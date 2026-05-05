@@ -1,69 +1,75 @@
-export default {
-  async fetch(request, env) {
-    if (request.method === 'OPTIONS') {
-      return new Response(null, { headers: corsHeaders() });
+export async function onRequestOptions() {
+  return new Response(null, { headers: corsHeaders() });
+}
+
+export async function onRequestPost(context) {
+  const { request, env } = context;
+
+  try {
+    const body = await request.json();
+    const trainNumber = (body.trainNumber || '').toString().trim();
+    const trainDate = body.trainDate;
+    const stationName = (body.stationName || body.stationQuery || '').toString().trim();
+    const extraBody = parseJson(env.PLK_EXTRA_BODY, {});
+
+    if (!trainNumber && !stationName) {
+      return json({ error: 'Missing trainNumber or stationName' }, 400);
     }
 
-    if (request.method !== 'POST') {
-      return json({ error: 'Use POST' }, 405);
+    const targetUrl = env.PLK_API_URL;
+    if (!targetUrl) {
+      return json({ error: 'Missing PLK_API_URL' }, 500);
     }
 
-    try {
-      const body = await request.json();
-      const trainNumber = body.trainNumber;
-      const trainDate = body.trainDate;
-      const extraBody = parseJson(env.PLK_EXTRA_BODY, {});
+    const authType = (env.PLK_AUTH_TYPE || 'bearer').toLowerCase();
+    const headers = {
+      'Content-Type': 'application/json'
+    };
 
-      if (!trainNumber) {
-        return json({ error: 'Missing trainNumber' }, 400);
-      }
-
-      const targetUrl = env.PLK_API_URL;
-      if (!targetUrl) {
-        return json({ error: 'Missing PLK_API_URL' }, 500);
-      }
-
-      const authType = (env.PLK_AUTH_TYPE || 'bearer').toLowerCase();
-      const headers = {
-        'Content-Type': 'application/json'
-      };
-
-      if (env.PLK_API_KEY) {
-        if (authType === 'bearer') headers['Authorization'] = `Bearer ${env.PLK_API_KEY}`;
-        else if (authType === 'x-api-key') headers['X-API-Key'] = env.PLK_API_KEY;
-        else if (authType === 'custom-header' && env.PLK_CUSTOM_HEADER) headers[env.PLK_CUSTOM_HEADER] = env.PLK_API_KEY;
-      }
-
-      const upstreamBody = {
-        trainNumber,
-        trainDate,
-        ...extraBody,
-        ...body
-      };
-
-      const upstream = await fetch(targetUrl, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(upstreamBody)
-      });
-
-      const text = await upstream.text();
-      return new Response(text, {
-        status: upstream.status,
-        headers: {
-          'Content-Type': upstream.headers.get('Content-Type') || 'application/json; charset=utf-8',
-          ...corsHeaders()
-        }
-      });
-    } catch (error) {
-      return json({ error: error.message || 'Worker error' }, 500);
+    if (env.PLK_API_KEY) {
+      if (authType === 'bearer') headers['Authorization'] = `Bearer ${env.PLK_API_KEY}`;
+      else if (authType === 'x-api-key') headers['X-API-Key'] = env.PLK_API_KEY;
+      else if (authType === 'custom-header' && env.PLK_CUSTOM_HEADER) headers[env.PLK_CUSTOM_HEADER] = env.PLK_API_KEY;
     }
+
+    const upstreamBody = {
+      ...extraBody,
+      ...body
+    };
+
+    if (trainNumber) upstreamBody.trainNumber = trainNumber;
+    if (trainDate) upstreamBody.trainDate = trainDate;
+    if (stationName) {
+      upstreamBody.stationName = stationName;
+      if (!upstreamBody.mode) upstreamBody.mode = 'station';
+    }
+
+    const upstream = await fetch(targetUrl, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(upstreamBody)
+    });
+
+    const text = await upstream.text();
+    return new Response(text, {
+      status: upstream.status,
+      headers: {
+        'Content-Type': upstream.headers.get('Content-Type') || 'application/json; charset=utf-8',
+        ...corsHeaders()
+      }
+    });
+  } catch (error) {
+    return json({ error: error.message || 'Worker error' }, 500);
   }
-};
+}
 
 function parseJson(value, fallback) {
   if (!value) return fallback;
-  try { return JSON.parse(value); } catch { return fallback; }
+  try {
+    return JSON.parse(value);
+  } catch {
+    return fallback;
+  }
 }
 
 function corsHeaders() {
