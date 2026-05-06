@@ -32,19 +32,11 @@ export async function onRequestPost(context) {
 
       const lookupText = await stationLookup.text();
       if (!stationLookup.ok) {
-        return new Response(lookupText, {
-          status: stationLookup.status,
-          headers: {
-            'Content-Type': stationLookup.headers.get('Content-Type') || 'application/json; charset=utf-8',
-            ...corsHeaders()
-          }
-        });
+        return passthrough(lookupText, stationLookup.status, stationLookup.headers.get('Content-Type'));
       }
 
-      let stationData;
-      try {
-        stationData = JSON.parse(lookupText);
-      } catch {
+      const stationData = safeJson(lookupText);
+      if (!stationData) {
         return json({ error: 'Invalid station dictionary response', raw: lookupText.slice(0, 1000) }, 502);
       }
 
@@ -91,56 +83,110 @@ export async function onRequestPost(context) {
     const text = await upstream.text();
 
     if (!upstream.ok) {
-      return new Response(text, {
-        status: upstream.status,
-        headers: {
-          'Content-Type': contentType,
-          ...corsHeaders(),
-          ...(matchedStation ? {
-            'X-Resolved-Station-Id': stationId,
-            'X-Resolved-Station-Name': encodeHeaderValue(matchedStation.name || stationName || '')
-          } : {
-            'X-Resolved-Station-Id': stationId
-          })
-        }
-      });
+      return passthrough(text, upstream.status, contentType, stationId, matchedStation?.name || stationName);
     }
 
-    let payload;
-    try {
-      payload = JSON.parse(text);
-    } catch {
-      return new Response(text, {
-        status: upstream.status,
-        headers: {
-          'Content-Type': contentType,
-          ...corsHeaders(),
-          'X-Resolved-Station-Id': stationId
-        }
-      });
+    const payload = safeJson(text);
+    if (!payload) {
+      return passthrough(text, upstream.status, contentType, stationId, matchedStation?.name || stationName);
     }
 
-    const wrapped = {
+    const departures = mapOperationsToDepartures(payload, stationId);
+    const maxDelayMinutes = departures.reduce((max, item) => Math.max(max, Number(item.delayMinutes) || 0), 0);
+
+    const response = {
       mode: 'station',
-      stationQuery: stationName || matchedStation?.name || null,
       stationFound: true,
+      stationQuery: stationName || matchedStation?.name || null,
       matchedStation: matchedStation?.name || stationName || null,
-      matchedStationId: Number.isNaN(Number(stationId)) ? stationId : Number(stationId),
-      upstream: payload
+      matchedStationId: toMaybeNumber(stationId),
+      status: departures.length ? (maxDelayMinutes > 0 ? 'DELAYED' : 'ON_TIME') : 'NO_DATA',
+      maxDelayMinutes,
+      departures,
+      rawCount: departures.length,
+      upstreamMeta: extractMeta(payload)
     };
 
-    return new Response(JSON.stringify(wrapped, null, 2), {
-      status: upstream.status,
+    return new Response(JSON.stringify(response, null, 2), {
+      status: 200,
       headers: {
         'Content-Type': 'application/json; charset=utf-8',
         ...corsHeaders(),
         'X-Resolved-Station-Id': stationId,
-        ...(matchedStation?.name ? { 'X-Resolved-Station-Name': encodeHeaderValue(matchedStation.name) } : {})
+        ...(matchedStation?.name ? { 'X-Resolved-Station-Name': encodeURIComponent(matchedStation.name) } : {})
       }
     });
   } catch (error) {
     return json({ error: error.message || 'Worker error' }, 500);
   }
+}
+
+function mapOperationsToDepartures(payload, stationId) {
+  const items = extractOperationItems(payload);
+
+  return items.map((item) => {
+    const planned = firstDefined(
+      item.plannedTime,
+      item.planTime,
+      item.scheduledTime,
+      item.departureTime?.planned,
+      item.times?.planned,
+      item.arrivalDepartureTime,
+      item.time
+    );
+
+    const actual = firstDefined(
+      item.actualTime,
+      item.realTime,
+      item.estimatedTime,
+      item.departureTime?.actual,
+      item.times?.actual,
+      item.updatedTime
+    );
+
+    const explicitDelay = firstDefined(
+      item.delayMinutes,
+      item.delay,
+      item.delayInMinutes,
+      item.departureTime?.delayMinutes,
+      item.times?.delayMinutes
+    );
+
+    const delayMinutes = normalizeDelayMinutes(explicitDelay, planned, actual);
+
+    return {
+      station: firstDefined(item.stationName, item.station, item.stopName, item.locationName, item.pointName) || '',
+      destination: firstDefined(item.destination, item.direction, item.destinationName, item.toStation, item.headsign) || '',
+      plannedTime: formatClock(planned),
+      actualTime: formatClock(actual || planned),
+      delayMinutes,
+      status: normalizeStatus(item.status, delayMinutes, planned, actual),
+      trainNumber: firstDefined(item.trainNumber, item.number, item.trainNo, item.commercialNumber) || '',
+      raw: item,
+      stationId: toMaybeNumber(stationId)
+    };
+  }).filter(item => item.destination || item.trainNumber || item.plannedTime || item.actualTime);
+}
+
+function extractOperationItems(payload) {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.operations)) return payload.operations;
+  if (Array.isArray(payload?.items)) return payload.items;
+  if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload?.departures)) return payload.departures;
+  if (Array.isArray(payload?.results)) return payload.results;
+  return [];
+}
+
+function extractMeta(payload) {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return null;
+  const meta = { ...payload };
+  delete meta.operations;
+  delete meta.items;
+  delete meta.data;
+  delete meta.departures;
+  delete meta.results;
+  return meta;
 }
 
 function buildHeaders(env, authType) {
@@ -177,6 +223,70 @@ function extractStations(data) {
   return [];
 }
 
+function normalizeStatus(status, delayMinutes, planned, actual) {
+  const normalized = String(status || '').trim();
+  if (normalized) return normalized;
+  if ((Number(delayMinutes) || 0) > 0) return 'DELAYED';
+  if (actual && planned && formatClock(actual) !== formatClock(planned)) return 'UPDATED';
+  return 'ON_TIME';
+}
+
+function normalizeDelayMinutes(delay, planned, actual) {
+  const parsed = Number(String(delay ?? '').replace(/[^\d-]/g, ''));
+  if (Number.isFinite(parsed)) return parsed;
+
+  const plannedMinutes = parseClockToMinutes(planned);
+  const actualMinutes = parseClockToMinutes(actual);
+  if (plannedMinutes === null || actualMinutes === null) return 0;
+  return actualMinutes - plannedMinutes;
+}
+
+function parseClockToMinutes(value) {
+  const str = String(value || '').trim();
+  const match = str.match(/(\d{1,2}):(\d{2})/);
+  if (!match) return null;
+  return Number(match[1]) * 60 + Number(match[2]);
+}
+
+function formatClock(value) {
+  const str = String(value || '').trim();
+  const match = str.match(/(\d{1,2}):(\d{2})/);
+  if (match) return `${match[1].padStart(2, '0')}:${match[2]}`;
+  return str;
+}
+
+function firstDefined(...values) {
+  for (const value of values) {
+    if (value !== undefined && value !== null && String(value).trim() !== '') return value;
+  }
+  return '';
+}
+
+function toMaybeNumber(value) {
+  const num = Number(value);
+  return Number.isNaN(num) ? value : num;
+}
+
+function safeJson(text) {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
+function passthrough(text, status, contentType, stationId, stationName) {
+  return new Response(text, {
+    status,
+    headers: {
+      'Content-Type': contentType || 'application/json; charset=utf-8',
+      ...corsHeaders(),
+      ...(stationId ? { 'X-Resolved-Station-Id': String(stationId) } : {}),
+      ...(stationName ? { 'X-Resolved-Station-Name': encodeURIComponent(String(stationName)) } : {})
+    }
+  });
+}
+
 function normalizeText(value) {
   return String(value || '')
     .normalize('NFD')
@@ -192,10 +302,6 @@ function normalizeBaseUrl(value) {
 function normalizeValue(value) {
   if (value === undefined || value === null) return '';
   return String(value).trim();
-}
-
-function encodeHeaderValue(value) {
-  return encodeURIComponent(String(value || ''));
 }
 
 function parseJson(value, fallback) {
