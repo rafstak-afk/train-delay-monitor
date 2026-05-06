@@ -7,7 +7,7 @@ export async function onRequestPost(context) {
 
   try {
     const body = await request.json();
-    const stationName = (body.stationName || body.stationQuery || '').toString().trim();
+    const stationName = normalizeValue(body.stationName || body.stationQuery);
     let stationId = normalizeValue(body.stationId || body.stations || body.stationCode);
 
     const apiBase = normalizeBaseUrl(env.PLK_API_BASE || 'https://pdp-api.plk-sa.pl/api/v1');
@@ -18,6 +18,8 @@ export async function onRequestPost(context) {
     if (!stationId && !stationName) {
       return json({ error: 'Missing stationName or stationId' }, 400);
     }
+
+    let matchedStation = null;
 
     if (!stationId && stationName) {
       const stationLookupUrl = new URL(`${apiBase}/dictionaries/stations`);
@@ -46,30 +48,27 @@ export async function onRequestPost(context) {
         return json({ error: 'Invalid station dictionary response', raw: lookupText.slice(0, 1000) }, 502);
       }
 
-      const stationMatch = pickStation(stationData, stationName);
-      if (!stationMatch) {
+      matchedStation = pickStation(stationData, stationName);
+      if (!matchedStation) {
         return json({
           error: 'Station not found',
           stationQuery: stationName,
-          stationLookupUrl: stationLookupUrl.toString(),
           dictionaryPreview: stationData
         }, 404);
       }
 
-      stationId = String(
-        stationMatch.id ??
-        stationMatch.stationId ??
-        stationMatch.value ??
-        stationMatch.code ??
-        ''
-      ).trim();
+      stationId = normalizeValue(
+        matchedStation.id ??
+        matchedStation.stationId ??
+        matchedStation.value ??
+        matchedStation.code
+      );
 
       if (!stationId) {
         return json({
           error: 'Station found but no ID returned',
           stationQuery: stationName,
-          match: stationMatch,
-          dictionaryPreview: stationData
+          match: matchedStation
         }, 502);
       }
     }
@@ -88,13 +87,55 @@ export async function onRequestPost(context) {
       headers
     });
 
-    const operationsText = await upstream.text();
-    return new Response(operationsText, {
+    const contentType = upstream.headers.get('Content-Type') || 'application/json; charset=utf-8';
+    const text = await upstream.text();
+
+    if (!upstream.ok) {
+      return new Response(text, {
+        status: upstream.status,
+        headers: {
+          'Content-Type': contentType,
+          ...corsHeaders(),
+          ...(matchedStation ? {
+            'X-Resolved-Station-Id': stationId,
+            'X-Resolved-Station-Name': encodeHeaderValue(matchedStation.name || stationName || '')
+          } : {
+            'X-Resolved-Station-Id': stationId
+          })
+        }
+      });
+    }
+
+    let payload;
+    try {
+      payload = JSON.parse(text);
+    } catch {
+      return new Response(text, {
+        status: upstream.status,
+        headers: {
+          'Content-Type': contentType,
+          ...corsHeaders(),
+          'X-Resolved-Station-Id': stationId
+        }
+      });
+    }
+
+    const wrapped = {
+      mode: 'station',
+      stationQuery: stationName || matchedStation?.name || null,
+      stationFound: true,
+      matchedStation: matchedStation?.name || stationName || null,
+      matchedStationId: Number.isNaN(Number(stationId)) ? stationId : Number(stationId),
+      upstream: payload
+    };
+
+    return new Response(JSON.stringify(wrapped, null, 2), {
       status: upstream.status,
       headers: {
-        'Content-Type': upstream.headers.get('Content-Type') || 'application/json; charset=utf-8',
+        'Content-Type': 'application/json; charset=utf-8',
         ...corsHeaders(),
-        'X-Resolved-Station-Id': stationId
+        'X-Resolved-Station-Id': stationId,
+        ...(matchedStation?.name ? { 'X-Resolved-Station-Name': encodeHeaderValue(matchedStation.name) } : {})
       }
     });
   } catch (error) {
@@ -113,32 +154,35 @@ function buildHeaders(env, authType) {
 }
 
 function pickStation(data, query) {
-  const items = Array.isArray(data)
-    ? data
-    : Array.isArray(data?.items)
-      ? data.items
-      : Array.isArray(data?.data)
-        ? data.data
-        : Array.isArray(data?.results)
-          ? data.results
-          : [];
-
+  const items = extractStations(data);
   if (!items.length) return null;
 
-  const q = query.toLowerCase();
-  const exact = items.find(item => {
-    const name = String(item.name ?? item.stationName ?? item.label ?? item.description ?? '').toLowerCase();
-    return name === q;
-  });
+  const q = normalizeText(query);
+
+  const exact = items.find(item => normalizeText(item.name ?? item.stationName ?? item.label ?? item.description) === q);
   if (exact) return exact;
 
-  const startsWith = items.find(item => {
-    const name = String(item.name ?? item.stationName ?? item.label ?? item.description ?? '').toLowerCase();
-    return name.startsWith(q);
-  });
+  const startsWith = items.find(item => normalizeText(item.name ?? item.stationName ?? item.label ?? item.description).startsWith(q));
   if (startsWith) return startsWith;
 
   return items[0] || null;
+}
+
+function extractStations(data) {
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.stations)) return data.stations;
+  if (Array.isArray(data?.items)) return data.items;
+  if (Array.isArray(data?.data)) return data.data;
+  if (Array.isArray(data?.results)) return data.results;
+  return [];
+}
+
+function normalizeText(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
 }
 
 function normalizeBaseUrl(value) {
@@ -148,6 +192,10 @@ function normalizeBaseUrl(value) {
 function normalizeValue(value) {
   if (value === undefined || value === null) return '';
   return String(value).trim();
+}
+
+function encodeHeaderValue(value) {
+  return encodeURIComponent(String(value || ''));
 }
 
 function parseJson(value, fallback) {
