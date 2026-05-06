@@ -8,7 +8,7 @@ export async function onRequestPost(context) {
   try {
     const body = await request.json();
     const stationNameRaw = normalizeValue(body.stationName || body.stationQuery || body.station);
-    const stationName = repairPolishText(stationNameRaw);
+    const stationName = normalizeInputStation(stationNameRaw);
     let stationId = normalizeValue(body.stationId || body.stations || body.stationCode);
 
     const apiBase = normalizeBaseUrl(env.PLK_API_BASE || 'https://pdp-api.plk-sa.pl/api/v1');
@@ -23,21 +23,13 @@ export async function onRequestPost(context) {
     let matchedStation = null;
 
     if (!stationId) {
-      const stationLookupUrl = new URL(`${apiBase}/dictionaries/stations`);
-      stationLookupUrl.searchParams.set('search', stationName);
-
-      const stationLookup = await fetch(stationLookupUrl.toString(), { method: 'GET', headers });
-      const lookupText = await stationLookup.text();
-      if (!stationLookup.ok) {
-        return passthrough(lookupText, stationLookup.status, stationLookup.headers.get('Content-Type'));
-      }
-
-      const stationData = safeJson(lookupText);
-      if (!stationData) {
-        return json({ error: 'Invalid station dictionary response', raw: lookupText.slice(0, 1000) }, 502);
-      }
-
+      const stationData = await fetchStationDictionary(apiBase, headers, stationName);
       matchedStation = pickStation(stationData, stationName);
+
+      if (!matchedStation && stationNameRaw && stationNameRaw !== stationName) {
+        matchedStation = pickStation(stationData, stationNameRaw);
+      }
+
       if (!matchedStation) {
         return json({
           error: 'Station not found',
@@ -96,20 +88,40 @@ export async function onRequestPost(context) {
   }
 }
 
-function repairPolishText(value) {
-  const str = String(value || '').trim();
-  if (!str) return '';
-  return str
-    .replace(/ /g, 'ó')
-    .replace(/GB wny/g, 'Główny')
-    .replace(/gB wny/g, 'główny')
-    .replace(/Krak w/g, 'Kraków')
-    .replace(/WrocBaw/g, 'Wrocław')
-    .replace(/PoznaD/g, 'Poznań')
-    .replace(/GdaDsk/g, 'Gdańsk')
-    .replace(/BiaBystok/g, 'Białystok')
-    .replace(/Bielsko-BiaBa/g, 'Bielsko-Biała')
-    .replace(/BochniaB/g, 'Bochnia');
+async function fetchStationDictionary(apiBase, headers, stationName) {
+  const attempts = [
+    stationName,
+    stationName.replace(/\s+/g, ' ').trim(),
+    stripDiacritics(stationName),
+    stripDiacritics(stationName).replace(/\s+/g, ' ').trim()
+  ].filter((value, index, array) => value && array.indexOf(value) === index);
+
+  let lastData = null;
+
+  for (const query of attempts) {
+    const stationLookupUrl = new URL(`${apiBase}/dictionaries/stations`);
+    stationLookupUrl.searchParams.set('search', query);
+
+    const stationLookup = await fetch(stationLookupUrl.toString(), { method: 'GET', headers });
+    const lookupText = await stationLookup.text();
+    if (!stationLookup.ok) throw new Error(`Station dictionary HTTP ${stationLookup.status}: ${lookupText}`);
+
+    const stationData = safeJson(lookupText);
+    if (!stationData) throw new Error('Invalid station dictionary response');
+
+    lastData = stationData;
+    if ((stationData.totalCount || 0) > 0 || extractStations(stationData).length > 0) return stationData;
+  }
+
+  return lastData || { stations: [], totalCount: 0 };
+}
+
+function normalizeInputStation(value) {
+  return String(value || '')
+    .replace(/\uFFFD/g, '')
+    .replace(/[\u0000-\u001F]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function mapOperationToRoute(item, fallbackStationName) {
@@ -146,7 +158,7 @@ function mapOperationToRoute(item, fallbackStationName) {
   const delayMinutes = normalizeDelayMinutes(explicitDelay, scheduled, actual);
 
   return {
-    station: repairPolishText(firstDefined(
+    station: firstDefined(
       item.stationName,
       item.station,
       item.stopName,
@@ -156,7 +168,7 @@ function mapOperationToRoute(item, fallbackStationName) {
       item.direction,
       item.destinationName,
       fallbackStationName
-    ) || ''),
+    ) || '',
     scheduled: formatClock(scheduled),
     actual: formatClock(actual || scheduled),
     delayMinutes,
@@ -251,8 +263,13 @@ function pickStation(data, query) {
   const q = normalizeText(query);
   const exact = items.find((item) => normalizeText(item.name ?? item.stationName ?? item.label ?? item.description) === q);
   if (exact) return exact;
-  const startsWith = items.find((item) => normalizeText(item.name ?? item.stationName ?? item.label ?? item.description).startsWith(q));
-  if (startsWith) return startsWith;
+
+  const strippedExact = items.find((item) => stripDiacritics(normalizeText(item.name ?? item.stationName ?? item.label ?? item.description)) === stripDiacritics(q));
+  if (strippedExact) return strippedExact;
+
+  const includes = items.find((item) => normalizeText(item.name ?? item.stationName ?? item.label ?? item.description).includes(q));
+  if (includes) return includes;
+
   return items[0] || null;
 }
 
@@ -290,12 +307,12 @@ function toMaybeNumber(value) {
   return Number.isNaN(num) ? value : num;
 }
 
+function stripDiacritics(value) {
+  return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
 function normalizeText(value) {
-  return repairPolishText(String(value || ''))
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .trim();
+  return stripDiacritics(String(value || '')).toLowerCase().replace(/\s+/g, ' ').trim();
 }
 
 function normalizeBaseUrl(value) {
