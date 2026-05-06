@@ -7,7 +7,8 @@ export async function onRequestPost(context) {
 
   try {
     const body = await request.json();
-    const stationName = normalizeValue(body.stationName || body.stationQuery || body.station);
+    const stationNameRaw = normalizeValue(body.stationName || body.stationQuery || body.station);
+    const stationName = repairPolishText(stationNameRaw);
     let stationId = normalizeValue(body.stationId || body.stations || body.stationCode);
 
     const apiBase = normalizeBaseUrl(env.PLK_API_BASE || 'https://pdp-api.plk-sa.pl/api/v1');
@@ -38,7 +39,12 @@ export async function onRequestPost(context) {
 
       matchedStation = pickStation(stationData, stationName);
       if (!matchedStation) {
-        return json({ error: 'Station not found', stationQuery: stationName, dictionaryPreview: stationData }, 404);
+        return json({
+          error: 'Station not found',
+          stationQuery: stationName,
+          stationQueryRaw: stationNameRaw,
+          dictionaryPreview: stationData
+        }, 404);
       }
 
       stationId = normalizeValue(matchedStation.id ?? matchedStation.stationId ?? matchedStation.value ?? matchedStation.code);
@@ -90,6 +96,22 @@ export async function onRequestPost(context) {
   }
 }
 
+function repairPolishText(value) {
+  const str = String(value || '').trim();
+  if (!str) return '';
+  return str
+    .replace(/ /g, 'ó')
+    .replace(/GB wny/g, 'Główny')
+    .replace(/gB wny/g, 'główny')
+    .replace(/Krak w/g, 'Kraków')
+    .replace(/WrocBaw/g, 'Wrocław')
+    .replace(/PoznaD/g, 'Poznań')
+    .replace(/GdaDsk/g, 'Gdańsk')
+    .replace(/BiaBystok/g, 'Białystok')
+    .replace(/Bielsko-BiaBa/g, 'Bielsko-Biała')
+    .replace(/BochniaB/g, 'Bochnia');
+}
+
 function mapOperationToRoute(item, fallbackStationName) {
   const scheduled = firstDefined(
     item.plannedTime,
@@ -124,7 +146,7 @@ function mapOperationToRoute(item, fallbackStationName) {
   const delayMinutes = normalizeDelayMinutes(explicitDelay, scheduled, actual);
 
   return {
-    station: firstDefined(
+    station: repairPolishText(firstDefined(
       item.stationName,
       item.station,
       item.stopName,
@@ -134,7 +156,7 @@ function mapOperationToRoute(item, fallbackStationName) {
       item.direction,
       item.destinationName,
       fallbackStationName
-    ) || '',
+    ) || ''),
     scheduled: formatClock(scheduled),
     actual: formatClock(actual || scheduled),
     delayMinutes,
@@ -269,7 +291,7 @@ function toMaybeNumber(value) {
 }
 
 function normalizeText(value) {
-  return String(value || '')
+  return repairPolishText(String(value || ''))
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
