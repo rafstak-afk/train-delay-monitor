@@ -43,23 +43,33 @@ export async function onRequestPost(context) {
       try {
         stationData = JSON.parse(lookupText);
       } catch {
-        return json({ error: 'Invalid station dictionary response', raw: lookupText.slice(0, 500) }, 502);
+        return json({ error: 'Invalid station dictionary response', raw: lookupText.slice(0, 1000) }, 502);
       }
 
       const stationMatch = pickStation(stationData, stationName);
       if (!stationMatch) {
         return json({
           error: 'Station not found',
-          stationQuery: stationName
+          stationQuery: stationName,
+          stationLookupUrl: stationLookupUrl.toString(),
+          dictionaryPreview: stationData
         }, 404);
       }
 
-      stationId = String(stationMatch.id ?? stationMatch.stationId ?? stationMatch.value ?? '').trim();
+      stationId = String(
+        stationMatch.id ??
+        stationMatch.stationId ??
+        stationMatch.value ??
+        stationMatch.code ??
+        ''
+      ).trim();
+
       if (!stationId) {
         return json({
           error: 'Station found but no ID returned',
           stationQuery: stationName,
-          match: stationMatch
+          match: stationMatch,
+          dictionaryPreview: stationData
         }, 502);
       }
     }
@@ -109,19 +119,21 @@ function pickStation(data, query) {
       ? data.items
       : Array.isArray(data?.data)
         ? data.data
-        : [];
+        : Array.isArray(data?.results)
+          ? data.results
+          : [];
 
   if (!items.length) return null;
 
   const q = query.toLowerCase();
   const exact = items.find(item => {
-    const name = String(item.name ?? item.stationName ?? item.label ?? '').toLowerCase();
+    const name = String(item.name ?? item.stationName ?? item.label ?? item.description ?? '').toLowerCase();
     return name === q;
   });
   if (exact) return exact;
 
   const startsWith = items.find(item => {
-    const name = String(item.name ?? item.stationName ?? item.label ?? '').toLowerCase();
+    const name = String(item.name ?? item.stationName ?? item.label ?? item.description ?? '').toLowerCase();
     return name.startsWith(q);
   });
   if (startsWith) return startsWith;
