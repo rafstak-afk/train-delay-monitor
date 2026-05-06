@@ -7,47 +7,45 @@ export async function onRequestPost(context) {
 
   try {
     const body = await request.json();
-    const trainNumber = (body.trainNumber || '').toString().trim();
-    const trainDate = body.trainDate;
-    const stationName = (body.stationName || body.stationQuery || '').toString().trim();
-    const extraBody = parseJson(env.PLK_EXTRA_BODY, {});
+    const stationId = normalizeStationId(body.stationId || body.stations || body.stationCode);
+    const date = (body.date || body.trainDate || '').toString().trim();
+    const extraQuery = parseJson(env.PLK_EXTRA_QUERY, {});
 
-    if (!trainNumber && !stationName) {
-      return json({ error: 'Missing trainNumber or stationName' }, 400);
+    if (!stationId) {
+      return json({
+        error: 'Missing stationId',
+        hint: 'PLK /api/v1/operations wymaga parametru stations (np. 33506), a nie samej nazwy stacji.'
+      }, 400);
     }
 
-    const targetUrl = env.PLK_API_URL;
-    if (!targetUrl) {
+    const baseUrl = env.PLK_API_URL;
+    if (!baseUrl) {
       return json({ error: 'Missing PLK_API_URL' }, 500);
     }
 
-    const authType = (env.PLK_AUTH_TYPE || 'bearer').toLowerCase();
-    const headers = {
-      'Content-Type': 'application/json'
-    };
+    const authType = (env.PLK_AUTH_TYPE || 'x-api-key').toLowerCase();
+    const headers = {};
 
     if (env.PLK_API_KEY) {
       if (authType === 'bearer') headers['Authorization'] = `Bearer ${env.PLK_API_KEY}`;
-      else if (authType === 'x-api-key') headers['X-API-Key'] = env.PLK_API_KEY;
+      else if (authType === 'x-api-key') headers['X-Api-Key'] = env.PLK_API_KEY;
       else if (authType === 'custom-header' && env.PLK_CUSTOM_HEADER) headers[env.PLK_CUSTOM_HEADER] = env.PLK_API_KEY;
     }
 
-    const upstreamBody = {
-      ...extraBody,
-      ...body
-    };
+    const url = new URL(baseUrl);
+    url.searchParams.set('stations', stationId);
 
-    if (trainNumber) upstreamBody.trainNumber = trainNumber;
-    if (trainDate) upstreamBody.trainDate = trainDate;
-    if (stationName) {
-      upstreamBody.stationName = stationName;
-      if (!upstreamBody.mode) upstreamBody.mode = 'station';
+    for (const [key, value] of Object.entries(extraQuery)) {
+      if (value !== undefined && value !== null && value !== '') {
+        url.searchParams.set(key, String(value));
+      }
     }
 
-    const upstream = await fetch(targetUrl, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(upstreamBody)
+    if (date) url.searchParams.set('date', date);
+
+    const upstream = await fetch(url.toString(), {
+      method: 'GET',
+      headers
     });
 
     const text = await upstream.text();
@@ -63,6 +61,11 @@ export async function onRequestPost(context) {
   }
 }
 
+function normalizeStationId(value) {
+  if (value === undefined || value === null) return '';
+  return String(value).trim();
+}
+
 function parseJson(value, fallback) {
   if (!value) return fallback;
   try {
@@ -76,7 +79,7 @@ function corsHeaders() {
   return {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-API-Key'
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-API-Key, X-Api-Key'
   };
 }
 
