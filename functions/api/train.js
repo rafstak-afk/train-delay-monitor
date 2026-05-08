@@ -100,7 +100,9 @@ async function handleStationMode({ apiBase, headers, stationName }) {
     debug: {
       dictionaryCount: extractStations(dictionaryData).length,
       trainsInPayload: Array.isArray(payload?.trains) ? payload.trains.length : 0,
-      payloadKeys: Object.keys(payload || {}).slice(0, 30)
+      payloadKeys: Object.keys(payload || {}).slice(0, 30),
+      sampleTrain: Array.isArray(payload?.trains) ? payload.trains[0] || null : null,
+      sampleStations: sampleStations(payload?.stations, stationId, matchedStation.name || matchedStation.stationName || stationName)
     }
   });
 }
@@ -429,6 +431,22 @@ function toMaybeNumber(value) {
   const num = Number(value);
   return Number.isNaN(num) ? value : num;
 }
+
+function sampleStations(stations, stationId, stationName) {
+  if (!stations || typeof stations !== 'object') return null;
+  const normalizedName = normalize(stationName);
+  const out = {};
+  for (const [key, value] of Object.entries(stations)) {
+    const candidateId = String(firstDefined(value?.id, value?.stationId, value?.uic, key));
+    const candidateName = normalize(firstDefined(value?.name, value?.stationName, value?.label, value?.description));
+    if (String(key) === String(stationId) || candidateId === String(stationId) || (candidateName && candidateName.includes(normalizedName))) {
+      out[key] = value;
+    }
+    if (Object.keys(out).length >= 5) break;
+  }
+  return out;
+}
+
 
 function corsHeaders() {
   return {
