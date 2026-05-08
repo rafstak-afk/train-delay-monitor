@@ -23,152 +23,37 @@
       font-family: Inter, system-ui, sans-serif;
     }
     * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      background: linear-gradient(180deg,#09101f,#0e1630 40%,#101935);
-      color: var(--text);
-      font: 16px/1.45 Inter, system-ui, sans-serif;
-    }
-    .wrap {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 24px;
-      display: grid;
-      gap: 20px;
-    }
-    .card {
-      background: rgba(18,25,51,.92);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 20px;
-    }
+    body { margin: 0; background: linear-gradient(180deg,#09101f,#0e1630 40%,#101935); color: var(--text); font: 16px/1.45 Inter, system-ui, sans-serif; }
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 24px; display: grid; gap: 20px; }
+    .card { background: rgba(18,25,51,.92); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; }
     h1,h2,h3 { margin: 0 0 12px; }
     .muted { color: var(--muted); }
-    .grid {
-      display: grid;
-      gap: var(--gap);
-    }
-    .form-grid {
-      grid-template-columns: repeat(auto-fit,minmax(220px,1fr));
-      align-items: end;
-    }
-    label {
-      display: grid;
-      gap: 8px;
-      font-weight: 600;
-    }
-    input, select, button, textarea {
-      width: 100%;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      background: var(--panel-2);
-      color: var(--text);
-      padding: 12px 14px;
-      font: inherit;
-    }
-    button {
-      cursor: pointer;
-      background: linear-gradient(180deg,#79b2ff,#5d95f5);
-      color: #081122;
-      font-weight: 800;
-      border: none;
-    }
-    button.secondary {
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--text);
-    }
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(3,minmax(0,1fr));
-      gap: 12px;
-    }
-    .stat {
-      background: rgba(255,255,255,.03);
-      border: 1px solid rgba(255,255,255,.06);
-      border-radius: 14px;
-      padding: 14px;
-    }
+    .grid { display: grid; gap: var(--gap); }
+    .form-grid { grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); align-items: end; }
+    label { display: grid; gap: 8px; font-weight: 600; }
+    input, select, button { width: 100%; border-radius: 12px; border: 1px solid var(--border); background: var(--panel-2); color: var(--text); padding: 12px 14px; font: inherit; }
+    button { cursor: pointer; background: linear-gradient(180deg,#79b2ff,#5d95f5); color: #081122; font-weight: 800; border: none; }
+    button.secondary { background: transparent; border: 1px solid var(--border); color: var(--text); }
+    .stats { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
+    .stat { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06); border-radius: 14px; padding: 14px; }
     .stat .k { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
     .stat .v { font-size: 26px; font-weight: 800; margin-top: 6px; }
     .status-ok { color: var(--ok); }
     .status-warn { color: var(--warn); }
     .status-bad { color: var(--danger); }
-    .result-split {
-      display: grid;
-      grid-template-rows: auto minmax(360px, 46vh);
-      gap: 16px;
-    }
-    .top-pane {
-      display: grid;
-      gap: 16px;
-    }
-    .table-wrap {
-      overflow: auto;
-      border: 1px solid rgba(255,255,255,.08);
-      border-radius: 14px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      min-width: 820px;
-    }
-    th, td {
-      padding: 10px 12px;
-      border-bottom: 1px solid rgba(255,255,255,.08);
-      text-align: left;
-      vertical-align: top;
-    }
-    th {
-      position: sticky;
-      top: 0;
-      background: #162046;
-      z-index: 1;
-      font-size: 13px;
-      text-transform: uppercase;
-      letter-spacing: .05em;
-    }
-    .bottom-pane {
-      border: 1px solid rgba(255,255,255,.08);
-      border-radius: 14px;
-      overflow: hidden;
-      background: #fff;
-      min-height: 360px;
-    }
-    .bottom-pane iframe {
-      width: 100%;
-      height: 100%;
-      border: 0;
-      background: #fff;
-    }
-    .embed-placeholder {
-      height: 100%;
-      min-height: 360px;
-      display: grid;
-      place-items: center;
-      padding: 24px;
-      text-align: center;
-      color: #223;
-      background: linear-gradient(180deg,#f4f7ff,#eaf0ff);
-    }
-    .toolbar {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-    }
+    .result-split { display: grid; grid-template-rows: auto minmax(360px, 46vh); gap: 16px; }
+    .top-pane { display: grid; gap: 16px; }
+    .table-wrap { overflow: auto; border: 1px solid rgba(255,255,255,.08); border-radius: 14px; }
+    table { width: 100%; border-collapse: collapse; min-width: 820px; }
+    th, td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,.08); text-align: left; vertical-align: top; }
+    th { position: sticky; top: 0; background: #162046; z-index: 1; font-size: 13px; text-transform: uppercase; letter-spacing: .05em; }
+    .bottom-pane { border: 1px solid rgba(255,255,255,.08); border-radius: 14px; overflow: hidden; background: #fff; min-height: 360px; }
+    .bottom-pane iframe { width: 100%; height: 100%; border: 0; background: #fff; }
+    .embed-placeholder { height: 100%; min-height: 360px; display: grid; place-items: center; padding: 24px; text-align: center; color: #223; background: linear-gradient(180deg,#f4f7ff,#eaf0ff); }
+    .toolbar { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; justify-content: space-between; }
     .hidden { display: none !important; }
-    pre {
-      white-space: pre-wrap;
-      word-break: break-word;
-      background: #0b1228;
-      border: 1px solid rgba(255,255,255,.08);
-      border-radius: 12px;
-      padding: 14px;
-      overflow: auto;
-    }
+    pre { white-space: pre-wrap; word-break: break-word; background: #0b1228; border: 1px solid rgba(255,255,255,.08); border-radius: 12px; padding: 14px; overflow: auto; }
+    a.link-btn { text-decoration:none; padding:12px 14px; border-radius:12px; border:1px solid var(--border); color:var(--text); }
     @media (max-width: 800px) {
       .stats { grid-template-columns: 1fr; }
       .result-split { grid-template-rows: auto minmax(300px, 38vh); }
@@ -180,7 +65,7 @@
   <main class="wrap">
     <section class="card">
       <h1>Monitor opóźnień PLK</h1>
-      <p class="muted">Architektura pozostaje bez zmian: formularz wywołuje ten sam endpoint API, a sekcja „Pokaż wynik” została podzielona poziomo na część górną i dolną.</p>
+      <p class="muted">Sekcja wyniku pozostaje podzielona poziomo: u góry dane z API, na dole widok pasażerski PLK z poprawnego linku skróconego.</p>
     </section>
 
     <section class="card grid">
@@ -227,7 +112,7 @@
 
           <div class="toolbar">
             <div class="muted" id="matchLine">Brak danych.</div>
-            <a id="stationLink" class="secondary hidden" target="_blank" rel="noopener noreferrer" style="text-decoration:none; padding:12px 14px; border-radius:12px; border:1px solid var(--border); color:var(--text);">Otwórz wyświetlacz PLK</a>
+            <a id="stationLink" class="link-btn hidden" target="_blank" rel="noopener noreferrer">Otwórz wyświetlacz PLK</a>
           </div>
 
           <div class="table-wrap">
@@ -253,11 +138,11 @@
           </div>
         </div>
 
-        <div class="bottom-pane" id="displayPane">
+        <div class="bottom-pane">
           <div class="embed-placeholder" id="embedPlaceholder">
             <div>
               <h3>Wyświetlacz stacyjny PLK</h3>
-              <p>Po wyszukaniu stacji tutaj pojawi się dolna część pola wyniku z osadzonym widokiem z adresu <code>https://i.plk-sa.pl/{stationId}</code>.</p>
+              <p>Po wyszukaniu stacji tutaj pojawi się widok pasażerski z adresu skróconego <code>l.plk-sa.pl</code>.</p>
             </div>
           </div>
           <iframe id="displayFrame" class="hidden" title="Wyświetlacz stacyjny PLK" referrerpolicy="no-referrer"></iframe>
@@ -305,7 +190,6 @@
       resultBody.innerHTML = '<tr><td colspan="10" class="muted">Brak danych do wyświetlenia.</td></tr>';
       stationLink.classList.add('hidden');
       stationLink.removeAttribute('href');
-      stationLink.textContent = 'Otwórz wyświetlacz PLK';
       displayFrame.src = 'about:blank';
       displayFrame.classList.add('hidden');
       embedPlaceholder.classList.remove('hidden');
@@ -397,12 +281,11 @@
         `).join('');
       }
 
-      const stationDisplayUrl = data?.stationDisplayUrl || '';
-      if (stationDisplayUrl) {
-        stationLink.href = stationDisplayUrl;
+      const stationPassengerUrl = data?.stationPassengerUrl || '';
+      if (stationPassengerUrl) {
+        stationLink.href = stationPassengerUrl;
         stationLink.classList.remove('hidden');
-        stationLink.textContent = 'Otwórz wyświetlacz PLK';
-        displayFrame.src = stationDisplayUrl;
+        displayFrame.src = stationPassengerUrl;
         displayFrame.classList.remove('hidden');
         embedPlaceholder.classList.add('hidden');
       } else {
