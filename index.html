@@ -163,3 +163,265 @@
       table { min-width: 720px; }
     }
   </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="card grid">
+      <h1>Monitor opóźnień PLK</h1>
+      <p class="muted">
+        Wersja uproszczona: bez iframe i bez skróconych linków l.plk-sa.pl.
+        Pole wyszukiwania samo rozpoznaje, czy pasażer wpisał nazwę stacji czy numer pociągu.
+      </p>
+    </section>
+
+    <section class="card grid">
+      <h2>Konfiguracja</h2>
+      <form id="searchForm" class="grid">
+        <div class="form-grid">
+          <label>
+            Stacja lub numer pociągu (rozpoznawane automatycznie)
+            <input id="query" placeholder="np. Tczew albo 45100" />
+          </label>
+          <label>
+            Data
+            <input id="trainDate" type="date" />
+          </label>
+        </div>
+        <div class="toolbar">
+          <div class="muted" id="statusLine">Wpisz parametry i pobierz dane.</div>
+          <div class="actions">
+            <button id="fetchBtn" type="submit">Pobierz z API</button>
+            <button id="clearBtn" type="button" class="secondary">Wyczyść wynik</button>
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <section class="card grid">
+      <h2>Wynik</h2>
+      <div class="stats">
+        <div class="stat"><div class="k">Zapytanie</div><div id="statTrain" class="v">—</div></div>
+        <div class="stat"><div class="k">Opóźnienie</div><div id="statDelay" class="v">—</div></div>
+        <div class="stat"><div class="k">Ostatnia stacja</div><div id="statLast" class="v">—</div></div>
+      </div>
+
+      <div class="toolbar">
+        <div class="muted" id="matchLine">Brak danych.</div>
+        <div class="muted" id="fullTableLink"></div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Stacja</th>
+              <th>Plan</th>
+              <th>Rzeczywisty</th>
+              <th>Opóźnienie</th>
+              <th>Status</th>
+              <th>Pociąg</th>
+              <th>Kierunek</th>
+              <th>Przewoźnik</th>
+              <th>Peron</th>
+              <th>Przez</th>
+            </tr>
+          </thead>
+          <tbody id="resultBody">
+            <tr><td colspan="10" class="muted">Brak danych do wyświetlenia.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card grid">
+      <h2>Portal Pasażera</h2>
+      <div class="portal-box grid">
+        <div class="muted" id="portalInfo">Po pobraniu danych pojawi się link do katalogu stacji w Portalu Pasażera, zbudowany z nazwy stacji.</div>
+        <div id="portalUrl" class="portal-url">—</div>
+        <div>
+          <a id="portalLink" class="portal-link hidden" target="_blank" rel="noopener noreferrer">Otwórz w Portalu Pasażera</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const queryEl = document.getElementById('query');
+    const trainDateEl = document.getElementById('trainDate');
+    const searchForm = document.getElementById('searchForm');
+    const fetchBtn = document.getElementById('fetchBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const statusLine = document.getElementById('statusLine');
+    const matchLine = document.getElementById('matchLine');
+    const fullTableLink = document.getElementById('fullTableLink');
+    const statTrain = document.getElementById('statTrain');
+    const statDelay = document.getElementById('statDelay');
+    const statLast = document.getElementById('statLast');
+    const resultBody = document.getElementById('resultBody');
+    const portalInfo = document.getElementById('portalInfo');
+    const portalUrl = document.getElementById('portalUrl');
+    const portalLink = document.getElementById('portalLink');
+
+    trainDateEl.value = new Date().toISOString().slice(0, 10);
+
+    searchForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      fetchData();
+    });
+
+    clearBtn.addEventListener('click', clearResult);
+
+    function clearResult() {
+      statusLine.textContent = 'Wynik wyczyszczony.';
+      matchLine.textContent = 'Brak danych.';
+      if (fullTableLink) fullTableLink.innerHTML = '';
+      statTrain.textContent = '—';
+      statDelay.textContent = '—';
+      statDelay.className = 'v';
+      statLast.textContent = '—';
+      resultBody.innerHTML = '<tr><td colspan="10" class="muted">Brak danych do wyświetlenia.</td></tr>';
+      portalInfo.textContent = 'Po pobraniu danych pojawi się link do katalogu stacji w Portalu Pasażera, zbudowany z nazwy stacji.';
+      portalUrl.textContent = '—';
+      portalLink.classList.add('hidden');
+      portalLink.removeAttribute('href');
+    }
+
+    async function fetchData() {
+      const query = queryEl.value.trim();
+      const apiUrl = '/api/train';
+
+      if (!query) {
+        statusLine.textContent = 'Podaj stację albo numer pociągu.';
+        return;
+      }
+
+      const detectedMode = detectQueryType(query);
+      const payload = detectedMode === 'train'
+        ? { trainNumber: query, trainDate: trainDateEl.value }
+        : { stationName: query };
+
+      fetchBtn.disabled = true;
+      statusLine.textContent = 'Pobieranie danych...';
+
+      try {
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const text = await response.text();
+        const data = parseJson(text) ?? { raw: text };
+
+        if (!response.ok) {
+          renderError(data, response.status);
+          return;
+        }
+
+        renderResult(data, detectedMode);
+        statusLine.textContent = 'Gotowe.';
+      } catch (error) {
+        renderError({ error: error.message }, 'network');
+      } finally {
+        fetchBtn.disabled = false;
+      }
+    }
+
+    function renderError(data, code) {
+      statusLine.textContent = `Błąd: ${code}`;
+      matchLine.textContent = data?.error || 'Nie udało się pobrać danych.';
+      if (fullTableLink) fullTableLink.innerHTML = '';
+      statTrain.textContent = '—';
+      statDelay.textContent = '—';
+      statDelay.className = 'v';
+      statLast.textContent = '—';
+      resultBody.innerHTML = '<tr><td colspan="10" class="muted">Brak danych do wyświetlenia.</td></tr>';
+      portalInfo.textContent = 'Nie udało się przygotować linku do Portalu Pasażera.';
+      portalUrl.textContent = '—';
+      portalLink.classList.add('hidden');
+      portalLink.removeAttribute('href');
+    }
+
+    function renderResult(data, mode) {
+      const route = Array.isArray(data?.route) ? data.route : [];
+      statTrain.textContent = mode === 'station' ? (data?.matchedStation || 'stacja') : (data?.trainNumber || 'pociąg');
+
+      const delay = Number(data?.delayMinutes || 0);
+      statDelay.textContent = `${delay} min`;
+      statDelay.className = `v ${delayClass(delay)}`;
+      statLast.textContent = data?.lastStation || '—';
+
+      if (data?.matchedStation) {
+        const total = data?.totalDepartures ?? route.length;
+        matchLine.textContent = `Rozpoznano zapytanie jako stację. Dopasowano: ${data.matchedStation} (${data.matchedStationId ?? 'brak ID'}). Pokazuję 20 pierwszych odjazdów z ${total}.`;
+        if (data?.matchedStationId && fullTableLink) {
+          const fullUrl = `https://l.plk-sa.pl/${data.matchedStationId}`;
+          fullTableLink.innerHTML = `<a href="${fullUrl}" target="_blank" rel="noopener noreferrer">Pełna tabela odjazdów</a>`;
+        } else if (fullTableLink) {
+          fullTableLink.innerHTML = '';
+        }
+      } else {
+        matchLine.textContent = `Rozpoznano zapytanie jako ${mode === 'train' ? 'numer pociągu' : 'stację'}. Status: ${data?.status || 'brak'}, rekordów: ${route.length}.`;
+        if (fullTableLink) fullTableLink.innerHTML = '';
+      }
+
+      if (!route.length) {
+        resultBody.innerHTML = '<tr><td colspan="10" class="muted">Brak danych do wyświetlenia.</td></tr>';
+      } else {
+        resultBody.innerHTML = route.map((row) => `
+          <tr>
+            <td>${esc(row.station)}</td>
+            <td>${esc(row.scheduled)}</td>
+            <td>${esc(row.actual)}</td>
+            <td>${esc(String(row.delayMinutes ?? 0))} min</td>
+            <td>${esc(row.status)}</td>
+            <td>${esc(row.trainNumber)}</td>
+            <td>${esc(row.destination)}</td>
+            <td>${esc(row.carrier)}</td>
+            <td>${esc(row.platform)}</td>
+            <td>${esc(row.via)}</td>
+          </tr>
+        `).join('');
+      }
+
+      if (data?.stationPortalUrl) {
+        portalInfo.textContent = 'Link do katalogu stacji w Portalu Pasażera zbudowany z nazwy stacji:';
+        portalUrl.textContent = data.stationPortalUrl;
+        portalLink.href = data.stationPortalUrl;
+        portalLink.classList.remove('hidden');
+      } else {
+        portalInfo.textContent = 'Dla tego wyniku nie udało się ustalić nazwy stacji do Portalu Pasażera.';
+        portalUrl.textContent = '—';
+        portalLink.classList.add('hidden');
+        portalLink.removeAttribute('href');
+      }
+    }
+
+    function detectQueryType(value) {
+      const text = String(value || '').trim();
+      if (/^\d{2,10}$/.test(text)) return 'train';
+      if (/^[A-Z]{1,4}\d{1,6}$/i.test(text)) return 'train';
+      return 'station';
+    }
+
+    function delayClass(delay) {
+      if (delay <= 0) return 'ok';
+      if (delay < 10) return 'warn';
+      return 'bad';
+    }
+
+    function parseJson(text) {
+      try { return JSON.parse(text); } catch { return null; }
+    }
+
+    function esc(value) {
+      return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+  </script>
+</body>
+</html>
