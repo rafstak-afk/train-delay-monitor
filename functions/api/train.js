@@ -93,8 +93,9 @@ async function handleStationMode({ apiBase, headers, stationName }) {
     delayMinutes,
     status: route.length ? (delayMinutes > 0 ? 'DELAYED' : 'ON_TIME') : 'NO_DATA',
     lastStation: matchedStation.name || stationName,
-    trainNumber: route[0]?.trainNumber || 'station',
-    route,
+    trainNumber: route[0]?.trainNumber || '',
+    route: route.slice(0, 20),
+    totalDepartures: route.length,
     debug: {
       dictionaryCount: extractStations(dictionaryData).length,
       trainsInPayload: Array.isArray(payload?.trains) ? payload.trains.length : 0,
@@ -135,7 +136,8 @@ async function handleTrainMode({ apiBase, headers, trainNumber, trainDate }) {
     delayMinutes,
     status: route.length ? (delayMinutes > 0 ? 'DELAYED' : 'ON_TIME') : 'NO_DATA',
     lastStation,
-    route,
+    route: route.slice(0, 20),
+    totalStops: route.length,
     debug: {
       trainsInPayload: Array.isArray(payload?.trains) ? payload.trains.length : 0,
       payloadKeys: Object.keys(payload || {}).slice(0, 30)
@@ -209,7 +211,18 @@ function buildRow({ train, stop, stops, stationsMap }) {
     actual,
     delayMinutes,
     status: delayMinutes > 0 ? 'DELAYED' : 'ON_TIME',
-    trainNumber: firstDefined(train.number, train.trainNumber, train.commercialNumber, train.name, train.id),
+    trainNumber: normalizeTrainNumber(firstDefined(
+      train.number,
+      train.trainNumber,
+      train.commercialNumber,
+      train.commercialNo,
+      train.name,
+      train.id,
+      stop.trainNumber,
+      stop.commercialNumber,
+      stop.number,
+      stop.name
+    )),
     destination: firstDefined(train.destination, train.destinationName, stationsMap[destinationId]?.name, destinationStop.stationName, destinationStop.name),
     carrier: firstDefined(train.carrier, train.operator, train.brand, train.categoryCommercialName, train.category),
     platform: firstDefined(stop.platform, stop.platformNumber, stop.departurePlatform, stop.arrivalPlatform, stop.track, stop.peron),
@@ -293,6 +306,13 @@ function extractStations(data) {
   if (Array.isArray(data?.data)) return data.data;
   if (Array.isArray(data?.results)) return data.results;
   return [];
+}
+
+function normalizeTrainNumber(value) {
+  const text = clean(value);
+  if (!text) return '';
+  const match = text.match(/([A-Z]{1,4}\s?\d{1,6}|\d{2,6})/);
+  return match ? match[1].replace(/\s+/g, ' ').trim() : text;
 }
 
 function buildPortalUrl(stationName) {
