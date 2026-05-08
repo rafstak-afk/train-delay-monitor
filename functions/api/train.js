@@ -43,7 +43,7 @@ export async function onRequestPost(context) {
     const delayMinutes = Math.max(0, ...route.map((row) => Number(row.delayMinutes) || 0), 0);
     const lastStation = route[0]?.station || matchedStation?.name || stationName || '';
     const status = route.length ? (delayMinutes > 0 ? 'DELAYED' : 'ON_TIME') : 'NO_DATA';
-    const stationDisplayUrl = `https://i.plk-sa.pl/${stationId}`;
+    const stationPassengerUrl = resolvePassengerUrl(stationId, matchedStation?.name || stationName);
 
     return json({
       mode: 'station',
@@ -54,12 +54,21 @@ export async function onRequestPost(context) {
       route,
       matchedStation: matchedStation?.name || stationName || '',
       matchedStationId: toMaybeNumber(stationId),
-      stationDisplayUrl,
+      stationPassengerUrl,
       sourceCount: route.length
     });
   } catch (error) {
     return json({ error: error.message || 'Worker error' }, 500);
   }
+}
+
+function resolvePassengerUrl(stationId, stationName) {
+  const overrides = {
+    '7112': 'https://l.plk-sa.pl/71001'
+  };
+
+  if (overrides[String(stationId)]) return overrides[String(stationId)];
+  return '';
 }
 
 async function fetchStationDictionary(apiBase, headers, stationName) {
