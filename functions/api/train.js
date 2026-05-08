@@ -90,6 +90,7 @@ async function handleStationMode({ apiBase, headers, stationName }) {
     matchedStation: matchedStation.name || matchedStation.stationName || stationName,
     matchedStationId: toMaybeNumber(stationId),
     stationPortalUrl: buildPortalUrl(matchedStation.name || matchedStation.stationName || stationName),
+    fullTimetableUrl: `https://l.plk-sa.pl/${stationId}`,
     delayMinutes,
     status: route.length ? (delayMinutes > 0 ? 'DELAYED' : 'ON_TIME') : 'NO_DATA',
     lastStation: matchedStation.name || stationName,
