@@ -178,7 +178,9 @@ function parseOperationsForStation(payload, targetStationId) {
     rows.push(buildRow({ train, stop, stops, stationsMap }));
   }
 
-  return rows.sort((a, b) => sortableTime(a.scheduled) - sortableTime(b.scheduled));
+  return rows
+    .filter((row) => row.station || row.scheduled || row.actual || row.trainNumber || row.destination)
+    .sort((a, b) => sortableTime(a.scheduled) - sortableTime(b.scheduled));
 }
 
 function parseOperationsForTrain(payload) {
@@ -193,12 +195,18 @@ function parseOperationsForTrain(payload) {
     }
   }
 
-  return rows.filter((row) => row.station || row.scheduled || row.actual || row.trainNumber);
+  return rows.filter((row) => row.station || row.scheduled || row.actual || row.trainNumber || row.destination);
 }
 
 function buildRow({ train, stop, stops, stationsMap }) {
   const stationId = clean(firstDefined(stop.stationId, stop.station, stop.id, stop.stationCode));
-  const station = firstDefined(stationsMap[stationId]?.name, stop.stationName, stop.name, stop.stationLabel, stop.station);
+  const station = firstDefined(
+    stationsMap[stationId]?.name,
+    stop.stationName,
+    stop.name,
+    stop.stationLabel,
+    stop.station
+  );
   const scheduled = extractScheduled(stop);
   const actual = extractActual(stop, scheduled);
   const delayMinutes = extractDelay(stop, scheduled, actual);
@@ -224,13 +232,35 @@ function buildRow({ train, stop, stops, stationsMap }) {
       stop.number,
       stop.name
     )),
-    destination: firstDefined(train.destination, train.destinationName, stationsMap[destinationId]?.name, destinationStop.stationName, destinationStop.name),
-    carrier: firstDefined(train.carrier, train.operator, train.brand, train.categoryCommercialName, train.category),
-    platform: firstDefined(stop.platform, stop.platformNumber, stop.departurePlatform, stop.arrivalPlatform, stop.track, stop.peron),
-    via: stops.slice(idx + 1, idx + 4).map((entry) => {
-      const id = clean(firstDefined(entry.stationId, entry.station, entry.id));
-      return firstDefined(stationsMap[id]?.name, entry.stationName, entry.name, entry.stationLabel);
-    }).filter(Boolean).join(', ')
+    destination: firstDefined(
+      train.destination,
+      train.destinationName,
+      stationsMap[destinationId]?.name,
+      destinationStop.stationName,
+      destinationStop.name
+    ),
+    carrier: firstDefined(
+      train.carrier,
+      train.operator,
+      train.brand,
+      train.categoryCommercialName,
+      train.category
+    ),
+    platform: firstDefined(
+      stop.platform,
+      stop.platformNumber,
+      stop.departurePlatform,
+      stop.arrivalPlatform,
+      stop.track,
+      stop.peron
+    ),
+    via: stops.slice(idx + 1, idx + 4)
+      .map((entry) => {
+        const id = clean(firstDefined(entry.stationId, entry.station, entry.id));
+        return firstDefined(stationsMap[id]?.name, entry.stationName, entry.name, entry.stationLabel);
+      })
+      .filter(Boolean)
+      .join(', ')
   };
 }
 
@@ -243,8 +273,14 @@ function extractStops(train) {
 }
 
 function stationMatch(entry, targetStationId) {
-  return [entry?.stationId, entry?.station, entry?.id, entry?.stationCode, entry?.stationUIC, entry?.stationInternalId]
-    .some((value) => String(value ?? '') === targetStationId);
+  return [
+    entry?.stationId,
+    entry?.station,
+    entry?.id,
+    entry?.stationCode,
+    entry?.stationUIC,
+    entry?.stationInternalId
+  ].some((value) => String(value ?? '') === targetStationId);
 }
 
 function extractScheduled(stop) {
@@ -285,6 +321,7 @@ function extractDelay(stop, planned, actual) {
     const num = Number(String(raw).replace(/[^\d-]/g, ''));
     if (Number.isFinite(num)) return Math.abs(num);
   }
+
   const p = parseClock(planned);
   const a = parseClock(actual);
   if (p === null || a === null) return 0;
@@ -312,7 +349,7 @@ function extractStations(data) {
 function normalizeTrainNumber(value) {
   const text = clean(value);
   if (!text) return '';
-  const match = text.match(/([A-Z]{1,4}\s?\d{1,6}|\d{2,6})/);
+  const match = text.match(/([A-Z]{1,4}\s?\d{1,6}|\d{2,6})/);
   return match ? match[1].replace(/\s+/g, ' ').trim() : text;
 }
 
@@ -381,7 +418,11 @@ function firstDefined(...values) {
 }
 
 function safeJson(text) {
-  try { return JSON.parse(text); } catch { return null; }
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
 }
 
 function toMaybeNumber(value) {
