@@ -90,7 +90,7 @@
     <section class="card grid">
       <h2>Wynik</h2>
       <div class="stats">
-        <div class="stat"><div class="k">Pociąg</div><div id="statTrain" class="v">—</div></div>
+        <div class="stat"><div class="k">Zapytanie</div><div id="statTrain" class="v">—</div></div>
         <div class="stat"><div class="k">Opóźnienie</div><div id="statDelay" class="v">—</div></div>
         <div class="stat"><div class="k">Ostatnia stacja</div><div id="statLast" class="v">—</div></div>
       </div>
@@ -225,14 +225,14 @@
 
     function renderResult(data, mode) {
       const route = Array.isArray(data?.route) ? data.route : [];
-      statTrain.textContent = data?.trainNumber || (mode === 'station' ? 'station' : '—');
+      statTrain.textContent = mode === 'station' ? (data?.matchedStation || 'stacja') : (data?.trainNumber || 'pociąg');
       const delay = Number(data?.delayMinutes || 0);
       statDelay.textContent = `${delay} min`;
       statDelay.className = `v ${delayClass(delay)}`;
       statLast.textContent = data?.lastStation || '—';
 
       if (data?.matchedStation) {
-        matchLine.textContent = `Rozpoznano zapytanie jako stację. Dopasowano: ${data.matchedStation} (${data.matchedStationId ?? 'brak ID'}). Rekordów: ${route.length}.`;
+        matchLine.textContent = `Rozpoznano zapytanie jako stację. Dopasowano: ${data.matchedStation} (${data.matchedStationId ?? 'brak ID'}). Pokazuję maksymalnie 20 najbliższych odjazdów z ${route.length}.`;
       } else {
         matchLine.textContent = `Rozpoznano zapytanie jako ${mode === 'train' ? 'numer pociągu' : 'stację'}. Status: ${data?.status || 'brak'}, rekordów: ${route.length}.`;
       }
