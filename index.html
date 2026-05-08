@@ -22,288 +22,144 @@
       color-scheme: dark;
     }
     * { box-sizing: border-box; }
-    body { margin: 0; background: linear-gradient(180deg,#08101e,#0d1630 35%,#0f1934); color: var(--text); font: 16px/1.45 Inter, system-ui, sans-serif; }
-    .wrap { max-width: 1200px; margin: 0 auto; padding: 24px; display: grid; gap: 20px; }
-    .card { background: rgba(18,25,51,.95); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; }
+    body {
+      margin: 0;
+      background: linear-gradient(180deg,#08101e,#0d1630 35%,#0f1934);
+      color: var(--text);
+      font: 16px/1.45 Inter, system-ui, sans-serif;
+    }
+    .wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px;
+      display: grid;
+      gap: 20px;
+    }
+    .card {
+      background: rgba(18,25,51,.95);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px;
+    }
     h1,h2,h3 { margin: 0 0 12px; }
     p { margin: 0; }
     .muted { color: var(--muted); }
     .grid { display: grid; gap: 16px; }
-    .form-grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); align-items: end; }
+    .form-grid {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(auto-fit,minmax(220px,1fr));
+      align-items: end;
+    }
     label { display: grid; gap: 8px; font-weight: 600; }
-    input, select, button { width: 100%; padding: 12px 14px; border-radius: 12px; font: inherit; }
-    input, select { color: var(--text); background: var(--panel-2); border: 1px solid var(--border); }
-    button { cursor: pointer; border: none; background: linear-gradient(180deg,#8abbff,#5f96f5); color: #071121; font-weight: 800; }
-    button.secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
-    .toolbar { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; justify-content: space-between; }
-    .actions { display: flex; gap: 12px; flex-wrap: wrap; }
-    .stats { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
-    .stat { padding: 14px; border: 1px solid rgba(255,255,255,.06); border-radius: 14px; background: rgba(255,255,255,.03); }
-    .stat .k { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
-    .stat .v { font-size: 28px; font-weight: 800; margin-top: 6px; }
+    input, select, button {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 12px;
+      font: inherit;
+    }
+    input, select {
+      color: var(--text);
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+    }
+    button {
+      cursor: pointer;
+      border: none;
+      background: linear-gradient(180deg,#8abbff,#5f96f5);
+      color: #071121;
+      font-weight: 800;
+    }
+    button.secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .toolbar {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3,minmax(0,1fr));
+      gap: 12px;
+    }
+    .stat {
+      padding: 14px;
+      border: 1px solid rgba(255,255,255,.06);
+      border-radius: 14px;
+      background: rgba(255,255,255,.03);
+    }
+    .stat .k {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--muted);
+    }
+    .stat .v {
+      font-size: 28px;
+      font-weight: 800;
+      margin-top: 6px;
+    }
     .ok { color: var(--ok); }
     .warn { color: var(--warn); }
     .bad { color: var(--bad); }
-    .table-wrap { overflow: auto; border: 1px solid rgba(255,255,255,.08); border-radius: 14px; }
-    table { width: 100%; border-collapse: collapse; min-width: 900px; }
-    th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid rgba(255,255,255,.07); }
-    th { background: #152046; text-transform: uppercase; font-size: 12px; letter-spacing: .06em; }
-    .portal-box, pre { background: #0b132d; border: 1px solid rgba(255,255,255,.08); border-radius: 14px; padding: 16px; }
-    .portal-link { display: inline-flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(255,255,255,.08); text-decoration: none; color: var(--text); background: rgba(255,255,255,.03); }
-    .portal-url { font-family: ui-monospace, SFMono-Regular, monospace; color: #dce5ff; word-break: break-all; }
-    pre { white-space: pre-wrap; word-break: break-word; overflow: auto; margin: 0; }
+    .table-wrap {
+      overflow: auto;
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 14px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 900px;
+    }
+    th, td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255,255,255,.07);
+    }
+    th {
+      background: #152046;
+      text-transform: uppercase;
+      font-size: 12px;
+      letter-spacing: .06em;
+    }
+    .portal-box {
+      background: #0b132d;
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 14px;
+      padding: 16px;
+    }
+    .portal-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.08);
+      text-decoration: none;
+      color: var(--text);
+      background: rgba(255,255,255,.03);
+    }
+    .portal-url {
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      color: #dce5ff;
+      word-break: break-all;
+    }
     .hidden { display: none !important; }
     @media (max-width: 820px) {
       .wrap { padding: 16px; }
       .stats { grid-template-columns: 1fr; }
+      table { min-width: 720px; }
     }
   </style>
-</head>
-<body>
-  <main class="wrap">
-    <section class="card grid">
-      <h1>Monitor opóźnień PLK</h1>
-      <p class="muted">Wersja uproszczona: bez iframe i bez skróconych linków l.plk-sa.pl. Pole wyszukiwania samo rozpoznaje, czy pasażer wpisał nazwę stacji czy numer pociągu.</p>
-    </section>
-
-    <section class="card grid">
-      <h2>Konfiguracja</h2>
-      <div class="form-grid">
-        <label>
-          Stacja lub numer pociągu (rozpoznawane automatycznie)
-          <input id="query" placeholder="np. Tczew albo 45100" />
-        </label>
-        <label>
-          Data
-          <input id="trainDate" type="date" />
-        </label>
-      </div>
-      <div class="toolbar">
-        <div class="muted" id="statusLine">Wpisz parametry i pobierz dane.</div>
-        <div class="actions">
-          <button id="fetchBtn" type="button">Pobierz z API</button>
-          <button id="clearBtn" type="button" class="secondary">Wyczyść wynik</button>
-        </div>
-      </div>
-    </section>
-
-    <section class="card grid">
-      <h2>Wynik</h2>
-      <div class="stats">
-        <div class="stat"><div class="k">Zapytanie</div><div id="statTrain" class="v">—</div></div>
-        <div class="stat"><div class="k">Opóźnienie</div><div id="statDelay" class="v">—</div></div>
-        <div class="stat"><div class="k">Ostatnia stacja</div><div id="statLast" class="v">—</div></div>
-      </div>
-
-      <div class="toolbar">
-        <div class="muted" id="matchLine">Brak danych.</div>
-      </div>
-
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Stacja</th>
-              <th>Plan</th>
-              <th>Rzeczywisty</th>
-              <th>Opóźnienie</th>
-              <th>Status</th>
-              <th>Pociąg</th>
-              <th>Kierunek</th>
-              <th>Przewoźnik</th>
-              <th>Peron</th>
-              <th>Przez</th>
-            </tr>
-          </thead>
-          <tbody id="resultBody">
-            <tr><td colspan="10" class="muted">Brak danych do wyświetlenia.</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="card grid">
-      <h2>Portal Pasażera</h2>
-      <div class="portal-box grid">
-        <div class="muted" id="portalInfo">Po pobraniu danych pojawi się link do katalogu stacji w Portalu Pasażera, zbudowany z nazwy stacji.</div>
-        <div id="portalUrl" class="portal-url">—</div>
-        <div>
-          <a id="portalLink" class="portal-link hidden" target="_blank" rel="noopener noreferrer">Otwórz w Portalu Pasażera</a>
-        </div>
-      </div>
-    </section>
-
-  </main>
-
-  <script>
-    const queryEl = document.getElementById('query');
-    const trainDateEl = document.getElementById('trainDate');
-    const fetchBtn = document.getElementById('fetchBtn');
-    const clearBtn = document.getElementById('clearBtn');
-    const statusLine = document.getElementById('statusLine');
-    const matchLine = document.getElementById('matchLine');
-    const fullTableLink = document.getElementById('fullTableLink');
-    const statTrain = document.getElementById('statTrain');
-    const statDelay = document.getElementById('statDelay');
-    const statLast = document.getElementById('statLast');
-    const resultBody = document.getElementById('resultBody');
-    const portalInfo = document.getElementById('portalInfo');
-    const portalUrl = document.getElementById('portalUrl');
-    const portalLink = document.getElementById('portalLink');
-
-    trainDateEl.value = new Date().toISOString().slice(0, 10);
-
-    fetchBtn.addEventListener('click', fetchData);
-    clearBtn.addEventListener('click', clearResult);
-
-    function clearResult() {
-      statusLine.textContent = 'Wynik wyczyszczony.';
-      matchLine.textContent = 'Brak danych.';
-      statTrain.textContent = '—';
-      statDelay.textContent = '—';
-      statDelay.className = 'v';
-      statLast.textContent = '—';
-      resultBody.innerHTML = '<tr><td colspan="10" class="muted">Brak danych do wyświetlenia.</td></tr>';
-      portalInfo.textContent = 'Po pobraniu danych pojawi się link do katalogu stacji w Portalu Pasażera, zbudowany z nazwy stacji.';
-      portalUrl.textContent = '—';
-      portalLink.classList.add('hidden');
-      portalLink.removeAttribute('href');
-    }
-
-    async function fetchData() {
-      const query = queryEl.value.trim();
-      const apiUrl = '/api/train';
-      if (!query) {
-        statusLine.textContent = 'Podaj stację albo numer pociągu.';
-        return;
-      }
-
-      const detectedMode = detectQueryType(query);
-      const payload = detectedMode === 'train'
-        ? { trainNumber: query, trainDate: trainDateEl.value }
-        : { stationName: query };
-
-      fetchBtn.disabled = true;
-      statusLine.textContent = 'Pobieranie danych...';
-
-      try {
-        const response = await fetch(apiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-
-        const text = await response.text();
-        const data = parseJson(text) ?? { raw: text };
-
-        if (!response.ok) {
-          renderError(data, response.status);
-          return;
-        }
-
-        renderResult(data, detectedMode);
-        statusLine.textContent = 'Gotowe.';
-      } catch (error) {
-        renderError({ error: error.message }, 'network');
-      } finally {
-        fetchBtn.disabled = false;
-      }
-    }
-
-    function renderError(data, code) {
-      statusLine.textContent = `Błąd: ${code}`;
-      matchLine.textContent = data?.error || 'Nie udało się pobrać danych.';
-      statTrain.textContent = '—';
-      statDelay.textContent = '—';
-      statDelay.className = 'v';
-      statLast.textContent = '—';
-      resultBody.innerHTML = '<tr><td colspan="10" class="muted">Brak danych do wyświetlenia.</td></tr>';
-      portalInfo.textContent = 'Nie udało się przygotować linku do Portalu Pasażera.';
-      portalUrl.textContent = '—';
-      portalLink.classList.add('hidden');
-      portalLink.removeAttribute('href');
-    }
-
-    function renderResult(data, mode) {
-      const route = Array.isArray(data?.route) ? data.route : [];
-      statTrain.textContent = mode === 'station' ? (data?.matchedStation || 'stacja') : (data?.trainNumber || 'pociąg');
-      const delay = Number(data?.delayMinutes || 0);
-      statDelay.textContent = `${delay} min`;
-      statDelay.className = `v ${delayClass(delay)}`;
-      statLast.textContent = data?.lastStation || '—';
-
-      if (data?.matchedStation) {
-        const total = data?.totalDepartures ?? route.length;
-        matchLine.textContent = `Rozpoznano zapytanie jako stację. Dopasowano: ${data.matchedStation} (${data.matchedStationId ?? 'brak ID'}). Pokazuję 20 pierwszych odjazdów z ${total}.`;
-        if (data?.matchedStationId) {
-          const fullUrl = `https://l.plk-sa.pl/${data.matchedStationId}`;
-          fullTableLink.innerHTML = `<a href="${fullUrl}" target="_blank" rel="noopener noreferrer">Pełna tabela odjazdów</a>`;
-        } else {
-          fullTableLink.innerHTML = '';
-        }
-      } else {
-        matchLine.textContent = `Rozpoznano zapytanie jako ${mode === 'train' ? 'numer pociągu' : 'stację'}. Status: ${data?.status || 'brak'}, rekordów: ${route.length}.`;
-        fullTableLink.innerHTML = '';
-      }
-
-      if (!route.length) {
-        resultBody.innerHTML = '<tr><td colspan="10" class="muted">Brak pozycji w tabeli. Sprawdź sekcję Debug JSON.</td></tr>';
-      } else {
-        resultBody.innerHTML = route.map((row) => `
-          <tr>
-            <td>${esc(row.station)}</td>
-            <td>${esc(row.scheduled)}</td>
-            <td>${esc(row.actual)}</td>
-            <td>${esc(String(row.delayMinutes ?? 0))} min</td>
-            <td>${esc(row.status)}</td>
-            <td>${esc(row.trainNumber)}</td>
-            <td>${esc(row.destination)}</td>
-            <td>${esc(row.carrier)}</td>
-            <td>${esc(row.platform)}</td>
-            <td>${esc(row.via)}</td>
-          </tr>
-        `).join('');
-      }
-
-      if (data?.stationPortalUrl) {
-        portalInfo.textContent = 'Link do katalogu stacji w Portalu Pasażera zbudowany z nazwy stacji:';
-        portalUrl.textContent = data.stationPortalUrl;
-        portalLink.href = data.stationPortalUrl;
-        portalLink.classList.remove('hidden');
-      } else {
-        portalInfo.textContent = 'Dla tego wyniku nie udało się ustalić nazwy stacji do Portalu Pasażera.';
-        portalUrl.textContent = '—';
-        portalLink.classList.add('hidden');
-        portalLink.removeAttribute('href');
-      }
-    }
-
-
-    function detectQueryType(value) {
-      const text = String(value || '').trim();
-      if (/^\d{2,10}$/.test(text)) return 'train';
-      if (/^[A-Z]{1,4}\d{1,6}$/i.test(text)) return 'train';
-      return 'station';
-    }
-
-    function delayClass(delay) {
-      if (delay <= 0) return 'ok';
-      if (delay < 10) return 'warn';
-      return 'bad';
-    }
-
-    function parseJson(text) {
-      try { return JSON.parse(text); } catch { return null; }
-    }
-
-    function esc(value) {
-      return String(value ?? '')
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#39;');
-    }
-  </script>
-</body>
-</html>
