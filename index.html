@@ -142,6 +142,7 @@
     const clearBtn = document.getElementById('clearBtn');
     const statusLine = document.getElementById('statusLine');
     const matchLine = document.getElementById('matchLine');
+    const fullTableLink = document.getElementById('fullTableLink');
     const statTrain = document.getElementById('statTrain');
     const statDelay = document.getElementById('statDelay');
     const statLast = document.getElementById('statLast');
@@ -232,9 +233,17 @@
       statLast.textContent = data?.lastStation || '—';
 
       if (data?.matchedStation) {
-        matchLine.textContent = `Rozpoznano zapytanie jako stację. Dopasowano: ${data.matchedStation} (${data.matchedStationId ?? 'brak ID'}). Pokazuję maksymalnie 20 najbliższych odjazdów z ${route.length}.`;
+        const total = data?.totalDepartures ?? route.length;
+        matchLine.textContent = `Rozpoznano zapytanie jako stację. Dopasowano: ${data.matchedStation} (${data.matchedStationId ?? 'brak ID'}). Pokazuję 20 pierwszych odjazdów z ${total}.`;
+        if (data?.matchedStationId) {
+          const fullUrl = `https://l.plk-sa.pl/${data.matchedStationId}`;
+          fullTableLink.innerHTML = `<a href="${fullUrl}" target="_blank" rel="noopener noreferrer">Pełna tabela odjazdów</a>`;
+        } else {
+          fullTableLink.innerHTML = '';
+        }
       } else {
         matchLine.textContent = `Rozpoznano zapytanie jako ${mode === 'train' ? 'numer pociągu' : 'stację'}. Status: ${data?.status || 'brak'}, rekordów: ${route.length}.`;
+        fullTableLink.innerHTML = '';
       }
 
       if (!route.length) {
