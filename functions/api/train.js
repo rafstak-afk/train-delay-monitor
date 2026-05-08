@@ -10,6 +10,7 @@ export async function onRequestPost(context) {
     const stationName = clean(body.stationName || body.stationQuery || body.station || '');
     const trainNumber = clean(body.trainNumber || '');
     const trainDate = clean(body.trainDate || body.date || '');
+    const trainTime = clean(body.trainTime || body.time || '');
     const autoQuery = clean(body.query || body.input || '');
     const detectedMode = trainNumber ? 'train' : (stationName ? 'station' : detectQueryType(autoQuery));
     const finalTrainNumber = trainNumber || (detectedMode === 'train' ? autoQuery : '');
@@ -21,51 +22,35 @@ export async function onRequestPost(context) {
     const headers = buildHeaders(env, authType);
 
     if (mode === 'train') {
-      return await handleTrainMode({ apiBase, headers, trainNumber: finalTrainNumber, trainDate });
+      return await handleTrainMode({ apiBase, headers, trainNumber: finalTrainNumber, trainDate, trainTime });
     }
 
     if (!finalStationName) {
       return json({ error: 'Missing stationName' }, 400);
     }
 
-    return await handleStationMode({ apiBase, headers, stationName: finalStationName });
+    return await handleStationMode({ apiBase, headers, stationName: finalStationName, trainDate, trainTime });
   } catch (error) {
     return json({ error: error.message || 'Worker error' }, 500);
   }
 }
 
-async function handleStationMode({ apiBase, headers, stationName }) {
+async function handleStationMode({ apiBase, headers, stationName, trainDate, trainTime }) {
   const dictionaryData = await fetchStationDictionary(apiBase, headers, stationName);
   const matchedStation = pickStation(dictionaryData, stationName);
 
   if (!matchedStation) {
-    return json({
-      mode: 'station',
-      error: 'Station not found',
-      stationQuery: stationName,
-      debug: { dictionaryData }
-    }, 404);
+    return json({ mode: 'station', error: 'Station not found', stationQuery: stationName }, 404);
   }
 
-  const stationId = clean(firstDefined(
-    matchedStation.id,
-    matchedStation.stationId,
-    matchedStation.value,
-    matchedStation.code,
-    matchedStation.uic
-  ));
-
+  const stationId = clean(firstDefined(matchedStation.id, matchedStation.stationId, matchedStation.value, matchedStation.code, matchedStation.uic));
   if (!stationId) {
-    return json({
-      mode: 'station',
-      error: 'Matched station has no stationId',
-      matchedStation,
-      debug: { dictionaryData }
-    }, 502);
+    return json({ mode: 'station', error: 'Matched station has no stationId', matchedStation }, 502);
   }
 
   const operationsUrl = new URL(`${apiBase}/operations`);
   operationsUrl.searchParams.set('stations', stationId);
+  if (trainDate) operationsUrl.searchParams.set('date', normalizeDateForApi(trainDate));
 
   const upstream = await fetch(operationsUrl.toString(), { method: 'GET', headers });
   const text = await upstream.text();
@@ -82,18 +67,20 @@ async function handleStationMode({ apiBase, headers, stationName }) {
     }, 502);
   }
 
-  const route = parseOperationsForStation(payload, stationId, matchedStation.name || matchedStation.stationName || stationName);
+  const stationMap = buildStationMap(payload?.stations, extractStations(dictionaryData));
+  let route = parseOperationsForStation(payload, stationId, matchedStation.name || matchedStation.stationName || stationName, stationMap);
+  route = filterRouteByTime(route, trainTime);
   const delayMinutes = Math.max(0, ...route.map((row) => Number(row.delayMinutes) || 0), 0);
 
   return json({
     mode: 'station',
-    matchedStation: matchedStation.name || matchedStation.stationName || stationName,
+    matchedStation: resolveStationName(stationId, stationMap, matchedStation.name || matchedStation.stationName || stationName),
     matchedStationId: toMaybeNumber(stationId),
     stationPortalUrl: buildPortalUrl(matchedStation.name || matchedStation.stationName || stationName),
     fullTimetableUrl: `https://l.plk-sa.pl/${stationId}`,
     delayMinutes,
     status: route.length ? (delayMinutes > 0 ? 'DELAYED' : 'ON_TIME') : 'NO_DATA',
-    lastStation: matchedStation.name || stationName,
+    lastStation: resolveStationName(stationId, stationMap, matchedStation.name || stationName),
     trainNumber: route[0]?.trainNumber || '',
     route: route.slice(0, 20),
     totalDepartures: route.length,
@@ -105,26 +92,22 @@ async function handleStationMode({ apiBase, headers, stationName }) {
   });
 }
 
-async function handleTrainMode({ apiBase, headers, trainNumber, trainDate }) {
+async function handleTrainMode({ apiBase, headers, trainNumber, trainDate, trainTime }) {
   const url = new URL(`${apiBase}/operations`);
   url.searchParams.set('trainNumber', trainNumber);
-  if (trainDate) url.searchParams.set('date', trainDate);
+  if (trainDate) url.searchParams.set('date', normalizeDateForApi(trainDate));
 
   const upstream = await fetch(url.toString(), { method: 'GET', headers });
   const text = await upstream.text();
   const payload = safeJson(text);
 
   if (!upstream.ok || !payload) {
-    return json({
-      mode: 'train',
-      error: `Operations HTTP ${upstream.status}`,
-      trainNumber,
-      trainDate,
-      debug: { rawText: text.slice(0, 4000) }
-    }, 502);
+    return json({ mode: 'train', error: `Operations HTTP ${upstream.status}`, trainNumber, trainDate }, 502);
   }
 
-  const route = parseOperationsForTrain(payload);
+  const stationMap = buildStationMap(payload?.stations, []);
+  let route = parseOperationsForTrain(payload, stationMap);
+  route = filterRouteByTime(route, trainTime);
   const delayMinutes = Math.max(0, ...route.map((row) => Number(row.delayMinutes) || 0), 0);
   const lastStation = route.length ? route[route.length - 1].station : '';
   const stationForPortal = route[0]?.station || '';
@@ -133,6 +116,7 @@ async function handleTrainMode({ apiBase, headers, trainNumber, trainDate }) {
     mode: 'train',
     trainNumber,
     trainDate,
+    trainTime,
     stationPortalUrl: stationForPortal ? buildPortalUrl(stationForPortal) : '',
     delayMinutes,
     status: route.length ? (delayMinutes > 0 ? 'DELAYED' : 'ON_TIME') : 'NO_DATA',
@@ -149,7 +133,6 @@ async function handleTrainMode({ apiBase, headers, trainNumber, trainDate }) {
 async function fetchStationDictionary(apiBase, headers, stationName) {
   const attempts = [stationName, stripDiacritics(stationName)].filter((value, index, array) => value && array.indexOf(value) === index);
   let lastData = null;
-
   for (const query of attempts) {
     const url = new URL(`${apiBase}/dictionaries/stations`);
     url.searchParams.set('search', query);
@@ -161,44 +144,39 @@ async function fetchStationDictionary(apiBase, headers, stationName) {
     lastData = data;
     if (extractStations(data).length) return data;
   }
-
   return lastData || { stations: [] };
 }
 
-function parseOperationsForStation(payload, targetStationId, targetStationName) {
+function parseOperationsForStation(payload, targetStationId, targetStationName, stationMap) {
   const trains = Array.isArray(payload?.trains) ? payload.trains : [];
   const rows = [];
-
   for (const train of trains) {
     const stops = extractStops(train);
-    const stop = stops.find((entry) => stationMatch(entry, targetStationId, targetStationName));
+    const stop = stops.find((entry) => stationMatch(entry, targetStationId, targetStationName, stationMap));
     if (!stop) continue;
-    rows.push(buildRow({ train, stop, stops }));
+    rows.push(buildRow({ train, stop, stops, stationMap }));
   }
-
   return rows
     .filter((row) => row.station || row.scheduled || row.actual || row.trainNumber || row.destination)
     .sort((a, b) => sortableTime(a.scheduled || a.actual) - sortableTime(b.scheduled || b.actual));
 }
 
-function parseOperationsForTrain(payload) {
+function parseOperationsForTrain(payload, stationMap) {
   const trains = Array.isArray(payload?.trains) ? payload.trains : [];
   const rows = [];
-
   for (const train of trains) {
     const stops = extractStops(train);
-    for (const stop of stops) {
-      rows.push(buildRow({ train, stop, stops }));
-    }
+    for (const stop of stops) rows.push(buildRow({ train, stop, stops, stationMap }));
   }
-
   return rows.filter((row) => row.station || row.scheduled || row.actual || row.trainNumber || row.destination);
 }
 
-function buildRow({ train, stop, stops }) {
-  const idx = stops.indexOf(stop);
+function buildRow({ train, stop, stops, stationMap }) {
+  const idx = Math.max(0, stops.indexOf(stop));
   const destinationStop = stops[stops.length - 1] || {};
-  const station = firstDefined(stop.stationName, stop.name, stop.stationLabel, stop.station, stop.stationId);
+  const stationId = firstDefined(stop.stationId, stop.station, stop.id, stop.stationCode);
+  const destinationId = firstDefined(destinationStop.stationId, destinationStop.station, destinationStop.id, destinationStop.stationCode);
+  const station = resolveStationName(stationId, stationMap, firstDefined(stop.stationName, stop.name, stop.stationLabel, stop.station));
   const scheduled = extractScheduled(stop);
   const actual = extractActual(stop, scheduled);
   const delayMinutes = extractDelay(stop, scheduled, actual);
@@ -210,92 +188,99 @@ function buildRow({ train, stop, stops }) {
     delayMinutes,
     status: normalizeStatus(firstDefined(stop.trainStatus, stop.status, train.trainStatus), delayMinutes),
     trainNumber: normalizeTrainNumber(firstDefined(
-      train.trainNumber,
-      train.number,
       train.commercialNumber,
       train.commercialNo,
-      train.name,
-      train.orderId,
-      train.trainOrderId,
+      train.publicTrainNumber,
+      train.displayNumber,
+      train.trainNumber,
       stop.trainNumber,
       stop.commercialNumber,
-      stop.number
+      train.number,
+      train.name,
+      train.orderId,
+      train.trainOrderId
     )),
-    destination: firstDefined(destinationStop.stationName, destinationStop.name, destinationStop.stationLabel, destinationStop.station, destinationStop.stationId),
-    carrier: firstDefined(train.carrier, train.operator, train.brand, train.categoryCommercialName, train.category),
-    platform: firstDefined(stop.platform, stop.platformNumber, stop.departurePlatform, stop.arrivalPlatform, stop.track, stop.peron),
+    destination: resolveStationName(destinationId, stationMap, firstDefined(destinationStop.stationName, destinationStop.name, destinationStop.stationLabel, destinationStop.station)),
+    carrier: normalizeCarrier(firstDefined(
+      train.carrierName,
+      train.carrier,
+      train.operatorName,
+      train.operator,
+      train.brand,
+      train.categoryCommercialName,
+      train.categoryName,
+      train.category,
+      stop.carrier,
+      stop.operator
+    )),
+    platform: firstDefined(
+      stop.platform,
+      stop.platformNumber,
+      stop.platformNo,
+      stop.departurePlatform,
+      stop.arrivalPlatform,
+      stop.track,
+      stop.trackNumber,
+      stop.peron,
+      stop.sector
+    ),
     via: stops.slice(idx + 1, idx + 4)
-      .map((entry) => firstDefined(entry.stationName, entry.name, entry.stationLabel, entry.station, entry.stationId))
+      .map((entry) => resolveStationName(firstDefined(entry.stationId, entry.station, entry.id, entry.stationCode), stationMap, firstDefined(entry.stationName, entry.name, entry.stationLabel, entry.station)))
       .filter(Boolean)
-      .join(', ')
+      .join(' • ')
   };
+}
+
+function buildStationMap(payloadStations, dictionaryStations) {
+  const map = new Map();
+  if (payloadStations && typeof payloadStations === 'object' && !Array.isArray(payloadStations)) {
+    for (const [key, value] of Object.entries(payloadStations)) {
+      if (typeof value === 'string') map.set(String(key), value);
+      else {
+        const id = String(firstDefined(value?.id, value?.stationId, key));
+        const name = firstDefined(value?.name, value?.stationName, value?.label, value?.description, key);
+        if (id && name) map.set(id, name);
+      }
+    }
+  }
+  for (const item of dictionaryStations || []) {
+    const id = String(firstDefined(item?.id, item?.stationId, item?.value, item?.code, item?.uic));
+    const name = firstDefined(item?.name, item?.stationName, item?.label, item?.description);
+    if (id && name && !map.has(id)) map.set(id, name);
+  }
+  return map;
+}
+
+function resolveStationName(stationId, stationMap, fallback = '') {
+  const key = clean(stationId);
+  if (key && stationMap?.has(key)) return stationMap.get(key);
+  return clean(fallback);
 }
 
 function extractStops(train) {
   const candidates = [train?.stations, train?.timetable, train?.stops, train?.route, train?.locations, train?.events];
-  for (const candidate of candidates) {
-    if (Array.isArray(candidate) && candidate.length) return candidate;
-  }
+  for (const candidate of candidates) if (Array.isArray(candidate) && candidate.length) return candidate;
   return [];
 }
 
-function stationMatch(entry, targetStationId, targetStationName) {
-  const normalizedTargetName = normalize(targetStationName);
-  const candidates = [
-    entry?.stationId,
-    entry?.station,
-    entry?.id,
-    entry?.stationCode,
-    entry?.stationUIC,
-    entry?.stationInternalId
-  ].map((value) => String(value ?? ''));
-
+function stationMatch(entry, targetStationId, targetStationName, stationMap) {
+  const candidates = [entry?.stationId, entry?.station, entry?.id, entry?.stationCode, entry?.stationUIC, entry?.stationInternalId].map((value) => String(value ?? ''));
   if (candidates.includes(String(targetStationId))) return true;
-
-  const nameCandidates = [
+  const names = [
     entry?.stationName,
     entry?.name,
     entry?.stationLabel,
-    entry?.station
+    resolveStationName(firstDefined(entry?.stationId, entry?.station, entry?.id, entry?.stationCode), stationMap, entry?.station)
   ].map((value) => normalize(value)).filter(Boolean);
-
-  return nameCandidates.includes(normalizedTargetName);
+  return names.includes(normalize(targetStationName));
 }
 
 function extractScheduled(stop) {
-  return formatTime(firstDefined(
-    stop.plannedDeparture,
-    stop.plannedArrival,
-    stop.departureTime,
-    stop.arrivalTime,
-    stop.planDeparture,
-    stop.planArrival,
-    stop.scheduledDeparture,
-    stop.scheduledArrival,
-    stop.time,
-    stop.planTime,
-    stop.scheduledTime,
-    stop.actualDeparture,
-    stop.actualArrival
-  ));
+  return formatTime(firstDefined(stop.plannedDeparture, stop.plannedArrival, stop.departureTime, stop.arrivalTime, stop.planDeparture, stop.planArrival, stop.scheduledDeparture, stop.scheduledArrival, stop.time, stop.planTime, stop.scheduledTime, stop.actualDeparture, stop.actualArrival));
 }
 
 function extractActual(stop, fallback) {
-  return formatTime(firstDefined(
-    stop.actualDeparture,
-    stop.actualArrival,
-    stop.estimatedDepartureTime,
-    stop.updatedDepartureTime,
-    stop.actualDepartureTime,
-    stop.estimatedArrivalTime,
-    stop.updatedArrivalTime,
-    stop.actualArrivalTime,
-    stop.realDeparture,
-    stop.realArrival,
-    stop.actualTime,
-    stop.realTime,
-    fallback
-  ));
+  return formatTime(firstDefined(stop.actualDeparture, stop.actualArrival, stop.estimatedDepartureTime, stop.updatedDepartureTime, stop.actualDepartureTime, stop.estimatedArrivalTime, stop.updatedArrivalTime, stop.actualArrivalTime, stop.realDeparture, stop.realArrival, stop.actualTime, stop.realTime, fallback));
 }
 
 function extractDelay(stop, planned, actual) {
@@ -304,11 +289,28 @@ function extractDelay(stop, planned, actual) {
     const num = Number(String(raw).replace(/[^\d-]/g, ''));
     if (Number.isFinite(num)) return Math.abs(num);
   }
-
   const p = parseClock(planned);
   const a = parseClock(actual);
   if (p === null || a === null) return 0;
   return Math.max(0, a - p);
+}
+
+function filterRouteByTime(route, trainTime) {
+  const pivot = parseClock(trainTime);
+  if (pivot === null) return route;
+  return route.filter((row) => {
+    const candidate = parseClock(row.actual || row.scheduled);
+    return candidate === null || candidate >= pivot;
+  });
+}
+
+function normalizeCarrier(value) {
+  const text = clean(value);
+  if (!text) return '';
+  if (/^IC$/i.test(text)) return 'PKP Intercity';
+  if (/^PR$/i.test(text)) return 'Polregio';
+  if (/^KM$/i.test(text)) return 'Koleje Mazowieckie';
+  return text;
 }
 
 function normalizeStatus(rawStatus, delayMinutes) {
@@ -340,6 +342,14 @@ function normalizeTrainNumber(value) {
   if (!text) return '';
   const match = text.match(/([A-Z]{1,4}\s?\d{1,6}|\d{2,9})/);
   return match ? match[1].replace(/\s+/g, ' ').trim() : text;
+}
+
+function normalizeDateForApi(value) {
+  const text = clean(value);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return text;
+  const m = text.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  if (m) return `${m[3]}-${m[2]}-${m[1]}`;
+  return text;
 }
 
 function buildPortalUrl(stationName) {
@@ -400,18 +410,12 @@ function sortableTime(value) {
 }
 
 function firstDefined(...values) {
-  for (const value of values) {
-    if (value !== undefined && value !== null && String(value).trim() !== '') return value;
-  }
+  for (const value of values) if (value !== undefined && value !== null && String(value).trim() !== '') return value;
   return '';
 }
 
 function safeJson(text) {
-  try {
-    return JSON.parse(text);
-  } catch {
-    return null;
-  }
+  try { return JSON.parse(text); } catch { return null; }
 }
 
 function toMaybeNumber(value) {
