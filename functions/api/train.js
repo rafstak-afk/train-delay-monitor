@@ -179,7 +179,7 @@ function buildRow({ train, stop, stops, stationMap }) {
   const station = resolveStationName(stationId, stationMap, firstDefined(stop.stationName, stop.name, stop.stationLabel, stop.station));
   const scheduled = extractScheduled(stop);
   const actual = extractActual(stop, scheduled);
-  const delayMinutes = extractDelay(stop, scheduled, actual);
+  const delayMinutes = extractDelay(stop, scheduled, actual, train, stop);
 
   return {
     station,
@@ -192,15 +192,18 @@ function buildRow({ train, stop, stops, stationMap }) {
       train.commercialNo,
       train.publicTrainNumber,
       train.displayNumber,
+      train.trainName,
+      train.name,
       train.trainNumber,
       stop.trainNumber,
       stop.commercialNumber,
       train.number,
-      train.name,
+      stop.marketingNumber,
+      stop.publicTrainNumber,
       train.orderId,
       train.trainOrderId
     )),
-    destination: resolveStationName(destinationId, stationMap, firstDefined(destinationStop.stationName, destinationStop.name, destinationStop.stationLabel, destinationStop.station)),
+    destination: resolveStationName(destinationId, stationMap, firstDefined(destinationStop.stationName, destinationStop.name, destinationStop.stationLabel, destinationStop.station, destinationStop.stationId)),
     carrier: normalizeCarrier(firstDefined(
       train.carrierName,
       train.carrier,
@@ -283,8 +286,8 @@ function extractActual(stop, fallback) {
   return formatTime(firstDefined(stop.actualDeparture, stop.actualArrival, stop.estimatedDepartureTime, stop.updatedDepartureTime, stop.actualDepartureTime, stop.estimatedArrivalTime, stop.updatedArrivalTime, stop.actualArrivalTime, stop.realDeparture, stop.realArrival, stop.actualTime, stop.realTime, fallback));
 }
 
-function extractDelay(stop, planned, actual) {
-  const raw = firstDefined(stop.delayMinutes, stop.delay, stop.departureDelay, stop.arrivalDelay, '');
+function extractDelay(stop, planned, actual, train = {}, stopRef = {}) {
+  const raw = firstDefined(stop.delayMinutes, stop.delay, stop.departureDelay, stop.arrivalDelay, stop.delayTime, stop.currentDelay, train.delayMinutes, train.delay, '');
   if (String(raw).trim()) {
     const num = Number(String(raw).replace(/[^\d-]/g, ''));
     if (Number.isFinite(num)) return Math.abs(num);
@@ -440,3 +443,6 @@ function json(data, status = 200) {
     }
   });
 }
+
+
+// note: station names are resolved from payload.stations when available; actual time means actual or predicted time after delay handling.
