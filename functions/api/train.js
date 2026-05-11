@@ -131,7 +131,7 @@ function buildStationMap(payload, dictionaryStations) {
       }
     }
   }
-  for (const item of dictionaryStations || []) addStationMapItem(map, item, False);
+  for (const item of dictionaryStations || []) addStationMapItem(map, item);
   return map;
 }
 
