@@ -5,358 +5,58 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Monitor opóźnień PLK</title>
   <style>
-    :root {
-      --bg:#07122f;
-      --panel:#0d1b4a;
-      --panel-2:#13265f;
-      --line:#28408c;
-      --text:#eef4ff;
-      --muted:#a8b8ea;
-      --good:#54d48a;
-      --warn:#ffcf57;
-      --bad:#ff7a7a;
-      --accent:#78a9ff;
-      --accent-2:#9ec0ff;
-      --radius:16px;
-    }
-    * { box-sizing:border-box; }
-    body {
-      margin:0;
-      font-family:Inter,system-ui,sans-serif;
-      background:radial-gradient(circle at top, #0d2166 0%, var(--bg) 55%);
-      color:var(--text);
-    }
-    .wrap {
-      max-width:1120px;
-      margin:0 auto;
-      padding:16px;
-    }
-    .card {
-      background:rgba(13,27,74,.94);
-      border:1px solid rgba(120,169,255,.18);
-      border-radius:var(--radius);
-      box-shadow:0 18px 36px rgba(0,0,0,.22);
-      padding:14px;
-      margin-bottom:14px;
-    }
-    h1 { margin:0 0 8px; font-size:30px; }
-    .lead { margin:0; color:var(--muted); font-size:13px; line-height:1.5; }
-    .grid {
-      display:grid;
-      grid-template-columns:minmax(0,2fr) 150px 120px auto;
-      gap:10px;
-      align-items:end;
-    }
-    .field label {
-      display:block;
-      margin-bottom:6px;
-      color:#dbe6ff;
-      font-size:12px;
-      font-weight:700;
-    }
-    input {
-      width:100%;
-      min-height:38px;
-      border-radius:12px;
-      border:1px solid #7ea7ff;
-      background:#10214f;
-      color:#fff;
-      padding:10px 12px;
-      font-size:15px;
-    }
-    .actions { display:grid; gap:6px; }
-    button {
-      min-height:38px;
-      border-radius:12px;
-      border:1px solid transparent;
-      font-weight:800;
-      cursor:pointer;
-      padding:0 16px;
-    }
-    .primary { background:#9fc2ff; color:#06122f; border-color:#c8dcff; }
-    .secondary { background:#0f1f4b; border-color:#88adff; color:#ffffff; }
-    .status { margin-top:10px; color:var(--muted); font-size:13px; }
-    .stats {
-      display:grid;
-      grid-template-columns:repeat(3,1fr);
-      gap:10px;
-      margin-bottom:10px;
-    }
-    .stat {
-      background:rgba(255,255,255,.03);
-      border:1px solid rgba(120,169,255,.12);
-      border-radius:14px;
-      padding:10px 12px;
-    }
-    .stat .k { color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.08em; }
-    .stat .v { font-size:19px; font-weight:800; margin-top:4px; }
-    .stat .ok { color:var(--good); }
-    .meta {
-      display:flex;
-      justify-content:space-between;
-      gap:10px;
-      flex-wrap:wrap;
-      color:var(--muted);
-      font-size:13px;
-      margin:8px 0 12px;
-    }
-    .table-wrap {
-      overflow:auto;
-      border:1px solid rgba(120,169,255,.12);
-      border-radius:14px;
-    }
-    table {
-      width:100%;
-      border-collapse:collapse;
-      min-width:930px;
-      font-size:13px;
-    }
-    th, td {
-      padding:8px 10px;
-      border-bottom:1px solid rgba(120,169,255,.1);
-      text-align:left;
-      vertical-align:top;
-      white-space:nowrap;
-    }
-    th {
-      font-size:11px;
-      text-transform:uppercase;
-      letter-spacing:.06em;
-      color:#d8e5ff;
-      background:#12245b;
-      position:sticky;
-      top:0;
-    }
-    td.compact { white-space:normal; line-height:1.25; min-width:110px; }
-    .pill {
-      display:inline-block;
-      border-radius:999px;
-      padding:3px 8px;
-      font-size:11px;
-      font-weight:700;
-      background:rgba(255,255,255,.08);
-    }
-    .delay-ok { color:var(--good); }
-    .delay-bad { color:var(--warn); }
-    a { color:#dcb9ff; }
-    .portal { margin-top:12px; font-size:13px; color:var(--muted); }
-    .mobile-cards { display:none; gap:8px; }
-    .row-card {
-      border:1px solid rgba(120,169,255,.12);
-      border-radius:14px;
-      padding:10px;
-      background:rgba(255,255,255,.03);
-    }
-    .row-top, .row-sub { display:flex; justify-content:space-between; gap:8px; }
-    .row-sub { margin-top:6px; color:var(--muted); font-size:12px; flex-wrap:wrap; }
-    .muted { color:var(--muted); }
-    @media (max-width: 860px) {
-      h1 { font-size:24px; }
-      .grid { grid-template-columns:1fr; }
-      .actions { grid-template-columns:1fr 1fr; }
-      .stats { grid-template-columns:1fr; }
-      .table-wrap { display:none; }
-      .mobile-cards { display:grid; }
-      .card { padding:12px; }
-      input, button { min-height:36px; font-size:13px; }
-      .stat .v { font-size:17px; }
-    }
+    :root{--bg:#07122f;--panel:#0d1b4a;--line:#7ea7ff;--text:#eef4ff;--muted:#a8b8ea;--good:#54d48a;--warn:#ffcf57;--accent:#9fc2ff}
+    *{box-sizing:border-box} body{margin:0;font-family:Inter,system-ui,sans-serif;background:radial-gradient(circle at top,#0d2166 0%,var(--bg) 55%);color:var(--text)}
+    .wrap{max-width:1100px;margin:0 auto;padding:14px}.card{background:rgba(13,27,74,.94);border:1px solid rgba(120,169,255,.18);border-radius:16px;padding:12px;margin-bottom:12px}
+    h1,h2{margin:0 0 8px}.lead,.status,.meta,.portal{color:var(--muted);font-size:13px}.grid{display:grid;grid-template-columns:minmax(0,2fr) 150px 110px auto;gap:8px;align-items:end}
+    .field label{display:block;margin-bottom:6px;font-size:12px;font-weight:700}.suggest-wrap{position:relative}
+    input{width:100%;min-height:38px;border-radius:12px;border:1px solid var(--line);background:#10214f;color:#fff;padding:9px 11px;font-size:14px}
+    .actions{display:grid;gap:6px} button{min-height:38px;border-radius:12px;padding:0 14px;font-weight:800;cursor:pointer}.primary{background:var(--accent);color:#06122f;border:1px solid #c8dcff}.secondary{background:#0f1f4b;border:1px solid #88adff;color:#fff}
+    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}.stat{background:rgba(255,255,255,.03);border:1px solid rgba(120,169,255,.12);border-radius:14px;padding:10px}.k{color:var(--muted);font-size:11px;text-transform:uppercase}.v{font-size:18px;font-weight:800}.ok{color:var(--good)}
+    .table-wrap{overflow:auto;border:1px solid rgba(120,169,255,.12);border-radius:14px}table{width:100%;border-collapse:collapse;min-width:920px;font-size:13px}th,td{padding:8px 10px;border-bottom:1px solid rgba(120,169,255,.1);text-align:left;vertical-align:top;white-space:nowrap}th{font-size:11px;text-transform:uppercase;background:#12245b}.compact{white-space:normal;line-height:1.25;min-width:110px}.pill{display:inline-block;border-radius:999px;padding:3px 8px;font-size:11px;font-weight:700;background:rgba(255,255,255,.08)}
+    .delay-ok{color:var(--good)}.delay-bad{color:var(--warn)} a{color:#dcb9ff}.suggestions{position:absolute;left:0;right:0;top:100%;z-index:10;background:#10214f;border:1px solid var(--line);border-radius:12px;margin-top:4px;overflow:hidden;display:none}.suggestions.show{display:block}.suggestion{padding:10px 12px;cursor:pointer;border-top:1px solid rgba(255,255,255,.06)}.suggestion:first-child{border-top:none}.suggestion:hover{background:#17316f}.mobile-cards{display:none;gap:8px}.row-card{border:1px solid rgba(120,169,255,.12);border-radius:14px;padding:10px;background:rgba(255,255,255,.03)}.row-top,.row-sub{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}.row-sub{margin-top:6px;color:var(--muted);font-size:12px}
+    @media (max-width:860px){.grid{grid-template-columns:1fr 1fr auto auto}.stats{grid-template-columns:1fr}.table-wrap{display:none}.mobile-cards{display:grid}}
+    @media (max-width:620px){.grid{grid-template-columns:1fr 1fr;}.actions{grid-column:1/-1;grid-template-columns:1fr 1fr}}
   </style>
 </head>
 <body>
   <div class="wrap">
-    <section class="card">
-      <h1>Monitor opóźnień PLK</h1>
-      <p class="lead">Wersja mobilna i uproszczona. Pole samo rozpoznaje, czy pasażer wpisał nazwę stacji czy numer pociągu. Data i godzina są startowo ustawiane na bieżące.</p>
-    </section>
-
+    <section class="card"><h1>Monitor opóźnień PLK</h1><p class="lead">Wybór stacji z podpowiedzi uruchamia wyszukiwanie automatycznie. Godzina rzeczywista oznacza czas rzeczywisty albo przewidywany po uwzględnieniu opóźnienia.</p></section>
     <section class="card">
       <h2>Konfiguracja</h2>
       <div class="grid">
-        <div class="field">
-          <label for="query">Stacja lub numer pociągu</label>
-          <input id="query" placeholder="np. Kraków Główny albo IC 63172">
-        </div>
-        <div class="field">
-          <label for="date">Data</label>
-          <input id="date" type="date">
-        </div>
-        <div class="field">
-          <label for="time">Godzina</label>
-          <input id="time" type="time">
-        </div>
-        <div class="actions">
-          <button class="primary" id="fetchBtn">Pobierz</button>
-          <button class="secondary" id="clearBtn">Wyczyść</button>
-        </div>
+        <div class="field suggest-wrap"><label for="query">Stacja lub numer pociągu</label><input id="query" list="stationHints" autocomplete="off" placeholder="np. Tarnowskie Góry albo IC 63172"><div id="suggestions" class="suggestions"></div></div>
+        <div class="field"><label for="date">Data</label><input id="date" type="date"></div>
+        <div class="field"><label for="time">Godzina</label><input id="time" type="time"></div>
+        <div class="actions"><button class="primary" id="fetchBtn">Pobierz</button><button class="secondary" id="clearBtn">Wyczyść</button></div>
       </div>
       <div class="status" id="statusText">Gotowe.</div>
     </section>
-
     <section class="card">
       <h2>Wynik</h2>
-      <div class="stats">
-        <div class="stat"><div class="k">Zapytanie</div><div class="v" id="queryValue">—</div></div>
-        <div class="stat"><div class="k">Opóźnienie</div><div class="v ok" id="delayValue">—</div></div>
-        <div class="stat"><div class="k">Ostatnia stacja</div><div class="v" id="lastStationValue">—</div></div>
-      </div>
-      <div class="meta">
-        <div id="summaryText">Brak danych.</div>
-        <div><a id="portalLink" href="#" target="_blank" rel="noopener noreferrer" hidden>Pełna tabela odjazdów</a></div>
-      </div>
-
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Stacja</th>
-              <th>Plan</th>
-              <th>Rzecz.</th>
-              <th>Opóź.</th>
-              <th>Status</th>
-              <th>Pociąg</th>
-              <th>Kierunek</th>
-              <th>Przewoźnik</th>
-              <th>Peron</th>
-              <th>Przez</th>
-            </tr>
-          </thead>
-          <tbody id="resultBody">
-            <tr><td colspan="10" class="muted">Brak danych do wyświetlenia.</td></tr>
-          </tbody>
-        </table>
-      </div>
-
+      <div class="stats"><div class="stat"><div class="k">Zapytanie</div><div class="v" id="queryValue">—</div></div><div class="stat"><div class="k">Opóźnienie</div><div class="v ok" id="delayValue">—</div></div><div class="stat"><div class="k">Ostatnia stacja</div><div class="v" id="lastStationValue">—</div></div></div>
+      <div class="meta"><div id="summaryText">Brak danych.</div><div><a id="portalLink" href="#" target="_blank" rel="noopener noreferrer" hidden>Pełna tabela odjazdów</a></div></div>
+      <div class="table-wrap"><table><thead><tr><th>Stacja</th><th>Plan</th><th>Rzecz.</th><th>Opóź.</th><th>Status</th><th>Pociąg</th><th>Kierunek</th><th>Przewoźnik</th><th>Peron</th><th>Przez</th></tr></thead><tbody id="resultBody"><tr><td colspan="10">Brak danych do wyświetlenia.</td></tr></tbody></table></div>
       <div class="mobile-cards" id="mobileCards"></div>
-      <div class="portal">W kolumnie „Rzecz.” pokazywana jest godzina rzeczywista lub przewidywana po uwzględnieniu opóźnienia; jeśli pociąg jedzie punktualnie, będzie równa planowi.</div>
+      <div class="portal">Jeżeli pociąg jedzie punktualnie, kolumna „Rzecz.” może być równa planowi.</div>
     </section>
   </div>
-
-  <script>
-    const queryInput = document.getElementById('query');
-    const dateInput = document.getElementById('date');
-    const timeInput = document.getElementById('time');
-    const fetchBtn = document.getElementById('fetchBtn');
-    const clearBtn = document.getElementById('clearBtn');
-    const statusText = document.getElementById('statusText');
-    const queryValue = document.getElementById('queryValue');
-    const delayValue = document.getElementById('delayValue');
-    const lastStationValue = document.getElementById('lastStationValue');
-    const summaryText = document.getElementById('summaryText');
-    const resultBody = document.getElementById('resultBody');
-    const mobileCards = document.getElementById('mobileCards');
-    const portalLink = document.getElementById('portalLink');
-
-    initDateTime();
-
-    fetchBtn.addEventListener('click', fetchData);
-    clearBtn.addEventListener('click', clearAll);
-    queryInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') fetchData(); });
-
-    function initDateTime() {
-      const now = new Date();
-      dateInput.value = now.toISOString().slice(0,10);
-      timeInput.value = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-    }
-
-    async function fetchData() {
-      const query = queryInput.value.trim();
-      if (!query) {
-        statusText.textContent = 'Wpisz stację albo numer pociągu.';
-        return;
-      }
-      statusText.textContent = 'Pobieranie danych…';
-      fetchBtn.disabled = true;
-      try {
-        const res = await fetch('/api/train', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query, trainDate: dateInput.value, trainTime: timeInput.value })
-        });
-        const data = await res.json();
-        render(data, query);
-        statusText.textContent = res.ok ? 'Gotowe.' : (data.error || 'Błąd API.');
-      } catch (err) {
-        statusText.textContent = `Błąd: ${err.message}`;
-      } finally {
-        fetchBtn.disabled = false;
-      }
-    }
-
-    function render(data, query) {
-      queryValue.textContent = data.matchedStation || data.trainNumber || query || '—';
-      delayValue.textContent = `${data.delayMinutes ?? 0} min`;
-      delayValue.className = 'v ' + ((data.delayMinutes ?? 0) > 0 ? 'delay-bad' : 'ok');
-      lastStationValue.textContent = data.lastStation || '—';
-      const count = data.totalDepartures ?? data.totalStops ?? 0;
-      summaryText.textContent = count ? `Pokazuję ${Math.min(count, 20)} z ${count} rekordów.` : 'Brak danych.';
-      if (data.fullTimetableUrl || data.stationPortalUrl) {
-        portalLink.hidden = false;
-        portalLink.href = data.fullTimetableUrl || data.stationPortalUrl;
-      } else {
-        portalLink.hidden = true;
-        portalLink.href = '#';
-      }
-      renderRows(data.route || []);
-    }
-
-    function renderRows(rows) {
-      if (!rows.length) {
-        resultBody.innerHTML = '<tr><td colspan="10" class="muted">Brak danych do wyświetlenia.</td></tr>';
-        mobileCards.innerHTML = '<div class="row-card muted">Brak danych do wyświetlenia.</div>';
-        return;
-      }
-      resultBody.innerHTML = rows.map((row) => `
-        <tr>
-          <td class="compact">${esc(row.station || '—')}</td>
-          <td>${esc(row.scheduled || '—')}</td>
-          <td>${esc(row.actual || '—')}</td>
-          <td class="${(row.delayMinutes || 0) > 0 ? 'delay-bad' : 'delay-ok'}">${esc(String(row.delayMinutes ?? 0))} min</td>
-          <td><span class="pill">${esc(labelStatus(row.status || '—'))}</span></td>
-          <td>${esc(row.trainNumber || '—')}</td>
-          <td class="compact">${esc(row.destination || '—')}</td>
-          <td class="compact">${esc(row.carrier || '—')}</td>
-          <td>${esc(row.platform || '—')}</td>
-          <td class="compact">${esc(row.via || '—')}</td>
-        </tr>
-      `).join('');
-
-      mobileCards.innerHTML = rows.map((row) => `
-        <div class="row-card">
-          <div class="row-top"><strong>${esc(row.trainNumber || '—')}</strong><span class="${(row.delayMinutes || 0) > 0 ? 'delay-bad' : 'delay-ok'}">${esc(String(row.delayMinutes ?? 0))} min</span></div>
-          <div class="row-sub"><span>${esc(row.station || '—')} → ${esc(row.destination || '—')}</span><span>${esc(row.scheduled || '—')} / ${esc(row.actual || '—')}</span></div>
-          <div class="row-sub"><span>${esc(labelStatus(row.status || '—'))}</span><span>${esc(row.carrier || '—')}</span><span>Peron ${esc(row.platform || '—')}</span></div>
-          <div class="row-sub"><span>Przez: ${esc(row.via || '—')}</span></div>
-        </div>
-      `).join('');
-    }
-
-    function clearAll() {
-      queryInput.value = '';
-      initDateTime();
-      queryValue.textContent = '—';
-      delayValue.textContent = '—';
-      lastStationValue.textContent = '—';
-      summaryText.textContent = 'Brak danych.';
-      resultBody.innerHTML = '<tr><td colspan="10" class="muted">Brak danych do wyświetlenia.</td></tr>';
-      mobileCards.innerHTML = '';
-      portalLink.hidden = true;
-      portalLink.href = '#';
-      statusText.textContent = 'Wyczyszczono.';
-    }
-
-    function labelStatus(status) {
-      const s = String(status || '').toUpperCase();
-      if (s === 'ON_TIME') return 'Punktualnie';
-      if (s === 'DELAYED') return 'Opóźniony';
-      if (s === 'S') return 'Zrealizowano';
-      if (s === 'C') return 'W ruchu';
-      return status || '—';
-    }
-
-    function esc(v) {
-      return String(v ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
-    }
-  </script>
+<script>
+const queryInput=document.getElementById('query'),dateInput=document.getElementById('date'),timeInput=document.getElementById('time'),fetchBtn=document.getElementById('fetchBtn'),clearBtn=document.getElementById('clearBtn'),statusText=document.getElementById('statusText'),queryValue=document.getElementById('queryValue'),delayValue=document.getElementById('delayValue'),lastStationValue=document.getElementById('lastStationValue'),summaryText=document.getElementById('summaryText'),resultBody=document.getElementById('resultBody'),mobileCards=document.getElementById('mobileCards'),portalLink=document.getElementById('portalLink'),suggestions=document.getElementById('suggestions');
+let hintTimer=null;
+initDateTime();
+fetchBtn.addEventListener('click',()=>fetchData()); clearBtn.addEventListener('click',clearAll); queryInput.addEventListener('keydown',e=>{if(e.key==='Enter')fetchData()});
+queryInput.addEventListener('input',()=>{clearTimeout(hintTimer); const q=queryInput.value.trim(); if(q.length<2){suggestions.classList.remove('show'); suggestions.innerHTML=''; return;} hintTimer=setTimeout(()=>loadHints(q),180);});
+document.addEventListener('click',e=>{ if(!suggestions.contains(e.target) && e.target!==queryInput) suggestions.classList.remove('show'); });
+function initDateTime(){const now=new Date();dateInput.value=now.toISOString().slice(0,10);timeInput.value=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`}
+async function loadHints(q){try{const r=await fetch(`/api/stations?search=${encodeURIComponent(q)}`); if(!r.ok) return; const data=await r.json(); const items=(Array.isArray(data?.stations)?data.stations:data?.items||data?.data||[]).slice(0,8); if(!items.length){suggestions.classList.remove('show'); return;} suggestions.innerHTML=items.map(item=>{const name=item.name||item.stationName||item.label||item.description||''; return `<div class="suggestion" data-name="${escAttr(name)}">${esc(name)}</div>`}).join(''); suggestions.classList.add('show'); [...suggestions.querySelectorAll('.suggestion')].forEach(el=>el.addEventListener('click',()=>{queryInput.value=el.dataset.name; suggestions.classList.remove('show'); fetchData();}));}catch{}}
+async function fetchData(){const query=queryInput.value.trim(); if(!query){statusText.textContent='Wpisz stację albo numer pociągu.'; return;} statusText.textContent='Pobieranie danych…'; fetchBtn.disabled=true; try{const res=await fetch('/api/train',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query,trainDate:dateInput.value,trainTime:timeInput.value})}); const data=await res.json(); render(data,query); statusText.textContent=res.ok?'Gotowe.':(data.error||'Błąd API.');}catch(err){statusText.textContent=`Błąd: ${err.message}`;}finally{fetchBtn.disabled=false;}}
+function render(data,query){queryValue.textContent=data.matchedStation||data.trainNumber||query||'—'; delayValue.textContent=`${data.delayMinutes??0} min`; delayValue.className='v '+((data.delayMinutes??0)>0?'delay-bad':'ok'); lastStationValue.textContent=data.lastStation||'—'; const count=data.totalDepartures??data.totalStops??0; summaryText.textContent=count?`Pokazuję ${Math.min(count,20)} z ${count} rekordów.`:'Brak danych.'; if(data.fullTimetableUrl||data.stationPortalUrl){portalLink.hidden=false; portalLink.href=data.fullTimetableUrl||data.stationPortalUrl;} else {portalLink.hidden=true; portalLink.href='#';} renderRows(data.route||[])}
+function renderRows(rows){if(!rows.length){resultBody.innerHTML='<tr><td colspan="10">Brak danych do wyświetlenia.</td></tr>'; mobileCards.innerHTML='<div class="row-card">Brak danych do wyświetlenia.</div>'; return;} resultBody.innerHTML=rows.map(row=>`<tr><td class="compact">${esc(row.station||'—')}</td><td>${esc(row.scheduled||'—')}</td><td>${esc(row.actual||'—')}</td><td class="${(row.delayMinutes||0)>0?'delay-bad':'delay-ok'}">${esc(String(row.delayMinutes??0))} min</td><td><span class="pill">${esc(labelStatus(row.status||'—'))}</span></td><td class="compact">${esc(row.trainNumber||'—')}</td><td class="compact">${esc(row.destination||'—')}</td><td class="compact">${esc(row.carrier||'—')}</td><td>${esc(row.platform||'—')}</td><td class="compact">${esc(row.via||'—')}</td></tr>`).join(''); mobileCards.innerHTML=rows.map(row=>`<div class="row-card"><div class="row-top"><strong>${esc(row.trainNumber||'—')}</strong><span class="${(row.delayMinutes||0)>0?'delay-bad':'delay-ok'}">${esc(String(row.delayMinutes??0))} min</span></div><div class="row-sub"><span>${esc(row.station||'—')} → ${esc(row.destination||'—')}</span><span>${esc(row.scheduled||'—')} / ${esc(row.actual||'—')}</span></div><div class="row-sub"><span>${esc(labelStatus(row.status||'—'))}</span><span>${esc(row.carrier||'—')}</span><span>Peron ${esc(row.platform||'—')}</span></div><div class="row-sub"><span>Przez: ${esc(row.via||'—')}</span></div></div>`).join('')}
+function clearAll(){queryInput.value=''; suggestions.classList.remove('show'); suggestions.innerHTML=''; initDateTime(); queryValue.textContent='—'; delayValue.textContent='—'; lastStationValue.textContent='—'; summaryText.textContent='Brak danych.'; resultBody.innerHTML='<tr><td colspan="10">Brak danych do wyświetlenia.</td></tr>'; mobileCards.innerHTML=''; portalLink.hidden=true; portalLink.href='#'; statusText.textContent='Wyczyszczono.'}
+function labelStatus(status){const s=String(status||'').toUpperCase(); if(s==='ON_TIME') return 'Punktualnie'; if(s==='DELAYED') return 'Opóźniony'; if(s==='DONE'||s==='S') return 'Zrealizowano'; if(s==='IN_PROGRESS'||s==='C') return 'W ruchu'; return status||'—'}
+function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;')}
+function escAttr(v){return esc(v).replaceAll("'",'&#39;')}
+</script>
 </body>
 </html>
