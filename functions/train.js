@@ -1,8 +1,9 @@
-export default {
-  async fetch(request, env) {
-    return handleRequest(request, env);
-  }
-};
+export async function onRequest(context) {
+  return handleRequest(
+    context.request,
+    context.env
+  );
+}
 
 // =========================
 // HELPERS
@@ -110,7 +111,6 @@ function calculateDelay(planned, actual) {
 
   let diff = a - p;
 
-  // przejście przez północ
   if (diff < -720) {
     diff += 1440;
   }
@@ -305,49 +305,11 @@ function getVia(
 }
 
 // =========================
-// SCHEDULE METADATA
-// =========================
-
-async function fetchScheduleMetadata(
-  apiBase,
-  headers,
-  scheduleId
-) {
-  try {
-    const url = `${apiBase}/schedules/${scheduleId}`;
-
-    const payload = await fetchJson(
-      url,
-      headers
-    );
-
-    return {
-      trainNumber: clean(
-        payload.trainNumber ||
-        payload.commercialNumber ||
-        payload.publicTrainNumber
-      ) || "—",
-
-      carrier: clean(
-        payload.carrier ||
-        payload.carrierName ||
-        payload.operator
-      ) || "—"
-    };
-
-  } catch {
-    return {
-      trainNumber: "—",
-      carrier: "—"
-    };
-  }
-}
-
-// =========================
 // MAIN
 // =========================
 
 async function handleRequest(request, env) {
+
   const method = request.method.toUpperCase();
 
   if (method === "OPTIONS") {
@@ -360,6 +322,7 @@ async function handleRequest(request, env) {
     return json({
       ok: true,
       usage: {
+        endpoint: "/train",
         method: "POST",
         body: {
           station: "Tczew"
@@ -369,6 +332,7 @@ async function handleRequest(request, env) {
   }
 
   try {
+
     const body = await request.json();
 
     const stationQuery = clean(
@@ -396,13 +360,9 @@ async function handleRequest(request, env) {
     // LOAD STATIONS
     // =========================
 
-    const stationsUrl = new URL(
-      `${apiBase}/dictionaries/stations`
-    );
-
     const stationsPayload =
       await fetchJson(
-        stationsUrl.toString(),
+        `${apiBase}/dictionaries/stations`,
         headers
       );
 
@@ -438,28 +398,12 @@ async function handleRequest(request, env) {
     // LOAD OPERATIONS
     // =========================
 
-    const operationsUrl = new URL(
-      `${apiBase}/operations`
-    );
-
-    operationsUrl.searchParams.set(
-      "stations",
-      stationId
-    );
-
-    operationsUrl.searchParams.set(
-      "withPlanned",
-      "true"
-    );
-
-    operationsUrl.searchParams.set(
-      "pageSize",
-      "200"
-    );
+    const operationsUrl =
+      `${apiBase}/operations?stations=${stationId}&withPlanned=true&pageSize=200`;
 
     const operationsPayload =
       await fetchJson(
-        operationsUrl.toString(),
+        operationsUrl,
         headers
       );
 
@@ -469,41 +413,13 @@ async function handleRequest(request, env) {
       );
 
     // =========================
-    // LOAD SCHEDULE CACHE
+    // BUILD ROWS
     // =========================
 
-    const uniqueScheduleIds = [
-      ...new Set(
-        operations.map(o =>
-          clean(o.scheduleId)
-        )
-      )
-    ];
-
-    const scheduleCache = {};
-
-    // limit żeby nie zabić API
-    const limitedScheduleIds =
-      uniqueScheduleIds.slice(0, 50);
-
-    await Promise.all(
-      limitedScheduleIds.map(async id => {
-        scheduleCache[id] =
-          await fetchScheduleMetadata(
-            apiBase,
-            headers,
-            id
-          );
-      })
-    );
-
-    // =========================
-    // BUILD DEPARTURES
-    // =========================
-
-    const departures = [];
+    const rows = [];
 
     for (const operation of operations) {
+
       const stops =
         getOperationStops(operation);
 
@@ -536,11 +452,6 @@ async function handleRequest(request, env) {
           actual
         );
 
-      const metadata =
-        scheduleCache[
-          clean(operation.scheduleId)
-        ] || {};
-
       const destination =
         getDestination(
           stops,
@@ -548,52 +459,40 @@ async function handleRequest(request, env) {
           stationMap
         );
 
-      departures.push({
+      rows.push({
         station: stationName,
-
         scheduled: planned,
-
         actual,
-
         delayMinutes: delay,
-
         status: normalizeStatus(
           operation.trainStatus
         ),
-
         trainNumber:
-          metadata.trainNumber || "—",
-
+          clean(operation.trainNumber)
+          || clean(operation.publicTrainNumber)
+          || clean(operation.commercialNumber)
+          || "—",
         destination,
-
         carrier:
-          metadata.carrier || "—",
-
+          clean(operation.carrier)
+          || clean(operation.operator)
+          || "—",
         platform:
           getPlatform(stop),
-
         via: getVia(
           stops,
           stopIndex,
           stationMap,
           destination
         ),
-
-        orderId: clean(
-          operation.orderId
-        ),
-
-        operatingDate: clean(
-          operation.operatingDate
-        )
+        orderId:
+          clean(operation.orderId),
+        operatingDate:
+          clean(operation.operatingDate)
       });
     }
 
-    // =========================
-    // SORT
-    // =========================
-
-    departures.sort((a, b) => {
+    rows.sort((a, b) => {
       return (
         (parseTime(a.actual)
           ?? 999999)
@@ -603,62 +502,20 @@ async function handleRequest(request, env) {
       );
     });
 
-    // =========================
-    // DEDUPE
-    // =========================
-
-    const seen = new Set();
-
-    const uniqueDepartures =
-      departures.filter(row => {
-
-        const key = [
-          row.orderId,
-          row.scheduled
-        ].join("|");
-
-        if (seen.has(key)) {
-          return false;
-        }
-
-        seen.add(key);
-
-        return true;
-      });
-
-    // =========================
-    // RESPONSE
-    // =========================
-
     return json({
       ok: true,
-
-      matchedStation:
-        stationName,
-
-      matchedStationId:
-        stationId,
-
-      totalDepartures:
-        uniqueDepartures.length,
-
-      route:
-        uniqueDepartures.slice(0, 20),
+      matchedStation: stationName,
+      matchedStationId: stationId,
+      totalDepartures: rows.length,
+      route: rows.slice(0, 50),
 
       debug: {
         operationsCount:
           operations.length,
-
-        scheduleCacheLoaded:
-          Object.keys(
-            scheduleCache
-          ).length,
-
         sampleOperation:
           operations[0] || null,
-
         firstRow:
-          uniqueDepartures[0] || null
+          rows[0] || null
       }
     });
 
