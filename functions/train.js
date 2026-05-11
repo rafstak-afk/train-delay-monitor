@@ -250,7 +250,12 @@ function dedupeRows(rows) {
 export async function onRequest(context) {
   const method = context.request.method.toUpperCase();
   if (method === 'OPTIONS') return new Response(null, { headers: corsHeaders() });
-  if (method === 'GET') return json({ ok: true, message: 'Użyj POST z query, trainDate i trainTime.' });
+  if (method === 'GET') {
+    return json({
+      ok: true,
+      message: 'Użyj POST z polami: query (nazwa stacji), trainDate (YYYY-MM-DD lub DD.MM.YYYY), trainTime (HH:mm).'
+    });
+  }
   if (method !== 'POST') return json({ error: 'Method not allowed' }, 405);
 
   try {
@@ -267,6 +272,7 @@ export async function onRequest(context) {
       headers['X-Api-Key'] = env.PLK_API_KEY;
     }
 
+    // 1. Szukamy stacji
     const stationsUrl = new URL(`${apiBase}/dictionaries/stations`);
     stationsUrl.searchParams.set('search', query);
     const stationPayload = await fetchJson(stationsUrl.toString(), headers);
@@ -276,24 +282,29 @@ export async function onRequest(context) {
     const stationId = clean(matchedStation.id || matchedStation.stationId || matchedStation.value || '');
     const stationName = clean(matchedStation.name || matchedStation.stationName || query);
 
+    // 2. Pobieramy operacje dla tej stacji – z pełnymi trasami
     const operationsUrl = new URL(`${apiBase}/operations`);
     operationsUrl.searchParams.set('stations', stationId);
     operationsUrl.searchParams.set('withPlanned', 'true');
+    operationsUrl.searchParams.set('fullRoutes', 'true');
+    operationsUrl.searchParams.set('pageSize', '10000');
     if (trainDate) operationsUrl.searchParams.set('date', normalizeDateForApi(trainDate));
 
     const operationsPayload = await fetchJson(operationsUrl.toString(), headers);
 
+    // 3. Budujemy i filtrujemy tabelę
     let route = buildRouteRows(stationId, stationName, operationsPayload);
     route = dedupeRows(filterRouteByTime(route, trainTime));
 
     const delayMinutes = Math.max(0, ...route.map(row => Number(row.delayMinutes) || 0), 0);
+    const lastRow = route[route.length - 1] || null;
 
     return json({
       matchedStation: stationName,
       matchedStationId: stationId,
       delayMinutes,
       status: route.length ? (delayMinutes > 0 ? 'DELAYED' : 'ON_TIME') : 'NO_DATA',
-      lastStation: route.length ? route[route.length - 1].destination || stationName : stationName,
+      lastStation: lastRow?.destination || '—',
       route: route.slice(0, 20),
       totalDepartures: route.length,
       debug: {
