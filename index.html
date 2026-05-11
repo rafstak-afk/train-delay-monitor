@@ -1,337 +1,207 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pl">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Monitor opóźnień PLK</title>
-  <style>
-    :root {
-      --bg: #07153b;
-      --bg2: #0b1f57;
-      --panel: #10245f;
-      --panel2: #162d73;
-      --line: #28479e;
-      --text: #eff4ff;
-      --muted: #b8c6f5;
-      --green: #31d07f;
-      --red: #ff7272;
-      --chip: #213a84;
-      --white: #ffffff;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: Inter, system-ui, sans-serif;
-      color: var(--text);
-      background:
-        linear-gradient(90deg, rgba(0,0,0,.18), rgba(0,0,0,0) 18%, rgba(0,0,0,.15) 100%),
-        radial-gradient(circle at 60% 10%, #17348f 0, #0b1f57 34%, #07153b 76%);
-      min-height: 100vh;
-      padding: 24px;
-    }
-    .wrap { max-width: 1120px; margin: 0 auto; }
-    .card {
-      background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
-      border: 1px solid rgba(150,180,255,.16);
-      border-radius: 20px;
-      padding: 20px;
-      box-shadow: 0 12px 28px rgba(0,0,0,.18);
-      backdrop-filter: blur(4px);
-      margin-bottom: 16px;
-    }
-    h1, h2 { margin: 0 0 10px; }
-    h1 { font-size: 2.2rem; }
-    h2 { font-size: 1.2rem; }
-    .muted { color: var(--muted); font-size: .95rem; }
-    .grid {
-      display: grid;
-      grid-template-columns: 1.8fr .8fr .7fr auto;
-      gap: 12px;
-      align-items: end;
-    }
-    label {
-      display: block;
-      font-size: .86rem;
-      margin: 0 0 6px;
-      color: var(--white);
-      font-weight: 700;
-    }
-    input {
-      width: 100%;
-      background: rgba(10, 25, 72, .9);
-      border: 1px solid #78a1ff;
-      color: var(--white);
-      border-radius: 13px;
-      padding: 12px 14px;
-      outline: none;
-      font-size: 1rem;
-    }
-    .buttons { display: grid; gap: 8px; }
-    button {
-      border: 1px solid #8fb2ff;
-      background: #9ec0ff;
-      color: #10245f;
-      font-weight: 800;
-      border-radius: 13px;
-      padding: 12px 16px;
-      cursor: pointer;
-      font-size: 1rem;
-    }
-    button.secondary {
-      background: #16306e;
-      color: var(--white);
-    }
-    .hint { min-height: 20px; margin-top: 8px; font-size: .95rem; color: var(--muted); }
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-      margin-bottom: 12px;
-    }
-    .stat {
-      background: rgba(255,255,255,.03);
-      border: 1px solid rgba(150,180,255,.12);
-      border-radius: 16px;
-      padding: 14px 16px;
-    }
-    .stat .k { font-size: .75rem; color: var(--muted); text-transform: uppercase; }
-    .stat .v { font-size: 1.05rem; font-weight: 800; margin-top: 4px; }
-    .green { color: var(--green); }
-    .tableWrap {
-      overflow: auto;
-      border: 1px solid rgba(150,180,255,.14);
-      border-radius: 16px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      min-width: 980px;
-      background: rgba(8, 25, 73, .35);
-    }
-    thead th {
-      background: rgba(53, 84, 170, .35);
-      color: var(--white);
-      text-align: left;
-      padding: 10px 12px;
-      font-size: .8rem;
-    }
-    tbody td {
-      border-top: 1px solid rgba(150,180,255,.12);
-      padding: 10px 12px;
-      font-size: .92rem;
-      vertical-align: top;
-    }
-    .chip {
-      display: inline-block;
-      padding: 4px 10px;
-      border-radius: 999px;
-      background: var(--chip);
-      font-size: .8rem;
-      font-weight: 700;
-      white-space: nowrap;
-    }
-    details { margin-top: 14px; }
-    summary { cursor: pointer; color: var(--muted); font-size: 1rem; }
-    pre {
-      white-space: pre-wrap;
-      word-break: break-word;
-      color: #d7e2ff;
-      font-size: .84rem;
-      line-height: 1.45;
-      margin: 10px 0 0;
-    }
-    a { color: #a8c2ff; }
-    @media (max-width: 900px) {
-      .grid, .stats { grid-template-columns: 1fr; }
-      .buttons { grid-template-columns: 1fr 1fr; }
-      h1 { font-size: 1.9rem; }
-      body { padding: 14px; }
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+<title>Monitor opóźnień PLK</title>
+
+<style>
+
+body{
+  font-family: Arial,sans-serif;
+  margin:20px;
+  background:#f4f4f4;
+  color:#222;
+}
+
+h1{
+  margin-bottom:10px;
+}
+
+.panel{
+  background:white;
+  padding:16px;
+  border-radius:12px;
+  margin-bottom:20px;
+  box-shadow:0 2px 8px rgba(0,0,0,.08);
+}
+
+input,button{
+  padding:10px;
+  font-size:16px;
+}
+
+button{
+  cursor:pointer;
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  background:white;
+}
+
+th,td{
+  border:1px solid #ddd;
+  padding:8px;
+  font-size:14px;
+}
+
+th{
+  background:#222;
+  color:white;
+}
+
+.delay{
+  color:#c62828;
+  font-weight:bold;
+}
+
+.ok{
+  color:#2e7d32;
+}
+
+pre{
+  white-space:pre-wrap;
+  font-size:12px;
+  background:#111;
+  color:#0f0;
+  padding:12px;
+  overflow:auto;
+  border-radius:8px;
+}
+
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <section class="card">
-      <h1>Monitor opóźnień PLK</h1>
-      <p class="muted">Wybór stacji uruchamia pobranie planu i realtime z oficjalnego API PLK. Godzina rzeczywista oznacza czas rzeczywisty albo przewidywany po uwzględnieniu opóźnienia.</p>
-    </section>
 
-    <section class="card">
-      <h2>Konfiguracja</h2>
-      <form id="form" class="grid">
-        <div>
-          <label for="station">Stacja</label>
-          <input id="station" name="station" placeholder="np. Tczew" value="Tczew" autocomplete="off" />
-          <div id="hint" class="hint">Gotowe.</div>
-        </div>
-        <div>
-          <label for="date">Data</label>
-          <input id="date" name="date" type="text" />
-        </div>
-        <div>
-          <label for="time">Godzina</label>
-          <input id="time" name="time" type="text" />
-        </div>
-        <div class="buttons">
-          <button type="submit">Pobierz</button>
-          <button type="button" id="clearBtn" class="secondary">Wyczyść</button>
-        </div>
-      </form>
-    </section>
+<h1>Monitor opóźnień PLK</h1>
 
-    <section class="card">
-      <h2>Wynik</h2>
-      <div class="stats">
-        <div class="stat"><div class="k">Zapytanie</div><div class="v" id="statQuery">—</div></div>
-        <div class="stat"><div class="k">Opóźnienie</div><div class="v green" id="statDelay">0 min</div></div>
-        <div class="stat"><div class="k">Ostatnia stacja</div><div class="v" id="statLast">—</div></div>
-      </div>
-      <div id="meta" class="muted"></div>
-      <div class="tableWrap" style="margin-top:12px;">
-        <table>
-          <thead>
-            <tr>
-              <th>STACJA</th>
-              <th>PLAN</th>
-              <th>RZECZ.</th>
-              <th>OPÓŹ.</th>
-              <th>STATUS</th>
-              <th>POCIĄG</th>
-              <th>KIERUNEK</th>
-              <th>PRZEWOŹNIK</th>
-              <th>PERON</th>
-              <th>PRZEZ</th>
-            </tr>
-          </thead>
-          <tbody id="tbody">
-            <tr><td colspan="10">Brak danych do wyświetlenia.</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <p class="muted" style="margin-top:10px;">Jeżeli pociąg jedzie punktualnie, kolumna „Rzecz.” może być równa planowi.</p>
-      <details>
-        <summary>Debug</summary>
-        <pre id="debug">{}</pre>
-      </details>
-    </section>
-  </div>
+<div class="panel">
 
-  <script>
-    const form = document.getElementById('form');
-    const stationEl = document.getElementById('station');
-    const dateEl = document.getElementById('date');
-    const timeEl = document.getElementById('time');
-    const hintEl = document.getElementById('hint');
-    const tbody = document.getElementById('tbody');
-    const debugEl = document.getElementById('debug');
-    const statQuery = document.getElementById('statQuery');
-    const statDelay = document.getElementById('statDelay');
-    const statLast = document.getElementById('statLast');
-    const meta = document.getElementById('meta');
-    const clearBtn = document.getElementById('clearBtn');
+<input
+  id="station"
+  placeholder="Np. Tczew"
+  value="Tczew"
+/>
 
-    const API_URL = './train';
+<button onclick="loadData()">
+Pobierz
+</button>
 
-    function pad(n) { return String(n).padStart(2, '0'); }
-    function setNow() {
-      const now = new Date();
-      dateEl.value = `${pad(now.getDate())}.${pad(now.getMonth() + 1)}.${now.getFullYear()}`;
-      timeEl.value = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
-    }
+</div>
 
-    function statusChip(text) {
-      return `<span class="chip">${escapeHtml(text || '—')}</span>`;
-    }
+<div class="panel">
 
-    function escapeHtml(value) {
-      return String(value ?? '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-    }
+<div id="summary"></div>
 
-    function renderRows(rows) {
-      if (!rows || !rows.length) {
-        tbody.innerHTML = '<tr><td colspan="10">Brak danych do wyświetlenia.</td></tr>';
-        return;
-      }
-      tbody.innerHTML = rows.map(row => `
-        <tr>
-          <td>${escapeHtml(row.station || '—')}</td>
-          <td>${escapeHtml(row.scheduled || '—')}</td>
-          <td>${escapeHtml(row.actual || '—')}</td>
-          <td class="green">${escapeHtml(String(row.delayMinutes ?? 0))} min</td>
-          <td>${statusChip(row.status || '—')}</td>
-          <td>${escapeHtml(row.trainNumber || '—')}</td>
-          <td>${escapeHtml(row.destination || '—')}</td>
-          <td>${escapeHtml(row.carrier || '—')}</td>
-          <td>${escapeHtml(row.platform || '—')}</td>
-          <td>${escapeHtml(row.via || '—')}</td>
-        </tr>
-      `).join('');
-    }
+</div>
 
-    async function loadData() {
-      const payload = {
-        query: stationEl.value.trim(),
-        trainDate: dateEl.value.trim(),
-        trainTime: timeEl.value.trim()
-      };
+<table>
 
-      statQuery.textContent = payload.query || '—';
-      hintEl.textContent = 'Pobieranie danych...';
-      meta.textContent = '';
-      debugEl.textContent = '{}';
+<thead>
+<tr>
+<th>STACJA</th>
+<th>PLAN</th>
+<th>RZECZ.</th>
+<th>OPÓŹ.</th>
+<th>STATUS</th>
+<th>POCIĄG</th>
+<th>KIERUNEK</th>
+<th>PRZEWOŹNIK</th>
+<th>PERON</th>
+<th>PRZEZ</th>
+</tr>
+</thead>
 
-      try {
-        const response = await fetch(API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        const data = await response.json();
+<tbody id="tbody"></tbody>
 
-        if (!response.ok) {
-          throw new Error(data.error || `HTTP ${response.status}`);
-        }
+</table>
 
-        statQuery.textContent = data.matchedStation || payload.query || '—';
-        statDelay.textContent = `${data.delayMinutes ?? 0} min`;
-        statLast.textContent = data.lastStation || '—';
-        meta.innerHTML = `Pokazuje ${data.route?.length || 0} z ${data.totalDepartures || 0} rekordów.${data.matchedStationId ? ' ID stacji: ' + escapeHtml(data.matchedStationId) + '.' : ''}`;
-        renderRows(data.route || []);
-        debugEl.textContent = JSON.stringify(data.debug || {}, null, 2);
-        hintEl.innerHTML = data.status === 'NO_DATA' ? 'Brak danych.' : 'Dane pobrane.';
-      } catch (error) {
-        statDelay.textContent = '0 min';
-        statLast.textContent = '—';
-        renderRows([]);
-        debugEl.textContent = '{}';
-        hintEl.textContent = error.message || 'Błąd pobierania danych.';
-        meta.textContent = 'Brak danych.';
-      }
-    }
+<h2>Debug</h2>
 
-    form.addEventListener('submit', (event) => {
-      event.preventDefault();
-      loadData();
-    });
+<pre id="debug"></pre>
 
-    clearBtn.addEventListener('click', () => {
-      stationEl.value = '';
-      setNow();
-      statQuery.textContent = '—';
-      statDelay.textContent = '0 min';
-      statLast.textContent = '—';
-      hintEl.textContent = 'Wyczyszczono.';
-      meta.textContent = '';
-      renderRows([]);
-      debugEl.textContent = '{}';
-    });
+<script>
 
-    setNow();
-  </script>
+async function loadData() {
+
+  const station =
+    document.getElementById("station").value;
+
+  const response = await fetch("/train", {
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json"
+    },
+    body:JSON.stringify({
+      station
+    })
+  });
+
+  const data = await response.json();
+
+  console.log(data);
+
+  document.getElementById("debug")
+    .textContent =
+      JSON.stringify(
+        data.debug,
+        null,
+        2
+      );
+
+  if (!data.route) {
+    alert("Błąd API");
+    return;
+  }
+
+  document.getElementById("summary")
+    .innerHTML = `
+      <b>Stacja:</b> ${data.matchedStation}
+      <br>
+      <b>ID:</b> ${data.matchedStationId}
+      <br>
+      <b>Odjazdy:</b> ${data.totalDepartures}
+    `;
+
+  const tbody =
+    document.getElementById("tbody");
+
+  tbody.innerHTML = "";
+
+  for (const row of data.route) {
+
+    const tr =
+      document.createElement("tr");
+
+    tr.innerHTML = `
+      <td>${row.station}</td>
+      <td>${row.scheduled}</td>
+      <td>${row.actual}</td>
+      <td class="${
+        row.delayMinutes > 0
+        ? 'delay'
+        : 'ok'
+      }">
+        ${row.delayMinutes} min
+      </td>
+      <td>${row.status}</td>
+      <td>${row.trainNumber}</td>
+      <td>${row.destination}</td>
+      <td>${row.carrier}</td>
+      <td>${row.platform}</td>
+      <td>${row.via}</td>
+    `;
+
+    tbody.appendChild(tr);
+  }
+}
+
+loadData();
+
+</script>
+
 </body>
 </html>
