@@ -1,334 +1,323 @@
-const STATIONS_URL = 'https://pdp-api.plk-sa.pl/api/v1/dictionaries/stations';
-const OPERATIONS_URL = 'https://pdp-api.plk-sa.pl/api/v1/operations';
-const SCHEDULES_URL = 'https://pdp-api.plk-sa.pl/api/v1/schedules';
+/**
+ * Cloudflare Worker — Tablica odjazdów PLK
+ *
+ * Strategia:
+ *  1. /dictionaries/stations?search=  → ID stacji
+ *  2. /schedules?stations=ID          → planowe odjazdy (główne źródło)
+ *  3. /operations?stations=ID         → real-time opóźnienia (nakładka)
+ *
+ * Zmienna środowiskowa: PLK_API_KEY (secret)
+ */
 
+const BASE = 'https://pdp-api.plk-sa.pl/api/v1';
+
+// ─── CORS preflight ───────────────────────────────────────────────────────────
 export async function onRequestOptions() {
-  return new Response(null, { headers: corsHeaders() });
+  return new Response(null, { headers: cors() });
 }
 
-// GET /api/stations?search=Katowice
+// ─── GET /api/stations?search=  (podpowiedzi) ────────────────────────────────
 export async function onRequestGet(context) {
   try {
-    const url = new URL(context.request.url);
-    const search = clean(url.searchParams.get('search') || '');
-    if (!search || search.length < 2) return json({ stations: [] });
-
-    const stations = await fetchStations(search, context.env);
+    const url  = new URL(context.request.url);
+    const q    = clean(url.searchParams.get('search') || '');
+    if (q.length < 2) return json({ stations: [] });
+    const stations = await getStations(q, context.env);
     return json({ stations });
-  } catch (error) {
-    return json({ error: error.message || 'Worker error' }, 500);
+  } catch (e) {
+    return json({ error: e.message }, 500);
   }
 }
 
-// POST /api/train
+// ─── POST /api/train ─────────────────────────────────────────────────────────
 export async function onRequestPost(context) {
   try {
-    const body = await context.request.json();
-    const stationQuery = clean(body.query || body.stationName || body.station || '');
-    const trainTime = clean(body.trainTime || body.time || '');
-    const trainDate = clean(body.trainDate || body.date || '');
+    const body        = await context.request.json();
+    const query       = clean(body.query || body.stationName || '');
+    const trainTime   = clean(body.trainTime || body.time || '');
+    const trainDate   = clean(body.trainDate || body.date || '') || today();
 
-    if (!stationQuery) return json({ error: 'Brak nazwy stacji.' }, 400);
+    if (!query) return json({ error: 'Brak nazwy stacji.' }, 400);
 
-    // 1. Resolve station ID
-    const stations = await fetchStations(stationQuery, context.env);
-    if (!stations.length) return json({ error: `Nie znaleziono stacji: "${stationQuery}"` }, 404);
+    // 1. Rozwiąż stację → ID
+    const stations = await getStations(query, context.env);
+    if (!stations.length)
+      return json({ error: `Nie znaleziono stacji: "${query}"` }, 404);
 
-    const station = stations[0];
-    const stationId = station.id;
-    const stationName = station.name;
+    const { id: stationId, name: stationName } = stations[0];
 
-    // 2. Fetch real-time operations for the station
-    const params = new URLSearchParams({
-      stations: String(stationId),
-      withPlanned: 'true',
-      fullRoutes: 'false',
-      pageSize: '100',
-    });
+    // 2. Pobierz rozkład planowy (główne dane)
+    const schedRes  = await plkGet(
+      `${BASE}/schedules?stations=${stationId}&dateFrom=${trainDate}&dateTo=${trainDate}&pageSize=200`,
+      context.env
+    );
+    const schedJson = await schedRes.json();
 
-    const opsRes = await plkFetch(`${OPERATIONS_URL}?${params}`, context.env);
-    const opsData = await opsRes.json();
+    // 3. Pobierz dane real-time (opóźnienia)
+    const opsRes  = await plkGet(
+      `${BASE}/operations?stations=${stationId}&withPlanned=true&fullRoutes=false&pageSize=500`,
+      context.env
+    );
+    const opsJson = await opsRes.json();
 
-    // 3. Also fetch scheduled departures for today to fill gaps
-    const dateParam = trainDate || new Date().toISOString().slice(0, 10);
-    const schedParams = new URLSearchParams({
-      stations: String(stationId),
-      dateFrom: dateParam,
-      dateTo: dateParam,
-      pageSize: '100',
-    });
-    let schedData = null;
-    try {
-      const schedRes = await plkFetch(`${SCHEDULES_URL}?${schedParams}`, context.env);
-      if (schedRes.ok) schedData = await schedRes.json();
-    } catch { /* optional, don't fail */ }
+    // 4. Zbuduj indeks opóźnień: trainNumber → delayMinutes
+    const delayIndex = buildDelayIndex(opsJson);
 
-    // 4. Map operations to route rows
-    const rawOps = Array.isArray(opsData?.operations) ? opsData.operations
-      : Array.isArray(opsData?.data) ? opsData.data
-      : Array.isArray(opsData) ? opsData
-      : [];
+    // 5. Mapuj rozkład → wiersze tablicy
+    const rawSchedules = extractArray(schedJson, ['schedules', 'data', 'items']);
+    let route = rawSchedules
+      .map(s => mapScheduleRow(s, stationId, delayIndex))
+      .filter(Boolean);
 
-    let route = rawOps.map(op => mapOperationRow(op, stationId)).filter(Boolean);
+    // 6. Filtruj po godzinie + deduplikuj + sortuj
+    route = sortByTime(dedup(filterByTime(route, trainTime)));
 
-    // 5. Merge scheduled data for trains not yet in operations
-    if (schedData) {
-      const rawSched = Array.isArray(schedData?.schedules) ? schedData.schedules
-        : Array.isArray(schedData?.data) ? schedData.data
-        : Array.isArray(schedData) ? schedData
-        : [];
-
-      const existingKeys = new Set(route.map(r => r._key));
-      const schedRows = rawSched.map(s => mapScheduleRow(s, stationId)).filter(Boolean);
-      for (const row of schedRows) {
-        if (!existingKeys.has(row._key)) route.push(row);
-      }
-    }
-
-    // 6. Filter by time and dedupe
-    route = dedupeRows(filterRouteByTime(route, trainTime));
-    route.sort((a, b) => (parseClock(a.scheduled) ?? 9999) - (parseClock(b.scheduled) ?? 9999));
-
-    const delayMinutes = Math.max(0, ...route.map(r => Number(r.delayMinutes) || 0));
-    const limited = route.slice(0, 30);
+    const maxDelay = Math.max(0, ...route.map(r => r.delayMinutes));
 
     return json({
-      matchedStation: stationName,
+      matchedStation:   stationName,
       stationId,
       fullTimetableUrl: `https://portalpasazera.pl/Wyswietlacz?sid=${stationId}`,
-      delayMinutes,
-      status: route.length ? (delayMinutes > 0 ? 'DELAYED' : 'ON_TIME') : 'NO_DATA',
-      lastStation: limited.length ? (limited[limited.length - 1].destination || stationName) : stationName,
-      route: limited,
-      totalDepartures: route.length,
+      delayMinutes:     maxDelay,
+      status:           route.length ? (maxDelay > 0 ? 'DELAYED' : 'ON_TIME') : 'NO_DATA',
+      lastStation:      route.length ? (route[route.length - 1].destination || stationName) : stationName,
+      route:            route.slice(0, 30),
+      totalDepartures:  route.length,
       debug: {
-        stationId,
-        stationName,
-        operationsCount: rawOps.length,
-        date: dateParam,
-        apiUrl: OPERATIONS_URL,
-        rawSample: rawOps[0] || null,
+        stationId, stationName, date: trainDate,
+        schedulesRaw:   rawSchedules.length,
+        operationsRaw:  countOps(opsJson),
+        delayIndexSize: Object.keys(delayIndex).length,
+        schedSample:    rawSchedules[0] || null,
+        opsSample:      firstOp(opsJson) || null,
       }
     });
-  } catch (error) {
-    return json({ error: error.message || 'Worker error' }, 500);
+
+  } catch (e) {
+    return json({ error: e.message || 'Worker error' }, 500);
   }
 }
 
-// ─── API helpers ─────────────────────────────────────────────────────────────
-
-async function fetchStations(search, env) {
-  const url = `${STATIONS_URL}?search=${encodeURIComponent(search)}&pageSize=10`;
-  const res = await plkFetch(url, env);
-  if (!res.ok) throw new Error(`Stations API HTTP ${res.status}`);
+// ─── Pobieranie stacji ────────────────────────────────────────────────────────
+async function getStations(search, env) {
+  const res  = await plkGet(`${BASE}/dictionaries/stations?search=${enc(search)}&pageSize=10`, env);
+  if (!res.ok) throw new Error(`Stations HTTP ${res.status}`);
   const data = await res.json();
-
-  const list = Array.isArray(data?.stations) ? data.stations
-    : Array.isArray(data?.data) ? data.data
-    : Array.isArray(data) ? data
-    : [];
-
-  return list.map(s => ({
-    id: s.id ?? s.stationId ?? s.sid,
-    name: clean(s.name ?? s.stationName ?? s.label ?? ''),
-    shortName: clean(s.shortName ?? ''),
-  })).filter(s => s.id && s.name);
+  return extractArray(data, ['stations', 'data', 'items'])
+    .map(s => ({
+      id:   s.id   ?? s.stationId ?? s.sid,
+      name: clean(s.name ?? s.stationName ?? s.label ?? ''),
+    }))
+    .filter(s => s.id && s.name);
 }
 
-async function plkFetch(url, env) {
-  const apiKey = env.PLK_API_KEY;
-  const authType = env.PLK_AUTH_TYPE || 'x-api-key';
+// ─── Indeks opóźnień z /operations ───────────────────────────────────────────
+function buildDelayIndex(opsJson) {
+  const index = {};
+  const ops   = extractArray(opsJson, ['operations', 'data', 'items']);
 
-  const headers = { 'Accept': 'application/json' };
-  if (authType === 'x-api-key') {
-    headers['x-api-key'] = apiKey;
-  } else {
-    headers['Authorization'] = `Bearer ${apiKey}`;
+  for (const op of ops) {
+    const keys = [
+      clean(op.trainNumber ?? op.trainNo ?? op.number ?? ''),
+      clean(op.commercialTrainNumber ?? ''),
+    ].filter(Boolean);
+
+    const delay = Number(op.delayMinutes ?? op.delay ?? op.delayInMinutes ?? 0) || 0;
+    if (delay === 0) continue;
+
+    for (const k of keys) {
+      if (k) index[k] = Math.max(index[k] || 0, delay);
+    }
   }
-
-  return fetch(url, { headers });
+  return index;
 }
 
-// ─── Row mappers ─────────────────────────────────────────────────────────────
+// ─── Mapowanie wiersza rozkładu ───────────────────────────────────────────────
+function mapScheduleRow(s, stationId, delayIndex) {
+  if (!s || typeof s !== 'object') return null;
 
-function mapOperationRow(op, stationId) {
-  if (!op || typeof op !== 'object') return null;
+  // Znajdź przystanek dla naszej stacji w trasie pociągu
+  const stops  = extractArray(s, ['stops', 'route', 'stations']);
+  const myStop = stops.find(st =>
+    String(st.stationId ?? st.id ?? '') === String(stationId)
+  ) || {};
 
-  // Find the stop matching our station
-  const stops = Array.isArray(op.stops) ? op.stops
-    : Array.isArray(op.route) ? op.route
-    : [];
-
-  const stop = stops.find(s =>
-    String(s.stationId ?? s.id ?? '') === String(stationId)
-  ) || stops[0] || op;
-
-  const scheduled = formatTime(
-    stop.plannedDeparture ?? stop.plannedArrival ??
-    stop.scheduledDeparture ?? stop.scheduledArrival ??
-    op.plannedDeparture ?? op.plannedArrival ?? ''
+  // Godzina planowana
+  const scheduled = fmtTime(
+    myStop.plannedDeparture ?? myStop.departure ??
+    myStop.plannedArrival   ?? myStop.arrival   ??
+    s.plannedDeparture      ?? s.departure      ??
+    s.plannedArrival        ?? s.arrival        ?? ''
   );
+  if (!scheduled) return null;
 
-  const actual = formatTime(
-    stop.actualDeparture ?? stop.actualArrival ??
-    stop.realDeparture ?? stop.realArrival ??
-    op.actualDeparture ?? op.actualArrival ??
-    scheduled
-  );
+  // Identyfikatory pociągu
+  const carrierCode = clean(s.carrierCode ?? s.carrier ?? s.operatorCode ?? '');
+  const trainNo     = clean(s.trainNumber ?? s.trainNo ?? s.number ?? '');
+  const trainName   = clean(s.commercialName ?? s.trainName ?? s.name ?? '');
 
-  const delayMinutes = Math.max(0,
-    Number(stop.delayMinutes ?? stop.delay ?? op.delayMinutes ?? op.delay ?? 0) || calcDelay(scheduled, actual)
-  );
+  // Opóźnienie z indeksu real-time
+  const delayMinutes = delayIndex[trainNo]
+    ?? delayIndex[`${carrierCode} ${trainNo}`]
+    ?? 0;
 
-  const carrierCode = clean(op.carrierCode ?? op.carrier ?? op.operatorCode ?? '');
-  const trainNo = clean(op.trainNumber ?? op.trainNo ?? op.number ?? '');
-  const trainName = clean(op.commercialName ?? op.trainName ?? op.name ?? '');
+  // Rzeczywista godzina = planowa + opóźnienie
+  const actualMins = (parseClock(scheduled) ?? 0) + delayMinutes;
+  const actual     = delayMinutes > 0 ? minsToTime(actualMins) : scheduled;
+
+  // Stacja docelowa
+  const lastStop    = stops.length ? stops[stops.length - 1] : {};
   const destination = clean(
-    op.destinationStationName ?? op.destination ?? op.finalStation ??
-    (stops.length ? (stops[stops.length - 1].stationName ?? '') : '') ?? ''
+    s.destinationStationName ?? s.destination ?? s.finalStation ??
+    lastStop.stationName     ?? lastStop.name ?? ''
   );
-  const platform = clean(stop.platform ?? stop.track ?? stop.platformNumber ?? op.platform ?? '');
-  const via = buildVia(stops, stationId);
-  const cancelled = op.cancelled === true || op.isCancelled === true || String(op.status ?? '').toLowerCase() === 'cancelled';
 
-  const trainParts = [carrierCode, trainNo, trainName].filter(Boolean);
-  const key = [scheduled, trainNo, destination].join('|');
+  // Stacje pośrednie po naszej stacji (bez docelowej)
+  const myIdx  = stops.findIndex(st =>
+    String(st.stationId ?? st.id ?? '') === String(stationId)
+  );
+  const viaStops = myIdx >= 0
+    ? stops.slice(myIdx + 1, -1)
+    : stops.slice(0, -1);
+  const via = viaStops.slice(0, 4)
+    .map(st => clean(st.stationName ?? st.name ?? ''))
+    .filter(Boolean).join(', ');
+
+  const platform = clean(
+    myStop.platform ?? myStop.track ?? myStop.platformNumber ??
+    s.platform      ?? s.track     ?? ''
+  );
+
+  const cancelled = s.cancelled === true || s.isCancelled === true
+    || String(s.status ?? '').toLowerCase().includes('cancel')
+    || String(s.status ?? '').toLowerCase().includes('odwoł');
+
+  const parts = [carrierCode, trainNo, trainName].filter(Boolean);
+  const key   = `${scheduled}|${trainNo}|${destination}`;
 
   return {
-    _key: key,
-    station: clean(stop.stationName ?? op.stationName ?? ''),
-    scheduled: scheduled || '—',
-    actual: actual || scheduled || '—',
+    _key:        key,
+    station:     clean(myStop.stationName ?? myStop.name ?? s.stationName ?? ''),
+    scheduled,
+    actual,
     delayMinutes,
-    status: cancelled ? 'Odwołany' : (delayMinutes > 0 ? 'Opóźniony' : 'Punktualnie'),
-    trainNumber: trainParts.join(' ') || '—',
+    status:      cancelled ? 'Odwołany' : (delayMinutes > 0 ? 'Opóźniony' : 'Punktualnie'),
+    trainNumber: parts.join(' ') || '—',
     destination: destination || '—',
-    carrier: expandCarrier(carrierCode),
-    platform: platform || '—',
-    via: via || '—',
+    carrier:     expandCarrier(carrierCode),
+    platform:    platform || '—',
+    via:         via || '—',
   };
 }
 
-function mapScheduleRow(sched, stationId) {
-  if (!sched || typeof sched !== 'object') return null;
-
-  const stops = Array.isArray(sched.stops) ? sched.stops
-    : Array.isArray(sched.route) ? sched.route
-    : [];
-
-  const stop = stops.find(s =>
-    String(s.stationId ?? s.id ?? '') === String(stationId)
-  ) || stops[0] || sched;
-
-  const scheduled = formatTime(
-    stop.plannedDeparture ?? stop.plannedArrival ??
-    stop.departure ?? stop.arrival ??
-    sched.plannedDeparture ?? ''
-  );
-
-  const carrierCode = clean(sched.carrierCode ?? sched.carrier ?? sched.operatorCode ?? '');
-  const trainNo = clean(sched.trainNumber ?? sched.trainNo ?? sched.number ?? '');
-  const trainName = clean(sched.commercialName ?? sched.trainName ?? sched.name ?? '');
-  const destination = clean(
-    sched.destinationStationName ?? sched.destination ?? sched.finalStation ??
-    (stops.length ? (stops[stops.length - 1].stationName ?? '') : '') ?? ''
-  );
-  const platform = clean(stop.platform ?? stop.track ?? '');
-  const via = buildVia(stops, stationId);
-
-  const trainParts = [carrierCode, trainNo, trainName].filter(Boolean);
-  const key = [scheduled, trainNo, destination].join('|');
-
-  return {
-    _key: key,
-    station: clean(stop.stationName ?? sched.stationName ?? ''),
-    scheduled: scheduled || '—',
-    actual: scheduled || '—',
-    delayMinutes: 0,
-    status: 'Planowy',
-    trainNumber: trainParts.join(' ') || '—',
-    destination: destination || '—',
-    carrier: expandCarrier(carrierCode),
-    platform: platform || '—',
-    via: via || '—',
-  };
-}
-
-function buildVia(stops, stationId) {
-  if (!stops.length) return '';
-  const idx = stops.findIndex(s => String(s.stationId ?? s.id ?? '') === String(stationId));
-  const after = idx >= 0 ? stops.slice(idx + 1, -1) : stops.slice(0, -1);
-  return after.slice(0, 4).map(s => clean(s.stationName ?? '')).filter(Boolean).join(', ');
-}
-
-// ─── Utilities ────────────────────────────────────────────────────────────────
-
-function filterRouteByTime(route, trainTime) {
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function filterByTime(route, trainTime) {
   const pivot = parseClock(trainTime);
   if (pivot === null) return route;
-  return route.filter(row => {
-    const t = parseClock(row.actual !== '—' ? row.actual : row.scheduled);
+  return route.filter(r => {
+    const t = parseClock(r.scheduled);
     return t === null || t >= pivot;
   });
 }
 
-function dedupeRows(rows) {
+function dedup(rows) {
   const seen = new Set();
-  return rows.filter(row => {
-    const key = row._key || [row.scheduled, row.trainNumber, row.destination].join('|');
-    if (seen.has(key)) return false;
-    seen.add(key);
+  return rows.filter(r => {
+    if (seen.has(r._key)) return false;
+    seen.add(r._key);
     return true;
   });
 }
 
+function sortByTime(rows) {
+  return rows.sort((a, b) =>
+    (parseClock(a.scheduled) ?? 9999) - (parseClock(b.scheduled) ?? 9999)
+  );
+}
+
 function expandCarrier(code) {
-  if (!code) return '—';
   const map = {
-    IC: 'PKP Intercity', PR: 'Polregio', KM: 'Koleje Mazowieckie',
-    KS: 'Koleje Śląskie', KD: 'Koleje Dolnośląskie', SKM: 'SKM Trójmiasto',
-    ŁKA: 'Łódź Aglo.', WKD: 'WKD', MK: 'Małopolska', AR: 'Arriva',
+    IC:  'PKP Intercity',   PR:  'Polregio',
+    KM:  'Koleje Mazowieckie', KS: 'Koleje Śląskie',
+    KD:  'Koleje Dolnośląskie', SKM: 'SKM Trójmiasto',
+    WKD: 'WKD',             MK:  'Małopolska',
+    AR:  'Arriva',
   };
-  return map[code.toUpperCase()] ?? code;
+  return map[(code || '').toUpperCase()] ?? code ?? '—';
 }
 
-function calcDelay(scheduled, actual) {
-  const s = parseClock(scheduled);
-  const a = parseClock(actual);
-  if (s === null || a === null) return 0;
-  return Math.max(0, a - s);
+function extractArray(obj, keys) {
+  if (Array.isArray(obj)) return obj;
+  for (const k of keys) {
+    if (k && Array.isArray(obj?.[k])) return obj[k];
+  }
+  // ostatnia szansa: pierwsza tablica w obiekcie
+  if (obj && typeof obj === 'object') {
+    for (const v of Object.values(obj)) {
+      if (Array.isArray(v) && v.length > 0) return v;
+    }
+  }
+  return [];
 }
 
-function formatTime(value) {
-  const str = String(value || '').trim();
-  // ISO datetime: 2026-05-11T14:23:00
-  const iso = str.match(/T(\d{2}):(\d{2})/);
+function countOps(opsJson) {
+  return extractArray(opsJson, ['operations', 'data', 'items']).length;
+}
+
+function firstOp(opsJson) {
+  return extractArray(opsJson, ['operations', 'data', 'items'])[0] || null;
+}
+
+async function plkGet(url, env) {
+  return fetch(url, {
+    headers: {
+      'Accept':    'application/json',
+      'x-api-key': env.PLK_API_KEY,
+    },
+  });
+}
+
+function today() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function fmtTime(v) {
+  const s = String(v || '').trim();
+  const iso = s.match(/T(\d{2}):(\d{2})/);
   if (iso) return `${iso[1]}:${iso[2]}`;
-  const hhmm = str.match(/(\d{1,2}):(\d{2})/);
-  if (hhmm) return `${hhmm[1].padStart(2, '0')}:${hhmm[2]}`;
+  const hm = s.match(/(\d{1,2}):(\d{2})/);
+  if (hm) return hm[1].padStart(2, '0') + ':' + hm[2];
   return '';
 }
 
-function parseClock(value) {
-  const m = String(value || '').match(/(\d{1,2}):(\d{2})/);
+function parseClock(v) {
+  const m = String(v || '').match(/(\d{1,2}):(\d{2})/);
   return m ? Number(m[1]) * 60 + Number(m[2]) : null;
 }
 
-function clean(value) {
-  return String(value ?? '').replace(/[\u0000-\u001F]/g, ' ').replace(/\s+/g, ' ').trim();
+function minsToTime(mins) {
+  const h = Math.floor(mins / 60) % 24;
+  const m = mins % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
-function corsHeaders() {
+function clean(v) {
+  return String(v ?? '').replace(/[\u0000-\u001F]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function enc(v) { return encodeURIComponent(v); }
+
+function cors() {
   return {
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin':  '*',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-API-Key',
+    'Access-Control-Allow-Headers': 'Content-Type, x-api-key',
   };
 }
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data, null, 2), {
     status,
-    headers: { 'Content-Type': 'application/json; charset=utf-8', ...corsHeaders() },
+    headers: { 'Content-Type': 'application/json; charset=utf-8', ...cors() },
   });
 }
