@@ -36,7 +36,6 @@ export async function onRequestPost(context) {
 
     const delayMinutes = Math.max(0, ...route.map((row) => Number(row.delayMinutes) || 0), 0);
     const matchedStationName = resolveStationName(stationId, stationMap, matchedStation.name || matchedStation.stationName || query);
-    const debug = buildDebug(payload, route);
 
     return json({
       matchedStation: matchedStationName,
@@ -44,10 +43,10 @@ export async function onRequestPost(context) {
       fullTimetableUrl: `https://portalpasazera.pl/Wyswietlacz?sid=${encodeURIComponent(stationId)}`,
       delayMinutes,
       status: route.length ? (delayMinutes > 0 ? 'DELAYED' : 'ON_TIME') : 'NO_DATA',
-      lastStation: route.length ? route[route.length - 1].station : matchedStationName,
+      lastStation: route.length ? route[route.length - 1].destination || matchedStationName : matchedStationName,
       route: route.slice(0, 20),
       totalDepartures: route.length,
-      debug
+      debug: buildDebug(payload, route)
     });
   } catch (error) {
     return json({ error: error.message || 'Worker error' }, 500);
@@ -80,18 +79,17 @@ function parseOperationsForStation(payload, targetStationId, targetStationName, 
     if (currentIndex === -1) continue;
     const stop = stops[currentIndex];
     const anchorName = resolveStationName(targetStationId, stationMap, targetStationName);
-    const destination = findDestinationName(stops, currentIndex, stationMap, anchorName);
+    const destination = findDestinationName(train, stops, currentIndex, stationMap, anchorName);
     const via = findViaNames(stops, currentIndex, stationMap, anchorName, destination);
     const scheduled = extractScheduled(stop);
     const actual = extractActual(stop, scheduled);
     const delayMinutes = extractDelay(stop, train, scheduled, actual);
-    const station = resolveStationName(firstDefined(stop.stationId, stop.station, stop.id, stop.stationCode), stationMap, anchorName);
     rows.push({
-      station,
+      station: anchorName,
       scheduled,
       actual,
       delayMinutes,
-      status: normalizeStatus(firstDefined(stop.trainStatus, stop.status, train.trainStatus, train.status), delayMinutes),
+      status: normalizeStatus(firstDefined(stop.trainStatus, stop.status, train.trainStatus, train.status, train.operatingStatus), delayMinutes),
       trainNumber: extractDisplayTrain(train, stop),
       destination,
       carrier: extractCarrier(train, stop),
@@ -111,18 +109,11 @@ function extractTrains(payload) {
 }
 
 function extractStops(train, payload) {
-  const candidates = [
-    train?.stations,
-    train?.timetable,
-    train?.stops,
-    train?.route,
-    train?.locations,
-    train?.events,
-    train?.stationTimes,
-    train?.stationStops,
-    train?.path
-  ];
-  for (const candidate of candidates) if (Array.isArray(candidate) && candidate.length) return candidate;
+  const candidates = [train?.stations, train?.timetable?.stations, train?.timetable, train?.stops, train?.route, train?.locations, train?.events, train?.stationTimes, train?.stationStops, train?.path];
+  for (const candidate of candidates) {
+    if (Array.isArray(candidate) && candidate.length) return candidate;
+    if (candidate && Array.isArray(candidate?.stations) && candidate.stations.length) return candidate.stations;
+  }
   if (Array.isArray(payload?.stationsTimeline)) return payload.stationsTimeline;
   return [];
 }
@@ -132,28 +123,22 @@ function buildStationMap(payload, dictionaryStations) {
   const candidates = [payload?.stations, payload?.data?.stations, payload?.dictionary?.stations, payload?.stationDictionary];
   for (const candidate of candidates) {
     if (Array.isArray(candidate)) {
-      for (const item of candidate) {
-        const id = clean(firstDefined(item?.id, item?.stationId, item?.value, item?.code, item?.uic));
-        const name = clean(firstDefined(item?.name, item?.stationName, item?.label, item?.description));
-        if (id && name) map.set(id, name);
-      }
+      for (const item of candidate) addStationMapItem(map, item);
     } else if (candidate && typeof candidate === 'object') {
       for (const [key, value] of Object.entries(candidate)) {
         if (typeof value === 'string') map.set(clean(key), clean(value));
-        else {
-          const id = clean(firstDefined(value?.id, value?.stationId, key));
-          const name = clean(firstDefined(value?.name, value?.stationName, value?.label, value?.description));
-          if (id && name) map.set(id, name);
-        }
+        else addStationMapItem(map, { ...(value || {}), id: firstDefined(value?.id, value?.stationId, key) });
       }
     }
   }
-  for (const item of dictionaryStations || []) {
-    const id = clean(firstDefined(item?.id, item?.stationId, item?.value, item?.code, item?.uic));
-    const name = clean(firstDefined(item?.name, item?.stationName, item?.label, item?.description));
-    if (id && name && !map.has(id)) map.set(id, name);
-  }
+  for (const item of dictionaryStations || []) addStationMapItem(map, item, False);
   return map;
+}
+
+function addStationMapItem(map, item) {
+  const id = clean(firstDefined(item?.id, item?.stationId, item?.value, item?.code, item?.uic));
+  const name = clean(firstDefined(item?.name, item?.stationName, item?.label, item?.description));
+  if (id && name && !map.has(id)) map.set(id, name);
 }
 
 function stationMatch(entry, targetStationId, targetStationName, stationMap) {
@@ -174,9 +159,9 @@ function resolveStationName(stationId, stationMap, fallback = '') {
   return clean(fallback);
 }
 
-function findDestinationName(stops, currentIndex, stationMap, anchorName) {
-  const explicit = stops[currentIndex]?.destinationName || stops[currentIndex]?.destination || stops[currentIndex]?.finalStationName || '';
-  if (clean(explicit) && normalize(explicit) !== normalize(anchorName)) return clean(explicit);
+function findDestinationName(train, stops, currentIndex, stationMap, anchorName) {
+  const explicit = clean(firstDefined(train?.destinationName, train?.destinationStationName, train?.lastStationName, stops[currentIndex]?.destinationName, stops[currentIndex]?.destination, stops[currentIndex]?.finalStationName));
+  if (explicit && normalize(explicit) !== normalize(anchorName)) return explicit;
   for (let i = stops.length - 1; i > currentIndex; i--) {
     const stop = stops[i];
     const name = resolveStationName(firstDefined(stop?.stationId, stop?.station, stop?.id, stop?.stationCode), stationMap, firstDefined(stop?.stationName, stop?.name, stop?.stationLabel));
@@ -196,41 +181,13 @@ function findViaNames(stops, currentIndex, stationMap, anchorName, destination) 
     if (!names.some((item) => normalize(item) === normalize(name))) names.push(name);
     if (names.length >= 4) break;
   }
-  return names.join(' • ');
+  return names.join(' • ') || '—';
 }
 
 function extractDisplayTrain(train, stop) {
-  const category = clean(firstDefined(
-    train?.commercialOperator,
-    train?.categoryCommercialName,
-    train?.categoryName,
-    train?.category,
-    stop?.commercialOperator,
-    stop?.trainCategory,
-    stop?.category,
-    train?.brand,
-    train?.carrierCode
-  ));
-  const number = clean(firstDefined(
-    train?.commercialNumber,
-    train?.publicTrainNumber,
-    train?.marketingNumber,
-    train?.displayNumber,
-    stop?.commercialNumber,
-    stop?.publicTrainNumber,
-    stop?.marketingNumber,
-    train?.trainNumber,
-    stop?.trainNumber
-  ));
-  const name = clean(firstDefined(
-    train?.commercialName,
-    train?.marketingName,
-    train?.trainName,
-    train?.nameCommercial,
-    stop?.commercialName,
-    stop?.trainName,
-    train?.name
-  ));
+  const category = clean(firstDefined(train?.commercialOperator, train?.categoryCommercialName, train?.categoryName, train?.category, stop?.commercialOperator, stop?.trainCategory, stop?.category, train?.brand, train?.carrierCode));
+  const number = clean(firstDefined(train?.commercialNumber, train?.publicTrainNumber, train?.marketingNumber, train?.displayNumber, stop?.commercialNumber, stop?.publicTrainNumber, stop?.marketingNumber, train?.trainNumber, stop?.trainNumber, train?.trainId));
+  const name = clean(firstDefined(train?.commercialName, train?.marketingName, train?.trainName, train?.nameCommercial, stop?.commercialName, stop?.trainName, train?.name));
   const shortNumber = normalizeTrainNumber(number);
   const parts = [category, shortNumber, name].filter(Boolean);
   if (parts.length) return parts.join(' ');
@@ -252,21 +209,18 @@ function extractPlatform(stop) {
 }
 
 function extractScheduled(stop) {
-  return formatTime(firstDefined(stop?.plannedDeparture, stop?.plannedArrival, stop?.departureTime, stop?.arrivalTime, stop?.planDeparture, stop?.planArrival, stop?.scheduledDeparture, stop?.scheduledArrival, stop?.advertisedDeparture, stop?.advertisedArrival));
+  return formatTime(firstDefined(stop?.scheduledDeparture, stop?.plannedDeparture, stop?.advertisedDeparture, stop?.departureTime, stop?.scheduledArrival, stop?.plannedArrival, stop?.advertisedArrival, stop?.arrivalTime));
 }
 
 function extractActual(stop, fallback) {
-  return formatTime(firstDefined(stop?.actualDeparture, stop?.actualArrival, stop?.estimatedDepartureTime, stop?.updatedDepartureTime, stop?.actualDepartureTime, stop?.estimatedArrivalTime, stop?.updatedArrivalTime, stop?.actualArrivalTime, stop?.realDeparture, stop?.realArrival, stop?.predictedDeparture, stop?.predictedArrival, fallback));
+  return formatTime(firstDefined(stop?.actualDeparture, stop?.actualArrival, stop?.updatedDepartureTime, stop?.estimatedDepartureTime, stop?.actualDepartureTime, stop?.updatedArrivalTime, stop?.estimatedArrivalTime, stop?.actualArrivalTime, fallback));
 }
 
 function extractDelay(stop, train, planned, actual) {
   const raw = firstDefined(stop?.delayMinutes, stop?.delay, stop?.departureDelay, stop?.arrivalDelay, stop?.delayTime, stop?.currentDelay, stop?.minutesDelay, stop?.delayInMinutes, stop?.predictedDelay, stop?.estimatedDelay, train?.delayMinutes, train?.delay, train?.minutesDelay, train?.delayInMinutes);
   const direct = parseDelayValue(raw);
   if (direct !== null) return direct;
-  const diffIso = diffMinutesFromIso(
-    firstDefined(stop?.plannedDeparture, stop?.plannedArrival, stop?.departureTime, stop?.arrivalTime, stop?.scheduledDeparture, stop?.scheduledArrival),
-    firstDefined(stop?.actualDeparture, stop?.actualArrival, stop?.estimatedDepartureTime, stop?.updatedDepartureTime, stop?.actualDepartureTime, stop?.estimatedArrivalTime, stop?.updatedArrivalTime, stop?.actualArrivalTime)
-  );
+  const diffIso = diffMinutesFromIso(firstDefined(stop?.scheduledDeparture, stop?.plannedDeparture, stop?.scheduledArrival, stop?.plannedArrival), firstDefined(stop?.actualDeparture, stop?.actualArrival, stop?.updatedDepartureTime, stop?.estimatedDepartureTime, stop?.updatedArrivalTime, stop?.estimatedArrivalTime));
   if (diffIso !== null) return Math.max(0, diffIso);
   const p = parseClock(planned), a = parseClock(actual);
   if (p === null || a === null) return 0;
@@ -301,7 +255,7 @@ function filterRouteByTime(route, trainTime) {
 function dedupeRows(rows) {
   const seen = new Set();
   return rows.filter((row) => {
-    const key = [row.scheduled, row.trainNumber, row.destination, row.platform].join('|');
+    const key = [row.scheduled, row.actual, row.trainNumber, row.destination, row.platform].join('|');
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
