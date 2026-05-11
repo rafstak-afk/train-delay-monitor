@@ -1,49 +1,45 @@
 /**
  * Cloudflare Worker — Tablica odjazdów PLK
- * ─────────────────────────────────────────
- * Architektura:
- *   /schedules  → pobierany co ~30 min (dane planowe, wolno się zmieniają)
- *   /operations → pobierany co ~30 s   (realtime, opóźnienia)
  *
- * Cache in-memory (globalThis) — żyje przez czas życia instancji workera.
- * Chroni limit API (Basic: 100 req/h).
+ * Potwierdzona struktura API (debug 2026-05-11):
  *
- * Łączenie danych: scheduleId + orderId (nie numer pociągu — może być nieunikalny).
+ * SCHEDULES item:
+ *   scheduleId, orderId, carrierCode, nationalNumber, commercialCategorySymbol
+ *   operatingDates: ["2026-05-11"]
+ *   stations: [{
+ *     stationId, orderNumber,
+ *     arrivalTime, departureTime,           ← HH:MM:SS
+ *     arrivalTrainNumber, departureTrainNumber,
+ *     arrivalCommercialCategory, departureCommercialCategory,
+ *     departurePlatform, departureTrack
+ *   }]
  *
- * Potwierdzona struktura API (z debug 2026-05-11):
- *   schedules[].stations[].departureTime          (HH:MM:SS)
- *   schedules[].stations[].departurePlatform
- *   schedules[].stations[].departureTrack
- *   schedules[].stations[].departureTrainNumber
- *   schedules[].stations[].departureCommercialCategory
- *   operations[].stations[].plannedDeparture       (ISO)
- *   operations[].stations[].plannedDepartureTime   (HH:MM:SS)
- *   operations[].stations[].actualDeparture        (ISO)
- *   operations[].stations[].actualDepartureTime    (HH:MM:SS)
+ * OPERATIONS item:
+ *   scheduleId, orderId (≠ schedules.orderId!), trainOrderId, trainStatus
+ *   stations: [{
+ *     stationId,
+ *     plannedArrival, plannedDeparture,     ← ISO datetime
+ *     plannedArrivalTime, plannedDepartureTime, ← HH:MM:SS
+ *     actualArrival, actualDeparture,       ← ISO datetime
+ *   }]
+ *
+ * WAŻNE: operations.orderId ≠ schedules.orderId
+ * Łączenie po: scheduleId + stacja (plannedDepartureTime ↔ departureTime)
  */
 
-const BASE            = 'https://pdp-api.plk-sa.pl/api/v1';
-const CACHE_SCHED_MS  = 30 * 60 * 1000;   // 30 min — plan
-const CACHE_OPS_MS    = 30 * 1000;        // 30 s  — realtime
-const CACHE_STAT_MS   = 60 * 60 * 1000;   // 1 h   — słownik stacji
+const BASE           = 'https://pdp-api.plk-sa.pl/api/v1';
+const CACHE_SCHED_MS = 30 * 60 * 1000;  // 30 min
+const CACHE_OPS_MS   = 30 * 1000;       // 30 s
+const CACHE_STAT_MS  = 60 * 60 * 1000;  // 1 h
 
-// ─── Cache in-memory ──────────────────────────────────────────────────────────
-// Struktura: { [cacheKey]: { ts: number, data: any } }
 if (!globalThis.__plkCache) globalThis.__plkCache = {};
+const C = globalThis.__plkCache;
 
-function cacheGet(key) {
-  const entry = globalThis.__plkCache[key];
-  return entry ? entry : null;
+function cacheGet(key, maxMs) {
+  const e = C[key];
+  return e && (Date.now() - e.ts) < maxMs ? e.data : null;
 }
-
-function cacheSet(key, data) {
-  globalThis.__plkCache[key] = { ts: Date.now(), data };
-}
-
-function cacheFresh(key, maxAgeMs) {
-  const entry = cacheGet(key);
-  return entry && (Date.now() - entry.ts) < maxAgeMs ? entry.data : null;
-}
+function cacheSet(key, data) { C[key] = { ts: Date.now(), data }; }
 
 // ─── CORS ─────────────────────────────────────────────────────────────────────
 export async function onRequestOptions() {
@@ -53,13 +49,10 @@ export async function onRequestOptions() {
 // ─── GET /api/stations?search= ───────────────────────────────────────────────
 export async function onRequestGet(context) {
   try {
-    const url = new URL(context.request.url);
-    const q   = clean(url.searchParams.get('search') || '');
+    const q = clean(new URL(context.request.url).searchParams.get('search') || '');
     if (q.length < 2) return json({ stations: [] });
     return json({ stations: await getStations(q, context.env) });
-  } catch (e) {
-    return json({ error: e.message }, 500);
-  }
+  } catch (e) { return json({ error: e.message }, 500); }
 }
 
 // ─── POST /api/train ─────────────────────────────────────────────────────────
@@ -72,16 +65,15 @@ export async function onRequestPost(context) {
 
     if (!query) return json({ error: 'Brak nazwy stacji.' }, 400);
 
-    // 1. Stacja → ID  (cache 1h)
     const stations = await getStations(query, context.env);
     if (!stations.length)
       return json({ error: `Nie znaleziono stacji: "${query}"` }, 404);
     const { id: stationId, name: stationName } = stations[0];
 
-    // 2. Plan  (cache 30 min per stacja+data)
-    const schedKey  = `sched:${stationId}:${trainDate}`;
-    let   schedJson = cacheFresh(schedKey, CACHE_SCHED_MS);
-    let   schedFromCache = true;
+    // Plan (cache 30 min)
+    const schedKey = `sched:${stationId}:${trainDate}`;
+    let schedFromCache = true;
+    let schedJson = cacheGet(schedKey, CACHE_SCHED_MS);
     if (!schedJson) {
       schedFromCache = false;
       const r = await plkGet(
@@ -92,10 +84,10 @@ export async function onRequestPost(context) {
       cacheSet(schedKey, schedJson);
     }
 
-    // 3. Realtime  (cache 30 s per stacja)
-    const opsKey  = `ops:${stationId}`;
-    let   opsJson = cacheFresh(opsKey, CACHE_OPS_MS);
-    let   opsFromCache = true;
+    // Realtime (cache 30 s)
+    const opsKey = `ops:${stationId}`;
+    let opsFromCache = true;
+    let opsJson = cacheGet(opsKey, CACHE_OPS_MS);
     if (!opsJson) {
       opsFromCache = false;
       const r = await plkGet(
@@ -106,20 +98,19 @@ export async function onRequestPost(context) {
       cacheSet(opsKey, opsJson);
     }
 
-    // 4. Indeks opóźnień: "scheduleId|orderId" → { delayMins, actualDep }
-    const delayIndex = buildDelayIndex(opsJson, stationId);
+    const rawSchedules = getKey(schedJson, 'schedules');
+    const rawOps       = getKey(opsJson,   'operations');
 
-    // 5. Mapuj plan → wiersze tablicy
-    const rawSchedules = arrFrom(schedJson, ['schedules', 'data', 'items']);
-    let   route = rawSchedules
-      .map(s => mapScheduleRow(s, stationId, delayIndex))
+    // Indeks opóźnień: scheduleId → { [plannedDepTime_HH:MM]: opData }
+    // (operations.orderId ≠ schedules.orderId, ale scheduleId jest wspólny)
+    const delayIndex = buildDelayIndex(rawOps, stationId);
+
+    let route = rawSchedules
+      .map(s => mapRow(s, stationId, delayIndex))
       .filter(Boolean);
 
-    // 6. Filtruj / deduplikuj / sortuj
     route = sortByTime(dedup(filterByTime(route, trainTime)));
-
     const maxDelay = route.length ? Math.max(0, ...route.map(r => r.delayMinutes)) : 0;
-    const rawOps   = arrFrom(opsJson, ['operations', 'data', 'items']);
 
     return json({
       matchedStation:   stationName,
@@ -132,173 +123,125 @@ export async function onRequestPost(context) {
       totalDepartures:  route.length,
       debug: {
         stationId, stationName, date: trainDate,
-        schedulesRaw:    rawSchedules.length,
-        operationsRaw:   rawOps.length,
-        delayIndexSize:  Object.keys(delayIndex).length,
-        cacheHits:       { sched: schedFromCache, ops: opsFromCache },
-        schedSample:     rawSchedules[0] || null,
-        opsSample:       rawOps[0] || null,
+        schedulesRaw: rawSchedules.length,
+        operationsRaw: rawOps.length,
+        delayIndexKeys: Object.keys(delayIndex).length,
+        cacheHits: { sched: schedFromCache, ops: opsFromCache },
+        schedSample: rawSchedules[0] || null,
+        opsSample: rawOps[0] || null,
       }
     });
 
-  } catch (e) {
-    return json({ error: e.message || 'Worker error' }, 500);
-  }
+  } catch (e) { return json({ error: e.message || 'Worker error' }, 500); }
 }
 
-// ─── Stacje (cache 1h) ────────────────────────────────────────────────────────
+// ─── Stacje ───────────────────────────────────────────────────────────────────
 async function getStations(search, env) {
-  const cacheKey = `stations:${search.toLowerCase()}`;
-  const cached   = cacheFresh(cacheKey, CACHE_STAT_MS);
+  const key    = `sta:${search.toLowerCase()}`;
+  const cached = cacheGet(key, CACHE_STAT_MS);
   if (cached) return cached;
 
-  const res  = await plkGet(
-    `${BASE}/dictionaries/stations?search=${enc(search)}&pageSize=10`,
-    env
-  );
+  const res  = await plkGet(`${BASE}/dictionaries/stations?search=${enc(search)}&pageSize=10`, env);
   if (!res.ok) throw new Error(`Stations HTTP ${res.status}`);
-  const data   = await res.json();
-  const result = arrFrom(data, ['stations', 'data', 'items'])
-    .map(s => ({
-      id:   s.id ?? s.stationId ?? s.sid,
-      name: clean(s.name ?? s.stationName ?? s.label ?? ''),
-    }))
+  const data = await res.json();
+  const list = (getKey(data, 'stations') || [])
+    .map(s => ({ id: s.id ?? s.stationId, name: clean(s.name ?? s.stationName ?? '') }))
     .filter(s => s.id && s.name);
 
-  cacheSet(cacheKey, result);
-  return result;
+  cacheSet(key, list);
+  return list;
 }
 
-// ─── Indeks opóźnień ──────────────────────────────────────────────────────────
-// Klucz: "scheduleId|orderId" — identyczne jak w /schedules
-// Wartość: { delayMins, actualDep (HH:MM) }
-function buildDelayIndex(opsJson, stationId) {
-  const index = {};
-  const ops   = arrFrom(opsJson, ['operations', 'data', 'items']);
-
+// ─── Indeks opóźnień ─────────────────────────────────────────────────────────
+// Klucz: `${scheduleId}:${plannedDepartureTime_HHMM}`
+// operations.orderId różni się od schedules.orderId — nie można po nim łączyć.
+// Zamiast tego: scheduleId (wspólny) + planowa godzina odjazdu ze stacji (identyczna).
+function buildDelayIndex(ops, stationId) {
+  const idx = {};
   for (const op of ops) {
-    const key = `${op.scheduleId}|${op.orderId}`;
+    const sid    = String(op.scheduleId ?? '');
+    if (!sid) continue;
 
-    // Przystanek dla naszej stacji
-    const opStops = arrFrom(op, ['stations', 'stops', 'route']);
-    const myStop  = opStops.find(st =>
-      String(st.stationId ?? st.id ?? '') === String(stationId)
-    );
+    const stops  = getStops(op);
+    const myStop = stops.find(st => String(st.stationId ?? '') === String(stationId));
     if (!myStop) continue;
 
-    // Czasy — API zwraca zarówno ISO jak i HH:MM:SS
-    const planned    = fmtTime(
-      myStop.plannedDeparture     ??
-      myStop.plannedDepartureTime ?? ''
-    );
-    const actual     = fmtTime(
-      myStop.actualDeparture     ??
-      myStop.actualDepartureTime ?? ''
-    );
+    const planned = fmtTime(myStop.plannedDeparture ?? myStop.plannedDepartureTime ?? '');
+    const actual  = fmtTime(myStop.actualDeparture  ?? myStop.actualDepartureTime  ?? '');
+    if (!planned) continue;
 
-    const delayMins  = calcDelay(planned, actual);
+    const delay   = calcDelay(planned, actual);
+    const key     = `${sid}:${planned}`;
 
-    // Zapisz nawet jeśli delay = 0 (żeby wiedzieć że dane są)
-    index[key] = {
-      delayMins,
+    idx[key] = {
+      delayMins:   delay,
       actualDep:   actual || planned,
-      plannedDep:  planned,
       trainStatus: clean(op.trainStatus ?? ''),
     };
   }
-  return index;
+  return idx;
 }
 
-// ─── Mapowanie wiersza rozkładu ───────────────────────────────────────────────
-function mapScheduleRow(s, stationId, delayIndex) {
+// ─── Mapowanie wiersza ────────────────────────────────────────────────────────
+function mapRow(s, stationId, delayIndex) {
   if (!s || typeof s !== 'object') return null;
 
-  // Przystanek naszej stacji w trasie pociągu
-  const stops  = arrFrom(s, ['stations', 'stops', 'route']);
-  const myStop = stops.find(st =>
-    String(st.stationId ?? st.id ?? '') === String(stationId)
-  );
+  // TYLKO pole "stations" — nie używamy heurystyki tablic
+  const stops = Array.isArray(s.stations) ? s.stations : [];
+  const myStop = stops.find(st => String(st.stationId ?? '') === String(stationId));
   if (!myStop) return null;
 
-  // Godzina planowana odjazdu (potwierdzone: "departureTime" = "HH:MM:SS")
-  const scheduled = fmtTime(
-    myStop.departureTime    ??
-    myStop.plannedDeparture ??
-    myStop.arrivalTime      ??
-    myStop.plannedArrival   ?? ''
-  );
+  // Godzina planowanego odjazdu
+  const scheduled = fmtTime(myStop.departureTime ?? myStop.arrivalTime ?? '');
   if (!scheduled) return null;
 
-  // Dane operacyjne (łączenie po scheduleId + orderId)
-  const opKey  = `${s.scheduleId}|${s.orderId}`;
+  // Łączenie z operations: scheduleId + planowa godzina
+  const opKey  = `${s.scheduleId}:${scheduled}`;
   const opData = delayIndex[opKey];
 
   const delayMinutes = opData?.delayMins ?? 0;
-  const actual       = opData?.actualDep
-    ? fmtTime(opData.actualDep) || addMins(scheduled, delayMinutes)
-    : (delayMinutes > 0 ? addMins(scheduled, delayMinutes) : scheduled);
+  const actual = delayMinutes > 0
+    ? (opData?.actualDep ? fmtTime(opData.actualDep) : addMins(scheduled, delayMinutes))
+    : scheduled;
 
-  // Status pociągu
-  const trainStatus  = opData?.trainStatus ?? '';
-  const cancelled    = s.cancelled === true || s.isCancelled === true
-    || trainStatus.toUpperCase() === 'C'
-    || trainStatus.toLowerCase().includes('cancel')
-    || trainStatus.toLowerCase().includes('odwoł');
+  // Status
+  const ts        = opData?.trainStatus ?? '';
+  const cancelled = ts.toUpperCase() === 'C'
+    || s.cancelled === true || s.isCancelled === true;
 
-  // Dane pociągu (potwierdzone nazwy pól)
-  const carrierCode = clean(s.carrierCode ?? s.carrier ?? '');
-  const trainNo     = clean(
-    myStop.departureTrainNumber ??
-    myStop.arrivalTrainNumber   ??
-    s.nationalNumber            ??
-    s.trainNumber               ?? ''
-  );
-  const category    = clean(
-    myStop.departureCommercialCategory ??
-    myStop.arrivalCommercialCategory   ??
-    s.commercialCategorySymbol         ?? ''
-  );
+  // Dane pociągu
+  const carrierCode = clean(s.carrierCode ?? '');
+  const trainNo     = clean(myStop.departureTrainNumber ?? myStop.arrivalTrainNumber ?? s.nationalNumber ?? '');
+  const category    = clean(myStop.departureCommercialCategory ?? s.commercialCategorySymbol ?? '');
+  const platform    = clean(myStop.departurePlatform ?? myStop.arrivalPlatform ?? '');
+  const track       = clean(myStop.departureTrack    ?? myStop.arrivalTrack    ?? '');
+  const platformLabel = [platform && `peron ${platform}`, track && `tor ${track}`].filter(Boolean).join(' / ') || '—';
 
-  // Peron i tor (potwierdzone: departurePlatform, departureTrack)
-  const platform = clean(
-    myStop.departurePlatform ?? myStop.arrivalPlatform ?? myStop.platform ?? ''
-  );
-  const track    = clean(
-    myStop.departureTrack ?? myStop.arrivalTrack ?? myStop.track ?? ''
-  );
-  const platformLabel = platform
-    ? (track ? `${platform} / tor ${track}` : platform)
-    : (track ? `tor ${track}` : '—');
-
-  // Stacja docelowa — ostatni przystanek
+  // Stacja docelowa
   const lastStop    = stops[stops.length - 1] ?? {};
-  const destination = clean(
-    s.destinationStationName ?? s.destination ??
-    lastStop.stationName     ?? lastStop.name ?? ''
-  );
+  const destination = clean(s.destinationStationName ?? lastStop.stationName ?? '');
 
   // Stacje pośrednie po naszym przystanku (bez końcowej)
   const myIdx    = stops.indexOf(myStop);
-  const viaStops = myIdx >= 0 ? stops.slice(myIdx + 1, -1) : [];
-  const via = viaStops.slice(0, 5)
-    .map(st => clean(st.stationName ?? st.name ?? ''))
+  const via = stops
+    .slice(myIdx + 1, -1)
+    .slice(0, 5)
+    .map(st => clean(st.stationName ?? ''))
     .filter(Boolean).join(', ');
 
-  const trainLabel = [category, carrierCode, trainNo].filter(Boolean).join(' ');
+  const trainLabel = [category, carrierCode, trainNo].filter(Boolean).join(' ') || '—';
   const key        = `${scheduled}|${trainNo}|${destination}`;
 
   return {
-    _key:        key,
-    station:     clean(myStop.stationName ?? myStop.name ?? ''),
+    _key: key,
+    station:     clean(myStop.stationName ?? ''),
     scheduled,
     actual,
     delayMinutes,
-    status:      cancelled
-      ? 'Odwołany'
-      : opData
-        ? (delayMinutes > 0 ? 'Opóźniony' : 'Punktualnie')
-        : 'Planowy',          // brak danych realtime → "Planowy" (nie "Punktualnie")
-    trainNumber: trainLabel || '—',
+    status: cancelled ? 'Odwołany'
+      : opData ? (delayMinutes > 0 ? 'Opóźniony' : 'Punktualnie')
+      : 'Planowy',
+    trainNumber: trainLabel,
     destination: destination || '—',
     carrier:     expandCarrier(carrierCode),
     platform:    platformLabel,
@@ -307,6 +250,18 @@ function mapScheduleRow(s, stationId, delayIndex) {
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+// Pobiera tablicę z konkretnego klucza (bez heurystyki)
+function getKey(obj, key) {
+  return Array.isArray(obj?.[key]) ? obj[key] : [];
+}
+
+// Pobiera stops/stations z obiektu operacji (sprawdza tylko znane klucze)
+function getStops(op) {
+  if (Array.isArray(op?.stations)) return op.stations;
+  if (Array.isArray(op?.stops))    return op.stops;
+  return [];
+}
+
 function filterByTime(route, trainTime) {
   const pivot = parseClock(trainTime);
   if (pivot === null) return route;
@@ -315,93 +270,66 @@ function filterByTime(route, trainTime) {
 
 function dedup(rows) {
   const seen = new Set();
-  return rows.filter(r => {
-    if (seen.has(r._key)) return false;
-    seen.add(r._key); return true;
-  });
+  return rows.filter(r => { if (seen.has(r._key)) return false; seen.add(r._key); return true; });
 }
 
 function sortByTime(rows) {
-  return rows.sort((a, b) =>
-    (parseClock(a.scheduled) ?? 9999) - (parseClock(b.scheduled) ?? 9999)
-  );
+  return rows.sort((a, b) => (parseClock(a.scheduled) ?? 9999) - (parseClock(b.scheduled) ?? 9999));
 }
 
 function calcDelay(planned, actual) {
-  const p = parseClock(planned);
-  const a = parseClock(actual);
-  if (p === null || a === null || actual === '' || planned === '') return 0;
-  const diff = a - p;
-  return diff < -120 ? diff + 1440 : Math.max(0, diff); // obsługa przekroczenia północy
+  const p = parseClock(planned), a = parseClock(actual);
+  if (p === null || a === null) return 0;
+  const d = a - p;
+  return d < -120 ? d + 1440 : Math.max(0, d);
 }
 
 function addMins(time, mins) {
-  const base = parseClock(time);
-  if (base === null || !mins) return time;
-  return minsToTime(base + mins);
+  const b = parseClock(time);
+  return b === null ? time : minsToTime(b + mins);
 }
 
 function expandCarrier(code) {
-  const map = {
-    IC:  'PKP Intercity',      PR:  'Polregio',
-    KM:  'Koleje Mazowieckie', KS:  'Koleje Śląskie',
-    KD:  'Koleje Dolnośląskie',SKM: 'SKM Trójmiasto',
-    WKD: 'WKD',                MK:  'Małopolska',
-    AR:  'Arriva',             ŁKA: 'Łódź Aglomeracyjna',
-  };
-  return map[(code || '').toUpperCase()] ?? code ?? '—';
-}
-
-// Wyciąga tablicę z obiektu — próbuje kluczy, potem fallback na pierwszą tablicę
-function arrFrom(obj, keys) {
-  if (Array.isArray(obj)) return obj;
-  for (const k of keys) {
-    if (k && Array.isArray(obj?.[k]) && obj[k].length > 0) return obj[k];
-  }
-  if (obj && typeof obj === 'object') {
-    for (const v of Object.values(obj)) {
-      if (Array.isArray(v) && v.length > 0) return v;
-    }
-  }
-  return [];
+  const map = { IC:'PKP Intercity', PR:'Polregio', KM:'Koleje Mazowieckie',
+    KS:'Koleje Śląskie', KD:'Koleje Dolnośląskie', SKM:'SKM Trójmiasto',
+    WKD:'WKD', MK:'Małopolska', AR:'Arriva', ŁKA:'Łódź Aglomeracyjna' };
+  return map[(code||'').toUpperCase()] ?? code ?? '—';
 }
 
 async function plkGet(url, env) {
-  return fetch(url, {
-    headers: { 'Accept': 'application/json', 'x-api-key': env.PLK_API_KEY },
-  });
+  return fetch(url, { headers: { 'Accept':'application/json', 'x-api-key': env.PLK_API_KEY } });
 }
 
 function today() { return new Date().toISOString().slice(0, 10); }
 
 function fmtTime(v) {
   const s = String(v || '').trim();
-  const iso = s.match(/T(\d{2}):(\d{2})/);          // ISO: 2026-05-11T15:47:00
+  const iso = s.match(/T(\d{2}):(\d{2})/);
   if (iso) return `${iso[1]}:${iso[2]}`;
-  const hm  = s.match(/^(\d{1,2}):(\d{2})/);         // HH:MM lub HH:MM:SS
+  const hm = s.match(/^(\d{1,2}):(\d{2})/);
   if (hm)  return hm[1].padStart(2, '0') + ':' + hm[2];
   return '';
 }
 
 function parseClock(v) {
   const m = String(v || '').match(/(\d{1,2}):(\d{2})/);
-  return m ? Number(m[1]) * 60 + Number(m[2]) : null;
+  return m ? +m[1] * 60 + +m[2] : null;
 }
 
 function minsToTime(mins) {
-  const normalized = ((mins % 1440) + 1440) % 1440;
-  return `${String(Math.floor(normalized / 60)).padStart(2, '0')}:${String(normalized % 60).padStart(2, '0')}`;
+  const n = ((mins % 1440) + 1440) % 1440;
+  return `${String(Math.floor(n/60)).padStart(2,'0')}:${String(n%60).padStart(2,'0')}`;
 }
 
 function clean(v) {
-  return String(v ?? '').replace(/[\u0000-\u001F]/g, ' ').replace(/\s+/g, ' ').trim();
+  return String(v ?? '').replace(/[\u0000-\u001F]/g,' ').replace(/\s+/g,' ').trim();
 }
 
-function enc(v)    { return encodeURIComponent(v); }
+function enc(v) { return encodeURIComponent(v); }
 
 function cors() {
   return {
-    'Access-Control-Allow-Origin':  '*',
+    'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, x-api-key',
   };
