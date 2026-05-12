@@ -22,6 +22,9 @@ function json(data, status = 200) {
 
 function clean(value) {
   return String(value ?? "")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -33,24 +36,105 @@ function normalize(value) {
     .toLowerCase();
 }
 
-const STATION_LINKS = {
-  "Lubliniec": "https://portalpasazera.pl/KatalogiStacji?stacja=Lubliniec",
-  "Tarnowskie Góry": "https://l.plk-sa.pl/71001",
-  "Bytom": "https://portalpasazera.pl/KatalogiStacji?stacja=Bytom",
-  "Gliwice": "https://portalpasazera.pl/KatalogiStacji?stacja=Gliwice",
-  "Chorzów Batory": "https://portalpasazera.pl/KatalogiStacji?stacja=Chorzów%20Batory",
-  "Katowice": "https://portalpasazera.pl/KatalogiStacji?stacja=Katowice",
-  "Kraków Główny": "https://portalpasazera.pl/KatalogiStacji?stacja=Kraków%20Główny"
-};
+function absoluteUrl(url) {
+  if (!url) return "";
+  if (url.startsWith("http")) return url;
+  if (url.startsWith("/")) return `https://portalpasazera.pl${url}`;
+  return `https://portalpasazera.pl/${url}`;
+}
 
-function knownStationLink(stationName) {
-  const needle = normalize(stationName);
+function catalogUrl(station) {
+  return `https://portalpasazera.pl/KatalogStacji?stacja=${encodeURIComponent(station)}`;
+}
 
-  for (const [name, link] of Object.entries(STATION_LINKS)) {
-    if (normalize(name) === needle) return link;
+async function fetchTextCached(url, ttl = 86400) {
+  const cache = caches.default;
+  const key = new Request(url, { method: "GET" });
+
+  const cached = await cache.match(key);
+  if (cached) return cached.text();
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      "User-Agent": "Mozilla/5.0"
+    }
+  });
+
+  const text = await response.text();
+
+  if (!response.ok) {
+    throw new Error(`Portal ${response.status}: ${text.slice(0, 160)}`);
   }
 
-  return `https://portalpasazera.pl/KatalogiStacji?stacja=${encodeURIComponent(stationName)}`;
+  await cache.put(
+    key,
+    new Response(text, {
+      headers: {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": `public, max-age=${ttl}`
+      }
+    })
+  );
+
+  return text;
+}
+
+async function resolveStationDisplayLink(stationName) {
+  const station = clean(stationName);
+  const url = catalogUrl(station);
+  const html = await fetchTextCached(url, 86400);
+
+  const direct = html.match(
+    /<a[^>]+href=["']([^"']*Wyswietlacz[^"']*)["'][^>]*>\s*Wyświetlacz stacyjny\s*<\/a>/i
+  );
+
+  if (direct?.[1]) {
+    return absoluteUrl(direct[1]);
+  }
+
+  const anyDisplay = html.match(/href=["']([^"']*Wyswietlacz\?sid=[^"']*)["']/i);
+
+  if (anyDisplay?.[1]) {
+    return absoluteUrl(anyDisplay[1]);
+  }
+
+  return url;
+}
+
+async function fetchJson(url, headers = {}, ttl = 30) {
+  const cache = caches.default;
+  const key = new Request(url, { method: "GET" });
+
+  const cached = await cache.match(key);
+  if (cached) return cached.json();
+
+  const response = await fetch(url, { method: "GET", headers });
+  const text = await response.text();
+
+  let data;
+
+  try {
+    data = JSON.parse(text);
+  } catch {
+    throw new Error(`Niepoprawna odpowiedź API: ${text.slice(0, 200)}`);
+  }
+
+  if (!response.ok) {
+    throw new Error(`PLK API ${response.status}: ${text.slice(0, 240)}`);
+  }
+
+  await cache.put(
+    key,
+    new Response(JSON.stringify(data), {
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": `public, max-age=${ttl}`
+      }
+    })
+  );
+
+  return data;
 }
 
 function extractArray(payload) {
@@ -73,41 +157,6 @@ function extractArray(payload) {
   }
 
   return [];
-}
-
-async function fetchJson(url, headers = {}, ttl = 30) {
-  const cache = caches.default;
-  const cacheKey = new Request(url, { method: "GET" });
-
-  const cached = await cache.match(cacheKey);
-  if (cached) return cached.json();
-
-  const response = await fetch(url, { method: "GET", headers });
-  const text = await response.text();
-
-  let data;
-
-  try {
-    data = JSON.parse(text);
-  } catch {
-    throw new Error(`Niepoprawna odpowiedź API: ${text.slice(0, 200)}`);
-  }
-
-  if (!response.ok) {
-    throw new Error(`PLK API ${response.status}: ${text.slice(0, 240)}`);
-  }
-
-  await cache.put(
-    cacheKey,
-    new Response(JSON.stringify(data), {
-      headers: {
-        "Content-Type": "application/json",
-        "Cache-Control": `public, max-age=${ttl}`
-      }
-    })
-  );
-
-  return data;
 }
 
 function parseTime(value) {
@@ -393,11 +442,25 @@ async function handleRequest(request, env) {
     return new Response(null, { headers: corsHeaders() });
   }
 
+  const url = new URL(request.url);
+
   if (method === "GET") {
+    const station = clean(url.searchParams.get("station"));
+
+    if (station) {
+      const stationLink = await resolveStationDisplayLink(station);
+
+      return json({
+        ok: true,
+        station,
+        stationLink,
+        catalogLink: catalogUrl(station)
+      });
+    }
+
     return json({
       ok: true,
-      endpoint: "/train",
-      stationLinks: STATION_LINKS
+      endpoint: "/train"
     });
   }
 
@@ -412,7 +475,7 @@ async function handleRequest(request, env) {
       return json({ ok: false, error: "Missing station" }, 400);
     }
 
-    const stationLink = knownStationLink(stationQuery);
+    const stationLink = await resolveStationDisplayLink(stationQuery);
 
     const apiKey = clean(env.PLK_API_KEY);
 
@@ -422,6 +485,7 @@ async function handleRequest(request, env) {
           ok: false,
           error: "Brak PLK_API_KEY w zmiennych środowiskowych Cloudflare.",
           stationLink,
+          catalogLink: catalogUrl(stationQuery),
           debug: {
             reason: "missing-env",
             stationQuery,
@@ -539,11 +603,18 @@ async function handleRequest(request, env) {
       }
     });
   } catch (error) {
+    const fallbackStation = "Tarnowskie Góry";
+    let stationLink = catalogUrl(fallbackStation);
+
+    try {
+      stationLink = await resolveStationDisplayLink(fallbackStation);
+    } catch {}
+
     return json(
       {
         ok: false,
         error: error.message || "Worker error",
-        stationLink: knownStationLink("Tarnowskie Góry"),
+        stationLink,
         debug: {
           message: error.message,
           stack: error.stack
