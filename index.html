@@ -1,6 +1,9 @@
+<!-- index.html -->
+
 <!DOCTYPE html>
 <html lang="pl">
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 
@@ -32,7 +35,11 @@ h1{
 
 .grid{
   display:grid;
-  grid-template-columns:1fr auto;
+  grid-template-columns:
+    1fr
+    180px
+    150px
+    auto;
   gap:12px;
   align-items:end;
 }
@@ -90,8 +97,14 @@ pre{
   font-size:12px;
 }
 
+a{
+  color:#0b57d0;
+}
+
 </style>
+
 </head>
+
 <body>
 
 <h1>Monitor opóźnień PLK</h1>
@@ -111,6 +124,24 @@ Wybór stacji uruchamia pobranie planu i realtime z oficjalnego API PLK.
   id="station"
   value="Tczew"
   placeholder="Np. Katowice"
+/>
+</div>
+
+<div>
+<label>Data</label>
+
+<input
+  id="date"
+  type="date"
+/>
+</div>
+
+<div>
+<label>Godzina</label>
+
+<input
+  id="time"
+  type="time"
 />
 </div>
 
@@ -153,11 +184,30 @@ Brak danych.
 
 </table>
 
+<div style="margin-top:20px">
+
+<a
+  href="https://portalpasazera.pl"
+  target="_blank"
+>
+Otwórz oficjalną tablicę Portal Pasażera PLK
+</a>
+
+</div>
+
 <h2>Debug</h2>
 
 <pre id="debug"></pre>
 
 <script>
+
+const now = new Date();
+
+document.getElementById("date").value =
+  now.toISOString().split("T")[0];
+
+document.getElementById("time").value =
+  now.toTimeString().slice(0,5);
 
 async function loadData() {
 
@@ -166,6 +216,16 @@ async function loadData() {
     const station =
       document.getElementById(
         "station"
+      ).value;
+
+    const date =
+      document.getElementById(
+        "date"
+      ).value;
+
+    const time =
+      document.getElementById(
+        "time"
       ).value;
 
     const response =
@@ -179,7 +239,9 @@ async function loadData() {
         },
 
         body:JSON.stringify({
-          station
+          station,
+          date,
+          time
         })
 
       });
