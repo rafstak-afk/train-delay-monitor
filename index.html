@@ -1,58 +1,43 @@
-<!-- public/index.html -->
-
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-
 <title>Monitor odjazdów PLK</title>
 
 <style>
-
 body{
   font-family:Arial,sans-serif;
   margin:12px;
   background:#f5f5f5;
   color:#222;
 }
-
 h1{
   margin-bottom:8px;
   font-size:24px;
 }
-
 .small{
   margin-bottom:16px;
   color:#666;
   font-size:14px;
 }
-
 .panel{
   background:white;
   border-radius:10px;
   padding:14px;
   margin-bottom:16px;
 }
-
 .grid{
   display:grid;
-  grid-template-columns:
-    1fr
-    150px
-    120px
-    auto;
+  grid-template-columns:1fr 150px 120px auto;
   gap:10px;
   align-items:end;
 }
-
 label{
   display:block;
   font-size:13px;
   margin-bottom:6px;
 }
-
 input{
   width:100%;
   padding:10px;
@@ -61,7 +46,6 @@ input{
   border-radius:6px;
   font-size:16px;
 }
-
 button{
   padding:10px 18px;
   border:none;
@@ -71,23 +55,19 @@ button{
   color:white;
   font-size:15px;
 }
-
 button:hover{
   opacity:.9;
 }
-
 .tableWrap{
   overflow:auto;
   background:white;
   border-radius:10px;
 }
-
 table{
   width:100%;
   border-collapse:collapse;
   min-width:950px;
 }
-
 th,td{
   border:1px solid #ddd;
   padding:8px;
@@ -95,23 +75,19 @@ th,td{
   text-align:left;
   white-space:nowrap;
 }
-
 th{
   background:#f0f0f0;
   position:sticky;
   top:0;
 }
-
 .delay{
   color:#c40000;
   font-weight:bold;
 }
-
 .ok{
   color:#008000;
   font-weight:bold;
 }
-
 pre{
   background:#111;
   color:#0f0;
@@ -120,34 +96,26 @@ pre{
   border-radius:8px;
   font-size:11px;
 }
-
 a{
   color:#0b57d0;
 }
 
 @media(max-width:900px){
-
   .grid{
     grid-template-columns:1fr;
   }
-
   button{
     width:100%;
   }
-
   body{
     margin:8px;
   }
-
   th,td{
     font-size:12px;
     padding:6px;
   }
-
 }
-
 </style>
-
 </head>
 
 <body>
@@ -155,76 +123,40 @@ a{
 <h1>Monitor odjazdów PLK</h1>
 
 <div class="small">
-Realtime z API PLK.
+Realtime z API PLK. Domyślnie pokazuje najbliższe 20 odjazdów od wskazanej godziny.
 </div>
 
 <div class="panel">
+  <div class="grid">
+    <div>
+      <label>Stacja</label>
+      <input id="station" list="stationsHistory" autocomplete="off" placeholder="Np. Tarnowskie Góry">
+      <datalist id="stationsHistory"></datalist>
+    </div>
 
-<div class="grid">
+    <div>
+      <label>Data</label>
+      <input id="date" type="date">
+    </div>
 
-<div>
+    <div>
+      <label>Godzina</label>
+      <input id="time" type="time">
+    </div>
 
-<label>Stacja</label>
-
-<input
-  id="station"
-  list="stationsHistory"
-  autocomplete="off"
-  placeholder="Np. Tarnowskie Góry"
-/>
-
-<datalist id="stationsHistory"></datalist>
-
-</div>
-
-<div>
-
-<label>Data</label>
-
-<input
-  id="date"
-  type="date"
-/>
-
-</div>
-
-<div>
-
-<label>Godzina</label>
-
-<input
-  id="time"
-  type="time"
-/>
-
-</div>
-
-<div>
-
-<button id="loadBtn">
-Pobierz
-</button>
-
-</div>
-
-</div>
-
+    <div>
+      <button id="loadBtn">Pobierz</button>
+    </div>
+  </div>
 </div>
 
 <div class="panel">
-
-<div id="summary">
-Brak danych.
-</div>
-
+  <div id="summary">Brak danych.</div>
 </div>
 
 <div class="tableWrap">
-
 <table>
-
 <thead>
-
 <tr>
 <th>STACJA</th>
 <th>PLAN</th>
@@ -237,28 +169,19 @@ Brak danych.
 <th>PERON</th>
 <th>PRZEZ</th>
 </tr>
-
 </thead>
-
 <tbody id="tbody"></tbody>
-
 </table>
-
 </div>
 
 <h2>Debug</h2>
-
 <pre id="debug"></pre>
 
 <script>
-
 const now = new Date();
 
-const stationInput =
-  document.getElementById("station");
-
-const historyList =
-  document.getElementById("stationsHistory");
+const stationInput = document.getElementById("station");
+const historyList = document.getElementById("stationsHistory");
 
 document.getElementById("date").value =
   now.toISOString().split("T")[0];
@@ -267,135 +190,67 @@ document.getElementById("time").value =
   now.toTimeString().slice(0,5);
 
 stationInput.value =
-  localStorage.getItem("lastStation")
-  || "Tarnowskie Góry";
+  localStorage.getItem("lastStation") || "Tarnowskie Góry";
 
 renderHistory();
 
 async function loadData() {
-
   try {
+    const station = stationInput.value.trim();
+    const date = document.getElementById("date").value;
+    const time = document.getElementById("time").value;
 
-    const station =
-      stationInput.value.trim();
-
-    const date =
-      document.getElementById(
-        "date"
-      ).value;
-
-    const time =
-      document.getElementById(
-        "time"
-      ).value;
-
-    if (!station) {
-      return;
-    }
+    if (!station) return;
 
     saveStation(station);
 
-    const response =
-      await fetch("/train", {
+    const response = await fetch("/train", {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body:JSON.stringify({ station, date, time })
+    });
 
-        method:"POST",
-
-        headers:{
-          "Content-Type":
-            "application/json"
-        },
-
-        body:JSON.stringify({
-          station,
-          date,
-          time
-        })
-
-      });
-
-    const data =
-      await response.json();
+    const data = await response.json();
 
     console.log(data);
 
-    document
-      .getElementById("debug")
-      .textContent =
-        JSON.stringify(
-          data.debug || data,
-          null,
-          2
-        );
+    document.getElementById("debug").textContent =
+      JSON.stringify(data.debug || data, null, 2);
 
     if (!data.ok) {
-
-      alert(
-        data.error
-        || "Błąd API"
-      );
-
+      alert(data.error || "Błąd API");
       return;
-
     }
 
-    document
-      .getElementById("summary")
-      .innerHTML = `
+    document.getElementById("summary").innerHTML = `
+      Dane pobrane.
+      <br><br>
+      Stacja: <b>${safe(data.matchedStation)}</b>
+      <br>
+      ID stacji API: <b>${safe(data.matchedStationId)}</b>
+      <br>
+      ID tablicy PLK: <b>${safe(data.portalStationId)}</b>
+      <br>
+      Rekordów po filtrze: <b>${safe(data.totalDepartures)}</b>
+      <br><br>
+      <a href="https://l.plk-sa.pl/${data.portalStationId}" target="_blank">
+        Otwórz oficjalną tablicę odjazdów PLK
+      </a>
+    `;
 
-Dane pobrane.
-<br><br>
-
-Stacja:
-<b>${data.matchedStation}</b>
-
-<br>
-
-ID stacji:
-<b>${data.matchedStationId}</b>
-
-<br>
-
-Rekordów:
-<b>${data.totalDepartures}</b>
-
-<br><br>
-
-<a
-  href="https://l.plk-sa.pl/${data.portalStationId}"
-  target="_blank"
->
-Otwórz oficjalną tablicę odjazdów PLK
-</a>
-
-`;
-
-    const tbody =
-      document.getElementById(
-        "tbody"
-      );
-
+    const tbody = document.getElementById("tbody");
     tbody.innerHTML = "";
 
     for (const row of data.route) {
-
-      const tr =
-        document.createElement("tr");
+      const tr = document.createElement("tr");
 
       tr.innerHTML = `
         <td>${safe(row.station)}</td>
         <td>${safe(row.scheduled)}</td>
         <td>${safe(row.actual)}</td>
-
-        <td class="${
-          row.delayMinutes > 0
-          ? 'delay'
-          : 'ok'
-        }">
-
-          ${row.delayMinutes} min
-
+        <td class="${row.delayMinutes > 0 ? 'delay' : 'ok'}">
+          ${safe(row.delayMinutes)} min
         </td>
-
         <td>${safe(row.status)}</td>
         <td>${safe(row.trainNumber)}</td>
         <td>${safe(row.destination)}</td>
@@ -405,122 +260,57 @@ Otwórz oficjalną tablicę odjazdów PLK
       `;
 
       tbody.appendChild(tr);
-
     }
-
   } catch (error) {
-
     console.error(error);
-
-    alert(
-      "Frontend error: "
-      + error.message
-    );
-
+    alert("Frontend error: " + error.message);
   }
-
 }
 
 function safe(value){
-
-  if(
-    value === null
-    || value === undefined
-    || value === ""
-  ){
-    return "—";
-  }
-
+  if(value === null || value === undefined || value === "") return "—";
   return value;
 }
 
 function saveStation(station){
-
-  localStorage.setItem(
-    "lastStation",
-    station
-  );
+  localStorage.setItem("lastStation", station);
 
   let history =
-    JSON.parse(
-      localStorage.getItem(
-        "stationHistory"
-      ) || "[]"
-    );
+    JSON.parse(localStorage.getItem("stationHistory") || "[]");
 
-  history =
-    history.filter(
-      s => s !== station
-    );
-
+  history = history.filter(s => s !== station);
   history.unshift(station);
-
   history = history.slice(0,20);
 
-  localStorage.setItem(
-    "stationHistory",
-    JSON.stringify(history)
-  );
+  localStorage.setItem("stationHistory", JSON.stringify(history));
 
   renderHistory();
-
 }
 
 function renderHistory(){
-
   const history =
-    JSON.parse(
-      localStorage.getItem(
-        "stationHistory"
-      ) || "[]"
-    );
+    JSON.parse(localStorage.getItem("stationHistory") || "[]");
 
   historyList.innerHTML = "";
 
   for(const station of history){
-
-    const option =
-      document.createElement(
-        "option"
-      );
-
+    const option = document.createElement("option");
     option.value = station;
-
     historyList.appendChild(option);
-
   }
-
 }
 
-document
-  .getElementById("loadBtn")
-  .addEventListener(
-    "click",
-    loadData
-  );
+document.getElementById("loadBtn").addEventListener("click", loadData);
 
-stationInput
-  .addEventListener(
-    "keydown",
-    e => {
+stationInput.addEventListener("keydown", e => {
+  if(e.key === "Enter") loadData();
+});
 
-      if(e.key === "Enter"){
-        loadData();
-      }
-
-    }
-  );
-
-stationInput
-  .addEventListener(
-    "change",
-    () => {
-      loadData();
-    }
-  );
+stationInput.addEventListener("change", () => {
+  loadData();
+});
 
 loadData();
-
 </script>
 
 </body>
