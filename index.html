@@ -110,7 +110,7 @@ a{
 <h1>Monitor opóźnień PLK</h1>
 
 <div class="small">
-Wybór stacji uruchamia pobranie planu i realtime z oficjalnego API PLK.
+Pobieranie realtime i rozkładu z API PLK.
 </div>
 
 <div class="panel">
@@ -123,7 +123,6 @@ Wybór stacji uruchamia pobranie planu i realtime z oficjalnego API PLK.
 <input
   id="station"
   value="Tczew"
-  placeholder="Np. Katowice"
 />
 </div>
 
@@ -146,9 +145,11 @@ Wybór stacji uruchamia pobranie planu i realtime z oficjalnego API PLK.
 </div>
 
 <div>
+
 <button onclick="loadData()">
 Pobierz dane
 </button>
+
 </div>
 
 </div>
@@ -166,6 +167,7 @@ Brak danych.
 <table>
 
 <thead>
+
 <tr>
 <th>STACJA</th>
 <th>PLAN</th>
@@ -178,22 +180,12 @@ Brak danych.
 <th>PERON</th>
 <th>PRZEZ</th>
 </tr>
+
 </thead>
 
 <tbody id="tbody"></tbody>
 
 </table>
-
-<div style="margin-top:20px">
-
-<a
-  href="https://portalpasazera.pl"
-  target="_blank"
->
-Otwórz oficjalną tablicę Portal Pasażera PLK
-</a>
-
-</div>
 
 <h2>Debug</h2>
 
@@ -249,10 +241,7 @@ async function loadData() {
     const data =
       await response.json();
 
-    console.log(
-      "API RESPONSE",
-      data
-    );
+    console.log(data);
 
     document
       .getElementById("debug")
@@ -271,19 +260,39 @@ async function loadData() {
       );
 
       return;
+
     }
 
     document
       .getElementById("summary")
       .innerHTML = `
-        Dane pobrane.
-        <br><br>
-        Stacja:
-        <b>${data.matchedStation}</b>
-        <br>
-        Rekordów:
-        <b>${data.totalDepartures}</b>
-      `;
+
+Dane pobrane.
+<br><br>
+
+Stacja:
+<b>${data.matchedStation}</b>
+
+<br>
+
+ID stacji:
+<b>${data.matchedStationId}</b>
+
+<br>
+
+Rekordów:
+<b>${data.totalDepartures}</b>
+
+<br><br>
+
+<a
+  href="https://l.plk-sa.pl/${data.matchedStationId}"
+  target="_blank"
+>
+Otwórz oficjalną tablicę odjazdów PLK
+</a>
+
+`;
 
     const tbody =
       document.getElementById(
