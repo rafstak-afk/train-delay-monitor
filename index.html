@@ -2,321 +2,231 @@
 <html lang="pl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-
-  <title>Tablica Odjazdów PLK</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tablica odjazdów PLK</title>
 
   <style>
-
-    *{
-      box-sizing:border-box;
-      margin:0;
-      padding:0;
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #101820;
+      color: #fff;
+      padding: 24px;
     }
 
-    body{
-      font-family:Arial,Helvetica,sans-serif;
-      background:#101820;
-      color:#fff;
-      padding:20px;
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      text-align: center;
     }
 
-    .container{
-      max-width:1400px;
-      margin:auto;
-    }
-
-    h1{
-      text-align:center;
-      margin-bottom:24px;
-      font-size:32px;
+    h1 {
+      margin-bottom: 24px;
     }
 
     .station-buttons,
-    .secondary-buttons{
-      display:flex;
-      flex-wrap:wrap;
-      justify-content:center;
-      gap:12px;
-      margin-bottom:14px;
+    .secondary-buttons {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 14px;
     }
 
-    .btn{
-      background:#0b57d0;
-      color:white;
-      text-decoration:none;
-      padding:12px 18px;
-      border-radius:8px;
-      font-weight:600;
-      transition:0.2s;
-      border:none;
-      cursor:pointer;
-      display:inline-block;
+    .btn {
+      border: 0;
+      border-radius: 10px;
+      padding: 12px 18px;
+      background: #0b57d0;
+      color: #fff;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+      font-size: 15px;
     }
 
-    .btn:hover{
-      background:#084298;
-      transform:translateY(-1px);
+    .btn:hover {
+      background: #084298;
     }
 
-    .search-box{
-      margin:24px auto;
-      max-width:600px;
-      display:flex;
-      gap:10px;
+    .secondary-buttons .btn {
+      background: #6f42c1;
     }
 
-    .search-box input{
-      flex:1;
-      padding:14px;
-      border:none;
-      border-radius:8px;
-      font-size:16px;
+    .secondary-buttons .btn:hover {
+      background: #59359a;
     }
 
-    .search-box button{
-      padding:14px 18px;
-      border:none;
-      border-radius:8px;
-      background:#198754;
-      color:white;
-      font-size:16px;
-      font-weight:bold;
-      cursor:pointer;
+    .search-box {
+      margin: 26px auto;
+      display: flex;
+      gap: 10px;
+      max-width: 620px;
     }
 
-    .search-box button:hover{
-      background:#157347;
+    .search-box input {
+      flex: 1;
+      padding: 14px;
+      border-radius: 10px;
+      border: 0;
+      font-size: 16px;
     }
 
-    .table-wrapper{
-      margin-top:30px;
-      overflow-x:auto;
-      border-radius:12px;
-      overflow:hidden;
+    .search-box button {
+      padding: 14px 18px;
+      border-radius: 10px;
+      border: 0;
+      background: #198754;
+      color: white;
+      font-weight: 700;
+      cursor: pointer;
     }
 
-    table{
-      width:100%;
-      border-collapse:collapse;
-      background:#1c2833;
+    .status {
+      margin-top: 18px;
+      min-height: 24px;
+      opacity: 0.85;
     }
 
-    thead{
-      background:#243447;
+    .hint {
+      margin-top: 30px;
+      opacity: 0.7;
+      font-size: 14px;
     }
 
-    th{
-      padding:16px;
-      text-align:left;
-    }
-
-    td{
-      padding:16px;
-      border-top:1px solid #2f4054;
-    }
-
-    tr:hover{
-      background:#253445;
-    }
-
-    .delay{
-      color:#ffcc00;
-      font-weight:bold;
-    }
-
-    .on-time{
-      color:#5dd39e;
-      font-weight:bold;
-    }
-
-    .footer{
-      text-align:center;
-      margin-top:30px;
-      opacity:0.7;
-      font-size:14px;
-    }
-
-    @media(max-width:768px){
-
-      h1{
-        font-size:24px;
-      }
-
-      .search-box{
-        flex-direction:column;
-      }
-
-      .search-box button{
-        width:100%;
-      }
-
-      th,td{
-        font-size:13px;
-        padding:12px;
+    @media (max-width: 700px) {
+      .search-box {
+        flex-direction: column;
       }
     }
-
   </style>
 </head>
 
 <body>
+  <div class="container">
+    <h1>🚆 Tablica odjazdów PLK</h1>
 
-<div class="container">
+    <div class="station-buttons">
+      <button class="btn" onclick="goToStation('Katowice')">Katowice</button>
+      <button class="btn" onclick="goToStation('Chorzów Batory')">Chorzów Batory</button>
+      <button class="btn" onclick="goToStation('Bytom')">Bytom</button>
+      <button class="btn" onclick="goToStation('Gliwice')">Gliwice</button>
+      <button class="btn" onclick="goToStation('Zabrze')">Zabrze</button>
 
-  <h1>🚆 Tablica Odjazdów PLK</h1>
+      <a class="btn" href="https://portalpasazera.pl" target="_blank" rel="noopener">
+        Portal Pasażera
+      </a>
 
-  <!-- PRZYCISKI STACJI -->
+      <a class="btn" href="/debug.html">
+        Debug
+      </a>
+    </div>
 
-  <div class="station-buttons">
+    <div class="secondary-buttons">
+      <a class="btn" href="https://l.plk-sa.pl/#qr-generator" target="_blank" rel="noopener">
+        Generator QR PLK
+      </a>
+    </div>
 
-    <button class="btn" onclick="loadStation('Katowice')">
-      Katowice
-    </button>
+    <div class="search-box">
+      <input
+        id="stationInput"
+        type="text"
+        placeholder="Wpisz nazwę stacji, np. Katowice"
+        onkeydown="handleEnter(event)"
+      />
 
-    <button class="btn" onclick="loadStation('Chorzów Batory')">
-      Chorzów Batory
-    </button>
+      <button onclick="searchStation()">
+        Szukaj
+      </button>
+    </div>
 
-    <button class="btn" onclick="loadStation('Bytom')">
-      Bytom
-    </button>
+    <div id="status" class="status">
+      Wybierz stację albo wpisz nazwę.
+    </div>
 
-    <button class="btn" onclick="loadStation('Gliwice')">
-      Gliwice
-    </button>
-
-    <button class="btn" onclick="loadStation('Zabrze')">
-      Zabrze
-    </button>
-
-    <a class="btn"
-       href="https://portalpasazera.pl"
-       target="_blank">
-      Portal Pasażera
-    </a>
-
-    <a class="btn"
-       href="/debug.html">
-      Debug
-    </a>
-
+    <div class="hint">
+      Po kliknięciu strona przechodzi w tej samej karcie, bez wyskakującego okna, bo przeglądarki nie lubią niespodzianek. Ludzie zresztą też.
+    </div>
   </div>
 
-  <!-- DRUGI RZĄD -->
+  <script>
+    const RESOLVER_ENDPOINTS = [
+      "/resolve-link",
+      "/resolve-link.js"
+    ];
 
-  <div class="secondary-buttons">
-
-    <a class="btn"
-       href="https://l.plk-sa.pl/#qr-generator"
-       target="_blank">
-      Generator QR PLK
-    </a>
-
-  </div>
-
-  <!-- WYSZUKIWARKA -->
-
-  <div class="search-box">
-
-    <input
-      type="text"
-      id="stationInput"
-      placeholder="Wpisz nazwę stacji..."
-    />
-
-    <button onclick="loadDepartures()">
-      Szukaj
-    </button>
-
-  </div>
-
-  <!-- TABLICA -->
-
-  <div class="table-wrapper">
-
-    <table>
-
-      <thead>
-        <tr>
-          <th>Godzina</th>
-          <th>Pociąg</th>
-          <th>Kierunek</th>
-          <th>Peron</th>
-          <th>Opóźnienie</th>
-        </tr>
-      </thead>
-
-      <tbody id="departuresBody">
-
-        <tr>
-          <td>--:--</td>
-          <td colspan="4">
-            Wybierz stację lub wyszukaj własną.
-          </td>
-        </tr>
-
-      </tbody>
-
-    </table>
-
-  </div>
-
-  <div class="footer">
-    Dane realtime PLK / Portal Pasażera
-  </div>
-
-</div>
-
-<script>
-
-  async function loadDepartures() {
-
-    const station =
-      document.getElementById("stationInput")
-      .value
-      .trim();
-
-    if (!station) {
-      alert("Wpisz nazwę stacji.");
-      return;
+    function setStatus(message) {
+      document.getElementById("status").textContent = message;
     }
 
-    loadStation(station);
-  }
+    function handleEnter(event) {
+      if (event.key === "Enter") {
+        searchStation();
+      }
+    }
 
-  async function loadStation(station) {
+    function searchStation() {
+      const station = document.getElementById("stationInput").value.trim();
 
-    try {
-
-      const response = await fetch(
-        `/resolve-link?station=${encodeURIComponent(station)}`
-      );
-
-      if (!response.ok) {
-        throw new Error("Błąd resolvera linku.");
+      if (!station) {
+        setStatus("Wpisz nazwę stacji.");
+        return;
       }
 
-      const data = await response.json();
+      goToStation(station);
+    }
 
-      if (!data.url) {
-        throw new Error("Brak URL w odpowiedzi.");
+    async function goToStation(station) {
+      setStatus("Szukam tablicy dla stacji: " + station + "...");
+
+      let lastError = null;
+
+      for (const endpoint of RESOLVER_ENDPOINTS) {
+        try {
+          const url = endpoint + "?station=" + encodeURIComponent(station);
+
+          const response = await fetch(url, {
+            method: "GET",
+            headers: {
+              "Accept": "application/json"
+            }
+          });
+
+          if (!response.ok) {
+            lastError = new Error("Resolver zwrócił HTTP " + response.status);
+            continue;
+          }
+
+          const data = await response.json();
+
+          const targetUrl =
+            data.url ||
+            data.link ||
+            data.href ||
+            data.redirectUrl;
+
+          if (!targetUrl) {
+            lastError = new Error("Brak pola url/link/href/redirectUrl w odpowiedzi resolvera.");
+            continue;
+          }
+
+          window.location.href = targetUrl;
+          return;
+
+        } catch (error) {
+          lastError = error;
+        }
       }
 
-      window.open(data.url, "_blank");
+      console.error(lastError);
 
-    } catch (error) {
-
-      console.error(error);
-
-      alert(
-        "Nie udało się otworzyć tablicy dla stacji: "
-        + station
+      setStatus(
+        "Nie udało się znaleźć tablicy dla stacji: " +
+        station +
+        ". Sprawdź resolver /resolve-link albo /resolve-link.js."
       );
     }
-  }
-
-</script>
-
+  </script>
 </body>
 </html>
