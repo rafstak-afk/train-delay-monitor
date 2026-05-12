@@ -91,12 +91,31 @@
     .status {
       margin-top: 18px;
       min-height: 24px;
-      opacity: 0.9;
+      opacity: 0.95;
+      white-space: pre-wrap;
+      text-align: left;
+      background: #1c2833;
+      border-radius: 12px;
+      padding: 16px;
+      font-family: Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.45;
+      overflow-x: auto;
+    }
+
+    .small-note {
+      margin-top: 14px;
+      opacity: 0.75;
+      font-size: 14px;
     }
 
     @media (max-width: 700px) {
       .search-box {
         flex-direction: column;
+      }
+
+      body {
+        padding: 14px;
       }
     }
   </style>
@@ -113,6 +132,7 @@
       <button class="btn" onclick="openStation('Bytom')">Bytom</button>
       <button class="btn" onclick="openStation('Gliwice')">Gliwice</button>
       <button class="btn" onclick="openStation('Zabrze')">Zabrze</button>
+      <button class="btn" onclick="openStation('Tczew')">Tczew</button>
 
       <a class="btn" href="https://portalpasazera.pl" target="_blank" rel="noopener">
         Portal Pasażera
@@ -143,7 +163,13 @@
     </div>
 
     <div id="status" class="status">
-      Wybierz stację albo wpisz nazwę.
+Gotowe. Kliknij stację albo wpisz nazwę.
+
+Ta wersja pokaże odpowiedzi endpointów resolvera bez chowania błędu w konsoli, bo najwyraźniej świat uznał, że debugowanie powinno być formą pokuty.
+    </div>
+
+    <div class="small-note">
+      Po znalezieniu prawidłowego linku strona automatycznie przejdzie do tablicy PLK.
     </div>
 
   </div>
@@ -165,104 +191,114 @@
     }
 
     async function openStation(station) {
-      setStatus("Szukam linku do tablicy: " + station + "...");
+      setStatus("Testuję resolver dla stacji: " + station + "...");
 
-      try {
-        const link = await resolveStationLink(station);
+      const encoded = encodeURIComponent(station);
 
-        if (!link) {
-          throw new Error("Resolver nie zwrócił linku.");
-        }
+      const tests = [
+        "/resolve-link?station=" + encoded,
+        "/resolve-link?name=" + encoded,
+        "/resolve-link?q=" + encoded,
 
-        setStatus("Otwieram tablicę: " + station);
+        "/resolve-link.js?station=" + encoded,
+        "/resolve-link.js?name=" + encoded,
+        "/resolve-link.js?q=" + encoded,
 
-        window.location.href = link;
+        "/api/resolve-link?station=" + encoded,
+        "/api/resolve-link?name=" + encoded,
+        "/api/resolve-link?q=" + encoded,
 
-      } catch (error) {
-        console.error("Błąd resolvera:", error);
-
-        setStatus(
-          "Nie udało się wygenerować linku dla stacji: " +
-          station +
-          ". Sprawdź odpowiedź resolvera w konsoli."
-        );
-      }
-    }
-
-    async function resolveStationLink(station) {
-      const endpoints = [
-        "/resolve-link?station=" + encodeURIComponent(station),
-        "/resolve-link?name=" + encodeURIComponent(station),
-        "/resolve-link?q=" + encodeURIComponent(station),
-
-        "/resolve-link.js?station=" + encodeURIComponent(station),
-        "/resolve-link.js?name=" + encodeURIComponent(station),
-        "/resolve-link.js?q=" + encodeURIComponent(station),
-
-        "/api/resolve-link?station=" + encodeURIComponent(station),
-        "/api/resolve-link?name=" + encodeURIComponent(station),
-        "/api/resolve-link?q=" + encodeURIComponent(station)
+        "/api/resolve?station=" + encoded,
+        "/api/station-link?station=" + encoded,
+        "/station-link?station=" + encoded
       ];
 
-      for (const endpoint of endpoints) {
+      let report = "STACJA: " + station + "\n";
+      report += "====================================\n";
+
+      for (const url of tests) {
         try {
-          const response = await fetch(endpoint, {
+          const response = await fetch(url, {
             method: "GET",
             headers: {
               "Accept": "application/json, text/plain, */*"
             }
           });
 
-          if (!response.ok) {
-            continue;
-          }
-
-          const contentType = response.headers.get("content-type") || "";
-
-          if (contentType.includes("application/json")) {
-            const data = await response.json();
-
-            console.log("Odpowiedź resolvera JSON:", endpoint, data);
-
-            return (
-              data.url ||
-              data.link ||
-              data.href ||
-              data.redirectUrl ||
-              data.target ||
-              data.result ||
-              null
-            );
-          }
-
           const text = await response.text();
-          console.log("Odpowiedź resolvera TEXT:", endpoint, text);
 
-          const trimmed = text.trim();
+          report += "\nURL: " + url;
+          report += "\nHTTP: " + response.status;
+          report += "\nCONTENT-TYPE: " + (response.headers.get("content-type") || "brak");
+          report += "\nODPOWIEDŹ: " + text.slice(0, 500);
+          report += "\n------------------------------------";
 
-          if (trimmed.startsWith("http")) {
-            return trimmed;
-          }
+          const foundLink = extractLink(text);
 
-          try {
-            const parsed = JSON.parse(trimmed);
-
-            return (
-              parsed.url ||
-              parsed.link ||
-              parsed.href ||
-              parsed.redirectUrl ||
-              parsed.target ||
-              parsed.result ||
-              null
+          if (response.ok && foundLink) {
+            setStatus(
+              "Znaleziono link dla stacji: " + station +
+              "\n\n" + foundLink +
+              "\n\nOtwieram..."
             );
-          } catch (_) {
-            // tekst nie był JSON-em, trudno, internet przeżyje
+
+            window.location.href = foundLink;
+            return;
           }
 
         } catch (error) {
-          console.warn("Nieudany endpoint:", endpoint, error);
+          report += "\nURL: " + url;
+          report += "\nBŁĄD FETCH: " + error.message;
+          report += "\n------------------------------------";
         }
+
+        setStatus(report);
+      }
+
+      report += "\n\nNIE ZNALEZIONO LINKU.";
+      report += "\n\nWniosek: frontend działa, ale nie trafia w działający resolver albo resolver nie jest wrzucony na Pages/Worker.";
+      report += "\nNajważniejsze będzie sprawdzić, który adres wcześniej działał i jak dokładnie nazywał parametr.";
+
+      setStatus(report);
+    }
+
+    function extractLink(text) {
+      const trimmed = text.trim();
+
+      if (!trimmed) {
+        return null;
+      }
+
+      if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+        return trimmed;
+      }
+
+      try {
+        const json = JSON.parse(trimmed);
+
+        const candidate =
+          json.url ||
+          json.link ||
+          json.href ||
+          json.redirectUrl ||
+          json.target ||
+          json.result ||
+          json.data?.url ||
+          json.data?.link ||
+          json.data?.href;
+
+        if (candidate && typeof candidate === "string") {
+          return candidate;
+        }
+
+      } catch (_) {
+        // To nie JSON. Cudownie. Lecimy dalej.
+      }
+
+      const match = trimmed.match(/https?:\/\/[^\s"'<>]+/);
+
+      if (match) {
+        return match[0];
       }
 
       return null;
