@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Monitor odjazdów</title>
+<title>Monitor odjazdów PLK</title>
 
 <style>
 :root{
@@ -315,13 +315,13 @@ pre{
 
 <script>
 const quickStations = [
-  { name:"Lubliniec", link:"https://l.plk-sa.pl/71183" },
+  { name:"Lubliniec", link:"https://portalpasazera.pl/KatalogiStacji?stacja=Lubliniec" },
   { name:"Tarnowskie Góry", link:"https://l.plk-sa.pl/71001" },
-  { name:"Bytom", link:"https://l.plk-sa.pl/71016" },
-  { name:"Gliwice", link:"https://l.plk-sa.pl/71026" },
-  { name:"Chorzów Batory", link:"https://l.plk-sa.pl/71041" },
-  { name:"Katowice", link:"https://l.plk-sa.pl/71000" },
-  { name:"Kraków Główny", link:"https://l.plk-sa.pl/73000" }
+  { name:"Bytom", link:"https://portalpasazera.pl/KatalogiStacji?stacja=Bytom" },
+  { name:"Gliwice", link:"https://portalpasazera.pl/KatalogiStacji?stacja=Gliwice" },
+  { name:"Chorzów Batory", link:"https://portalpasazera.pl/KatalogiStacji?stacja=Chorzów%20Batory" },
+  { name:"Katowice", link:"https://portalpasazera.pl/KatalogiStacji?stacja=Katowice" },
+  { name:"Kraków Główny", link:"https://portalpasazera.pl/KatalogiStacji?stacja=Kraków%20Główny" }
 ];
 
 const now = new Date();
@@ -355,15 +355,19 @@ function renderQuickStations(){
   }
 }
 
+function linkForStation(station){
+  const item = quickStations.find(x => x.name === station);
+  return item?.link || `https://portalpasazera.pl/KatalogiStacji?stacja=${encodeURIComponent(station)}`;
+}
+
 function updateStationLink(data){
   const station = stationInput.value.trim();
-  const quick = quickStations.find(x => x.name === station);
 
   const link =
     data?.stationLink ||
-    quick?.link ||
+    linkForStation(station) ||
     localStorage.getItem("lastStationLink") ||
-    "https://l.plk-sa.pl/";
+    "https://portalpasazera.pl/KatalogStacji";
 
   stationLink.href = link;
 }
@@ -419,6 +423,15 @@ async function loadData(){
 
     renderResults(data.route || []);
   }catch(error){
+    const link = linkForStation(station);
+
+    document.getElementById("summary").innerHTML = `
+      <span>
+        Nie pobrano danych z API.
+      </span>
+      <a id="stationLink" href="${link}" target="_blank">Oficjalna tablica PLK</a>
+    `;
+
     document.getElementById("error").innerHTML = `
       <div class="error">
         ${safe(error.message)}
@@ -428,7 +441,15 @@ async function loadData(){
     document.getElementById("debug").textContent =
       error.stack || error.message || String(error);
 
-    updateStationLink(null);
+    document.getElementById("results").innerHTML = `
+      <div class="row">
+        <div class="time">—</div>
+        <div class="train">—</div>
+        <div class="dest">API niedostępne</div>
+        <div class="via">Użyj linku do oficjalnej tablicy PLK. Tak, czasem nawet fallback musi robić za główną funkcję.</div>
+        <div class="platform">—</div>
+      </div>
+    `;
   }
 }
 
@@ -442,7 +463,7 @@ function renderResults(rows){
         <div class="time">—</div>
         <div class="train">—</div>
         <div class="dest">Brak danych</div>
-        <div class="via">Zmień godzinę albo poczekaj na odnowienie limitu API.</div>
+        <div class="via">Zmień godzinę albo sprawdź oficjalną tablicę PLK.</div>
         <div class="platform">—</div>
       </div>
     `;
