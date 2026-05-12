@@ -5,10 +5,6 @@ export async function onRequest(context) {
   );
 }
 
-// =========================
-// HELPERS
-// =========================
-
 function corsHeaders() {
   return {
     "Access-Control-Allow-Origin": "*",
@@ -42,6 +38,7 @@ function normalize(value) {
 }
 
 async function fetchJson(url, headers = {}) {
+
   const response = await fetch(url, {
     method: "GET",
     headers
@@ -55,13 +52,13 @@ async function fetchJson(url, headers = {}) {
     data = JSON.parse(text);
   } catch {
     throw new Error(
-      `Invalid JSON from ${url}: ${text.slice(0, 300)}`
+      `Invalid JSON from API: ${text.slice(0, 300)}`
     );
   }
 
   if (!response.ok) {
     throw new Error(
-      `HTTP ${response.status}: ${text.slice(0, 300)}`
+      `PLK API ${response.status}: ${text.slice(0, 300)}`
     );
   }
 
@@ -69,7 +66,10 @@ async function fetchJson(url, headers = {}) {
 }
 
 function extractArray(payload) {
-  if (Array.isArray(payload)) return payload;
+
+  if (Array.isArray(payload)) {
+    return payload;
+  }
 
   const keys = [
     "data",
@@ -81,171 +81,201 @@ function extractArray(payload) {
   ];
 
   for (const key of keys) {
+
     if (Array.isArray(payload?.[key])) {
       return payload[key];
     }
+
   }
 
   return [];
 }
 
 function parseTime(value) {
-  const match = clean(value).match(/(\d{2}):(\d{2})/);
 
-  if (!match) return null;
+  const match =
+    clean(value).match(/(\d{2}):(\d{2})/);
 
-  return Number(match[1]) * 60 + Number(match[2]);
+  if (!match) {
+    return null;
+  }
+
+  return (
+    Number(match[1]) * 60
+    + Number(match[2])
+  );
 }
 
 function formatTime(value) {
-  const match = clean(value).match(/(\d{2}:\d{2})/);
 
-  return match ? match[1] : "—";
+  const match =
+    clean(value).match(/(\d{2}:\d{2})/);
+
+  return match
+    ? match[1]
+    : "—";
 }
 
 function calculateDelay(planned, actual) {
+
   const p = parseTime(planned);
   const a = parseTime(actual);
 
-  if (p === null || a === null) return 0;
-
-  let diff = a - p;
-
-  if (diff < -720) {
-    diff += 1440;
+  if (p === null || a === null) {
+    return 0;
   }
 
-  return Math.max(0, diff);
+  return Math.max(0, a - p);
 }
 
 function normalizeStatus(status) {
-  const s = clean(status).toUpperCase();
 
-  if (["S", "DONE", "COMPLETED"].includes(s)) {
+  const s =
+    clean(status).toUpperCase();
+
+  if (
+    ["S", "DONE", "COMPLETED"]
+      .includes(s)
+  ) {
     return "Zrealizowano";
   }
 
-  if (["C", "RUNNING", "IN_PROGRESS"].includes(s)) {
+  if (
+    ["RUNNING", "C", "IN_PROGRESS"]
+      .includes(s)
+  ) {
     return "W ruchu";
   }
 
-  if (["LATE", "DELAYED"].includes(s)) {
+  if (
+    ["DELAYED", "LATE"]
+      .includes(s)
+  ) {
     return "Opóźniony";
   }
 
   return "W ruchu";
 }
 
-// =========================
-// STATIONS
-// =========================
-
-function findStation(stations, query) {
-  const needle = normalize(query);
-
-  return (
-    stations.find(s =>
-      normalize(
-        s.name || s.stationName
-      ).includes(needle)
-    ) || null
-  );
-}
-
 function buildStationMap(stations) {
+
   const map = {};
 
   for (const station of stations) {
+
     const id = clean(
-      station.id ||
-      station.stationId
+      station.id
+      || station.stationId
     );
 
     const name = clean(
-      station.name ||
-      station.stationName
+      station.name
+      || station.stationName
     );
 
     if (id && name) {
       map[id] = name;
     }
+
   }
 
   return map;
 }
 
-// =========================
-// OPERATIONS
-// =========================
+function findStation(stations, query) {
 
-function getOperationStops(operation) {
+  const needle = normalize(query);
+
+  return (
+    stations.find(station =>
+      normalize(
+        station.name
+        || station.stationName
+      ).includes(needle)
+    )
+    || null
+  );
+}
+
+function getStops(operation) {
+
   const candidates = [
     operation.stations,
     operation.stops,
     operation.route,
-    operation.path,
-    operation.timetable
+    operation.path
   ];
 
   for (const candidate of candidates) {
+
     if (
       Array.isArray(candidate)
       && candidate.length
     ) {
       return candidate;
     }
+
   }
 
   return [];
 }
 
-function getStopStationId(stop) {
+function stopStationId(stop) {
+
   return clean(
-    stop.stationId ||
-    stop.id ||
-    stop.station?.id
+    stop.stationId
+    || stop.id
   );
 }
 
 function getPlannedTime(stop) {
+
   return (
-    formatTime(stop.plannedDepartureTime) ||
-    formatTime(stop.plannedArrivalTime) ||
-    formatTime(stop.plannedDeparture) ||
-    formatTime(stop.plannedArrival) ||
-    "—"
+    formatTime(stop.plannedDeparture)
+    || formatTime(stop.plannedDepartureTime)
+    || formatTime(stop.plannedArrival)
+    || formatTime(stop.plannedArrivalTime)
+    || "—"
   );
 }
 
 function getActualTime(stop, planned) {
+
   return (
-    formatTime(stop.actualDepartureTime) ||
-    formatTime(stop.actualArrivalTime) ||
-    formatTime(stop.actualDeparture) ||
-    formatTime(stop.actualArrival) ||
-    planned
+    formatTime(stop.actualDeparture)
+    || formatTime(stop.actualDepartureTime)
+    || formatTime(stop.actualArrival)
+    || formatTime(stop.actualArrivalTime)
+    || planned
   );
 }
 
-function getDelay(stop, operation, planned, actual) {
-  const explicit =
-    stop.delayMinutes ??
-    stop.delay ??
-    operation.delayMinutes ??
-    operation.delay;
+function getPlatform(stop) {
 
-  if (explicit !== undefined) {
-    return Number(explicit) || 0;
-  }
-
-  return calculateDelay(planned, actual);
+  return clean(
+    stop.platform
+    || stop.platformNumber
+    || stop.track
+  ) || "—";
 }
 
-function getPlatform(stop) {
+function getTrainNumber(operation) {
+
   return clean(
-    stop.platform ||
-    stop.platformNumber ||
-    stop.track
+    operation.trainNumber
+    || operation.publicTrainNumber
+    || operation.commercialNumber
+    || operation.marketingNumber
+  ) || "—";
+}
+
+function getCarrier(operation) {
+
+  return clean(
+    operation.carrier
+    || operation.carrierName
+    || operation.operator
+    || operation.operatorName
   ) || "—";
 }
 
@@ -254,16 +284,20 @@ function getDestination(
   currentIndex,
   stationMap
 ) {
+
   for (
     let i = stops.length - 1;
     i > currentIndex;
     i--
   ) {
-    const id = getStopStationId(stops[i]);
+
+    const id =
+      stopStationId(stops[i]);
 
     if (stationMap[id]) {
       return stationMap[id];
     }
+
   }
 
   return "—";
@@ -275,6 +309,7 @@ function getVia(
   stationMap,
   destination
 ) {
+
   const names = [];
 
   for (
@@ -282,11 +317,16 @@ function getVia(
     i < stops.length;
     i++
   ) {
-    const id = getStopStationId(stops[i]);
 
-    const name = stationMap[id];
+    const id =
+      stopStationId(stops[i]);
 
-    if (!name) continue;
+    const name =
+      stationMap[id];
+
+    if (!name) {
+      continue;
+    }
 
     if (name === destination) {
       break;
@@ -299,50 +339,63 @@ function getVia(
     if (names.length >= 4) {
       break;
     }
+
   }
 
-  return names.join(" • ") || "—";
+  return names.join(" • ")
+    || "—";
 }
 
-// =========================
-// MAIN
-// =========================
+async function handleRequest(
+  request,
+  env
+) {
 
-async function handleRequest(request, env) {
-
-  const method = request.method.toUpperCase();
+  const method =
+    request.method.toUpperCase();
 
   if (method === "OPTIONS") {
-    return new Response(null, {
-      headers: corsHeaders()
+
+    return new Response(
+      null,
+      {
+        headers: corsHeaders()
+      }
+    );
+
+  }
+
+  if (method === "GET") {
+
+    return json({
+      ok: true,
+      endpoint: "/train"
     });
+
   }
 
   if (method !== "POST") {
+
     return json({
-      ok: true,
-      usage: {
-        endpoint: "/train",
-        method: "POST",
-        body: {
-          station: "Tczew"
-        }
-      }
-    });
+      error: "Method not allowed"
+    }, 405);
+
   }
 
   try {
 
-    const body = await request.json();
+    const body =
+      await request.json();
 
-    const stationQuery = clean(
-      body.station
-    );
+    const stationQuery =
+      clean(body.station);
 
     if (!stationQuery) {
+
       return json({
         error: "Missing station"
       }, 400);
+
     }
 
     const apiBase =
@@ -352,25 +405,33 @@ async function handleRequest(request, env) {
     const headers = {};
 
     if (env.PLK_API_KEY) {
+
       headers["X-Api-Key"] =
         env.PLK_API_KEY;
+
     }
 
-    // =========================
-    // LOAD STATIONS
-    // =========================
+    // ====================
+    // STATIONS
+    // ====================
+
+    const stationsUrl = new URL(
+      `${apiBase}/dictionaries/stations`
+    );
+
+    stationsUrl.searchParams.set(
+      "search",
+      stationQuery
+    );
 
     const stationsPayload =
       await fetchJson(
-        `${apiBase}/dictionaries/stations`,
+        stationsUrl.toString(),
         headers
       );
 
     const stations =
       extractArray(stationsPayload);
-
-    const stationMap =
-      buildStationMap(stations);
 
     const matchedStation =
       findStation(
@@ -379,31 +440,60 @@ async function handleRequest(request, env) {
       );
 
     if (!matchedStation) {
+
       return json({
         error: "Station not found"
       }, 404);
+
     }
 
-    const stationId = clean(
-      matchedStation.id ||
-      matchedStation.stationId
-    );
+    const stationId =
+      clean(
+        matchedStation.id
+        || matchedStation.stationId
+      );
 
-    const stationName = clean(
-      matchedStation.name ||
-      matchedStation.stationName
-    );
+    const stationName =
+      clean(
+        matchedStation.name
+        || matchedStation.stationName
+      );
 
-    // =========================
-    // LOAD OPERATIONS
-    // =========================
+    const stationMap =
+      buildStationMap(stations);
+
+    // ====================
+    // OPERATIONS
+    // ====================
 
     const operationsUrl =
-      `${apiBase}/operations?stations=${stationId}&withPlanned=true&pageSize=200`;
+      new URL(
+        `${apiBase}/operations`
+      );
+
+    operationsUrl.searchParams.set(
+      "stations",
+      stationId
+    );
+
+    operationsUrl.searchParams.set(
+      "withPlanned",
+      "true"
+    );
+
+    operationsUrl.searchParams.set(
+      "fullRoutes",
+      "true"
+    );
+
+    operationsUrl.searchParams.set(
+      "pageSize",
+      "500"
+    );
 
     const operationsPayload =
       await fetchJson(
-        operationsUrl,
+        operationsUrl.toString(),
         headers
       );
 
@@ -412,28 +502,33 @@ async function handleRequest(request, env) {
         operationsPayload
       );
 
-    // =========================
-    // BUILD ROWS
-    // =========================
+    // ====================
+    // BUILD TABLE
+    // ====================
 
     const rows = [];
 
     for (const operation of operations) {
 
       const stops =
-        getOperationStops(operation);
+        getStops(operation);
 
-      if (!stops.length) continue;
+      if (!stops.length) {
+        continue;
+      }
 
       const stopIndex =
         stops.findIndex(stop =>
-          getStopStationId(stop)
+          stopStationId(stop)
           === stationId
         );
 
-      if (stopIndex === -1) continue;
+      if (stopIndex === -1) {
+        continue;
+      }
 
-      const stop = stops[stopIndex];
+      const stop =
+        stops[stopIndex];
 
       const planned =
         getPlannedTime(stop);
@@ -445,9 +540,7 @@ async function handleRequest(request, env) {
         );
 
       const delay =
-        getDelay(
-          stop,
-          operation,
+        calculateDelay(
           planned,
           actual
         );
@@ -468,15 +561,10 @@ async function handleRequest(request, env) {
           operation.trainStatus
         ),
         trainNumber:
-          clean(operation.trainNumber)
-          || clean(operation.publicTrainNumber)
-          || clean(operation.commercialNumber)
-          || "—",
+          getTrainNumber(operation),
         destination,
         carrier:
-          clean(operation.carrier)
-          || clean(operation.operator)
-          || "—",
+          getCarrier(operation),
         platform:
           getPlatform(stop),
         via: getVia(
@@ -490,9 +578,11 @@ async function handleRequest(request, env) {
         operatingDate:
           clean(operation.operatingDate)
       });
+
     }
 
     rows.sort((a, b) => {
+
       return (
         (parseTime(a.actual)
           ?? 999999)
@@ -500,16 +590,28 @@ async function handleRequest(request, env) {
         (parseTime(b.actual)
           ?? 999999)
       );
+
     });
 
     return json({
+
       ok: true,
-      matchedStation: stationName,
-      matchedStationId: stationId,
-      totalDepartures: rows.length,
-      route: rows.slice(0, 50),
+
+      matchedStation:
+        stationName,
+
+      matchedStationId:
+        stationId,
+
+      totalDepartures:
+        rows.length,
+
+      route:
+        rows.slice(0, 50),
 
       debug: {
+        stationId,
+        stationName,
         operationsCount:
           operations.length,
         sampleOperation:
@@ -517,14 +619,22 @@ async function handleRequest(request, env) {
         firstRow:
           rows[0] || null
       }
+
     });
 
   } catch (error) {
 
     return json({
-      error: error.message,
-      stack: error.stack
+
+      error:
+        error.message
+        || "Unknown error",
+
+      stack:
+        error.stack
+
     }, 500);
 
   }
+
 }
