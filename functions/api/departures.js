@@ -37,13 +37,33 @@ export async function onRequestGet(context) {
       return json({ error: "Nie znaleziono stacji", stationName }, 404);
     }
 
-    const [schedulesRaw, operationsRaw] = await Promise.all([
-      getJson(`${PLK_BASE}/schedules?dateFrom=${date}&dateTo=${date}&stations=${station.id}`, headers),
-      getJson(`${PLK_BASE}/operations?stations=${station.id}&withPlanned=true&pageSize=10000`, headers)
-    ]);
+    const stationSchedulesUrl =
+      `${PLK_BASE}/schedules?dateFrom=${date}&dateTo=${date}&stations=${station.id}`;
 
-    const stationNames = buildStationNameMap(schedulesRaw);
-    const allDepartures = buildDepartures(schedulesRaw, operationsRaw, station.id, stationNames);
+    const fullSchedulesUrl =
+      `${PLK_BASE}/schedules?dateFrom=${date}&dateTo=${date}`;
+
+    const operationsUrl =
+      `${PLK_BASE}/operations?stations=${station.id}&withPlanned=true&pageSize=10000`;
+
+    const [stationSchedulesRaw, fullSchedulesRaw, operationsRaw] =
+      await Promise.all([
+        getJson(stationSchedulesUrl, headers),
+        getJson(fullSchedulesUrl, headers),
+        getJson(operationsUrl, headers)
+      ]);
+
+    const fullRoutesMap = buildFullRoutesMap(fullSchedulesRaw);
+    const stationNames = buildStationNameMap(fullSchedulesRaw);
+
+    const allDepartures = buildDepartures({
+      stationSchedulesRaw,
+      fullRoutesMap,
+      operationsRaw,
+      stationId: station.id,
+      stationNames
+    });
+
     const departures = getDeparturesFromTime(allDepartures, time, limit);
 
     return json({
@@ -90,8 +110,14 @@ async function findStation(name, headers) {
   };
 }
 
-function buildDepartures(schedulesRaw, operationsRaw, stationId, stationNames) {
-  const routes = schedulesRaw.routes || [];
+function buildDepartures({
+  stationSchedulesRaw,
+  fullRoutesMap,
+  operationsRaw,
+  stationId,
+  stationNames
+}) {
+  const stationRoutes = stationSchedulesRaw.routes || [];
   const trains = operationsRaw.trains || [];
 
   const operationsMap = new Map();
@@ -110,10 +136,16 @@ function buildDepartures(schedulesRaw, operationsRaw, stationId, stationNames) {
 
   const rows = [];
 
-  for (const route of routes) {
-    const routeStations = route.stations || [];
+  for (const stationRoute of stationRoutes) {
+    const key = makeKey(stationRoute);
+    const fullRoute = fullRoutesMap.get(key) || stationRoute;
 
-    const stationPlan = routeStations.find(
+    const routeStations =
+      Array.isArray(fullRoute.stations) && fullRoute.stations.length
+        ? fullRoute.stations
+        : stationRoute.stations || [];
+
+    const stationPlan = (stationRoute.stations || []).find(
       s => Number(s.stationId) === Number(stationId)
     );
 
@@ -130,20 +162,19 @@ function buildDepartures(schedulesRaw, operationsRaw, stationId, stationNames) {
 
     const destination =
       stationName(destinationStation, stationNames) ||
-      route.destinationStationName ||
-      route.destination ||
+      fullRoute.destinationStationName ||
+      fullRoute.destination ||
       "";
 
     const via = currentIndex >= 0
       ? routeStations
-          .slice(currentIndex + 1, currentIndex + 5)
+          .slice(currentIndex + 1, currentIndex + 6)
           .map(s => stationName(s, stationNames))
           .filter(Boolean)
           .filter(name => normalize(name) !== normalize(destination))
           .join(", ")
       : "";
 
-    const key = makeKey(route);
     const operation = operationsMap.get(key);
     const opStation = operation?.station;
 
@@ -166,19 +197,19 @@ function buildDepartures(schedulesRaw, operationsRaw, stationId, stationNames) {
     rows.push({
       time: shortTime(actualTime || plannedTime),
       plannedTime: shortTime(plannedTime),
-      train: stationPlan.departureTrainNumber || route.nationalNumber || "",
-      category: stationPlan.departureCommercialCategory || route.commercialCategorySymbol || "",
-      name: route.name || "",
-      carrier: route.carrierCode || "",
+      train: stationPlan.departureTrainNumber || fullRoute.nationalNumber || stationRoute.nationalNumber || "",
+      category: stationPlan.departureCommercialCategory || fullRoute.commercialCategorySymbol || stationRoute.commercialCategorySymbol || "",
+      name: fullRoute.name || stationRoute.name || "",
+      carrier: fullRoute.carrierCode || stationRoute.carrierCode || "",
       destination,
       via,
       platform: stationPlan.departurePlatform || "",
       track: stationPlan.departureTrack || "",
       delay,
       status: operation?.train?.trainStatus || "",
-      scheduleId: route.scheduleId,
-      orderId: route.orderId,
-      trainOrderId: route.trainOrderId
+      scheduleId: stationRoute.scheduleId,
+      orderId: stationRoute.orderId,
+      trainOrderId: stationRoute.trainOrderId
     });
   }
 
@@ -196,6 +227,21 @@ function buildDepartures(schedulesRaw, operationsRaw, stationId, stationNames) {
     });
 }
 
+function buildFullRoutesMap(fullSchedulesRaw) {
+  const map = new Map();
+  const routes = fullSchedulesRaw.routes || [];
+
+  for (const route of routes) {
+    const key = makeKey(route);
+
+    if (key) {
+      map.set(key, route);
+    }
+  }
+
+  return map;
+}
+
 function buildStationNameMap(schedulesRaw) {
   const map = new Map();
   const dictionaries = schedulesRaw.dictionaries || {};
@@ -203,18 +249,26 @@ function buildStationNameMap(schedulesRaw) {
   const possibleLists = [
     dictionaries.stations,
     dictionaries.station,
+    dictionaries.stopPoints,
     schedulesRaw.stations
   ];
 
   for (const list of possibleLists) {
-    if (Array.isArray(list)) {
-      for (const item of list) {
-        const id = item.id || item.stationId;
-        const name = item.name || item.stationName;
+    if (!Array.isArray(list)) continue;
 
-        if (id && name) {
-          map.set(Number(id), name);
-        }
+    for (const item of list) {
+      const id =
+        item.id ||
+        item.stationId ||
+        item.stopPointId;
+
+      const name =
+        item.name ||
+        item.stationName ||
+        item.stopPointName;
+
+      if (id && name) {
+        map.set(Number(id), name);
       }
     }
   }
