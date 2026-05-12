@@ -2,279 +2,306 @@
 <html lang="pl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
   <title>Tablica Odjazdów PLK</title>
 
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
+
+    *{
+      box-sizing:border-box;
+      margin:0;
+      padding:0;
     }
 
-    body {
-      font-family: Arial, Helvetica, sans-serif;
-      background: #101820;
-      color: #ffffff;
-      min-height: 100vh;
-      padding: 20px;
+    body{
+      font-family:Arial,Helvetica,sans-serif;
+      background:#101820;
+      color:#fff;
+      padding:20px;
     }
 
-    .container {
-      max-width: 1400px;
-      margin: 0 auto;
+    .container{
+      max-width:1400px;
+      margin:auto;
     }
 
-    h1 {
-      text-align: center;
-      margin-bottom: 24px;
-      font-size: 32px;
-      font-weight: 700;
+    h1{
+      text-align:center;
+      margin-bottom:24px;
+      font-size:32px;
     }
 
-    .top-buttons,
-    .secondary-buttons {
-      display: flex;
-      justify-content: center;
-      gap: 12px;
-      margin-bottom: 14px;
-      flex-wrap: wrap;
+    .station-buttons,
+    .secondary-buttons{
+      display:flex;
+      flex-wrap:wrap;
+      justify-content:center;
+      gap:12px;
+      margin-bottom:14px;
     }
 
-    .btn {
-      display: inline-block;
-      padding: 12px 18px;
-      border-radius: 8px;
-      background: #0b57d0;
-      color: white;
-      text-decoration: none;
-      font-weight: 600;
-      transition: 0.2s ease;
+    .btn{
+      background:#0b57d0;
+      color:white;
+      text-decoration:none;
+      padding:12px 18px;
+      border-radius:8px;
+      font-weight:600;
+      transition:0.2s;
+      border:none;
+      cursor:pointer;
     }
 
-    .btn:hover {
-      background: #084298;
-      transform: translateY(-1px);
+    .btn:hover{
+      background:#084298;
+      transform:translateY(-1px);
     }
 
-    .search-box {
-      margin: 24px auto;
-      max-width: 500px;
-      display: flex;
-      gap: 10px;
+    .search-box{
+      margin:24px auto;
+      max-width:600px;
+      display:flex;
+      gap:10px;
     }
 
-    .search-box input {
-      flex: 1;
-      padding: 14px;
-      border-radius: 8px;
-      border: none;
-      font-size: 16px;
+    .search-box input{
+      flex:1;
+      padding:14px;
+      border:none;
+      border-radius:8px;
+      font-size:16px;
     }
 
-    .search-box button {
-      padding: 14px 18px;
-      border: none;
-      border-radius: 8px;
-      background: #198754;
-      color: white;
-      font-size: 16px;
-      font-weight: 700;
-      cursor: pointer;
+    .search-box button{
+      padding:14px 18px;
+      border:none;
+      border-radius:8px;
+      background:#198754;
+      color:white;
+      font-size:16px;
+      font-weight:bold;
+      cursor:pointer;
     }
 
-    .search-box button:hover {
-      background: #157347;
+    .search-box button:hover{
+      background:#157347;
     }
 
-    .table-wrapper {
-      margin-top: 30px;
-      overflow-x: auto;
-      border-radius: 12px;
-      overflow: hidden;
+    .table-wrapper{
+      margin-top:30px;
+      overflow-x:auto;
+      border-radius:12px;
+      overflow:hidden;
     }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: #1c2833;
+    table{
+      width:100%;
+      border-collapse:collapse;
+      background:#1c2833;
     }
 
-    thead {
-      background: #243447;
+    thead{
+      background:#243447;
     }
 
-    th {
-      padding: 16px;
-      text-align: left;
-      font-size: 15px;
-      letter-spacing: 0.5px;
+    th{
+      padding:16px;
+      text-align:left;
     }
 
-    td {
-      padding: 16px;
-      border-top: 1px solid #2f4054;
-      font-size: 15px;
+    td{
+      padding:16px;
+      border-top:1px solid #2f4054;
     }
 
-    tr:hover {
-      background: #253445;
+    tr:hover{
+      background:#253445;
     }
 
-    .delay {
-      color: #ffcc00;
-      font-weight: bold;
+    .delay{
+      color:#ffcc00;
+      font-weight:bold;
     }
 
-    .on-time {
-      color: #5dd39e;
-      font-weight: bold;
+    .on-time{
+      color:#5dd39e;
+      font-weight:bold;
     }
 
-    .footer {
-      text-align: center;
-      margin-top: 30px;
-      opacity: 0.7;
-      font-size: 14px;
+    .footer{
+      text-align:center;
+      margin-top:30px;
+      opacity:0.7;
+      font-size:14px;
     }
 
-    @media (max-width: 768px) {
-      h1 {
-        font-size: 24px;
+    @media(max-width:768px){
+
+      h1{
+        font-size:24px;
       }
 
-      .search-box {
-        flex-direction: column;
+      .search-box{
+        flex-direction:column;
       }
 
-      .search-box button {
-        width: 100%;
+      .search-box button{
+        width:100%;
       }
 
-      th,
-      td {
-        padding: 12px;
-        font-size: 13px;
+      th,td{
+        font-size:13px;
+        padding:12px;
       }
     }
+
   </style>
 </head>
 
 <body>
 
-  <div class="container">
+<div class="container">
 
-    <h1>🚆 Tablica Odjazdów PLK</h1>
+  <h1>🚆 Tablica Odjazdów PLK</h1>
 
-    <!-- GŁÓWNE PRZYCISKI -->
-    <div class="top-buttons">
+  <!-- PRZYCISKI STACJI -->
 
-      <a class="btn"
-         href="https://portalpasazera.pl"
-         target="_blank">
-        Portal Pasażera
-      </a>
+  <div class="station-buttons">
 
-      <a class="btn"
-         href="/debug.html">
-        Debug
-      </a>
+    <button class="btn" onclick="loadStation('Katowice')">
+      Katowice
+    </button>
 
-    </div>
+    <button class="btn" onclick="loadStation('Chorzów Batory')">
+      Chorzów Batory
+    </button>
 
-    <!-- DRUGI RZĄD -->
-    <div class="secondary-buttons">
+    <button class="btn" onclick="loadStation('Bytom')">
+      Bytom
+    </button>
 
-      <a class="btn"
-         href="https://l.plk-sa.pl/#qr-generator"
-         target="_blank">
-        Generator QR PLK
-      </a>
+    <button class="btn" onclick="loadStation('Gliwice')">
+      Gliwice
+    </button>
 
-    </div>
+    <button class="btn" onclick="loadStation('Zabrze')">
+      Zabrze
+    </button>
 
-    <!-- WYSZUKIWARKA -->
-    <div class="search-box">
+    <a class="btn"
+       href="https://portalpasazera.pl"
+       target="_blank">
+      Portal Pasażera
+    </a>
 
-      <input
-        type="text"
-        id="stationInput"
-        placeholder="Wpisz nazwę stacji..."
-      />
-
-      <button onclick="loadDepartures()">
-        Szukaj
-      </button>
-
-    </div>
-
-    <!-- TABLICA -->
-    <div class="table-wrapper">
-
-      <table>
-
-        <thead>
-          <tr>
-            <th>Godzina</th>
-            <th>Pociąg</th>
-            <th>Kierunek</th>
-            <th>Peron</th>
-            <th>Opóźnienie</th>
-          </tr>
-        </thead>
-
-        <tbody id="departuresBody">
-
-          <tr>
-            <td>12:15</td>
-            <td>IC 3812</td>
-            <td>Warszawa Centralna</td>
-            <td>2</td>
-            <td class="on-time">0 min</td>
-          </tr>
-
-          <tr>
-            <td>12:22</td>
-            <td>REGIO 44721</td>
-            <td>Katowice</td>
-            <td>1</td>
-            <td class="delay">+7 min</td>
-          </tr>
-
-        </tbody>
-
-      </table>
-
-    </div>
-
-    <div class="footer">
-      Dane realtime PLK / Portal Pasażera
-    </div>
+    <a class="btn"
+       href="/debug.html">
+      Debug
+    </a>
 
   </div>
 
-  <script>
+  <!-- DRUGI RZĄD -->
 
-    async function loadDepartures() {
+  <div class="secondary-buttons">
 
-      const station = document.getElementById("stationInput").value;
+    <a class="btn"
+       href="https://l.plk-sa.pl/#qr-generator"
+       target="_blank">
+      Generator QR PLK
+    </a>
 
-      if (!station) {
-        alert("Wpisz nazwę stacji.");
-        return;
-      }
+  </div>
 
-      console.log("Szukam stacji:", station);
+  <!-- WYSZUKIWARKA -->
 
-      // TU PODPINASZ SWOJE API / WORKER
-      // fetch('/api/departures?station=' + encodeURIComponent(station))
+  <div class="search-box">
 
-      alert("Tutaj podepniesz swoje API PLK.");
+    <input
+      type="text"
+      id="stationInput"
+      placeholder="Wpisz nazwę stacji..."
+    />
 
+    <button onclick="loadDepartures()">
+      Szukaj
+    </button>
+
+  </div>
+
+  <!-- TABLICA -->
+
+  <div class="table-wrapper">
+
+    <table>
+
+      <thead>
+        <tr>
+          <th>Godzina</th>
+          <th>Pociąg</th>
+          <th>Kierunek</th>
+          <th>Peron</th>
+          <th>Opóźnienie</th>
+        </tr>
+      </thead>
+
+      <tbody id="departuresBody">
+
+        <tr>
+          <td>12:15</td>
+          <td>IC 3812</td>
+          <td>Warszawa Centralna</td>
+          <td>2</td>
+          <td class="on-time">0 min</td>
+        </tr>
+
+        <tr>
+          <td>12:22</td>
+          <td>REGIO 44721</td>
+          <td>Katowice</td>
+          <td>1</td>
+          <td class="delay">+7 min</td>
+        </tr>
+
+      </tbody>
+
+    </table>
+
+  </div>
+
+  <div class="footer">
+    Dane realtime PLK / Portal Pasażera
+  </div>
+
+</div>
+
+<script>
+
+  async function loadDepartures(){
+
+    const station =
+      document.getElementById("stationInput").value;
+
+    if(!station){
+      alert("Wpisz nazwę stacji.");
+      return;
     }
 
-  </script>
+    loadStation(station);
+  }
+
+  async function loadStation(station){
+
+    console.log("Ładowanie stacji:", station);
+
+    // tutaj podłączysz worker/API
+    // fetch(...)
+
+    alert("Tutaj podłączysz API dla stacji: " + station);
+  }
+
+</script>
 
 </body>
 </html>
