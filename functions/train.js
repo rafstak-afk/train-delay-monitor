@@ -130,7 +130,13 @@ function calculateDelay(planned, actual) {
     return 0;
   }
 
-  return Math.max(0, a - p);
+  let diff = a - p;
+
+  if (diff < -720) {
+    diff += 1440;
+  }
+
+  return Math.max(0, diff);
 }
 
 function normalizeStatus(status) {
@@ -520,6 +526,21 @@ function filterByTime(rows, time) {
 
 }
 
+function buildPortalStationId(stationId){
+
+  const cleaned =
+    clean(stationId);
+
+  if(
+    cleaned.startsWith("7")
+    && cleaned.length >= 5
+  ){
+    return cleaned;
+  }
+
+  return `7${cleaned}`;
+}
+
 async function handleRequest(
   request,
   env
@@ -582,6 +603,10 @@ async function handleRequest(
 
     }
 
+    // ======================
+    // STATIONS
+    // ======================
+
     const stationsUrl = new URL(
       `${apiBase}/dictionaries/stations`
     );
@@ -626,6 +651,10 @@ async function handleRequest(
         || matchedStation.stationName
       );
 
+    // ======================
+    // FULL STATION MAP
+    // ======================
+
     const allStationsPayload =
       await fetchJson(
         `${apiBase}/dictionaries/stations`,
@@ -641,6 +670,10 @@ async function handleRequest(
       buildStationMap(
         allStations
       );
+
+    // ======================
+    // OPERATIONS
+    // ======================
 
     const operationsUrl =
       new URL(
@@ -811,11 +844,16 @@ async function handleRequest(
       matchedStationId:
         stationId,
 
+      portalStationId:
+        buildPortalStationId(
+          stationId
+        ),
+
       totalDepartures:
         filteredRows.length,
 
       route:
-        filteredRows.slice(0, 20),
+        filteredRows.slice(0,20),
 
       debug: {
 
