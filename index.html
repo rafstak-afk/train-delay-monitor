@@ -72,15 +72,21 @@
       margin: 26px auto;
       display: flex;
       gap: 10px;
-      max-width: 760px;
+      max-width: 900px;
+      flex-wrap: wrap;
+      justify-content: center;
     }
 
     .search-box input {
-      flex: 1;
       padding: 14px;
       border-radius: 10px;
       border: 0;
       font-size: 16px;
+    }
+
+    #stationInput {
+      min-width: 260px;
+      flex: 1;
     }
 
     .search-box button {
@@ -119,7 +125,7 @@
       margin-top: 34px;
       background: #1c2833;
       border-radius: 14px;
-      padding: 18px;
+      padding: 14px;
       text-align: left;
     }
 
@@ -127,6 +133,7 @@
       text-align: center;
       margin-top: 0;
       margin-bottom: 8px;
+      font-size: 20px;
     }
 
     .api-meta {
@@ -143,13 +150,17 @@
     table {
       width: 100%;
       border-collapse: collapse;
-      min-width: 760px;
+      table-layout: fixed;
     }
 
     th, td {
-      padding: 10px 12px;
+      padding: 8px 9px;
       border-bottom: 1px solid #34495e;
-      font-size: 14px;
+      font-size: 13px;
+      white-space: normal;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+      vertical-align: top;
     }
 
     th {
@@ -159,6 +170,41 @@
 
     tr:hover {
       background: #253445;
+    }
+
+    .col-time {
+      width: 62px;
+    }
+
+    .col-train {
+      width: 105px;
+    }
+
+    .col-direction {
+      width: auto;
+    }
+
+    .col-platform {
+      width: 48px;
+      text-align: center;
+    }
+
+    .col-delay {
+      width: 68px;
+      text-align: center;
+    }
+
+    .train-main,
+    .direction-main {
+      font-weight: 700;
+    }
+
+    .train-name,
+    .direction-via {
+      opacity: 0.78;
+      font-size: 12px;
+      margin-top: 3px;
+      line-height: 1.25;
     }
 
     .delay {
@@ -173,15 +219,61 @@
 
     .muted {
       opacity: 0.65;
+      font-size: 12px;
     }
 
     @media (max-width: 700px) {
       body {
-        padding: 14px;
+        padding: 10px;
+      }
+
+      .container {
+        max-width: 100%;
       }
 
       .search-box {
         flex-direction: column;
+      }
+
+      .search-box input,
+      .search-box button {
+        width: 100%;
+        box-sizing: border-box;
+      }
+
+      #stationInput {
+        min-width: auto;
+      }
+
+      .api-panel {
+        padding: 10px;
+      }
+
+      th, td {
+        padding: 7px 6px;
+        font-size: 12px;
+      }
+
+      .col-time {
+        width: 54px;
+      }
+
+      .col-train {
+        width: 82px;
+      }
+
+      .col-platform {
+        width: 38px;
+      }
+
+      .col-delay {
+        width: 55px;
+      }
+
+      .train-name,
+      .direction-via,
+      .muted {
+        font-size: 11px;
       }
     }
   </style>
@@ -202,12 +294,7 @@
     </div>
 
     <div class="secondary-row">
-      <a
-        class="btn-small"
-        href="https://l.plk-sa.pl/#qr-generator"
-        target="_blank"
-        rel="noopener"
-      >
+      <a class="btn-small" href="https://l.plk-sa.pl/#qr-generator" target="_blank" rel="noopener">
         Generator QR PLK
       </a>
     </div>
@@ -217,16 +304,14 @@
         id="stationInput"
         type="text"
         placeholder="Wpisz nazwę stacji..."
-        onkeydown="if(event.key === 'Enter') searchStation()"
+        onkeydown="if(event.key === 'Enter') loadApiDeparturesFromInput()"
       />
 
-      <button class="btn-official" onclick="searchStation()">
-        Otwórz PLK
-      </button>
+      <input id="dateInput" type="date" />
+      <input id="timeInput" type="time" />
 
-      <button class="btn-api" onclick="loadApiDeparturesFromInput()">
-        Pokaż z API
-      </button>
+      <button class="btn-official" onclick="searchStation()">Otwórz PLK</button>
+      <button class="btn-api" onclick="loadApiDeparturesFromInput()">Pokaż z API</button>
     </div>
 
     <div id="status" class="status">
@@ -235,28 +320,28 @@
 
     <div class="api-panel">
       <h2>Własna tablica z API PLK</h2>
+
       <div id="apiMeta" class="api-meta">
-        Kliknij „Pokaż z API”, żeby załadować odjazdy bez opuszczania strony.
+        Kliknij „Pokaż z API”, żeby załadować 20 odjazdów od wybranej lub bieżącej godziny.
       </div>
 
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
-              <th>Godzina</th>
-              <th>Plan</th>
-              <th>Pociąg</th>
-              <th>Nazwa</th>
-              <th>Przewoźnik</th>
-              <th>Peron</th>
-              <th>Tor</th>
-              <th>Opóźnienie</th>
+              <th class="col-time">Godz.</th>
+              <th class="col-train">Pociąg</th>
+              <th class="col-direction">Kierunek / przez</th>
+              <th class="col-platform">Per.</th>
+              <th class="col-platform">Tor</th>
+              <th class="col-delay">Opóźn.</th>
             </tr>
           </thead>
+
           <tbody id="apiDeparturesBody">
             <tr>
-              <td colspan="8" class="muted">
-                Brak danych. Jeszcze. Spokojnie, backend już umie mówić.
+              <td colspan="6" class="muted">
+                Brak danych. Backend już mówi, więc teraz tylko nie przewracać stolika.
               </td>
             </tr>
           </tbody>
@@ -267,6 +352,23 @@
   </div>
 
   <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      setDefaultDateTime();
+    });
+
+    function setDefaultDateTime() {
+      const now = new Date();
+
+      const yyyy = now.getFullYear();
+      const mm = String(now.getMonth() + 1).padStart(2, "0");
+      const dd = String(now.getDate()).padStart(2, "0");
+      const hh = String(now.getHours()).padStart(2, "0");
+      const mi = String(now.getMinutes()).padStart(2, "0");
+
+      document.getElementById("dateInput").value = `${yyyy}-${mm}-${dd}`;
+      document.getElementById("timeInput").value = `${hh}:${mi}`;
+    }
+
     function setStatus(text) {
       document.getElementById("status").textContent = text;
     }
@@ -357,10 +459,7 @@
 
       if (!trimmed) return null;
 
-      if (
-        trimmed.startsWith("http://") ||
-        trimmed.startsWith("https://")
-      ) {
+      if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
         return trimmed;
       }
 
@@ -392,21 +491,29 @@
       const tbody = document.getElementById("apiDeparturesBody");
       const meta = document.getElementById("apiMeta");
 
+      const date = document.getElementById("dateInput").value;
+      const time = document.getElementById("timeInput").value;
+
+      const params = new URLSearchParams({
+        station,
+        limit: "20"
+      });
+
+      if (date) params.set("date", date);
+      if (time) params.set("time", time);
+
       setStatus("Pobieram odjazdy z API PLK dla stacji: " + station + "...");
       meta.textContent = "Ładowanie danych z API PLK dla stacji: " + station + "...";
 
       tbody.innerHTML =
-        '<tr><td colspan="8" class="muted">Ładowanie danych...</td></tr>';
+        '<tr><td colspan="6" class="muted">Ładowanie danych...</td></tr>';
 
       try {
-        const response = await fetch(
-          "/api/departures?station=" + encodeURIComponent(station),
-          {
-            headers: {
-              "Accept": "application/json"
-            }
+        const response = await fetch("/api/departures?" + params.toString(), {
+          headers: {
+            "Accept": "application/json"
           }
-        );
+        });
 
         const data = await response.json();
 
@@ -418,16 +525,16 @@
           ? data.departures
           : [];
 
-        const upcoming = filterUpcomingDepartures(departures).slice(0, 30);
-
         meta.textContent =
           "Stacja: " +
           (data.station?.name || station) +
-          " | Wygenerowano: " +
-          formatDateTime(data.generatedAt) +
-          " | Pokazuję najbliższe odjazdy.";
+          " | Data: " +
+          (data.date || date || "bieżąca") +
+          " | Od godziny: " +
+          (data.timeFrom || time || "bieżącej") +
+          " | Pokazuję do 20 odjazdów.";
 
-        renderDepartures(upcoming);
+        renderDepartures(departures);
 
         setStatus("Załadowano odjazdy z API PLK dla stacji: " + (data.station?.name || station));
 
@@ -435,8 +542,9 @@
         console.error(error);
 
         meta.textContent = "Nie udało się pobrać danych z API PLK.";
+
         tbody.innerHTML =
-          '<tr><td colspan="8" class="muted">Błąd pobierania danych: ' +
+          '<tr><td colspan="6" class="muted">Błąd pobierania danych: ' +
           escapeHtml(error.message) +
           '</td></tr>';
 
@@ -444,49 +552,48 @@
       }
     }
 
-    function filterUpcomingDepartures(departures) {
-      const now = new Date();
-      const nowMinutes = now.getHours() * 60 + now.getMinutes();
-
-      return departures.filter(row => {
-        const value = row.time || row.plannedTime || "";
-        const minutes = parseTimeToMinutes(value);
-
-        if (minutes === null) return true;
-
-        return minutes >= nowMinutes - 5;
-      });
-    }
-
     function renderDepartures(departures) {
       const tbody = document.getElementById("apiDeparturesBody");
 
       if (!departures.length) {
         tbody.innerHTML =
-          '<tr><td colspan="8" class="muted">Brak najbliższych odjazdów w danych API.</td></tr>';
+          '<tr><td colspan="6" class="muted">Brak odjazdów dla wybranej daty i godziny.</td></tr>';
         return;
       }
 
       tbody.innerHTML = departures.map(row => {
         const delay = Number(row.delay || 0);
         const delayClass = delay > 0 ? "delay" : "ontime";
-        const delayText = delay > 0 ? "+" + delay + " min" : "0 min";
+        const delayText = delay > 0 ? "+" + delay + " min" : "0";
 
         const trainLabel = [
           row.category,
           row.train
         ].filter(Boolean).join(" ");
 
+        const destination = row.destination || "";
+        const via = row.via || "";
+
         return `
           <tr>
-            <td><strong>${escapeHtml(shortTime(row.time))}</strong></td>
-            <td>${escapeHtml(shortTime(row.plannedTime))}</td>
-            <td>${escapeHtml(trainLabel)}</td>
-            <td>${escapeHtml(row.name || "")}</td>
-            <td>${escapeHtml(row.carrier || "")}</td>
-            <td>${escapeHtml(row.platform || "")}</td>
-            <td>${escapeHtml(row.track || "")}</td>
-            <td class="${delayClass}">${delayText}</td>
+            <td class="col-time">
+              <strong>${escapeHtml(shortTime(row.time))}</strong>
+              <div class="muted">${escapeHtml(shortTime(row.plannedTime))}</div>
+            </td>
+
+            <td class="col-train">
+              <div class="train-main">${escapeHtml(trainLabel)}</div>
+              <div class="train-name">${escapeHtml(row.name || row.carrier || "")}</div>
+            </td>
+
+            <td class="col-direction">
+              <div class="direction-main">${escapeHtml(destination || "brak kierunku")}</div>
+              <div class="direction-via">${via ? "przez: " + escapeHtml(via) : ""}</div>
+            </td>
+
+            <td class="col-platform">${escapeHtml(row.platform || "")}</td>
+            <td class="col-platform">${escapeHtml(row.track || "")}</td>
+            <td class="${delayClass} col-delay">${delayText}</td>
           </tr>
         `;
       }).join("");
@@ -499,23 +606,6 @@
       const match = str.match(/(\d{2}:\d{2})/);
 
       return match ? match[1] : str;
-    }
-
-    function parseTimeToMinutes(value) {
-      const match = String(value || "").match(/(\d{2}):(\d{2})/);
-      if (!match) return null;
-
-      return Number(match[1]) * 60 + Number(match[2]);
-    }
-
-    function formatDateTime(value) {
-      if (!value) return "brak daty";
-
-      try {
-        return new Date(value).toLocaleString("pl-PL");
-      } catch (_) {
-        return value;
-      }
     }
 
     function escapeHtml(value) {
