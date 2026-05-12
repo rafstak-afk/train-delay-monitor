@@ -53,6 +53,13 @@ function extractArray(payload) {
   return [];
 }
 
+function ttlFor(url) {
+  if (url.includes("/operations")) return 20;
+  if (url.includes("/schedules")) return 300;
+  if (url.includes("/dictionaries")) return 86400;
+  return 300;
+}
+
 async function fetchJson(url, headers = {}) {
   const cache = caches.default;
   const cacheKey = new Request(url, { method: "GET" });
@@ -74,14 +81,12 @@ async function fetchJson(url, headers = {}) {
     throw new Error(`PLK API ${response.status}: ${text.slice(0, 200)}`);
   }
 
-  const ttl = url.includes("/operations") ? 30 : 3600;
-
   await cache.put(
     cacheKey,
     new Response(JSON.stringify(data), {
       headers: {
         "Content-Type": "application/json",
-        "Cache-Control": `public, max-age=${ttl}`
+        "Cache-Control": `public, max-age=${ttlFor(url)}`
       }
     })
   );
@@ -98,14 +103,15 @@ async function tryFetchJson(url, headers = {}) {
 }
 
 function parseTime(value) {
-  const match = clean(value).match(/(\d{2}):(\d{2})/);
+  const match = clean(value).match(/(\d{1,2}):(\d{2})/);
   if (!match) return null;
   return Number(match[1]) * 60 + Number(match[2]);
 }
 
 function formatTime(value) {
-  const match = clean(value).match(/(\d{2}:\d{2})/);
-  return match ? match[1] : "—";
+  const match = clean(value).match(/(\d{1,2}):(\d{2})/);
+  if (!match) return "—";
+  return `${match[1].padStart(2, "0")}:${match[2]}`;
 }
 
 function calculateDelay(planned, actual) {
@@ -124,7 +130,6 @@ function normalizeStatus(status) {
   const s = clean(status).toUpperCase();
 
   if (["S", "DONE", "COMPLETED"].includes(s)) return "Zrealizowano";
-  if (["RUNNING", "C", "IN_PROGRESS"].includes(s)) return "W ruchu";
   if (["DELAYED", "LATE"].includes(s)) return "Opóźniony";
 
   return "W ruchu";
@@ -176,21 +181,22 @@ function getPortalStationId(station, stationId) {
     if (/^\d{5,}$/.test(cleaned)) return cleaned;
   }
 
-  const cleanedStationId = clean(stationId);
+  const id = clean(stationId);
 
-  if (/^\d{5,}$/.test(cleanedStationId)) return cleanedStationId;
+  if (/^\d{5,}$/.test(id)) return id;
+  if (/^\d{4}$/.test(id)) return `7${id}`;
 
-  return cleanedStationId;
+  return id;
 }
 
-function getStops(operation) {
+function getStops(item) {
   const candidates = [
-    operation.stations,
-    operation.stops,
-    operation.route,
-    operation.path,
-    operation.timetable,
-    operation.timetableEntries
+    item.stations,
+    item.stops,
+    item.route,
+    item.path,
+    item.timetable,
+    item.timetableEntries
   ];
 
   for (const candidate of candidates) {
@@ -240,7 +246,7 @@ function getActualTime(stop, planned) {
   );
 }
 
-function getDestination(stops, currentIndex, stationMap) {
+function getDestinationFromStops(stops, currentIndex, stationMap) {
   const sorted = sortStops(stops);
   const current = stops[currentIndex];
   const currentSeq = stopSeq(current);
@@ -252,11 +258,10 @@ function getDestination(stops, currentIndex, stationMap) {
   }
 
   const last = after[after.length - 1];
-
   return stopName(last, stationMap) || "—";
 }
 
-function getVia(stops, currentIndex, stationMap, destination) {
+function getViaFromStops(stops, currentIndex, stationMap, destination) {
   const sorted = sortStops(stops);
   const current = stops[currentIndex];
   const currentSeq = stopSeq(current);
@@ -277,80 +282,77 @@ function getVia(stops, currentIndex, stationMap, destination) {
     if (names.length >= 4) break;
   }
 
-  return names.join(" • ") || "—";
+  return names.join(", ") || "—";
 }
 
-function normalizeCarrier(raw) {
-  const value = clean(raw);
-  const upper = value.toUpperCase();
+function normalizeCarrier(value) {
+  const raw = clean(value);
+  const upper = raw.toUpperCase();
 
-  if (!value) return "—";
+  if (!raw) return "—";
   if (upper === "IC") return "PKP Intercity";
   if (upper === "PR") return "POLREGIO";
   if (upper === "KS") return "Koleje Śląskie";
   if (upper === "KM") return "Koleje Mazowieckie";
   if (upper === "KD") return "Koleje Dolnośląskie";
   if (upper === "KW") return "Koleje Wielkopolskie";
-  if (upper === "ŁKA" || upper === "LKA") return "Łódzka Kolej Aglomeracyjna";
+  if (upper === "ŁKA" || upper === "LKA") return "ŁKA";
 
-  return value;
+  return raw;
 }
 
-function getTrainNumber(operation, meta = {}) {
-  const values = [
-    operation.trainNumber,
-    operation.publicTrainNumber,
-    operation.commercialNumber,
-    operation.marketingNumber,
-    operation.train?.number,
-    operation.train?.trainNumber,
-    operation.train?.commercialNumber,
-    operation.train?.publicTrainNumber,
-    operation.trainName,
-    operation.name,
-    operation.additionalData?.trainNumber,
-    meta.trainNumber,
-    meta.publicTrainNumber,
-    meta.commercialNumber,
-    meta.marketingNumber,
-    meta.name
-  ];
-
+function firstValue(values) {
   for (const value of values) {
     const cleaned = clean(value);
     if (cleaned && cleaned !== "—") return cleaned;
   }
 
-  return "—";
+  return "";
 }
 
-function getCarrier(operation, meta = {}) {
-  const values = [
-    operation.carrier,
-    operation.carrierName,
-    operation.operator,
-    operation.operatorName,
-    operation.train?.carrier,
-    operation.train?.carrierName,
-    operation.train?.operator,
-    operation.train?.operatorName,
-    operation.additionalData?.carrier,
+function getTrainNumber(item, meta = {}) {
+  return firstValue([
+    item.trainNumber,
+    item.publicTrainNumber,
+    item.commercialNumber,
+    item.marketingNumber,
+    item.train?.number,
+    item.train?.trainNumber,
+    item.train?.commercialNumber,
+    item.train?.publicTrainNumber,
+    item.trainName,
+    item.name,
+    item.additionalData?.trainNumber,
+    meta.trainNumber,
+    meta.publicTrainNumber,
+    meta.commercialNumber,
+    meta.marketingNumber,
+    meta.name
+  ]) || "—";
+}
+
+function getCarrier(item, meta = {}) {
+  const value = firstValue([
+    item.carrier,
+    item.carrierName,
+    item.operator,
+    item.operatorName,
+    item.train?.carrier,
+    item.train?.carrierName,
+    item.train?.operator,
+    item.train?.operatorName,
+    item.additionalData?.carrier,
     meta.carrier,
     meta.carrierName,
     meta.operator,
     meta.operatorName
-  ];
+  ]);
 
-  for (const value of values) {
-    const cleaned = clean(value);
-    if (cleaned && cleaned !== "—") return normalizeCarrier(cleaned);
-  }
-
-  return "—";
+  return normalizeCarrier(value);
 }
 
 function getPlatform(stop, meta = {}) {
-  const values = [
+  return firstValue([
     stop.platform,
     stop.platformNumber,
     stop.departurePlatform,
@@ -364,138 +366,124 @@ function getPlatform(stop, meta = {}) {
     meta.platformNumber,
     meta.track,
     meta.trackNumber
-  ];
-
-  for (const value of values) {
-    const cleaned = clean(value);
-    if (cleaned && cleaned !== "—") return cleaned;
-  }
-
-  return "—";
+  ]) || "—";
 }
 
-function scheduleKey(operation) {
+function scheduleKey(item) {
   return [
-    clean(operation.scheduleId),
-    clean(operation.orderId),
-    clean(operation.operatingDate)
+    clean(item.scheduleId),
+    clean(item.orderId),
+    clean(item.operatingDate)
   ].join("|");
 }
 
-function extractScheduleMeta(payload, stationId) {
-  if (!payload) return {};
+function scheduleLooseKey(item, planned, destination) {
+  return [
+    clean(item.scheduleId),
+    clean(item.orderId),
+    clean(planned),
+    normalize(destination)
+  ].join("|");
+}
 
-  const root = Array.isArray(payload) ? payload[0] : payload;
-  const stops = getStops(root).length ? getStops(root) : extractArray(root);
-
+function extractScheduleMeta(schedule, stationId, stationMap) {
+  const stops = getStops(schedule);
   let stationStop = null;
+  let stationIndex = -1;
 
-  for (const stop of stops) {
-    if (stopStationId(stop) === clean(stationId)) {
-      stationStop = stop;
+  for (let i = 0; i < stops.length; i++) {
+    if (stopStationId(stops[i]) === clean(stationId)) {
+      stationStop = stops[i];
+      stationIndex = i;
       break;
     }
   }
 
+  const destination =
+    stationStop && stationIndex >= 0
+      ? getDestinationFromStops(stops, stationIndex, stationMap)
+      : firstValue([
+          schedule.destination,
+          schedule.destinationStation,
+          schedule.to,
+          schedule.endStation,
+          schedule.lastStation
+        ]);
+
+  const via =
+    stationStop && stationIndex >= 0
+      ? getViaFromStops(stops, stationIndex, stationMap, destination)
+      : "—";
+
   return {
-    trainNumber:
-      clean(root.trainNumber) ||
-      clean(root.publicTrainNumber) ||
-      clean(root.commercialNumber) ||
-      clean(root.marketingNumber) ||
-      clean(root.train?.number) ||
-      clean(root.train?.trainNumber),
-
-    carrier:
-      clean(root.carrier) ||
-      clean(root.carrierName) ||
-      clean(root.operator) ||
-      clean(root.operatorName) ||
-      clean(root.train?.carrier) ||
-      clean(root.train?.operator),
-
-    platform:
-      clean(stationStop?.platform) ||
-      clean(stationStop?.platformNumber) ||
-      clean(stationStop?.departurePlatform) ||
-      clean(stationStop?.arrivalPlatform) ||
-      clean(stationStop?.track) ||
-      clean(stationStop?.trackNumber)
+    trainNumber: getTrainNumber(schedule),
+    carrier: getCarrier(schedule),
+    platform: getPlatform(stationStop || {}, {}),
+    destination: destination || "—",
+    via,
+    planned: stationStop ? getPlannedTime(stationStop) : "—"
   };
 }
 
-async function loadScheduleMeta(apiBase, headers, operation, stationId) {
-  const scheduleId = clean(operation.scheduleId);
-  const orderId = clean(operation.orderId);
-  const operatingDate = clean(operation.operatingDate);
+function buildScheduleMap(schedules, stationId, stationMap) {
+  const byExact = {};
+  const byLoose = {};
 
-  if (!scheduleId) return {};
+  for (const schedule of schedules) {
+    const meta = extractScheduleMeta(schedule, stationId, stationMap);
 
-  const urls = [];
+    const exact = scheduleKey(schedule);
+    byExact[exact] = meta;
 
-  if (scheduleId && orderId && operatingDate) {
-    urls.push(`${apiBase}/operations/train/${scheduleId}/${orderId}/${operatingDate}`);
+    const loose = scheduleLooseKey(schedule, meta.planned, meta.destination);
+    byLoose[loose] = meta;
   }
 
-  if (scheduleId && orderId) {
-    urls.push(`${apiBase}/schedules/route/${scheduleId}/${orderId}`);
-  }
+  return { byExact, byLoose };
+}
 
-  urls.push(`${apiBase}/schedules/${scheduleId}`);
+function scoreRow(row) {
+  let score = 0;
 
-  for (const url of urls) {
-    const payload = await tryFetchJson(url, headers);
-    const meta = extractScheduleMeta(payload, stationId);
+  if (row.trainNumber && row.trainNumber !== "—") score += 5;
+  if (row.destination && row.destination !== "—") score += 5;
+  if (row.carrier && row.carrier !== "—") score += 3;
+  if (row.platform && row.platform !== "—") score += 3;
+  if (row.via && row.via !== "—") score += 2;
+  if (row.status === "Zrealizowano") score -= 1;
 
-    if (meta.trainNumber || meta.carrier || meta.platform) {
-      return meta;
-    }
-  }
-
-  return {};
+  return score;
 }
 
 function dedupeRows(rows) {
   const best = new Map();
 
   for (const row of rows) {
-    const key = [
-      row.scheduleId || row.destination,
+    const stableKey = [
+      row.scheduleId || row.trainNumber || row.destination,
       row.orderId || row.scheduled,
       row.operatingDate || "",
       row.stationId,
       row.scheduled
     ].join("|");
 
+    const fallbackKey = [
+      row.scheduled,
+      row.destination,
+      row.via
+    ].join("|");
+
+    const key =
+      stableKey.replace(/\|/g, "") ? stableKey : fallbackKey;
+
     const current = best.get(key);
 
-    if (!current) {
-      best.set(key, row);
-      continue;
-    }
-
-    const currentScore = scoreRow(current);
-    const newScore = scoreRow(row);
-
-    if (newScore > currentScore) {
+    if (!current || scoreRow(row) > scoreRow(current)) {
       best.set(key, row);
     }
   }
 
   return [...best.values()];
-}
-
-function scoreRow(row) {
-  let score = 0;
-
-  if (row.trainNumber && row.trainNumber !== "—") score += 3;
-  if (row.destination && row.destination !== "—") score += 3;
-  if (row.carrier && row.carrier !== "—") score += 2;
-  if (row.platform && row.platform !== "—") score += 2;
-  if (row.via && row.via !== "—") score += 1;
-  if (row.status === "Zrealizowano") score -= 1;
-
-  return score;
 }
 
 function filterByTime(rows, time) {
@@ -507,49 +495,6 @@ function filterByTime(rows, time) {
   return rows.filter(row => {
     const value = parseTime(row.actual || row.scheduled);
     return value !== null && value >= pivot;
-  });
-}
-
-async function enrichRows(apiBase, headers, rows, stationId) {
-  const needsMeta = rows
-    .filter(row =>
-      row.trainNumber === "—" ||
-      row.carrier === "—" ||
-      row.platform === "—"
-    )
-    .slice(0, 8);
-
-  const metaMap = {};
-
-  for (const row of needsMeta) {
-    const key = [
-      row.scheduleId,
-      row.orderId,
-      row.operatingDate
-    ].join("|");
-
-    if (metaMap[key]) continue;
-
-    metaMap[key] = await loadScheduleMeta(apiBase, headers, row._operation, stationId);
-  }
-
-  return rows.map(row => {
-    const key = [
-      row.scheduleId,
-      row.orderId,
-      row.operatingDate
-    ].join("|");
-
-    const meta = metaMap[key] || {};
-
-    return {
-      ...row,
-      trainNumber: row.trainNumber !== "—" ? row.trainNumber : getTrainNumber(row._operation, meta),
-      carrier: row.carrier !== "—" ? row.carrier : getCarrier(row._operation, meta),
-      platform: row.platform !== "—" ? row.platform : getPlatform(row._stop, meta),
-      _operation: undefined,
-      _stop: undefined
-    };
   });
 }
 
@@ -581,11 +526,12 @@ async function handleRequest(request, env) {
     const headers = {};
 
     if (env.PLK_API_KEY) {
-      headers["X-Api-Key"] = env.PLK_API_KEY;
+      headers["X-API-Key"] = env.PLK_API_KEY;
     }
 
     const stationsUrl = new URL(`${apiBase}/dictionaries/stations`);
     stationsUrl.searchParams.set("search", stationQuery);
+    stationsUrl.searchParams.set("pageSize", "20");
 
     const stationsPayload = await fetchJson(stationsUrl.toString(), headers);
     const stations = extractArray(stationsPayload);
@@ -601,7 +547,10 @@ async function handleRequest(request, env) {
 
     let stationMap = buildStationMap(stations);
 
-    const allStationsPayload = await tryFetchJson(`${apiBase}/dictionaries/stations`, headers);
+    const allStationsUrl = new URL(`${apiBase}/dictionaries/stations`);
+    allStationsUrl.searchParams.set("pageSize", "5000");
+
+    const allStationsPayload = await tryFetchJson(allStationsUrl.toString(), headers);
     const allStations = extractArray(allStationsPayload);
 
     if (allStations.length) {
@@ -612,14 +561,30 @@ async function handleRequest(request, env) {
     operationsUrl.searchParams.set("stations", stationId);
     operationsUrl.searchParams.set("withPlanned", "true");
     operationsUrl.searchParams.set("fullRoutes", "true");
-    operationsUrl.searchParams.set("pageSize", "200");
+    operationsUrl.searchParams.set("pageSize", "500");
 
     if (requestDate) {
       operationsUrl.searchParams.set("date", requestDate);
     }
 
-    const operationsPayload = await fetchJson(operationsUrl.toString(), headers);
+    const schedulesUrl = new URL(`${apiBase}/schedules`);
+    schedulesUrl.searchParams.set("stations", stationId);
+    schedulesUrl.searchParams.set("pageSize", "5000");
+
+    if (requestDate) {
+      schedulesUrl.searchParams.set("dateFrom", requestDate);
+      schedulesUrl.searchParams.set("dateTo", requestDate);
+    }
+
+    const [operationsPayload, schedulesPayload] = await Promise.all([
+      fetchJson(operationsUrl.toString(), headers),
+      tryFetchJson(schedulesUrl.toString(), headers)
+    ]);
+
     const operations = extractArray(operationsPayload);
+    const schedules = extractArray(schedulesPayload);
+
+    const scheduleMap = buildScheduleMap(schedules, stationId, stationMap);
 
     const rows = [];
 
@@ -633,7 +598,26 @@ async function handleRequest(request, env) {
       const stop = stops[stopIndex];
       const planned = getPlannedTime(stop);
       const actual = getActualTime(stop, planned);
-      const destination = getDestination(stops, stopIndex, stationMap);
+
+      const opDestination = getDestinationFromStops(stops, stopIndex, stationMap);
+      const exactMeta = scheduleMap.byExact[scheduleKey(operation)] || {};
+      const looseMeta =
+        scheduleMap.byLoose[scheduleLooseKey(operation, planned, opDestination)] || {};
+
+      const meta = {
+        ...looseMeta,
+        ...exactMeta
+      };
+
+      const destination =
+        meta.destination && meta.destination !== "—"
+          ? meta.destination
+          : opDestination;
+
+      const via =
+        meta.via && meta.via !== "—"
+          ? meta.via
+          : getViaFromStops(stops, stopIndex, stationMap, destination);
 
       rows.push({
         stationId,
@@ -642,27 +626,24 @@ async function handleRequest(request, env) {
         actual,
         delayMinutes: calculateDelay(planned, actual),
         status: normalizeStatus(operation.trainStatus),
-        trainNumber: getTrainNumber(operation),
+        trainNumber: getTrainNumber(operation, meta),
         destination,
-        carrier: getCarrier(operation),
-        platform: getPlatform(stop),
-        via: getVia(stops, stopIndex, stationMap, destination),
+        carrier: getCarrier(operation, meta),
+        platform: getPlatform(stop, meta),
+        via,
         scheduleId: clean(operation.scheduleId),
         orderId: clean(operation.orderId),
-        operatingDate: clean(operation.operatingDate),
-        _operation: operation,
-        _stop: stop
+        operatingDate: clean(operation.operatingDate)
       });
     }
 
     const filteredRows = filterByTime(rows, requestTime);
-    const sortedRows = filteredRows.sort(
+
+    filteredRows.sort(
       (a, b) => (parseTime(a.actual) ?? 999999) - (parseTime(b.actual) ?? 999999)
     );
 
-    const firstRows = sortedRows.slice(0, 30);
-    const enrichedRows = await enrichRows(apiBase, headers, firstRows, stationId);
-    const uniqueRows = dedupeRows(enrichedRows).slice(0, 20);
+    const uniqueRows = dedupeRows(filteredRows).slice(0, 20);
 
     return json({
       ok: true,
@@ -678,11 +659,11 @@ async function handleRequest(request, env) {
         portalStationId,
         stationLink: `https://l.plk-sa.pl/${portalStationId}`,
         operationsCount: operations.length,
-        rawRows: rows.length,
-        filteredRows: filteredRows.length,
+        schedulesCount: schedules.length,
         returnedRows: uniqueRows.length,
         sampleStation: matchedStation,
         sampleOperation: operations[0] || null,
+        sampleSchedule: schedules[0] || null,
         firstRow: uniqueRows[0] || null
       }
     });
