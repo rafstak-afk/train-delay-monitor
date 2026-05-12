@@ -18,9 +18,7 @@
   --dangerText:#9b0000;
 }
 
-*{
-  box-sizing:border-box;
-}
+*{ box-sizing:border-box; }
 
 body{
   margin:0;
@@ -84,15 +82,21 @@ button{
   padding:8px 0 0;
 }
 
-.quick button{
+.quick a{
   height:30px;
-  padding:0 9px;
+  padding:6px 10px;
   border-radius:999px;
   background:#ffffff;
   color:#07588b;
   border:1px solid #b9cbe0;
   white-space:nowrap;
   font-size:13px;
+  text-decoration:none;
+  font-weight:bold;
+}
+
+.quick a:hover{
+  background:#e7f1ff;
 }
 
 .summary{
@@ -115,7 +119,6 @@ button{
   margin:0 10px 10px;
   background:var(--blue);
   color:var(--text);
-  border-collapse:collapse;
   width:calc(100% - 20px);
 }
 
@@ -131,7 +134,7 @@ button{
 
 .subHead{
   display:grid;
-  grid-template-columns:90px 80px 1.2fr 2fr 70px;
+  grid-template-columns:90px 80px 1.25fr 2.1fr 70px;
   color:var(--yellow);
   font-style:italic;
   font-weight:bold;
@@ -142,7 +145,7 @@ button{
 
 .row{
   display:grid;
-  grid-template-columns:90px 80px 1.2fr 2fr 70px;
+  grid-template-columns:90px 80px 1.25fr 2.1fr 70px;
   gap:10px;
   padding:7px 10px;
   align-items:center;
@@ -150,9 +153,7 @@ button{
   background:#2f70b8;
 }
 
-.row:nth-child(even){
-  background:#284c75;
-}
+.row:nth-child(even){ background:#284c75; }
 
 .time{
   font-size:27px;
@@ -164,13 +165,8 @@ button{
   line-height:1.05;
 }
 
-.trainMain{
-  font-size:20px;
-}
-
-.trainSub{
-  font-size:11px;
-}
+.trainMain{ font-size:20px; }
+.trainSub{ font-size:11px; }
 
 .dest{
   font-size:20px;
@@ -203,9 +199,7 @@ button{
   font-size:14px;
 }
 
-.debugWrap{
-  margin:10px;
-}
+.debugWrap{ margin:10px; }
 
 .debugTitle{
   cursor:pointer;
@@ -224,30 +218,15 @@ pre{
   border-radius:8px;
 }
 
-.debugWrap.open pre{
-  display:block;
-}
+.debugWrap.open pre{ display:block; }
 
 @media(max-width:760px){
-  .grid{
-    grid-template-columns:1fr 1fr;
-  }
+  .grid{ grid-template-columns:1fr 1fr; }
+  .grid input:first-child{ grid-column:1 / -1; }
+  .grid button{ grid-column:1 / -1; }
 
-  .grid input:first-child{
-    grid-column:1 / -1;
-  }
-
-  .grid button{
-    grid-column:1 / -1;
-  }
-
-  .boardHead{
-    font-size:26px;
-  }
-
-  .subHead{
-    display:none;
-  }
+  .boardHead{ font-size:26px; }
+  .subHead{ display:none; }
 
   .row{
     grid-template-columns:66px 58px 1fr 42px;
@@ -263,17 +242,9 @@ pre{
     font-size:23px;
   }
 
-  .train{
-    grid-area:train;
-  }
-
-  .trainMain{
-    font-size:17px;
-  }
-
-  .trainSub{
-    font-size:10px;
-  }
+  .train{ grid-area:train; }
+  .trainMain{ font-size:17px; }
+  .trainSub{ font-size:10px; }
 
   .dest{
     grid-area:dest;
@@ -318,7 +289,7 @@ pre{
 
 <div class="summary" id="summary">
   <span>Brak danych.</span>
-  <a id="stationLink" href="https://l.plk-sa.pl/" target="_blank">Oficjalna tablica PLK</a>
+  <a id="stationLink" href="https://l.plk-sa.pl/71001" target="_blank">Oficjalna tablica PLK</a>
 </div>
 
 <div id="error"></div>
@@ -344,13 +315,13 @@ pre{
 
 <script>
 const quickStations = [
-  "Lubliniec",
-  "Tarnowskie Góry",
-  "Bytom",
-  "Gliwice",
-  "Chorzów Batory",
-  "Katowice",
-  "Kraków Główny"
+  { name:"Lubliniec", link:"https://l.plk-sa.pl/71183" },
+  { name:"Tarnowskie Góry", link:"https://l.plk-sa.pl/71001" },
+  { name:"Bytom", link:"https://l.plk-sa.pl/71016" },
+  { name:"Gliwice", link:"https://l.plk-sa.pl/71026" },
+  { name:"Chorzów Batory", link:"https://l.plk-sa.pl/71041" },
+  { name:"Katowice", link:"https://l.plk-sa.pl/71000" },
+  { name:"Kraków Główny", link:"https://l.plk-sa.pl/73000" }
 ];
 
 const now = new Date();
@@ -374,28 +345,27 @@ function renderQuickStations(){
   const box = document.getElementById("quickStations");
   box.innerHTML = "";
 
-  for(const name of quickStations){
-    const btn = document.createElement("button");
-    btn.textContent = name;
-    btn.addEventListener("click", () => {
-      stationInput.value = name;
-      loadData();
-    });
-    box.appendChild(btn);
+  for(const item of quickStations){
+    const a = document.createElement("a");
+    a.textContent = item.name;
+    a.href = item.link;
+    a.target = "_blank";
+    a.rel = "noopener";
+    box.appendChild(a);
   }
 }
 
 function updateStationLink(data){
-  const id =
-    data?.portalStationId ||
-    localStorage.getItem("lastPortalStationId") ||
-    "";
+  const station = stationInput.value.trim();
+  const quick = quickStations.find(x => x.name === station);
 
-  if(id){
-    stationLink.href = `https://l.plk-sa.pl/${id}`;
-  } else {
-    stationLink.href = "https://l.plk-sa.pl/";
-  }
+  const link =
+    data?.stationLink ||
+    quick?.link ||
+    localStorage.getItem("lastStationLink") ||
+    "https://l.plk-sa.pl/";
+
+  stationLink.href = link;
 }
 
 async function loadData(){
@@ -427,8 +397,8 @@ async function loadData(){
     document.getElementById("debug").textContent =
       JSON.stringify(data.debug || data, null, 2);
 
-    if(data.portalStationId){
-      localStorage.setItem("lastPortalStationId", data.portalStationId);
+    if(data.stationLink){
+      localStorage.setItem("lastStationLink", data.stationLink);
     }
 
     updateStationLink(data);
@@ -442,7 +412,7 @@ async function loadData(){
     document.getElementById("summary").innerHTML = `
       <span>
         Dane odświeżone. Rekordów: <b>${safe(data.totalDepartures)}</b>.
-        ID PLK: <b>${safe(data.portalStationId)}</b>
+        Źródło: <b>${safe(data.debug?.source)}</b>
       </span>
       <a id="stationLink" href="${safe(data.stationLink)}" target="_blank">Oficjalna tablica PLK</a>
     `;
@@ -452,8 +422,6 @@ async function loadData(){
     document.getElementById("error").innerHTML = `
       <div class="error">
         ${safe(error.message)}
-        <br>
-        Jeśli to 429, limit API PLK jest chwilowo wyczerpany. Tak, nawet serwer czasem mówi „nie dzisiaj”.
       </div>
     `;
 
