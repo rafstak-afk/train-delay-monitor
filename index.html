@@ -51,6 +51,7 @@
       transition:0.2s;
       border:none;
       cursor:pointer;
+      display:inline-block;
     }
 
     .btn:hover{
@@ -249,19 +250,10 @@
       <tbody id="departuresBody">
 
         <tr>
-          <td>12:15</td>
-          <td>IC 3812</td>
-          <td>Warszawa Centralna</td>
-          <td>2</td>
-          <td class="on-time">0 min</td>
-        </tr>
-
-        <tr>
-          <td>12:22</td>
-          <td>REGIO 44721</td>
-          <td>Katowice</td>
-          <td>1</td>
-          <td class="delay">+7 min</td>
+          <td>--:--</td>
+          <td colspan="4">
+            Wybierz stację lub wyszukaj własną.
+          </td>
         </tr>
 
       </tbody>
@@ -278,12 +270,14 @@
 
 <script>
 
-  async function loadDepartures(){
+  async function loadDepartures() {
 
     const station =
-      document.getElementById("stationInput").value;
+      document.getElementById("stationInput")
+      .value
+      .trim();
 
-    if(!station){
+    if (!station) {
       alert("Wpisz nazwę stacji.");
       return;
     }
@@ -291,14 +285,35 @@
     loadStation(station);
   }
 
-  async function loadStation(station){
+  async function loadStation(station) {
 
-    console.log("Ładowanie stacji:", station);
+    try {
 
-    // tutaj podłączysz worker/API
-    // fetch(...)
+      const response = await fetch(
+        `/resolve-link?station=${encodeURIComponent(station)}`
+      );
 
-    alert("Tutaj podłączysz API dla stacji: " + station);
+      if (!response.ok) {
+        throw new Error("Błąd resolvera linku.");
+      }
+
+      const data = await response.json();
+
+      if (!data.url) {
+        throw new Error("Brak URL w odpowiedzi.");
+      }
+
+      window.open(data.url, "_blank");
+
+    } catch (error) {
+
+      console.error(error);
+
+      alert(
+        "Nie udało się otworzyć tablicy dla stacji: "
+        + station
+      );
+    }
   }
 
 </script>
