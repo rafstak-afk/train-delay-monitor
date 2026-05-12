@@ -21,7 +21,8 @@ function json(data, status = 200) {
     {
       status,
       headers: {
-        "Content-Type": "application/json; charset=utf-8",
+        "Content-Type":
+          "application/json; charset=utf-8",
         ...corsHeaders()
       }
     }
@@ -59,9 +60,11 @@ async function fetchJson(url, headers = {}) {
   }
 
   if (!response.ok) {
+
     throw new Error(
-      `PLK API ${response.status}: ${text.slice(0, 300)}`
+      `PLK API ${response.status}: ${text.slice(0,300)}`
     );
+
   }
 
   return data;
@@ -254,38 +257,102 @@ function getActualTime(stop, planned) {
 
 function getPlatform(stop) {
 
-  return clean(
-    stop.platform
-    || stop.platformNumber
-    || stop.departurePlatform
-    || stop.arrivalPlatform
-    || stop.track
-  ) || "—";
+  const values = [
+
+    stop.platform,
+    stop.platformNumber,
+    stop.departurePlatform,
+    stop.arrivalPlatform,
+
+    stop.track,
+    stop.sector,
+
+    stop.additionalData?.platform,
+    stop.additionalData?.track
+
+  ];
+
+  for (const value of values) {
+
+    const cleaned = clean(value);
+
+    if (cleaned) {
+      return cleaned;
+    }
+
+  }
+
+  return "—";
+
 }
 
 function getTrainNumber(operation) {
 
-  return clean(
-    operation.trainNumber
-    || operation.publicTrainNumber
-    || operation.commercialNumber
-    || operation.marketingNumber
-    || operation.train?.number
-    || operation.train?.commercialNumber
-    || operation.trainName
-  ) || "—";
+  const values = [
+
+    operation.trainNumber,
+    operation.publicTrainNumber,
+    operation.commercialNumber,
+    operation.marketingNumber,
+
+    operation.train?.number,
+    operation.train?.trainNumber,
+    operation.train?.commercialNumber,
+    operation.train?.publicTrainNumber,
+
+    operation.trainName,
+    operation.name,
+
+    operation.additionalData?.trainNumber
+
+  ];
+
+  for (const value of values) {
+
+    const cleaned = clean(value);
+
+    if (cleaned) {
+      return cleaned;
+    }
+
+  }
+
+  return "—";
+
 }
 
 function getCarrier(operation) {
 
-  const raw = clean(
-    operation.carrier
-    || operation.carrierName
-    || operation.operator
-    || operation.operatorName
-    || operation.train?.carrier
-    || operation.train?.carrierName
-  );
+  const values = [
+
+    operation.carrier,
+    operation.carrierName,
+    operation.operator,
+    operation.operatorName,
+
+    operation.train?.carrier,
+    operation.train?.carrierName,
+    operation.train?.operator,
+    operation.train?.operatorName,
+
+    operation.additionalData?.carrier
+
+  ];
+
+  let raw = "";
+
+  for (const value of values) {
+
+    const cleaned = clean(value);
+
+    if (cleaned) {
+
+      raw = cleaned;
+      break;
+
+    }
+
+  }
 
   if (!raw) {
     return "—";
@@ -310,7 +377,12 @@ function getCarrier(operation) {
     return "Koleje Mazowieckie";
   }
 
+  if (normalized === "KD") {
+    return "Koleje Dolnośląskie";
+  }
+
   return raw;
+
 }
 
 function getDestination(
@@ -470,8 +542,7 @@ async function handleRequest(
   if (method === "GET") {
 
     return json({
-      ok: true,
-      endpoint: "/train"
+      ok: true
     });
 
   }
@@ -510,8 +581,6 @@ async function handleRequest(
         env.PLK_API_KEY;
 
     }
-
-    // STATIONS
 
     const stationsUrl = new URL(
       `${apiBase}/dictionaries/stations`
@@ -557,8 +626,6 @@ async function handleRequest(
         || matchedStation.stationName
       );
 
-    // FULL STATION MAP
-
     const allStationsPayload =
       await fetchJson(
         `${apiBase}/dictionaries/stations`,
@@ -574,8 +641,6 @@ async function handleRequest(
       buildStationMap(
         allStations
       );
-
-    // OPERATIONS
 
     const operationsUrl =
       new URL(
@@ -669,30 +734,48 @@ async function handleRequest(
         );
 
       rows.push({
-        station: stationName,
-        scheduled: planned,
+
+        station:
+          stationName,
+
+        scheduled:
+          planned,
+
         actual,
-        delayMinutes: delay,
-        status: normalizeStatus(
-          operation.trainStatus
-        ),
+
+        delayMinutes:
+          delay,
+
+        status:
+          normalizeStatus(
+            operation.trainStatus
+          ),
+
         trainNumber:
           getTrainNumber(operation),
+
         destination,
+
         carrier:
           getCarrier(operation),
+
         platform:
           getPlatform(stop),
-        via: getVia(
-          stops,
-          stopIndex,
-          stationMap,
-          destination
-        ),
+
+        via:
+          getVia(
+            stops,
+            stopIndex,
+            stationMap,
+            destination
+          ),
+
         orderId:
           clean(operation.orderId),
+
         operatingDate:
           clean(operation.operatingDate)
+
       });
 
     }
@@ -735,12 +818,19 @@ async function handleRequest(
         filteredRows.slice(0, 20),
 
       debug: {
+
         stationId,
         stationName,
+
         operationsCount:
           operations.length,
+
+        sampleOperation:
+          operations[0] || null,
+
         firstRow:
           filteredRows[0] || null
+
       }
 
     });
