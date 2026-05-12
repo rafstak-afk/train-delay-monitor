@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
   <title>Tablica odjazdów PLK</title>
 
   <style>
@@ -16,7 +15,7 @@
     }
 
     .container {
-      max-width: 1100px;
+      max-width: 1200px;
       margin: 0 auto;
       text-align: center;
     }
@@ -73,7 +72,7 @@
       margin: 26px auto;
       display: flex;
       gap: 10px;
-      max-width: 620px;
+      max-width: 760px;
     }
 
     .search-box input {
@@ -88,20 +87,92 @@
       padding: 14px 18px;
       border-radius: 10px;
       border: 0;
-      background: #198754;
       color: white;
       font-weight: 700;
       cursor: pointer;
     }
 
-    .search-box button:hover {
+    .btn-official {
+      background: #198754;
+    }
+
+    .btn-official:hover {
       background: #157347;
+    }
+
+    .btn-api {
+      background: #0dcaf0;
+      color: #102027 !important;
+    }
+
+    .btn-api:hover {
+      background: #31d2f2;
     }
 
     .status {
       margin-top: 18px;
       min-height: 24px;
       opacity: 0.9;
+    }
+
+    .api-panel {
+      margin-top: 34px;
+      background: #1c2833;
+      border-radius: 14px;
+      padding: 18px;
+      text-align: left;
+    }
+
+    .api-panel h2 {
+      text-align: center;
+      margin-top: 0;
+      margin-bottom: 8px;
+    }
+
+    .api-meta {
+      text-align: center;
+      opacity: 0.75;
+      margin-bottom: 16px;
+      font-size: 14px;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 760px;
+    }
+
+    th, td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #34495e;
+      font-size: 14px;
+    }
+
+    th {
+      background: #243447;
+      text-align: left;
+    }
+
+    tr:hover {
+      background: #253445;
+    }
+
+    .delay {
+      color: #ffcc00;
+      font-weight: 700;
+    }
+
+    .ontime {
+      color: #5dd39e;
+      font-weight: 700;
+    }
+
+    .muted {
+      opacity: 0.65;
     }
 
     @media (max-width: 700px) {
@@ -149,11 +220,48 @@
         onkeydown="if(event.key === 'Enter') searchStation()"
       />
 
-      <button onclick="searchStation()">Szukaj</button>
+      <button class="btn-official" onclick="searchStation()">
+        Otwórz PLK
+      </button>
+
+      <button class="btn-api" onclick="loadApiDeparturesFromInput()">
+        Pokaż z API
+      </button>
     </div>
 
     <div id="status" class="status">
       Wybierz stację albo wpisz nazwę.
+    </div>
+
+    <div class="api-panel">
+      <h2>Własna tablica z API PLK</h2>
+      <div id="apiMeta" class="api-meta">
+        Kliknij „Pokaż z API”, żeby załadować odjazdy bez opuszczania strony.
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Godzina</th>
+              <th>Plan</th>
+              <th>Pociąg</th>
+              <th>Nazwa</th>
+              <th>Przewoźnik</th>
+              <th>Peron</th>
+              <th>Tor</th>
+              <th>Opóźnienie</th>
+            </tr>
+          </thead>
+          <tbody id="apiDeparturesBody">
+            <tr>
+              <td colspan="8" class="muted">
+                Brak danych. Jeszcze. Spokojnie, backend już umie mówić.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
   </div>
@@ -174,17 +282,28 @@
       openStation(station);
     }
 
+    function loadApiDeparturesFromInput() {
+      const station = document.getElementById("stationInput").value.trim();
+
+      if (!station) {
+        setStatus("Wpisz nazwę stacji.");
+        return;
+      }
+
+      loadApiDepartures(station);
+    }
+
     async function openStation(station) {
-      setStatus("Szukam tablicy dla stacji: " + station + "...");
+      setStatus("Szukam tablicy PLK dla stacji: " + station + "...");
 
       const link = await resolveStationLink(station);
 
       if (!link) {
-        setStatus("Nie udało się znaleźć tablicy dla stacji: " + station);
+        setStatus("Nie udało się znaleźć tablicy PLK dla stacji: " + station);
         return;
       }
 
-      setStatus("Otwieram tablicę dla stacji: " + station + "...");
+      setStatus("Otwieram tablicę PLK dla stacji: " + station + "...");
       window.location.href = link;
     }
 
@@ -218,16 +337,12 @@
             }
           });
 
-          if (!response.ok) {
-            continue;
-          }
+          if (!response.ok) continue;
 
           const text = await response.text();
           const link = extractLink(text);
 
-          if (link) {
-            return link;
-          }
+          if (link) return link;
 
         } catch (error) {
           console.warn("Nieudany endpoint:", endpoint, error);
@@ -240,9 +355,7 @@
     function extractLink(text) {
       const trimmed = text.trim();
 
-      if (!trimmed) {
-        return null;
-      }
+      if (!trimmed) return null;
 
       if (
         trimmed.startsWith("http://") ||
@@ -269,13 +382,149 @@
           return candidate;
         }
 
-      } catch (_) {
-        // Nie JSON. Internet znowu wybrał chaos.
-      }
+      } catch (_) {}
 
       const match = trimmed.match(/https?:\/\/[^\s"'<>]+/);
-
       return match ? match[0] : null;
+    }
+
+    async function loadApiDepartures(station) {
+      const tbody = document.getElementById("apiDeparturesBody");
+      const meta = document.getElementById("apiMeta");
+
+      setStatus("Pobieram odjazdy z API PLK dla stacji: " + station + "...");
+      meta.textContent = "Ładowanie danych z API PLK dla stacji: " + station + "...";
+
+      tbody.innerHTML =
+        '<tr><td colspan="8" class="muted">Ładowanie danych...</td></tr>';
+
+      try {
+        const response = await fetch(
+          "/api/departures?station=" + encodeURIComponent(station),
+          {
+            headers: {
+              "Accept": "application/json"
+            }
+          }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || data.details || "Błąd API");
+        }
+
+        const departures = Array.isArray(data.departures)
+          ? data.departures
+          : [];
+
+        const upcoming = filterUpcomingDepartures(departures).slice(0, 30);
+
+        meta.textContent =
+          "Stacja: " +
+          (data.station?.name || station) +
+          " | Wygenerowano: " +
+          formatDateTime(data.generatedAt) +
+          " | Pokazuję najbliższe odjazdy.";
+
+        renderDepartures(upcoming);
+
+        setStatus("Załadowano odjazdy z API PLK dla stacji: " + (data.station?.name || station));
+
+      } catch (error) {
+        console.error(error);
+
+        meta.textContent = "Nie udało się pobrać danych z API PLK.";
+        tbody.innerHTML =
+          '<tr><td colspan="8" class="muted">Błąd pobierania danych: ' +
+          escapeHtml(error.message) +
+          '</td></tr>';
+
+        setStatus("Nie udało się pobrać odjazdów z API dla stacji: " + station);
+      }
+    }
+
+    function filterUpcomingDepartures(departures) {
+      const now = new Date();
+      const nowMinutes = now.getHours() * 60 + now.getMinutes();
+
+      return departures.filter(row => {
+        const value = row.time || row.plannedTime || "";
+        const minutes = parseTimeToMinutes(value);
+
+        if (minutes === null) return true;
+
+        return minutes >= nowMinutes - 5;
+      });
+    }
+
+    function renderDepartures(departures) {
+      const tbody = document.getElementById("apiDeparturesBody");
+
+      if (!departures.length) {
+        tbody.innerHTML =
+          '<tr><td colspan="8" class="muted">Brak najbliższych odjazdów w danych API.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = departures.map(row => {
+        const delay = Number(row.delay || 0);
+        const delayClass = delay > 0 ? "delay" : "ontime";
+        const delayText = delay > 0 ? "+" + delay + " min" : "0 min";
+
+        const trainLabel = [
+          row.category,
+          row.train
+        ].filter(Boolean).join(" ");
+
+        return `
+          <tr>
+            <td><strong>${escapeHtml(shortTime(row.time))}</strong></td>
+            <td>${escapeHtml(shortTime(row.plannedTime))}</td>
+            <td>${escapeHtml(trainLabel)}</td>
+            <td>${escapeHtml(row.name || "")}</td>
+            <td>${escapeHtml(row.carrier || "")}</td>
+            <td>${escapeHtml(row.platform || "")}</td>
+            <td>${escapeHtml(row.track || "")}</td>
+            <td class="${delayClass}">${delayText}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function shortTime(value) {
+      if (!value) return "";
+
+      const str = String(value);
+      const match = str.match(/(\d{2}:\d{2})/);
+
+      return match ? match[1] : str;
+    }
+
+    function parseTimeToMinutes(value) {
+      const match = String(value || "").match(/(\d{2}):(\d{2})/);
+      if (!match) return null;
+
+      return Number(match[1]) * 60 + Number(match[2]);
+    }
+
+    function formatDateTime(value) {
+      if (!value) return "brak daty";
+
+      try {
+        return new Date(value).toLocaleString("pl-PL");
+      } catch (_) {
+        return value;
+      }
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
     }
   </script>
 </body>
