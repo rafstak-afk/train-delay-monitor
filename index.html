@@ -82,9 +82,9 @@ button{
   padding:8px 0 0;
 }
 
-.quick a{
+.quick button{
   height:30px;
-  padding:6px 10px;
+  padding:0 10px;
   border-radius:999px;
   background:#ffffff;
   color:#07588b;
@@ -95,7 +95,7 @@ button{
   font-weight:bold;
 }
 
-.quick a:hover{
+.quick button:hover{
   background:#e7f1ff;
 }
 
@@ -289,7 +289,7 @@ pre{
 
 <div class="summary" id="summary">
   <span>Brak danych.</span>
-  <a id="stationLink" href="https://l.plk-sa.pl/71001" target="_blank">Oficjalna tablica PLK</a>
+  <a id="stationLink" href="https://portalpasazera.pl/KatalogStacji?stacja=Tarnowskie%20G%C3%B3ry" target="_blank">Oficjalna tablica PLK</a>
 </div>
 
 <div id="error"></div>
@@ -315,13 +315,13 @@ pre{
 
 <script>
 const quickStations = [
-  { name:"Lubliniec", link:"https://portalpasazera.pl/KatalogiStacji?stacja=Lubliniec" },
-  { name:"Tarnowskie Góry", link:"https://l.plk-sa.pl/71001" },
-  { name:"Bytom", link:"https://portalpasazera.pl/KatalogiStacji?stacja=Bytom" },
-  { name:"Gliwice", link:"https://portalpasazera.pl/KatalogiStacji?stacja=Gliwice" },
-  { name:"Chorzów Batory", link:"https://portalpasazera.pl/KatalogiStacji?stacja=Chorzów%20Batory" },
-  { name:"Katowice", link:"https://portalpasazera.pl/KatalogiStacji?stacja=Katowice" },
-  { name:"Kraków Główny", link:"https://portalpasazera.pl/KatalogiStacji?stacja=Kraków%20Główny" }
+  "Lubliniec",
+  "Tarnowskie Góry",
+  "Bytom",
+  "Gliwice",
+  "Chorzów Batory",
+  "Katowice",
+  "Kraków Główny"
 ];
 
 const now = new Date();
@@ -345,29 +345,64 @@ function renderQuickStations(){
   const box = document.getElementById("quickStations");
   box.innerHTML = "";
 
-  for(const item of quickStations){
-    const a = document.createElement("a");
-    a.textContent = item.name;
-    a.href = item.link;
-    a.target = "_blank";
-    a.rel = "noopener";
-    box.appendChild(a);
+  for(const name of quickStations){
+    const btn = document.createElement("button");
+    btn.textContent = name;
+
+    btn.addEventListener("click", async () => {
+      await openOfficialBoard(name);
+    });
+
+    box.appendChild(btn);
   }
 }
 
-function linkForStation(station){
-  const item = quickStations.find(x => x.name === station);
-  return item?.link || `https://portalpasazera.pl/KatalogiStacji?stacja=${encodeURIComponent(station)}`;
-}
+async function resolveOfficialLink(station){
+  const cacheKey = "stationLink:" + station;
+  const cached = localStorage.getItem(cacheKey);
 
-function updateStationLink(data){
-  const station = stationInput.value.trim();
+  if(cached) return cached;
+
+  const response = await fetch(`/train?station=${encodeURIComponent(station)}`);
+  const data = await response.json();
 
   const link =
+    data.stationLink ||
+    data.catalogLink ||
+    `https://portalpasazera.pl/KatalogStacji?stacja=${encodeURIComponent(station)}`;
+
+  localStorage.setItem(cacheKey, link);
+
+  return link;
+}
+
+async function openOfficialBoard(station){
+  try{
+    const link = await resolveOfficialLink(station);
+    window.open(link, "_blank", "noopener");
+  }catch{
+    window.open(
+      `https://portalpasazera.pl/KatalogStacji?stacja=${encodeURIComponent(station)}`,
+      "_blank",
+      "noopener"
+    );
+  }
+}
+
+async function updateStationLink(data){
+  const station = stationInput.value.trim();
+
+  let link =
     data?.stationLink ||
-    linkForStation(station) ||
-    localStorage.getItem("lastStationLink") ||
-    "https://portalpasazera.pl/KatalogStacji";
+    localStorage.getItem("stationLink:" + station);
+
+  if(!link){
+    try{
+      link = await resolveOfficialLink(station);
+    }catch{
+      link = `https://portalpasazera.pl/KatalogStacji?stacja=${encodeURIComponent(station)}`;
+    }
+  }
 
   stationLink.href = link;
 }
@@ -383,7 +418,7 @@ async function loadData(){
   document.getElementById("results").innerHTML = "";
   document.getElementById("debug").textContent = "Pobieranie danych...";
 
-  updateStationLink(null);
+  await updateStationLink(null);
 
   try{
     const response = await fetch("/train", {
@@ -402,10 +437,10 @@ async function loadData(){
       JSON.stringify(data.debug || data, null, 2);
 
     if(data.stationLink){
-      localStorage.setItem("lastStationLink", data.stationLink);
+      localStorage.setItem("stationLink:" + station, data.stationLink);
     }
 
-    updateStationLink(data);
+    await updateStationLink(data);
 
     if(!data.ok){
       throw new Error(data.error || "Błąd API");
@@ -423,7 +458,7 @@ async function loadData(){
 
     renderResults(data.route || []);
   }catch(error){
-    const link = linkForStation(station);
+    const link = stationLink.href;
 
     document.getElementById("summary").innerHTML = `
       <span>
@@ -446,7 +481,7 @@ async function loadData(){
         <div class="time">—</div>
         <div class="train">—</div>
         <div class="dest">API niedostępne</div>
-        <div class="via">Użyj linku do oficjalnej tablicy PLK. Tak, czasem nawet fallback musi robić za główną funkcję.</div>
+        <div class="via">Użyj linku do oficjalnej tablicy PLK.</div>
         <div class="platform">—</div>
       </div>
     `;
@@ -559,7 +594,6 @@ document.getElementById("debugToggle").addEventListener("click", () => {
   document.getElementById("debugWrap").classList.toggle("open");
 });
 
-updateStationLink(null);
 loadData();
 </script>
 
