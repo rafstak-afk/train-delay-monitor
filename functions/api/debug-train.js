@@ -49,6 +49,9 @@ export async function onRequestGet(context) {
       routeStationsCount: route?.stations?.length || 0,
       operationStationsCount: operation?.stations?.length || 0,
 
+      routeStations: route?.stations || [],
+      operationStations: operation?.stations || [],
+
       route,
       operation
     }, null, 2), {
