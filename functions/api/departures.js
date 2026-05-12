@@ -46,15 +46,23 @@ export async function onRequestGet(context) {
     const operationsUrl =
       `${PLK_BASE}/operations?stations=${station.id}&withPlanned=true&pageSize=10000`;
 
-    const [stationSchedulesRaw, fullSchedulesRaw, operationsRaw] =
-      await Promise.all([
-        getJson(stationSchedulesUrl, headers),
-        getJson(fullSchedulesUrl, headers),
-        getJson(operationsUrl, headers)
-      ]);
+    const stationsDictionaryUrl =
+      `${PLK_BASE}/dictionaries/stations?pageSize=100000`;
+
+    const [
+      stationSchedulesRaw,
+      fullSchedulesRaw,
+      operationsRaw,
+      stationsDictionaryRaw
+    ] = await Promise.all([
+      getJson(stationSchedulesUrl, headers),
+      getJson(fullSchedulesUrl, headers),
+      getJson(operationsUrl, headers),
+      getJson(stationsDictionaryUrl, headers)
+    ]);
 
     const fullRoutesMap = buildFullRoutesMap(fullSchedulesRaw);
-    const stationNames = buildStationNameMap(fullSchedulesRaw);
+    const stationNames = buildStationNameMap(fullSchedulesRaw, stationsDictionaryRaw);
 
     const allDepartures = buildDepartures({
       stationSchedulesRaw,
@@ -89,17 +97,11 @@ async function findStation(name, headers) {
     headers
   );
 
-  const stations =
-    data.stations ||
-    data.items ||
-    data.results ||
-    data.data ||
-    [];
-
+  const stations = extractArray(data);
   const wanted = normalize(name);
 
   const found =
-    stations.find(s => normalize(s.name) === wanted) ||
+    stations.find(s => normalize(s.name || s.stationName) === wanted) ||
     stations[0];
 
   if (!found) return null;
@@ -242,38 +244,62 @@ function buildFullRoutesMap(fullSchedulesRaw) {
   return map;
 }
 
-function buildStationNameMap(schedulesRaw) {
+function buildStationNameMap(fullSchedulesRaw, stationsDictionaryRaw) {
   const map = new Map();
-  const dictionaries = schedulesRaw.dictionaries || {};
+
+  addStationNamesFromSchedules(map, fullSchedulesRaw);
+  addStationNamesFromDictionary(map, stationsDictionaryRaw);
+
+  return map;
+}
+
+function addStationNamesFromSchedules(map, schedulesRaw) {
+  const dictionaries = schedulesRaw?.dictionaries || {};
 
   const possibleLists = [
     dictionaries.stations,
     dictionaries.station,
     dictionaries.stopPoints,
-    schedulesRaw.stations
+    schedulesRaw?.stations
   ];
 
   for (const list of possibleLists) {
-    if (!Array.isArray(list)) continue;
+    addStationListToMap(map, list);
+  }
+}
 
-    for (const item of list) {
-      const id =
-        item.id ||
-        item.stationId ||
-        item.stopPointId;
+function addStationNamesFromDictionary(map, dictionaryRaw) {
+  const possibleLists = [
+    dictionaryRaw?.stations,
+    dictionaryRaw?.items,
+    dictionaryRaw?.results,
+    dictionaryRaw?.data,
+    dictionaryRaw
+  ];
 
-      const name =
-        item.name ||
-        item.stationName ||
-        item.stopPointName;
+  for (const list of possibleLists) {
+    addStationListToMap(map, list);
+  }
+}
 
-      if (id && name) {
-        map.set(Number(id), name);
-      }
+function addStationListToMap(map, list) {
+  if (!Array.isArray(list)) return;
+
+  for (const item of list) {
+    const id =
+      item.id ||
+      item.stationId ||
+      item.stopPointId;
+
+    const name =
+      item.name ||
+      item.stationName ||
+      item.stopPointName;
+
+    if (id && name) {
+      map.set(Number(id), name);
     }
   }
-
-  return map;
 }
 
 function stationName(station, stationNames) {
@@ -395,6 +421,18 @@ async function getJson(url, headers) {
   }
 
   return JSON.parse(text);
+}
+
+function extractArray(data) {
+  if (Array.isArray(data)) return data;
+
+  return (
+    data?.stations ||
+    data?.items ||
+    data?.results ||
+    data?.data ||
+    []
+  );
 }
 
 function normalize(value) {
