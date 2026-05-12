@@ -1,834 +1,280 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>Monitor odjazdów PLK</title>
+  <title>Tablica Odjazdów PLK</title>
 
-<style>
-:root{
-  --blue:#214a73;
-  --blue2:#2f70b8;
-  --yellow:#ffe600;
-  --bg:#ececec;
-  --text:#ffffff;
-  --line:#1d3d5e;
-  --danger:#ffdede;
-  --dangerText:#8f0000;
-  --muted:#d8e5f5;
-}
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-*{
-  box-sizing:border-box;
-}
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: #101820;
+      color: #ffffff;
+      min-height: 100vh;
+      padding: 20px;
+    }
 
-body{
-  margin:0;
-  background:var(--bg);
-  font-family:Arial,sans-serif;
-  color:#111;
-}
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
 
-.header{
-  background:#07588b;
-  color:white;
-  padding:10px 12px 14px;
-}
+    h1 {
+      text-align: center;
+      margin-bottom: 24px;
+      font-size: 32px;
+      font-weight: 700;
+    }
 
-.brand{
-  font-size:11px;
-  font-weight:bold;
-  opacity:.95;
-  margin-bottom:12px;
-}
+    .top-buttons,
+    .secondary-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
 
-.title{
-  font-size:22px;
-  font-weight:bold;
-  text-align:center;
-}
+    .btn {
+      display: inline-block;
+      padding: 12px 18px;
+      border-radius: 8px;
+      background: #0b57d0;
+      color: white;
+      text-decoration: none;
+      font-weight: 600;
+      transition: 0.2s ease;
+    }
 
-.controls{
-  background:#f5f5f5;
-  border-bottom:1px solid #ccc;
-  padding:10px;
-}
+    .btn:hover {
+      background: #084298;
+      transform: translateY(-1px);
+    }
 
-.grid{
-  display:grid;
-  grid-template-columns:1fr 140px 110px 120px;
-  gap:8px;
-}
+    .search-box {
+      margin: 24px auto;
+      max-width: 500px;
+      display: flex;
+      gap: 10px;
+    }
 
-input,button{
-  height:40px;
-  border-radius:6px;
-  border:1px solid #bdbdbd;
-  font-size:15px;
-  padding:0 10px;
-}
+    .search-box input {
+      flex: 1;
+      padding: 14px;
+      border-radius: 8px;
+      border: none;
+      font-size: 16px;
+    }
 
-button{
-  border:none;
-  background:#006bc7;
-  color:white;
-  font-weight:bold;
-  cursor:pointer;
-}
+    .search-box button {
+      padding: 14px 18px;
+      border: none;
+      border-radius: 8px;
+      background: #198754;
+      color: white;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+    }
 
-button:hover{
-  filter:brightness(1.05);
-}
+    .search-box button:hover {
+      background: #157347;
+    }
 
-.quick{
-  display:flex;
-  gap:6px;
-  overflow:auto;
-  padding-top:10px;
-}
+    .table-wrapper {
+      margin-top: 30px;
+      overflow-x: auto;
+      border-radius: 12px;
+      overflow: hidden;
+    }
 
-.quick button{
-  height:32px;
-  border-radius:999px;
-  border:1px solid #b7cbe4;
-  background:white;
-  color:#07588b;
-  font-size:13px;
-  white-space:nowrap;
-  padding:0 12px;
-}
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #1c2833;
+    }
 
-.summary{
-  padding:8px 12px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:10px;
-  flex-wrap:wrap;
-  font-size:13px;
-}
+    thead {
+      background: #243447;
+    }
 
-.summary a{
-  color:#07588b;
-  font-weight:bold;
-}
+    th {
+      padding: 16px;
+      text-align: left;
+      font-size: 15px;
+      letter-spacing: 0.5px;
+    }
 
-.board{
-  margin:0 10px 10px;
-  background:var(--blue);
-  color:var(--text);
-}
+    td {
+      padding: 16px;
+      border-top: 1px solid #2f4054;
+      font-size: 15px;
+    }
 
-.boardHead{
-  color:var(--yellow);
-  padding:8px 10px 4px;
-  font-style:italic;
-  font-size:34px;
-  font-weight:bold;
-  line-height:1;
-}
+    tr:hover {
+      background: #253445;
+    }
 
-.subHead{
-  display:grid;
-  grid-template-columns:88px 80px 1.2fr 2fr 60px;
-  gap:10px;
-  color:var(--yellow);
-  font-style:italic;
-  font-weight:bold;
-  border-bottom:1px solid var(--line);
-  padding:4px 10px 7px;
-}
+    .delay {
+      color: #ffcc00;
+      font-weight: bold;
+    }
 
-.row{
-  display:grid;
-  grid-template-columns:88px 80px 1.2fr 2fr 60px;
-  gap:10px;
-  align-items:center;
-  padding:7px 10px;
-  border-bottom:1px solid rgba(255,255,255,.08);
-}
+    .on-time {
+      color: #5dd39e;
+      font-weight: bold;
+    }
 
-.row:nth-child(odd){
-  background:var(--blue2);
-}
+    .footer {
+      text-align: center;
+      margin-top: 30px;
+      opacity: 0.7;
+      font-size: 14px;
+    }
 
-.time{
-  font-size:27px;
-  line-height:1;
-}
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 24px;
+      }
 
-.delay{
-  margin-top:4px;
-  font-size:12px;
-  color:#ffef9c;
-}
+      .search-box {
+        flex-direction: column;
+      }
 
-.train{
-  text-align:center;
-}
+      .search-box button {
+        width: 100%;
+      }
 
-.trainMain{
-  font-size:20px;
-  line-height:1;
-}
-
-.trainSub{
-  margin-top:3px;
-  font-size:11px;
-}
-
-.dest{
-  font-size:20px;
-  font-weight:bold;
-  line-height:1.05;
-}
-
-.via{
-  font-size:17px;
-  line-height:1.1;
-}
-
-.platform{
-  text-align:center;
-  font-size:28px;
-}
-
-.error{
-  margin:10px;
-  padding:10px;
-  border-radius:8px;
-  background:var(--danger);
-  color:var(--dangerText);
-  font-size:14px;
-}
-
-.debugWrap{
-  margin:10px;
-}
-
-.debugTitle{
-  cursor:pointer;
-  font-weight:bold;
-  margin-bottom:6px;
-}
-
-pre{
-  display:none;
-  background:#111;
-  color:#76ff97;
-  padding:10px;
-  border-radius:8px;
-  overflow:auto;
-  max-height:340px;
-  font-size:12px;
-}
-
-.debugWrap.open pre{
-  display:block;
-}
-
-@media(max-width:760px){
-
-  .grid{
-    grid-template-columns:1fr 1fr;
-  }
-
-  .grid input:first-child{
-    grid-column:1/-1;
-  }
-
-  .grid button{
-    grid-column:1/-1;
-  }
-
-  .boardHead{
-    font-size:25px;
-  }
-
-  .subHead{
-    display:none;
-  }
-
-  .row{
-    grid-template-columns:64px 54px 1fr 42px;
-    grid-template-areas:
-      "time train dest platform"
-      "time train via platform";
-    gap:6px;
-    padding:8px;
-  }
-
-  .time{
-    grid-area:time;
-    font-size:22px;
-  }
-
-  .train{
-    grid-area:train;
-  }
-
-  .trainMain{
-    font-size:16px;
-  }
-
-  .trainSub{
-    font-size:10px;
-  }
-
-  .dest{
-    grid-area:dest;
-    font-size:17px;
-  }
-
-  .via{
-    grid-area:via;
-    font-size:13px;
-    color:var(--muted);
-  }
-
-  .platform{
-    grid-area:platform;
-    font-size:22px;
-  }
-}
-</style>
+      th,
+      td {
+        padding: 12px;
+        font-size: 13px;
+      }
+    }
+  </style>
 </head>
 
 <body>
 
-<div class="header">
-  <div class="brand">
-    PKP POLSKIE LINIE KOLEJOWE S.A.
-  </div>
+  <div class="container">
 
-  <div class="title">
-    Wyświetlacz stacyjny:
-    <span id="stationTitle">Tarnowskie Góry</span>
-  </div>
-</div>
+    <h1>🚆 Tablica Odjazdów PLK</h1>
 
-<div class="controls">
+    <!-- GŁÓWNE PRZYCISKI -->
+    <div class="top-buttons">
 
-  <div class="grid">
+      <a class="btn"
+         href="https://portalpasazera.pl"
+         target="_blank">
+        Portal Pasażera
+      </a>
 
-    <input
-      id="station"
-      list="stationsHistory"
-      placeholder="Wpisz stację"
-    >
+      <a class="btn"
+         href="/debug.html">
+        Debug
+      </a>
 
-    <datalist id="stationsHistory"></datalist>
-
-    <input id="date" type="date">
-    <input id="time" type="time">
-
-    <button id="loadBtn">
-      Pobierz
-    </button>
-
-  </div>
-
-  <div class="quick" id="quickStations"></div>
-
-</div>
-
-<div class="summary" id="summary">
-
-  <span>
-    Brak danych.
-  </span>
-
-  <a
-    id="stationLink"
-    href="https://portalpasazera.pl"
-    target="_blank"
-  >
-    Oficjalna tablica PLK
-  </a>
-
-</div>
-
-<div id="error"></div>
-
-<div class="board">
-
-  <div class="boardHead">
-    ODJAZDY Departures
-  </div>
-
-  <div class="subHead">
-
-    <div>
-      Godzina<br>Time
     </div>
 
-    <div>
-      Pociąg<br>Train
+    <!-- DRUGI RZĄD -->
+    <div class="secondary-buttons">
+
+      <a class="btn"
+         href="https://l.plk-sa.pl/#qr-generator"
+         target="_blank">
+        Generator QR PLK
+      </a>
+
     </div>
 
-    <div>
-      Stacja docelowa<br>Destination
+    <!-- WYSZUKIWARKA -->
+    <div class="search-box">
+
+      <input
+        type="text"
+        id="stationInput"
+        placeholder="Wpisz nazwę stacji..."
+      />
+
+      <button onclick="loadDepartures()">
+        Szukaj
+      </button>
+
     </div>
 
-    <div>
-      Informacje dodatkowe<br>Additional information
+    <!-- TABLICA -->
+    <div class="table-wrapper">
+
+      <table>
+
+        <thead>
+          <tr>
+            <th>Godzina</th>
+            <th>Pociąg</th>
+            <th>Kierunek</th>
+            <th>Peron</th>
+            <th>Opóźnienie</th>
+          </tr>
+        </thead>
+
+        <tbody id="departuresBody">
+
+          <tr>
+            <td>12:15</td>
+            <td>IC 3812</td>
+            <td>Warszawa Centralna</td>
+            <td>2</td>
+            <td class="on-time">0 min</td>
+          </tr>
+
+          <tr>
+            <td>12:22</td>
+            <td>REGIO 44721</td>
+            <td>Katowice</td>
+            <td>1</td>
+            <td class="delay">+7 min</td>
+          </tr>
+
+        </tbody>
+
+      </table>
+
     </div>
 
-    <div>
-      Peron<br>Platform
+    <div class="footer">
+      Dane realtime PLK / Portal Pasażera
     </div>
 
   </div>
 
-  <div id="results"></div>
+  <script>
 
-</div>
+    async function loadDepartures() {
 
-<div class="debugWrap" id="debugWrap">
+      const station = document.getElementById("stationInput").value;
 
-  <div class="debugTitle" id="debugToggle">
-    Debug
-  </div>
-
-  <pre id="debug">
-Brak danych debug.
-  </pre>
-
-</div>
-
-<script>
-
-const quickStations = [
-  "Lubliniec",
-  "Tarnowskie Góry",
-  "Bytom",
-  "Gliwice",
-  "Chorzów Batory",
-  "Katowice",
-  "Kraków Główny"
-];
-
-const stationInput = document.getElementById("station");
-const stationLink = document.getElementById("stationLink");
-
-const now = new Date();
-
-document.getElementById("date").value =
-  now.toISOString().split("T")[0];
-
-document.getElementById("time").value =
-  now.toTimeString().slice(0,5);
-
-stationInput.value =
-  localStorage.getItem("lastStation")
-  || "Tarnowskie Góry";
-
-renderHistory();
-renderQuickStations();
-
-async function resolveOfficialLink(station){
-
-  const cacheKey =
-    "station-link:" + station;
-
-  const cached =
-    localStorage.getItem(cacheKey);
-
-  if(cached){
-    return cached;
-  }
-
-  const response = await fetch(
-    `/resolve-link?station=${encodeURIComponent(station)}`
-  );
-
-  const data = await response.json();
-
-  const link =
-    data.stationLink
-    || data.catalogLink
-    || `https://portalpasazera.pl/KatalogStacji?stacja=${encodeURIComponent(station)}`;
-
-  localStorage.setItem(cacheKey, link);
-
-  return link;
-}
-
-function renderQuickStations(){
-
-  const box =
-    document.getElementById("quickStations");
-
-  box.innerHTML = "";
-
-  for(const station of quickStations){
-
-    const btn =
-      document.createElement("button");
-
-    btn.textContent = station;
-
-    btn.addEventListener("click", async () => {
-
-      try{
-
-        const link =
-          await resolveOfficialLink(station);
-
-        window.open(
-          link,
-          "_blank",
-          "noopener"
-        );
-
-      }catch{
-
-        window.open(
-          `https://portalpasazera.pl/KatalogStacji?stacja=${encodeURIComponent(station)}`,
-          "_blank",
-          "noopener"
-        );
-
+      if (!station) {
+        alert("Wpisz nazwę stacji.");
+        return;
       }
 
-    });
+      console.log("Szukam stacji:", station);
 
-    box.appendChild(btn);
-  }
-}
+      // TU PODPINASZ SWOJE API / WORKER
+      // fetch('/api/departures?station=' + encodeURIComponent(station))
 
-async function updateStationLink(station){
+      alert("Tutaj podepniesz swoje API PLK.");
 
-  try{
-
-    const link =
-      await resolveOfficialLink(station);
-
-    stationLink.href = link;
-
-  }catch{
-
-    stationLink.href =
-      `https://portalpasazera.pl/KatalogStacji?stacja=${encodeURIComponent(station)}`;
-
-  }
-}
-
-async function loadData(){
-
-  const station =
-    stationInput.value.trim();
-
-  if(!station){
-    return;
-  }
-
-  saveStation(station);
-
-  document.getElementById("stationTitle").textContent =
-    station;
-
-  document.getElementById("error").innerHTML = "";
-
-  document.getElementById("results").innerHTML = "";
-
-  document.getElementById("debug").textContent =
-    "Pobieranie danych...";
-
-  await updateStationLink(station);
-
-  try{
-
-    const response = await fetch("/train", {
-      method:"POST",
-      headers:{
-        "Content-Type":"application/json"
-      },
-      body:JSON.stringify({
-        station,
-        date:document.getElementById("date").value,
-        time:document.getElementById("time").value
-      })
-    });
-
-    const data =
-      await response.json();
-
-    document.getElementById("debug").textContent =
-      JSON.stringify(data.debug || data, null, 2);
-
-    if(!data.ok){
-      throw new Error(
-        data.error || "Błąd API"
-      );
     }
 
-    if(data.stationLink){
-      stationLink.href =
-        data.stationLink;
-    }
-
-    document.getElementById("summary").innerHTML = `
-      <span>
-        Rekordów:
-        <b>${safe(data.totalDepartures)}</b>
-      </span>
-
-      <a
-        id="stationLink"
-        href="${safe(stationLink.href)}"
-        target="_blank"
-      >
-        Oficjalna tablica PLK
-      </a>
-    `;
-
-    renderResults(data.route || []);
-
-  }catch(error){
-
-    document.getElementById("error").innerHTML = `
-      <div class="error">
-        ${safe(error.message)}
-      </div>
-    `;
-
-    document.getElementById("results").innerHTML = `
-      <div class="row">
-
-        <div class="time">
-          —
-        </div>
-
-        <div class="train">
-          —
-        </div>
-
-        <div class="dest">
-          API niedostępne
-        </div>
-
-        <div class="via">
-          Nadal możesz użyć oficjalnej tablicy PLK.
-          Cywilizacja jeszcze całkiem nie upadła.
-        </div>
-
-        <div class="platform">
-          —
-        </div>
-
-      </div>
-    `;
-  }
-}
-
-function renderResults(rows){
-
-  const results =
-    document.getElementById("results");
-
-  results.innerHTML = "";
-
-  if(!rows.length){
-
-    results.innerHTML = `
-      <div class="row">
-
-        <div class="time">—</div>
-        <div class="train">—</div>
-
-        <div class="dest">
-          Brak danych
-        </div>
-
-        <div class="via">
-          Zmień godzinę lub sprawdź oficjalną tablicę.
-        </div>
-
-        <div class="platform">—</div>
-
-      </div>
-    `;
-
-    return;
-  }
-
-  for(const row of rows){
-
-    const div =
-      document.createElement("div");
-
-    div.className = "row";
-
-    div.innerHTML = `
-
-      <div class="time">
-
-        ${safe(row.scheduled)}
-
-        ${
-          Number(row.delayMinutes) > 0
-          ? `<div class="delay">+${safe(row.delayMinutes)} min</div>`
-          : ""
-        }
-
-      </div>
-
-      <div class="train">
-
-        <div class="trainMain">
-          ${mainTrain(row.trainNumber)}
-        </div>
-
-        <div class="trainSub">
-          ${safe(row.trainNumber)}
-        </div>
-
-      </div>
-
-      <div class="dest">
-        ${safe(row.destination)}
-      </div>
-
-      <div class="via">
-        ${safe(row.via)}
-      </div>
-
-      <div class="platform">
-        ${safe(row.platform)}
-      </div>
-
-    `;
-
-    results.appendChild(div);
-  }
-}
-
-function mainTrain(value){
-
-  const text =
-    safe(value);
-
-  if(text === "—"){
-    return "—";
-  }
-
-  return text.split(/\s+/)[0];
-}
-
-function safe(value){
-
-  if(
-    value === undefined
-    || value === null
-    || value === ""
-  ){
-    return "—";
-  }
-
-  return String(value);
-}
-
-function saveStation(station){
-
-  localStorage.setItem(
-    "lastStation",
-    station
-  );
-
-  let history =
-    JSON.parse(
-      localStorage.getItem("stationHistory")
-      || "[]"
-    );
-
-  history =
-    history.filter(
-      item => item !== station
-    );
-
-  history.unshift(station);
-
-  history =
-    history.slice(0,20);
-
-  localStorage.setItem(
-    "stationHistory",
-    JSON.stringify(history)
-  );
-
-  renderHistory();
-}
-
-function renderHistory(){
-
-  const history =
-    JSON.parse(
-      localStorage.getItem("stationHistory")
-      || "[]"
-    );
-
-  const datalist =
-    document.getElementById("stationsHistory");
-
-  datalist.innerHTML = "";
-
-  for(const station of history){
-
-    const option =
-      document.createElement("option");
-
-    option.value = station;
-
-    datalist.appendChild(option);
-  }
-}
-
-document.getElementById("loadBtn")
-.addEventListener("click", loadData);
-
-stationInput.addEventListener("keydown", e => {
-
-  if(e.key === "Enter"){
-    loadData();
-  }
-
-});
-
-stationInput.addEventListener("change", () => {
-  loadData();
-});
-
-stationInput.addEventListener("input", () => {
-
-  const history =
-    JSON.parse(
-      localStorage.getItem("stationHistory")
-      || "[]"
-    );
-
-  if(
-    history.includes(
-      stationInput.value.trim()
-    )
-  ){
-    loadData();
-  }
-
-});
-
-document.getElementById("debugToggle")
-.addEventListener("click", () => {
-
-  document.getElementById("debugWrap")
-  .classList.toggle("open");
-
-});
-
-loadData();
-
-</script>
+  </script>
 
 </body>
 </html>
