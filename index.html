@@ -7,72 +7,274 @@
 
 <title>Monitor odjazdów PLK</title>
 
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
 <style>
 
+:root{
+
+  --bg:#0f1115;
+  --panel:#1a1d24;
+  --card:#22262f;
+
+  --text:#f5f7fa;
+  --muted:#9ea7b3;
+
+  --accent:#4f8cff;
+
+  --green:#1db954;
+  --red:#ff4d4f;
+  --yellow:#ffb020;
+
+}
+
+*{
+  box-sizing:border-box;
+}
+
 body{
-  font-family:Arial,sans-serif;
-  margin:8px;
-  background:#f5f5f5;
+
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+
+  font-family:
+    Inter,
+    sans-serif;
+
 }
 
-h1{
-  font-size:22px;
+.header{
+
+  position:sticky;
+  top:0;
+
+  z-index:100;
+
+  background:rgba(15,17,21,.95);
+
+  backdrop-filter:blur(10px);
+
+  padding:16px;
+
+  border-bottom:
+    1px solid rgba(255,255,255,.06);
+
 }
 
-.panel{
-  background:white;
-  border-radius:10px;
-  padding:12px;
-  margin-bottom:12px;
+.title{
+
+  font-size:24px;
+  font-weight:700;
+
+  margin-bottom:14px;
+
 }
 
-.grid{
-  display:grid;
-  grid-template-columns:1fr;
+.search{
+
+  display:flex;
+  flex-direction:column;
   gap:10px;
+
 }
 
-input,button{
+input,
+button{
 
   width:100%;
-  box-sizing:border-box;
-  padding:12px;
+
+  border:none;
+  border-radius:14px;
+
+  padding:14px;
+
   font-size:16px;
 
 }
 
+input{
+
+  background:var(--panel);
+  color:var(--text);
+
+}
+
 button{
-  border:none;
-  background:#0b57d0;
+
+  background:var(--accent);
   color:white;
-  border-radius:8px;
+
+  font-weight:600;
+
+}
+
+.summary{
+
+  padding:16px;
+
+  color:var(--muted);
+
+  font-size:14px;
+
+}
+
+.results{
+
+  padding:12px;
+
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+
 }
 
 .card{
 
-  background:white;
-  border-radius:10px;
-  padding:10px;
-  margin-bottom:10px;
+  background:var(--card);
+
+  border-radius:18px;
+
+  padding:16px;
+
+  box-shadow:
+    0 4px 16px rgba(0,0,0,.25);
 
 }
 
-.row{
-  margin-bottom:4px;
+.top{
+
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+
+  margin-bottom:12px;
+
 }
 
-.label{
-  font-weight:bold;
+.time{
+
+  font-size:34px;
+  font-weight:700;
+
+  line-height:1;
+
+}
+
+.actual{
+
+  color:var(--muted);
+  font-size:14px;
 }
 
 .delay{
-  color:red;
-  font-weight:bold;
+
+  padding:6px 10px;
+
+  border-radius:999px;
+
+  font-size:13px;
+  font-weight:700;
+
 }
 
-.ok{
-  color:green;
-  font-weight:bold;
+.delay.ok{
+
+  background:
+    rgba(29,185,84,.15);
+
+  color:var(--green);
+
+}
+
+.delay.late{
+
+  background:
+    rgba(255,77,79,.15);
+
+  color:var(--red);
+
+}
+
+.destination{
+
+  font-size:22px;
+  font-weight:700;
+
+  margin-bottom:8px;
+
+}
+
+.meta{
+
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+
+  margin-top:12px;
+
+}
+
+.metaBox{
+
+  background:
+    rgba(255,255,255,.04);
+
+  border-radius:12px;
+
+  padding:10px;
+
+}
+
+.label{
+
+  color:var(--muted);
+
+  font-size:12px;
+
+  margin-bottom:4px;
+
+}
+
+.value{
+
+  font-size:15px;
+  font-weight:600;
+
+}
+
+.link{
+
+  color:var(--accent);
+  text-decoration:none;
+
+}
+
+.loading{
+
+  text-align:center;
+  padding:30px;
+
+  color:var(--muted);
+
+}
+
+.error{
+
+  margin:16px;
+
+  background:
+    rgba(255,77,79,.15);
+
+  color:var(--red);
+
+  border-radius:14px;
+
+  padding:14px;
+
 }
 
 </style>
@@ -81,46 +283,55 @@ button{
 
 <body>
 
-<h1>Monitor odjazdów PLK</h1>
+<div class="header">
 
-<div class="panel">
+  <div class="title">
+    Monitor odjazdów PLK
+  </div>
 
-<div class="grid">
+  <div class="search">
 
-<input
-  id="station"
-  list="stationsHistory"
-  placeholder="Stacja"
-/>
+    <input
+      id="station"
+      list="stationsHistory"
+      placeholder="Wpisz stację"
+    >
 
-<datalist id="stationsHistory"></datalist>
+    <datalist id="stationsHistory"></datalist>
 
-<input
-  id="date"
-  type="date"
-/>
+    <input
+      id="date"
+      type="date"
+    >
 
-<input
-  id="time"
-  type="time"
-/>
+    <input
+      id="time"
+      type="time"
+    >
 
-<button id="loadBtn">
-Pobierz
-</button>
+    <button id="loadBtn">
+      Pobierz odjazdy
+    </button>
 
-</div>
+  </div>
 
 </div>
 
 <div
-  class="panel"
+  class="summary"
   id="summary"
 >
 Brak danych
 </div>
 
-<div id="results"></div>
+<div
+  id="error"
+></div>
+
+<div
+  class="results"
+  id="results"
+></div>
 
 <script>
 
@@ -163,51 +374,62 @@ async function loadData(){
 
   saveStation(station);
 
-  const response =
-    await fetch("/train",{
-
-      method:"POST",
-
-      headers:{
-        "Content-Type":
-          "application/json"
-      },
-
-      body:JSON.stringify({
-
-        station,
-
-        date:
-          document
-            .getElementById("date")
-            .value,
-
-        time:
-          document
-            .getElementById("time")
-            .value
-
-      })
-
-    });
-
-  const data =
-    await response.json();
-
-  if(!data.ok){
-
-    alert(
-      data.error
-      || "Błąd API"
-    );
-
-    return;
-
-  }
+  document
+    .getElementById("error")
+    .innerHTML = "";
 
   document
-    .getElementById("summary")
-    .innerHTML = `
+    .getElementById("results")
+    .innerHTML =
+      `<div class="loading">
+        Pobieranie danych...
+      </div>`;
+
+  try{
+
+    const response =
+      await fetch("/train",{
+
+        method:"POST",
+
+        headers:{
+          "Content-Type":
+            "application/json"
+        },
+
+        body:JSON.stringify({
+
+          station,
+
+          date:
+            document
+              .getElementById("date")
+              .value,
+
+          time:
+            document
+              .getElementById("time")
+              .value
+
+        })
+
+      });
+
+    const data =
+      await response.json();
+
+    if(!data.ok){
+
+      throw new Error(
+        data.error
+        || "Błąd API"
+      );
+
+    }
+
+    document
+      .getElementById("summary")
+      .innerHTML = `
 
 <b>${data.matchedStation}</b>
 <br>
@@ -216,6 +438,7 @@ ${data.totalDepartures}
 <br><br>
 
 <a
+ class="link"
  href="https://l.plk-sa.pl/${data.portalStationId}"
  target="_blank"
 >
@@ -224,6 +447,38 @@ Oficjalna tablica PLK
 
 `;
 
+    renderResults(data.route);
+
+  }catch(error){
+
+    document
+      .getElementById("results")
+      .innerHTML = "";
+
+    document
+      .getElementById("error")
+      .innerHTML = `
+
+<div class="error">
+
+${error.message}
+
+<br><br>
+
+Możliwe że API PLK
+tymczasowo zablokowało
+zapytania (429 Rate Limit).
+
+</div>
+
+`;
+
+  }
+
+}
+
+function renderResults(rows){
+
   const results =
     document.getElementById(
       "results"
@@ -231,7 +486,7 @@ Oficjalna tablica PLK
 
   results.innerHTML = "";
 
-  for(const row of data.route){
+  for(const row of rows){
 
     const card =
       document.createElement(
@@ -243,68 +498,79 @@ Oficjalna tablica PLK
 
     card.innerHTML = `
 
-<div class="row">
-<span class="label">
-PLAN:
-</span>
-${safe(row.scheduled)}
-</div>
+<div class="top">
 
-<div class="row">
-<span class="label">
-RZECZ:
-</span>
-${safe(row.actual)}
-</div>
+  <div>
 
-<div class="row">
-<span class="label">
-OPÓŹ:
-</span>
+    <div class="time">
+      ${safe(row.scheduled)}
+    </div>
 
-<span class="${
-  row.delayMinutes > 0
-  ? "delay"
-  : "ok"
-}">
-${safe(row.delayMinutes)} min
-</span>
+    <div class="actual">
+      rzeczywisty:
+      ${safe(row.actual)}
+    </div>
+
+  </div>
+
+  <div class="delay ${
+    row.delayMinutes > 0
+    ? "late"
+    : "ok"
+  }">
+
+    ${safe(row.delayMinutes)} min
+
+  </div>
 
 </div>
 
-<div class="row">
-<span class="label">
-POCIĄG:
-</span>
-${safe(row.trainNumber)}
+<div class="destination">
+  ${safe(row.destination)}
 </div>
 
-<div class="row">
-<span class="label">
-KIERUNEK:
-</span>
-${safe(row.destination)}
-</div>
+<div class="meta">
 
-<div class="row">
-<span class="label">
-PRZEWOŹNIK:
-</span>
-${safe(row.carrier)}
-</div>
+  <div class="metaBox">
+    <div class="label">
+      Pociąg
+    </div>
 
-<div class="row">
-<span class="label">
-PERON:
-</span>
-${safe(row.platform)}
-</div>
+    <div class="value">
+      ${safe(row.trainNumber)}
+    </div>
+  </div>
 
-<div class="row">
-<span class="label">
-PRZEZ:
-</span>
-${safe(row.via)}
+  <div class="metaBox">
+    <div class="label">
+      Przewoźnik
+    </div>
+
+    <div class="value">
+      ${safe(row.carrier)}
+    </div>
+  </div>
+
+  <div class="metaBox">
+    <div class="label">
+      Peron
+    </div>
+
+    <div class="value">
+      ${safe(row.platform)}
+    </div>
+  </div>
+
+  <div class="metaBox">
+    <div class="label">
+      Przez
+    </div>
+
+    <div class="value">
+      ${safe(row.via)}
+    </div>
+  </div>
+
 </div>
 
 `;
