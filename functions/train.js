@@ -1,3 +1,5 @@
+// functions/train.js
+
 export async function onRequest(context) {
   return handleRequest(
     context.request,
@@ -255,6 +257,8 @@ function getPlatform(stop) {
   return clean(
     stop.platform
     || stop.platformNumber
+    || stop.departurePlatform
+    || stop.arrivalPlatform
     || stop.track
   ) || "—";
 }
@@ -266,17 +270,47 @@ function getTrainNumber(operation) {
     || operation.publicTrainNumber
     || operation.commercialNumber
     || operation.marketingNumber
+    || operation.train?.number
+    || operation.train?.commercialNumber
+    || operation.trainName
   ) || "—";
 }
 
 function getCarrier(operation) {
 
-  return clean(
+  const raw = clean(
     operation.carrier
     || operation.carrierName
     || operation.operator
     || operation.operatorName
-  ) || "—";
+    || operation.train?.carrier
+    || operation.train?.carrierName
+  );
+
+  if (!raw) {
+    return "—";
+  }
+
+  const normalized =
+    raw.toUpperCase();
+
+  if (normalized === "IC") {
+    return "PKP Intercity";
+  }
+
+  if (normalized === "PR") {
+    return "POLREGIO";
+  }
+
+  if (normalized === "KS") {
+    return "Koleje Śląskie";
+  }
+
+  if (normalized === "KM") {
+    return "Koleje Mazowieckie";
+  }
+
+  return raw;
 }
 
 function getDestination(
@@ -291,8 +325,19 @@ function getDestination(
     i--
   ) {
 
+    const stop = stops[i];
+
+    const explicitName = clean(
+      stop.stationName
+      || stop.name
+    );
+
+    if (explicitName) {
+      return explicitName;
+    }
+
     const id =
-      stopStationId(stops[i]);
+      stopStationId(stop);
 
     if (stationMap[id]) {
       return stationMap[id];
@@ -318,11 +363,19 @@ function getVia(
     i++
   ) {
 
+    const stop = stops[i];
+
+    const explicitName = clean(
+      stop.stationName
+      || stop.name
+    );
+
     const id =
-      stopStationId(stops[i]);
+      stopStationId(stop);
 
     const name =
-      stationMap[id];
+      explicitName
+      || stationMap[id];
 
     if (!name) {
       continue;
@@ -344,6 +397,55 @@ function getVia(
 
   return names.join(" • ")
     || "—";
+}
+
+function dedupeRows(rows) {
+
+  const seen = new Set();
+
+  return rows.filter(row => {
+
+    const key = [
+      row.trainNumber,
+      row.scheduled,
+      row.destination,
+      row.platform
+    ].join("|");
+
+    if (seen.has(key)) {
+      return false;
+    }
+
+    seen.add(key);
+
+    return true;
+
+  });
+
+}
+
+function filterByTime(rows, time) {
+
+  if (!time) {
+    return rows;
+  }
+
+  const pivot =
+    parseTime(time);
+
+  return rows.filter(row => {
+
+    const value =
+      parseTime(
+        row.actual
+        || row.scheduled
+      );
+
+    return value !== null
+      && value >= pivot;
+
+  });
+
 }
 
 async function handleRequest(
@@ -374,14 +476,6 @@ async function handleRequest(
 
   }
 
-  if (method !== "POST") {
-
-    return json({
-      error: "Method not allowed"
-    }, 405);
-
-  }
-
   try {
 
     const body =
@@ -389,6 +483,12 @@ async function handleRequest(
 
     const stationQuery =
       clean(body.station);
+
+    const requestDate =
+      clean(body.date);
+
+    const requestTime =
+      clean(body.time);
 
     if (!stationQuery) {
 
@@ -411,9 +511,7 @@ async function handleRequest(
 
     }
 
-    // ====================
     // STATIONS
-    // ====================
 
     const stationsUrl = new URL(
       `${apiBase}/dictionaries/stations`
@@ -459,12 +557,25 @@ async function handleRequest(
         || matchedStation.stationName
       );
 
-    const stationMap =
-      buildStationMap(stations);
+    // FULL STATION MAP
 
-    // ====================
+    const allStationsPayload =
+      await fetchJson(
+        `${apiBase}/dictionaries/stations`,
+        headers
+      );
+
+    const allStations =
+      extractArray(
+        allStationsPayload
+      );
+
+    const stationMap =
+      buildStationMap(
+        allStations
+      );
+
     // OPERATIONS
-    // ====================
 
     const operationsUrl =
       new URL(
@@ -488,8 +599,17 @@ async function handleRequest(
 
     operationsUrl.searchParams.set(
       "pageSize",
-      "500"
+      "200"
     );
+
+    if (requestDate) {
+
+      operationsUrl.searchParams.set(
+        "date",
+        requestDate
+      );
+
+    }
 
     const operationsPayload =
       await fetchJson(
@@ -501,10 +621,6 @@ async function handleRequest(
       extractArray(
         operationsPayload
       );
-
-    // ====================
-    // BUILD TABLE
-    // ====================
 
     const rows = [];
 
@@ -581,7 +697,16 @@ async function handleRequest(
 
     }
 
-    rows.sort((a, b) => {
+    const uniqueRows =
+      dedupeRows(rows);
+
+    const filteredRows =
+      filterByTime(
+        uniqueRows,
+        requestTime
+      );
+
+    filteredRows.sort((a, b) => {
 
       return (
         (parseTime(a.actual)
@@ -604,20 +729,18 @@ async function handleRequest(
         stationId,
 
       totalDepartures:
-        rows.length,
+        filteredRows.length,
 
       route:
-        rows.slice(0, 50),
+        filteredRows.slice(0, 20),
 
       debug: {
         stationId,
         stationName,
         operationsCount:
           operations.length,
-        sampleOperation:
-          operations[0] || null,
         firstRow:
-          rows[0] || null
+          filteredRows[0] || null
       }
 
     });
