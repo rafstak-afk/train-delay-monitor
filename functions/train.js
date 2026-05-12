@@ -21,7 +21,30 @@ function json(data, status = 200) {
 }
 
 function clean(value) {
-  return String(value ?? "").trim();
+  return String(value ?? "")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&oacute;/g, "ó")
+    .replace(/&Oacute;/g, "Ó")
+    .replace(/&lacute;/g, "ł")
+    .replace(/&Lacute;/g, "Ł")
+    .replace(/&sacute;/g, "ś")
+    .replace(/&Sacute;/g, "Ś")
+    .replace(/&zacute;/g, "ź")
+    .replace(/&Zacute;/g, "Ź")
+    .replace(/&zdot;/g, "ż")
+    .replace(/&Zdot;/g, "Ż")
+    .replace(/&cacute;/g, "ć")
+    .replace(/&Cacute;/g, "Ć")
+    .replace(/&nacute;/g, "ń")
+    .replace(/&Nacute;/g, "Ń")
+    .replace(/&aogon;/g, "ą")
+    .replace(/&Aogon;/g, "Ą")
+    .replace(/&eogon;/g, "ę")
+    .replace(/&Eogon;/g, "Ę")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function normalize(value) {
@@ -29,6 +52,30 @@ function normalize(value) {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
+}
+
+function parseTime(value) {
+  const m = clean(value).match(/(\d{1,2}):(\d{2})/);
+  if (!m) return null;
+  return Number(m[1]) * 60 + Number(m[2]);
+}
+
+function formatTime(value) {
+  const m = clean(value).match(/(\d{1,2}):(\d{2})/);
+  if (!m) return "—";
+  return `${m[1].padStart(2, "0")}:${m[2]}`;
+}
+
+function calculateDelay(planned, actual) {
+  const p = parseTime(planned);
+  const a = parseTime(actual);
+
+  if (p === null || a === null) return 0;
+
+  let diff = a - p;
+  if (diff < -720) diff += 1440;
+
+  return Math.max(0, diff);
 }
 
 function extractArray(payload) {
@@ -53,24 +100,51 @@ function extractArray(payload) {
   return [];
 }
 
-function ttlFor(url) {
-  if (url.includes("/operations")) return 20;
-  if (url.includes("/schedules")) return 300;
-  if (url.includes("/dictionaries")) return 86400;
-  return 300;
+async function fetchText(url) {
+  const cache = caches.default;
+  const key = new Request(url, { method: "GET" });
+
+  const cached = await cache.match(key);
+  if (cached) return cached.text();
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      "User-Agent": "Mozilla/5.0"
+    }
+  });
+
+  const text = await response.text();
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status} dla ${url}`);
+  }
+
+  await cache.put(
+    key,
+    new Response(text, {
+      headers: {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "public, max-age=20"
+      }
+    })
+  );
+
+  return text;
 }
 
 async function fetchJson(url, headers = {}) {
   const cache = caches.default;
-  const cacheKey = new Request(url, { method: "GET" });
+  const key = new Request(url, { method: "GET" });
 
-  const cached = await cache.match(cacheKey);
+  const cached = await cache.match(key);
   if (cached) return cached.json();
 
   const response = await fetch(url, { method: "GET", headers });
   const text = await response.text();
 
   let data;
+
   try {
     data = JSON.parse(text);
   } catch {
@@ -82,48 +156,16 @@ async function fetchJson(url, headers = {}) {
   }
 
   await cache.put(
-    cacheKey,
+    key,
     new Response(JSON.stringify(data), {
       headers: {
         "Content-Type": "application/json",
-        "Cache-Control": `public, max-age=${ttlFor(url)}`
+        "Cache-Control": "public, max-age=30"
       }
     })
   );
 
   return data;
-}
-
-async function tryFetchJson(url, headers = {}) {
-  try {
-    return await fetchJson(url, headers);
-  } catch {
-    return null;
-  }
-}
-
-function parseTime(value) {
-  const match = clean(value).match(/(\d{1,2}):(\d{2})/);
-  if (!match) return null;
-  return Number(match[1]) * 60 + Number(match[2]);
-}
-
-function formatTime(value) {
-  const match = clean(value).match(/(\d{1,2}):(\d{2})/);
-  if (!match) return "—";
-  return `${match[1].padStart(2, "0")}:${match[2]}`;
-}
-
-function calculateDelay(planned, actual) {
-  const p = parseTime(planned);
-  const a = parseTime(actual);
-
-  if (p === null || a === null) return 0;
-
-  let diff = a - p;
-  if (diff < -720) diff += 1440;
-
-  return Math.max(0, diff);
 }
 
 function normalizeStatus(status) {
@@ -135,58 +177,170 @@ function normalizeStatus(status) {
   return "W ruchu";
 }
 
-function findStation(stations, query) {
-  const needle = normalize(query);
+const STATION_LINKS = {
+  "Lubliniec": "https://l.plk-sa.pl/71183",
+  "Tarnowskie Góry": "https://l.plk-sa.pl/71001",
+  "Bytom": "https://l.plk-sa.pl/71016",
+  "Gliwice": "https://l.plk-sa.pl/71026",
+  "Chorzów Batory": "https://l.plk-sa.pl/71041",
+  "Katowice": "https://l.plk-sa.pl/71000",
+  "Kraków Główny": "https://l.plk-sa.pl/73000"
+};
 
-  return (
-    stations.find(station =>
-      normalize(station.name || station.stationName) === needle
-    ) ||
-    stations.find(station =>
-      normalize(station.name || station.stationName).includes(needle)
-    ) ||
-    stations[0] ||
-    null
-  );
-}
+function getKnownStationLink(stationName) {
+  const needle = normalize(stationName);
 
-function buildStationMap(stations) {
-  const map = {};
-
-  for (const station of stations) {
-    const id = clean(station.id || station.stationId);
-    const name = clean(station.name || station.stationName);
-
-    if (id && name) map[id] = name;
+  for (const [name, link] of Object.entries(STATION_LINKS)) {
+    if (normalize(name) === needle) return link;
   }
 
-  return map;
+  return "";
 }
 
-function getPortalStationId(station, stationId) {
-  const candidates = [
-    station.portalStationId,
-    station.portalId,
-    station.passengerStationId,
-    station.stationNumber,
-    station.stationCode,
-    station.externalId,
-    station.uicCode,
-    station.uic,
-    station.displayId
-  ];
+function getKnownStationId(stationName) {
+  const link = getKnownStationLink(stationName);
+  const m = link.match(/\/(\d+)$/);
+  return m ? m[1] : "";
+}
 
-  for (const value of candidates) {
+function parseDisplayRows(html, stationName, portalStationId) {
+  const text = html
+    .replace(/\r/g, "")
+    .replace(/\n/g, " ")
+    .replace(/\t/g, " ");
+
+  const rows = [];
+
+  const rowRegex = /<tr[^>]*>(.*?)<\/tr>/gi;
+  let match;
+
+  while ((match = rowRegex.exec(text))) {
+    const rowHtml = match[1];
+
+    const cells = [];
+    const cellRegex = /<t[dh][^>]*>(.*?)<\/t[dh]>/gi;
+    let cellMatch;
+
+    while ((cellMatch = cellRegex.exec(rowHtml))) {
+      cells.push(clean(cellMatch[1]));
+    }
+
+    if (cells.length < 4) continue;
+
+    const joined = cells.join(" ");
+    const time = formatTime(joined);
+
+    if (time === "—") continue;
+
+    const platformCandidate = cells.find(c => /^\d+[A-Z]?$/.test(c)) || "—";
+
+    const destination =
+      cells.find(c =>
+        c.length > 2 &&
+        !/^\d/.test(c) &&
+        !/odjazdy|departures|godzina|time|pociąg|train|peron|platform/i.test(c)
+      ) || "—";
+
+    const train =
+      cells.find(c =>
+        /\b(IC|TLK|EIC|EIP|R|RE|KS|KM|KD|KW|ŁKA|Os)\b/i.test(c)
+      ) || "—";
+
+    const via =
+      cells
+        .filter(c =>
+          c !== time &&
+          c !== train &&
+          c !== destination &&
+          c !== platformCandidate &&
+          c.length > 2
+        )
+        .slice(0, 2)
+        .join(", ") || "—";
+
+    rows.push({
+      station: stationName,
+      scheduled: time,
+      actual: time,
+      delayMinutes: 0,
+      status: "W ruchu",
+      trainNumber: train,
+      destination,
+      carrier: carrierFromTrain(train),
+      platform: platformCandidate,
+      via,
+      source: "display"
+    });
+  }
+
+  return dedupeRows(rows).slice(0, 20);
+}
+
+function carrierFromTrain(value) {
+  const text = clean(value).toUpperCase();
+
+  if (text.includes("KS")) return "Koleje Śląskie";
+  if (text.includes("IC") || text.includes("TLK") || text.includes("EIC") || text.includes("EIP")) return "PKP Intercity";
+  if (text.match(/\bR\b/) || text.includes("REGIO")) return "POLREGIO";
+  if (text.includes("KM")) return "Koleje Mazowieckie";
+  if (text.includes("KD")) return "Koleje Dolnośląskie";
+  if (text.includes("KW")) return "Koleje Wielkopolskie";
+
+  return "—";
+}
+
+function dedupeRows(rows) {
+  const best = new Map();
+
+  for (const row of rows) {
+    const key = [
+      row.scheduled,
+      normalize(row.destination),
+      normalize(row.via),
+      row.platform
+    ].join("|");
+
+    const current = best.get(key);
+
+    if (!current || scoreRow(row) > scoreRow(current)) {
+      best.set(key, row);
+    }
+  }
+
+  return [...best.values()];
+}
+
+function scoreRow(row) {
+  let score = 0;
+
+  if (row.trainNumber && row.trainNumber !== "—") score += 5;
+  if (row.destination && row.destination !== "—") score += 5;
+  if (row.carrier && row.carrier !== "—") score += 3;
+  if (row.platform && row.platform !== "—") score += 4;
+  if (row.via && row.via !== "—") score += 2;
+
+  return score;
+}
+
+function filterByTime(rows, time) {
+  if (!time) return rows;
+
+  const pivot = parseTime(time);
+  if (pivot === null) return rows;
+
+  return rows.filter(row => {
+    const value = parseTime(row.actual || row.scheduled);
+    return value !== null && value >= pivot;
+  });
+}
+
+function firstValue(values) {
+  for (const value of values) {
     const cleaned = clean(value);
-    if (/^\d{5,}$/.test(cleaned)) return cleaned;
+    if (cleaned && cleaned !== "—") return cleaned;
   }
 
-  const id = clean(stationId);
-
-  if (/^\d{5,}$/.test(id)) return id;
-  if (/^\d{4}$/.test(id)) return `7${id}`;
-
-  return id;
+  return "";
 }
 
 function getStops(item) {
@@ -210,14 +364,6 @@ function stopStationId(stop) {
   return clean(stop.stationId || stop.id || stop.station?.id);
 }
 
-function stopName(stop, stationMap) {
-  return (
-    clean(stop.stationName || stop.name || stop.station?.name) ||
-    stationMap[stopStationId(stop)] ||
-    ""
-  );
-}
-
 function stopSeq(stop) {
   return Number(stop.plannedSequenceNumber ?? stop.actualSequenceNumber ?? 0);
 }
@@ -226,27 +372,15 @@ function sortStops(stops) {
   return [...stops].sort((a, b) => stopSeq(a) - stopSeq(b));
 }
 
-function getPlannedTime(stop) {
+function stopName(stop, stationMap) {
   return (
-    formatTime(stop.plannedDeparture) ||
-    formatTime(stop.plannedDepartureTime) ||
-    formatTime(stop.plannedArrival) ||
-    formatTime(stop.plannedArrivalTime) ||
-    "—"
+    clean(stop.stationName || stop.name || stop.station?.name) ||
+    stationMap[stopStationId(stop)] ||
+    ""
   );
 }
 
-function getActualTime(stop, planned) {
-  return (
-    formatTime(stop.actualDeparture) ||
-    formatTime(stop.actualDepartureTime) ||
-    formatTime(stop.actualArrival) ||
-    formatTime(stop.actualArrivalTime) ||
-    planned
-  );
-}
-
-function getDestinationFromStops(stops, currentIndex, stationMap) {
+function getDestination(stops, currentIndex, stationMap) {
   const sorted = sortStops(stops);
   const current = stops[currentIndex];
   const currentSeq = stopSeq(current);
@@ -261,7 +395,7 @@ function getDestinationFromStops(stops, currentIndex, stationMap) {
   return stopName(last, stationMap) || "—";
 }
 
-function getViaFromStops(stops, currentIndex, stationMap, destination) {
+function getVia(stops, currentIndex, stationMap, destination) {
   const sorted = sortStops(stops);
   const current = stops[currentIndex];
   const currentSeq = stopSeq(current);
@@ -285,32 +419,7 @@ function getViaFromStops(stops, currentIndex, stationMap, destination) {
   return names.join(", ") || "—";
 }
 
-function normalizeCarrier(value) {
-  const raw = clean(value);
-  const upper = raw.toUpperCase();
-
-  if (!raw) return "—";
-  if (upper === "IC") return "PKP Intercity";
-  if (upper === "PR") return "POLREGIO";
-  if (upper === "KS") return "Koleje Śląskie";
-  if (upper === "KM") return "Koleje Mazowieckie";
-  if (upper === "KD") return "Koleje Dolnośląskie";
-  if (upper === "KW") return "Koleje Wielkopolskie";
-  if (upper === "ŁKA" || upper === "LKA") return "ŁKA";
-
-  return raw;
-}
-
-function firstValue(values) {
-  for (const value of values) {
-    const cleaned = clean(value);
-    if (cleaned && cleaned !== "—") return cleaned;
-  }
-
-  return "";
-}
-
-function getTrainNumber(item, meta = {}) {
+function getTrainNumber(item) {
   return firstValue([
     item.trainNumber,
     item.publicTrainNumber,
@@ -318,40 +427,25 @@ function getTrainNumber(item, meta = {}) {
     item.marketingNumber,
     item.train?.number,
     item.train?.trainNumber,
-    item.train?.commercialNumber,
-    item.train?.publicTrainNumber,
     item.trainName,
-    item.name,
-    item.additionalData?.trainNumber,
-    meta.trainNumber,
-    meta.publicTrainNumber,
-    meta.commercialNumber,
-    meta.marketingNumber,
-    meta.name
+    item.name
   ]) || "—";
 }
 
-function getCarrier(item, meta = {}) {
+function getCarrier(item) {
   const value = firstValue([
     item.carrier,
     item.carrierName,
     item.operator,
     item.operatorName,
     item.train?.carrier,
-    item.train?.carrierName,
-    item.train?.operator,
-    item.train?.operatorName,
-    item.additionalData?.carrier,
-    meta.carrier,
-    meta.carrierName,
-    meta.operator,
-    meta.operatorName
+    item.train?.operator
   ]);
 
-  return normalizeCarrier(value);
+  return carrierFromTrain(value) !== "—" ? carrierFromTrain(value) : clean(value) || "—";
 }
 
-function getPlatform(stop, meta = {}) {
+function getPlatform(stop) {
   return firstValue([
     stop.platform,
     stop.platformNumber,
@@ -359,143 +453,110 @@ function getPlatform(stop, meta = {}) {
     stop.arrivalPlatform,
     stop.track,
     stop.trackNumber,
-    stop.sector,
-    stop.additionalData?.platform,
-    stop.additionalData?.track,
-    meta.platform,
-    meta.platformNumber,
-    meta.track,
-    meta.trackNumber
+    stop.sector
   ]) || "—";
 }
 
-function scheduleKey(item) {
-  return [
-    clean(item.scheduleId),
-    clean(item.orderId),
-    clean(item.operatingDate)
-  ].join("|");
-}
+function buildStationMap(stations) {
+  const map = {};
 
-function scheduleLooseKey(item, planned, destination) {
-  return [
-    clean(item.scheduleId),
-    clean(item.orderId),
-    clean(planned),
-    normalize(destination)
-  ].join("|");
-}
+  for (const station of stations) {
+    const id = clean(station.id || station.stationId);
+    const name = clean(station.name || station.stationName);
 
-function extractScheduleMeta(schedule, stationId, stationMap) {
-  const stops = getStops(schedule);
-  let stationStop = null;
-  let stationIndex = -1;
-
-  for (let i = 0; i < stops.length; i++) {
-    if (stopStationId(stops[i]) === clean(stationId)) {
-      stationStop = stops[i];
-      stationIndex = i;
-      break;
-    }
+    if (id && name) map[id] = name;
   }
 
-  const destination =
-    stationStop && stationIndex >= 0
-      ? getDestinationFromStops(stops, stationIndex, stationMap)
-      : firstValue([
-          schedule.destination,
-          schedule.destinationStation,
-          schedule.to,
-          schedule.endStation,
-          schedule.lastStation
-        ]);
+  return map;
+}
 
-  const via =
-    stationStop && stationIndex >= 0
-      ? getViaFromStops(stops, stationIndex, stationMap, destination)
-      : "—";
+function findStation(stations, query) {
+  const needle = normalize(query);
+
+  return (
+    stations.find(station =>
+      normalize(station.name || station.stationName) === needle
+    ) ||
+    stations.find(station =>
+      normalize(station.name || station.stationName).includes(needle)
+    ) ||
+    stations[0] ||
+    null
+  );
+}
+
+async function fallbackApiRows(apiBase, headers, stationQuery, requestDate, requestTime) {
+  const stationsUrl = new URL(`${apiBase}/dictionaries/stations`);
+  stationsUrl.searchParams.set("search", stationQuery);
+  stationsUrl.searchParams.set("pageSize", "20");
+
+  const stationsPayload = await fetchJson(stationsUrl.toString(), headers);
+  const stations = extractArray(stationsPayload);
+  const matchedStation = findStation(stations, stationQuery);
+
+  if (!matchedStation) {
+    throw new Error("Nie znaleziono stacji");
+  }
+
+  const stationId = clean(matchedStation.id || matchedStation.stationId);
+  const stationName = clean(matchedStation.name || matchedStation.stationName);
+  const stationMap = buildStationMap(stations);
+
+  const operationsUrl = new URL(`${apiBase}/operations`);
+  operationsUrl.searchParams.set("stations", stationId);
+  operationsUrl.searchParams.set("withPlanned", "true");
+  operationsUrl.searchParams.set("fullRoutes", "true");
+  operationsUrl.searchParams.set("pageSize", "200");
+
+  if (requestDate) {
+    operationsUrl.searchParams.set("date", requestDate);
+  }
+
+  const operationsPayload = await fetchJson(operationsUrl.toString(), headers);
+  const operations = extractArray(operationsPayload);
+
+  const rows = [];
+
+  for (const operation of operations) {
+    const stops = getStops(operation);
+    if (!stops.length) continue;
+
+    const stopIndex = stops.findIndex(stop => stopStationId(stop) === stationId);
+    if (stopIndex === -1) continue;
+
+    const stop = stops[stopIndex];
+    const planned = formatTime(stop.plannedDeparture || stop.plannedDepartureTime || stop.plannedArrival || stop.plannedArrivalTime);
+    const actual = formatTime(stop.actualDeparture || stop.actualDepartureTime || stop.actualArrival || stop.actualArrivalTime) || planned;
+    const destination = getDestination(stops, stopIndex, stationMap);
+
+    rows.push({
+      station: stationName,
+      scheduled: planned,
+      actual,
+      delayMinutes: calculateDelay(planned, actual),
+      status: normalizeStatus(operation.trainStatus),
+      trainNumber: getTrainNumber(operation),
+      destination,
+      carrier: getCarrier(operation),
+      platform: getPlatform(stop),
+      via: getVia(stops, stopIndex, stationMap, destination),
+      source: "api"
+    });
+  }
 
   return {
-    trainNumber: getTrainNumber(schedule),
-    carrier: getCarrier(schedule),
-    platform: getPlatform(stationStop || {}, {}),
-    destination: destination || "—",
-    via,
-    planned: stationStop ? getPlannedTime(stationStop) : "—"
-  };
-}
-
-function buildScheduleMap(schedules, stationId, stationMap) {
-  const byExact = {};
-  const byLoose = {};
-
-  for (const schedule of schedules) {
-    const meta = extractScheduleMeta(schedule, stationId, stationMap);
-
-    const exact = scheduleKey(schedule);
-    byExact[exact] = meta;
-
-    const loose = scheduleLooseKey(schedule, meta.planned, meta.destination);
-    byLoose[loose] = meta;
-  }
-
-  return { byExact, byLoose };
-}
-
-function scoreRow(row) {
-  let score = 0;
-
-  if (row.trainNumber && row.trainNumber !== "—") score += 5;
-  if (row.destination && row.destination !== "—") score += 5;
-  if (row.carrier && row.carrier !== "—") score += 3;
-  if (row.platform && row.platform !== "—") score += 3;
-  if (row.via && row.via !== "—") score += 2;
-  if (row.status === "Zrealizowano") score -= 1;
-
-  return score;
-}
-
-function dedupeRows(rows) {
-  const best = new Map();
-
-  for (const row of rows) {
-    const stableKey = [
-      row.scheduleId || row.trainNumber || row.destination,
-      row.orderId || row.scheduled,
-      row.operatingDate || "",
-      row.stationId,
-      row.scheduled
-    ].join("|");
-
-    const fallbackKey = [
-      row.scheduled,
-      row.destination,
-      row.via
-    ].join("|");
-
-    const key =
-      stableKey.replace(/\|/g, "") ? stableKey : fallbackKey;
-
-    const current = best.get(key);
-
-    if (!current || scoreRow(row) > scoreRow(current)) {
-      best.set(key, row);
+    matchedStation: stationName,
+    matchedStationId: stationId,
+    portalStationId: getKnownStationId(stationQuery),
+    stationLink: getKnownStationLink(stationQuery),
+    route: dedupeRows(filterByTime(rows, requestTime)).slice(0, 20),
+    debug: {
+      source: "api-fallback",
+      stationId,
+      operationsCount: operations.length,
+      sampleOperation: operations[0] || null
     }
-  }
-
-  return [...best.values()];
-}
-
-function filterByTime(rows, time) {
-  if (!time) return rows;
-
-  const pivot = parseTime(time);
-  if (pivot === null) return rows;
-
-  return rows.filter(row => {
-    const value = parseTime(row.actual || row.scheduled);
-    return value !== null && value >= pivot;
-  });
+  };
 }
 
 async function handleRequest(request, env) {
@@ -506,7 +567,11 @@ async function handleRequest(request, env) {
   }
 
   if (method === "GET") {
-    return json({ ok: true, endpoint: "/train" });
+    return json({
+      ok: true,
+      endpoint: "/train",
+      knownLinks: STATION_LINKS
+    });
   }
 
   try {
@@ -517,7 +582,38 @@ async function handleRequest(request, env) {
     const requestTime = clean(body.time);
 
     if (!stationQuery) {
-      return json({ error: "Missing station" }, 400);
+      return json({ ok: false, error: "Missing station" }, 400);
+    }
+
+    const knownLink = getKnownStationLink(stationQuery);
+    const knownId = getKnownStationId(stationQuery);
+
+    if (knownLink) {
+      try {
+        const html = await fetchText(knownLink);
+        let rows = parseDisplayRows(html, stationQuery, knownId);
+        rows = filterByTime(rows, requestTime).slice(0, 20);
+
+        if (rows.length) {
+          return json({
+            ok: true,
+            matchedStation: stationQuery,
+            matchedStationId: knownId,
+            portalStationId: knownId,
+            stationLink: knownLink,
+            totalDepartures: rows.length,
+            route: rows,
+            debug: {
+              source: "plk-display-html",
+              station: stationQuery,
+              stationLink: knownLink,
+              parsedRows: rows.length
+            }
+          });
+        }
+      } catch (error) {
+        // idziemy do API fallback
+      }
     }
 
     const apiBase =
@@ -527,145 +623,20 @@ async function handleRequest(request, env) {
 
     if (env.PLK_API_KEY) {
       headers["X-API-Key"] = env.PLK_API_KEY;
+      headers["X-Api-Key"] = env.PLK_API_KEY;
     }
 
-    const stationsUrl = new URL(`${apiBase}/dictionaries/stations`);
-    stationsUrl.searchParams.set("search", stationQuery);
-    stationsUrl.searchParams.set("pageSize", "20");
-
-    const stationsPayload = await fetchJson(stationsUrl.toString(), headers);
-    const stations = extractArray(stationsPayload);
-    const matchedStation = findStation(stations, stationQuery);
-
-    if (!matchedStation) {
-      return json({ error: "Nie znaleziono stacji" }, 404);
-    }
-
-    const stationId = clean(matchedStation.id || matchedStation.stationId);
-    const stationName = clean(matchedStation.name || matchedStation.stationName);
-    const portalStationId = getPortalStationId(matchedStation, stationId);
-
-    let stationMap = buildStationMap(stations);
-
-    const allStationsUrl = new URL(`${apiBase}/dictionaries/stations`);
-    allStationsUrl.searchParams.set("pageSize", "5000");
-
-    const allStationsPayload = await tryFetchJson(allStationsUrl.toString(), headers);
-    const allStations = extractArray(allStationsPayload);
-
-    if (allStations.length) {
-      stationMap = buildStationMap(allStations);
-    }
-
-    const operationsUrl = new URL(`${apiBase}/operations`);
-    operationsUrl.searchParams.set("stations", stationId);
-    operationsUrl.searchParams.set("withPlanned", "true");
-    operationsUrl.searchParams.set("fullRoutes", "true");
-    operationsUrl.searchParams.set("pageSize", "500");
-
-    if (requestDate) {
-      operationsUrl.searchParams.set("date", requestDate);
-    }
-
-    const schedulesUrl = new URL(`${apiBase}/schedules`);
-    schedulesUrl.searchParams.set("stations", stationId);
-    schedulesUrl.searchParams.set("pageSize", "5000");
-
-    if (requestDate) {
-      schedulesUrl.searchParams.set("dateFrom", requestDate);
-      schedulesUrl.searchParams.set("dateTo", requestDate);
-    }
-
-    const [operationsPayload, schedulesPayload] = await Promise.all([
-      fetchJson(operationsUrl.toString(), headers),
-      tryFetchJson(schedulesUrl.toString(), headers)
-    ]);
-
-    const operations = extractArray(operationsPayload);
-    const schedules = extractArray(schedulesPayload);
-
-    const scheduleMap = buildScheduleMap(schedules, stationId, stationMap);
-
-    const rows = [];
-
-    for (const operation of operations) {
-      const stops = getStops(operation);
-      if (!stops.length) continue;
-
-      const stopIndex = stops.findIndex(stop => stopStationId(stop) === stationId);
-      if (stopIndex === -1) continue;
-
-      const stop = stops[stopIndex];
-      const planned = getPlannedTime(stop);
-      const actual = getActualTime(stop, planned);
-
-      const opDestination = getDestinationFromStops(stops, stopIndex, stationMap);
-      const exactMeta = scheduleMap.byExact[scheduleKey(operation)] || {};
-      const looseMeta =
-        scheduleMap.byLoose[scheduleLooseKey(operation, planned, opDestination)] || {};
-
-      const meta = {
-        ...looseMeta,
-        ...exactMeta
-      };
-
-      const destination =
-        meta.destination && meta.destination !== "—"
-          ? meta.destination
-          : opDestination;
-
-      const via =
-        meta.via && meta.via !== "—"
-          ? meta.via
-          : getViaFromStops(stops, stopIndex, stationMap, destination);
-
-      rows.push({
-        stationId,
-        station: stationName,
-        scheduled: planned,
-        actual,
-        delayMinutes: calculateDelay(planned, actual),
-        status: normalizeStatus(operation.trainStatus),
-        trainNumber: getTrainNumber(operation, meta),
-        destination,
-        carrier: getCarrier(operation, meta),
-        platform: getPlatform(stop, meta),
-        via,
-        scheduleId: clean(operation.scheduleId),
-        orderId: clean(operation.orderId),
-        operatingDate: clean(operation.operatingDate)
-      });
-    }
-
-    const filteredRows = filterByTime(rows, requestTime);
-
-    filteredRows.sort(
-      (a, b) => (parseTime(a.actual) ?? 999999) - (parseTime(b.actual) ?? 999999)
-    );
-
-    const uniqueRows = dedupeRows(filteredRows).slice(0, 20);
+    const result = await fallbackApiRows(apiBase, headers, stationQuery, requestDate, requestTime);
 
     return json({
       ok: true,
-      matchedStation: stationName,
-      matchedStationId: stationId,
-      portalStationId,
-      stationLink: `https://l.plk-sa.pl/${portalStationId}`,
-      totalDepartures: uniqueRows.length,
-      route: uniqueRows,
-      debug: {
-        stationId,
-        stationName,
-        portalStationId,
-        stationLink: `https://l.plk-sa.pl/${portalStationId}`,
-        operationsCount: operations.length,
-        schedulesCount: schedules.length,
-        returnedRows: uniqueRows.length,
-        sampleStation: matchedStation,
-        sampleOperation: operations[0] || null,
-        sampleSchedule: schedules[0] || null,
-        firstRow: uniqueRows[0] || null
-      }
+      matchedStation: result.matchedStation,
+      matchedStationId: result.matchedStationId,
+      portalStationId: result.portalStationId,
+      stationLink: result.stationLink || "https://l.plk-sa.pl/",
+      totalDepartures: result.route.length,
+      route: result.route,
+      debug: result.debug
     });
   } catch (error) {
     return json(
