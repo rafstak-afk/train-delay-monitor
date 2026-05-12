@@ -1,4 +1,4 @@
-<!-- index.html -->
+<!-- public/index.html -->
 
 <!DOCTYPE html>
 <html lang="pl">
@@ -7,46 +7,49 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 
-<title>Monitor opóźnień PLK</title>
+<title>Monitor odjazdów PLK</title>
 
 <style>
 
 body{
   font-family:Arial,sans-serif;
-  margin:20px;
+  margin:12px;
   background:#f5f5f5;
+  color:#222;
 }
 
 h1{
-  margin-bottom:10px;
+  margin-bottom:8px;
+  font-size:24px;
 }
 
 .small{
-  margin-bottom:20px;
-  color:#555;
+  margin-bottom:16px;
+  color:#666;
+  font-size:14px;
 }
 
 .panel{
   background:white;
   border-radius:10px;
-  padding:16px;
-  margin-bottom:20px;
+  padding:14px;
+  margin-bottom:16px;
 }
 
 .grid{
   display:grid;
   grid-template-columns:
     1fr
-    180px
     150px
+    120px
     auto;
-  gap:12px;
+  gap:10px;
   align-items:end;
 }
 
 label{
   display:block;
-  font-size:14px;
+  font-size:13px;
   margin-bottom:6px;
 }
 
@@ -54,17 +57,35 @@ input{
   width:100%;
   padding:10px;
   box-sizing:border-box;
+  border:1px solid #ccc;
+  border-radius:6px;
+  font-size:16px;
 }
 
 button{
   padding:10px 18px;
+  border:none;
+  border-radius:6px;
   cursor:pointer;
+  background:#0b57d0;
+  color:white;
+  font-size:15px;
+}
+
+button:hover{
+  opacity:.9;
+}
+
+.tableWrap{
+  overflow:auto;
+  background:white;
+  border-radius:10px;
 }
 
 table{
   width:100%;
   border-collapse:collapse;
-  background:white;
+  min-width:950px;
 }
 
 th,td{
@@ -72,19 +93,22 @@ th,td{
   padding:8px;
   font-size:14px;
   text-align:left;
+  white-space:nowrap;
 }
 
 th{
   background:#f0f0f0;
+  position:sticky;
+  top:0;
 }
 
 .delay{
-  color:red;
+  color:#c40000;
   font-weight:bold;
 }
 
 .ok{
-  color:green;
+  color:#008000;
   font-weight:bold;
 }
 
@@ -94,11 +118,32 @@ pre{
   padding:12px;
   overflow:auto;
   border-radius:8px;
-  font-size:12px;
+  font-size:11px;
 }
 
 a{
   color:#0b57d0;
+}
+
+@media(max-width:900px){
+
+  .grid{
+    grid-template-columns:1fr;
+  }
+
+  button{
+    width:100%;
+  }
+
+  body{
+    margin:8px;
+  }
+
+  th,td{
+    font-size:12px;
+    padding:6px;
+  }
+
 }
 
 </style>
@@ -107,10 +152,10 @@ a{
 
 <body>
 
-<h1>Monitor opóźnień PLK</h1>
+<h1>Monitor odjazdów PLK</h1>
 
 <div class="small">
-Pobieranie realtime i rozkładu z API PLK.
+Realtime z API PLK.
 </div>
 
 <div class="panel">
@@ -118,36 +163,46 @@ Pobieranie realtime i rozkładu z API PLK.
 <div class="grid">
 
 <div>
+
 <label>Stacja</label>
 
 <input
   id="station"
-  value="Tczew"
+  list="stationsHistory"
+  autocomplete="off"
+  placeholder="Np. Tarnowskie Góry"
 />
+
+<datalist id="stationsHistory"></datalist>
+
 </div>
 
 <div>
+
 <label>Data</label>
 
 <input
   id="date"
   type="date"
 />
+
 </div>
 
 <div>
+
 <label>Godzina</label>
 
 <input
   id="time"
   type="time"
 />
+
 </div>
 
 <div>
 
-<button onclick="loadData()">
-Pobierz dane
+<button id="loadBtn">
+Pobierz
 </button>
 
 </div>
@@ -163,6 +218,8 @@ Brak danych.
 </div>
 
 </div>
+
+<div class="tableWrap">
 
 <table>
 
@@ -187,6 +244,8 @@ Brak danych.
 
 </table>
 
+</div>
+
 <h2>Debug</h2>
 
 <pre id="debug"></pre>
@@ -195,20 +254,30 @@ Brak danych.
 
 const now = new Date();
 
+const stationInput =
+  document.getElementById("station");
+
+const historyList =
+  document.getElementById("stationsHistory");
+
 document.getElementById("date").value =
   now.toISOString().split("T")[0];
 
 document.getElementById("time").value =
   now.toTimeString().slice(0,5);
 
+stationInput.value =
+  localStorage.getItem("lastStation")
+  || "Tarnowskie Góry";
+
+renderHistory();
+
 async function loadData() {
 
   try {
 
     const station =
-      document.getElementById(
-        "station"
-      ).value;
+      stationInput.value.trim();
 
     const date =
       document.getElementById(
@@ -219,6 +288,12 @@ async function loadData() {
       document.getElementById(
         "time"
       ).value;
+
+    if (!station) {
+      return;
+    }
+
+    saveStation(station);
 
     const response =
       await fetch("/train", {
@@ -286,7 +361,7 @@ Rekordów:
 <br><br>
 
 <a
-  href="https://l.plk-sa.pl/${data.matchedStationId}"
+  href="https://l.plk-sa.pl/${data.portalStationId}"
   target="_blank"
 >
 Otwórz oficjalną tablicę odjazdów PLK
@@ -307,9 +382,9 @@ Otwórz oficjalną tablicę odjazdów PLK
         document.createElement("tr");
 
       tr.innerHTML = `
-        <td>${row.station}</td>
-        <td>${row.scheduled}</td>
-        <td>${row.actual}</td>
+        <td>${safe(row.station)}</td>
+        <td>${safe(row.scheduled)}</td>
+        <td>${safe(row.actual)}</td>
 
         <td class="${
           row.delayMinutes > 0
@@ -321,12 +396,12 @@ Otwórz oficjalną tablicę odjazdów PLK
 
         </td>
 
-        <td>${row.status}</td>
-        <td>${row.trainNumber}</td>
-        <td>${row.destination}</td>
-        <td>${row.carrier}</td>
-        <td>${row.platform}</td>
-        <td>${row.via}</td>
+        <td>${safe(row.status)}</td>
+        <td>${safe(row.trainNumber)}</td>
+        <td>${safe(row.destination)}</td>
+        <td>${safe(row.carrier)}</td>
+        <td>${safe(row.platform)}</td>
+        <td>${safe(row.via)}</td>
       `;
 
       tbody.appendChild(tr);
@@ -345,6 +420,104 @@ Otwórz oficjalną tablicę odjazdów PLK
   }
 
 }
+
+function safe(value){
+
+  if(
+    value === null
+    || value === undefined
+    || value === ""
+  ){
+    return "—";
+  }
+
+  return value;
+}
+
+function saveStation(station){
+
+  localStorage.setItem(
+    "lastStation",
+    station
+  );
+
+  let history =
+    JSON.parse(
+      localStorage.getItem(
+        "stationHistory"
+      ) || "[]"
+    );
+
+  history =
+    history.filter(
+      s => s !== station
+    );
+
+  history.unshift(station);
+
+  history = history.slice(0,20);
+
+  localStorage.setItem(
+    "stationHistory",
+    JSON.stringify(history)
+  );
+
+  renderHistory();
+
+}
+
+function renderHistory(){
+
+  const history =
+    JSON.parse(
+      localStorage.getItem(
+        "stationHistory"
+      ) || "[]"
+    );
+
+  historyList.innerHTML = "";
+
+  for(const station of history){
+
+    const option =
+      document.createElement(
+        "option"
+      );
+
+    option.value = station;
+
+    historyList.appendChild(option);
+
+  }
+
+}
+
+document
+  .getElementById("loadBtn")
+  .addEventListener(
+    "click",
+    loadData
+  );
+
+stationInput
+  .addEventListener(
+    "keydown",
+    e => {
+
+      if(e.key === "Enter"){
+        loadData();
+      }
+
+    }
+  );
+
+stationInput
+  .addEventListener(
+    "change",
+    () => {
+      loadData();
+    }
+  );
 
 loadData();
 
