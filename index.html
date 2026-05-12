@@ -3,22 +3,25 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
+
 <title>Monitor odjazdów PLK</title>
 
 <style>
 :root{
-  --blue:#284c75;
+  --blue:#214a73;
   --blue2:#2f70b8;
   --yellow:#ffe600;
-  --bg:#e9e9e9;
+  --bg:#ececec;
   --text:#ffffff;
+  --line:#1d3d5e;
+  --danger:#ffdede;
+  --dangerText:#8f0000;
   --muted:#d8e5f5;
-  --line:#203d60;
-  --danger:#ffdddd;
-  --dangerText:#9b0000;
 }
 
-*{ box-sizing:border-box; }
+*{
+  box-sizing:border-box;
+}
 
 body{
   margin:0;
@@ -30,7 +33,7 @@ body{
 .header{
   background:#07588b;
   color:white;
-  padding:8px 12px 12px;
+  padding:10px 12px 14px;
 }
 
 .brand{
@@ -41,30 +44,29 @@ body{
 }
 
 .title{
-  font-size:20px;
+  font-size:22px;
   font-weight:bold;
   text-align:center;
 }
 
 .controls{
-  background:#f3f3f3;
+  background:#f5f5f5;
   border-bottom:1px solid #ccc;
   padding:10px;
 }
 
 .grid{
   display:grid;
-  grid-template-columns:1fr 135px 110px 120px;
+  grid-template-columns:1fr 140px 110px 120px;
   gap:8px;
-  align-items:center;
 }
 
 input,button{
-  height:38px;
-  border:1px solid #bbb;
-  border-radius:5px;
-  padding:0 10px;
+  height:40px;
+  border-radius:6px;
+  border:1px solid #bdbdbd;
   font-size:15px;
+  padding:0 10px;
 }
 
 button{
@@ -75,39 +77,36 @@ button{
   cursor:pointer;
 }
 
+button:hover{
+  filter:brightness(1.05);
+}
+
 .quick{
   display:flex;
   gap:6px;
   overflow:auto;
-  padding:8px 0 0;
+  padding-top:10px;
 }
 
 .quick button{
-  height:30px;
-  padding:0 10px;
+  height:32px;
   border-radius:999px;
-  background:#ffffff;
+  border:1px solid #b7cbe4;
+  background:white;
   color:#07588b;
-  border:1px solid #b9cbe0;
-  white-space:nowrap;
   font-size:13px;
-  text-decoration:none;
-  font-weight:bold;
-}
-
-.quick button:hover{
-  background:#e7f1ff;
+  white-space:nowrap;
+  padding:0 12px;
 }
 
 .summary{
   padding:8px 12px;
-  font-size:13px;
-  color:#333;
   display:flex;
   justify-content:space-between;
-  gap:12px;
   align-items:center;
+  gap:10px;
   flex-wrap:wrap;
+  font-size:13px;
 }
 
 .summary a{
@@ -119,54 +118,65 @@ button{
   margin:0 10px 10px;
   background:var(--blue);
   color:var(--text);
-  width:calc(100% - 20px);
 }
 
 .boardHead{
-  background:var(--blue);
   color:var(--yellow);
   padding:8px 10px 4px;
   font-style:italic;
-  font-weight:bold;
   font-size:34px;
+  font-weight:bold;
   line-height:1;
 }
 
 .subHead{
   display:grid;
-  grid-template-columns:90px 80px 1.25fr 2.1fr 70px;
+  grid-template-columns:88px 80px 1.2fr 2fr 60px;
+  gap:10px;
   color:var(--yellow);
   font-style:italic;
   font-weight:bold;
-  padding:4px 10px 6px;
-  gap:10px;
   border-bottom:1px solid var(--line);
+  padding:4px 10px 7px;
 }
 
 .row{
   display:grid;
-  grid-template-columns:90px 80px 1.25fr 2.1fr 70px;
+  grid-template-columns:88px 80px 1.2fr 2fr 60px;
   gap:10px;
-  padding:7px 10px;
   align-items:center;
+  padding:7px 10px;
   border-bottom:1px solid rgba(255,255,255,.08);
-  background:#2f70b8;
 }
 
-.row:nth-child(even){ background:#284c75; }
+.row:nth-child(odd){
+  background:var(--blue2);
+}
 
 .time{
   font-size:27px;
   line-height:1;
 }
 
-.train{
-  text-align:center;
-  line-height:1.05;
+.delay{
+  margin-top:4px;
+  font-size:12px;
+  color:#ffef9c;
 }
 
-.trainMain{ font-size:20px; }
-.trainSub{ font-size:11px; }
+.train{
+  text-align:center;
+}
+
+.trainMain{
+  font-size:20px;
+  line-height:1;
+}
+
+.trainSub{
+  margin-top:3px;
+  font-size:11px;
+}
 
 .dest{
   font-size:20px;
@@ -175,31 +185,27 @@ button{
 }
 
 .via{
-  font-size:18px;
-  line-height:1.15;
+  font-size:17px;
+  line-height:1.1;
 }
 
 .platform{
-  font-size:28px;
   text-align:center;
-}
-
-.delay{
-  font-size:12px;
-  margin-top:3px;
-  color:#ffef9c;
+  font-size:28px;
 }
 
 .error{
   margin:10px;
-  background:var(--danger);
-  color:var(--dangerText);
   padding:10px;
   border-radius:8px;
+  background:var(--danger);
+  color:var(--dangerText);
   font-size:14px;
 }
 
-.debugWrap{ margin:10px; }
+.debugWrap{
+  margin:10px;
+}
 
 .debugTitle{
   cursor:pointer;
@@ -210,26 +216,42 @@ button{
 pre{
   display:none;
   background:#111;
-  color:#7dff9a;
+  color:#76ff97;
   padding:10px;
-  overflow:auto;
-  max-height:330px;
-  font-size:12px;
   border-radius:8px;
+  overflow:auto;
+  max-height:340px;
+  font-size:12px;
 }
 
-.debugWrap.open pre{ display:block; }
+.debugWrap.open pre{
+  display:block;
+}
 
 @media(max-width:760px){
-  .grid{ grid-template-columns:1fr 1fr; }
-  .grid input:first-child{ grid-column:1 / -1; }
-  .grid button{ grid-column:1 / -1; }
 
-  .boardHead{ font-size:26px; }
-  .subHead{ display:none; }
+  .grid{
+    grid-template-columns:1fr 1fr;
+  }
+
+  .grid input:first-child{
+    grid-column:1/-1;
+  }
+
+  .grid button{
+    grid-column:1/-1;
+  }
+
+  .boardHead{
+    font-size:25px;
+  }
+
+  .subHead{
+    display:none;
+  }
 
   .row{
-    grid-template-columns:66px 58px 1fr 42px;
+    grid-template-columns:64px 54px 1fr 42px;
     grid-template-areas:
       "time train dest platform"
       "time train via platform";
@@ -239,12 +261,20 @@ pre{
 
   .time{
     grid-area:time;
-    font-size:23px;
+    font-size:22px;
   }
 
-  .train{ grid-area:train; }
-  .trainMain{ font-size:17px; }
-  .trainSub{ font-size:10px; }
+  .train{
+    grid-area:train;
+  }
+
+  .trainMain{
+    font-size:16px;
+  }
+
+  .trainSub{
+    font-size:10px;
+  }
 
   .dest{
     grid-area:dest;
@@ -255,12 +285,11 @@ pre{
     grid-area:via;
     font-size:13px;
     color:var(--muted);
-    white-space:normal;
   }
 
   .platform{
     grid-area:platform;
-    font-size:24px;
+    font-size:22px;
   }
 }
 </style>
@@ -269,51 +298,107 @@ pre{
 <body>
 
 <div class="header">
-  <div class="brand">PKP POLSKIE LINIE KOLEJOWE S.A.</div>
-  <div class="title">Wyświetlacz stacyjny: <span id="stationTitle">Tarnowskie Góry</span></div>
+  <div class="brand">
+    PKP POLSKIE LINIE KOLEJOWE S.A.
+  </div>
+
+  <div class="title">
+    Wyświetlacz stacyjny:
+    <span id="stationTitle">Tarnowskie Góry</span>
+  </div>
 </div>
 
 <div class="controls">
+
   <div class="grid">
-    <input id="station" list="stationsHistory" placeholder="Wpisz stację">
+
+    <input
+      id="station"
+      list="stationsHistory"
+      placeholder="Wpisz stację"
+    >
+
     <datalist id="stationsHistory"></datalist>
 
     <input id="date" type="date">
     <input id="time" type="time">
 
-    <button id="loadBtn">Pobierz</button>
+    <button id="loadBtn">
+      Pobierz
+    </button>
+
   </div>
 
   <div class="quick" id="quickStations"></div>
+
 </div>
 
 <div class="summary" id="summary">
-  <span>Brak danych.</span>
-  <a id="stationLink" href="https://portalpasazera.pl/KatalogStacji?stacja=Tarnowskie%20G%C3%B3ry" target="_blank">Oficjalna tablica PLK</a>
+
+  <span>
+    Brak danych.
+  </span>
+
+  <a
+    id="stationLink"
+    href="https://portalpasazera.pl"
+    target="_blank"
+  >
+    Oficjalna tablica PLK
+  </a>
+
 </div>
 
 <div id="error"></div>
 
 <div class="board">
-  <div class="boardHead">ODJAZDY Departures</div>
+
+  <div class="boardHead">
+    ODJAZDY Departures
+  </div>
 
   <div class="subHead">
-    <div>Godzina<br>Time</div>
-    <div>Pociąg<br>Train</div>
-    <div>Stacja docelowa<br>Destination</div>
-    <div>Stacje pośrednie / Informacje dodatkowe<br>Via stations / Additional information</div>
-    <div>Peron<br>Platform</div>
+
+    <div>
+      Godzina<br>Time
+    </div>
+
+    <div>
+      Pociąg<br>Train
+    </div>
+
+    <div>
+      Stacja docelowa<br>Destination
+    </div>
+
+    <div>
+      Informacje dodatkowe<br>Additional information
+    </div>
+
+    <div>
+      Peron<br>Platform
+    </div>
+
   </div>
 
   <div id="results"></div>
+
 </div>
 
 <div class="debugWrap" id="debugWrap">
-  <div class="debugTitle" id="debugToggle">Debug</div>
-  <pre id="debug">Brak danych debug.</pre>
+
+  <div class="debugTitle" id="debugToggle">
+    Debug
+  </div>
+
+  <pre id="debug">
+Brak danych debug.
+  </pre>
+
 </div>
 
 <script>
+
 const quickStations = [
   "Lubliniec",
   "Tarnowskie Góry",
@@ -324,6 +409,9 @@ const quickStations = [
   "Kraków Główny"
 ];
 
+const stationInput = document.getElementById("station");
+const stationLink = document.getElementById("stationLink");
+
 const now = new Date();
 
 document.getElementById("date").value =
@@ -332,98 +420,131 @@ document.getElementById("date").value =
 document.getElementById("time").value =
   now.toTimeString().slice(0,5);
 
-const stationInput = document.getElementById("station");
-const stationLink = document.getElementById("stationLink");
-
 stationInput.value =
-  localStorage.getItem("lastStation") || "Tarnowskie Góry";
+  localStorage.getItem("lastStation")
+  || "Tarnowskie Góry";
 
 renderHistory();
 renderQuickStations();
 
-function renderQuickStations(){
-  const box = document.getElementById("quickStations");
-  box.innerHTML = "";
-
-  for(const name of quickStations){
-    const btn = document.createElement("button");
-    btn.textContent = name;
-
-    btn.addEventListener("click", async () => {
-      await openOfficialBoard(name);
-    });
-
-    box.appendChild(btn);
-  }
-}
-
 async function resolveOfficialLink(station){
-  const cacheKey = "stationLink:" + station;
-  const cached = localStorage.getItem(cacheKey);
 
-  if(cached) return cached;
+  const cacheKey =
+    "station-link:" + station;
 
-  const response = await fetch(`/train?station=${encodeURIComponent(station)}`);
+  const cached =
+    localStorage.getItem(cacheKey);
+
+  if(cached){
+    return cached;
+  }
+
+  const response = await fetch(
+    `/resolve-link?station=${encodeURIComponent(station)}`
+  );
+
   const data = await response.json();
 
   const link =
-    data.stationLink ||
-    data.catalogLink ||
-    `https://portalpasazera.pl/KatalogStacji?stacja=${encodeURIComponent(station)}`;
+    data.stationLink
+    || data.catalogLink
+    || `https://portalpasazera.pl/KatalogStacji?stacja=${encodeURIComponent(station)}`;
 
   localStorage.setItem(cacheKey, link);
 
   return link;
 }
 
-async function openOfficialBoard(station){
-  try{
-    const link = await resolveOfficialLink(station);
-    window.open(link, "_blank", "noopener");
-  }catch{
-    window.open(
-      `https://portalpasazera.pl/KatalogStacji?stacja=${encodeURIComponent(station)}`,
-      "_blank",
-      "noopener"
-    );
+function renderQuickStations(){
+
+  const box =
+    document.getElementById("quickStations");
+
+  box.innerHTML = "";
+
+  for(const station of quickStations){
+
+    const btn =
+      document.createElement("button");
+
+    btn.textContent = station;
+
+    btn.addEventListener("click", async () => {
+
+      try{
+
+        const link =
+          await resolveOfficialLink(station);
+
+        window.open(
+          link,
+          "_blank",
+          "noopener"
+        );
+
+      }catch{
+
+        window.open(
+          `https://portalpasazera.pl/KatalogStacji?stacja=${encodeURIComponent(station)}`,
+          "_blank",
+          "noopener"
+        );
+
+      }
+
+    });
+
+    box.appendChild(btn);
   }
 }
 
-async function updateStationLink(data){
-  const station = stationInput.value.trim();
+async function updateStationLink(station){
 
-  let link =
-    data?.stationLink ||
-    localStorage.getItem("stationLink:" + station);
+  try{
 
-  if(!link){
-    try{
-      link = await resolveOfficialLink(station);
-    }catch{
-      link = `https://portalpasazera.pl/KatalogStacji?stacja=${encodeURIComponent(station)}`;
-    }
+    const link =
+      await resolveOfficialLink(station);
+
+    stationLink.href = link;
+
+  }catch{
+
+    stationLink.href =
+      `https://portalpasazera.pl/KatalogStacji?stacja=${encodeURIComponent(station)}`;
+
   }
-
-  stationLink.href = link;
 }
 
 async function loadData(){
-  const station = stationInput.value.trim();
-  if(!station) return;
+
+  const station =
+    stationInput.value.trim();
+
+  if(!station){
+    return;
+  }
 
   saveStation(station);
 
-  document.getElementById("stationTitle").textContent = station;
-  document.getElementById("error").innerHTML = "";
-  document.getElementById("results").innerHTML = "";
-  document.getElementById("debug").textContent = "Pobieranie danych...";
+  document.getElementById("stationTitle").textContent =
+    station;
 
-  await updateStationLink(null);
+  document.getElementById("error").innerHTML = "";
+
+  document.getElementById("results").innerHTML = "";
+
+  document.getElementById("debug").textContent =
+    "Pobieranie danych...";
+
+  await updateStationLink(station);
 
   try{
+
     const response = await fetch("/train", {
       method:"POST",
-      headers:{ "Content-Type":"application/json" },
+      headers:{
+        "Content-Type":"application/json"
+      },
       body:JSON.stringify({
         station,
         date:document.getElementById("date").value,
@@ -431,41 +552,41 @@ async function loadData(){
       })
     });
 
-    const data = await response.json();
+    const data =
+      await response.json();
 
     document.getElementById("debug").textContent =
       JSON.stringify(data.debug || data, null, 2);
 
-    if(data.stationLink){
-      localStorage.setItem("stationLink:" + station, data.stationLink);
-    }
-
-    await updateStationLink(data);
-
     if(!data.ok){
-      throw new Error(data.error || "Błąd API");
+      throw new Error(
+        data.error || "Błąd API"
+      );
     }
 
-    document.getElementById("stationTitle").textContent = data.matchedStation;
+    if(data.stationLink){
+      stationLink.href =
+        data.stationLink;
+    }
 
     document.getElementById("summary").innerHTML = `
       <span>
-        Dane odświeżone. Rekordów: <b>${safe(data.totalDepartures)}</b>.
-        Źródło: <b>${safe(data.debug?.source)}</b>
+        Rekordów:
+        <b>${safe(data.totalDepartures)}</b>
       </span>
-      <a id="stationLink" href="${safe(data.stationLink)}" target="_blank">Oficjalna tablica PLK</a>
+
+      <a
+        id="stationLink"
+        href="${safe(stationLink.href)}"
+        target="_blank"
+      >
+        Oficjalna tablica PLK
+      </a>
     `;
 
     renderResults(data.route || []);
-  }catch(error){
-    const link = stationLink.href;
 
-    document.getElementById("summary").innerHTML = `
-      <span>
-        Nie pobrano danych z API.
-      </span>
-      <a id="stationLink" href="${link}" target="_blank">Oficjalna tablica PLK</a>
-    `;
+  }catch(error){
 
     document.getElementById("error").innerHTML = `
       <div class="error">
@@ -473,56 +594,111 @@ async function loadData(){
       </div>
     `;
 
-    document.getElementById("debug").textContent =
-      error.stack || error.message || String(error);
-
     document.getElementById("results").innerHTML = `
       <div class="row">
-        <div class="time">—</div>
-        <div class="train">—</div>
-        <div class="dest">API niedostępne</div>
-        <div class="via">Użyj linku do oficjalnej tablicy PLK.</div>
-        <div class="platform">—</div>
+
+        <div class="time">
+          —
+        </div>
+
+        <div class="train">
+          —
+        </div>
+
+        <div class="dest">
+          API niedostępne
+        </div>
+
+        <div class="via">
+          Nadal możesz użyć oficjalnej tablicy PLK.
+          Cywilizacja jeszcze całkiem nie upadła.
+        </div>
+
+        <div class="platform">
+          —
+        </div>
+
       </div>
     `;
   }
 }
 
 function renderResults(rows){
-  const results = document.getElementById("results");
+
+  const results =
+    document.getElementById("results");
+
   results.innerHTML = "";
 
   if(!rows.length){
+
     results.innerHTML = `
       <div class="row">
+
         <div class="time">—</div>
         <div class="train">—</div>
-        <div class="dest">Brak danych</div>
-        <div class="via">Zmień godzinę albo sprawdź oficjalną tablicę PLK.</div>
+
+        <div class="dest">
+          Brak danych
+        </div>
+
+        <div class="via">
+          Zmień godzinę lub sprawdź oficjalną tablicę.
+        </div>
+
         <div class="platform">—</div>
+
       </div>
     `;
+
     return;
   }
 
   for(const row of rows){
-    const div = document.createElement("div");
+
+    const div =
+      document.createElement("div");
+
     div.className = "row";
 
     div.innerHTML = `
+
       <div class="time">
+
         ${safe(row.scheduled)}
-        ${Number(row.delayMinutes) > 0 ? `<div class="delay">+${safe(row.delayMinutes)} min</div>` : ""}
+
+        ${
+          Number(row.delayMinutes) > 0
+          ? `<div class="delay">+${safe(row.delayMinutes)} min</div>`
+          : ""
+        }
+
       </div>
 
       <div class="train">
-        <div class="trainMain">${mainTrain(row.trainNumber)}</div>
-        <div class="trainSub">${safe(row.trainNumber)}</div>
+
+        <div class="trainMain">
+          ${mainTrain(row.trainNumber)}
+        </div>
+
+        <div class="trainSub">
+          ${safe(row.trainNumber)}
+        </div>
+
       </div>
 
-      <div class="dest">${safe(row.destination)}</div>
-      <div class="via">${safe(row.via)}</div>
-      <div class="platform">${safe(row.platform)}</div>
+      <div class="dest">
+        ${safe(row.destination)}
+      </div>
+
+      <div class="via">
+        ${safe(row.via)}
+      </div>
+
+      <div class="platform">
+        ${safe(row.platform)}
+      </div>
+
     `;
 
     results.appendChild(div);
@@ -530,51 +706,94 @@ function renderResults(rows){
 }
 
 function mainTrain(value){
-  const text = safe(value);
-  if(text === "—") return "—";
 
-  const first = text.split(/\s+/)[0];
-  return first || text;
+  const text =
+    safe(value);
+
+  if(text === "—"){
+    return "—";
+  }
+
+  return text.split(/\s+/)[0];
 }
 
 function safe(value){
-  if(value === null || value === undefined || value === "") return "—";
+
+  if(
+    value === undefined
+    || value === null
+    || value === ""
+  ){
+    return "—";
+  }
+
   return String(value);
 }
 
 function saveStation(station){
-  localStorage.setItem("lastStation", station);
+
+  localStorage.setItem(
+    "lastStation",
+    station
+  );
 
   let history =
-    JSON.parse(localStorage.getItem("stationHistory") || "[]");
+    JSON.parse(
+      localStorage.getItem("stationHistory")
+      || "[]"
+    );
 
-  history = history.filter(s => s !== station);
+  history =
+    history.filter(
+      item => item !== station
+    );
+
   history.unshift(station);
-  history = history.slice(0,20);
 
-  localStorage.setItem("stationHistory", JSON.stringify(history));
+  history =
+    history.slice(0,20);
+
+  localStorage.setItem(
+    "stationHistory",
+    JSON.stringify(history)
+  );
 
   renderHistory();
 }
 
 function renderHistory(){
-  const history =
-    JSON.parse(localStorage.getItem("stationHistory") || "[]");
 
-  const datalist = document.getElementById("stationsHistory");
+  const history =
+    JSON.parse(
+      localStorage.getItem("stationHistory")
+      || "[]"
+    );
+
+  const datalist =
+    document.getElementById("stationsHistory");
+
   datalist.innerHTML = "";
 
   for(const station of history){
-    const option = document.createElement("option");
+
+    const option =
+      document.createElement("option");
+
     option.value = station;
+
     datalist.appendChild(option);
   }
 }
 
-document.getElementById("loadBtn").addEventListener("click", loadData);
+document.getElementById("loadBtn")
+.addEventListener("click", loadData);
 
 stationInput.addEventListener("keydown", e => {
-  if(e.key === "Enter") loadData();
+
+  if(e.key === "Enter"){
+    loadData();
+  }
+
 });
 
 stationInput.addEventListener("change", () => {
@@ -582,19 +801,33 @@ stationInput.addEventListener("change", () => {
 });
 
 stationInput.addEventListener("input", () => {
-  const history =
-    JSON.parse(localStorage.getItem("stationHistory") || "[]");
 
-  if(history.includes(stationInput.value.trim())){
+  const history =
+    JSON.parse(
+      localStorage.getItem("stationHistory")
+      || "[]"
+    );
+
+  if(
+    history.includes(
+      stationInput.value.trim()
+    )
+  ){
     loadData();
   }
+
 });
 
-document.getElementById("debugToggle").addEventListener("click", () => {
-  document.getElementById("debugWrap").classList.toggle("open");
+document.getElementById("debugToggle")
+.addEventListener("click", () => {
+
+  document.getElementById("debugWrap")
+  .classList.toggle("open");
+
 });
 
 loadData();
+
 </script>
 
 </body>
