@@ -1,38 +1,56 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 
 <title>Monitor opóźnień PLK</title>
 
 <style>
 
 body{
-  font-family: Arial,sans-serif;
+  font-family:Arial,sans-serif;
   margin:20px;
-  background:#f4f4f4;
-  color:#222;
+  background:#f5f5f5;
 }
 
 h1{
   margin-bottom:10px;
 }
 
-.panel{
-  background:white;
-  padding:16px;
-  border-radius:12px;
+.small{
   margin-bottom:20px;
-  box-shadow:0 2px 8px rgba(0,0,0,.08);
+  color:#555;
 }
 
-input,button{
+.panel{
+  background:white;
+  border-radius:10px;
+  padding:16px;
+  margin-bottom:20px;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:12px;
+  align-items:end;
+}
+
+label{
+  display:block;
+  font-size:14px;
+  margin-bottom:6px;
+}
+
+input{
+  width:100%;
   padding:10px;
-  font-size:16px;
+  box-sizing:border-box;
 }
 
 button{
+  padding:10px 18px;
   cursor:pointer;
 }
 
@@ -46,30 +64,30 @@ th,td{
   border:1px solid #ddd;
   padding:8px;
   font-size:14px;
+  text-align:left;
 }
 
 th{
-  background:#222;
-  color:white;
+  background:#f0f0f0;
 }
 
 .delay{
-  color:#c62828;
+  color:red;
   font-weight:bold;
 }
 
 .ok{
-  color:#2e7d32;
+  color:green;
+  font-weight:bold;
 }
 
 pre{
-  white-space:pre-wrap;
-  font-size:12px;
   background:#111;
   color:#0f0;
   padding:12px;
   overflow:auto;
   border-radius:8px;
+  font-size:12px;
 }
 
 </style>
@@ -78,23 +96,39 @@ pre{
 
 <h1>Monitor opóźnień PLK</h1>
 
+<div class="small">
+Wybór stacji uruchamia pobranie planu i realtime z oficjalnego API PLK.
+</div>
+
 <div class="panel">
+
+<div class="grid">
+
+<div>
+<label>Stacja</label>
 
 <input
   id="station"
-  placeholder="Np. Tczew"
   value="Tczew"
+  placeholder="Np. Katowice"
 />
+</div>
 
+<div>
 <button onclick="loadData()">
-Pobierz
+Pobierz dane
 </button>
+</div>
+
+</div>
 
 </div>
 
 <div class="panel">
 
-<div id="summary"></div>
+<div id="summary">
+Brak danych.
+</div>
 
 </div>
 
@@ -127,76 +161,118 @@ Pobierz
 
 async function loadData() {
 
-  const station =
-    document.getElementById("station").value;
+  try {
 
-  const response = await fetch("/train", {
-    method:"POST",
-    headers:{
-      "Content-Type":"application/json"
-    },
-    body:JSON.stringify({
-      station
-    })
-  });
+    const station =
+      document.getElementById(
+        "station"
+      ).value;
 
-  const data = await response.json();
+    const response =
+      await fetch("/train", {
 
-  console.log(data);
+        method:"POST",
 
-  document.getElementById("debug")
-    .textContent =
-      JSON.stringify(
-        data.debug,
-        null,
-        2
+        headers:{
+          "Content-Type":
+            "application/json"
+        },
+
+        body:JSON.stringify({
+          station
+        })
+
+      });
+
+    const data =
+      await response.json();
+
+    console.log(
+      "API RESPONSE",
+      data
+    );
+
+    document
+      .getElementById("debug")
+      .textContent =
+        JSON.stringify(
+          data.debug || data,
+          null,
+          2
+        );
+
+    if (!data.ok) {
+
+      alert(
+        data.error
+        || "Błąd API"
       );
 
-  if (!data.route) {
-    alert("Błąd API");
-    return;
+      return;
+    }
+
+    document
+      .getElementById("summary")
+      .innerHTML = `
+        Dane pobrane.
+        <br><br>
+        Stacja:
+        <b>${data.matchedStation}</b>
+        <br>
+        Rekordów:
+        <b>${data.totalDepartures}</b>
+      `;
+
+    const tbody =
+      document.getElementById(
+        "tbody"
+      );
+
+    tbody.innerHTML = "";
+
+    for (const row of data.route) {
+
+      const tr =
+        document.createElement("tr");
+
+      tr.innerHTML = `
+        <td>${row.station}</td>
+        <td>${row.scheduled}</td>
+        <td>${row.actual}</td>
+
+        <td class="${
+          row.delayMinutes > 0
+          ? 'delay'
+          : 'ok'
+        }">
+
+          ${row.delayMinutes} min
+
+        </td>
+
+        <td>${row.status}</td>
+        <td>${row.trainNumber}</td>
+        <td>${row.destination}</td>
+        <td>${row.carrier}</td>
+        <td>${row.platform}</td>
+        <td>${row.via}</td>
+      `;
+
+      tbody.appendChild(tr);
+
+    }
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert(
+      "Frontend error: "
+      + error.message
+    );
+
   }
 
-  document.getElementById("summary")
-    .innerHTML = `
-      <b>Stacja:</b> ${data.matchedStation}
-      <br>
-      <b>ID:</b> ${data.matchedStationId}
-      <br>
-      <b>Odjazdy:</b> ${data.totalDepartures}
-    `;
-
-  const tbody =
-    document.getElementById("tbody");
-
-  tbody.innerHTML = "";
-
-  for (const row of data.route) {
-
-    const tr =
-      document.createElement("tr");
-
-    tr.innerHTML = `
-      <td>${row.station}</td>
-      <td>${row.scheduled}</td>
-      <td>${row.actual}</td>
-      <td class="${
-        row.delayMinutes > 0
-        ? 'delay'
-        : 'ok'
-      }">
-        ${row.delayMinutes} min
-      </td>
-      <td>${row.status}</td>
-      <td>${row.trainNumber}</td>
-      <td>${row.destination}</td>
-      <td>${row.carrier}</td>
-      <td>${row.platform}</td>
-      <td>${row.via}</td>
-    `;
-
-    tbody.appendChild(tr);
-  }
 }
 
 loadData();
