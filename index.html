@@ -7,302 +7,288 @@
   <title>Tablica odjazdów PLK</title>
 
   <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #101820;
-      color: white;
-      padding: 24px;
+
+    body{
+      margin:0;
+      font-family:Arial,sans-serif;
+      background:#101820;
+      color:white;
+      padding:24px;
     }
 
-    .container {
-      max-width: 1100px;
-      margin: 0 auto;
-      text-align: center;
+    .container{
+      max-width:1100px;
+      margin:0 auto;
+      text-align:center;
     }
 
-    h1 {
-      margin-bottom: 24px;
+    h1{
+      margin-bottom:24px;
     }
 
-    .station-buttons,
-    .secondary-buttons {
-      display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-bottom: 14px;
+    .station-buttons{
+      display:flex;
+      justify-content:center;
+      flex-wrap:wrap;
+      gap:12px;
+      margin-bottom:18px;
     }
 
-    .btn {
-      border: 0;
-      border-radius: 10px;
-      padding: 12px 18px;
-      background: #0b57d0;
-      color: white;
-      font-weight: 700;
-      text-decoration: none;
-      cursor: pointer;
-      font-size: 15px;
-      display: inline-block;
+    .btn{
+      border:0;
+      border-radius:10px;
+      padding:12px 18px;
+      background:#0b57d0;
+      color:white;
+      font-weight:700;
+      text-decoration:none;
+      cursor:pointer;
+      font-size:15px;
+      transition:0.2s;
     }
 
-    .btn:hover {
-      background: #084298;
+    .btn:hover{
+      background:#084298;
     }
 
-    .secondary-buttons .btn {
-      background: #6f42c1;
+    .secondary-row{
+      margin-top:8px;
+      margin-bottom:28px;
     }
 
-    .secondary-buttons .btn:hover {
-      background: #59359a;
+    .btn-small{
+      display:inline-block;
+      padding:6px 10px;
+      font-size:12px;
+      border-radius:7px;
+      background:#4b5563;
+      color:white;
+      text-decoration:none;
+      opacity:0.8;
+      transition:0.2s;
     }
 
-    .search-box {
-      margin: 26px auto;
-      display: flex;
-      gap: 10px;
-      max-width: 620px;
+    .btn-small:hover{
+      opacity:1;
+      background:#374151;
     }
 
-    .search-box input {
-      flex: 1;
-      padding: 14px;
-      border-radius: 10px;
-      border: 0;
-      font-size: 16px;
+    .search-box{
+      margin:26px auto;
+      display:flex;
+      gap:10px;
+      max-width:620px;
     }
 
-    .search-box button {
-      padding: 14px 18px;
-      border-radius: 10px;
-      border: 0;
-      background: #198754;
-      color: white;
-      font-weight: 700;
-      cursor: pointer;
+    .search-box input{
+      flex:1;
+      padding:14px;
+      border-radius:10px;
+      border:0;
+      font-size:16px;
     }
 
-    .search-box button:hover {
-      background: #157347;
+    .search-box button{
+      padding:14px 18px;
+      border-radius:10px;
+      border:0;
+      background:#198754;
+      color:white;
+      font-weight:700;
+      cursor:pointer;
     }
 
-    .status {
-      margin-top: 18px;
-      min-height: 24px;
-      opacity: 0.95;
-      white-space: pre-wrap;
-      text-align: left;
-      background: #1c2833;
-      border-radius: 12px;
-      padding: 16px;
-      font-family: Consolas, monospace;
-      font-size: 13px;
-      line-height: 1.45;
-      overflow-x: auto;
+    .search-box button:hover{
+      background:#157347;
     }
 
-    .small-note {
-      margin-top: 14px;
-      opacity: 0.75;
-      font-size: 14px;
+    .status{
+      margin-top:18px;
+      min-height:24px;
+      opacity:0.9;
     }
 
-    @media (max-width: 700px) {
-      .search-box {
-        flex-direction: column;
+    @media(max-width:700px){
+
+      .search-box{
+        flex-direction:column;
       }
 
-      body {
-        padding: 14px;
+      body{
+        padding:14px;
       }
     }
+
   </style>
 </head>
 
 <body>
-  <div class="container">
 
-    <h1>🚆 Tablica odjazdów PLK</h1>
+<div class="container">
 
-    <div class="station-buttons">
-      <button class="btn" onclick="openStation('Katowice')">Katowice</button>
-      <button class="btn" onclick="openStation('Chorzów Batory')">Chorzów Batory</button>
-      <button class="btn" onclick="openStation('Bytom')">Bytom</button>
-      <button class="btn" onclick="openStation('Gliwice')">Gliwice</button>
-      <button class="btn" onclick="openStation('Zabrze')">Zabrze</button>
-      <button class="btn" onclick="openStation('Tczew')">Tczew</button>
+  <h1>🚆 Tablica odjazdów PLK</h1>
 
-      <a class="btn" href="https://portalpasazera.pl" target="_blank" rel="noopener">
-        Portal Pasażera
-      </a>
+  <!-- GŁÓWNE PRZYCISKI -->
 
-      <a class="btn" href="/debug.html">
-        Debug
-      </a>
-    </div>
+  <div class="station-buttons">
 
-    <div class="secondary-buttons">
-      <a class="btn" href="https://l.plk-sa.pl/#qr-generator" target="_blank" rel="noopener">
-        Generator QR PLK
-      </a>
-    </div>
+    <button class="btn"
+            onclick="openStation('Tarnowskie Góry')">
+      Tarnowskie Góry
+    </button>
 
-    <div class="search-box">
-      <input
-        id="stationInput"
-        type="text"
-        placeholder="Wpisz nazwę stacji, np. Katowice"
-        onkeydown="if(event.key === 'Enter') searchStation()"
-      />
+    <button class="btn"
+            onclick="openStation('Chorzów Batory')">
+      Chorzów Batory
+    </button>
 
-      <button onclick="searchStation()">
-        Szukaj
-      </button>
-    </div>
+    <button class="btn"
+            onclick="openStation('Katowice')">
+      Katowice
+    </button>
 
-    <div id="status" class="status">
-Gotowe. Kliknij stację albo wpisz nazwę.
+    <button class="btn"
+            onclick="openStation('Bytom')">
+      Bytom
+    </button>
 
-Ta wersja pokaże odpowiedzi endpointów resolvera bez chowania błędu w konsoli, bo najwyraźniej świat uznał, że debugowanie powinno być formą pokuty.
-    </div>
+    <button class="btn"
+            onclick="openStation('Gliwice')">
+      Gliwice
+    </button>
 
-    <div class="small-note">
-      Po znalezieniu prawidłowego linku strona automatycznie przejdzie do tablicy PLK.
-    </div>
+    <button class="btn"
+            onclick="openStation('Kraków Główny')">
+      Kraków Główny
+    </button>
 
   </div>
 
-  <script>
-    function setStatus(text) {
-      document.getElementById("status").textContent = text;
+  <!-- DRUGI RZĄD -->
+
+  <div class="secondary-row">
+
+    <a class="btn-small"
+       href="https://l.plk-sa.pl/#qr-generator"
+       target="_blank"
+       rel="noopener">
+      Generator QR PLK
+    </a>
+
+  </div>
+
+  <!-- WYSZUKIWARKA -->
+
+  <div class="search-box">
+
+    <input
+      id="stationInput"
+      type="text"
+      placeholder="Wpisz nazwę stacji..."
+      onkeydown="if(event.key === 'Enter') searchStation()"
+    />
+
+    <button onclick="searchStation()">
+      Szukaj
+    </button>
+
+  </div>
+
+  <div id="status" class="status">
+    Wybierz stację albo wpisz nazwę.
+  </div>
+
+</div>
+
+<script>
+
+  function setStatus(text){
+    document.getElementById("status").textContent = text;
+  }
+
+  function searchStation(){
+
+    const station =
+      document.getElementById("stationInput")
+      .value
+      .trim();
+
+    if(!station){
+      setStatus("Wpisz nazwę stacji.");
+      return;
     }
 
-    function searchStation() {
-      const station = document.getElementById("stationInput").value.trim();
+    openStation(station);
+  }
 
-      if (!station) {
-        setStatus("Wpisz nazwę stacji.");
-        return;
+  async function openStation(station){
+
+    setStatus("Otwieram tablicę dla stacji: " + station + "...");
+
+    try{
+
+      const response = await fetch(
+        "/resolve-link?station=" +
+        encodeURIComponent(station)
+      );
+
+      const text = await response.text();
+
+      const link = extractLink(text);
+
+      if(!link){
+        throw new Error("Brak linku w odpowiedzi resolvera.");
       }
 
-      openStation(station);
+      window.location.href = link;
+
+    }catch(error){
+
+      console.error(error);
+
+      setStatus(
+        "Nie udało się otworzyć tablicy dla stacji: " +
+        station
+      );
+    }
+  }
+
+  function extractLink(text){
+
+    const trimmed = text.trim();
+
+    if(
+      trimmed.startsWith("http://") ||
+      trimmed.startsWith("https://")
+    ){
+      return trimmed;
     }
 
-    async function openStation(station) {
-      setStatus("Testuję resolver dla stacji: " + station + "...");
+    try{
 
-      const encoded = encodeURIComponent(station);
+      const json = JSON.parse(trimmed);
 
-      const tests = [
-        "/resolve-link?station=" + encoded,
-        "/resolve-link?name=" + encoded,
-        "/resolve-link?q=" + encoded,
+      return (
+        json.url ||
+        json.link ||
+        json.href ||
+        json.redirectUrl ||
+        json.target ||
+        json.result ||
+        null
+      );
 
-        "/resolve-link.js?station=" + encoded,
-        "/resolve-link.js?name=" + encoded,
-        "/resolve-link.js?q=" + encoded,
-
-        "/api/resolve-link?station=" + encoded,
-        "/api/resolve-link?name=" + encoded,
-        "/api/resolve-link?q=" + encoded,
-
-        "/api/resolve?station=" + encoded,
-        "/api/station-link?station=" + encoded,
-        "/station-link?station=" + encoded
-      ];
-
-      let report = "STACJA: " + station + "\n";
-      report += "====================================\n";
-
-      for (const url of tests) {
-        try {
-          const response = await fetch(url, {
-            method: "GET",
-            headers: {
-              "Accept": "application/json, text/plain, */*"
-            }
-          });
-
-          const text = await response.text();
-
-          report += "\nURL: " + url;
-          report += "\nHTTP: " + response.status;
-          report += "\nCONTENT-TYPE: " + (response.headers.get("content-type") || "brak");
-          report += "\nODPOWIEDŹ: " + text.slice(0, 500);
-          report += "\n------------------------------------";
-
-          const foundLink = extractLink(text);
-
-          if (response.ok && foundLink) {
-            setStatus(
-              "Znaleziono link dla stacji: " + station +
-              "\n\n" + foundLink +
-              "\n\nOtwieram..."
-            );
-
-            window.location.href = foundLink;
-            return;
-          }
-
-        } catch (error) {
-          report += "\nURL: " + url;
-          report += "\nBŁĄD FETCH: " + error.message;
-          report += "\n------------------------------------";
-        }
-
-        setStatus(report);
-      }
-
-      report += "\n\nNIE ZNALEZIONO LINKU.";
-      report += "\n\nWniosek: frontend działa, ale nie trafia w działający resolver albo resolver nie jest wrzucony na Pages/Worker.";
-      report += "\nNajważniejsze będzie sprawdzić, który adres wcześniej działał i jak dokładnie nazywał parametr.";
-
-      setStatus(report);
+    }catch(_){
+      // JSON postanowił być JSON-em opcjonalnym
     }
 
-    function extractLink(text) {
-      const trimmed = text.trim();
+    const match =
+      trimmed.match(/https?:\/\/[^\s"'<>]+/);
 
-      if (!trimmed) {
-        return null;
-      }
+    return match ? match[0] : null;
+  }
 
-      if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
-        return trimmed;
-      }
+</script>
 
-      try {
-        const json = JSON.parse(trimmed);
-
-        const candidate =
-          json.url ||
-          json.link ||
-          json.href ||
-          json.redirectUrl ||
-          json.target ||
-          json.result ||
-          json.data?.url ||
-          json.data?.link ||
-          json.data?.href;
-
-        if (candidate && typeof candidate === "string") {
-          return candidate;
-        }
-
-      } catch (_) {
-        // To nie JSON. Cudownie. Lecimy dalej.
-      }
-
-      const match = trimmed.match(/https?:\/\/[^\s"'<>]+/);
-
-      if (match) {
-        return match[0];
-      }
-
-      return null;
-    }
-  </script>
 </body>
 </html>
