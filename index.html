@@ -7,16 +7,15 @@
 
 <style>
 :root{
-  --bg:#0f1115;
-  --panel:#1a1d24;
-  --card:#22262f;
-  --soft:#2b303b;
-  --text:#f5f7fa;
-  --muted:#9ea7b3;
-  --accent:#4f8cff;
-  --green:#1db954;
-  --red:#ff4d4f;
-  --yellow:#ffb020;
+  --blue:#284c75;
+  --blue2:#2f70b8;
+  --yellow:#ffe600;
+  --bg:#e9e9e9;
+  --text:#ffffff;
+  --muted:#d8e5f5;
+  --line:#203d60;
+  --danger:#ffdddd;
+  --dangerText:#9b0000;
 }
 
 *{
@@ -26,191 +25,271 @@
 body{
   margin:0;
   background:var(--bg);
-  color:var(--text);
   font-family:Arial,sans-serif;
+  color:#111;
 }
 
 .header{
-  position:sticky;
-  top:0;
-  z-index:10;
-  background:rgba(15,17,21,.96);
-  padding:14px;
-  border-bottom:1px solid rgba(255,255,255,.08);
+  background:#07588b;
+  color:white;
+  padding:8px 12px 12px;
+}
+
+.brand{
+  font-size:11px;
+  font-weight:bold;
+  opacity:.95;
+  margin-bottom:12px;
 }
 
 .title{
-  font-size:24px;
-  font-weight:800;
-  margin-bottom:12px;
+  font-size:20px;
+  font-weight:bold;
+  text-align:center;
+}
+
+.controls{
+  background:#f3f3f3;
+  border-bottom:1px solid #ccc;
+  padding:10px;
 }
 
 .grid{
   display:grid;
-  grid-template-columns:1fr;
-  gap:10px;
+  grid-template-columns:1fr 135px 110px 120px;
+  gap:8px;
+  align-items:center;
 }
 
 input,button{
-  width:100%;
-  border:none;
-  border-radius:14px;
-  padding:14px;
-  font-size:16px;
-}
-
-input{
-  background:var(--panel);
-  color:var(--text);
-  border:1px solid rgba(255,255,255,.08);
+  height:38px;
+  border:1px solid #bbb;
+  border-radius:5px;
+  padding:0 10px;
+  font-size:15px;
 }
 
 button{
-  background:var(--accent);
+  border:none;
+  background:#006bc7;
   color:white;
-  font-weight:700;
+  font-weight:bold;
   cursor:pointer;
 }
 
+.quick{
+  display:flex;
+  gap:6px;
+  overflow:auto;
+  padding:8px 0 0;
+}
+
+.quick button{
+  height:30px;
+  padding:0 9px;
+  border-radius:999px;
+  background:#ffffff;
+  color:#07588b;
+  border:1px solid #b9cbe0;
+  white-space:nowrap;
+  font-size:13px;
+}
+
 .summary{
-  margin:12px;
-  padding:14px;
-  background:var(--panel);
-  border-radius:16px;
-  color:var(--muted);
-  line-height:1.45;
-}
-
-.link{
-  color:var(--accent);
-  font-weight:700;
-  text-decoration:none;
-}
-
-.results{
-  padding:12px;
-  display:grid;
-  gap:12px;
-}
-
-.card{
-  background:var(--card);
-  border-radius:18px;
-  padding:16px;
-  box-shadow:0 6px 20px rgba(0,0,0,.22);
-}
-
-.cardTop{
+  padding:8px 12px;
+  font-size:13px;
+  color:#333;
   display:flex;
   justify-content:space-between;
   gap:12px;
-  align-items:flex-start;
-  margin-bottom:12px;
+  align-items:center;
+  flex-wrap:wrap;
 }
 
-.time{
+.summary a{
+  color:#07588b;
+  font-weight:bold;
+}
+
+.board{
+  margin:0 10px 10px;
+  background:var(--blue);
+  color:var(--text);
+  border-collapse:collapse;
+  width:calc(100% - 20px);
+}
+
+.boardHead{
+  background:var(--blue);
+  color:var(--yellow);
+  padding:8px 10px 4px;
+  font-style:italic;
+  font-weight:bold;
   font-size:34px;
-  font-weight:800;
   line-height:1;
 }
 
-.actual{
-  margin-top:5px;
-  color:var(--muted);
-  font-size:13px;
+.subHead{
+  display:grid;
+  grid-template-columns:90px 80px 1.2fr 2fr 70px;
+  color:var(--yellow);
+  font-style:italic;
+  font-weight:bold;
+  padding:4px 10px 6px;
+  gap:10px;
+  border-bottom:1px solid var(--line);
+}
+
+.row{
+  display:grid;
+  grid-template-columns:90px 80px 1.2fr 2fr 70px;
+  gap:10px;
+  padding:7px 10px;
+  align-items:center;
+  border-bottom:1px solid rgba(255,255,255,.08);
+  background:#2f70b8;
+}
+
+.row:nth-child(even){
+  background:#284c75;
+}
+
+.time{
+  font-size:27px;
+  line-height:1;
+}
+
+.train{
+  text-align:center;
+  line-height:1.05;
+}
+
+.trainMain{
+  font-size:20px;
+}
+
+.trainSub{
+  font-size:11px;
+}
+
+.dest{
+  font-size:20px;
+  font-weight:bold;
+  line-height:1.05;
+}
+
+.via{
+  font-size:18px;
+  line-height:1.15;
+}
+
+.platform{
+  font-size:28px;
+  text-align:center;
 }
 
 .delay{
-  padding:7px 10px;
-  border-radius:999px;
-  font-size:13px;
-  font-weight:800;
-  white-space:nowrap;
-}
-
-.delay.ok{
-  color:var(--green);
-  background:rgba(29,185,84,.14);
-}
-
-.delay.late{
-  color:var(--red);
-  background:rgba(255,77,79,.14);
-}
-
-.destination{
-  font-size:22px;
-  font-weight:800;
-  margin-bottom:12px;
-}
-
-.meta{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:10px;
-}
-
-.metaBox{
-  background:rgba(255,255,255,.045);
-  padding:10px;
-  border-radius:12px;
-  min-width:0;
-}
-
-.label{
-  color:var(--muted);
   font-size:12px;
-  margin-bottom:5px;
-}
-
-.value{
-  font-size:15px;
-  font-weight:700;
-  overflow-wrap:anywhere;
+  margin-top:3px;
+  color:#ffef9c;
 }
 
 .error{
-  margin:12px;
-  padding:14px;
-  background:rgba(255,77,79,.14);
-  color:#ffb4b4;
-  border-radius:16px;
-  line-height:1.45;
+  margin:10px;
+  background:var(--danger);
+  color:var(--dangerText);
+  padding:10px;
+  border-radius:8px;
+  font-size:14px;
 }
 
 .debugWrap{
-  margin:12px;
+  margin:10px;
 }
 
 .debugTitle{
-  color:var(--muted);
-  font-size:14px;
-  margin:12px 0 8px;
+  cursor:pointer;
+  font-weight:bold;
+  margin-bottom:6px;
 }
 
 pre{
-  background:#080a0f;
+  display:none;
+  background:#111;
   color:#7dff9a;
-  padding:12px;
+  padding:10px;
   overflow:auto;
-  border-radius:14px;
+  max-height:330px;
   font-size:12px;
-  max-height:360px;
+  border-radius:8px;
 }
 
-@media(min-width:760px){
-  .grid{
-    grid-template-columns:1fr 170px 140px 160px;
-  }
+.debugWrap.open pre{
+  display:block;
+}
 
-  .results{
+@media(max-width:760px){
+  .grid{
     grid-template-columns:1fr 1fr;
   }
-}
 
-@media(min-width:1120px){
-  .results{
-    grid-template-columns:1fr 1fr 1fr;
+  .grid input:first-child{
+    grid-column:1 / -1;
+  }
+
+  .grid button{
+    grid-column:1 / -1;
+  }
+
+  .boardHead{
+    font-size:26px;
+  }
+
+  .subHead{
+    display:none;
+  }
+
+  .row{
+    grid-template-columns:66px 58px 1fr 42px;
+    grid-template-areas:
+      "time train dest platform"
+      "time train via platform";
+    gap:6px;
+    padding:8px;
+  }
+
+  .time{
+    grid-area:time;
+    font-size:23px;
+  }
+
+  .train{
+    grid-area:train;
+  }
+
+  .trainMain{
+    font-size:17px;
+  }
+
+  .trainSub{
+    font-size:10px;
+  }
+
+  .dest{
+    grid-area:dest;
+    font-size:17px;
+  }
+
+  .via{
+    grid-area:via;
+    font-size:13px;
+    color:var(--muted);
+    white-space:normal;
+  }
+
+  .platform{
+    grid-area:platform;
+    font-size:24px;
   }
 }
 </style>
@@ -219,8 +298,11 @@ pre{
 <body>
 
 <div class="header">
-  <div class="title">Monitor odjazdów PLK</div>
+  <div class="brand">PKP POLSKIE LINIE KOLEJOWE S.A.</div>
+  <div class="title">Wyświetlacz stacyjny: <span id="stationTitle">Tarnowskie Góry</span></div>
+</div>
 
+<div class="controls">
   <div class="grid">
     <input id="station" list="stationsHistory" placeholder="Wpisz stację">
     <datalist id="stationsHistory"></datalist>
@@ -230,29 +312,46 @@ pre{
 
     <button id="loadBtn">Pobierz</button>
   </div>
+
+  <div class="quick" id="quickStations"></div>
 </div>
 
 <div class="summary" id="summary">
-  Brak danych.
-  <br>
-  <a id="stationLink" class="link" href="https://l.plk-sa.pl/" target="_blank">
-    Otwórz oficjalną tablicę PLK
-  </a>
+  <span>Brak danych.</span>
+  <a id="stationLink" href="https://l.plk-sa.pl/" target="_blank">Oficjalna tablica PLK</a>
 </div>
 
 <div id="error"></div>
-<div class="results" id="results"></div>
 
-<div class="debugWrap">
-  <div class="debugTitle">Debug</div>
+<div class="board">
+  <div class="boardHead">ODJAZDY Departures</div>
+
+  <div class="subHead">
+    <div>Godzina<br>Time</div>
+    <div>Pociąg<br>Train</div>
+    <div>Stacja docelowa<br>Destination</div>
+    <div>Stacje pośrednie / Informacje dodatkowe<br>Via stations / Additional information</div>
+    <div>Peron<br>Platform</div>
+  </div>
+
+  <div id="results"></div>
+</div>
+
+<div class="debugWrap" id="debugWrap">
+  <div class="debugTitle" id="debugToggle">Debug</div>
   <pre id="debug">Brak danych debug.</pre>
 </div>
 
 <script>
-const stationAliases = {
-  "Tarnowskie Góry": "",
-  "Tczew": ""
-};
+const quickStations = [
+  "Lubliniec",
+  "Tarnowskie Góry",
+  "Bytom",
+  "Gliwice",
+  "Chorzów Batory",
+  "Katowice",
+  "Kraków Główny"
+];
 
 const now = new Date();
 
@@ -269,6 +368,22 @@ stationInput.value =
   localStorage.getItem("lastStation") || "Tarnowskie Góry";
 
 renderHistory();
+renderQuickStations();
+
+function renderQuickStations(){
+  const box = document.getElementById("quickStations");
+  box.innerHTML = "";
+
+  for(const name of quickStations){
+    const btn = document.createElement("button");
+    btn.textContent = name;
+    btn.addEventListener("click", () => {
+      stationInput.value = name;
+      loadData();
+    });
+    box.appendChild(btn);
+  }
+}
 
 function updateStationLink(data){
   const id =
@@ -278,20 +393,18 @@ function updateStationLink(data){
 
   if(id){
     stationLink.href = `https://l.plk-sa.pl/${id}`;
-    stationLink.textContent = "Otwórz oficjalną tablicę PLK";
   } else {
     stationLink.href = "https://l.plk-sa.pl/";
-    stationLink.textContent = "Otwórz stronę PLK";
   }
 }
 
 async function loadData(){
   const station = stationInput.value.trim();
-
   if(!station) return;
 
   saveStation(station);
 
+  document.getElementById("stationTitle").textContent = station;
   document.getElementById("error").innerHTML = "";
   document.getElementById("results").innerHTML = "";
   document.getElementById("debug").textContent = "Pobieranie danych...";
@@ -324,27 +437,23 @@ async function loadData(){
       throw new Error(data.error || "Błąd API");
     }
 
+    document.getElementById("stationTitle").textContent = data.matchedStation;
+
     document.getElementById("summary").innerHTML = `
-      <b>${safe(data.matchedStation)}</b>
-      <br>
-      Odjazdów: ${safe(data.totalDepartures)}
-      <br>
-      ID tablicy PLK: ${safe(data.portalStationId)}
-      <br><br>
-      <a id="stationLink" class="link" href="${safe(data.stationLink)}" target="_blank">
-        Otwórz oficjalną tablicę PLK
-      </a>
+      <span>
+        Dane odświeżone. Rekordów: <b>${safe(data.totalDepartures)}</b>.
+        ID PLK: <b>${safe(data.portalStationId)}</b>
+      </span>
+      <a id="stationLink" href="${safe(data.stationLink)}" target="_blank">Oficjalna tablica PLK</a>
     `;
 
     renderResults(data.route || []);
-
   }catch(error){
     document.getElementById("error").innerHTML = `
       <div class="error">
         ${safe(error.message)}
-        <br><br>
-        Jeżeli widzisz PLK API 429, limit zapytań został czasowo wyczerpany.
-        Link do tablicy PLK zostaje dostępny, jeżeli wcześniej udało się pobrać ID stacji.
+        <br>
+        Jeśli to 429, limit API PLK jest chwilowo wyczerpany. Tak, nawet serwer czasem mówi „nie dzisiaj”.
       </div>
     `;
 
@@ -361,56 +470,47 @@ function renderResults(rows){
 
   if(!rows.length){
     results.innerHTML = `
-      <div class="card">
-        Brak odjazdów dla wskazanego filtra.
+      <div class="row">
+        <div class="time">—</div>
+        <div class="train">—</div>
+        <div class="dest">Brak danych</div>
+        <div class="via">Zmień godzinę albo poczekaj na odnowienie limitu API.</div>
+        <div class="platform">—</div>
       </div>
     `;
     return;
   }
 
   for(const row of rows){
-    const card = document.createElement("div");
-    card.className = "card";
+    const div = document.createElement("div");
+    div.className = "row";
 
-    card.innerHTML = `
-      <div class="cardTop">
-        <div>
-          <div class="time">${safe(row.scheduled)}</div>
-          <div class="actual">rzeczywisty: ${safe(row.actual)}</div>
-        </div>
-
-        <div class="delay ${Number(row.delayMinutes) > 0 ? "late" : "ok"}">
-          ${safe(row.delayMinutes)} min
-        </div>
+    div.innerHTML = `
+      <div class="time">
+        ${safe(row.scheduled)}
+        ${Number(row.delayMinutes) > 0 ? `<div class="delay">+${safe(row.delayMinutes)} min</div>` : ""}
       </div>
 
-      <div class="destination">${safe(row.destination)}</div>
-
-      <div class="meta">
-        <div class="metaBox">
-          <div class="label">Pociąg</div>
-          <div class="value">${safe(row.trainNumber)}</div>
-        </div>
-
-        <div class="metaBox">
-          <div class="label">Przewoźnik</div>
-          <div class="value">${safe(row.carrier)}</div>
-        </div>
-
-        <div class="metaBox">
-          <div class="label">Peron</div>
-          <div class="value">${safe(row.platform)}</div>
-        </div>
-
-        <div class="metaBox">
-          <div class="label">Przez</div>
-          <div class="value">${safe(row.via)}</div>
-        </div>
+      <div class="train">
+        <div class="trainMain">${mainTrain(row.trainNumber)}</div>
+        <div class="trainSub">${safe(row.trainNumber)}</div>
       </div>
+
+      <div class="dest">${safe(row.destination)}</div>
+      <div class="via">${safe(row.via)}</div>
+      <div class="platform">${safe(row.platform)}</div>
     `;
 
-    results.appendChild(card);
+    results.appendChild(div);
   }
+}
+
+function mainTrain(value){
+  const text = safe(value);
+  if(text === "—") return "—";
+
+  const first = text.split(/\s+/)[0];
+  return first || text;
 }
 
 function safe(value){
@@ -464,6 +564,10 @@ stationInput.addEventListener("input", () => {
   if(history.includes(stationInput.value.trim())){
     loadData();
   }
+});
+
+document.getElementById("debugToggle").addEventListener("click", () => {
+  document.getElementById("debugWrap").classList.toggle("open");
 });
 
 updateStationLink(null);
