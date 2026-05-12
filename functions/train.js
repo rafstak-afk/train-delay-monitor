@@ -1,7 +1,7 @@
 export async function onRequest(context) {
   return handleRequest(context.request, context.env);
 }
-
+'RafStaK
 function corsHeaders() {
   return {
     "Access-Control-Allow-Origin": "*",
