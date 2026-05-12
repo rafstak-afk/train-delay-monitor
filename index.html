@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <title>Tablica odjazdów PLK</title>
 
   <style>
@@ -10,7 +11,7 @@
       margin: 0;
       font-family: Arial, sans-serif;
       background: #101820;
-      color: #fff;
+      color: white;
       padding: 24px;
     }
 
@@ -38,11 +39,12 @@
       border-radius: 10px;
       padding: 12px 18px;
       background: #0b57d0;
-      color: #fff;
+      color: white;
       font-weight: 700;
       text-decoration: none;
       cursor: pointer;
       font-size: 15px;
+      display: inline-block;
     }
 
     .btn:hover {
@@ -82,16 +84,14 @@
       cursor: pointer;
     }
 
+    .search-box button:hover {
+      background: #157347;
+    }
+
     .status {
       margin-top: 18px;
       min-height: 24px;
-      opacity: 0.85;
-    }
-
-    .hint {
-      margin-top: 30px;
-      opacity: 0.7;
-      font-size: 14px;
+      opacity: 0.9;
     }
 
     @media (max-width: 700px) {
@@ -104,14 +104,15 @@
 
 <body>
   <div class="container">
+
     <h1>🚆 Tablica odjazdów PLK</h1>
 
     <div class="station-buttons">
-      <button class="btn" onclick="goToStation('Katowice')">Katowice</button>
-      <button class="btn" onclick="goToStation('Chorzów Batory')">Chorzów Batory</button>
-      <button class="btn" onclick="goToStation('Bytom')">Bytom</button>
-      <button class="btn" onclick="goToStation('Gliwice')">Gliwice</button>
-      <button class="btn" onclick="goToStation('Zabrze')">Zabrze</button>
+      <button class="btn" onclick="openStation('Katowice')">Katowice</button>
+      <button class="btn" onclick="openStation('Chorzów Batory')">Chorzów Batory</button>
+      <button class="btn" onclick="openStation('Bytom')">Bytom</button>
+      <button class="btn" onclick="openStation('Gliwice')">Gliwice</button>
+      <button class="btn" onclick="openStation('Zabrze')">Zabrze</button>
 
       <a class="btn" href="https://portalpasazera.pl" target="_blank" rel="noopener">
         Portal Pasażera
@@ -133,7 +134,7 @@
         id="stationInput"
         type="text"
         placeholder="Wpisz nazwę stacji, np. Katowice"
-        onkeydown="handleEnter(event)"
+        onkeydown="if(event.key === 'Enter') searchStation()"
       />
 
       <button onclick="searchStation()">
@@ -145,25 +146,11 @@
       Wybierz stację albo wpisz nazwę.
     </div>
 
-    <div class="hint">
-      Po kliknięciu strona przechodzi w tej samej karcie, bez wyskakującego okna, bo przeglądarki nie lubią niespodzianek. Ludzie zresztą też.
-    </div>
   </div>
 
   <script>
-    const RESOLVER_ENDPOINTS = [
-      "/resolve-link",
-      "/resolve-link.js"
-    ];
-
-    function setStatus(message) {
-      document.getElementById("status").textContent = message;
-    }
-
-    function handleEnter(event) {
-      if (event.key === "Enter") {
-        searchStation();
-      }
+    function setStatus(text) {
+      document.getElementById("status").textContent = text;
     }
 
     function searchStation() {
@@ -174,58 +161,111 @@
         return;
       }
 
-      goToStation(station);
+      openStation(station);
     }
 
-    async function goToStation(station) {
-      setStatus("Szukam tablicy dla stacji: " + station + "...");
+    async function openStation(station) {
+      setStatus("Szukam linku do tablicy: " + station + "...");
 
-      let lastError = null;
+      try {
+        const link = await resolveStationLink(station);
 
-      for (const endpoint of RESOLVER_ENDPOINTS) {
+        if (!link) {
+          throw new Error("Resolver nie zwrócił linku.");
+        }
+
+        setStatus("Otwieram tablicę: " + station);
+
+        window.location.href = link;
+
+      } catch (error) {
+        console.error("Błąd resolvera:", error);
+
+        setStatus(
+          "Nie udało się wygenerować linku dla stacji: " +
+          station +
+          ". Sprawdź odpowiedź resolvera w konsoli."
+        );
+      }
+    }
+
+    async function resolveStationLink(station) {
+      const endpoints = [
+        "/resolve-link?station=" + encodeURIComponent(station),
+        "/resolve-link?name=" + encodeURIComponent(station),
+        "/resolve-link?q=" + encodeURIComponent(station),
+
+        "/resolve-link.js?station=" + encodeURIComponent(station),
+        "/resolve-link.js?name=" + encodeURIComponent(station),
+        "/resolve-link.js?q=" + encodeURIComponent(station),
+
+        "/api/resolve-link?station=" + encodeURIComponent(station),
+        "/api/resolve-link?name=" + encodeURIComponent(station),
+        "/api/resolve-link?q=" + encodeURIComponent(station)
+      ];
+
+      for (const endpoint of endpoints) {
         try {
-          const url = endpoint + "?station=" + encodeURIComponent(station);
-
-          const response = await fetch(url, {
+          const response = await fetch(endpoint, {
             method: "GET",
             headers: {
-              "Accept": "application/json"
+              "Accept": "application/json, text/plain, */*"
             }
           });
 
           if (!response.ok) {
-            lastError = new Error("Resolver zwrócił HTTP " + response.status);
             continue;
           }
 
-          const data = await response.json();
+          const contentType = response.headers.get("content-type") || "";
 
-          const targetUrl =
-            data.url ||
-            data.link ||
-            data.href ||
-            data.redirectUrl;
+          if (contentType.includes("application/json")) {
+            const data = await response.json();
 
-          if (!targetUrl) {
-            lastError = new Error("Brak pola url/link/href/redirectUrl w odpowiedzi resolvera.");
-            continue;
+            console.log("Odpowiedź resolvera JSON:", endpoint, data);
+
+            return (
+              data.url ||
+              data.link ||
+              data.href ||
+              data.redirectUrl ||
+              data.target ||
+              data.result ||
+              null
+            );
           }
 
-          window.location.href = targetUrl;
-          return;
+          const text = await response.text();
+          console.log("Odpowiedź resolvera TEXT:", endpoint, text);
+
+          const trimmed = text.trim();
+
+          if (trimmed.startsWith("http")) {
+            return trimmed;
+          }
+
+          try {
+            const parsed = JSON.parse(trimmed);
+
+            return (
+              parsed.url ||
+              parsed.link ||
+              parsed.href ||
+              parsed.redirectUrl ||
+              parsed.target ||
+              parsed.result ||
+              null
+            );
+          } catch (_) {
+            // tekst nie był JSON-em, trudno, internet przeżyje
+          }
 
         } catch (error) {
-          lastError = error;
+          console.warn("Nieudany endpoint:", endpoint, error);
         }
       }
 
-      console.error(lastError);
-
-      setStatus(
-        "Nie udało się znaleźć tablicy dla stacji: " +
-        station +
-        ". Sprawdź resolver /resolve-link albo /resolve-link.js."
-      );
+      return null;
     }
   </script>
 </body>
