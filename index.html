@@ -158,8 +158,8 @@
       border-bottom: 1px solid #34495e;
       font-size: 13px;
       white-space: normal;
-      word-break: break-word;
-      overflow-wrap: anywhere;
+      word-break: normal;
+      overflow-wrap: normal;
       vertical-align: top;
     }
 
@@ -249,31 +249,77 @@
         padding: 10px;
       }
 
-      th, td {
-        padding: 7px 6px;
-        font-size: 12px;
+      .table-wrap {
+        overflow-x: visible;
+      }
+
+      table,
+      thead,
+      tbody,
+      tr,
+      th,
+      td {
+        display: block;
+        width: 100% !important;
+      }
+
+      thead {
+        display: none;
+      }
+
+      tr {
+        background: #1f2f3d;
+        border: 1px solid #34495e;
+        border-radius: 12px;
+        margin-bottom: 12px;
+        padding: 10px;
+      }
+
+      td {
+        border-bottom: none;
+        padding: 4px 0;
+        font-size: 14px;
       }
 
       .col-time {
-        width: 54px;
+        font-size: 18px;
       }
 
       .col-train {
-        width: 82px;
+        font-size: 15px;
       }
 
-      .col-platform {
-        width: 38px;
+      .col-direction {
+        margin-top: 8px;
       }
 
+      .direction-main {
+        font-size: 16px;
+      }
+
+      .direction-via {
+        font-size: 13px;
+        line-height: 1.35;
+        opacity: 0.8;
+      }
+
+      .col-platform,
       .col-delay {
-        width: 55px;
+        text-align: left;
+        display: inline-block;
+        width: auto !important;
+        margin-right: 16px;
       }
 
-      .train-name,
-      .direction-via,
-      .muted {
-        font-size: 11px;
+      .col-platform::before {
+        content: attr(data-label) ": ";
+        opacity: 0.7;
+      }
+
+      .col-delay::before {
+        content: "Opóźn.: ";
+        opacity: 0.7;
+        color: white;
       }
     }
   </style>
@@ -591,8 +637,8 @@
               <div class="direction-via">${via ? "przez: " + escapeHtml(via) : ""}</div>
             </td>
 
-            <td class="col-platform">${escapeHtml(row.platform || "")}</td>
-            <td class="col-platform">${escapeHtml(row.track || "")}</td>
+            <td class="col-platform" data-label="Per.">${escapeHtml(row.platform || "")}</td>
+            <td class="col-platform" data-label="Tor">${escapeHtml(row.track || "")}</td>
             <td class="${delayClass} col-delay">${delayText}</td>
           </tr>
         `;
