@@ -69,7 +69,8 @@ export async function onRequestGet(context) {
       fullRoutesMap,
       operationsRaw,
       stationId: station.id,
-      stationNames
+      stationNames,
+      date
     });
 
     const departures = getDeparturesFromTime(allDepartures, time, limit);
@@ -117,7 +118,8 @@ function buildDepartures({
   fullRoutesMap,
   operationsRaw,
   stationId,
-  stationNames
+  stationNames,
+  date
 }) {
   const stationRoutes = stationSchedulesRaw.routes || [];
   const trains = operationsRaw.trains || [];
@@ -125,6 +127,10 @@ function buildDepartures({
   const operationsMap = new Map();
 
   for (const train of trains) {
+    if (train.operatingDate && train.operatingDate !== date) {
+      continue;
+    }
+
     const key = makeKey(train);
 
     const stationOp = (train.stations || []).find(
