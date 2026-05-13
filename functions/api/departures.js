@@ -49,17 +49,19 @@ export async function onRequestGet(context) {
     const stationsDictionaryUrl =
       `${PLK_BASE}/dictionaries/stations?pageSize=100000`;
 
-    const [
-      stationSchedulesRaw,
-      fullSchedulesRaw,
-      operationsRaw,
-      stationsDictionaryRaw
-    ] = await Promise.all([
-      getJson(stationSchedulesUrl, headers),
-      getJson(fullSchedulesUrl, headers),
-      getJson(operationsUrl, headers),
-      getJson(stationsDictionaryUrl, headers)
+    const responses = await Promise.all([
+      getJsonWithMeta(stationSchedulesUrl, headers),
+      getJsonWithMeta(fullSchedulesUrl, headers),
+      getJsonWithMeta(operationsUrl, headers),
+      getJsonWithMeta(stationsDictionaryUrl, headers)
     ]);
+
+    const stationSchedulesRaw = responses[0].data;
+    const fullSchedulesRaw = responses[1].data;
+    const operationsRaw = responses[2].data;
+    const stationsDictionaryRaw = responses[3].data;
+
+    const apiLimits = mergeApiLimits(responses.map(r => r.apiLimits));
 
     const fullRoutesMap = buildFullRoutesMap(fullSchedulesRaw);
     const stationNames = buildStationNameMap(fullSchedulesRaw, stationsDictionaryRaw);
@@ -81,6 +83,7 @@ export async function onRequestGet(context) {
       date,
       timeFrom: time,
       limit,
+      apiLimits,
       departures
     });
 
@@ -93,11 +96,12 @@ export async function onRequestGet(context) {
 }
 
 async function findStation(name, headers) {
-  const data = await getJson(
+  const response = await getJsonWithMeta(
     `${PLK_BASE}/dictionaries/stations?search=${encodeURIComponent(name)}&pageSize=20`,
     headers
   );
 
+  const data = response.data;
   const stations = extractArray(data);
   const wanted = normalize(name);
 
@@ -418,7 +422,7 @@ function minutesFromTime(time) {
   return Number(match[1]) * 60 + Number(match[2]);
 }
 
-async function getJson(url, headers) {
+async function getJsonWithMeta(url, headers) {
   const res = await fetch(url, { headers });
   const text = await res.text();
 
@@ -426,7 +430,62 @@ async function getJson(url, headers) {
     throw new Error(`HTTP ${res.status}: ${text.slice(0, 500)}`);
   }
 
-  return JSON.parse(text);
+  return {
+    data: JSON.parse(text),
+    apiLimits: readApiLimits(res.headers)
+  };
+}
+
+function readApiLimits(headers) {
+  const limit =
+    headers.get("x-ratelimit-limit") ||
+    headers.get("ratelimit-limit") ||
+    headers.get("x-rate-limit-limit");
+
+  const remaining =
+    headers.get("x-ratelimit-remaining") ||
+    headers.get("ratelimit-remaining") ||
+    headers.get("x-rate-limit-remaining");
+
+  const reset =
+    headers.get("x-ratelimit-reset") ||
+    headers.get("ratelimit-reset") ||
+    headers.get("x-rate-limit-reset");
+
+  return {
+    available: Boolean(limit || remaining || reset),
+    limit: limit ?? null,
+    remaining: remaining ?? null,
+    reset: reset ?? null
+  };
+}
+
+function mergeApiLimits(items) {
+  const availableItems = items.filter(item => item && item.available);
+
+  if (!availableItems.length) {
+    return {
+      available: false,
+      limit: null,
+      remaining: null,
+      reset: null
+    };
+  }
+
+  const remainingValues = availableItems
+    .map(item => Number(item.remaining))
+    .filter(Number.isFinite);
+
+  const limitValues = availableItems
+    .map(item => Number(item.limit))
+    .filter(Number.isFinite);
+
+  return {
+    available: true,
+    limit: limitValues.length ? String(Math.max(...limitValues)) : availableItems[0].limit,
+    remaining: remainingValues.length ? String(Math.min(...remainingValues)) : availableItems[0].remaining,
+    reset: availableItems.find(item => item.reset)?.reset ?? null
+  };
 }
 
 function extractArray(data) {
