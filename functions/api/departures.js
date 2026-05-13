@@ -440,12 +440,16 @@ function readApiLimits(headers) {
   const limit =
     headers.get("x-ratelimit-limit") ||
     headers.get("ratelimit-limit") ||
-    headers.get("x-rate-limit-limit");
+    headers.get("x-rate-limit-limit") ||
+    headers.get("x-ratelimit-hourly-limit") ||
+    headers.get("x-ratelimit-daily-limit");
 
   const remaining =
     headers.get("x-ratelimit-remaining") ||
     headers.get("ratelimit-remaining") ||
-    headers.get("x-rate-limit-remaining");
+    headers.get("x-rate-limit-remaining") ||
+    headers.get("x-ratelimit-hourly-remaining") ||
+    headers.get("x-ratelimit-daily-remaining");
 
   const reset =
     headers.get("x-ratelimit-reset") ||
