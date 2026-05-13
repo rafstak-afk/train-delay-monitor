@@ -44,13 +44,9 @@
       font-size: 15px;
     }
 
-    .btn:hover {
-      background: #084298;
-    }
+    .btn:hover { background: #084298; }
 
-    .secondary-row {
-      margin-bottom: 28px;
-    }
+    .secondary-row { margin-bottom: 28px; }
 
     .btn-small {
       display: inline-block;
@@ -63,10 +59,7 @@
       opacity: 0.85;
     }
 
-    .btn-small:hover {
-      opacity: 1;
-      background: #374151;
-    }
+    .btn-small:hover { opacity: 1; background: #374151; }
 
     .search-box {
       margin: 26px auto 10px;
@@ -109,10 +102,7 @@
       opacity: 0.9;
     }
 
-    .suggestion-chip:hover {
-      background: #253445;
-      opacity: 1;
-    }
+    .suggestion-chip:hover { background: #253445; opacity: 1; }
 
     .search-box button {
       padding: 14px 18px;
@@ -123,31 +113,14 @@
       cursor: pointer;
     }
 
-    .btn-official {
-      background: #198754;
-    }
+    .btn-official { background: #198754; }
+    .btn-official:hover { background: #157347; }
 
-    .btn-official:hover {
-      background: #157347;
-    }
+    .btn-api { background: #0dcaf0; color: #102027 !important; }
+    .btn-api:hover { background: #31d2f2; }
 
-    .btn-api {
-      background: #0dcaf0;
-      color: #102027 !important;
-    }
-
-    .btn-api:hover {
-      background: #31d2f2;
-    }
-
-    .btn-alert {
-      background: #dc3545;
-      color: white;
-    }
-
-    .btn-alert:hover {
-      background: #bb2d3b;
-    }
+    .btn-alert { background: #dc3545; }
+    .btn-alert:hover { background: #bb2d3b; }
 
     .status {
       margin-top: 18px;
@@ -196,9 +169,7 @@
       text-align: center;
     }
 
-    .table-wrap {
-      overflow-x: auto;
-    }
+    .table-wrap { overflow-x: auto; }
 
     table {
       width: 100%;
@@ -221,53 +192,25 @@
       text-align: left;
     }
 
-    tr:hover {
-      background: #253445;
-    }
+    tr:hover { background: #253445; }
 
-    .col-time {
-      width: 72px;
-    }
-
-    .col-train {
-      width: 105px;
-    }
-
-    .col-direction {
-      width: auto;
-    }
-
-    .col-platform {
-      width: 48px;
-      text-align: center;
-    }
-
-    .col-delay {
-      width: 68px;
-      text-align: center;
-    }
+    .col-time { width: 72px; }
+    .col-train { width: 105px; }
+    .col-direction { width: auto; }
+    .col-platform { width: 48px; text-align: center; }
+    .col-delay { width: 68px; text-align: center; }
 
     .time-real {
       font-weight: 800;
       font-size: 15px;
     }
 
-    .time-delay-low {
-      color: #ffcc00;
-    }
-
-    .time-delay-mid {
-      color: #ff4d4d;
-    }
-
-    .time-delay-high {
-      color: #c084fc;
-    }
+    .time-delay-low { color: #ffcc00; }
+    .time-delay-mid { color: #ff4d4d; }
+    .time-delay-high { color: #c084fc; }
 
     .train-main,
-    .direction-main {
-      font-weight: 700;
-    }
+    .direction-main { font-weight: 700; }
 
     .train-name,
     .direction-via {
@@ -277,57 +220,24 @@
       line-height: 1.25;
     }
 
-    .delay {
-      color: #ffcc00;
-      font-weight: 700;
-    }
+    .delay { color: #ffcc00; font-weight: 700; }
+    .delay-mid { color: #ff4d4d; font-weight: 700; }
+    .delay-high { color: #c084fc; font-weight: 700; }
+    .ontime { color: #5dd39e; font-weight: 700; }
+    .muted { opacity: 0.65; font-size: 12px; }
 
-    .delay-mid {
-      color: #ff4d4d;
-      font-weight: 700;
-    }
-
-    .delay-high {
-      color: #c084fc;
-      font-weight: 700;
-    }
-
-    .ontime {
-      color: #5dd39e;
-      font-weight: 700;
-    }
-
-    .muted {
-      opacity: 0.65;
-      font-size: 12px;
-    }
+    .mobile-only { display: none; }
 
     @media (max-width: 700px) {
-      body {
-        padding: 8px;
-      }
+      .desktop-cell { display: none !important; }
 
-      .container {
-        max-width: 100%;
-      }
+      body { padding: 8px; }
+      .container { max-width: 100%; }
+      h1 { font-size: 24px; margin-bottom: 16px; }
 
-      h1 {
-        font-size: 24px;
-        margin-bottom: 16px;
-      }
-
-      .station-buttons {
-        gap: 8px;
-      }
-
-      .btn {
-        padding: 10px 12px;
-        font-size: 13px;
-      }
-
-      .secondary-row {
-        margin-bottom: 18px;
-      }
+      .station-buttons { gap: 8px; }
+      .btn { padding: 10px 12px; font-size: 13px; }
+      .secondary-row { margin-bottom: 18px; }
 
       .search-box {
         flex-direction: column;
@@ -340,44 +250,19 @@
         box-sizing: border-box;
       }
 
-      #stationInput {
-        min-width: auto;
-      }
+      #stationInput { min-width: auto; }
+      .api-panel { padding: 8px; margin-top: 20px; }
+      .api-panel h2 { font-size: 18px; }
+      .api-meta { font-size: 12px; }
+      .api-limits { font-size: 11px; }
+      .table-wrap { overflow-x: visible; }
 
-      .api-panel {
-        padding: 8px;
-        margin-top: 20px;
-      }
-
-      .api-panel h2 {
-        font-size: 18px;
-      }
-
-      .api-meta {
-        font-size: 12px;
-      }
-
-      .api-limits {
-        font-size: 11px;
-      }
-
-      .table-wrap {
-        overflow-x: visible;
-      }
-
-      table,
-      thead,
-      tbody,
-      tr,
-      th,
-      td {
+      table, thead, tbody, tr, th, td {
         display: block;
         width: 100% !important;
       }
 
-      thead {
-        display: none;
-      }
+      thead { display: none; }
 
       tr {
         background: #1f2f3d;
@@ -393,92 +278,29 @@
         font-size: 13px;
       }
 
-      .mobile-row {
+      .mobile-only { display: block; }
+
+      .mobile-layout {
         display: grid;
         grid-template-columns: 58px 72px 1fr 48px;
         gap: 7px;
         align-items: start;
       }
 
-      .mobile-time {
-        grid-column: 1;
-      }
+      .mobile-time { grid-column: 1; }
+      .mobile-train { grid-column: 2; text-align: center; }
+      .mobile-direction { grid-column: 3; }
+      .mobile-side { grid-column: 4; text-align: center; }
 
-      .mobile-train {
-        grid-column: 2;
-        text-align: center;
-      }
-
-      .mobile-direction {
-        grid-column: 3;
-      }
-
-      .mobile-side {
-        grid-column: 4;
-        text-align: center;
-      }
-
-      .time-real {
-        font-size: 21px;
-        line-height: 1;
-      }
-
-      .muted {
-        font-size: 11px;
-      }
-
-      .train-main {
-        font-size: 15px;
-        line-height: 1.1;
-      }
-
-      .train-name {
-        font-size: 11px;
-        line-height: 1.15;
-      }
-
-      .direction-main {
-        font-size: 16px;
-        line-height: 1.1;
-      }
-
-      .direction-via {
-        font-size: 12px;
-        line-height: 1.2;
-        margin-top: 3px;
-      }
-
-      .mobile-platform {
-        font-size: 20px;
-        line-height: 1;
-        font-weight: 700;
-      }
-
-      .mobile-track {
-        font-size: 11px;
-        opacity: 0.75;
-        margin-top: 3px;
-      }
-
-      .mobile-delay {
-        margin-top: 4px;
-        font-size: 12px;
-        font-weight: 800;
-      }
-
-      .desktop-only {
-        display: none;
-      }
-    }
-
-    @media (min-width: 701px) {
-      .mobile-row {
-        display: contents;
-      }
-
-      .mobile-only {
-        display: none;
-      }
+      .time-real { font-size: 21px; line-height: 1; }
+      .muted { font-size: 11px; }
+      .train-main { font-size: 15px; line-height: 1.1; }
+      .train-name { font-size: 11px; line-height: 1.15; }
+      .direction-main { font-size: 16px; line-height: 1.1; }
+      .direction-via { font-size: 12px; line-height: 1.2; margin-top: 3px; }
+      .mobile-platform { font-size: 20px; line-height: 1; font-weight: 700; }
+      .mobile-track { font-size: 11px; opacity: 0.75; margin-top: 3px; }
+      .mobile-delay { margin-top: 4px; font-size: 12px; font-weight: 800; }
     }
   </style>
 </head>
@@ -580,7 +402,6 @@
 
     function setDefaultDateTime() {
       const now = new Date();
-
       const yyyy = now.getFullYear();
       const mm = String(now.getMonth() + 1).padStart(2, "0");
       const dd = String(now.getDate()).padStart(2, "0");
@@ -597,24 +418,20 @@
 
     function searchStation() {
       const station = document.getElementById("stationInput").value.trim();
-
       if (!station) {
         setStatus("Wpisz nazwę stacji.");
         return;
       }
-
       saveStationToHistory(station);
       openStation(station);
     }
 
     function loadApiDeparturesFromInput() {
       const station = document.getElementById("stationInput").value.trim();
-
       if (!station) {
         setStatus("Wpisz nazwę stacji.");
         return;
       }
-
       loadApiDepartures(station);
     }
 
@@ -625,7 +442,6 @@
 
     async function openStation(station) {
       setStatus("Szukam tablicy PLK dla stacji: " + station + "...");
-
       const link = await resolveStationLink(station);
 
       if (!link) {
@@ -639,7 +455,6 @@
 
     async function resolveStationLink(station) {
       const encoded = encodeURIComponent(station);
-
       const endpoints = [
         "/resolve-link?station=" + encoded,
         "/resolve-link?name=" + encoded,
@@ -659,53 +474,29 @@
         try {
           const response = await fetch(endpoint, {
             method: "GET",
-            headers: {
-              "Accept": "application/json, text/plain, */*"
-            }
+            headers: { "Accept": "application/json, text/plain, */*" }
           });
 
           if (!response.ok) continue;
-
           const text = await response.text();
           const link = extractLink(text);
-
           if (link) return link;
-
         } catch (error) {
           console.warn("Nieudany endpoint:", endpoint, error);
         }
       }
-
       return null;
     }
 
     function extractLink(text) {
       const trimmed = text.trim();
-
       if (!trimmed) return null;
-
-      if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
-        return trimmed;
-      }
+      if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) return trimmed;
 
       try {
         const json = JSON.parse(trimmed);
-
-        const candidate =
-          json.url ||
-          json.link ||
-          json.href ||
-          json.redirectUrl ||
-          json.target ||
-          json.result ||
-          json.data?.url ||
-          json.data?.link ||
-          json.data?.href;
-
-        if (candidate && typeof candidate === "string") {
-          return candidate;
-        }
-
+        const candidate = json.url || json.link || json.href || json.redirectUrl || json.target || json.result || json.data?.url || json.data?.link || json.data?.href;
+        if (candidate && typeof candidate === "string") return candidate;
       } catch (_) {}
 
       const match = trimmed.match(/https?:\/\/[^\s"'<>]+/);
@@ -716,15 +507,10 @@
       const tbody = document.getElementById("apiDeparturesBody");
       const meta = document.getElementById("apiMeta");
       const limits = document.getElementById("apiLimits");
-
       const date = document.getElementById("dateInput").value;
       const time = document.getElementById("timeInput").value;
 
-      const params = new URLSearchParams({
-        station,
-        limit: "20"
-      });
-
+      const params = new URLSearchParams({ station, limit: "20" });
       if (date) params.set("date", date);
       if (time) params.set("time", time);
 
@@ -734,66 +520,36 @@
       setStatus("Pobieram odjazdy z API PLK dla stacji: " + station + "...");
       meta.textContent = "Ładowanie danych z API PLK dla stacji: " + station + "...";
       limits.textContent = "Limit API: sprawdzam...";
-
-      tbody.innerHTML =
-        '<tr><td colspan="6" class="muted">Ładowanie danych...</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" class="muted">Ładowanie danych...</td></tr>';
 
       try {
         const response = await fetch("/api/departures?" + params.toString(), {
-          headers: {
-            "Accept": "application/json"
-          }
+          headers: { "Accept": "application/json" }
         });
-
         const data = await response.json();
+        if (!response.ok) throw new Error(data.error || data.details || "Błąd API");
 
-        if (!response.ok) {
-          throw new Error(data.error || data.details || "Błąd API");
-        }
-
-        const departures = Array.isArray(data.departures)
-          ? data.departures
-          : [];
-
-        meta.textContent =
-          "Stacja: " +
-          (data.station?.name || station) +
-          " | Data: " +
-          (data.date || date || "bieżąca") +
-          " | Od godziny: " +
-          (data.timeFrom || time || "bieżącej") +
-          " | Pokazuję do 20 odjazdów.";
-
+        const departures = Array.isArray(data.departures) ? data.departures : [];
+        meta.textContent = "Stacja: " + (data.station?.name || station) + " | Data: " + (data.date || date || "bieżąca") + " | Od godziny: " + (data.timeFrom || time || "bieżącej") + " | Pokazuję do 20 odjazdów.";
         limits.textContent = formatApiLimits(data.apiLimits);
 
         renderDepartures(departures);
         handleDelayAlerts(departures);
-
         setStatus("Załadowano odjazdy z API PLK dla stacji: " + (data.station?.name || station));
-
         scrollToApiPanel();
-
       } catch (error) {
         console.error(error);
-
         meta.textContent = "Nie udało się pobrać danych z API PLK.";
         limits.textContent = "Limit API: brak danych.";
-
-        tbody.innerHTML =
-          '<tr><td colspan="6" class="muted">Błąd pobierania danych: ' +
-          escapeHtml(error.message) +
-          '</td></tr>';
-
+        tbody.innerHTML = '<tr><td colspan="6" class="muted">Błąd pobierania danych: ' + escapeHtml(error.message) + '</td></tr>';
         setStatus("Nie udało się pobrać odjazdów z API dla stacji: " + station);
       }
     }
 
     function renderDepartures(departures) {
       const tbody = document.getElementById("apiDeparturesBody");
-
       if (!departures.length) {
-        tbody.innerHTML =
-          '<tr><td colspan="6" class="muted">Brak odjazdów dla wybranej daty i godziny.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="muted">Brak odjazdów dla wybranej daty i godziny.</td></tr>';
         return;
       }
 
@@ -802,53 +558,41 @@
         const delayClass = getDelayClass(delay);
         const timeClass = getTimeDelayClass(delay);
         const delayText = delay > 0 ? "+" + delay + " min" : "0";
-
-        const trainLabel = [
-          row.category,
-          row.train
-        ].filter(Boolean).join(" ");
-
+        const trainLabel = [row.category, row.train].filter(Boolean).join(" ");
         const destination = row.destination || "";
         const via = row.via || "";
 
         return `
           <tr>
-            <td class="col-time">
+            <td class="col-time desktop-cell">
               <div class="time-real ${timeClass}">${escapeHtml(shortTime(row.time))}</div>
               <div class="muted">${escapeHtml(shortTime(row.plannedTime))}</div>
             </td>
-
-            <td class="col-train">
+            <td class="col-train desktop-cell">
               <div class="train-main">${escapeHtml(trainLabel)}</div>
               <div class="train-name">${escapeHtml(row.name || row.carrier || "")}</div>
             </td>
-
-            <td class="col-direction">
+            <td class="col-direction desktop-cell">
               <div class="direction-main">${escapeHtml(destination || "brak kierunku")}</div>
               <div class="direction-via">${via ? escapeHtml(via) : ""}</div>
             </td>
-
-            <td class="col-platform desktop-only">${escapeHtml(row.platform || "")}</td>
-            <td class="col-platform desktop-only">${escapeHtml(row.track || "")}</td>
-            <td class="${delayClass} col-delay desktop-only">${delayText}</td>
-
+            <td class="col-platform desktop-cell">${escapeHtml(row.platform || "")}</td>
+            <td class="col-platform desktop-cell">${escapeHtml(row.track || "")}</td>
+            <td class="${delayClass} col-delay desktop-cell">${delayText}</td>
             <td class="mobile-only">
-              <div class="mobile-row">
+              <div class="mobile-layout">
                 <div class="mobile-time">
                   <div class="time-real ${timeClass}">${escapeHtml(shortTime(row.time))}</div>
                   <div class="muted">${escapeHtml(shortTime(row.plannedTime))}</div>
                 </div>
-
                 <div class="mobile-train">
                   <div class="train-main">${escapeHtml(trainLabel)}</div>
                   <div class="train-name">${escapeHtml(row.name || row.carrier || "")}</div>
                 </div>
-
                 <div class="mobile-direction">
                   <div class="direction-main">${escapeHtml(destination || "brak kierunku")}</div>
                   <div class="direction-via">${via ? escapeHtml(via) : ""}</div>
                 </div>
-
                 <div class="mobile-side">
                   <div class="mobile-platform">${escapeHtml(row.platform || "")}</div>
                   <div class="mobile-track">tor ${escapeHtml(row.track || "")}</div>
@@ -856,8 +600,7 @@
                 </div>
               </div>
             </td>
-          </tr>
-        `;
+          </tr>`;
       }).join("");
     }
 
@@ -877,94 +620,54 @@
 
     function toggleDelayAlerts() {
       delayAlertsEnabled = !delayAlertsEnabled;
-
       const button = document.getElementById("alertButton");
       button.textContent = delayAlertsEnabled ? "Alarm opóźnień: ON" : "Alarm opóźnień: OFF";
-
-      if (delayAlertsEnabled && "Notification" in window && Notification.permission === "default") {
-        Notification.requestPermission();
-      }
-
+      if (delayAlertsEnabled && "Notification" in window && Notification.permission === "default") Notification.requestPermission();
       setStatus(delayAlertsEnabled ? "Alarm opóźnień włączony." : "Alarm opóźnień wyłączony.");
     }
 
     function handleDelayAlerts(departures) {
       const alertBox = document.getElementById("delayAlertBox");
-
-      const delayed = departures
-        .filter(row => Number(row.delay || 0) > 0)
-        .slice(0, 5);
-
+      const delayed = departures.filter(row => Number(row.delay || 0) > 0).slice(0, 5);
       if (!delayed.length) {
         alertBox.style.display = "none";
         alertBox.textContent = "";
         return;
       }
 
-      const message = delayed
-        .map(row => {
-          const train = [row.category, row.train].filter(Boolean).join(" ");
-          return `${shortTime(row.time)} ${train} +${row.delay} min`;
-        })
-        .join(" | ");
+      const message = delayed.map(row => {
+        const train = [row.category, row.train].filter(Boolean).join(" ");
+        return `${shortTime(row.time)} ${train} +${row.delay} min`;
+      }).join(" | ");
 
       alertBox.style.display = "block";
       alertBox.textContent = "Opóźnione: " + message;
-
-      const signature = delayed
-        .map(row => `${row.train}-${row.time}-${row.delay}`)
-        .join("|");
-
+      const signature = delayed.map(row => `${row.train}-${row.time}-${row.delay}`).join("|");
       if (!delayAlertsEnabled || signature === lastDelayedSignature) return;
-
       lastDelayedSignature = signature;
-
-      if ("Notification" in window && Notification.permission === "granted") {
-        new Notification("Opóźnione pociągi", {
-          body: message
-        });
-      }
+      if ("Notification" in window && Notification.permission === "granted") new Notification("Opóźnione pociągi", { body: message });
     }
 
     function formatApiLimits(apiLimits) {
-      if (!apiLimits || !apiLimits.available) {
-        return "Limit API: brak informacji w nagłówkach odpowiedzi PLK.";
-      }
-
+      if (!apiLimits || !apiLimits.available) return "Limit API: brak informacji w nagłówkach odpowiedzi PLK.";
       const parts = [];
-
-      if (apiLimits.remaining !== null && apiLimits.remaining !== undefined) {
-        parts.push("pozostało: " + apiLimits.remaining);
-      }
-
-      if (apiLimits.limit !== null && apiLimits.limit !== undefined) {
-        parts.push("pula: " + apiLimits.limit);
-      }
-
-      if (apiLimits.reset !== null && apiLimits.reset !== undefined) {
-        parts.push("reset: " + apiLimits.reset);
-      }
-
+      if (apiLimits.remaining !== null && apiLimits.remaining !== undefined) parts.push("pozostało: " + apiLimits.remaining);
+      if (apiLimits.limit !== null && apiLimits.limit !== undefined) parts.push("pula: " + apiLimits.limit);
+      if (apiLimits.reset !== null && apiLimits.reset !== undefined) parts.push("reset: " + apiLimits.reset);
       return "Limit API: " + (parts.length ? parts.join(" | ") : "brak szczegółów.");
     }
 
     function saveStationToHistory(station) {
       const clean = station.trim();
       if (!clean) return;
-
-      const current = getStationHistory()
-        .filter(item => item.toLowerCase() !== clean.toLowerCase());
-
+      const current = getStationHistory().filter(item => item.toLowerCase() !== clean.toLowerCase());
       current.unshift(clean);
-
       localStorage.setItem(HISTORY_KEY, JSON.stringify(current.slice(0, 8)));
     }
 
     function getStationHistory() {
       try {
-        const raw = localStorage.getItem(HISTORY_KEY);
-        const parsed = JSON.parse(raw || "[]");
-
+        const parsed = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
         return Array.isArray(parsed) ? parsed : [];
       } catch (_) {
         return [];
@@ -975,38 +678,20 @@
       const history = getStationHistory();
       const datalist = document.getElementById("stationHistoryList");
       const suggestions = document.getElementById("suggestions");
-
-      datalist.innerHTML = history
-        .map(station => `<option value="${escapeHtml(station)}"></option>`)
-        .join("");
-
-      suggestions.innerHTML = history
-        .map(station => `
-          <button class="suggestion-chip" onclick="chooseStation('${escapeJs(station)}')">
-            ${escapeHtml(station)}
-          </button>
-        `)
-        .join("");
+      datalist.innerHTML = history.map(station => `<option value="${escapeHtml(station)}"></option>`).join("");
+      suggestions.innerHTML = history.map(station => `<button class="suggestion-chip" onclick="chooseStation('${escapeJs(station)}')">${escapeHtml(station)}</button>`).join("");
     }
 
     function scrollToApiPanel() {
       const panel = document.getElementById("apiPanel");
-
       if (!panel) return;
-
-      panel.scrollIntoView({
-        behavior: "smooth",
-        block: "start"
-      });
+      panel.scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
     function shortTime(value) {
       if (!value) return "";
-
-      const str = String(value);
-      const match = str.match(/(\d{2}:\d{2})/);
-
-      return match ? match[1] : str;
+      const match = String(value).match(/(\d{2}:\d{2})/);
+      return match ? match[1] : value;
     }
 
     function escapeHtml(value) {
