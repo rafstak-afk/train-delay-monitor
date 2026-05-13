@@ -1,21 +1,21 @@
 const PLK_BASE = "https://pdp-api.plk-sa.pl/api/v1";
 
+const CACHE_TTL = {
+  STATION_SEARCH: 86400,
+  STATIONS_DICTIONARY: 86400,
+  FULL_SCHEDULES: 21600,
+  STATION_SCHEDULES: 300,
+  OPERATIONS: 30
+};
+
 export async function onRequestGet(context) {
   const { request, env } = context;
   const url = new URL(request.url);
 
   const stationName = (url.searchParams.get("station") || "").trim();
-
-  const date =
-    url.searchParams.get("date") ||
-    localDateYYYYMMDD();
-
-  const time =
-    url.searchParams.get("time") ||
-    currentTimeHHMM();
-
-  const limit =
-    clamp(Number(url.searchParams.get("limit") || 20), 1, 80);
+  const date = url.searchParams.get("date") || localDateYYYYMMDD();
+  const time = url.searchParams.get("time") || currentTimeHHMM();
+  const limit = clamp(Number(url.searchParams.get("limit") || 20), 1, 80);
 
   if (!stationName) {
     return json({ error: "Brak parametru station" }, 400);
@@ -49,19 +49,36 @@ export async function onRequestGet(context) {
     const stationsDictionaryUrl =
       `${PLK_BASE}/dictionaries/stations?pageSize=100000`;
 
-    const responses = await Promise.all([
-      getJsonWithMeta(stationSchedulesUrl, headers),
-      getJsonWithMeta(fullSchedulesUrl, headers),
-      getJsonWithMeta(operationsUrl, headers),
-      getJsonWithMeta(stationsDictionaryUrl, headers)
+    const [
+      stationSchedulesResult,
+      fullSchedulesResult,
+      operationsResult,
+      stationsDictionaryResult
+    ] = await Promise.all([
+      getJsonCached(stationSchedulesUrl, headers, CACHE_TTL.STATION_SCHEDULES),
+      getJsonCached(fullSchedulesUrl, headers, CACHE_TTL.FULL_SCHEDULES),
+      getJsonCached(operationsUrl, headers, CACHE_TTL.OPERATIONS),
+      getJsonCached(stationsDictionaryUrl, headers, CACHE_TTL.STATIONS_DICTIONARY)
     ]);
 
-    const stationSchedulesRaw = responses[0].data;
-    const fullSchedulesRaw = responses[1].data;
-    const operationsRaw = responses[2].data;
-    const stationsDictionaryRaw = responses[3].data;
+    const stationSchedulesRaw = stationSchedulesResult.data;
+    const fullSchedulesRaw = fullSchedulesResult.data;
+    const operationsRaw = operationsResult.data;
+    const stationsDictionaryRaw = stationsDictionaryResult.data;
 
-    const apiLimits = mergeApiLimits(responses.map(r => r.apiLimits));
+    const apiLimits = mergeApiLimits([
+      stationSchedulesResult.apiLimits,
+      fullSchedulesResult.apiLimits,
+      operationsResult.apiLimits,
+      stationsDictionaryResult.apiLimits
+    ]);
+
+    const cache = {
+      stationSchedules: stationSchedulesResult.cache,
+      fullSchedules: fullSchedulesResult.cache,
+      operations: operationsResult.cache,
+      stationsDictionary: stationsDictionaryResult.cache
+    };
 
     const fullRoutesMap = buildFullRoutesMap(fullSchedulesRaw);
     const stationNames = buildStationNameMap(fullSchedulesRaw, stationsDictionaryRaw);
@@ -84,6 +101,7 @@ export async function onRequestGet(context) {
       timeFrom: time,
       limit,
       apiLimits,
+      cache,
       departures
     });
 
@@ -96,10 +114,10 @@ export async function onRequestGet(context) {
 }
 
 async function findStation(name, headers) {
-  const response = await getJsonWithMeta(
-    `${PLK_BASE}/dictionaries/stations?search=${encodeURIComponent(name)}&pageSize=20`,
-    headers
-  );
+  const url =
+    `${PLK_BASE}/dictionaries/stations?search=${encodeURIComponent(name)}&pageSize=20`;
+
+  const response = await getJsonCached(url, headers, CACHE_TTL.STATION_SEARCH);
 
   const data = response.data;
   const stations = extractArray(data);
@@ -114,6 +132,60 @@ async function findStation(name, headers) {
   return {
     id: found.id || found.stationId,
     name: found.name || found.stationName
+  };
+}
+
+async function getJsonCached(url, headers, ttlSeconds) {
+  const cache = caches.default;
+  const cacheKey = new Request("https://cache.local/" + btoa(url), {
+    method: "GET"
+  });
+
+  const cachedResponse = await cache.match(cacheKey);
+
+  if (cachedResponse) {
+    const cachedData = await cachedResponse.json();
+
+    return {
+      data: cachedData,
+      apiLimits: {
+        available: false,
+        limit: null,
+        remaining: null,
+        reset: null
+      },
+      cache: "HIT"
+    };
+  }
+
+  const result = await getJsonWithMeta(url, headers);
+
+  const responseForCache = new Response(JSON.stringify(result.data), {
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": `public, max-age=${ttlSeconds}`
+    }
+  });
+
+  await cache.put(cacheKey, responseForCache);
+
+  return {
+    ...result,
+    cache: "MISS"
+  };
+}
+
+async function getJsonWithMeta(url, headers) {
+  const res = await fetch(url, { headers });
+  const text = await res.text();
+
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status}: ${text.slice(0, 500)}`);
+  }
+
+  return {
+    data: JSON.parse(text),
+    apiLimits: readApiLimits(res.headers)
   };
 }
 
@@ -245,10 +317,7 @@ function buildFullRoutesMap(fullSchedulesRaw) {
 
   for (const route of routes) {
     const key = makeKey(route);
-
-    if (key) {
-      map.set(key, route);
-    }
+    if (key) map.set(key, route);
   }
 
   return map;
@@ -333,15 +402,9 @@ function getDeparturesFromTime(rows, time, limit) {
   }
 
   return rows
-    .map(row => {
-      return {
-        ...row,
-        _effectiveMinutes: effectiveMinutes(row)
-      };
-    })
+    .map(row => ({ ...row, _effectiveMinutes: effectiveMinutes(row) }))
     .filter(row => {
       if (row._effectiveMinutes === null) return false;
-
       return row._effectiveMinutes >= fromMinutes - 5;
     })
     .sort((a, b) => a._effectiveMinutes - b._effectiveMinutes)
@@ -359,6 +422,62 @@ function effectiveMinutes(row) {
   }
 
   return displayedMinutes;
+}
+
+function readApiLimits(headers) {
+  const limit =
+    headers.get("x-ratelimit-limit") ||
+    headers.get("ratelimit-limit") ||
+    headers.get("x-rate-limit-limit") ||
+    headers.get("x-ratelimit-hourly-limit") ||
+    headers.get("x-ratelimit-daily-limit");
+
+  const remaining =
+    headers.get("x-ratelimit-remaining") ||
+    headers.get("ratelimit-remaining") ||
+    headers.get("x-rate-limit-remaining") ||
+    headers.get("x-ratelimit-hourly-remaining") ||
+    headers.get("x-ratelimit-daily-remaining");
+
+  const reset =
+    headers.get("x-ratelimit-reset") ||
+    headers.get("ratelimit-reset") ||
+    headers.get("x-rate-limit-reset");
+
+  return {
+    available: Boolean(limit || remaining || reset),
+    limit: limit ?? null,
+    remaining: remaining ?? null,
+    reset: reset ?? null
+  };
+}
+
+function mergeApiLimits(items) {
+  const availableItems = items.filter(item => item && item.available);
+
+  if (!availableItems.length) {
+    return {
+      available: false,
+      limit: null,
+      remaining: null,
+      reset: null
+    };
+  }
+
+  const remainingValues = availableItems
+    .map(item => Number(item.remaining))
+    .filter(Number.isFinite);
+
+  const limitValues = availableItems
+    .map(item => Number(item.limit))
+    .filter(Number.isFinite);
+
+  return {
+    available: true,
+    limit: limitValues.length ? String(Math.max(...limitValues)) : availableItems[0].limit,
+    remaining: remainingValues.length ? String(Math.min(...remainingValues)) : availableItems[0].remaining,
+    reset: availableItems.find(item => item.reset)?.reset ?? null
+  };
 }
 
 function makeKey(x) {
@@ -420,76 +539,6 @@ function minutesFromTime(time) {
   if (!match) return null;
 
   return Number(match[1]) * 60 + Number(match[2]);
-}
-
-async function getJsonWithMeta(url, headers) {
-  const res = await fetch(url, { headers });
-  const text = await res.text();
-
-  if (!res.ok) {
-    throw new Error(`HTTP ${res.status}: ${text.slice(0, 500)}`);
-  }
-
-  return {
-    data: JSON.parse(text),
-    apiLimits: readApiLimits(res.headers)
-  };
-}
-
-function readApiLimits(headers) {
-  const limit =
-    headers.get("x-ratelimit-limit") ||
-    headers.get("ratelimit-limit") ||
-    headers.get("x-rate-limit-limit") ||
-    headers.get("x-ratelimit-hourly-limit") ||
-    headers.get("x-ratelimit-daily-limit");
-
-  const remaining =
-    headers.get("x-ratelimit-remaining") ||
-    headers.get("ratelimit-remaining") ||
-    headers.get("x-rate-limit-remaining") ||
-    headers.get("x-ratelimit-hourly-remaining") ||
-    headers.get("x-ratelimit-daily-remaining");
-
-  const reset =
-    headers.get("x-ratelimit-reset") ||
-    headers.get("ratelimit-reset") ||
-    headers.get("x-rate-limit-reset");
-
-  return {
-    available: Boolean(limit || remaining || reset),
-    limit: limit ?? null,
-    remaining: remaining ?? null,
-    reset: reset ?? null
-  };
-}
-
-function mergeApiLimits(items) {
-  const availableItems = items.filter(item => item && item.available);
-
-  if (!availableItems.length) {
-    return {
-      available: false,
-      limit: null,
-      remaining: null,
-      reset: null
-    };
-  }
-
-  const remainingValues = availableItems
-    .map(item => Number(item.remaining))
-    .filter(Number.isFinite);
-
-  const limitValues = availableItems
-    .map(item => Number(item.limit))
-    .filter(Number.isFinite);
-
-  return {
-    available: true,
-    limit: limitValues.length ? String(Math.max(...limitValues)) : availableItems[0].limit,
-    remaining: remainingValues.length ? String(Math.min(...remainingValues)) : availableItems[0].remaining,
-    reset: availableItems.find(item => item.reset)?.reset ?? null
-  };
 }
 
 function extractArray(data) {
