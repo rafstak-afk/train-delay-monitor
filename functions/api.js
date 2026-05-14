@@ -42,283 +42,235 @@ export async function onRequest(context) {
         const stopId = url.searchParams.get('stop') || '';
         if (!stopId) return json({ error: 'Brak stop' }, 400);
 
-        const nowMinutes = warsawMinutesNow();
+        const now = new Date();
+        const nowMin = now.getHours() * 60 + now.getMinutes();
 
-        // 1) Najpierw próbujemy SDIP, czyli realne/prognozowane odjazdy.
-        // Dla części stanowisk ten endpoint zwraca pustkę, więc niżej jest fallback do rozkładu planowego.
-        const sdipUrl = 'https://rj.transportgzm.pl/api/-/sdip/table/' + encodeURIComponent(stopId) + '/v2/';
+        function stripHtml(input) {
+          return String(input || '')
+            .replace(/<br\s*\/?\s*>/gi, ' ')
+            .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+            .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+            .replace(/<[^>]+>/g, ' ')
+            .replace(/&nbsp;/g, ' ')
+            .replace(/&amp;/g, '&')
+            .replace(/&quot;/g, '"')
+            .replace(/&#039;/g, "'")
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .replace(/\s+/g, ' ')
+            .trim();
+        }
 
+        function minutesFromHHMM(value) {
+          const m = String(value || '').match(/(\d{1,2}):(\d{2})/);
+          if (!m) return null;
+          return Number(m[1]) * 60 + Number(m[2]);
+        }
+
+        function normalizeDirection(value) {
+          return stripHtml(value).replace(/^Kierunek:\s*/i, '').trim();
+        }
+
+        function minutesLabel(diffMin, fallbackTime) {
+          if (diffMin === null || diffMin === undefined || Number.isNaN(diffMin)) return fallbackTime || '';
+          if (diffMin <= 0) return 'już!';
+          return diffMin + ' min';
+        }
+
+        function parseSdipHtml(html) {
+          const departures = [];
+          const rowRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
+          let rowMatch;
+
+          while ((rowMatch = rowRegex.exec(html)) !== null) {
+            const row = rowMatch[1];
+            const cells = [];
+            const cellRegex = /<td[^>]*>([\s\S]*?)<\/td>/gi;
+            let cellMatch;
+
+            while ((cellMatch = cellRegex.exec(row)) !== null) {
+              const text = stripHtml(cellMatch[1]);
+              if (text) cells.push(text);
+            }
+
+            if (cells.length >= 3) {
+              const line = stripHtml(cells[0]);
+              const direction = normalizeDirection(cells[1]);
+              const rawTime = stripHtml(cells[2]);
+              const plannedMatch = rawTime.match(/(\d{1,2}:\d{2})/);
+              const planned = plannedMatch ? plannedMatch[1] : '';
+              const actual = planned ? minutesFromHHMM(planned) : null;
+              const diffMin = actual === null ? null : actual - nowMin;
+
+              departures.push({
+                line,
+                direction,
+                headsign: direction,
+                planned,
+                actual,
+                diffMin,
+                delay: 0,
+                minutes: rawTime || minutesLabel(diffMin, planned),
+                timeType: 'RT',
+                source: 'sdip'
+              });
+            }
+          }
+
+          return departures
+            .filter(d => d.line && d.direction)
+            .slice(0, 12);
+        }
+
+        function parseScheduleHtml(html) {
+          const departures = [];
+          const rowRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
+          let rowMatch;
+
+          while ((rowMatch = rowRegex.exec(html)) !== null) {
+            const row = rowMatch[1];
+            const cells = [];
+            const cellRegex = /<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/gi;
+            let cellMatch;
+
+            while ((cellMatch = cellRegex.exec(row)) !== null) {
+              const text = stripHtml(cellMatch[1]);
+              if (text) cells.push(text);
+            }
+
+            if (cells.length < 3) continue;
+
+            const timeIndex = cells.findIndex(c => /\b\d{1,2}:\d{2}\b/.test(c));
+            if (timeIndex < 0) continue;
+
+            const timeMatch = cells[timeIndex].match(/\b(\d{1,2}:\d{2})\b/);
+            if (!timeMatch) continue;
+
+            const planned = timeMatch[1];
+            const actual = minutesFromHHMM(planned);
+            const diffMin = actual === null ? null : actual - nowMin;
+
+            // Nie pokazujemy starych kursów z rozkładu planowego.
+            if (diffMin !== null && diffMin < -10) continue;
+
+            const afterTime = cells.slice(timeIndex + 1).filter(Boolean);
+            let line = afterTime.find(c => /^[A-ZĄĆĘŁŃÓŚŹŻ]*\d{1,4}[A-ZĄĆĘŁŃÓŚŹŻ]*$/i.test(c)) || afterTime[0] || '';
+            let direction = afterTime.find(c => /^Kierunek:/i.test(c)) || afterTime.find(c => c !== line && !/^Pokaż/i.test(c)) || '';
+
+            line = stripHtml(line);
+            direction = normalizeDirection(direction);
+
+            if (!line || !direction) continue;
+
+            departures.push({
+              line,
+              direction,
+              headsign: direction,
+              planned,
+              actual,
+              diffMin,
+              delay: 0,
+              minutes: minutesLabel(diffMin, planned),
+              timeType: 'PLAN',
+              source: 'schedule-page'
+            });
+          }
+
+          return departures
+            .sort((a, b) => (a.actual ?? 99999) - (b.actual ?? 99999))
+            .slice(0, 12);
+        }
+
+        function extractUpdated(html) {
+          const m = String(html || '').match(/Aktualizacja danych:\s*([^<]+)/i);
+          if (m) return stripHtml(m[1]);
+          return new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        const debug = {
+          sdipStatus: null,
+          scheduleStatus: null,
+          sdipParsed: 0,
+          scheduleParsed: 0
+        };
+
+        // 1. Próba rzeczywistych odjazdów SDIP. Nigdy nie rzucamy 502 do frontu.
         try {
-          const sdipRes = await fetch(sdipUrl, {
+          const sdipUrl = 'https://rj.transportgzm.pl/api/-/sdip/table/' + encodeURIComponent(stopId) + '/v2/';
+          const res = await fetch(sdipUrl, {
             headers: {
               'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+              'User-Agent': 'Mozilla/5.0',
+              'Referer': 'https://rj.transportgzm.pl/',
               'HX-Request': 'true',
               'HX-Target': 'sdip-time-table-' + stopId,
-              'HX-Current-URL': 'https://rj.transportgzm.pl/v2/rozklady/przystanek/stop/' + encodeURIComponent(stopId) + '/',
-              'Referer': 'https://rj.transportgzm.pl/'
+              'HX-Current-URL': 'https://rj.transportgzm.pl/v2/rozklady/przystanek/stop/' + encodeURIComponent(stopId) + '/c/'
             }
           });
 
-          if (sdipRes.ok) {
-            const sdipHtml = await sdipRes.text();
-            const rtDepartures = parseSdipTableHtml(sdipHtml, nowMinutes);
-            const updated = extractUpdated(sdipHtml) || currentWarsawHHMM();
+          debug.sdipStatus = res.status;
+          const html = await res.text();
 
-            if (rtDepartures.length) {
+          if (res.ok) {
+            const departures = parseSdipHtml(html);
+            debug.sdipParsed = departures.length;
+
+            if (departures.length) {
               return json({
                 stopId,
-                updated,
+                updated: extractUpdated(html),
                 source: 'sdip',
                 timeType: 'RT',
-                departures: rtDepartures
+                departures,
+                debug
               });
             }
           }
         } catch (e) {
-          // Nie kończymy błędem. SDIP bywa pusty albo kapryśny, więc próbujemy rozkład planowy.
+          debug.sdipStatus = 'fetch-error: ' + e.message;
         }
 
-        // 2) Fallback: strona rozkładowa GZM, czyli planowe odjazdy.
-        // To obsługuje takie przypadki jak Wielowieś Centrum Przesiadkowe, gdzie SDIP jest pusty,
-        // ale normalny rozkład HTML istnieje.
-        const scheduleUrl = 'https://rj.transportgzm.pl/v2/rozklady/przystanek/stop/' + encodeURIComponent(stopId) + '/c/';
-        const scheduleRes = await fetch(scheduleUrl, {
-          headers: {
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-            'Referer': 'https://rj.transportgzm.pl/'
+        // 2. Fallback: zwykła strona rozkładowa GZM. To są dane PLAN, nie RT.
+        try {
+          const scheduleUrl = 'https://rj.transportgzm.pl/v2/rozklady/przystanek/stop/' + encodeURIComponent(stopId) + '/c/';
+          const res = await fetch(scheduleUrl, {
+            headers: {
+              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+              'User-Agent': 'Mozilla/5.0',
+              'Referer': 'https://rj.transportgzm.pl/'
+            }
+          });
+
+          debug.scheduleStatus = res.status;
+          const html = await res.text();
+
+          if (res.ok) {
+            const departures = parseScheduleHtml(html);
+            debug.scheduleParsed = departures.length;
+
+            return json({
+              stopId,
+              updated: new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' }),
+              source: 'schedule-page',
+              timeType: 'PLAN',
+              departures,
+              debug
+            });
           }
-        });
-
-        const scheduleHtml = await scheduleRes.text();
-
-        if (!scheduleRes.ok) {
-          return json({
-            stopId,
-            updated: currentWarsawHHMM(),
-            source: 'schedule-page',
-            timeType: 'PLAN',
-            error: 'GZM schedule HTTP ' + scheduleRes.status,
-            body: scheduleHtml.slice(0, 500),
-            departures: []
-          }, 502);
+        } catch (e) {
+          debug.scheduleStatus = 'fetch-error: ' + e.message;
         }
 
-        const planDepartures = parseSchedulePageHtml(scheduleHtml, nowMinutes);
-
+        // 3. Nawet jeśli oba źródła padną, frontend dostaje 200 z pustą tablicą i diagnostyką, nie HTTP 502.
         return json({
           stopId,
-          updated: currentWarsawHHMM(),
-          source: 'schedule-page',
-          timeType: 'PLAN',
-          departures: planDepartures
+          updated: new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' }),
+          source: 'none',
+          timeType: 'NONE',
+          departures: [],
+          error: 'Nie udało się pobrać danych SDIP ani rozkładu planowego',
+          debug
         });
-      }
-
-      function parseSdipTableHtml(html, nowMinutes) {
-        const departures = [];
-        const rows = html.match(/<tr[\s\S]*?<\/tr>/gi) || [];
-
-        for (const row of rows) {
-          const cells = extractCells(row);
-          if (cells.length < 3) continue;
-
-          // SDIP najczęściej ma: Linia | Kierunek / ostatni przystanek | Odjazd
-          const line = cells[0];
-          const direction = cleanDirection(cells[1]);
-          const rawDeparture = cells[2];
-
-          if (!line || !direction) continue;
-          if (/linia/i.test(line) || /kierunek/i.test(direction)) continue;
-
-          const parsed = parseDepartureValue(rawDeparture, nowMinutes);
-
-          departures.push({
-            line,
-            direction,
-            headsign: direction,
-            planned: parsed.time || rawDeparture,
-            actual: parsed.minutesOfDay,
-            diffMin: parsed.diffMin,
-            delay: 0,
-            minutes: parsed.label,
-            timeType: 'RT',
-            source: 'sdip'
-          });
-        }
-
-        return departures.slice(0, 20);
-      }
-
-      function parseSchedulePageHtml(html, nowMinutes) {
-        const departures = [];
-        const rows = html.match(/<tr[\s\S]*?<\/tr>/gi) || [];
-
-        for (const row of rows) {
-          const cells = extractCells(row);
-          if (cells.length < 3) continue;
-
-          // Strona rozkładowa ma zwykle: Godzina odjazdu | Linia | Kierunek / ostatni przystanek dla kursu
-          const timeCandidate = cells.find(c => /^\d{1,2}:\d{2}$/.test(c));
-          if (!timeCandidate) continue;
-
-          const timeIndex = cells.indexOf(timeCandidate);
-          const line = cells[timeIndex + 1] || '';
-          const rawDirection = cells[timeIndex + 2] || '';
-
-          if (!line || !rawDirection) continue;
-          if (/linia/i.test(line) || /kierunek/i.test(rawDirection)) continue;
-
-          const direction = cleanDirection(rawDirection);
-          const plannedMinutes = minutesFromHHMM(timeCandidate);
-          if (plannedMinutes === null) continue;
-
-          let diffMin = plannedMinutes - nowMinutes;
-          if (diffMin < -180) diffMin += 1440;
-          if (diffMin < -5) continue;
-
-          departures.push({
-            line: stripHtml(line),
-            direction,
-            headsign: direction,
-            planned: normalizeHHMM(timeCandidate),
-            actual: plannedMinutes,
-            diffMin,
-            delay: 0,
-            minutes: diffMin <= 0 ? 'już!' : diffMin + ' min',
-            timeType: 'PLAN',
-            source: 'schedule-page'
-          });
-        }
-
-        return departures
-          .sort((a, b) => a.diffMin - b.diffMin)
-          .slice(0, 20);
-      }
-
-      function extractCells(rowHtml) {
-        const cells = [];
-        const cellRegex = /<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/gi;
-        let match;
-
-        while ((match = cellRegex.exec(rowHtml)) !== null) {
-          const cleaned = stripHtml(match[1]);
-          if (cleaned) cells.push(cleaned);
-        }
-
-        return cells;
-      }
-
-      function stripHtml(value) {
-        return String(value || '')
-          .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-          .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-          .replace(/<br\s*\/?\s*>/gi, ' ')
-          .replace(/<[^>]+>/g, ' ')
-          .replace(/&nbsp;/gi, ' ')
-          .replace(/&amp;/gi, '&')
-          .replace(/&quot;/gi, '"')
-          .replace(/&#039;/gi, "'")
-          .replace(/\s+/g, ' ')
-          .trim();
-      }
-
-      function cleanDirection(value) {
-        return stripHtml(value)
-          .replace(/^Kierunek:\s*/i, '')
-          .replace(/^kierunek\s*/i, '')
-          .trim();
-      }
-
-      function parseDepartureValue(value, nowMinutes) {
-        const text = stripHtml(value).toLowerCase();
-
-        if (/już|teraz|odjeżdża/.test(text)) {
-          return {
-            time: currentWarsawHHMM(),
-            minutesOfDay: nowMinutes,
-            diffMin: 0,
-            label: 'już!'
-          };
-        }
-
-        const minMatch = text.match(/(-?\d+)\s*min/);
-        if (minMatch) {
-          const diff = Number(minMatch[1]);
-          const minutesOfDay = (nowMinutes + diff + 1440) % 1440;
-          return {
-            time: hhmmFromMinutes(minutesOfDay),
-            minutesOfDay,
-            diffMin: diff,
-            label: diff <= 0 ? 'już!' : diff + ' min'
-          };
-        }
-
-        const timeMatch = text.match(/(\d{1,2}:\d{2})/);
-        if (timeMatch) {
-          const minutesOfDay = minutesFromHHMM(timeMatch[1]);
-          let diff = minutesOfDay - nowMinutes;
-          if (diff < -180) diff += 1440;
-          return {
-            time: normalizeHHMM(timeMatch[1]),
-            minutesOfDay,
-            diffMin: diff,
-            label: diff <= 0 ? 'już!' : diff + ' min'
-          };
-        }
-
-        return {
-          time: text,
-          minutesOfDay: null,
-          diffMin: 9999,
-          label: text
-        };
-      }
-
-      function minutesFromHHMM(value) {
-        const match = String(value || '').match(/(\d{1,2}):(\d{2})/);
-        if (!match) return null;
-        return Number(match[1]) * 60 + Number(match[2]);
-      }
-
-      function normalizeHHMM(value) {
-        const match = String(value || '').match(/(\d{1,2}):(\d{2})/);
-        if (!match) return '';
-        return String(Number(match[1])).padStart(2, '0') + ':' + match[2];
-      }
-
-      function hhmmFromMinutes(minutes) {
-        const safe = ((Number(minutes) || 0) + 1440) % 1440;
-        return String(Math.floor(safe / 60)).padStart(2, '0') + ':' + String(safe % 60).padStart(2, '0');
-      }
-
-      function warsawMinutesNow() {
-        const parts = new Intl.DateTimeFormat('pl-PL', {
-          timeZone: 'Europe/Warsaw',
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false
-        }).formatToParts(new Date());
-
-        const hour = Number(parts.find(p => p.type === 'hour')?.value || 0);
-        const minute = Number(parts.find(p => p.type === 'minute')?.value || 0);
-        return hour * 60 + minute;
-      }
-
-      function currentWarsawHHMM() {
-        return new Intl.DateTimeFormat('pl-PL', {
-          timeZone: 'Europe/Warsaw',
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false
-        }).format(new Date());
-      }
-
-      function extractUpdated(html) {
-        const text = stripHtml(html);
-        const match = text.match(/Aktualizacja danych:\s*([0-9:.\s-]+)/i);
-        return match ? match[1].trim() : '';
       }
 
 
