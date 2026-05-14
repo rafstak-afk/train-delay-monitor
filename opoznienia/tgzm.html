@@ -149,6 +149,36 @@
       font-family: var(--mono);
       padding: 0.5rem 0.6rem;
     }
+    .time-main {
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 700;
+      color: #e8e8e8;
+    }
+    .time-sub {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: #777;
+      margin-top: 1px;
+    }
+    .time-kind {
+      display: inline-block;
+      margin-left: 4px;
+      padding: 1px 4px;
+      border-radius: 4px;
+      font-family: var(--mono);
+      font-size: 9px;
+      font-weight: 700;
+      vertical-align: 1px;
+    }
+    .time-kind.rt {
+      background: #e53935;
+      color: #fff;
+    }
+    .time-kind.plan {
+      background: #333;
+      color: #aaa;
+    }
   </style>
 </head>
 <body>
@@ -297,11 +327,19 @@
         departures.forEach(d => {
           const row = document.createElement('div');
           row.className = 'dep-row';
+          const ti = timeInfo(d);
+          const diffStr = d.minutes || (Number(d.diffMin) <= 0 ? 'już!' : d.diffMin + ' min');
+          const diffCls = Number(d.diffMin) <= 2 ? 'dep-soon' : Number(d.diffMin) <= 5 ? 'dep-warn' : 'dep-ok';
+
           row.innerHTML = `
             <div class="line-badge" style="${lineBadgeStyle(String(d.line || ''))}">${escapeHtml(d.line || '')}</div>
-            <div class="dep-direction">${escapeHtml(d.direction || '')}</div>
+            <div class="dep-direction">${escapeHtml(d.direction || d.headsign || '')}</div>
             <div class="dep-time">
-              <div class="dep-plan">${escapeHtml(d.minutes || '')}</div>
+              <div class="time-main">
+                ${escapeHtml(ti.main)}<span class="time-kind ${ti.labelClass}">${ti.label}</span>
+              </div>
+              ${ti.showPlanned ? `<div class="time-sub">plan ${escapeHtml(ti.planned)}</div>` : ''}
+              <div class="${diffCls}">${escapeHtml(diffStr)}</div>
             </div>
           `;
           block.appendChild(row);
@@ -333,7 +371,40 @@
     }
   });
 
-    function lineBadgeStyle(line) {
+    function minutesFromHHMM(value) {
+    const match = String(value || '').match(/(\d{1,2}):(\d{2})/);
+    if (!match) return null;
+    return Number(match[1]) * 60 + Number(match[2]);
+  }
+
+  function hhmmFromMinutes(value) {
+    const minutes = Number(value);
+    if (!Number.isFinite(minutes)) return '';
+    const normalized = ((minutes % 1440) + 1440) % 1440;
+    const hh = String(Math.floor(normalized / 60)).padStart(2, '0');
+    const mm = String(normalized % 60).padStart(2, '0');
+    return hh + ':' + mm;
+  }
+
+  function timeInfo(d) {
+    const planned = String(d.planned || '').slice(0, 5);
+    const plannedMinutes = minutesFromHHMM(planned);
+    const actualMinutes = Number(d.actual);
+    const hasActual = Number.isFinite(actualMinutes);
+    const actualText = hasActual ? hhmmFromMinutes(actualMinutes) : planned;
+    const delay = Number(d.delay || 0);
+    const isRealtime = hasActual && plannedMinutes !== null && (actualMinutes !== plannedMinutes || delay !== 0);
+
+    return {
+      main: actualText || planned || '',
+      planned,
+      label: isRealtime ? 'RT' : 'PLAN',
+      labelClass: isRealtime ? 'rt' : 'plan',
+      showPlanned: isRealtime && planned && planned !== actualText
+    };
+  }
+
+  function lineBadgeStyle(line) {
     // Kolory dla konkretnych linii
     const colors = {
       '3':   ['#e53935','#fff'],
@@ -394,14 +465,18 @@
           deps.forEach(d => {
             const row = document.createElement('div');
             row.className = 'dep-row';
-            const diffStr = d.diffMin <= 0 ? 'już!' : d.diffMin + ' min';
+            const diffStr = d.minutes || (d.diffMin <= 0 ? 'już!' : d.diffMin + ' min');
             const diffCls = d.diffMin <= 2 ? 'dep-soon' : d.diffMin <= 5 ? 'dep-warn' : 'dep-ok';
+            const ti = timeInfo(d);
             row.innerHTML = `
-              <div class="line-badge" style="${lineBadgeStyle(d.line)}">${d.line}</div>
-              <div class="dep-direction">${d.headsign}</div>
+              <div class="line-badge" style="${lineBadgeStyle(String(d.line || ''))}">${escapeHtml(d.line || '')}</div>
+              <div class="dep-direction">${escapeHtml(d.headsign || d.direction || '')}</div>
               <div class="dep-time">
-                <div class="dep-plan">${d.planned}</div>
-                <div class="${diffCls}">${diffStr}</div>
+                <div class="time-main">
+                  ${escapeHtml(ti.main)}<span class="time-kind ${ti.labelClass}">${ti.label}</span>
+                </div>
+                ${ti.showPlanned ? `<div class="time-sub">plan ${escapeHtml(ti.planned)}</div>` : ''}
+                <div class="${diffCls}">${escapeHtml(diffStr)}</div>
               </div>`;
             block.appendChild(row);
           });
