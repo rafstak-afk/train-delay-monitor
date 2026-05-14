@@ -1,1 +1,348 @@
-<!doctype html><html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Opóźnienia</title><style>body{margin:0;background:#101820;color:#fff;font-family:Arial,sans-serif}.topbar{height:52px;display:flex;align-items:center;gap:12px;padding:0 14px;background:#1c2833;border-bottom:1px solid #34495e}.topbar a{color:#fff;text-decoration:none;font-weight:700}iframe{width:100vw;height:calc(100vh - 53px);border:0;display:block;background:white}</style></head><body><div class="topbar"><a href="/">← Tablica odjazdów</a><strong>🚦 Opóźnienia</strong></div><iframe src="https://rafstak-afk.github.io/opoznienia/"></iframe></body></html>
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Opóźnienia">
+  <title>Opóźnienia pociągów</title>
+  <!-- v3 -->
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #f7f5f0; --surface: #ffffff;
+      --border: rgba(0,0,0,0.08); --border2: rgba(0,0,0,0.14);
+      --text: #1a1a18; --text2: #6b6b66; --text3: #a0a09a;
+      --accent: #b8860b; --red: #c0392b; --green-border: #4caf50;
+      --mono: 'DM Mono', monospace; --sans: 'DM Sans', sans-serif;
+    }
+    body { font-family: var(--sans); background: var(--bg); color: var(--text); min-height: 100vh; }
+    header {
+      padding: 2.5rem 1.25rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem;
+      position: sticky; top: 0; background: var(--bg); z-index: 10;
+    }
+    .header-left h1 { font-size: 20px; font-weight: 600; letter-spacing: -0.3px; }
+    .header-left p  { font-size: 12px; color: var(--text3); margin-top: 2px; font-family: var(--mono); }
+    .refresh-btn {
+      background: var(--surface); border: 1px solid var(--border2); border-radius: 8px;
+      color: var(--text); font-family: var(--sans); font-size: 13px;
+      padding: 0.5rem 0.875rem; cursor: pointer;
+      display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .spin { display: inline-block; }
+    .toggles-bar {
+      display: flex; gap: 1rem; flex-wrap: wrap;
+      padding: 0.6rem 1.25rem; border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .toggle-wrap { display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text); font-family:var(--sans); flex-shrink:0; }
+    .toggle { position:relative; width:40px; height:22px; flex-shrink:0; }
+    .toggle input { opacity:0; width:0; height:0; }
+    .toggle-slider {
+      position:absolute; inset:0; background:var(--border2); border-radius:22px;
+      cursor:pointer; transition:background 0.2s;
+    }
+    .toggle-slider:before {
+      content:''; position:absolute; width:16px; height:16px; left:3px; top:3px;
+      background:#fff; border-radius:50%; transition:transform 0.2s;
+    }
+    .toggle input:checked + .toggle-slider { background:var(--green-border, #4caf50); }
+    .toggle input:checked + .toggle-slider:before { transform:translateX(18px); }
+    .loading .spin { animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .container { padding: 0 1rem 2rem; max-width: 700px; margin: 0 auto; }
+    .station-block { margin-top: 1.5rem; }
+    .station-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.5rem 0; margin-bottom: 0.5rem; border-bottom: 1px solid var(--border);
+    }
+    .station-name  { font-size: 15px; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: 0.05em; font-family: var(--sans); }
+    .station-count { font-size: 11px; font-family: var(--mono); color: var(--text3); }
+    .train-row {
+      background: var(--surface); border: 0.5px solid var(--border); border-radius: 10px;
+      padding: 0.75rem 0.875rem; margin-bottom: 6px;
+    }
+    .train-row.cancel { animation: pulse-cancel 2.5s ease-in-out infinite; }
+    @keyframes pulse-cancel {
+      0%   { background: rgba(192,57,43,0.04); border-color: rgba(192,57,43,0.15); }
+      50%  { background: rgba(192,57,43,0.11); border-color: rgba(192,57,43,0.35); }
+      100% { background: rgba(192,57,43,0.04); border-color: rgba(192,57,43,0.15); }
+    }
+    .train-row.big { animation: pulse-big 2.5s ease-in-out infinite; }
+    .train-row.tracked {
+      background: #e8f8e8; border-color: #4caf50;
+    }
+    .train-row.tracked .train-nm { font-weight: 700; }
+    .train-row.tracked .relation { font-weight: 700; }
+    @keyframes pulse-big {
+      0%   { background: rgba(255,200,0,0.06); border-color: rgba(200,150,0,0.15); }
+      50%  { background: rgba(255,200,0,0.18); border-color: rgba(200,150,0,0.40); }
+      100% { background: rgba(255,200,0,0.06); border-color: rgba(200,150,0,0.15); }
+    }
+    .train-top { display: grid; grid-template-columns: 56px 1fr auto; gap: 0 12px; align-items: start; }
+    .delay { font-family: var(--mono); font-size: 15px; font-weight: 500; color: var(--accent); text-align: right; padding-top: 1px; }
+    .delay.big    { color: var(--red); }
+    .delay.cancel { color: var(--red); font-size: 11px; line-height: 1.3; }
+    .train-info { min-width: 0; }
+    .train-nm   { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .train-carrier { font-size: 11px; color: var(--text2); font-family: var(--mono); margin-top: 1px; }
+    .train-time { text-align: right; flex-shrink: 0; }
+    .t-plan   { font-family: var(--mono); font-size: 14px; font-weight: 500; }
+    .t-act    { font-family: var(--mono); font-size: 11px; color: var(--red); margin-top: 1px; }
+    .t-cancel { font-family: var(--mono); font-size: 11px; color: var(--red); }
+    .train-route {
+      margin-top: 6px; padding-top: 6px;
+      border-top: 0.5px solid var(--border);
+      font-size: 11px; color: var(--text2);
+      font-family: var(--mono); line-height: 1.5;
+    }
+    .train-route .relation { color: var(--text); font-weight: 500; }
+    .empty { text-align: center; padding: 3rem 1rem; color: var(--text3); font-size: 13px; font-family: var(--mono); }
+    .err   { background: rgba(192,57,43,0.06); border: 1px solid rgba(192,57,43,0.2); border-radius: 10px; padding: 1rem; font-size: 13px; color: var(--red); margin-top: 1.5rem; font-family: var(--mono); line-height: 1.6; }
+    .updated { font-size: 11px; font-family: var(--mono); color: var(--text3); text-align: center; margin-top: 1.5rem; }
+    #spinner { text-align: center; padding: 3rem 1rem; color: var(--text3); font-family: var(--mono); font-size: 13px; }
+    .station-link { text-decoration: none; color: inherit; }
+    .station-link:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+<header>
+  <div class="header-left">
+    <h1>Opóźnienia pociągów</h1>
+    <p>dane real-time · PLK API · <span id='limit-info'>limit: …</span></p>
+  </div>
+</header>
+<div class="toggles-bar" style="justify-content:flex-end;">
+  <button class="refresh-btn" onclick="location.href='tgzm.html'">🚌 TGZM</button>
+  <button class="refresh-btn" onclick="location.href='sledzone.html'">★ Śledzone</button>
+  <button class="refresh-btn" onclick="location.href='moje.html'">★ Monitor</button>
+  <button class="refresh-btn" id="rbtn" onclick="load()"><span class="spin">↻</span> Odśwież</button>
+</div>
+<div class="toggles-bar">
+  <label class="toggle-wrap">
+    <span id="toggle-label">Śledzone: wł</span>
+    <label class="toggle">
+      <input type="checkbox" id="tracked-toggle" checked onchange="onToggle()">
+      <span class="toggle-slider"></span>
+    </label>
+  </label>
+  <label class="toggle-wrap">
+    <span id="small-label">Małe opóźnienia: wł</span>
+    <label class="toggle">
+      <input type="checkbox" id="small-toggle" checked onchange="onSmallToggle()">
+      <span class="toggle-slider"></span>
+    </label>
+  </label>
+</div>
+<div class="container">
+  <div id="spinner">Pobieram dane…</div>
+  <div id="content"></div>
+  <div class="updated" id="upd"></div>
+</div>
+<script>
+  const STATIONS = [
+    { id: 71001, name: 'Tarnowskie Góry' },
+    { id: 72306, name: 'Bytom' },
+    { id: 73106, name: 'Chorzów Batory' },
+    { id: 73312, name: 'Katowice' },
+    { id: 69708, name: 'Gliwice' },
+    { id: 71407, name: 'Lubliniec' },
+    { id: 80416, name: 'Kraków Główny' },
+    { id: 75309, name: 'Zawiercie' },
+    { id: 62653, name: 'Częstochowa' },
+  ];
+
+  const IDS   = STATIONS.map(s => s.id).join(',');
+  const NAMES = STATIONS.map(s => s.name).join('|');
+
+  function getTracked() {
+    try { return JSON.parse(localStorage.getItem('tracked') || '[]'); }
+    catch { return []; }
+  }
+
+  function getShowSmall() {
+    try { return localStorage.getItem('showSmall') !== 'false'; }
+    catch { return true; }
+  }
+
+  function onSmallToggle() {
+    const cb = document.getElementById('small-toggle');
+    localStorage.setItem('showSmall', cb.checked ? 'true' : 'false');
+    document.getElementById('small-label').textContent = cb.checked ? 'Małe opóźnienia: wł' : 'Małe opóźnienia: wył';
+    load();
+  }
+
+  function getShowTracked() {
+    try { return localStorage.getItem('showTracked') !== 'false'; }
+    catch { return true; }
+  }
+
+  function onToggle() {
+    const cb = document.getElementById('tracked-toggle');
+    localStorage.setItem('showTracked', cb.checked ? 'true' : 'false');
+    document.getElementById('toggle-label').textContent = cb.checked ? 'Śledzone: wł' : 'Śledzone: wył';
+    load();
+  }
+
+  function fmtTime(val) {
+    if (!val) return '';
+    if (/^\d{2}:\d{2}/.test(val)) return val.slice(0, 5);
+    try {
+      const d = new Date(val);
+      return isNaN(d) ? val : d.toLocaleTimeString('pl-PL', {hour:'2-digit', minute:'2-digit'});
+    } catch { return val; }
+  }
+
+  function isStillRelevant(plannedTime, delay, actualTime) {
+    if (!plannedTime) return true;
+    try {
+      const todayWarsaw = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Warsaw' });
+      const dateStr = (actualTime || plannedTime);
+      if (dateStr && dateStr.includes('T')) {
+        const recDate = dateStr.slice(0, 10);
+        if (recDate < todayWarsaw) return false;
+      }
+      return true;
+    } catch { return true; }
+  }
+
+  async function load() {
+    const btn = document.getElementById('rbtn');
+    btn.classList.add('loading');
+    document.getElementById('spinner').style.display = 'block';
+    document.getElementById('content').innerHTML = '';
+    document.getElementById('upd').textContent = '';
+
+    try {
+      const tracked = getTracked();
+      const trackedNums = tracked.map(t => t.number).join(',');
+      const [res, limitRes] = await Promise.all([
+        fetch('/api?action=delays&ids=' + IDS + '&names=' + encodeURIComponent(NAMES) + (trackedNums ? '&tracked=' + encodeURIComponent(trackedNums) : '')),
+        fetch('/api?action=limit')
+      ]);
+      // Aktualizuj info o limicie
+      try {
+        const ldata = await limitRes.json();
+        document.getElementById('limit-info').textContent =
+          'dzienny: ' + ldata.daily_remaining + '/' + ldata.daily_limit;
+      } catch(e) {}
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+
+      document.getElementById('spinner').style.display = 'none';
+      const content = document.getElementById('content');
+      let anyShown = false;
+
+      STATIONS.forEach(station => {
+        const st = data[station.id];
+
+        const trains = (st ? st.trains : []).filter(t => {
+          if (t.cancelled) return true;
+          const num = String(t.trainNumber);
+          if (num.length > 8 && !t.trainName && !t.catSymbol) return false;
+          // Śledzone pociągi pokazuj nawet punktualne (jeśli włączone)
+          const showTracked = getShowTracked();
+          const isTracked = showTracked && tracked.some(tr => String(tr.number) === String(t.trainNumber));
+          if (!isTracked && t.delay <= 0) return false;
+          // Ukryj małe opóźnienia (<5 min) jeśli wyłączone — ale odwołane zawsze pokazuj
+          if (!t.cancelled && !isTracked && t.delay > 0 && t.delay < 5 && !getShowSmall()) return false;
+          return isStillRelevant(t.plannedTime, t.delay, t.actualTime);
+        });
+        anyShown = true;
+        if (!trains.length) {
+          const block = document.createElement('div');
+          block.className = 'station-block';
+          block.innerHTML = `
+            <div class="station-header">
+              <div class="station-name"><a class="station-link" href="https://l.plk-sa.pl/${station.id}" target="_blank">${station.name}</a></div>
+            </div>
+            <div style="font-size:12px;color:var(--text3);font-family:var(--mono);padding:0.25rem 0 0.5rem;">🟢 Wszystkie pociągi na stacji punktualnie</div>`;
+          content.appendChild(block);
+          return;
+        }
+
+        const cancelCount = trains.filter(t => t.cancelled).length;
+        const delayCount  = trains.filter(t => !t.cancelled).length;
+        const parts = [];
+        if (cancelCount) parts.push(cancelCount + ' odwołanych');
+        if (delayCount)  parts.push(delayCount  + ' opóźnionych');
+
+        const block = document.createElement('div');
+        block.className = 'station-block';
+        block.innerHTML = `
+          <div class="station-header">
+            <div class="station-name"><a class="station-link" href="https://l.plk-sa.pl/${station.id}" target="_blank">${st.name}</a></div>
+            <div class="station-count">${parts.join(' · ')}</div>
+          </div>`;
+
+        trains.forEach(t => {
+          const tracked = getTracked();
+          const isTracked = tracked.some(tr => String(tr.number) === String(t.trainNumber));
+          const big  = !t.cancelled && t.delay >= 15;
+          const plan = fmtTime(t.plannedTime);
+          const act  = fmtTime(t.actualTime);
+          const trainLabel = [t.catSymbol, t.trainNumber, t.trainName].filter(Boolean).join(' ');
+          const relation = t.from && t.to ? t.from + ' → ' + t.to
+                         : t.to ? '→ ' + t.to : t.from ? t.from + ' →' : '';
+
+          const row = document.createElement('div');
+          row.className = 'train-row' + (t.cancelled ? ' cancel' : (isTracked && getShowTracked()) ? ' tracked' : big ? ' big' : '');
+          row.innerHTML = `
+            <div class="train-top">
+              <div class="delay${t.cancelled ? ' cancel' : big ? ' big' : ''}">
+                ${t.cancelled ? 'ODWOŁANY' : t.delay > 0 ? '+' + t.delay + "'" : isTracked ? '🟢' : '+' + t.delay + "'"}
+              </div>
+              <div class="train-info">
+                <div class="train-nm">${trainLabel || '—'}</div>
+                <div class="train-carrier">${t.carrierCode || ''}</div>
+              </div>
+              <div class="train-time">
+                <div class="t-plan${t.cancelled ? ' t-cancel' : ''}">${plan}</div>
+                ${!t.cancelled && act && act !== plan ? `<div class="t-act">${act}</div>` : ''}
+              </div>
+            </div>
+            ${relation ? `
+            <div class="train-route">
+              <div class="relation">${relation}</div>
+            </div>` : ''}`;
+          block.appendChild(row);
+        });
+
+        content.appendChild(block);
+      });
+
+      if (!anyShown)
+        content.innerHTML = '<div class="empty">🟢 Brak opóźnień i odwołań na wybranych stacjach</div>';
+
+      document.getElementById('upd').textContent =
+        'ostatnia aktualizacja: ' + new Date().toLocaleTimeString('pl-PL', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+
+    } catch(e) {
+      document.getElementById('spinner').style.display = 'none';
+      document.getElementById('content').innerHTML = `<div class="err">Błąd: ${e.message}</div>`;
+    }
+
+    btn.classList.remove('loading');
+  }
+
+  // Inicjuj stan przełącznika
+  const _scb = document.getElementById('small-toggle');
+  const _sshow = getShowSmall();
+  _scb.checked = _sshow;
+  document.getElementById('small-label').textContent = _sshow ? 'Małe opóźnienia: wł' : 'Małe opóźnienia: wył';
+
+  const _cb = document.getElementById('tracked-toggle');
+  const _show = getShowTracked();
+  _cb.checked = _show;
+  document.getElementById('toggle-label').textContent = _show ? 'Śledzone: wł' : 'Śledzone: wył';
+
+  load();
+  setInterval(load, 180000);
+</script>
+</body>
+</html>
