@@ -149,6 +149,21 @@
       font-family: var(--mono);
       padding: 0.5rem 0.6rem;
     }
+
+    .fallback-link {
+      display: inline-block;
+      margin-top: 0.35rem;
+      color: #ff9500;
+      text-decoration: underline;
+      font-family: var(--mono);
+      font-size: 11px;
+    }
+    .empty-note {
+      display: block;
+      color: #777;
+      margin-top: 0.25rem;
+      line-height: 1.35;
+    }
     .time-main {
       font-family: var(--mono);
       font-size: 12px;
@@ -319,7 +334,15 @@
         const departures = result.data.departures || [];
 
         if (!departures.length) {
-          block.innerHTML += `<div class="empty-stop">🟢 Brak nadchodzących odjazdów</div>`;
+          const gzmUrl = 'https://rj.transportgzm.pl/v2/rozklady/przystanek/stop/' + encodeURIComponent(result.st.id) + '/c/';
+          const errorText = result.data && result.data.error ? result.data.error : 'Brak danych w lokalnym źródle.';
+          block.innerHTML += `
+            <div class="empty-stop">
+              ⚠ Brak danych w naszej tablicy dla tego stanowiska.
+              <span class="empty-note">${escapeHtml(errorText)}</span>
+              <a class="fallback-link" href="${gzmUrl}" target="_blank" rel="noopener">Otwórz rozkład w SDIP / GZM</a>
+            </div>
+          `;
           grid.appendChild(block);
           return;
         }
@@ -460,7 +483,7 @@
           </div>`;
 
         if (!deps.length) {
-          block.innerHTML += `<div class="empty-stop">🟢 Brak nadchodzących odjazdów</div>`;
+          block.innerHTML += `<div class="empty-stop">⚠ Brak danych / brak nadchodzących odjazdów</div>`;
         } else {
           deps.forEach(d => {
             const row = document.createElement('div');
