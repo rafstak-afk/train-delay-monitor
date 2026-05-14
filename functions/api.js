@@ -41,49 +41,68 @@ export async function onRequest(context) {
       if (action === 'sdip') {
         const stopId = url.searchParams.get('stop') || '';
         if (!stopId) return json({ error: 'Brak stop' }, 400);
-        const res = await fetch('https://rj.transportgzm.pl/api/-/sdip/table/' + stopId + '/v2/', {
+
+        const target =
+          'https://rj.transportgzm.pl/api/-/sdip/table/' +
+          encodeURIComponent(stopId) +
+          '/v2/';
+
+        const res = await fetch(target, {
           headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-            'HX-Request': 'true',
-            'HX-Target': 'sdip-time-table-' + stopId,
-            'HX-Current-URL': 'https://rj.transportgzm.pl/v2/rozklady/przystanek/stop/' + stopId + '/',
-            'Referer': 'https://rj.transportgzm.pl/',
-          },
-          cf: {
-            tlsClientAuth: { enabled: false },
-            ssl: { rejectUnauthorized: false },
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'User-Agent': 'Mozilla/5.0',
+            'Referer': 'https://rj.transportgzm.pl/'
           }
         });
-        if (!res.ok) throw new Error('SDIP HTTP ' + res.status);
+
         const html = await res.text();
-        // Parsuj HTML - wyciągnij wiersze tabeli
+
+        if (!res.ok) {
+          return json({
+            error: 'SDIP HTTP',
+            status: res.status,
+            body: html.slice(0, 500)
+          }, 502);
+        }
+
         const departures = [];
-        // Szukaj wierszy tr z danymi
-        const rowRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
-        let rowMatch;
-        while ((rowMatch = rowRegex.exec(html)) !== null) {
-          const row = rowMatch[1];
+        const rowRegex = /<tr[^>]*>(.*?)<\/tr>/gis;
+        const tdRegex = /<td[^>]*>(.*?)<\/td>/gis;
+        let row;
+
+        while ((row = rowRegex.exec(html)) !== null) {
           const cells = [];
-          const cellRegex = /<td[^>]*>([\s\S]*?)<\/td>/gi;
-          let cellMatch;
-          while ((cellMatch = cellRegex.exec(row)) !== null) {
-            // Usuń tagi HTML z contentu
-            const text = cellMatch[1].replace(/<[^>]+>/g, '').trim();
-            if (text) cells.push(text);
+          let td;
+
+          while ((td = tdRegex.exec(row[1])) !== null) {
+            const clean = td[1]
+              .replace(/<br\s*\/?>/gi, ' ')
+              .replace(/<[^>]+>/g, ' ')
+              .replace(/&nbsp;/g, ' ')
+              .replace(/&amp;/g, '&')
+              .replace(/&lt;/g, '<')
+              .replace(/&gt;/g, '>')
+              .replace(/\s+/g, ' ')
+              .trim();
+
+            if (clean) cells.push(clean);
           }
+
           if (cells.length >= 3) {
             departures.push({
-              line:      cells[0],
+              line: cells[0],
               direction: cells[1],
-              minutes:   cells[2]
+              minutes: cells[2]
             });
           }
         }
-        // Wyciągnij czas aktualizacji
-        const updateMatch = html.match(/Aktualizacja danych:\s*([^<]+)/);
+
+        const updateMatch = html.match(/Aktualizacja danych:\s*([^<]+)/i);
         const updated = updateMatch ? updateMatch[1].trim() : '';
+
         return json({ stopId, updated, departures });
       }
+
 
 
       if (action === 'tgzm') {
