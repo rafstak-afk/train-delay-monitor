@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Przebieg pociągu</title>
+<style>
+body{margin:0;font-family:Arial,sans-serif;background:#101820;color:#fff;padding:18px}.wrap{max-width:960px;margin:0 auto}.top{display:flex;gap:10px;align-items:center;justify-content:space-between;margin-bottom:18px}.btn{border:0;border-radius:10px;padding:11px 14px;background:#0b57d0;color:#fff;font-weight:700;text-decoration:none;cursor:pointer}.panel{background:#1c2833;border:1px solid #34495e;border-radius:14px;padding:14px;margin-bottom:14px}.form{display:grid;grid-template-columns:1fr 1fr auto;gap:10px}.form input{padding:12px;border:0;border-radius:10px;font-size:16px}.green{background:#198754}.muted{opacity:.7}.err{background:#3b1d1d;border:1px solid #dc3545;color:#ffd6d6}.ok{color:#5dd39e;font-weight:700}.warn{color:#ffcc00;font-weight:700}table{width:100%;border-collapse:collapse}th,td{border-bottom:1px solid #34495e;padding:9px;text-align:left;vertical-align:top}th{background:#243447}.last{border:1px solid #5dd39e;background:#143326}@media(max-width:700px){body{padding:10px}.form{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}table,tbody,tr,td{display:block;width:100%}thead{display:none}tr{border:1px solid #34495e;border-radius:12px;margin-bottom:10px;padding:8px;background:#223244}td{border:0;padding:3px 0}td::before{content:attr(data-label) ': ';font-weight:700;opacity:.75}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><h1>🚆 Przebieg pociągu</h1><a class="btn" href="/">← Tablica</a></div>
+  <div class="panel form">
+    <input id="trainInput" placeholder="Wpisz numer pociągu" />
+    <input id="stationInput" placeholder="Stacja odniesienia, np. Tarnowskie Góry" />
+    <button class="btn green" onclick="loadTrain()">Pokaż z API</button>
+  </div>
+  <div id="status" class="panel muted">Kliknij numer pociągu na tablicy albo wpisz numer ręcznie.</div>
+  <div id="content"></div>
+</div>
+<script>
+const qs=new URLSearchParams(location.search);
+function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}
+function short(v){if(!v)return'';const m=String(v).match(/(\d{2}:\d{2})/);return m?m[1]:String(v)}
+function setStatus(t,cls='panel muted'){const el=document.getElementById('status');el.className=cls;el.textContent=t}
+function stationName(st,dict){return st.stationName||st.name||dict?.[st.stationId]||('ID '+st.stationId)}
+function opForStation(operation, st){if(!operation||!Array.isArray(operation.stations))return null;const seq=st.orderNumber??st.plannedSequenceNumber??st.actualSequenceNumber;return operation.stations.find(o=>String(o.stationId)===String(st.stationId) || (seq!=null && (o.plannedSequenceNumber==seq||o.actualSequenceNumber==seq)))||null}
+function isPassed(op){return !!(op&&(op.isConfirmed||op.actualArrival||op.actualDeparture))}
+function buildDebugUrl(){const p=new URLSearchParams();['date','scheduleId','orderId','trainOrderId'].forEach(k=>{if(qs.get(k))p.set(k,qs.get(k))});return '/api/debug-train?'+p.toString()}
+async function loadTrain(){document.activeElement&&document.activeElement.blur&&document.activeElement.blur();const train=document.getElementById('trainInput').value.trim();const station=document.getElementById('stationInput').value.trim();if(!train)return setStatus('Wpisz numer pociągu.', 'panel err');setStatus('Pobieram przebieg pociągu '+train+'...');try{let data=null;if(qs.get('scheduleId')&&qs.get('orderId')&&qs.get('trainOrderId')){const r=await fetch(buildDebugUrl(),{headers:{Accept:'application/json'}});data=await r.json();if(!r.ok)throw new Error(data.error||data.details||'HTTP '+r.status)}else{if(!station)throw new Error('Przy ręcznym wyszukiwaniu wpisz też stację odniesienia, żeby znaleźć właściwy kurs.');const today=new Date().toISOString().slice(0,10);const r=await fetch('/api/departures?'+new URLSearchParams({station,date:today,time:'00:00',limit:'100'}),{headers:{Accept:'application/json'}});const d=await r.json();const dep=(d.departures||[]).find(x=>String(x.train)===String(train));if(!dep)throw new Error('Nie znalazłem tego pociągu w odjazdach tej stacji. Otwórz przebieg przez kliknięcie numeru z tablicy.');location.href='/train.html?'+new URLSearchParams({train:dep.train,category:dep.category||'',name:dep.name||'',station,date:today,scheduleId:dep.scheduleId,orderId:dep.orderId,trainOrderId:dep.trainOrderId}).toString();return}render(data)}catch(e){setStatus('Błąd: '+e.message,'panel err')}}
+function render(data){const route=data.route||{};const operation=data.operation||{};const stations=Array.isArray(route.stations)?route.stations:[];const dict=data.stationNames||data.stationsDictionary||data.dictionaries?.stations||{};let lastIdx=-1;stations.forEach((st,i)=>{if(isPassed(opForStation(operation,st)))lastIdx=i});const last=lastIdx>=0?stations[lastIdx]:null;const title=[qs.get('category'),qs.get('train'),qs.get('name')].filter(Boolean).join(' ');let html='<div class="panel"><h2>'+esc(title||route.name||'Pociąg')+'</h2>';html+='<div class="muted">Stacja z kliknięcia: '+esc(qs.get('station')||'')+'</div>';if(last)html+='<p>Ostatnia zaliczona stacja: <span class="ok">'+esc(stationName(last,dict))+'</span></p>';else html+='<p class="warn">Brak potwierdzonej ostatniej stacji w danych operacyjnych.</p>';html+='</div>';if(!stations.length){html+='<div class="panel err">Backend nie zwrócił listy stacji trasy.</div>';content.innerHTML=html;return}html+='<div class="panel"><table><thead><tr><th>#</th><th>Stacja</th><th>Plan</th><th>Rzeczywisty</th><th>Status</th></tr></thead><tbody>';stations.forEach((st,i)=>{const op=opForStation(operation,st);const plan=short(st.departureTime||st.arrivalTime||op?.plannedDepartureTime||op?.plannedArrivalTime||op?.plannedDeparture||op?.plannedArrival);const actual=short(op?.actualDeparture||op?.actualArrival);const cls=i===lastIdx?' class="last"':'';html+='<tr'+cls+'><td data-label="#">'+esc(st.orderNumber??op?.plannedSequenceNumber??i+1)+'</td><td data-label="Stacja">'+esc(stationName(st,dict))+'</td><td data-label="Plan">'+esc(plan)+'</td><td data-label="Rzeczywisty">'+esc(actual||'-')+'</td><td data-label="Status">'+(isPassed(op)?'<span class="ok">zaliczona</span>':'<span class="muted">plan</span>')+'</td></tr>'});html+='</tbody></table></div>';content.innerHTML=html;setStatus('Załadowano przebieg pociągu.')} 
+document.addEventListener('DOMContentLoaded',()=>{trainInput.value=qs.get('train')||'';stationInput.value=qs.get('station')||'';if(trainInput.value)loadTrain()});
+</script>
+</body>
+</html>
