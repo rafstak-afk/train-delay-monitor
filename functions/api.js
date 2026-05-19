@@ -197,9 +197,13 @@ export async function onRequest(context) {
               const depStr = stopData.dep;
               const [dh, dm] = depStr.split(':').map(Number);
               const planMin = dh * 60 + dm;
-              const diff = planMin - nowMin;
-              if (diff < -2 || diff > 90) continue;
-              const key = tripData.line + '|' + tripData.headsign + '|' + planMin;
+              const delaySecRaw = delays[tripId] ? delays[tripId][Number(seqStr)] : undefined;
+              const hasRealtime = delaySecRaw !== undefined;
+              const delayMin = hasRealtime ? Math.round(Number(delaySecRaw || 0) / 60) : 0;
+              const actualMin = planMin + delayMin;
+              const actualDiff = actualMin - nowMin;
+              if (actualDiff < -2 || actualDiff > 90) continue;
+              const key = tripData.line + '|' + tripData.headsign + '|' + actualMin + '|' + delayMin;
               if (seen.has(key)) continue;
               seen.add(key);
               deps.push({
@@ -207,9 +211,11 @@ export async function onRequest(context) {
                 headsign: tripData.headsign,
                 planned: depStr,
                 platform: platMap[stopData.stop_id] || '?',
-                actual: planMin,
-                diffMin: diff,
-                delay: 0,
+                actual: actualMin,
+                diffMin: actualDiff,
+                delay: delayMin,
+                timeType: hasRealtime ? 'RT' : 'PLAN',
+                source: hasRealtime ? 'gtfs-rt' : 'gtfs-static',
               });
             }
           }
