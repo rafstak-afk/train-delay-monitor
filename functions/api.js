@@ -7,6 +7,58 @@ async function plkGet(path) {
   return res.json();
 }
 
+function arrifyPayload(data) {
+  if (Array.isArray(data)) return data;
+  return data?.trains || data?.items || data?.content || data?.data || data?.operations || [];
+}
+
+function trainNumberMatches(item, trainNo) {
+  const wanted = String(trainNo || '').trim();
+  if (!wanted) return false;
+  const candidates = [
+    item.trainNumber, item.commercialTrainNumber, item.nationalNumber, item.tn,
+    item.arrivalTrainNumber, item.departureTrainNumber, item.number, item.trainNo
+  ];
+  return candidates.some(v => String(v ?? '').trim() === wanted);
+}
+
+function pickTrainIds(item) {
+  return {
+    scheduleId: item.scheduleId ?? item.sid,
+    orderId: item.orderId ?? item.oid,
+    trainOrderId: item.trainOrderId ?? item.toid,
+    operatingDate: item.operatingDate ?? item.date ?? item.runDate
+  };
+}
+
+async function resolveTrainIdsFromOperations({ trainNo, stationId, operatingDate }) {
+  if (!trainNo) throw new Error('Brak numeru pociągu do resolvera');
+  if (!stationId) throw new Error('Brak stationId do resolvera pociągu');
+  const qs = new URLSearchParams({
+    stations: String(stationId),
+    withPlanned: 'true',
+    fullRoutes: 'false',
+    pageSize: '10000'
+  });
+  const data = await plkGet('/operations?' + qs.toString());
+  const trains = arrifyPayload(data);
+  const found = trains.find(t => trainNumberMatches(t, trainNo));
+  if (!found) {
+    throw new Error('Nie znaleziono pociągu ' + trainNo + ' dla stacji ' + stationId);
+  }
+  const ids = pickTrainIds(found);
+  if (!ids.scheduleId || !ids.orderId) {
+    throw new Error('Znaleziono pociąg, ale bez scheduleId/orderId');
+  }
+  return {
+    ...ids,
+    operatingDate: ids.operatingDate || operatingDate,
+    resolverSource: 'operations',
+    resolverStationId: stationId,
+    resolverMatchedTrain: found
+  };
+}
+
 const CORS = { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' };
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: CORS });
@@ -41,27 +93,55 @@ export async function onRequest(context) {
 
 
       if (action === 'train-route') {
-        const scheduleId = url.searchParams.get('scheduleId') || '';
-        const orderId = url.searchParams.get('orderId') || '';
-        const trainOrderId = url.searchParams.get('trainOrderId') || '';
+        let scheduleId = url.searchParams.get('scheduleId') || '';
+        let orderId = url.searchParams.get('orderId') || '';
+        let trainOrderId = url.searchParams.get('trainOrderId') || '';
         const train = url.searchParams.get('train') || '';
-        const operatingDate = url.searchParams.get('operatingDate') || url.searchParams.get('date') || new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Warsaw' });
-        if (!scheduleId || !orderId) return json({ error: 'Brak scheduleId lub orderId' }, 400);
+        const stationId = url.searchParams.get('stationId') || '';
+        const station = url.searchParams.get('station') || '';
+        let operatingDate = url.searchParams.get('operatingDate') || url.searchParams.get('date') || new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Warsaw' });
 
         const result = {
           ok: true,
           source: 'PDP API PLK',
           train,
+          stationId,
+          station,
           scheduleId,
           orderId,
           trainOrderId,
           operatingDate,
+          resolvedBy: scheduleId && orderId ? 'query-identifiers' : null,
           foundRoute: false,
           foundOperation: false,
           route: null,
           operation: null,
           errors: {}
         };
+
+        if (!scheduleId || !orderId) {
+          try {
+            const resolved = await resolveTrainIdsFromOperations({ trainNo: train, stationId, operatingDate });
+            scheduleId = String(resolved.scheduleId);
+            orderId = String(resolved.orderId);
+            trainOrderId = String(resolved.trainOrderId || trainOrderId || '');
+            operatingDate = String(resolved.operatingDate || operatingDate);
+            Object.assign(result, {
+              scheduleId, orderId, trainOrderId, operatingDate,
+              resolvedBy: resolved.resolverSource,
+              resolverStationId: resolved.resolverStationId,
+              resolverMatchedTrain: resolved.resolverMatchedTrain
+            });
+          } catch (e) {
+            return json({
+              ok: false,
+              error: 'Nie udało się ustalić scheduleId/orderId dla pociągu',
+              details: e.message,
+              hint: 'Najpewniejsze wejście: klik numer pociągu z tablicy, wtedy rekord niesie scheduleId i orderId. Alternatywnie podaj stationId, np. Katowice=33506 dla przykładu 3815.',
+              train, stationId, station, operatingDate
+            }, 400);
+          }
+        }
 
         try {
           const route = await plkGet('/schedules/route/' + encodeURIComponent(scheduleId) + '/' + encodeURIComponent(orderId));
