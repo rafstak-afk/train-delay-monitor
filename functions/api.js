@@ -38,6 +38,54 @@ export async function onRequest(context) {
         });
       }
 
+
+
+      if (action === 'train-route') {
+        const scheduleId = url.searchParams.get('scheduleId') || '';
+        const orderId = url.searchParams.get('orderId') || '';
+        const trainOrderId = url.searchParams.get('trainOrderId') || '';
+        const train = url.searchParams.get('train') || '';
+        const operatingDate = url.searchParams.get('operatingDate') || url.searchParams.get('date') || new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Warsaw' });
+        if (!scheduleId || !orderId) return json({ error: 'Brak scheduleId lub orderId' }, 400);
+
+        const result = {
+          ok: true,
+          source: 'PDP API PLK',
+          train,
+          scheduleId,
+          orderId,
+          trainOrderId,
+          operatingDate,
+          foundRoute: false,
+          foundOperation: false,
+          route: null,
+          operation: null,
+          errors: {}
+        };
+
+        try {
+          const route = await plkGet('/schedules/route/' + encodeURIComponent(scheduleId) + '/' + encodeURIComponent(orderId));
+          result.route = route.route || route;
+          result.foundRoute = true;
+          result.routeStationsCount = Array.isArray(result.route?.stations) ? result.route.stations.length : null;
+        } catch (e) {
+          result.errors.route = e.message;
+        }
+
+        try {
+          const operation = await plkGet('/operations/train/' + encodeURIComponent(scheduleId) + '/' + encodeURIComponent(orderId) + '/' + encodeURIComponent(operatingDate));
+          result.operation = operation.operation || operation;
+          result.foundOperation = true;
+          result.operationStationsCount = Array.isArray(result.operation?.stations) ? result.operation.stations.length : null;
+        } catch (e) {
+          result.errors.operation = e.message;
+        }
+
+        if (!result.foundRoute && !result.foundOperation) {
+          return json(result, 502);
+        }
+        return json(result);
+      }
       if (action === 'sdip') {
         const stopId = url.searchParams.get('stop') || '';
         if (!stopId) return json({ error: 'Brak stop' }, 400);
@@ -197,13 +245,9 @@ export async function onRequest(context) {
               const depStr = stopData.dep;
               const [dh, dm] = depStr.split(':').map(Number);
               const planMin = dh * 60 + dm;
-              const delaySecRaw = delays[tripId] ? delays[tripId][Number(seqStr)] : undefined;
-              const hasRealtime = delaySecRaw !== undefined;
-              const delayMin = hasRealtime ? Math.round(Number(delaySecRaw || 0) / 60) : 0;
-              const actualMin = planMin + delayMin;
-              const actualDiff = actualMin - nowMin;
-              if (actualDiff < -2 || actualDiff > 90) continue;
-              const key = tripData.line + '|' + tripData.headsign + '|' + actualMin + '|' + delayMin;
+              const diff = planMin - nowMin;
+              if (diff < -2 || diff > 90) continue;
+              const key = tripData.line + '|' + tripData.headsign + '|' + planMin;
               if (seen.has(key)) continue;
               seen.add(key);
               deps.push({
@@ -211,11 +255,9 @@ export async function onRequest(context) {
                 headsign: tripData.headsign,
                 planned: depStr,
                 platform: platMap[stopData.stop_id] || '?',
-                actual: actualMin,
-                diffMin: actualDiff,
-                delay: delayMin,
-                timeType: hasRealtime ? 'RT' : 'PLAN',
-                source: hasRealtime ? 'gtfs-rt' : 'gtfs-static',
+                actual: planMin,
+                diffMin: diff,
+                delay: 0,
               });
             }
           }
