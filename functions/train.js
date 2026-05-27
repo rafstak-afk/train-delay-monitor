@@ -1,71 +1,185 @@
-const HTML = "<!DOCTYPE html>\n<html lang=\"pl\">\n<head>\n<meta charset=\"UTF-8\" />\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n<title>Bieg pociągu</title>\n<style>\n:root{--bg:#101820;--panel:#1c2833;--panel2:#223244;--border:#34495e;--blue:#0b57d0;--green:#5dd39e;--yellow:#ffcc00;--red:#ff4d4d;--violet:#c084fc;--muted:rgba(255,255,255,.68);--dim:#b9c3cf;--cyan:#22d3ee}\n*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#fff;padding:24px}.container{max-width:1180px;margin:0 auto}h1{text-align:center;margin:8px 0 18px;font-size:34px}.top{display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap;margin-bottom:18px}.top input{padding:12px 14px;border:0;border-radius:10px;font-size:20px;min-width:260px}.btn{border:0;border-radius:10px;padding:13px 18px;background:var(--blue);color:#fff;font-weight:800;cursor:pointer;text-decoration:none;display:inline-block}.btn.secondary{background:#4b5563}.btn.green{background:#198754}.panel{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px;margin-top:14px}.muted{color:var(--muted)}.status{min-height:22px;text-align:center;color:var(--muted)}.summary{display:grid;grid-template-columns:1fr 1fr;gap:12px}.card{background:var(--panel2);border:1px solid var(--border);border-radius:12px;padding:14px}.label{font-size:15px;color:var(--muted);margin-bottom:4px}.big{font-size:24px;font-weight:900}.hint{font-size:14px;line-height:1.35;color:#d7e1ec;margin-top:8px}.ok{color:var(--green);font-weight:800}.warn{color:var(--yellow);font-weight:800}.err{background:#3b1d1d;border-color:#dc3545;color:#ffd6d6}.route{margin-top:12px}.route-note{font-size:14px;color:#d7e1ec;line-height:1.35;margin-bottom:12px}.row{display:grid;grid-template-columns:118px minmax(260px,1fr) 165px 110px 110px;gap:12px;align-items:center;padding:12px;border-bottom:1px solid rgba(255,255,255,.10)}.row:last-child{border-bottom:0}.row.future{opacity:.78}.row.current{background:rgba(255,204,0,.10);border-radius:10px}.row.next{background:rgba(34,211,238,.10);border-radius:10px}.station{font-size:20px;font-weight:900}.station-id{font-size:13px;color:var(--muted);margin-top:3px}.name-src{font-size:12px;color:#94a3b8;margin-top:2px}.badge{display:inline-block;border-radius:999px;padding:5px 10px;font-size:13px;font-weight:900;text-align:center}.badge.done{background:#14532d;color:#bbf7d0}.badge.current{background:var(--yellow);color:#102027}.badge.next{background:var(--cyan);color:#102027}.badge.plan{background:#374151;color:#e5e7eb}.badge.future{background:#334155;color:#dbeafe}.small{font-size:12px;color:var(--muted)}.copy{margin-left:8px;background:#374151;padding:8px 10px;font-size:12px}.time-one{font-size:20px;font-weight:900;color:var(--green)}.time-one.future-time{color:#cbd5e1}.time-plan{font-size:13px;color:#cbd5e1}.time-real{font-size:20px;font-weight:900}.delay-zero{color:var(--green);font-weight:900}.delay-low{color:var(--yellow);font-weight:900}.delay-mid{color:var(--red);font-weight:900}.delay-high{color:var(--violet);font-weight:900}.platform{font-size:18px;font-weight:800}.portal-link{word-break:break-all}\n@media(max-width:760px){body{padding:10px}h1{font-size:26px}.top{display:grid;grid-template-columns:1fr auto}.top input{min-width:0;width:100%;font-size:16px}.summary{grid-template-columns:1fr}.row{grid-template-columns:88px 1fr;gap:6px;padding:10px}.row .times,.row .delay,.row .platform-wrap{grid-column:2}.row .state{grid-column:1}.station{font-size:17px}.btn{padding:10px 12px}.copy{margin-left:0;margin-top:8px}}\n</style>\n</head>\n<body>\n<div class=\"container\">\n  <h1>🚆 Bieg pociągu</h1>\n  <div class=\"top\">\n    <input id=\"trainInput\" inputmode=\"numeric\" placeholder=\"Wpisz numer pociągu\" />\n    <button class=\"btn\" onclick=\"loadTrain()\">Pokaż</button>\n    <a class=\"btn secondary\" href=\"/\">← Tablica</a>\n  </div>\n  <div id=\"status\" class=\"status\">Wpisz numer albo kliknij pociąg z tablicy.</div>\n  <div id=\"content\"></div>\n</div>\n<script>\nfunction qs(name){return new URLSearchParams(location.search).get(name)||''}\nfunction esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('\"','&quot;').replaceAll(\"'\",'&#039;')}\nfunction shortTime(v){if(!v)return'';const m=String(v).match(/(\\d{2}:\\d{2})/);return m?m[1]:String(v)}\nfunction todayIso(){return new Date().toLocaleDateString('sv-SE',{timeZone:'Europe/Warsaw'})}\nfunction portalUrl(train){return 'https://portalpasazera.pl/ZnajdzPociag'}\nfunction detailsParams(){const p=new URLSearchParams();['date','scheduleId','scheduledId','orderId','trainOrderId','stationId','station','category','name','destination'].forEach(k=>{const v=qs(k);if(v)p.set(k,v)});return p}\nfunction setStatus(t){document.getElementById('status').textContent=t}\nfunction normalizeText(v){return String(v||'').replaceAll('+',' ').trim()}\nfunction timeToMin(t){const m=shortTime(t).match(/^(\\d{2}):(\\d{2})$/);return m?Number(m[1])*60+Number(m[2]):null}\nfunction delayMinutes(plan,real){const p=timeToMin(plan),r=timeToMin(real);if(p==null||r==null)return 0;let d=r-p;if(d<-720)d+=1440;if(d>720)d-=1440;return d}\nfunction delayClass(d){return d>=20?'delay-high':d>10?'delay-mid':d>0?'delay-low':'delay-zero'}\nfunction seqOf(s,i){return Number(s.orderNumber||s.plannedSequenceNumber||s.actualSequenceNumber||s.sequenceNumber||s.idx||i+1)}\nfunction getId(s){return String(s.stationId||s.stopId||s.id||'')}\nfunction getPlanned(s){return s.plannedDepartureTime||s.plannedArrivalTime||s.plannedDeparture||s.plannedArrival||s.departureTime||s.arrivalTime||''}\nfunction getActual(s){return s.actualDepartureTime||s.actualArrivalTime||s.actualDeparture||s.actualArrival||''}\nfunction getPlatform(s){return [s.departurePlatform||s.arrivalPlatform||s.platform,s.departureTrack||s.arrivalTrack||s.track].filter(Boolean).join(' / ')}\nfunction statusInfo(code){const m={P:['Kurs aktywny / w realizacji','Kod PLK: P. Pociąg jest w biegu albo w bieżącej obsłudze systemu.'],S:['Rozkładowy / bez potwierdzenia realizacji','Kod PLK: S. Dane wyglądają na rozkładowe, bez pewnego potwierdzenia bieżącej realizacji.'],R:['W ruchu','Kod PLK: R. Pociąg w ruchu.'],O:['Opóźniony','Kod PLK: O. Pociąg ma opóźnienie.'],Z:['Zakończony','Kod PLK: Z. Bieg zakończony.'],C:['Odwołany','Kod PLK: C. Kurs odwołany.'],X:['Odwołany','Kod PLK: X. Kurs odwołany.']};return m[code]||[code?('Kod statusu: '+code):'brak danych','Brak opisu tego kodu w lokalnym słowniku.']}\nfunction readName(v){if(!v)return'';if(typeof v==='string')return v;return v.name||v.stationName||v.stopName||v.shortName||v.displayName||v.label||''}\nfunction collectDictNames(data){const map={};const addObj=(src,source)=>{if(!src)return;if(Array.isArray(src)){src.forEach(x=>{const id=getId(x);const n=readName(x);if(id&&n)map[id]={name:n,source}});return}for(const [k,v] of Object.entries(src)){const n=readName(v);if(n)map[String(k)]={name:n,source}}};\n  addObj(data.stationNames,'słownik API: stationNames');addObj(data.stations,'słownik API: stations');addObj(data.dictionaries&&data.dictionaries.stations,'słownik API: dictionaries.stations');addObj(data.route&&data.route.stationNames,'słownik API: route.stationNames');addObj(data.operation&&data.operation.stationNames,'słownik API: operation.stationNames');\n  [...((data.route&&data.route.stations)||[]),...((data.operation&&data.operation.stations)||[])].forEach(s=>{const id=getId(s);const n=readName(s);if(id&&n)map[id]={name:n,source:'pole API przy stacji'}});\n  const sid=qs('stationId'), sn=normalizeText(qs('station'));if(sid&&sn)map[String(sid)]={name:sn,source:'parametr URL'};return map}\nasync function resolveStationNames(ids,date){const clean=[...new Set(ids.map(String).filter(Boolean))];if(!clean.length)return{};try{const q=new URLSearchParams({action:'station-names',ids:clean.join(','),date:date||todayIso()});const r=await fetch('/train?'+q.toString(),{headers:{Accept:'application/json'}});if(!r.ok)return{};const j=await r.json();return j.names||{}}catch(e){return{}}}\nfunction stationTitle(s,nameMap,resolved){const id=getId(s);const direct=readName(s);if(direct)return {name:direct,source:'pole API przy stacji'};if(nameMap[id])return nameMap[id];if(resolved[id])return {name:resolved[id],source:'resolver PLK'};return {name:'Nieznana stacja',source:'brak nazwy w API / słowniku PLK'}}\nfunction normalizeStations(data){const route=(data.route&&Array.isArray(data.route.stations))?data.route.stations:[];const op=(data.operation&&Array.isArray(data.operation.stations))?data.operation.stations:[];const opBySeq={};const opById={};op.forEach((o,i)=>{opBySeq[seqOf(o,i)]=o;if(getId(o))opById[getId(o)]=o});const base=route.length?route:op;return base.map((r,i)=>{const seq=seqOf(r,i);return Object.assign({},r,opById[getId(r)]||{},opBySeq[seq]||{}, {idx:i+1,seq})}).sort((a,b)=>seqOf(a,0)-seqOf(b,0))}\nfunction lastConfirmedStation(stations){let last=null;for(const s of stations){if(s.isConfirmed===true)last=s}return last}\nfunction firstFutureSeq(stations){const nowParts=new Date().toLocaleTimeString('pl-PL',{timeZone:'Europe/Warsaw',hour12:false,hour:'2-digit',minute:'2-digit'}).split(':').map(Number);const now=nowParts[0]*60+nowParts[1];for(const s of stations){const p=timeToMin(getPlanned(s));if(p!=null&&p>=now)return seqOf(s,0)}return null}\nfunction renderTime(s,state){const p=shortTime(getPlanned(s));const a=shortTime(getActual(s));const isFuture=(state==='future'||state==='next'||state==='plan');if(!a||a===p){return '<div class=\"time-one '+(isFuture?'future-time':'')+'\">'+esc(p||a||'—')+'</div>'}const d=delayMinutes(p,a);return '<div class=\"time-plan\">plan '+esc(p||'—')+'</div><div class=\"time-real '+delayClass(Math.max(0,d))+'\">real '+esc(a)+'</div>'}\nfunction renderDelay(s){const p=shortTime(getPlanned(s)),a=shortTime(getActual(s));const d=(!a||a===p)?0:delayMinutes(p,a);return '<div class=\"small\">opóźnienie</div><div class=\"'+delayClass(Math.max(0,d))+'\">'+(d>0?'+'+d:d)+' min</div>'}\nfunction stateFor(s,lastSeq,nextSeq){const seq=seqOf(s,0);if(lastSeq!=null){if(seq<lastSeq)return ['done','zaliczona'];if(seq===lastSeq)return ['current','ostatnia'];if(seq===lastSeq+1)return ['next','następna'];return ['future','przed']}if(nextSeq!=null){if(seq<nextSeq)return ['plan','wg planu minęła'];if(seq===nextSeq)return ['next','następna'];return ['future','przed']}return ['future','przed']}\nasync function loadTrain(){const train=(document.getElementById('trainInput').value||'').trim();if(!train){setStatus('Wpisz numer pociągu.');return}document.getElementById('trainInput').blur();setStatus('Pobieram dane pociągu '+train+'...');const content=document.getElementById('content');content.innerHTML='';const idp=detailsParams();const scheduleId=idp.get('scheduleId')||idp.get('scheduledId');if((scheduleId&&idp.get('orderId'))||idp.get('stationId')){try{const q=new URLSearchParams();q.set('action','train-route');if(scheduleId)q.set('scheduleId',scheduleId);if(idp.get('orderId'))q.set('orderId',idp.get('orderId'));q.set('train',train);q.set('operatingDate',idp.get('date')||todayIso());if(idp.get('trainOrderId'))q.set('trainOrderId',idp.get('trainOrderId'));if(idp.get('stationId'))q.set('stationId',idp.get('stationId'));if(idp.get('station'))q.set('station',idp.get('station'));const r=await fetch('/api?'+q.toString(),{headers:{Accept:'application/json'}});const data=await r.json();if(!r.ok)throw new Error(data.error||data.details||'HTTP '+r.status);await renderDebugTrain(train,data,idp.get('date')||todayIso());return}catch(e){content.innerHTML='<div class=\"panel err\">Nie udało się pobrać przebiegu z API PLK: '+esc(e.message)+'</div>'}}\nrenderFallback(train)}\nasync function renderDebugTrain(train,data,date){const content=document.getElementById('content');const route=data.route||{},op=data.operation||{};const stations=normalizeStations(data);const dict=collectDictNames(data);const ids=stations.map(getId).filter(id=>id&&!dict[id]);const resolved=await resolveStationNames(ids,date);const last=lastConfirmedStation(stations);const lastSeq=last?seqOf(last,0):null;const nextSeq=lastSeq!=null?lastSeq+1:firstFutureSeq(stations);setStatus('Gotowe.');const title=[route.commercialCategorySymbol||qs('category'),route.nationalNumber||train,route.name||qs('name')].filter(Boolean).join(' ');const st=statusInfo(op.trainStatus);\nlet lastBox='brak potwierdzonej stacji';let lastTime='';if(last){const nm=stationTitle(last,dict,resolved);lastBox=nm.name+' · ID '+getId(last);lastTime=shortTime(getActual(last)||getPlanned(last));}\ncontent.innerHTML='<div class=\"panel\"><div class=\"summary\"><div class=\"card\"><div class=\"label\">Pociąg</div><div class=\"big\">'+esc(title||('Pociąg '+train))+'</div><div class=\"hint\">Status: '+esc(st[0])+'<br>'+esc(st[1])+'</div></div><div class=\"card\"><div class=\"label\">Ostatnia potwierdzona stacja</div><div class=\"big\">'+esc(lastBox)+'</div><div class=\"hint\">'+esc(lastTime)+'</div></div></div><div style=\"margin-top:12px\"><a class=\"btn green\" target=\"_blank\" rel=\"noopener\" href=\"'+esc(portalUrl(train))+'\">Otwórz Portal Pasażera</a><button class=\"btn copy\" onclick=\"copyTrainSummary()\">Kopiuj podsumowanie</button></div></div><div class=\"panel route\"><h2>Trasa stacja po stacji</h2><div class=\"route-note\">Nazwy stacji pochodzą wyłącznie z danych PLK: pola stacji, słownika odpowiedzi albo dynamicznego resolvera. Jeśli PLK nie poda nazwy, zostawiamy ID techniczne, bez zgadywania bajek o Strzebiniu.</div><div id=\"routeRows\"></div></div>';\nconst rows=document.getElementById('routeRows');if(!stations.length){rows.innerHTML='<div class=\"muted\">Brak listy stacji w odpowiedzi API.</div>';return}\nrows.innerHTML=stations.map(s=>{const id=getId(s);const nm=stationTitle(s,dict,resolved);const sf=stateFor(s,lastSeq,nextSeq);const state=sf[0],text=sf[1];const cls=(state==='done'?'done':state==='current'?'current':state==='next'?'next':state==='plan'?'plan':'future');const platform=getPlatform(s)||'—';return '<div class=\"row '+cls+'\"><div class=\"state\"><span class=\"badge '+(cls==='future'?'future':cls)+'\">'+esc(text)+'</span></div><div><div class=\"station\">'+esc(nm.name)+'</div><div class=\"station-id\">ID '+esc(id||'—')+' · kolejność: '+esc(seqOf(s,0))+'</div><div class=\"name-src\">nazwa: '+esc(nm.source)+'</div></div><div class=\"times\">'+renderTime(s,state)+'</div><div class=\"delay\">'+renderDelay(s)+'</div><div class=\"platform-wrap\"><div class=\"small\">peron / tor</div><div class=\"platform\">'+esc(platform)+'</div></div></div>'}).join('')}\nfunction renderFallback(train){setStatus('Nie mam identyfikatorów kursu z tablicy. Pokazuję bezpieczny fallback.');document.getElementById('content').innerHTML='<div class=\"panel\"><h2>Pociąg '+esc(train)+'</h2><p>Ten widok dostał sam numer pociągu albo niepełne identyfikatory kursu PLK. Pełny przebieg działa najlepiej po kliknięciu numeru bezpośrednio z naszej tablicy odjazdów.</p><a class=\"btn green\" target=\"_blank\" rel=\"noopener\" href=\"'+esc(portalUrl(train))+'\">Otwórz wyszukiwarkę pociągu w Portal Pasażera</a><button class=\"btn copy\" onclick=\"navigator.clipboard.writeText(\\''+esc(train)+'\\')\">Kopiuj numer</button></div>'}\nfunction copyTrainSummary(){const text=document.body.innerText.replace(/\\n{3,}/g,'\\n\\n');navigator.clipboard.writeText(text)}\ndocument.addEventListener('DOMContentLoaded',()=>{const t=qs('train');if(t){trainInput.value=t;loadTrain()}})\n</script>\n</body>\n</html>";
+const HTML = "<!DOCTYPE html>\n<html lang=\"pl\">\n<head>\n<meta charset=\"UTF-8\" />\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n<title>Bieg pociągu</title>\n<style>\n:root{--bg:#101820;--panel:#1c2833;--panel2:#223244;--border:#34495e;--blue:#0b57d0;--green:#5dd39e;--yellow:#ffcc00;--red:#ff4d4d;--muted:rgba(255,255,255,.65)}\n*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#fff;padding:24px}.container{max-width:980px;margin:0 auto}h1{text-align:center;margin:8px 0 18px}.top{display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap;margin-bottom:18px}.top input{padding:12px 14px;border:0;border-radius:10px;font-size:18px;min-width:220px}.btn{border:0;border-radius:10px;padding:12px 16px;background:var(--blue);color:#fff;font-weight:800;cursor:pointer;text-decoration:none;display:inline-block}.btn.secondary{background:#4b5563}.btn.green{background:#198754}.panel{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px;margin-top:14px}.muted{color:var(--muted)}.status{min-height:22px;text-align:center;color:var(--muted)}.summary{display:grid;grid-template-columns:1fr 1fr;gap:12px}.card{background:var(--panel2);border:1px solid var(--border);border-radius:12px;padding:14px}.big{font-size:24px;font-weight:900}.ok{color:var(--green);font-weight:800}.warn{color:var(--yellow);font-weight:800}.err{background:#3b1d1d;border-color:#dc3545;color:#ffd6d6}.route{margin-top:12px}.row{display:grid;grid-template-columns:82px 1fr 120px 120px;gap:10px;align-items:start;padding:10px;border-bottom:1px solid rgba(255,255,255,.08)}.row:last-child{border-bottom:0}.station{font-weight:800}.badge{display:inline-block;border-radius:999px;padding:3px 8px;font-size:12px;font-weight:900}.badge.done{background:#14532d;color:#bbf7d0}.badge.next{background:#78350f;color:#fde68a}.badge.plan{background:#374151;color:#e5e7eb}.portal-link{word-break:break-all}.small{font-size:12px}.copy{margin-left:8px;background:#374151;padding:6px 9px;font-size:12px}@media(max-width:700px){body{padding:10px}h1{font-size:24px}.top{display:grid;grid-template-columns:1fr auto}.top input{min-width:0;width:100%;font-size:16px}.summary{grid-template-columns:1fr}.row{grid-template-columns:64px 1fr;gap:4px}.row .times{grid-column:2}.row .state{grid-column:1 / span 2}.btn{padding:10px 12px}}\n</style>\n</head>\n<body>\n<div class=\"container\">\n  <h1>🚆 Bieg pociągu</h1>\n  <div class=\"top\">\n    <input id=\"trainInput\" inputmode=\"numeric\" placeholder=\"Wpisz numer pociągu\" />\n    <button class=\"btn\" onclick=\"loadTrain()\">Pokaż</button>\n    <a class=\"btn secondary\" href=\"/\">← Tablica</a>\n  </div>\n  <div id=\"status\" class=\"status\">Wpisz numer albo kliknij pociąg z tablicy.</div>\n  <div id=\"content\"></div>\n</div>\n<script>\nfunction qs(name){return new URLSearchParams(location.search).get(name)||''}\nfunction esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('\"','&quot;').replaceAll(\"'\",'&#039;')}\nfunction shortTime(v){if(!v)return'';const m=String(v).match(/(\\d{2}:\\d{2})/);return m?m[1]:v}\nfunction todayIso(){return new Date().toLocaleDateString('sv-SE',{timeZone:'Europe/Warsaw'})}\nfunction portalUrl(train){return 'https://portalpasazera.pl/ZnajdzPociag'}\nfunction detailsParams(){const p=new URLSearchParams();['date','scheduleId','orderId','trainOrderId','stationId','station'].forEach(k=>{const v=qs(k);if(v)p.set(k,v)});return p}\nfunction setStatus(t){document.getElementById('status').textContent=t}\nfunction stationLabel(s){return s.stationName||s.name||s.stopName||(s.stationId?'stacja ID '+s.stationId:'')}\nfunction timePair(s){return [shortTime(s.actualArrival||s.actualDeparture||s.arrivalTime||s.departureTime||s.plannedArrival||s.plannedDeparture), shortTime(s.plannedArrival||s.plannedDeparture||s.plannedArrivalTime||s.plannedDepartureTime)].filter(Boolean).join(' / ')}\nfunction normalizeStations(data){const route=(data.route&&data.route.stations)||[];const op=(data.operation&&data.operation.stations)||[];const byId={};for(const o of op){byId[o.stationId]=o}return route.map((r,i)=>Object.assign({},r,byId[r.stationId]||{}, {idx:i+1}))}\nfunction lastDone(stations){let last=null;for(const s of stations){if(s.isConfirmed||s.actualArrival||s.actualDeparture)last=s}return last}\nasync function loadTrain(){const train=(document.getElementById('trainInput').value||'').trim();if(!train){setStatus('Wpisz numer pociągu.');return}document.getElementById('trainInput').blur();setStatus('Pobieram dane pociągu '+train+'...');const content=document.getElementById('content');content.innerHTML='';const idp=detailsParams();if((idp.get('scheduleId')&&idp.get('orderId')) || idp.get('stationId')){try{const q=new URLSearchParams();q.set('action','train-route');if(idp.get('scheduleId'))q.set('scheduleId',idp.get('scheduleId'));if(idp.get('orderId'))q.set('orderId',idp.get('orderId'));q.set('train',train);q.set('operatingDate',idp.get('date')||idp.get('operatingDate')||todayIso());if(idp.get('trainOrderId'))q.set('trainOrderId',idp.get('trainOrderId'));if(idp.get('stationId'))q.set('stationId',idp.get('stationId'));if(idp.get('station'))q.set('station',idp.get('station'));const r=await fetch('/api?'+q.toString(),{headers:{Accept:'application/json'}});const data=await r.json();if(!r.ok)throw new Error(data.error||data.details||'HTTP '+r.status);renderDebugTrain(train,data);return}catch(e){content.innerHTML='<div class=\"panel err\">Nie udało się pobrać przebiegu z API PLK: '+esc(e.message)+'</div>';}}\nrenderFallback(train)}\nfunction renderDebugTrain(train,data){const content=document.getElementById('content');const route=data.route||{},op=data.operation||{};const stations=normalizeStations(data);const last=lastDone(stations);setStatus('Gotowe.');const name=[route.commercialCategorySymbol||'',route.nationalNumber||train,route.name||''].filter(Boolean).join(' ');content.innerHTML=`<div class=\"panel\"><div class=\"summary\"><div class=\"card\"><div class=\"muted\">Pociąg</div><div class=\"big\">${esc(name)}</div><div class=\"muted\">Status: ${esc(op.trainStatus||'brak')}</div></div><div class=\"card\"><div class=\"muted\">Ostatnia zaliczona stacja</div><div class=\"big\">${last?esc(stationLabel(last)):'brak potwierdzenia'}</div><div class=\"muted\">${last?esc(timePair(last)):''}</div></div></div><div style=\"margin-top:12px\"><a class=\"btn green\" target=\"_blank\" rel=\"noopener\" href=\"${esc(portalUrl(train))}\">Otwórz Portal Pasażera</a><button class=\"btn copy\" onclick=\"copyTrainSummary()\">Kopiuj podsumowanie</button></div></div><div class=\"panel route\"><h2>Trasa stacja po stacji</h2><div id=\"routeRows\"></div></div>`;const rows=document.getElementById('routeRows');if(!stations.length){rows.innerHTML='<div class=\"muted\">Brak listy stacji w odpowiedzi API.</div>';return}rows.innerHTML=stations.map(s=>{const done=s.isConfirmed||s.actualArrival||s.actualDeparture;return `<div class=\"row\"><div class=\"state\"><span class=\"badge ${done?'done':'plan'}\">${done?'zaliczona':'plan'}</span></div><div><div class=\"station\">${esc(stationLabel(s))}</div><div class=\"muted small\">kolejność: ${esc(s.orderNumber||s.plannedSequenceNumber||s.actualSequenceNumber||s.idx)}</div></div><div class=\"times\"><div class=\"muted small\">plan / real</div>${esc(timePair(s))}</div><div class=\"times\"><div class=\"muted small\">peron / tor</div>${esc([s.departurePlatform||s.arrivalPlatform,s.departureTrack||s.arrivalTrack].filter(Boolean).join(' / '))}</div></div>`}).join('')}\nfunction renderFallback(train){setStatus('Nie mam identyfikatorów kursu z tablicy. Pokazuję bezpieczny fallback.');document.getElementById('content').innerHTML=`<div class=\"panel\"><h2>Pociąg ${esc(train)}</h2><p>Ten widok dostał sam numer pociągu albo niepełne identyfikatory kursu PLK. Pełny przebieg działa najlepiej po kliknięciu numeru bezpośrednio z naszej tablicy odjazdów.</p><p class=\"muted\">Portal Pasażera ma właściwy ekran „Znajdź pociąg po numerze”. Na razie otwieram go jako fallback, żeby nie prowadzić Cię do tablicy stacyjnej. Bo raz już ta kolejka pojechała w krzaki.</p><a class=\"btn green\" target=\"_blank\" rel=\"noopener\" href=\"${esc(portalUrl(train))}\">Otwórz wyszukiwarkę pociągu w Portal Pasażera</a><button class=\"btn copy\" onclick=\"navigator.clipboard.writeText('${esc(train)}')\">Kopiuj numer</button></div>`}\nfunction copyTrainSummary(){const text=document.body.innerText.replace(/\\n{3,}/g,'\\n\\n');navigator.clipboard.writeText(text)}\ndocument.addEventListener('DOMContentLoaded',()=>{const t=qs('train');if(t){trainInput.value=t;loadTrain()}})\n</script>\n</body>\n</html>\n";
 
 
 const BASE = 'https://pdp-api.plk-sa.pl/api/v1';
-const CORS_JSON = { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' };
-function json(data, status = 200) { return new Response(JSON.stringify(data), { status, headers: CORS_JSON }); }
-function stationNameFromValue(v) {
-  if (!v) return '';
-  if (typeof v === 'string') return v;
-  return v.name || v.stationName || v.stopName || v.shortName || v.displayName || v.label || '';
-}
-async function plkFetch(path, key) {
-  const res = await fetch(BASE + path, { headers: { 'X-API-Key': key } });
-  const txt = await res.text();
-  let data = null;
-  try { data = JSON.parse(txt); } catch (_) { data = { raw: txt.slice(0, 500) }; }
-  if (!res.ok) throw new Error('PLK HTTP ' + res.status + ': ' + txt.slice(0, 220));
-  return data;
-}
-async function resolveStationNames(context) {
-  const url = new URL(context.request.url);
-  const key = context.env.PLK_API_KEY || context.env.PDP_API_KEY || '';
-  if (!key) return json({ names: {}, error: 'Brak PLK_API_KEY' }, 200);
-  const ids = (url.searchParams.get('ids') || '').split(',').map(s => s.trim()).filter(Boolean);
-  const date = url.searchParams.get('date') || new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Warsaw' });
-  if (!ids.length) return json({ names: {} });
-  const names = {};
-  const addFromStationsObject = (src) => {
-    if (!src) return;
-    if (Array.isArray(src)) {
-      for (const item of src) {
-        const id = String(item.stationId || item.stopId || item.id || '');
-        const name = stationNameFromValue(item);
-        if (id && name) names[id] = name;
-      }
-      return;
-    }
-    for (const [id, value] of Object.entries(src)) {
-      const name = stationNameFromValue(value);
-      if (name) names[String(id)] = name;
-    }
-  };
-  // Najpierw endpoint schedules, bo jego dictionaries.stations jest najbardziej użyteczny w tym projekcie.
-  try {
-    const data = await plkFetch('/schedules?stations=' + encodeURIComponent(ids.join(',')) + '&dateFrom=' + encodeURIComponent(date) + '&dateTo=' + encodeURIComponent(date) + '&pageSize=1', key);
-    addFromStationsObject(data.stations);
-    addFromStationsObject(data.dictionaries && data.dictionaries.stations);
-  } catch (e) {}
-  // Druga próba: operations też często niesie mapę stations.
-  const missing = ids.filter(id => !names[id]);
-  if (missing.length) {
-    try {
-      const data = await plkFetch('/operations?stations=' + encodeURIComponent(missing.join(',')) + '&withPlanned=false&pageSize=1', key);
-      addFromStationsObject(data.stations);
-      addFromStationsObject(data.dictionaries && data.dictionaries.stations);
-    } catch (e) {}
-  }
-  return json({ names });
+
+const JSON_HEADERS = {
+  'content-type': 'application/json; charset=utf-8',
+  'access-control-allow-origin': '*',
+  'cache-control': 'no-store'
+};
+
+function json(data, status = 200) {
+  return new Response(JSON.stringify(data, null, 2), { status, headers: JSON_HEADERS });
 }
 
-export async function onRequest(context) {
-  const url = new URL(context.request.url);
-  if (url.searchParams.get('action') === 'station-names') return resolveStationNames(context);
+function html(status = 200) {
   return new Response(HTML, {
-    status: 200,
+    status,
     headers: {
       'content-type': 'text/html; charset=utf-8',
       'cache-control': 'no-store'
     }
   });
+}
+
+function getKey(context) {
+  return context.env.PLK_API_KEY || context.env.PDP_API_KEY || '';
+}
+
+async function plkFetchJson(context, path) {
+  const key = getKey(context);
+  if (!key) {
+    throw new Error('Brak zmiennej środowiskowej PLK_API_KEY/PDP_API_KEY');
+  }
+
+  const started = Date.now();
+  const res = await fetch(BASE + path, {
+    headers: {
+      'X-API-Key': key,
+      'Accept': 'application/json'
+    }
+  });
+
+  const text = await res.text();
+  let body = null;
+  try {
+    body = text ? JSON.parse(text) : null;
+  } catch (_) {
+    body = {
+      nonJson: true,
+      preview: text.slice(0, 1200)
+    };
+  }
+
+  if (!res.ok) {
+    const err = new Error('PLK HTTP ' + res.status);
+    err.status = res.status;
+    err.body = body;
+    err.responseMs = Date.now() - started;
+    throw err;
+  }
+
+  return {
+    status: res.status,
+    responseMs: Date.now() - started,
+    body
+  };
+}
+
+function extractStationNamesFromAny(value, out = {}) {
+  if (!value || typeof value !== 'object') return out;
+
+  if (Array.isArray(value)) {
+    for (const item of value) extractStationNamesFromAny(item, out);
+    return out;
+  }
+
+  for (const [key, item] of Object.entries(value)) {
+    if (item && typeof item === 'object') {
+      const id = item.stationId || item.stopId || item.id || key;
+      const name = item.stationName || item.name || item.stopName || item.shortName;
+      if (id && name) out[String(id)] = String(name);
+      extractStationNamesFromAny(item, out);
+    } else if (/^\d+$/.test(String(key)) && typeof item === 'string') {
+      out[String(key)] = item;
+    }
+  }
+
+  return out;
+}
+
+async function resolveStationNames(context, ids) {
+  const uniqueIds = [...new Set(ids.map(String).filter(Boolean))];
+  const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Warsaw' });
+
+  const attempts = [
+    {
+      label: 'operations',
+      path: '/operations?stations=' + encodeURIComponent(uniqueIds.join(',')) + '&withPlanned=true&fullRoutes=true&pageSize=50'
+    },
+    {
+      label: 'schedules',
+      path: '/schedules?stations=' + encodeURIComponent(uniqueIds.join(',')) + '&dateFrom=' + today + '&dateTo=' + today + '&pageSize=50'
+    }
+  ];
+
+  const found = {};
+  const diagnostics = [];
+
+  for (const attempt of attempts) {
+    try {
+      const res = await plkFetchJson(context, attempt.path);
+      const names = extractStationNamesFromAny(res.body, {});
+      for (const id of uniqueIds) {
+        if (names[id]) found[id] = names[id];
+      }
+      diagnostics.push({
+        source: attempt.label,
+        status: res.status,
+        responseMs: res.responseMs,
+        found: Object.keys(found).length
+      });
+    } catch (e) {
+      diagnostics.push({
+        source: attempt.label,
+        status: e.status || null,
+        error: e.message,
+        responseMs: e.responseMs || null,
+        preview: e.body?.preview || e.body || null
+      });
+    }
+  }
+
+  const filtered = {};
+  const missing = [];
+  for (const id of uniqueIds) {
+    if (found[id]) filtered[id] = found[id];
+    else missing.push(id);
+  }
+
+  return { requested: uniqueIds, names: filtered, missing, diagnostics };
+}
+
+export async function onRequest(context) {
+  const url = new URL(context.request.url);
+  const action = url.searchParams.get('action') || '';
+
+  if (action === 'debug') {
+    const train = url.searchParams.get('train') || '';
+    const params = Object.fromEntries(url.searchParams.entries());
+    const required = ['scheduleId', 'orderId', 'trainOrderId'];
+    const missingCourseIds = required.filter(k => !url.searchParams.get(k));
+    return json({
+      ok: true,
+      endpoint: '/train',
+      action: 'debug',
+      train,
+      params,
+      canLoadFullRoute: missingCourseIds.length === 0,
+      missingCourseIds,
+      note: missingCourseIds.length
+        ? 'Pełny bieg pociągu wymaga wejścia z głównej tablicy, bo wtedy URL zawiera scheduleId/orderId/trainOrderId.'
+        : 'Są identyfikatory kursu. Strona może próbować pobrać pełny bieg przez /api?action=train-route.'
+    });
+  }
+
+  if (action === 'station-names') {
+    const ids = (url.searchParams.get('ids') || '')
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean);
+
+    if (!ids.length) {
+      return json({ ok: false, error: 'Brak parametru ids, np. ?action=station-names&ids=71407,69708' }, 400);
+    }
+
+    const result = await resolveStationNames(context, ids);
+    return json({
+      ok: true,
+      ...result
+    });
+  }
+
+  return html();
 }
