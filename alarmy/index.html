@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="pl">
-<!-- app-version: alarmy-v0.2.4 board-cache-first-alerts -->
+<!-- app-version: alarmy-v0.2.5 board-cache-from-selected-time -->
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,7 +13,7 @@
 <body>
 <div class="wrap">
 <h1>🔔 Alarmy pociągów</h1>
-<div class="version">v0.2.4 · najpierw cache tablicy · potem alarmy z realnych wierszy</div>
+<div class="version">v0.2.5 · cache od wskazanej godziny · bez zapisywania pustki</div>
 <div class="panel">
   <div class="grid">
     <input id="stationInput" placeholder="Stacja kontrolna, np. Tarnowskie Góry">
@@ -27,7 +27,7 @@
   <details class="advanced">
     <summary>Opcje zaawansowane, czyli dział dla ludzi lubiących cierpieć</summary>
     <div class="advanced-grid">
-      <select id="modeInput"><option value="day" selected>Sprawdź cały dzień</option><option value="around">Sprawdź okolice godziny</option></select>
+      <select id="modeInput"><option value="fromTime" selected>Od wskazanej godziny</option><option value="day">Cały dzień</option><option value="around">Okolice godziny</option></select>
       <input id="timeInput" type="time" title="Godzina kontrolna">
       <select id="windowInput"><option value="2">Okno ±2 h</option><option value="4" selected>Okno ±4 h</option><option value="8">Okno ±8 h</option></select>
     </div>
@@ -38,7 +38,7 @@
     <button id="watchBtn" class="btn-red" onclick="toggleWatch()">Monitoring: OFF</button>
     <button class="btn-gray" onclick="clearTrains()">Wyczyść listę</button>
   </div>
-  <div class="note"><strong>Zmiana v0.2.4:</strong> alarmy działają metodą „tablica najpierw”. Najpierw pobierasz tablicę stacji do pamięci, aplikacja pokazuje znalezione pociągi i ich surowe identyfikatory, a dopiero potem buduje alarmy z realnych wierszy tablicy. Koniec z generowaniem pustych kart z samego numeru pociągu, bo to była informatyczna homeopatia.</div>
+  <div class="note"><strong>Zmiana v0.2.5:</strong> pobieranie tablicy domyślnie startuje od godziny wpisanej w polu czasu, a nie od losowo wyglądającego poranka. Pusty wynik nie jest zapisywany do cache. Bo cache z zerem pozycji to nie cache, tylko pudełko po danych.</div>
   <div id="cacheState" class="cachebox">Cache tablicy: brak.</div>
 </div>
 <div class="panel"><h2>Śledzone pociągi</h2><div id="trainList" class="list"></div></div>
@@ -48,7 +48,7 @@
 <div class="bottom"><a href="/">🚆 Tablica</a><button onclick="preloadBoard()">📥 Tablica</button><button onclick="toggleWatch()">🔔 Alarm</button></div>
 <script>
 const STORE='rafstakTrainAlertsV02';
-const BOARD_CACHE='rafstakAlarmBoardCacheV024';
+const BOARD_CACHE='rafstakAlarmBoardCacheV025';
 let watchTimer=null,lastSignature='';
 
 document.addEventListener('DOMContentLoaded',()=>{
@@ -96,31 +96,53 @@ async function preloadBoard(){
   setStatus('Pobieram tablicę stacji '+station+' do pamięci...');
   results.innerHTML='<div class="muted">Pobieram tablicę i buduję cache...</div>';
   try{
-    const deps=await loadStationDepartures(station,date);
+    const loaded=await loadStationDepartures(station,date);
+    const deps=loaded.rows;
+    if(!deps.length){
+      results.innerHTML='<div class="card warn"><b>Tablica zwróciła 0 pozycji.</b><div class="muted">Cache nie został zapisany. Parametry: '+esc(station)+' · '+esc(date)+' · sloty: '+loaded.slots.map(esc).join(', ')+'. Zmień godzinę albo tryb pobierania.</div></div>';
+      setStatus('Nie zapisuję pustego cache. Sloty: '+loaded.slots.join(', ')+'.');
+      return;
+    }
     setBoardCache(station,date,deps);
-    results.innerHTML='<div class="card"><b>Pobrano tablicę do pamięci:</b> '+esc(station)+' · '+deps.length+' pozycji.<div class="muted">Teraz wpisz/dodaj numery i kliknij „Sprawdź alarmy”.</div></div>';
-    setStatus('Cache gotowy: '+deps.length+' pozycji.');
+    results.innerHTML='<div class="card"><b>Pobrano tablicę do pamięci:</b> '+esc(station)+' · '+deps.length+' pozycji.<div class="muted">Sloty pobierania: '+loaded.slots.map(esc).join(', ')+'. Teraz wpisz/dodaj numery i kliknij „Sprawdź alarmy”.</div></div>';
+    setStatus('Cache gotowy: '+deps.length+' pozycji. Sloty: '+loaded.slots.join(', ')+'.');
   }catch(e){results.innerHTML='<div class="card alarm">Błąd pobierania tablicy: '+esc(e.message)+'</div>';setStatus('Nie udało się pobrać tablicy.')}
 }
 
 function timeSlots(){
-  if(modeInput.value==='around'){
-    const [h,m]=(timeInput.value||'12:00').split(':').map(Number); const win=Number(windowInput.value||4);
-    const start=Math.max(0,h-win), end=Math.min(23,h+win), out=[];
-    for(let x=start;x<=end;x+=2)out.push(`${String(x).padStart(2,'0')}:${String(m||0).padStart(2,'0')}`);
+  const [hh,mm]=(timeInput.value||'12:00').split(':').map(Number);
+  const h=Number.isFinite(hh)?hh:12;
+  const m=Number.isFinite(mm)?mm:0;
+  const mode=modeInput.value||'fromTime';
+  const out=[];
+  const add=(hour,minute=0)=>{if(hour>=0&&hour<=23){const v=`${String(hour).padStart(2,'0')}:${String(minute).padStart(2,'0')}`;if(!out.includes(v))out.push(v)}};
+  if(mode==='around'){
+    const win=Number(windowInput.value||4);
+    const start=Math.max(0,h-win), end=Math.min(23,h+win);
+    add(h,m);
+    for(let x=start;x<=end;x+=1)add(x,0);
+    return out.sort();
+  }
+  if(mode==='day'){
+    for(let x=0;x<=23;x+=1)add(x,0);
     return out;
   }
-  return ['00:00','04:00','08:00','12:00','16:00','20:00'];
+  // Domyślnie: od godziny wpisanej w okienku do końca dnia.
+  // Najpierw dokładna godzina z pola, potem pełne godziny, żeby nie zaczynać magicznie od 04:00.
+  add(h,m);
+  for(let x=h+1;x<=23;x+=1)add(x,0);
+  return out;
 }
 async function fetchJson(url){const r=await fetch(url,{headers:{Accept:'application/json'}});let data={};try{data=await r.json()}catch{}if(!r.ok)throw new Error(data.error||data.details||data.message||('HTTP '+r.status));return data}
 function uniqDepartures(rows){const m=new Map();for(const d of rows){const no=trainNoOf(d), key=[no,shortTime(d.time||d.actualTime),shortTime(d.plannedTime),d.destination,d.status,d.statusCode].join('|');if(no&&!m.has(key))m.set(key,d)}return [...m.values()]}
 async function loadStationDepartures(station,date){
   const all=[]; const slots=timeSlots();
+  const errors=[];
   for(const t of slots){
     const p=new URLSearchParams({station,limit:'300',date,time:t});
-    try{const data=await fetchJson('/api/departures?'+p.toString()); if(Array.isArray(data.departures))all.push(...data.departures)}catch(e){console.warn('departures failed',t,e)}
+    try{const data=await fetchJson('/api/departures?'+p.toString()); if(Array.isArray(data.departures))all.push(...data.departures)}catch(e){errors.push(t+': '+e.message);console.warn('departures failed',t,e)}
   }
-  return uniqDepartures(all);
+  return {rows:uniqDepartures(all),slots,errors};
 }
 async function loadTrainFallback(no,station,date){
   const urls=[
