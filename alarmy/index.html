@@ -1,51 +1,154 @@
 <!DOCTYPE html>
 <html lang="pl">
-<!-- app-version: alarmy-v0.1 experimental-train-alerts -->
+<!-- app-version: alarmy-v0.2 train-alerts-station-plus-train-fallback -->
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Alarmy pociągów RafStaKa</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alarmy pociągów RafStaKa v0.2</title>
 <style>
-:root{--bg:#101820;--panel:#1c2833;--card:#223244;--border:#34495e;--blue:#0b57d0;--green:#198754;--red:#dc3545;--yellow:#ffcc00;--muted:rgba(255,255,255,.68)}
-*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#fff;padding:22px 22px 80px}.wrap{max-width:980px;margin:0 auto}h1{text-align:center;margin:16px 0 6px;font-size:30px}.version{text-align:center;color:var(--muted);font-size:12px;margin-bottom:18px}.panel{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:14px;margin:14px 0}.grid{display:grid;grid-template-columns:1.4fr .8fr .8fr;gap:8px}input,select,button{border:0;border-radius:10px;padding:12px;font-size:15px}button{font-weight:900;cursor:pointer}.btn-blue{background:var(--blue);color:#fff}.btn-green{background:var(--green);color:#fff}.btn-red{background:var(--red);color:#fff}.btn-gray{background:#475569;color:#fff}.actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:10px}.help{font-size:13px;color:var(--muted);line-height:1.35}.list{display:grid;gap:8px}.train-chip{display:flex;align-items:center;justify-content:space-between;gap:8px;background:#162433;border:1px solid #2f4358;border-radius:12px;padding:10px 12px}.train-chip strong{font-size:18px}.result{display:grid;gap:10px;margin-top:10px}.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px}.card.alarm{border-color:#ef4444;background:#3b1d1d}.card.cancelled{border-color:#ef4444;opacity:.82}.row{display:grid;grid-template-columns:92px 1fr 90px;gap:10px;align-items:start}.time{font-size:24px;font-weight:900;color:#5dd39e}.delay{font-weight:900;color:#5dd39e}.delay.warn{color:var(--yellow)}.delay.bad{color:#ff6b6b}.badge{display:inline-block;padding:3px 8px;border-radius:999px;font-size:12px;font-weight:900;background:#334155;color:#fff}.badge-red{background:#7f1d1d}.badge-yellow{background:#854d0e}.badge-green{background:#166534}.muted{color:var(--muted);font-size:12px}.big{font-size:18px;font-weight:900}.statusline{text-align:center;color:var(--muted);margin:10px 0;min-height:20px}.bottom{position:fixed;left:50%;bottom:8px;transform:translateX(-50%);width:min(620px,calc(100vw - 16px));background:rgba(22,36,51,.97);border:1px solid var(--border);border-radius:14px;padding:7px;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;z-index:20}.bottom a,.bottom button{display:flex;align-items:center;justify-content:center;height:36px;border-radius:9px;background:#f2f4f8;color:#111827;text-decoration:none;font-size:12px;font-weight:900}@media(max-width:700px){body{padding:10px 8px 76px}h1{font-size:24px}.grid{grid-template-columns:1fr 1fr}.grid input:first-child{grid-column:1/-1}.row{grid-template-columns:70px 1fr 72px}.time{font-size:22px}input,select,button{padding:10px;font-size:14px}}
+:root{--bg:#101820;--panel:#1c2833;--card:#223244;--card2:#162433;--border:#34495e;--blue:#0b57d0;--green:#198754;--red:#dc3545;--yellow:#ffcc00;--muted:rgba(255,255,255,.68);--ok:#5dd39e;--bad:#ff6b6b}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#fff;padding:18px 18px 82px}.wrap{max-width:1040px;margin:0 auto}h1{text-align:center;margin:14px 0 5px;font-size:30px}.version{text-align:center;color:var(--muted);font-size:12px;margin-bottom:14px}.panel{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:14px;margin:12px 0}.grid{display:grid;grid-template-columns:1.2fr .62fr .62fr;gap:8px}.train-row{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:8px}input,select,textarea,button{border:0;border-radius:10px;padding:12px;font-size:15px}textarea{min-height:66px;resize:vertical;font-family:Arial,sans-serif}button{font-weight:900;cursor:pointer}.btn-blue{background:var(--blue);color:#fff}.btn-green{background:var(--green);color:#fff}.btn-red{background:var(--red);color:#fff}.btn-gray{background:#475569;color:#fff}.actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:10px}.help{font-size:13px;color:var(--muted);line-height:1.42}.help strong{color:#fff}.advanced{margin-top:10px}.advanced summary{cursor:pointer;color:#dbeafe;font-weight:900}.advanced-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px}.list{display:grid;gap:8px}.train-chip{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--card2);border:1px solid #2f4358;border-radius:12px;padding:10px 12px}.train-chip strong{font-size:18px}.result{display:grid;gap:10px;margin-top:10px}.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px}.card.alarm{border-color:#ef4444;background:#3b1d1d}.card.cancelled{border-color:#ef4444}.card.missing{border-color:#64748b;background:#1f2937}.card.warn{border-color:#eab308}.row{display:grid;grid-template-columns:92px 1fr 116px;gap:10px;align-items:start}.time{font-size:24px;font-weight:900;color:var(--ok)}.delay{font-weight:900;color:var(--ok)}.delay.warn{color:var(--yellow)}.delay.bad{color:var(--bad)}.badge{display:inline-block;padding:4px 9px;border-radius:999px;font-size:12px;font-weight:900;background:#334155;color:#fff;margin-top:5px}.badge-red{background:#7f1d1d}.badge-yellow{background:#854d0e}.badge-green{background:#166534}.badge-gray{background:#475569}.muted{color:var(--muted);font-size:12px}.big{font-size:18px;font-weight:900}.statusline{text-align:center;color:var(--muted);margin:10px 0;min-height:20px}.source{font-size:11px;color:var(--muted);margin-top:6px}.bottom{position:fixed;left:50%;bottom:8px;transform:translateX(-50%);width:min(660px,calc(100vw - 16px));background:rgba(22,36,51,.97);border:1px solid var(--border);border-radius:14px;padding:7px;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;z-index:20}.bottom a,.bottom button{display:flex;align-items:center;justify-content:center;height:36px;border-radius:9px;background:#f2f4f8;color:#111827;text-decoration:none;font-size:12px;font-weight:900}.mini{font-size:12px;padding:8px 10px}.note{background:#0f172a;border:1px dashed #475569;border-radius:12px;padding:10px;margin-top:8px;color:#dbeafe;font-size:13px;line-height:1.35}@media(max-width:740px){body{padding:10px 8px 76px}h1{font-size:24px}.grid{grid-template-columns:1fr 1fr}.grid input:first-child{grid-column:1/-1}.train-row{grid-template-columns:1fr}.advanced-grid{grid-template-columns:1fr}.row{grid-template-columns:70px 1fr 86px}.time{font-size:22px}input,select,textarea,button{padding:10px;font-size:14px}}
 </style>
 </head>
 <body>
 <div class="wrap">
 <h1>🔔 Alarmy pociągów</h1>
-<div class="version">wersja robocza v0.1 · osobna kopia bez ruszania głównej tablicy</div>
+<div class="version">v0.2 · mniej zgadywania · tablica stacji + awaryjne sprawdzenie pociągu</div>
 <div class="panel">
   <div class="grid">
-    <input id="stationInput" placeholder="Stacja, np. Tarnowskie Góry">
+    <input id="stationInput" placeholder="Stacja kontrolna, np. Tarnowskie Góry">
     <input id="dateInput" type="date">
-    <input id="timeInput" type="time">
-    <input id="trainInput" placeholder="Nr pociągu, np. 40678">
     <select id="thresholdInput"><option value="0">Alarm: każda zmiana</option><option value="5" selected>Alarm od +5 min</option><option value="10">Alarm od +10 min</option><option value="15">Alarm od +15 min</option></select>
-    <button class="btn-blue" onclick="addTrain()">Dodaj pociąg</button>
   </div>
+  <div class="train-row">
+    <textarea id="trainInput" placeholder="Numery pociągów, np. 14022 37000 3814 40621 40250"></textarea>
+    <button class="btn-blue" onclick="addTrains()">Dodaj</button>
+  </div>
+  <details class="advanced">
+    <summary>Opcje zaawansowane, czyli dział dla ludzi lubiących cierpieć</summary>
+    <div class="advanced-grid">
+      <select id="modeInput"><option value="day" selected>Sprawdź cały dzień</option><option value="around">Sprawdź okolice godziny</option></select>
+      <input id="timeInput" type="time" title="Godzina kontrolna">
+      <select id="windowInput"><option value="2">Okno ±2 h</option><option value="4" selected>Okno ±4 h</option><option value="8">Okno ±8 h</option></select>
+    </div>
+  </details>
   <div class="actions">
     <button class="btn-green" onclick="checkNow()">Sprawdź teraz</button>
     <button id="watchBtn" class="btn-red" onclick="toggleWatch()">Monitoring: OFF</button>
     <button class="btn-gray" onclick="clearTrains()">Wyczyść listę</button>
   </div>
-  <p class="help">Eksperymentalnie sprawdza wskazane numery w tablicy wybranej stacji przez <code>/api/departures</code>. Alarmuje przy odwołaniu albo opóźnieniu od ustawionego progu. Monitoring co 3 minuty, bez kopania API po kostkach.</p>
+  <div class="note"><strong>Zmiana v0.2:</strong> alarm najpierw sprawdza szerzej tablicę wybranej stacji, a gdy numeru nie ma, próbuje awaryjnie odpytać szczegóły pociągu. Wynik „nie znaleziono w tablicy” nie udaje już, że pociąg nie istnieje. Minimalny standard cywilizacji, ale nie przesadzajmy z entuzjazmem.</div>
 </div>
 <div class="panel"><h2>Śledzone pociągi</h2><div id="trainList" class="list"></div></div>
-<div id="status" class="statusline">Dodaj numer pociągu i kliknij „Sprawdź teraz”.</div>
+<div id="status" class="statusline">Dodaj numery i kliknij „Sprawdź teraz”.</div>
 <div class="panel"><h2>Wyniki</h2><div id="results" class="result"><div class="muted">Brak danych.</div></div></div>
 </div>
 <div class="bottom"><a href="/">🚆 Tablica</a><button onclick="checkNow()">🔄 Sprawdź</button><button onclick="toggleWatch()">🔔 Alarm</button></div>
 <script>
-const STORE='rafstakTrainAlertsV01';let watchTimer=null,lastSignature='';
-document.addEventListener('DOMContentLoaded',()=>{setDefaultDateTime();stationInput.value=localStorage.getItem('lastAlarmStation')||'Tarnowskie Góry';renderTrainList()});
+const STORE='rafstakTrainAlertsV02';
+let watchTimer=null,lastSignature='';
+
+document.addEventListener('DOMContentLoaded',()=>{
+  setDefaultDateTime();
+  stationInput.value=localStorage.getItem('lastAlarmStation')||'Tarnowskie Góry';
+  migrateOldStore();
+  renderTrainList();
+});
+
+function migrateOldStore(){
+  if(localStorage.getItem(STORE))return;
+  try{const old=JSON.parse(localStorage.getItem('rafstakTrainAlertsV01')||'[]');if(Array.isArray(old)&&old.length)localStorage.setItem(STORE,JSON.stringify(old));}catch{}
+}
 function setDefaultDateTime(){const n=new Date();dateInput.value=`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;timeInput.value=`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`}
-function getTrains(){try{return JSON.parse(localStorage.getItem(STORE)||'[]')}catch{return[]}}function setTrains(a){localStorage.setItem(STORE,JSON.stringify([...new Set(a.map(x=>String(x).trim()).filter(Boolean))]));renderTrainList()}
-function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'","&#039;")}function setStatus(t){status.textContent=t}
-function addTrain(){const n=trainInput.value.trim();if(!n)return setStatus('Wpisz numer pociągu.');setTrains([n,...getTrains()]);trainInput.value='';setStatus('Dodano pociąg '+n+'.')}function removeTrain(n){setTrains(getTrains().filter(x=>x!==n))}function clearTrains(){setTrains([]);results.innerHTML='<div class="muted">Brak danych.</div>';setStatus('Lista wyczyszczona.')}
-function renderTrainList(){const arr=getTrains();trainList.innerHTML=arr.length?arr.map(n=>`<div class="train-chip"><strong>${esc(n)}</strong><button class="btn-gray" onclick="removeTrain('${esc(n)}')">Usuń</button></div>`).join(''):'<div class="muted">Nie dodano jeszcze pociągów.</div>'}
-async function checkNow(){const station=stationInput.value.trim(),watched=getTrains();if(!station)return setStatus('Wpisz stację.');if(!watched.length)return setStatus('Dodaj chociaż jeden numer pociągu.');localStorage.setItem('lastAlarmStation',station);const params=new URLSearchParams({station,limit:'80'});if(dateInput.value)params.set('date',dateInput.value);if(timeInput.value)params.set('time',timeInput.value);setStatus('Pobieram odjazdy dla stacji: '+station+'...');results.innerHTML='<div class="muted">Ładowanie...</div>';try{const r=await fetch('/api/departures?'+params.toString(),{headers:{Accept:'application/json'}}),data=await r.json();if(!r.ok)throw new Error(data.error||data.details||'Błąd API');const deps=Array.isArray(data.departures)?data.departures:[];const found=deps.filter(d=>watched.includes(String(d.train||d.trainNumber||'').trim()));renderResults(found,watched);checkNotifications(found);setStatus('Sprawdzono: '+new Date().toLocaleTimeString('pl-PL')+'.')}catch(e){results.innerHTML='<div class="card alarm">Błąd pobierania danych: '+esc(e.message)+'</div>';setStatus('Nie udało się pobrać danych.')}}
-function codeOf(d){const vals=[d.statusCode,d.status,d.trainStatus,d.operationStatus,d.operationalStatus,d.plkStatus,d.plkCode,d.realizationStatus,d.runStatus,d.cancellationStatus,d.state,d.code];for(const v of vals){const s=String(v??'').trim().toUpperCase();if(s==='X'||s.includes('ODWO')||s.includes('CANCEL'))return 'X'}return''}function isCancelled(d){return codeOf(d)==='X'}function trainLabel(d){return [d.category,d.train||d.trainNumber].filter(Boolean).join(' ')}function shortTime(v){if(!v)return'';const m=String(v).match(/(\d{2}:\d{2})/);return m?m[1]:v}function delayClass(d){d=Number(d||0);return d>=15?'delay bad':d>=5?'delay warn':'delay'}
-function renderResults(found,watched){const missing=watched.filter(n=>!found.some(d=>String(d.train||d.trainNumber||'')===String(n)));const cards=found.map(d=>{const delay=Number(d.delay||0),cancel=isCancelled(d),alarm=cancel||delay>=Number(thresholdInput.value||5);return `<div class="card ${alarm?'alarm':''} ${cancel?'cancelled':''}"><div class="row"><div><div class="time">${esc(shortTime(d.time))}</div><div class="muted">${esc(shortTime(d.plannedTime))}</div></div><div><div class="big">${esc(trainLabel(d))}</div><div>${esc(d.name||d.carrier||'')}</div><div class="muted">${esc(d.destination||'brak kierunku')}${d.via?' · przez: '+esc(d.via):''}</div>${cancel?'<span class="badge badge-red">ODWOŁANY</span>':alarm?'<span class="badge badge-yellow">ALARM</span>':'<span class="badge badge-green">OK</span>'}</div><div><div class="${delayClass(delay)}">${cancel?'ODWOŁANY':(delay>0?'+'+delay+' min':'0')}</div><div class="muted">per. ${esc(d.platform||'—')} / tor ${esc(d.track||'—')}</div></div></div></div>`});if(missing.length)cards.push(`<div class="card"><b>Nie znaleziono:</b> ${missing.map(esc).join(', ')}<div class="muted">Może być poza zakresem najbliższych odjazdów albo potrzebny jest inny czas/stacja.</div></div>`);results.innerHTML=cards.length?cards.join(''):'<div class="muted">Brak śledzonych pociągów w aktualnej tablicy.</div>'}
-function checkNotifications(found){const threshold=Number(thresholdInput.value||5),alerts=found.filter(d=>isCancelled(d)||Number(d.delay||0)>=threshold),sig=alerts.map(d=>`${d.train||d.trainNumber}-${d.delay}-${codeOf(d)}-${d.time}`).join('|');if(!alerts.length||sig===lastSignature)return;lastSignature=sig;const msg=alerts.map(d=>isCancelled(d)?`${trainLabel(d)} ODWOŁANY`:`${trainLabel(d)} +${d.delay} min`).join(' | ');if('Notification'in window&&Notification.permission==='granted')new Notification('Alarm pociągu',{body:msg});setStatus('Alarm: '+msg)}
+function getTrains(){try{return JSON.parse(localStorage.getItem(STORE)||'[]')}catch{return[]}}
+function setTrains(a){localStorage.setItem(STORE,JSON.stringify([...new Set(a.map(normalizeTrainNo).filter(Boolean))]));renderTrainList()}
+function normalizeTrainNo(v){return String(v??'').trim().replace(/[^0-9A-Za-z-]/g,'').toUpperCase()}
+function extractTrainNos(v){return String(v||'').split(/[\s,;]+/).map(normalizeTrainNo).filter(Boolean)}
+function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'","&#039;")}
+function setStatus(t){status.textContent=t}
+function addTrains(){const nums=extractTrainNos(trainInput.value);if(!nums.length)return setStatus('Wpisz przynajmniej jeden numer pociągu.');setTrains([...nums,...getTrains()]);trainInput.value='';setStatus('Dodano: '+nums.join(', ')+'.')}
+function removeTrain(n){setTrains(getTrains().filter(x=>x!==n))}
+function clearTrains(){setTrains([]);results.innerHTML='<div class="muted">Brak danych.</div>';setStatus('Lista wyczyszczona.')}
+function renderTrainList(){const arr=getTrains();trainList.innerHTML=arr.length?arr.map(n=>`<div class="train-chip"><strong>${esc(n)}</strong><button class="btn-gray mini" onclick="removeTrain('${esc(n)}')">Usuń</button></div>`).join(''):'<div class="muted">Nie dodano jeszcze pociągów.</div>'}
+
+function timeSlots(){
+  if(modeInput.value==='around'){
+    const [h,m]=(timeInput.value||'12:00').split(':').map(Number); const win=Number(windowInput.value||4);
+    const start=Math.max(0,h-win), end=Math.min(23,h+win), out=[];
+    for(let x=start;x<=end;x+=2)out.push(`${String(x).padStart(2,'0')}:${String(m||0).padStart(2,'0')}`);
+    return out;
+  }
+  return ['00:00','04:00','08:00','12:00','16:00','20:00'];
+}
+async function fetchJson(url){const r=await fetch(url,{headers:{Accept:'application/json'}});let data={};try{data=await r.json()}catch{}if(!r.ok)throw new Error(data.error||data.details||data.message||('HTTP '+r.status));return data}
+function uniqDepartures(rows){const m=new Map();for(const d of rows){const no=trainNoOf(d), key=[no,shortTime(d.time||d.actualTime),shortTime(d.plannedTime),d.destination,d.status,d.statusCode].join('|');if(no&&!m.has(key))m.set(key,d)}return [...m.values()]}
+async function loadStationDepartures(station,date){
+  const all=[]; const slots=timeSlots();
+  for(const t of slots){
+    const p=new URLSearchParams({station,limit:'300',date,time:t});
+    try{const data=await fetchJson('/api/departures?'+p.toString()); if(Array.isArray(data.departures))all.push(...data.departures)}catch(e){console.warn('departures failed',t,e)}
+  }
+  return uniqDepartures(all);
+}
+async function loadTrainFallback(no,station,date){
+  const urls=[
+    `/api/train?train=${encodeURIComponent(no)}&date=${encodeURIComponent(date)}&station=${encodeURIComponent(station)}`,
+    `/api/train?number=${encodeURIComponent(no)}&date=${encodeURIComponent(date)}&station=${encodeURIComponent(station)}`,
+    `/api/train?trainNo=${encodeURIComponent(no)}&date=${encodeURIComponent(date)}&station=${encodeURIComponent(station)}`,
+    `/train?train=${encodeURIComponent(no)}&date=${encodeURIComponent(date)}&station=${encodeURIComponent(station)}`
+  ];
+  for(const u of urls){
+    try{const data=await fetchJson(u); const d=normalizeTrainDetail(data,no); if(d)return d}catch(e){console.warn('train fallback failed',u,e)}
+  }
+  return null;
+}
+function normalizeTrainDetail(data,no){
+  if(!data||typeof data!=='object')return null;
+  const src=data.train||data.details||data.data||data.result||data;
+  const rows=[...(Array.isArray(src)?src:[src])].filter(Boolean);
+  const first=rows.find(x=>String(trainNoOf(x)||no)===String(no))||rows[0];
+  if(!first)return null;
+  return {...first,train:first.train||first.trainNumber||first.number||no,_source:'szczegóły pociągu'};
+}
+async function checkNow(){
+  const station=stationInput.value.trim(), watched=getTrains(), date=dateInput.value;
+  if(!station)return setStatus('Wpisz stację kontrolną.');
+  if(!watched.length)return setStatus('Dodaj chociaż jeden numer pociągu.');
+  localStorage.setItem('lastAlarmStation',station);
+  setStatus('Sprawdzam szeroko tablicę stacji '+station+'...');
+  results.innerHTML='<div class="muted">Ładowanie...</div>';
+  try{
+    const deps=await loadStationDepartures(station,date);
+    const found=[]; const missing=[];
+    for(const no of watched){
+      const hits=deps.filter(d=>String(trainNoOf(d))===String(no));
+      if(hits.length) found.push(...hits.map(x=>({...x,_source:'tablica stacji'}))); else missing.push(no);
+    }
+    const fallback=[]; const stillMissing=[];
+    if(missing.length){setStatus('Nie ma wszystkich numerów w tablicy. Sprawdzam awaryjnie szczegóły pociągów...')}
+    for(const no of missing){const d=await loadTrainFallback(no,station,date); if(d)fallback.push(d); else stillMissing.push(no)}
+    const rows=[...found,...fallback];
+    renderResults(rows,stillMissing,station,deps.length);
+    checkNotifications(rows);
+    setStatus('Sprawdzono: '+new Date().toLocaleTimeString('pl-PL')+'. Tablica: '+deps.length+' pozycji, szczegóły: '+fallback.length+'.');
+  }catch(e){results.innerHTML='<div class="card alarm">Błąd pobierania danych: '+esc(e.message)+'</div>';setStatus('Nie udało się pobrać danych.')}
+}
+function trainNoOf(d){return normalizeTrainNo(d.train||d.trainNumber||d.number||d.trainNo||d.commercialTrainNumber)}
+function codeOf(d){const vals=[d.statusCode,d.status,d.trainStatus,d.operationStatus,d.operationalStatus,d.plkStatus,d.plkCode,d.realizationStatus,d.runStatus,d.cancellationStatus,d.state,d.code,d.kodPLK,d.plkKod];for(const v of vals){const s=String(v??'').trim().toUpperCase();if(s==='X'||s.includes('ODWO')||s.includes('CANCEL')||s.includes('ANNUL'))return 'X'}return ''}
+function isCancelled(d){return codeOf(d)==='X'}
+function trainLabel(d){return [d.category,d.train||d.trainNumber||d.number].filter(Boolean).join(' ')}
+function shortTime(v){if(!v)return'';const m=String(v).match(/(\d{2}:\d{2})/);return m?m[1]:v}
+function delayOf(d){const vals=[d.delay,d.delayMinutes,d.delayed,d.late,d.delayInMinutes];for(const v of vals){const n=Number(v);if(Number.isFinite(n))return n}return 0}
+function delayClass(d){d=Number(d||0);return d>=15?'delay bad':d>=5?'delay warn':'delay'}
+function statusBadge(d,alarm){if(isCancelled(d))return '<span class="badge badge-red">ODWOŁANY</span>'; if(alarm)return '<span class="badge badge-yellow">ALARM</span>'; return '<span class="badge badge-green">OK</span>'}
+function renderResults(rows,missing,station,loadedCount){
+  const threshold=Number(thresholdInput.value||5);
+  const cards=rows.map(d=>{const delay=delayOf(d),cancel=isCancelled(d),alarm=cancel||delay>=threshold, no=trainNoOf(d);return `<div class="card ${alarm?'alarm':''} ${cancel?'cancelled':''}"><div class="row"><div><div class="time">${esc(shortTime(d.time||d.actualTime||d.departureTime||d.plannedTime))}</div><div class="muted">plan: ${esc(shortTime(d.plannedTime||d.scheduledTime||d.time))}</div></div><div><div class="big">${esc(trainLabel(d)||no)}</div><div>${esc(d.name||d.carrier||d.operator||'')}</div><div class="muted">${esc(d.destination||d.to||d.direction||'brak kierunku')}${d.via?' · przez: '+esc(d.via):''}</div>${statusBadge(d,alarm)}<div class="source">Źródło: ${esc(d._source||'dane API')} ${codeOf(d)?'· kod: '+esc(codeOf(d)):''}</div></div><div><div class="${delayClass(delay)}">${cancel?'ODWOŁANY':(delay>0?'+'+delay+' min':'0')}</div><div class="muted">per. ${esc(d.platform||'—')} / tor ${esc(d.track||'—')}</div></div></div></div>`});
+  if(missing.length)cards.push(`<div class="card missing"><b>Nie znaleziono w tablicy ani w szczegółach:</b> ${missing.map(esc).join(', ')}<div class="muted">To nie znaczy automatycznie, że pociąg nie istnieje. Znaczy: nie ma go w pobranej tablicy stacji „${esc(station)}” (${loadedCount} pozycji) i endpoint szczegółów nie zwrócił użytecznego wyniku. Czyli komunikat wreszcie mówi prawdę, co w IT bywa wydarzeniem sezonu.</div></div>`);
+  results.innerHTML=cards.length?cards.join(''):'<div class="muted">Brak śledzonych pociągów w aktualnych danych.</div>';
+}
+function checkNotifications(rows){const threshold=Number(thresholdInput.value||5),alerts=rows.filter(d=>isCancelled(d)||delayOf(d)>=threshold),sig=alerts.map(d=>`${trainNoOf(d)}-${delayOf(d)}-${codeOf(d)}-${d.time||d.plannedTime}`).join('|');if(!alerts.length||sig===lastSignature)return;lastSignature=sig;const msg=alerts.map(d=>isCancelled(d)?`${trainLabel(d)} ODWOŁANY`:`${trainLabel(d)} +${delayOf(d)} min`).join(' | ');if('Notification'in window&&Notification.permission==='granted')new Notification('Alarm pociągu',{body:msg});setStatus('Alarm: '+msg)}
 function toggleWatch(){if(watchTimer){clearInterval(watchTimer);watchTimer=null;watchBtn.textContent='Monitoring: OFF';watchBtn.className='btn-red';setStatus('Monitoring wyłączony.');return}if('Notification'in window&&Notification.permission==='default')Notification.requestPermission();watchTimer=setInterval(checkNow,180000);watchBtn.textContent='Monitoring: ON';watchBtn.className='btn-green';checkNow()}
 </script>
-</body></html>
+</body>
+</html>
