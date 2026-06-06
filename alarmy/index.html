@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="pl">
-<!-- app-version: alarmy-v0.2.9 loading-scroll-cache-bugfix -->
+<!-- app-version: alarmy-v0.3.0 auto-cache-resilient-fetch -->
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Alarmy pociągów RafStaKa v0.2.9</title>
+<title>Alarmy pociągów RafStaKa v0.3.0</title>
 <style>
 :root{--bg:#101820;--panel:#1c2833;--card:#223244;--card2:#162433;--border:#34495e;--blue:#0b57d0;--green:#198754;--red:#dc3545;--yellow:#ffcc00;--muted:rgba(255,255,255,.68);--ok:#5dd39e;--bad:#ff6b6b}
 *{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#fff;padding:18px 18px 82px}.wrap{max-width:1040px;margin:0 auto}h1{text-align:center;margin:14px 0 5px;font-size:30px}.version{text-align:center;color:var(--muted);font-size:12px;margin-bottom:14px}.panel{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:14px;margin:12px 0}.grid{display:grid;grid-template-columns:1.2fr .62fr .62fr;gap:8px}.train-row{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:8px}input,select,textarea,button{border:0;border-radius:10px;padding:12px;font-size:15px}textarea{min-height:66px;resize:vertical;font-family:Arial,sans-serif}button{font-weight:900;cursor:pointer}.btn-blue{background:var(--blue);color:#fff}.btn-green{background:var(--green);color:#fff}.btn-red{background:var(--red);color:#fff}.btn-gray{background:#475569;color:#fff}.actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:10px}.help{font-size:13px;color:var(--muted);line-height:1.42}.help strong{color:#fff}.advanced{margin-top:10px}.advanced summary{cursor:pointer;color:#dbeafe;font-weight:900}.advanced-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px}.list{display:grid;gap:8px}.train-chip{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--card2);border:1px solid #2f4358;border-radius:12px;padding:10px 12px}.train-chip strong{font-size:18px}.result{display:grid;gap:10px;margin-top:10px}.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px}.card.alarm{border-color:#ef4444;background:#3b1d1d}.card.cancelled{border-color:#ef4444}.card.missing{border-color:#64748b;background:#1f2937}.card.warn{border-color:#eab308}.row{display:grid;grid-template-columns:92px 1fr 116px;gap:10px;align-items:start}.time{font-size:24px;font-weight:900;color:var(--ok)}.delay{font-weight:900;color:var(--ok)}.delay.warn{color:var(--yellow)}.delay.bad{color:var(--bad)}.badge{display:inline-block;padding:4px 9px;border-radius:999px;font-size:12px;font-weight:900;background:#334155;color:#fff;margin-top:5px}.badge-red{background:#7f1d1d}.badge-yellow{background:#854d0e}.badge-green{background:#166534}.badge-gray{background:#475569}.muted{color:var(--muted);font-size:12px}.big{font-size:18px;font-weight:900}.train-run-link{color:#dbeafe;text-decoration:none;border-bottom:1px dotted #93c5fd}.train-run-link:hover{color:#fff;border-bottom-color:#fff}.train-link{color:#dbeafe;text-decoration:none;border-bottom:1px dotted rgba(219,234,254,.75)}.train-link:hover{color:#fff;border-bottom-color:#fff}.statusline{text-align:center;color:var(--muted);margin:10px 0;min-height:20px}.source{font-size:11px;color:var(--muted);margin-top:6px}.details{margin-top:8px;display:grid;gap:4px;font-size:12px;color:#dbeafe}.rawgrid{margin-top:8px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;font-size:11px;color:#cbd5e1}.rawgrid div{background:#0f172a;border:1px solid #334155;border-radius:8px;padding:5px}.rawgrid b{color:#fff}@media(max-width:740px){.rawgrid{grid-template-columns:1fr}}.details b{color:#fff}.route{margin-top:6px;font-size:12px;color:var(--muted);line-height:1.35}.train-link.disabled{color:#94a3b8;border-bottom:0;cursor:not-allowed}.idpill{display:inline-block;margin-left:6px;padding:2px 6px;border-radius:999px;background:#0f172a;border:1px solid #475569;color:#cbd5e1;font-size:10px;font-weight:900;vertical-align:middle}.bottom{position:fixed;left:50%;bottom:8px;transform:translateX(-50%);width:min(660px,calc(100vw - 16px));background:rgba(22,36,51,.97);border:1px solid var(--border);border-radius:14px;padding:7px;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;z-index:20}.bottom a,.bottom button{display:flex;align-items:center;justify-content:center;height:36px;border-radius:9px;background:#f2f4f8;color:#111827;text-decoration:none;font-size:12px;font-weight:900}.mini{font-size:12px;padding:8px 10px}.note{background:#0f172a;border:1px dashed #475569;border-radius:12px;padding:10px;margin-top:8px;color:#dbeafe;font-size:13px;line-height:1.35}.cachebox{background:#102235;border:1px solid #31516f;border-radius:12px;padding:10px;margin-top:10px;font-size:13px;color:#dbeafe}.cachebox b{color:#fff}.boardlist{display:grid;gap:6px;margin-top:8px;max-height:260px;overflow:auto}.boarditem{display:grid;grid-template-columns:78px 98px 1fr 100px;gap:8px;align-items:center;background:#0f172a;border:1px solid #334155;border-radius:10px;padding:7px}.boarditem .n{font-weight:900;color:#dbeafe}.boarditem .t{color:#5dd39e;font-weight:900}.boarditem button{padding:7px 9px;font-size:12px}.cache-ok{color:#5dd39e;font-weight:900}.cache-bad{color:#ffcc00;font-weight:900}@media(max-width:740px){.boarditem{grid-template-columns:70px 82px 1fr}.boarditem button{grid-column:1/-1}}@media(max-width:740px){body{padding:10px 8px 76px}h1{font-size:24px}.grid{grid-template-columns:1fr 1fr}.grid input:first-child{grid-column:1/-1}.train-row{grid-template-columns:1fr}.advanced-grid{grid-template-columns:1fr}.row{grid-template-columns:70px 1fr 86px}.time{font-size:22px}input,select,textarea,button{padding:10px;font-size:14px}}
@@ -33,7 +33,7 @@
 <body>
 <div class="wrap">
 <h1>🔔 Alarmy pociągów</h1>
-<div class="version">v0.2.9 · poprawka sprawdzania · animacja ładowania · przewijanie do wyników</div>
+<div class="version">v0.3.0 · automatyczny cache · odporniejsze pobieranie tablicy</div>
 <div class="panel">
   <div class="grid">
     <input id="stationInput" placeholder="Stacja kontrolna, np. Tarnowskie Góry">
@@ -53,19 +53,19 @@
     </div>
   </details>
   <div class="actions">
-    <button class="btn-blue" onclick="preloadBoard()">1. Pobierz tablicę</button>
-    <button class="btn-green" onclick="checkNow()">2. Sprawdź alarmy</button>
+    <button class="btn-blue" onclick="preloadBoard()">Pobierz tablicę</button>
+    <button class="btn-green" onclick="checkNow()">Sprawdź alarmy</button>
     <button id="watchBtn" class="btn-red" onclick="toggleWatch()">Monitoring: OFF</button>
     <button class="btn-gray" onclick="clearTrains()">Wyczyść listę</button>
   </div>
-  <div class="note"><strong>Zmiana v0.2.8:</strong> wyniki są grupowane na: odwołane, opóźnione i pozostałe. Alarmy zapisują krótką historię w przeglądarce. Numery w próbce cache można kliknąć, żeby dodać je do monitoringu. Bo ręczne przepisywanie numerów to sport dla ludzi z nadmiarem cierpliwości.</div>
+  <div class="note"><strong>Zmiana v0.3.0:</strong> cache pobiera się automatycznie przy sprawdzaniu alarmów, jeżeli go brakuje albo jest pusty. Ręczne „Pobierz” zostaje jako przycisk serwisowy. Pobieranie używa mniejszych porcji i robi fallback na cały dzień.</div>
   <div id="cacheState" class="cachebox">Cache tablicy: brak.</div>
 </div>
 <div class="panel"><h2>Śledzone pociągi</h2><div id="trainList" class="list"></div></div>
 <div id="status" class="statusline">Dodaj numery i kliknij „Sprawdź teraz”.</div>
 <div class="panel"><h2>Wyniki</h2><div id="results" class="result"><div class="muted">Brak danych.</div></div></div><div class="panel"><h2>Historia alarmów</h2><div id="historyBox" class="historybox">Brak historii alarmów.</div></div>
 </div>
-<div class="bottom"><a href="/">🚆 Główna</a><button onclick="preloadBoard()">📥 Pobierz</button><button onclick="toggleWatch()">🔔 Alarm</button></div>
+<div class="bottom"><a href="/">🚆 Główna</a><button onclick="preloadBoard()">📥 Cache</button><button onclick="toggleWatch()">🔔 Alarm</button></div>
 <script>
 const STORE='rafstakTrainAlertsV02';
 const BOARD_CACHE='rafstakAlarmBoardCacheV028';
@@ -141,6 +141,14 @@ async function preloadBoard(){
   }catch(e){results.innerHTML='<div class="card alarm">Błąd pobierania tablicy: '+esc(e.message)+'</div>';setStatus('Nie udało się pobrać tablicy.')}
 }
 
+function allDaySlots(){
+  const out=[];
+  for(let x=0;x<=23;x+=1)out.push(`${String(x).padStart(2,'0')}:00`);
+  return out;
+}
+function uniqSlots(slots){
+  return [...new Set((slots||[]).filter(Boolean))];
+}
 function timeSlots(){
   const [hh,mm]=(timeInput.value||'12:00').split(':').map(Number);
   const h=Number.isFinite(hh)?hh:12;
@@ -168,13 +176,27 @@ function timeSlots(){
 async function fetchJson(url){const r=await fetch(url,{headers:{Accept:'application/json'}});let data={};try{data=await r.json()}catch{}if(!r.ok)throw new Error(data.error||data.details||data.message||('HTTP '+r.status));return data}
 function uniqDepartures(rows){const m=new Map();for(const d of rows){const no=trainNoOf(d), key=[no,shortTime(d.time||d.actualTime),shortTime(d.plannedTime),d.destination,d.status,d.statusCode].join('|');if(no&&!m.has(key))m.set(key,d)}return [...m.values()]}
 async function loadStationDepartures(station,date){
-  const all=[]; const slots=timeSlots();
-  const errors=[];
-  for(const t of slots){
-    const p=new URLSearchParams({station,limit:'300',date,time:t});
-    try{const data=await fetchJson('/api/departures?'+p.toString()); if(Array.isArray(data.departures))all.push(...data.departures)}catch(e){errors.push(t+': '+e.message);console.warn('departures failed',t,e)}
+  async function runSlots(slots,label){
+    const all=[]; const errors=[];
+    for(const t of slots){
+      const p=new URLSearchParams({station,limit:'80',date,time:t});
+      try{
+        const data=await fetchJson('/api/departures?'+p.toString());
+        if(Array.isArray(data.departures))all.push(...data.departures);
+      }catch(e){
+        errors.push(t+': '+e.message);
+        console.warn('departures failed',label,t,e);
+      }
+    }
+    return {rows:uniqDepartures(all),slots,errors,label};
   }
-  return {rows:uniqDepartures(all),slots,errors};
+  const primary=await runSlots(uniqSlots(timeSlots()),'primary');
+  if(primary.rows.length) return primary;
+  const fallback=await runSlots(allDaySlots(),'fallback-all-day');
+  fallback.slots=[...primary.slots,...fallback.slots];
+  fallback.errors=[...primary.errors,...fallback.errors];
+  fallback.label='fallback-all-day';
+  return fallback;
 }
 async function loadTrainFallback(no,station,date){
   const urls=[
@@ -201,18 +223,25 @@ async function checkNow(){
   if(!station)return setStatus('Wpisz stację kontrolną.');
   if(!watched.length)return setStatus('Dodaj chociaż jeden numer pociągu.');
   localStorage.setItem('lastAlarmStation',station);
-  setStatus('Sprawdzam alarmy z cache tablicy...');
-  showLoading('Sprawdzam alarmy')
+  showLoading('Sprawdzam alarmy i przygotowuję cache');
   try{
     let c=getBoardCache();
     let deps=[];
-    if(cacheMatches(c,station,date)){
+    if(cacheMatches(c,station,date)&&Array.isArray(c.rows)&&c.rows.length){
       deps=c.rows;
     }else{
-      setStatus('Brak aktualnego cache dla tej stacji/daty. Pobieram tablicę najpierw...');
+      setStatus('Brak aktualnego cache. Pobieram tablicę automatycznie...');
       const loaded=await loadStationDepartures(station,date);
       deps=loaded.rows||[];
-      if(deps.length)c=setBoardCache(station,date,deps);
+      if(deps.length){
+        c=setBoardCache(station,date,deps);
+      }else{
+        const msg='Tablica zwróciła 0 pozycji. Cache nie został zapisany. Parametry: '+station+' · '+date+' · sloty: '+loaded.slots.join(', ')+'.';
+        results.innerHTML='<div class="card warn"><b>Nie udało się zbudować cache.</b><div class="muted">'+esc(msg)+'</div><div class="muted">Endpoint /api/departures nie zwrócił odjazdów dla pobranych slotów. Sprawdź główną tablicę dla tej samej stacji i daty.</div></div>';
+        scrollToResults();
+        setStatus('Cache pusty. Alarmy nie mają z czego sprawdzać pociągów.');
+        return;
+      }
     }
     if(!Array.isArray(deps))deps=[];
     const found=[]; const missing=[];
@@ -225,7 +254,11 @@ async function checkNow(){
     checkNotifications(found);
     renderCacheState();
     setStatus('Sprawdzono z cache: '+new Date().toLocaleTimeString('pl-PL')+'. Tablica: '+deps.length+' pozycji, znaleziono: '+found.length+', brak w tablicy: '+missing.length+'.');
-  }catch(e){results.innerHTML='<div class="card alarm">Błąd sprawdzania: '+esc(e.message)+'</div>';setStatus('Nie udało się sprawdzić alarmów.')}
+  }catch(e){
+    results.innerHTML='<div class="card alarm">Błąd sprawdzania: '+esc(e.message)+'</div>';
+    scrollToResults();
+    setStatus('Nie udało się sprawdzić alarmów.');
+  }
 }
 function trainNoOf(d){return normalizeTrainNo(d.train||d.trainNumber||d.number||d.trainNo||d.commercialTrainNumber||d.train_number||d.trainNumberString||d.train_number_string||d.displayTrainNumber||d.communicationNumber||d.operationNumber)}
 function valOf(d,names){for(const n of names){if(d&&d[n]!==undefined&&d[n]!==null&&String(d[n]).trim()!=='')return d[n]}return''}
