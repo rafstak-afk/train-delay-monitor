@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="pl">
-<!-- app-version: alarmy-v0.3.1 verified-default-trains -->
+<!-- app-version: alarmy-v0.3.2 verified-default-trains -->
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -314,16 +314,25 @@ function valOf(d,names){for(const n of names){if(d&&d[n]!==undefined&&d[n]!==nul
 function codeOf(d){const vals=[d.statusCode,d.status,d.trainStatus,d.operationStatus,d.operationalStatus,d.plkStatus,d.plkCode,d.realizationStatus,d.runStatus,d.cancellationStatus,d.state,d.code,d.kodPLK,d.plkKod];for(const v of vals){const s=String(v??'').trim().toUpperCase();if(s==='X'||s.includes('ODWO')||s.includes('CANCEL')||s.includes('ANNUL'))return 'X'}return ''}
 function isCancelled(d){return codeOf(d)==='X'}
 function trainLabel(d){return [valOf(d,['category','trainCategory','type']),trainNoOf(d)].filter(Boolean).join(' ')}
+function isGoodRunId(v){
+  const s=String(v??'').trim();
+  if(!s)return false;
+  // Nie uznajemy roku ani prostego numeru pociągu za ID kursu. To robiło nekrolog zamiast biegu.
+  if(/^20\d{2}$/.test(s))return false;
+  if(s===String(dateInput.value||'').slice(0,4))return false;
+  if(/^\d{1,3}$/.test(s))return false;
+  return true;
+}
 function runIdOf(d){
-  const direct=valOf(d,['runId','courseId','journeyId','journey_id','trainId','train_id','timetableId','timetable_id','operationId','operation_id','scheduleId','schedule_id','relationId','relation_id','connectionId','connection_id','communicationId','communication_id','course_id','courseID','id','uid','href','link']);
-  if(direct)return String(direct);
-  const link=String(valOf(d,['url','href','link','detailsUrl','trainUrl'])||'');
-  const m=link.match(/[?&](?:id|runId|courseId|journeyId|trainId|operationId|scheduleId)=([^&#]+)/i);
-  return m?decodeURIComponent(m[1]):'';
+  const trusted=['runId','courseId','journeyId','journey_id','trainId','train_id','timetableId','timetable_id','operationId','operation_id','scheduleId','schedule_id','relationId','relation_id','connectionId','connection_id','communicationId','communication_id','course_id','courseID','uid'];
+  for(const k of trusted){const v=d&&d[k]; if(isGoodRunId(v))return String(v).trim()}
+  const link=String(valOf(d,['detailsUrl','trainUrl','runUrl','url','href','link'])||'');
+  const m=link.match(/[?&](?:id|runId|courseId|journeyId|trainId|operationId|scheduleId|connectionId|communicationId)=([^&#]+)/i);
+  return m&&isGoodRunId(decodeURIComponent(m[1]))?decodeURIComponent(m[1]):'';
 }
 function extraIdsOf(d){
-  const keys=['runId','courseId','journeyId','trainId','timetableId','operationId','scheduleId','id','uid'];
-  return keys.map(k=>d&&d[k]!==undefined&&d[k]!==null?[k,String(d[k])]:null).filter(Boolean);
+  const keys=['runId','courseId','journeyId','trainId','timetableId','operationId','scheduleId','connectionId','communicationId','uid'];
+  return keys.map(k=>d&&d[k]!==undefined&&d[k]!==null&&isGoodRunId(d[k])?[k,String(d[k])]:null).filter(Boolean);
 }
 function detailLinkOf(d){return String(valOf(d,['detailsUrl','trainUrl','runUrl','url','href','link'])||'')}
 function cacheRunData(no,d={}){
