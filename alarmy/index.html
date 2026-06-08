@@ -1,19 +1,19 @@
 <!DOCTYPE html>
 <html lang="pl">
-<!-- app-version: alarmy-v0.2.9 startup-watchlist-autoload -->
+<!-- app-version: alarmy-v0.3.1 verified-default-trains -->
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Alarmy pociągów RafStaKa v0.2.9</title>
+<title>Alarmy pociągów RafStaKa v0.3.1</title>
 <style>
 :root{--bg:#101820;--panel:#1c2833;--card:#223244;--card2:#162433;--border:#34495e;--blue:#0b57d0;--green:#198754;--red:#dc3545;--yellow:#ffcc00;--muted:rgba(255,255,255,.68);--ok:#5dd39e;--bad:#ff6b6b}
-*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#fff;padding:18px 18px 82px}.wrap{max-width:1040px;margin:0 auto}h1{text-align:center;margin:14px 0 5px;font-size:30px}.version{text-align:center;color:var(--muted);font-size:12px;margin-bottom:14px}.panel{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:14px;margin:12px 0}.grid{display:grid;grid-template-columns:1.2fr .62fr .62fr;gap:8px}.train-row{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:8px}input,select,textarea,button{border:0;border-radius:10px;padding:12px;font-size:15px}textarea{min-height:66px;resize:vertical;font-family:Arial,sans-serif}button{font-weight:900;cursor:pointer}.btn-blue{background:var(--blue);color:#fff}.btn-green{background:var(--green);color:#fff}.btn-red{background:var(--red);color:#fff}.btn-gray{background:#475569;color:#fff}.actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:10px}.help{font-size:13px;color:var(--muted);line-height:1.42}.help strong{color:#fff}.advanced{margin-top:10px}.advanced summary{cursor:pointer;color:#dbeafe;font-weight:900}.advanced-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px}.list{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.train-chip{display:inline-flex;align-items:center;gap:6px;background:#e5e7eb;color:#111827;border:0;border-radius:999px;padding:6px 8px 6px 11px;line-height:1;max-width:100%}.train-chip strong{font-size:13px;font-weight:900;color:#111827}.chip-x{width:16px;height:16px;border-radius:50%;border:1px solid #64748b;background:#f8fafc;color:#111827;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;line-height:1;padding:0;cursor:pointer}.chip-x:hover{background:#fee2e2;border-color:#dc2626;color:#991b1b}.result{display:grid;gap:10px;margin-top:10px}.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px}.card.alarm{border-color:#ef4444;background:#3b1d1d}.card.cancelled{border-color:#ef4444}.card.missing{border-color:#64748b;background:#1f2937}.card.warn{border-color:#eab308}.row{display:grid;grid-template-columns:92px 1fr 116px;gap:10px;align-items:start}.miniinfo{display:flex;gap:8px;flex-wrap:wrap;margin-top:7px}.miniinfo span{background:#0f172a;border:1px solid #334155;border-radius:999px;padding:3px 8px;font-size:12px;color:#dbeafe}.via{color:var(--muted);font-size:13px;line-height:1.28;margin-top:2px}.headline{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.time{font-size:24px;font-weight:900;color:var(--ok)}.delay{font-weight:900;color:var(--ok)}.delay.warn{color:var(--yellow)}.delay.bad{color:var(--bad)}.badge{display:inline-block;padding:4px 9px;border-radius:999px;font-size:12px;font-weight:900;background:#334155;color:#fff;margin-top:5px}.badge-red{background:#7f1d1d}.badge-yellow{background:#854d0e}.badge-green{background:#166534}.badge-gray{background:#475569}.muted{color:var(--muted);font-size:12px}.big{font-size:18px;font-weight:900}.train-run-link{color:#dbeafe;text-decoration:none;border-bottom:1px dotted #93c5fd}.train-run-link:hover{color:#fff;border-bottom-color:#fff}.train-link{color:#dbeafe;text-decoration:none;border-bottom:1px dotted rgba(219,234,254,.75)}.train-link:hover{color:#fff;border-bottom-color:#fff}.statusline{text-align:center;color:var(--muted);margin:10px 0;min-height:20px}.source{font-size:11px;color:var(--muted);margin-top:6px}.details{margin-top:8px;display:grid;gap:4px;font-size:12px;color:#dbeafe}.rawgrid{margin-top:8px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;font-size:11px;color:#cbd5e1}.rawgrid div{background:#0f172a;border:1px solid #334155;border-radius:8px;padding:5px}.rawgrid b{color:#fff}@media(max-width:740px){.rawgrid{grid-template-columns:1fr}}.details b{color:#fff}.route{margin-top:6px;font-size:12px;color:var(--muted);line-height:1.35}.train-link.disabled{color:#94a3b8;border-bottom:0;cursor:not-allowed}.idpill{display:inline-block;margin-left:6px;padding:2px 6px;border-radius:999px;background:#0f172a;border:1px solid #475569;color:#cbd5e1;font-size:10px;font-weight:900;vertical-align:middle}.bottom{position:fixed;left:50%;bottom:8px;transform:translateX(-50%);width:min(660px,calc(100vw - 16px));background:rgba(22,36,51,.97);border:1px solid var(--border);border-radius:14px;padding:7px;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;z-index:20}.bottom a,.bottom button{display:flex;align-items:center;justify-content:center;height:36px;border-radius:9px;background:#f2f4f8;color:#111827;text-decoration:none;font-size:12px;font-weight:900}.mini{font-size:12px;padding:8px 10px}.note{background:#0f172a;border:1px dashed #475569;border-radius:12px;padding:10px;margin-top:8px;color:#dbeafe;font-size:13px;line-height:1.35}.cachebox{background:#102235;border:1px solid #31516f;border-radius:12px;padding:10px;margin-top:10px;font-size:13px;color:#dbeafe}.cachebox b{color:#fff}.station-switches{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}.switch-card{background:#102235;border:1px solid #31516f;border-radius:12px;padding:10px;display:flex;align-items:center;justify-content:space-between;gap:8px}.switch-card span{font-weight:900;font-size:13px}.switch{position:relative;display:inline-block;width:48px;height:26px;flex:0 0 auto}.switch input{opacity:0;width:0;height:0}.slider{position:absolute;cursor:pointer;inset:0;background:#475569;border-radius:999px;transition:.18s}.slider:before{content:"";position:absolute;height:20px;width:20px;left:3px;top:3px;background:white;border-radius:50%;transition:.18s}.switch input:checked + .slider{background:#198754}.switch input:checked + .slider:before{transform:translateX(22px)}.station-summary{font-size:12px;color:#dbeafe;margin-top:8px;line-height:1.35}.custom-stations{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:8px}.custom-stations button{white-space:nowrap}.boardlist{display:grid;gap:6px;margin-top:8px;max-height:260px;overflow:auto}.boarditem{display:grid;grid-template-columns:78px 98px 1fr 100px;gap:8px;align-items:center;background:#0f172a;border:1px solid #334155;border-radius:10px;padding:7px}.boarditem .n{font-weight:900;color:#dbeafe}.boarditem .t{color:#5dd39e;font-weight:900}.boarditem button{padding:7px 9px;font-size:12px}.cache-ok{color:#5dd39e;font-weight:900}.cache-bad{color:#ffcc00;font-weight:900}.loader{display:none;margin-top:10px;background:#0f172a;border:1px solid #334155;border-radius:12px;padding:10px;color:#dbeafe}.loader.on{display:flex;align-items:center;gap:10px}.spinner{width:18px;height:18px;border-radius:50%;border:3px solid rgba(255,255,255,.25);border-top-color:#fff;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}.pulse{animation:pulse 1s ease-in-out infinite}@keyframes pulse{0%,100%{opacity:.55}50%{opacity:1}}@media(max-width:740px){.boarditem{grid-template-columns:70px 82px 1fr}.boarditem button{grid-column:1/-1}.station-switches{grid-template-columns:1fr 1fr}.custom-stations{grid-template-columns:1fr}}@media(max-width:740px){body{padding:10px 8px 76px}h1{font-size:24px}.grid{grid-template-columns:1fr 1fr}.grid input:first-child{grid-column:1/-1}.train-row{grid-template-columns:1fr}.advanced-grid{grid-template-columns:1fr}.row{grid-template-columns:70px 1fr 86px}.time{font-size:22px}input,select,textarea,button{padding:10px;font-size:14px}}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#fff;padding:18px 18px 82px}.wrap{max-width:1040px;margin:0 auto}h1{text-align:center;margin:14px 0 5px;font-size:30px}.version{text-align:center;color:var(--muted);font-size:12px;margin-bottom:14px}.panel{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:14px;margin:12px 0}.grid{display:grid;grid-template-columns:1.2fr .62fr .62fr;gap:8px}.train-row{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:8px}input,select,textarea,button{border:0;border-radius:10px;padding:12px;font-size:15px}textarea{min-height:66px;resize:vertical;font-family:Arial,sans-serif}button{font-weight:900;cursor:pointer}.btn-blue{background:var(--blue);color:#fff}.btn-green{background:var(--green);color:#fff}.btn-red{background:var(--red);color:#fff}.btn-gray{background:#475569;color:#fff}.actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:10px}.help{font-size:13px;color:var(--muted);line-height:1.42}.help strong{color:#fff}.advanced{margin-top:10px}.advanced summary{cursor:pointer;color:#dbeafe;font-weight:900}.advanced-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px}.list{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.train-chip{display:inline-flex;align-items:center;gap:6px;background:#e5e7eb;color:#111827;border:0;border-radius:999px;padding:6px 8px 6px 11px;line-height:1;max-width:100%}.train-chip strong{font-size:13px;font-weight:900;color:#111827}.chip-x{width:16px;height:16px;border-radius:50%;border:1px solid #64748b;background:#f8fafc;color:#111827;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;line-height:1;padding:0;cursor:pointer}.chip-x:hover{background:#fee2e2;border-color:#dc2626;color:#991b1b}.result{display:grid;gap:10px;margin-top:10px}.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px}.card.alarm{border-color:#ef4444;background:#3b1d1d}.card.cancelled{border-color:#ef4444}.card.missing{border-color:#64748b;background:#1f2937}.card.warn{border-color:#eab308}.row{display:grid;grid-template-columns:92px 1fr 116px;gap:10px;align-items:start}.miniinfo{display:flex;gap:8px;flex-wrap:wrap;margin-top:7px}.miniinfo span{background:#0f172a;border:1px solid #334155;border-radius:999px;padding:3px 8px;font-size:12px;color:#dbeafe}.via{color:var(--muted);font-size:13px;line-height:1.28;margin-top:2px}.headline{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.time{font-size:24px;font-weight:900;color:var(--ok)}.delay{font-weight:900;color:var(--ok)}.delay.warn{color:var(--yellow)}.delay.bad{color:var(--bad)}.badge{display:inline-block;padding:4px 9px;border-radius:999px;font-size:12px;font-weight:900;background:#334155;color:#fff;margin-top:5px}.badge-red{background:#7f1d1d}.badge-yellow{background:#854d0e}.badge-green{background:#166534}.badge-gray{background:#475569}.muted{color:var(--muted);font-size:12px}.big{font-size:18px;font-weight:900}.train-run-link{color:#dbeafe;text-decoration:none;border-bottom:1px dotted #93c5fd}.train-run-link:hover{color:#fff;border-bottom-color:#fff}.train-link{color:#dbeafe;text-decoration:none;border-bottom:1px dotted rgba(219,234,254,.75)}.train-link:hover{color:#fff;border-bottom-color:#fff}.statusline{text-align:center;color:var(--muted);margin:10px 0;min-height:20px}.source{font-size:11px;color:var(--muted);margin-top:6px}.details{margin-top:8px;display:grid;gap:4px;font-size:12px;color:#dbeafe}.rawgrid{margin-top:8px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;font-size:11px;color:#cbd5e1}.rawgrid div{background:#0f172a;border:1px solid #334155;border-radius:8px;padding:5px}.rawgrid b{color:#fff}@media(max-width:740px){.rawgrid{grid-template-columns:1fr}}.details b{color:#fff}.route{margin-top:6px;font-size:12px;color:var(--muted);line-height:1.35}.train-link.disabled{color:#94a3b8;border-bottom:0;cursor:not-allowed}.idpill{display:inline-block;margin-left:6px;padding:2px 6px;border-radius:999px;background:#0f172a;border:1px solid #475569;color:#cbd5e1;font-size:10px;font-weight:900;vertical-align:middle}.bottom{position:fixed;left:50%;bottom:8px;transform:translateX(-50%);width:min(660px,calc(100vw - 16px));background:rgba(22,36,51,.97);border:1px solid var(--border);border-radius:14px;padding:7px;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;z-index:20}.bottom a,.bottom button{display:flex;align-items:center;justify-content:center;height:36px;border-radius:9px;background:#f2f4f8;color:#111827;text-decoration:none;font-size:12px;font-weight:900}.mini{font-size:12px;padding:8px 10px}.note{background:#0f172a;border:1px dashed #475569;border-radius:12px;padding:10px;margin-top:8px;color:#dbeafe;font-size:13px;line-height:1.35}.cachebox{background:#102235;border:1px solid #31516f;border-radius:12px;padding:10px;margin-top:10px;font-size:13px;color:#dbeafe}.cachebox b{color:#fff}.station-switches{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}.switch-card{background:#102235;border:1px solid #31516f;border-radius:12px;padding:10px;display:flex;align-items:center;justify-content:space-between;gap:8px}.switch-card span{font-weight:900;font-size:13px}.switch{position:relative;display:inline-block;width:48px;height:26px;flex:0 0 auto}.switch input{opacity:0;width:0;height:0}.slider{position:absolute;cursor:pointer;inset:0;background:#475569;border-radius:999px;transition:.18s}.slider:before{content:"";position:absolute;height:20px;width:20px;left:3px;top:3px;background:white;border-radius:50%;transition:.18s}.switch input:checked + .slider{background:#198754}.switch input:checked + .slider:before{transform:translateX(22px)}.station-summary{font-size:12px;color:#dbeafe;margin-top:8px;line-height:1.35}.custom-stations{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:8px}.custom-stations button{white-space:nowrap}.boardlist{display:grid;gap:6px;margin-top:8px;max-height:260px;overflow:auto}.boarditem{display:grid;grid-template-columns:78px 98px 1fr 100px;gap:8px;align-items:center;background:#0f172a;border:1px solid #334155;border-radius:10px;padding:7px}.boarditem .n{font-weight:900;color:#dbeafe}.boarditem .t{color:#5dd39e;font-weight:900}.boarditem button{padding:7px 9px;font-size:12px}.cache-ok{color:#5dd39e;font-weight:900}.cache-bad{color:#ffcc00;font-weight:900} .loader{display:none;margin-top:10px;background:#0f172a;border:1px solid #334155;border-radius:14px;padding:12px;color:#dbeafe;overflow:hidden}.loader.on{display:block}.rail-title{display:flex;align-items:center;justify-content:space-between;gap:10px;font-weight:900;margin-bottom:8px}.rail-title small{font-weight:700;color:var(--muted)}.rail-track{position:relative;height:30px;margin:8px 0 10px;border-top:3px double #64748b;border-bottom:3px double #64748b;overflow:hidden;border-radius:10px;background:linear-gradient(90deg,rgba(255,255,255,.04),rgba(255,255,255,.01))}.rail-train{position:absolute;left:-44px;top:2px;font-size:22px;filter:drop-shadow(0 2px 2px rgba(0,0,0,.45));animation:railRun 2.4s linear infinite}.loader.done .rail-train{animation-duration:1.2s}.rail-stations{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.rail-station{background:#111827;border:1px solid #334155;border-radius:10px;padding:7px 9px;font-size:12px;display:flex;align-items:center;justify-content:space-between;gap:8px}.rail-station b{font-size:12px}.rail-station .state{white-space:nowrap;color:var(--muted);font-weight:900}.rail-station.wait .state{color:#94a3b8}.rail-station.loading{border-color:#60a5fa}.rail-station.loading .state{color:#93c5fd}.rail-station.ok{border-color:#16a34a}.rail-station.ok .state{color:#5dd39e}.rail-station.err{border-color:#dc2626}.rail-station.err .state{color:#ff6b6b}.loader-mini{font-size:12px;color:var(--muted);margin-top:7px;line-height:1.35}@keyframes railRun{from{transform:translateX(0)}to{transform:translateX(calc(100vw + 110px))}}@media(max-width:740px){.rail-stations{grid-template-columns:1fr}.rail-title{align-items:flex-start;flex-direction:column}} .spinner{display:none}.pulse{animation:pulse 1s ease-in-out infinite}@keyframes pulse{0%,100%{opacity:.55}50%{opacity:1}}@media(max-width:740px){.boarditem{grid-template-columns:70px 82px 1fr}.boarditem button{grid-column:1/-1}.station-switches{grid-template-columns:1fr 1fr}.custom-stations{grid-template-columns:1fr}}@media(max-width:740px){body{padding:10px 8px 76px}h1{font-size:24px}.grid{grid-template-columns:1fr 1fr}.grid input:first-child{grid-column:1/-1}.train-row{grid-template-columns:1fr}.advanced-grid{grid-template-columns:1fr}.row{grid-template-columns:70px 1fr 86px}.time{font-size:22px}input,select,textarea,button{padding:10px;font-size:14px}}
 </style>
 </head>
 <body>
 <div class="wrap">
 <h1>🔔 Alarmy pociągów</h1>
-<div class="version">v0.2.9 · startowa lista pociągów · auto-start · animacja pobierania</div>
+<div class="version">v0.3.0 · auto-start · cache wielu stacji · pędzący pociąg i statusy pobierania</div>
 <div class="panel">
   <div class="grid">
     <input id="stationInput" placeholder="Stacja pomocnicza, np. Tarnowskie Góry">
@@ -44,9 +44,14 @@
     <button id="watchBtn" class="btn-red" onclick="toggleWatch()">Monitoring: OFF</button>
     <button class="btn-gray" onclick="clearTrains()">Wyczyść listę</button>
   </div>
-  <div class="note"><strong>Zmiana v0.2.9:</strong> po otwarciu zakładki automatycznie pobieram cache dla zaznaczonych stacji i od razu pokazuję obserwowane pociągi. Startowa lista: 3814, 3815, 40450, 40658, 40250, 40468, 14022, 41023, 38107, 40921, 40423. Cache siedzi w <code>sessionStorage</code>, czyli tylko do zamknięcia tej zakładki.</div>
+  <div class="note"><strong>Zmiana v0.3.1:</strong> po otwarciu zakładki automatycznie pobieram cache dla zaznaczonych stacji, od razu pokazuję obserwowane pociągi i pokazuję status pobierania każdej stacji. Startowa lista: 3814, 3815, 40450, 40658, 40250, 40468, 14022, 41023, 38107, 40921, 40423. Cache siedzi w <code>sessionStorage</code>, czyli tylko do zamknięcia tej zakładki.</div>
   <div id="cacheState" class="cachebox">Cache tablicy: brak.</div>
-  <div id="loader" class="loader"><span class="spinner"></span><span id="loaderText" class="pulse">Pobieram dane...</span></div>
+  <div id="loader" class="loader">
+    <div class="rail-title"><span id="loaderText" class="pulse">🚆 Pobieranie danych...</span><small id="loaderMini">czekam na stacje</small></div>
+    <div class="rail-track"><div class="rail-train">🚆</div></div>
+    <div id="railStations" class="rail-stations"></div>
+    <div class="loader-mini">Status pokazuje każdą stację osobno. Jak któraś polegnie, przynajmniej wiadomo, gdzie API postanowiło zagrać w chowanego.</div>
+  </div>
 </div>
 <div class="panel"><h2>Śledzone pociągi</h2><div id="trainList" class="list"></div></div>
 <div id="status" class="statusline">Otwieram zakładkę, pobieram cache zaznaczonych stacji i od razu pokazuję obserwowane pociągi.</div>
@@ -55,10 +60,10 @@
 <div class="bottom"><a href="/">🚆 Tablica</a><button onclick="checkNow()">🔄 Sprawdź</button><button onclick="toggleWatch()">🔔 Alarm</button></div>
 <script>
 const STORE='rafstakTrainAlertsV02';
-const BOARD_CACHE='rafstakAlarmBoardCacheV029';
+const BOARD_CACHE='rafstakAlarmBoardCacheV030';
 const BASE_STATIONS=['Tarnowskie Góry','Chorzów Batory','Katowice','Gliwice'];
 const CUSTOM_STATIONS='rafstakAlarmCustomStationsV028';
-const STATION_PREF='rafstakAlarmStationsV029';
+const STATION_PREF='rafstakAlarmStationsV030';
 const DEFAULT_TRAINS=['3814','3815','40450','40658','40250','40468','14022','41023','38107','40921','40423'];
 let watchTimer=null,lastSignature='';
 
@@ -75,8 +80,11 @@ document.addEventListener('DOMContentLoaded',()=>{
 
 function ensureDefaultTrains(){
   const existing=getTrains();
-  if(existing.length)return;
-  setTrains(DEFAULT_TRAINS);
+  const merged=[...existing];
+  for(const n of DEFAULT_TRAINS){
+    if(!merged.includes(n)) merged.push(n);
+  }
+  setTrains(merged);
 }
 async function startupAutoRun(){
   setLoading(true,'Start: pobieram cache dla aktywnych stacji...');
@@ -110,7 +118,38 @@ function normalizeTrainNo(v){return String(v??'').trim().replace(/[^0-9A-Za-z-]/
 function extractTrainNos(v){return String(v||'').split(/[\s,;]+/).map(normalizeTrainNo).filter(Boolean)}
 function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'","&#039;")}
 function setStatus(t){status.textContent=t}
-function setLoading(on,text){if(!window.loader)return;loader.classList.toggle('on',!!on);if(text&&window.loaderText)loaderText.textContent=text}
+function setLoading(on,text){
+  if(!window.loader)return;
+  loader.classList.toggle('on',!!on);
+  loader.classList.remove('done');
+  if(text&&window.loaderText)loaderText.textContent=text;
+  if(!on&&window.railStations)railStations.innerHTML='';
+  if(on&&window.loaderMini&&!loaderMini.textContent)loaderMini.textContent='pobieranie w toku';
+}
+function initRailLoader(stations,text){
+  setLoading(true,text||'🚆 Pobieranie danych...');
+  if(window.loaderMini)loaderMini.textContent='0/'+stations.length+' stacji gotowych';
+  if(window.railStations)railStations.innerHTML=stations.map(st=>`<div class="rail-station wait" data-station="${esc(st)}"><b>${esc(st)}</b><span class="state">⏳ oczekuje</span></div>`).join('');
+}
+function updateRailStation(station,state,count,msg){
+  if(!window.railStations)return;
+  const el=[...railStations.querySelectorAll('.rail-station')].find(x=>x.getAttribute('data-station')===station);
+  if(!el)return;
+  el.classList.remove('wait','loading','ok','err');
+  el.classList.add(state);
+  const stateEl=el.querySelector('.state');
+  if(stateEl){
+    if(state==='loading')stateEl.textContent='⟳ pobieranie...';
+    else if(state==='ok')stateEl.textContent='✓ '+(Number.isFinite(count)?count:0)+' poz.';
+    else if(state==='err')stateEl.textContent='⚠ błąd';
+    else stateEl.textContent=msg||'⏳ oczekuje';
+  }
+  const done=[...railStations.querySelectorAll('.rail-station.ok,.rail-station.err')].length;
+  const total=railStations.querySelectorAll('.rail-station').length;
+  if(window.loaderMini)loaderMini.textContent=done+'/'+total+' stacji gotowych';
+  if(done===total&&window.loader)loader.classList.add('done');
+}
+
 function addTrains(){const nums=extractTrainNos(trainInput.value);if(!nums.length)return setStatus('Wpisz przynajmniej jeden numer pociągu.');setTrains([...nums,...getTrains()]);trainInput.value='';setStatus('Dodano: '+nums.join(', ')+'.')}
 function removeTrain(n){setTrains(getTrains().filter(x=>x!==n))}
 function clearTrains(){setTrains([]);results.innerHTML='<div class="muted">Brak danych.</div>';setStatus('Lista wyczyszczona.')}
@@ -148,7 +187,11 @@ async function preloadBoard(force=false){
   setLoading(true,'Pobieram równolegle tablice: '+stations.join(', ')+'...');
   if(force)results.innerHTML='<div class="muted">Odświeżam cache wielu stacji...</div>';
   try{
-    const loadedResults=await Promise.allSettled(stations.map(st=>loadStationDepartures(st,date).then(loaded=>({st,loaded}))));
+    initRailLoader(stations,'🚆 Pobieram dane ze stacji...');
+    const loadedResults=await Promise.allSettled(stations.map(st=>{
+      updateRailStation(st,'loading');
+      return loadStationDepartures(st,date).then(loaded=>{updateRailStation(st,'ok',loaded.rows.length);return {st,loaded};}).catch(err=>{updateRailStation(st,'err',0);throw Object.assign(err,{station:st});});
+    }));
     const all=[]; const byStation={}; const slotInfo=[]; const errors=[];
     for(const item of loadedResults){
       if(item.status==='fulfilled'){
@@ -157,7 +200,8 @@ async function preloadBoard(force=false){
         byStation[st]=rows; all.push(...rows); slotInfo.push(st+': '+loaded.slots.join(','));
         if(loaded.errors&&loaded.errors.length)errors.push(st+': '+loaded.errors.slice(0,3).join(' | '));
       }else{
-        errors.push(item.reason&&item.reason.message?item.reason.message:String(item.reason));
+        const st=item.reason&&item.reason.station?item.reason.station:'stacja';
+        errors.push(st+': '+(item.reason&&item.reason.message?item.reason.message:String(item.reason)));
       }
     }
     const deps=uniqDepartures(all);
