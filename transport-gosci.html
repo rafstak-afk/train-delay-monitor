@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Transport gości do Kościoła</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --card: #ffffff;
+      --text: #111827;
+      --muted: #6b7280;
+      --line: #e5e7eb;
+      --accent: #2563eb;
+      --bus: #eff6ff;
+      --coach: #fef3c7;
+      --return: #f3f4f6;
+      --warning: #dc2626;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f8fafc;
+      color: var(--text);
+    }
+    header {
+      background: linear-gradient(135deg, #0f172a, #1e3a8a);
+      color: white;
+      padding: 24px 18px;
+    }
+    .wrap { max-width: 1120px; margin: 0 auto; }
+    h1 { margin: 0 0 8px; font-size: clamp(24px, 4vw, 38px); line-height: 1.1; }
+    .lead { margin: 0; color: #dbeafe; font-size: 16px; }
+    main { padding: 18px; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .box {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: 0 6px 18px rgba(15, 23, 42, .06);
+    }
+    .box strong { display: block; margin-bottom: 4px; }
+    .warning {
+      border-left: 5px solid var(--warning);
+      color: #991b1b;
+      background: #fff7f7;
+      font-weight: 700;
+    }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin: 16px 0;
+    }
+    input, select {
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font: inherit;
+      background: white;
+    }
+    input { min-width: min(100%, 320px); flex: 1; }
+    .count { color: var(--muted); font-size: 14px; }
+    .table-card {
+      overflow: auto;
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      box-shadow: 0 6px 18px rgba(15, 23, 42, .06);
+    }
+    table { width: 100%; border-collapse: collapse; min-width: 760px; }
+    th, td { padding: 10px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { background: #f1f5f9; position: sticky; top: 0; z-index: 1; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; }
+    tr:hover { background: #f8fafc; }
+    .lp { width: 54px; text-align: right; color: var(--muted); }
+    .time { white-space: nowrap; font-weight: 700; }
+    .vehicle { white-space: nowrap; }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 3px 9px;
+      font-size: 12px;
+      font-weight: 700;
+      border: 1px solid transparent;
+    }
+    .bus { background: var(--bus); color: #1d4ed8; border-color: #bfdbfe; }
+    .autokar { background: var(--coach); color: #92400e; border-color: #fde68a; }
+    .odwozka { background: var(--return); color: #374151; border-color: #d1d5db; }
+    .kid { background: #fef9c3; }
+    footer { color: var(--muted); font-size: 13px; padding: 18px 0 4px; }
+    @media (max-width: 760px) {
+      .grid { grid-template-columns: 1fr; }
+      header { padding: 20px 14px; }
+      main { padding: 14px; }
+      .toolbar { display: grid; grid-template-columns: 1fr; }
+      input, select { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <h1>Transport gości do Kościoła</h1>
+      <p class="lead">Kościół pw. MB Królowej Pokoju w Tarnowskich Górach. Transport odbywa się dwoma pojazdami: autokarem i busem.</p>
+    </div>
+  </header>
+  <main>
+    <div class="wrap">
+      <section class="grid" aria-label="Informacje organizacyjne">
+        <div class="box">
+          <strong>Planowany przyjazd autokaru</strong>
+          13:30–13:45 do Kościoła
+        </div>
+        <div class="box">
+          <strong>Planowany przyjazd busa</strong>
+          13:40 do Kościoła
+        </div>
+        <div class="box">
+          <strong>Kursy powrotne</strong>
+          Busem co około 90–120 min. Pierwszy kurs krótko po północy. Kolejność wyjazdu goście ustalają między sobą.
+        </div>
+      </section>
+
+      <section class="box warning">
+        Kierowca wykonuje telefon, odjeżdżając z lokalizacji na następny adres, aby poinformować, za ile czasu można się go spodziewać.
+      </section>
+
+      <section class="toolbar" aria-label="Filtrowanie listy">
+        <input id="search" type="search" placeholder="Szukaj: imię, przystanek, pojazd..." />
+        <select id="vehicleFilter" aria-label="Filtr pojazdu">
+          <option value="">Wszystkie pozycje</option>
+          <option value="bus">Bus</option>
+          <option value="autokar">Autokar</option>
+          <option value="odwozka">Tylko odwoźka po weselu</option>
+        </select>
+        <span class="count" id="count"></span>
+      </section>
+
+      <section class="table-card">
+        <table>
+          <thead>
+            <tr>
+              <th class="lp">Lp.</th>
+              <th>Imię</th>
+              <th>Godzina</th>
+              <th>Przystanek / lokalizacja</th>
+              <th>Pojazd</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </section>
+      <footer>Dane przepisane z arkusza przekazanego organizacyjnie. Żadnych fajerwerków, bo to transport, nie centrum dowodzenia NATO.</footer>
+    </div>
+  </main>
+
+  <script>
+    const guests = [
+      {lp:1, name:'Barbara', time:'12:30', place:'Tychy, Cyganerii', vehicle:'bus'},
+      {lp:2, name:'Blanka', time:'12:30', place:'Tychy, Cyganerii', vehicle:'bus'},
+      {lp:3, name:'Jacek', time:'12:30', place:'Tychy, Cyganerii', vehicle:'bus'},
+      {lp:4, name:'Jadwiga', time:'13:05', place:'Siemianowice Śląskie, Ogrodowa', vehicle:'bus'},
+      {lp:5, name:'Jakub', time:'13:05', place:'Siemianowice Śląskie, Ogrodowa', vehicle:'bus'},
+      {lp:6, name:'Karina', time:'12:50', place:'Katowice, ul. Przyjazna', vehicle:'bus'},
+      {lp:7, name:'Damian', time:'12:50', place:'Katowice, ul. Przyjazna', vehicle:'bus'},
+      {lp:8, name:'Maksymilian', time:'12:50', place:'Katowice, ul. Przyjazna', vehicle:'bus'},
+      {lp:9, name:'Sonia', time:'12:50', place:'Katowice, ul. Przyjazna', vehicle:'bus'},
+      {lp:10, name:'Urszula', time:'12:50', place:'Katowice, ul. Przyjazna', vehicle:'bus'},
+      {lp:11, name:'Marzena', time:'13:25', place:'Hotel Kropka', vehicle:'bus'},
+      {lp:12, name:'Krzysztof', time:'13:25', place:'Hotel Kropka', vehicle:'bus'},
+      {lp:13, name:'Marek', time:'13:30', place:'Hotel Opera', vehicle:'bus'},
+      {lp:14, name:'Magda', time:'13:30', place:'Hotel Opera', vehicle:'bus'},
+      {lp:15, name:'Mikołaj', time:'13:30', place:'Hotel Opera', vehicle:'bus'},
+      {lp:16, name:'Michalina', time:'13:30', place:'Hotel Opera', vehicle:'bus'},
+      {lp:17, name:'Jadwiga', time:'13:05', place:'Kalzone', vehicle:'autokar'},
+      {lp:18, name:'Józef', time:'13:05', place:'Kalzone', vehicle:'autokar'},
+      {lp:19, name:'Sabina', time:'13:05', place:'Kalzone', vehicle:'autokar'},
+      {lp:20, name:'Mariusz', time:'13:05', place:'Kalzone', vehicle:'autokar'},
+      {lp:21, name:'Maria', time:'13:05', place:'Kalzone', vehicle:'autokar'},
+      {lp:22, name:'Tomasz', time:'12:55', place:'Długosza', vehicle:'autokar'},
+      {lp:23, name:'Łucja', time:'12:55', place:'Długosza', vehicle:'autokar'},
+      {lp:24, name:'Mateusz', time:'12:55', place:'Długosza', vehicle:'autokar'},
+      {lp:25, name:'Magda', time:'12:55', place:'Długosza', vehicle:'autokar'},
+      {lp:26, name:'Jerzy', time:'12:50', place:'Skłodowskiej lub okolice Lidla', vehicle:'autokar'},
+      {lp:27, name:'Gabriela', time:'12:50', place:'Skłodowskiej lub okolice Lidla', vehicle:'autokar'},
+      {lp:28, name:'Zbigniew', time:'13:10', place:'Intermarche w kierunku ul. Józefskiej i Cmentarza', vehicle:'autokar'},
+      {lp:29, name:'Jolanta', time:'13:10', place:'Intermarche w kierunku ul. Józefskiej i Cmentarza', vehicle:'autokar'},
+      {lp:30, name:'Marcin', time:'', place:'', vehicle:'odwozka'},
+      {lp:31, name:'Monika', time:'', place:'', vehicle:'odwozka'},
+      {lp:32, name:'Martyna', time:'', place:'', vehicle:'odwozka'},
+      {lp:33, name:'Dominik', time:'13:25', place:'Hotel Kropka', vehicle:'bus'},
+      {lp:34, name:'Iwona', time:'13:25', place:'Hotel Kropka', vehicle:'bus'},
+      {lp:35, name:'Krzysztof', time:'13:25', place:'Hotel Kropka', vehicle:'bus'},
+      {lp:36, name:'Jan', time:'13:25', place:'Hotel Kropka', vehicle:'bus'},
+      {lp:37, name:'Barbara', time:'12:30', place:'Stare Tesco obecnie Intercars', vehicle:'autokar'},
+      {lp:38, name:'Bogdan', time:'12:30', place:'Stare Tesco obecnie Intercars', vehicle:'autokar'},
+      {lp:39, name:'Magdalena', time:'12:30', place:'Stare Tesco obecnie Intercars', vehicle:'autokar'},
+      {lp:40, name:'Magdalena - osoba 1', time:'12:30', place:'Stare Tesco obecnie Intercars', vehicle:'autokar'},
+      {lp:41, name:'Alicja', time:'12:30', place:'Stare Tesco obecnie Intercars', vehicle:'autokar'},
+      {lp:42, name:'Klaudiusz', time:'', place:'', vehicle:'odwozka'},
+      {lp:43, name:'Bożena', time:'', place:'', vehicle:'odwozka'},
+      {lp:44, name:'Julia', time:'', place:'', vehicle:'odwozka'},
+      {lp:45, name:'Natalia', time:'', place:'', vehicle:'odwozka'},
+      {lp:46, name:'Amelia <4 lata', time:'', place:'', vehicle:'odwozka'},
+      {lp:47, name:'Piotr', time:'', place:'', vehicle:'odwozka'}
+    ];
+
+    const rows = document.querySelector('#rows');
+    const search = document.querySelector('#search');
+    const vehicleFilter = document.querySelector('#vehicleFilter');
+    const count = document.querySelector('#count');
+
+    function label(vehicle) {
+      if (vehicle === 'odwozka') return 'tylko odwoźka po weselu';
+      return vehicle;
+    }
+
+    function render() {
+      const q = search.value.trim().toLowerCase();
+      const f = vehicleFilter.value;
+      const filtered = guests.filter(g => {
+        const haystack = `${g.lp} ${g.name} ${g.time} ${g.place} ${label(g.vehicle)}`.toLowerCase();
+        return (!q || haystack.includes(q)) && (!f || g.vehicle === f);
+      });
+      rows.innerHTML = filtered.map(g => `
+        <tr class="${g.name.includes('<4') ? 'kid' : ''}">
+          <td class="lp">${g.lp}</td>
+          <td>${g.name}</td>
+          <td class="time">${g.time || '—'}</td>
+          <td>${g.vehicle === 'odwozka' ? '—' : g.place}</td>
+          <td class="vehicle"><span class="badge ${g.vehicle}">${label(g.vehicle)}</span></td>
+        </tr>
+      `).join('');
+      count.textContent = `${filtered.length} / ${guests.length} pozycji`;
+    }
+
+    search.addEventListener('input', render);
+    vehicleFilter.addEventListener('change', render);
+    render();
+  </script>
+</body>
+</html>
