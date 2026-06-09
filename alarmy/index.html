@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="pl">
-<!-- app-version: alarmy-v0.3.2 verified-default-trains -->
+<!-- app-version: alarmy-v0.3.3 verified-default-trains -->
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -334,29 +334,65 @@ function extraIdsOf(d){
   const keys=['runId','courseId','journeyId','trainId','timetableId','operationId','scheduleId','connectionId','communicationId','uid'];
   return keys.map(k=>d&&d[k]!==undefined&&d[k]!==null&&isGoodRunId(d[k])?[k,String(d[k])]:null).filter(Boolean);
 }
-function detailLinkOf(d){return String(valOf(d,['detailsUrl','trainUrl','runUrl','url','href','link'])||'')}
+function detailLinkOf(d){return String(valOf(d,['detailsUrl','trainUrl','runUrl','url','href','link','detailsLink','detailUrl','routeUrl','routeLink'])||'')}
+
+function deepValues(obj, limit=300){
+  const out=[]; const seen=new Set();
+  function walk(x,path){
+    if(out.length>=limit||x===null||x===undefined)return;
+    if(typeof x==='object'){
+      if(seen.has(x))return; seen.add(x);
+      if(Array.isArray(x)){x.forEach((v,i)=>walk(v,path+'.'+i));return}
+      for(const [k,v] of Object.entries(x))walk(v,path+'.'+k);
+    }else{
+      out.push({path,value:String(x)});
+    }
+  }
+  walk(obj,'row'); return out;
+}
+function deepDetailLinkOf(d){
+  const direct=detailLinkOf(d); if(direct)return direct;
+  const vals=deepValues(d);
+  const url=vals.find(x=>/^https?:\/\//i.test(x.value)&&/(pociag|train|bieg|szczeg|wyswietlacz|portalpasazera|plk)/i.test(x.value));
+  if(url)return url.value;
+  const relative=vals.find(x=>/^\//.test(x.value)&&/(train|pociag|bieg|szczeg)/i.test(x.value));
+  return relative?relative.value:'';
+}
+function deepRunIdOf(d){
+  const direct=runIdOf(d); if(direct)return direct;
+  const vals=deepValues(d);
+  const hit=vals.find(x=>/(run|course|journey|trip|operation|schedule|connection|communication|uid|ident|id)/i.test(x.path)&&isGoodRunId(x.value));
+  return hit?hit.value:'';
+}
+function rootTrainUrl(no,d={}){
+  const p=new URLSearchParams();
+  p.set('train',no);
+  if(dateInput.value)p.set('date',dateInput.value);
+  p.set('station',d._station||stationInput.value.trim()||'');
+  const dl=deepDetailLinkOf(d);
+  const rid=deepRunIdOf(d);
+  if(dl){p.set('link',dl);p.set('sourceLink',dl);p.set('url',dl)}
+  if(rid){p.set('runId',rid);p.set('courseId',rid)}
+  for(const [k,v] of extraIdsOf(d))if(!p.has(k))p.set(k,v);
+  return '/train.html?'+p.toString();
+}
+
 function cacheRunData(no,d={}){
   const key='rafstakTrainRun_'+Date.now()+'_'+Math.random().toString(16).slice(2);
   try{sessionStorage.setItem(key,JSON.stringify({train:no,station:stationInput.value.trim(),date:dateInput.value,row:d,createdAt:new Date().toISOString()}));}catch{}
   return key;
 }
 function trainRunUrl(no,d={}){
-  const p=new URLSearchParams();
-  p.set('train',no);
-  if(dateInput.value)p.set('date',dateInput.value);
-  p.set('station',d._station||stationInput.value.trim()||'');
-  const runId=runIdOf(d); if(runId)p.set('runId',runId);
-  const dl=detailLinkOf(d); if(dl)p.set('sourceLink',dl);
-  const key=cacheRunData(no,d); p.set('cacheKey',key);
-  for(const [k,v] of extraIdsOf(d))if(!p.has(k))p.set(k,v);
-  return 'train-run.html?'+p.toString();
+  // Kliknięcie numeru ma prowadzić do głównego widoku biegu pociągu, nie do technicznego podglądu alarmów.
+  // Przekazujemy wszystko, co udało się wydobyć z tablicy: link, runId/courseId i dane pomocnicze.
+  return rootTrainUrl(no,d);
 }
 function trainRunLink(no,label,d={}){
   if(!no)return esc(label||'');
-  const runId=runIdOf(d);
-  const dl=detailLinkOf(d);
+  const runId=deepRunIdOf(d);
+  const dl=deepDetailLinkOf(d);
   const idPill=runId?`<span class="idpill">ID ${esc(runId)}</span>`:(dl?`<span class="idpill">link z tablicy</span>`:`<span class="idpill">szukaj ID</span>`);
-  return `<a class="train-link" href="${esc(trainRunUrl(no,d))}" target="_blank" rel="noopener" title="Otwórz podgląd biegu pociągu ${esc(no)}">${esc(label||no)}</a>${idPill}`;
+  return `<a class="train-link" href="${esc(trainRunUrl(no,d))}" target="_blank" rel="noopener" title="Otwórz bieg pociągu ${esc(no)}">${esc(label||no)}</a>${idPill}`;
 }
 function stopName(s){return String(valOf(s,['station','stationName','name','stop','stopName','location'])||'').trim()}
 function routeStopsOf(d){
