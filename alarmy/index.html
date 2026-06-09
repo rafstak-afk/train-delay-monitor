@@ -120,9 +120,38 @@ function getStationPrefs(){try{const p=JSON.parse(localStorage.getItem(STATION_P
 function setStationPrefs(p){localStorage.setItem(STATION_PREF,JSON.stringify(p));}
 function selectedStations(){const p=getStationPrefs();return allStations().filter(s=>p[s]!==false);}
 function renderStationSwitches(){const prefs=getStationPrefs();const custom=new Set(getCustomStations());stationSwitches.innerHTML=allStations().map(s=>`<div class="switch-card"><span>${esc(s)}${custom.has(s)?' <small class="muted">własna</small>':''}</span><label class="switch"><input type="checkbox" ${prefs[s]!==false?'checked':''} onchange="toggleStation('${esc(s)}',this.checked)"><span class="slider"></span></label>${custom.has(s)?`<button class="btn-gray mini" onclick="removeCustomStation('${esc(s)}')">Usuń</button>`:''}</div>`).join('');renderStationSummary();}
-function toggleStation(station,on){const s=String(station||'').trim();const p=getStationPrefs();p[s]=!!on;setStationPrefs(p);renderStationSummary();preloadBoard(true);}
-function addCustomStation(){const s=String(customStationInput.value||'').trim();if(!s)return setStatus('Wpisz nazwę stacji do dodania.');setCustomStations([s,...getCustomStations()]);const p=getStationPrefs();p[s]=true;setStationPrefs(p);customStationInput.value='';renderStationSwitches();setStatus('Dodano stację do auto-cache: '+s+'.');preloadBoard(true);}
-function removeCustomStation(station){const s=String(station||'').trim();setCustomStations(getCustomStations().filter(x=>x!==s));const p=getStationPrefs();delete p[s];setStationPrefs(p);renderStationSwitches();setStatus('Usunięto stację z listy: '+s+'.');preloadBoard(true);}
+async function toggleStation(station,on){
+  const s=String(station||'').trim();
+  const p=getStationPrefs();
+  p[s]=!!on;
+  setStationPrefs(p);
+  renderStationSummary();
+  await refreshCacheAndResults('Zmieniono stacje. Odświeżam cache i wyniki...');
+}
+async function addCustomStation(){
+  const s=String(customStationInput.value||'').trim();
+  if(!s)return setStatus('Wpisz nazwę stacji do dodania.');
+  setCustomStations([s,...getCustomStations()]);
+  const p=getStationPrefs();p[s]=true;setStationPrefs(p);
+  customStationInput.value='';renderStationSwitches();
+  await refreshCacheAndResults('Dodano stację do auto-cache: '+s+'. Pobieram dane i odświeżam wyniki...');
+}
+async function removeCustomStation(station){
+  const s=String(station||'').trim();
+  setCustomStations(getCustomStations().filter(x=>x!==s));
+  const p=getStationPrefs();delete p[s];setStationPrefs(p);
+  renderStationSwitches();
+  await refreshCacheAndResults('Usunięto stację z listy: '+s+'. Odświeżam cache i wyniki...');
+}
+async function refreshCacheAndResults(message){
+  setStatus(message||'Odświeżam cache i wyniki...');
+  try{
+    await preloadBoard(true);
+    if(getTrains().length) await checkNow({silentStart:true});
+  }finally{
+    setLoading(false);
+  }
+}
 function renderStationSummary(){const sel=selectedStations();stationSummary.textContent='Stacje do auto-cache: '+(sel.length?sel.join(', '):'brak, więc alarmy będą ślepe jak kret w tunelu')+'.';}
 function getTrains(){try{return JSON.parse(localStorage.getItem(STORE)||'[]')}catch{return[]}}
 function setTrains(a){localStorage.setItem(STORE,JSON.stringify([...new Set(a.map(normalizeTrainNo).filter(Boolean))]));renderTrainList()}
@@ -162,8 +191,8 @@ function updateRailStation(station,state,count,msg){
   if(done===total&&window.loader)loader.classList.add('done');
 }
 
-function addTrains(){const nums=extractTrainNos(trainInput.value);if(!nums.length)return setStatus('Wpisz przynajmniej jeden numer pociągu.');setTrains([...nums,...getTrains()]);trainInput.value='';setStatus('Dodano: '+nums.join(', ')+'.')}
-function removeTrain(n){setTrains(getTrains().filter(x=>x!==n))}
+async function addTrains(){const nums=extractTrainNos(trainInput.value);if(!nums.length)return setStatus('Wpisz przynajmniej jeden numer pociągu.');setTrains([...nums,...getTrains()]);trainInput.value='';setStatus('Dodano: '+nums.join(', ')+'. Odświeżam wyniki...');if(getBoardCache())await checkNow({silentStart:true});setLoading(false)}
+async function removeTrain(n){setTrains(getTrains().filter(x=>x!==n)); if(getTrains().length&&getBoardCache())await checkNow({silentStart:true}); else results.innerHTML='<div class="muted">Brak danych.</div>'; setLoading(false)}
 function clearTrains(){setTrains([]);results.innerHTML='<div class="muted">Brak danych.</div>';setStatus('Lista wyczyszczona.')}
 function renderTrainList(){const arr=getTrains();trainList.innerHTML=arr.length?arr.map(n=>{const safe=esc(n);return `<span class="train-chip"><strong>${safe}</strong><button class="chip-x" title="Usuń ${safe}" aria-label="Usuń pociąg ${safe}" onclick="removeTrain('${safe}')">×</button></span>`}).join(''):'<div class="muted">Nie dodano jeszcze pociągów.</div>'}
 
@@ -351,7 +380,7 @@ function extraIdsOf(d){
 function detailLinkOf(d){return String(valOf(d,[
   'detailsUrl','detailUrl','detailsLink','detailLink','trainUrl','trainLink','runUrl','runLink','routeUrl','routeLink',
   'url','href','link','externalUrl','externalLink','plkUrl','plkLink','portalUrl','portalLink','trainDetailsUrl','trainDetailsLink',
-  'courseUrl','courseLink','journeyUrl','journeyLink'
+  'courseUrl','courseLink','journeyUrl','journeyLink','displayUrl','displayURL','display_url','details_url','detail_url','train_url','run_url','route_url','portal_url','plk_url','boardUrl','boardLink','timetableUrl','timetableLink','fullUrl','fullLink'
 ])||'')}
 
 function deepValues(obj, limit=300){
@@ -375,7 +404,8 @@ function urlScore(u,path=''){
   if(/^https?:\/\//i.test(s))score+=20;
   if(/^\//.test(s))score+=12;
   if(/portalpasazera|plk-sa|plk/i.test(s))score+=40;
-  if(/pociag|pociąg|train|bieg|journey|run|szczeg|route|trasa|kurs/i.test(s))score+=35;
+  if(/pociag|pociąg|train|bieg|journey|run|szczeg|route|trasa|kurs|rozklad|rozkład|przebieg|timetable/i.test(s))score+=35;
+  if(/[?&](?:id|runId|courseId|journeyId|trainId|operationId|scheduleId|connectionId|communicationId)=/i.test(s))score+=30;
   if(/wyswietlacz|wyświetlacz|odjazd|przyjazd|station|stacja/i.test(s))score+=8;
   if(/(link|url|href|detail|details|szczeg|route|run|journey|course)/i.test(path))score+=25;
   if(/api\/train|\/train\.html|train-run/i.test(s))score-=100;
@@ -389,7 +419,7 @@ function deepDetailLinkOf(d){
   for(const x of vals){
     const v=String(x.value||'').trim();
     if(!v)continue;
-    if(/^https?:\/\//i.test(v)||/^\/\//.test(v)||/^\//.test(v)||/portalpasazera|plk-sa|pociag|pociąg|train|bieg|journey|run|szczeg/i.test(v)){
+    if(/^https?:\/\//i.test(v)||/^\/\//.test(v)||/^\//.test(v)||/[?&=]/.test(v)||/portalpasazera|plk-sa|pociag|pociąg|train|bieg|journey|run|szczeg|kurs|trasa|route|rozklad|rozkład/i.test(v)||/(link|url|href|detail|details|run|journey|course|route|portal|plk)/i.test(x.path)){
       const score=urlScore(v,x.path);
       if(score>0)candidates.push({value:v,score,path:x.path});
     }
@@ -422,9 +452,15 @@ function hasRealRunTarget(d={}){
 }
 function rootTrainUrl(no,d={}){
   // Źródło prawdy: rekord z cache tablicy stacji. Jeżeli tablica ma link biegu, otwieramy go bezpośrednio.
-  // Nie zgadujemy po samym numerze i nie odpalamy /api/train, bo to dawało 503 i nekrolog zamiast biegu.
   const dl=normalizeDetailUrl(deepDetailLinkOf(d));
   if(dl)return dl;
+  // Plan B: jeśli z rekordu tablicy wyciągniemy prawdziwy identyfikator kursu, odsyłamy do głównego widoku biegu z tym ID.
+  // Nie używamy gołego numeru jako ID, bo to wcześniej produkowało nekrolog.
+  const rid=deepRunIdOf(d);
+  if(rid){
+    const qs=new URLSearchParams({train:no||trainNoOf(d)||'',date:dateInput.value||'',station:d._station||stationInput.value.trim()||'',runId:rid,courseId:rid});
+    return '/train.html?'+qs.toString();
+  }
   return '';
 }
 
@@ -438,7 +474,7 @@ function trainRunLink(no,label,d={}){
   if(!no)return esc(label||'');
   const href=trainRunUrl(no,d);
   if(!href){
-    return `<span class="train-link disabled" title="Brak bezpośredniego linku biegu w rekordzie tablicy. Worker /api/departures musi przekazać link z PLK, inaczej front nie ma czego otworzyć.">${esc(label||no)}</span><span class="idpill">brak linku PLK</span>`;
+    return `<span class="train-link disabled" title="Brak linku biegu albo identyfikatora kursu w rekordzie tablicy. Front nie będzie zgadywał po samym numerze.">${esc(label||no)}</span><span class="idpill">brak linku PLK</span>`;
   }
   return `<a class="train-link" href="${esc(href)}" target="_blank" rel="noopener" title="Otwórz bieg pociągu ${esc(no)} z linku tablicy PLK">${esc(label||no)}</a><span class="idpill">bieg PLK</span>`;
 }
