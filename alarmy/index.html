@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="pl">
-<!-- app-version: alarmy-v0.3.5 direct-plk-run-links-no-train-run -->
+<!-- app-version: alarmy-v0.3.6 auto-day-cache-base-stations-on -->
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Alarmy pociągów RafStaKa v0.3.5</title>
+<title>Alarmy pociągów RafStaKa v0.3.6</title>
 <style>
 :root{--bg:#101820;--panel:#1c2833;--card:#223244;--card2:#162433;--border:#34495e;--blue:#0b57d0;--green:#198754;--red:#dc3545;--yellow:#ffcc00;--muted:rgba(255,255,255,.68);--ok:#5dd39e;--bad:#ff6b6b}
 *{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#fff;padding:18px 18px 82px}.wrap{max-width:1040px;margin:0 auto}h1{text-align:center;margin:14px 0 5px;font-size:30px}.version{text-align:center;color:var(--muted);font-size:12px;margin-bottom:14px}.panel{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:14px;margin:12px 0}.grid{display:grid;grid-template-columns:1.2fr .62fr .62fr;gap:8px}.train-row{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:8px}input,select,textarea,button{border:0;border-radius:10px;padding:12px;font-size:15px}textarea{min-height:66px;resize:vertical;font-family:Arial,sans-serif}button{font-weight:900;cursor:pointer}.btn-blue{background:var(--blue);color:#fff}.btn-green{background:var(--green);color:#fff}.btn-red{background:var(--red);color:#fff}.btn-gray{background:#475569;color:#fff}.actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:10px}.help{font-size:13px;color:var(--muted);line-height:1.42}.help strong{color:#fff}.advanced{margin-top:10px}.advanced summary{cursor:pointer;color:#dbeafe;font-weight:900}.advanced-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px}.list{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.train-chip{display:inline-flex;align-items:center;gap:6px;background:#e5e7eb;color:#111827;border:0;border-radius:999px;padding:6px 8px 6px 11px;line-height:1;max-width:100%}.train-chip strong{font-size:13px;font-weight:900;color:#111827}.chip-x{width:16px;height:16px;border-radius:50%;border:1px solid #64748b;background:#f8fafc;color:#111827;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;line-height:1;padding:0;cursor:pointer}.chip-x:hover{background:#fee2e2;border-color:#dc2626;color:#991b1b}.result{display:grid;gap:10px;margin-top:10px}.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px}.card.alarm{border-color:#ef4444;background:#3b1d1d}.card.cancelled{border-color:#ef4444}.card.missing{border-color:#64748b;background:#1f2937}.card.warn{border-color:#eab308}.row{display:grid;grid-template-columns:92px 1fr 116px;gap:10px;align-items:start}.miniinfo{display:flex;gap:8px;flex-wrap:wrap;margin-top:7px}.miniinfo span{background:#0f172a;border:1px solid #334155;border-radius:999px;padding:3px 8px;font-size:12px;color:#dbeafe}.via{color:var(--muted);font-size:13px;line-height:1.28;margin-top:2px}.headline{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.time{font-size:24px;font-weight:900;color:var(--ok)}.delay{font-weight:900;color:var(--ok)}.delay.warn{color:var(--yellow)}.delay.bad{color:var(--bad)}.badge{display:inline-block;padding:4px 9px;border-radius:999px;font-size:12px;font-weight:900;background:#334155;color:#fff;margin-top:5px}.badge-red{background:#7f1d1d}.badge-yellow{background:#854d0e}.badge-green{background:#166534}.badge-gray{background:#475569}.muted{color:var(--muted);font-size:12px}.big{font-size:18px;font-weight:900}.train-run-link{color:#dbeafe;text-decoration:none;border-bottom:1px dotted #93c5fd}.train-run-link:hover{color:#fff;border-bottom-color:#fff}.train-link{color:#dbeafe;text-decoration:none;border-bottom:1px dotted rgba(219,234,254,.75)}.train-link:hover{color:#fff;border-bottom-color:#fff}.statusline{text-align:center;color:var(--muted);margin:10px 0;min-height:20px}.source{font-size:11px;color:var(--muted);margin-top:6px}.details{margin-top:8px;display:grid;gap:4px;font-size:12px;color:#dbeafe}.rawgrid{margin-top:8px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;font-size:11px;color:#cbd5e1}.rawgrid div{background:#0f172a;border:1px solid #334155;border-radius:8px;padding:5px}.rawgrid b{color:#fff}@media(max-width:740px){.rawgrid{grid-template-columns:1fr}}.details b{color:#fff}.route{margin-top:6px;font-size:12px;color:var(--muted);line-height:1.35}.train-link.disabled{color:#94a3b8;border-bottom:0;cursor:not-allowed}.idpill{display:inline-block;margin-left:6px;padding:2px 6px;border-radius:999px;background:#0f172a;border:1px solid #475569;color:#cbd5e1;font-size:10px;font-weight:900;vertical-align:middle}.bottom{position:fixed;left:50%;bottom:8px;transform:translateX(-50%);width:min(660px,calc(100vw - 16px));background:rgba(22,36,51,.97);border:1px solid var(--border);border-radius:14px;padding:7px;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;z-index:20}.bottom a,.bottom button{display:flex;align-items:center;justify-content:center;height:36px;border-radius:9px;background:#f2f4f8;color:#111827;text-decoration:none;font-size:12px;font-weight:900}.mini{font-size:12px;padding:8px 10px}.note{background:#0f172a;border:1px dashed #475569;border-radius:12px;padding:10px;margin-top:8px;color:#dbeafe;font-size:13px;line-height:1.35}.cachebox{background:#102235;border:1px solid #31516f;border-radius:12px;padding:10px;margin-top:10px;font-size:13px;color:#dbeafe}.cachebox b{color:#fff}.station-switches{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}.switch-card{background:#102235;border:1px solid #31516f;border-radius:12px;padding:10px;display:flex;align-items:center;justify-content:space-between;gap:8px}.switch-card span{font-weight:900;font-size:13px}.switch{position:relative;display:inline-block;width:48px;height:26px;flex:0 0 auto}.switch input{opacity:0;width:0;height:0}.slider{position:absolute;cursor:pointer;inset:0;background:#475569;border-radius:999px;transition:.18s}.slider:before{content:"";position:absolute;height:20px;width:20px;left:3px;top:3px;background:white;border-radius:50%;transition:.18s}.switch input:checked + .slider{background:#198754}.switch input:checked + .slider:before{transform:translateX(22px)}.station-summary{font-size:12px;color:#dbeafe;margin-top:8px;line-height:1.35}.custom-stations{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:8px}.custom-stations button{white-space:nowrap}.boardlist{display:grid;gap:6px;margin-top:8px;max-height:260px;overflow:auto}.boarditem{display:grid;grid-template-columns:78px 98px 1fr 100px;gap:8px;align-items:center;background:#0f172a;border:1px solid #334155;border-radius:10px;padding:7px}.boarditem .n{font-weight:900;color:#dbeafe}.boarditem .t{color:#5dd39e;font-weight:900}.boarditem button{padding:7px 9px;font-size:12px}.cache-ok{color:#5dd39e;font-weight:900}.cache-bad{color:#ffcc00;font-weight:900} .loader{display:none;margin-top:10px;background:#0f172a;border:1px solid #334155;border-radius:14px;padding:12px;color:#dbeafe;overflow:hidden}.loader.on{display:block}.rail-title{display:flex;align-items:center;justify-content:space-between;gap:10px;font-weight:900;margin-bottom:8px}.rail-title small{font-weight:700;color:var(--muted)}.rail-track{position:relative;height:30px;margin:8px 0 10px;border-top:3px double #64748b;border-bottom:3px double #64748b;overflow:hidden;border-radius:10px;background:linear-gradient(90deg,rgba(255,255,255,.04),rgba(255,255,255,.01))}.rail-train{position:absolute;left:-44px;top:2px;font-size:22px;filter:drop-shadow(0 2px 2px rgba(0,0,0,.45));animation:railRun 2.4s linear infinite}.loader.done .rail-train{animation-duration:1.2s}.rail-stations{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.rail-station{background:#111827;border:1px solid #334155;border-radius:10px;padding:7px 9px;font-size:12px;display:flex;align-items:center;justify-content:space-between;gap:8px}.rail-station b{font-size:12px}.rail-station .state{white-space:nowrap;color:var(--muted);font-weight:900}.rail-station.wait .state{color:#94a3b8}.rail-station.loading{border-color:#60a5fa}.rail-station.loading .state{color:#93c5fd}.rail-station.ok{border-color:#16a34a}.rail-station.ok .state{color:#5dd39e}.rail-station.err{border-color:#dc2626}.rail-station.err .state{color:#ff6b6b}.loader-mini{font-size:12px;color:var(--muted);margin-top:7px;line-height:1.35}@keyframes railRun{from{transform:translateX(0)}to{transform:translateX(calc(100vw + 110px))}}@media(max-width:740px){.rail-stations{grid-template-columns:1fr}.rail-title{align-items:flex-start;flex-direction:column}} .spinner{display:none}.pulse{animation:pulse 1s ease-in-out infinite}@keyframes pulse{0%,100%{opacity:.55}50%{opacity:1}}@media(max-width:740px){.boarditem{grid-template-columns:70px 82px 1fr}.boarditem button{grid-column:1/-1}.station-switches{grid-template-columns:1fr 1fr}.custom-stations{grid-template-columns:1fr}}@media(max-width:740px){body{padding:10px 8px 76px}h1{font-size:24px}.grid{grid-template-columns:1fr 1fr}.grid input:first-child{grid-column:1/-1}.train-row{grid-template-columns:1fr}.advanced-grid{grid-template-columns:1fr}.row{grid-template-columns:70px 1fr 86px}.time{font-size:22px}input,select,textarea,button{padding:10px;font-size:14px}}
@@ -13,7 +13,7 @@
 <body>
 <div class="wrap">
 <h1>🔔 Alarmy pociągów</h1>
-<div class="version">v0.3.5 · auto-cache · bez zakładki train-run · link biegu bezpośrednio z tablicy PLK</div>
+<div class="version">v0.3.6 · auto-cache całodniowy · stacje bazowe ON · link biegu z tablicy PLK</div>
 <div class="panel">
   <div class="grid">
     <input id="stationInput" placeholder="Stacja pomocnicza, np. Tarnowskie Góry">
@@ -33,7 +33,7 @@
   <details class="advanced">
     <summary>Opcje zaawansowane, czyli dział dla ludzi lubiących cierpieć</summary>
     <div class="advanced-grid">
-      <select id="modeInput"><option value="fromTime" selected>Od wskazanej godziny</option><option value="day">Cały dzień</option><option value="around">Okolice godziny</option></select>
+      <select id="modeInput"><option value="fromTime">Od wskazanej godziny</option><option value="day" selected>Cały dzień</option><option value="around">Okolice godziny</option></select>
       <input id="timeInput" type="time" title="Godzina kontrolna">
       <select id="windowInput"><option value="2">Okno ±2 h</option><option value="4" selected>Okno ±4 h</option><option value="8">Okno ±8 h</option></select>
     </div>
@@ -44,7 +44,7 @@
     <button id="watchBtn" class="btn-red" onclick="toggleWatch()">Monitoring: OFF</button>
     <button class="btn-gray" onclick="clearTrains()">Wyczyść listę</button>
   </div>
-  <div class="note"><strong>Zmiana v0.3.1:</strong> po otwarciu zakładki automatycznie pobieram cache dla zaznaczonych stacji, od razu pokazuję obserwowane pociągi i pokazuję status pobierania każdej stacji. Startowa lista: 3814, 3815, 40450, 40658, 40250, 40468, 14022, 41023, 38107, 40921, 40423. Cache siedzi w <code>sessionStorage</code>, czyli tylko do zamknięcia tej zakładki.</div>
+  <div class="note"><strong>Zmiana v0.3.6:</strong> po otwarciu zakładki automatycznie pobieram cache dla zaznaczonych stacji, od razu pokazuję obserwowane pociągi i pokazuję status pobierania każdej stacji. Startowa lista: 3814, 3815, 40450, 40658, 40250, 40468, 14022, 41023, 38107, 40921, 40423. Cache siedzi w <code>sessionStorage</code>, czyli tylko do zamknięcia tej zakładki.</div>
   <div id="cacheState" class="cachebox">Cache tablicy: brak.</div>
   <div id="loader" class="loader">
     <div class="rail-title"><span id="loaderText" class="pulse">🚆 Pobieranie danych...</span><small id="loaderMini">czekam na stacje</small></div>
@@ -64,12 +64,14 @@ const BOARD_CACHE='rafstakAlarmBoardCacheV030';
 const BASE_STATIONS=['Tarnowskie Góry','Chorzów Batory','Katowice','Gliwice'];
 const CUSTOM_STATIONS='rafstakAlarmCustomStationsV028';
 const STATION_PREF='rafstakAlarmStationsV030';
+const STATION_BASE_ON_MIGRATION='rafstakAlarmBaseStationsOnV036';
 const DEFAULT_TRAINS=['3814','3815','40450','40658','40250','40468','14022','41023','38107','40921','40423'];
 let watchTimer=null,lastSignature='';
 
 document.addEventListener('DOMContentLoaded',()=>{
   setDefaultDateTime();
   stationInput.value=localStorage.getItem('lastAlarmStation')||'Tarnowskie Góry';
+  forceBaseStationsOnOnce();
   renderStationSwitches();
   migrateOldStore();
   ensureDefaultTrains();
@@ -101,6 +103,16 @@ function migrateOldStore(){
   try{const old=JSON.parse(localStorage.getItem('rafstakTrainAlertsV01')||'[]');if(Array.isArray(old)&&old.length)localStorage.setItem(STORE,JSON.stringify(old));}catch{}
 }
 function setDefaultDateTime(){const n=new Date();dateInput.value=`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;timeInput.value=`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`}
+
+function forceBaseStationsOnOnce(){
+  // v0.3.6: po poprzednich testach część bazowych stacji mogła zostać wyłączona w localStorage.
+  // Na starcie nowej wersji włączamy cztery stacje bazowe raz, żeby auto-cache nie startował z połową mapy.
+  if(localStorage.getItem(STATION_BASE_ON_MIGRATION))return;
+  const p=getStationPrefs();
+  for(const s of BASE_STATIONS)p[s]=true;
+  setStationPrefs(p);
+  localStorage.setItem(STATION_BASE_ON_MIGRATION,'1');
+}
 function getCustomStations(){try{const a=JSON.parse(localStorage.getItem(CUSTOM_STATIONS)||'[]');if(Array.isArray(a))return [...new Set(a.map(x=>String(x||'').trim()).filter(Boolean))]}catch{} return []}
 function setCustomStations(a){localStorage.setItem(CUSTOM_STATIONS,JSON.stringify([...new Set(a.map(x=>String(x||'').trim()).filter(Boolean))]));}
 function allStations(){return [...new Set([...BASE_STATIONS,...getCustomStations()])];}
@@ -155,7 +167,7 @@ function removeTrain(n){setTrains(getTrains().filter(x=>x!==n))}
 function clearTrains(){setTrains([]);results.innerHTML='<div class="muted">Brak danych.</div>';setStatus('Lista wyczyszczona.')}
 function renderTrainList(){const arr=getTrains();trainList.innerHTML=arr.length?arr.map(n=>{const safe=esc(n);return `<span class="train-chip"><strong>${safe}</strong><button class="chip-x" title="Usuń ${safe}" aria-label="Usuń pociąg ${safe}" onclick="removeTrain('${safe}')">×</button></span>`}).join(''):'<div class="muted">Nie dodano jeszcze pociągów.</div>'}
 
-function cacheSignature(){return [dateInput.value||'',modeInput.value||'fromTime',timeInput.value||'',windowInput.value||'',selectedStations().join(',')].join('|')}
+function cacheSignature(){return [dateInput.value||'',modeInput.value||'day',timeInput.value||'',windowInput.value||'',selectedStations().join(',')].join('|')}
 function getBoardCache(){try{return JSON.parse(sessionStorage.getItem(BOARD_CACHE)||'null')}catch{return null}}
 function setBoardCache(rows,byStation,meta={}){const payload={stations:selectedStations(),date:dateInput.value,rows,byStation,createdAt:new Date().toISOString(),signature:cacheSignature(),...meta};try{sessionStorage.setItem(BOARD_CACHE,JSON.stringify(payload))}catch{}renderCacheState();return payload}
 function cacheMatches(c){return c&&String(c.signature||'')===cacheSignature()&&Array.isArray(c.rows)&&c.rows.length>0}
@@ -222,7 +234,7 @@ function timeSlots(){
   const [hh,mm]=(timeInput.value||'12:00').split(':').map(Number);
   const h=Number.isFinite(hh)?hh:12;
   const m=Number.isFinite(mm)?mm:0;
-  const mode=modeInput.value||'fromTime';
+  const mode=modeInput.value||'day';
   const out=[];
   const add=(hour,minute=0)=>{if(hour>=0&&hour<=23){const v=`${String(hour).padStart(2,'0')}:${String(minute).padStart(2,'0')}`;if(!out.includes(v))out.push(v)}};
   if(mode==='around'){
@@ -233,7 +245,9 @@ function timeSlots(){
     return out.sort();
   }
   if(mode==='day'){
-    for(let x=0;x<=23;x+=1)add(x,0);
+    // Cały dzień, ale bez 24 zapytań na stację. Sloty co 4h z limitem 300 dają praktycznie pełną tablicę,
+    // a API nie dostaje młotkiem po głowie.
+    for(const x of [0,4,8,12,16,20])add(x,0);
     return out;
   }
   // Domyślnie: od godziny wpisanej w okienku do końca dnia.
@@ -497,7 +511,7 @@ function renderResults(rows,missing,station,loadedCount){
     const rel=origin&&dest?`${origin} → ${dest}`:dest;
     return `<div class="card ${alarm?'alarm':''} ${cancel?'cancelled':''}"><div class="row"><div><div class="time">${esc(actualTimeOf(d)||plannedTimeOf(d)||'—')}</div><div class="muted">plan: ${esc(plannedTimeOf(d)||'—')}</div></div><div><div class="headline"><span class="big">${trainRunLink(no,trainLabel(d)||no,d)}</span>${statusBadge(d,alarm)}</div><div><strong>${esc(carrier)}</strong>${name?' · '+esc(name):''}</div><div class="muted">${esc(rel)}</div>${via?`<div class="via">przez: ${esc(via)}</div>`:''}<div class="miniinfo">${d._station?`<span>stacja: ${esc(d._station)}</span>`:''}<span>per. ${esc(platformOf(d)||'—')}</span><span>tor ${esc(trackOf(d)||'—')}</span><span>${trainRunUrl(no,d)?'link biegu: jest':'link biegu: brak'}</span></div></div><div><div class="${delayClass(delay)}">${cancel?'ODWOŁANY':(delay>0?'+'+delay+' min':'0')}</div></div></div></div>`;
   });
-  if(missing.length)cards.push(`<div class="card missing"><b>Nie znaleziono w pobranej tablicy:</b> ${missing.map(n=>'<strong>'+esc(n)+'</strong>').join(', ')}<div class="muted">Tych numerów nie ma w cache tablicy dla aktualnej stacji, daty i okna czasu. Zmień parametry albo odśwież cache. Tak, API nadal nie jest wyszukiwarką marzeń.</div></div>`);
+  if(missing.length)cards.push(`<div class="card missing"><b>Nie znaleziono w pobranej tablicy:</b> ${missing.map(n=>'<strong>'+esc(n)+'</strong>').join(', ')}<div class="muted">Tych numerów nie ma w cache dla aktywnych stacji: ${selectedStations().map(esc).join(', ')}. Tryb pobierania: ${esc(modeInput.value||'day')}, data: ${esc(dateInput.value||'—')}. Jeśli pociąg nie przejeżdża przez aktywne stacje albo jest poza tablicą PLK, front go nie wyczaruje, nawet gdy będzie bardzo ładnie prosił.</div></div>`);
   results.innerHTML=cards.length?cards.join(''):'<div class="muted">Brak śledzonych pociągów w aktualnych danych.</div>';
 }
 function checkNotifications(rows){const threshold=Number(thresholdInput.value||5),alerts=rows.filter(d=>isCancelled(d)||delayOf(d)>=threshold),sig=alerts.map(d=>`${trainNoOf(d)}-${delayOf(d)}-${codeOf(d)}-${d.time||d.plannedTime}`).join('|');if(!alerts.length||sig===lastSignature)return;lastSignature=sig;const msg=alerts.map(d=>isCancelled(d)?`${trainLabel(d)} ODWOŁANY`:`${trainLabel(d)} +${delayOf(d)} min`).join(' | ');if('Notification'in window&&Notification.permission==='granted')new Notification('Alarm pociągu',{body:msg});setStatus('Alarm: '+msg)}
