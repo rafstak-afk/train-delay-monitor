@@ -636,6 +636,7 @@
 
     function applySmartMobileBehavior(filtered, query) {
       clearTimeout(smartKeyboardTimer);
+
       if (!isLikelyMobile() || !query) {
         if (resultHint) {
           resultHint.textContent = '';
@@ -644,7 +645,7 @@
         return;
       }
 
-      if (filtered.length > 0 && filtered.length <= 3) {
+      if (filtered.length > 0) {
         smartKeyboardTimer = setTimeout(() => {
           const first = document.querySelector('#rows tr');
           const active = document.activeElement;
@@ -654,15 +655,19 @@
           }
 
           if (resultHint) {
-            resultHint.textContent = filtered.length === 1
-              ? 'Znaleziono 1 osobę. Wynik poniżej.'
-              : `Znaleziono ${filtered.length} osoby. Sprawdź szczegóły poniżej.`;
+            if (filtered.length === 1) {
+              resultHint.textContent = 'Znaleziono 1 osobę. Wynik poniżej.';
+            } else if (filtered.length <= 4) {
+              resultHint.textContent = `Znaleziono ${filtered.length} osoby. Sprawdź szczegóły poniżej.`;
+            } else {
+              resultHint.textContent = `Znaleziono ${filtered.length} pozycji. Pierwsze wyniki poniżej.`;
+            }
             resultHint.classList.add('show');
           }
 
           setTimeout(() => {
             if (first) {
-              first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              first.scrollIntoView({ behavior: 'smooth', block: 'start' });
               first.classList.add('result-focus');
               setTimeout(() => first.classList.remove('result-focus'), 1800);
             }
@@ -670,10 +675,8 @@
         }, 900);
       } else {
         if (resultHint) {
-          resultHint.textContent = filtered.length > 3
-            ? `Znaleziono ${filtered.length} pozycji. Dopisz kolejne litery.`
-            : '';
-          resultHint.classList.toggle('show', filtered.length > 3);
+          resultHint.textContent = 'Brak wyników. Sprawdź pisownię albo wpisz mniej liter.';
+          resultHint.classList.add('show');
         }
       }
     }
