@@ -197,6 +197,36 @@
       footer { font-size: 12px; padding: 10px 0; }
     }
 
+  
+    .result-hint {
+      display: none;
+      margin: 6px 0 0;
+      font-size: 13px;
+      color: #334155;
+      font-weight: 700;
+    }
+    .result-hint.show {
+      display: block;
+    }
+    tr.result-focus {
+      outline: 2px solid #2563eb;
+      outline-offset: 2px;
+      animation: focusPulse 1.6s ease-out 1;
+    }
+    @keyframes focusPulse {
+      0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, .35); }
+      100% { box-shadow: 0 0 0 10px rgba(37, 99, 235, 0); }
+    }
+    @media (max-width: 760px) {
+      .result-hint {
+        font-size: 12px;
+        text-align: right;
+      }
+      tr.result-focus {
+        outline-offset: 1px;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -233,13 +263,14 @@
             <option value="odwozka">Tylko odwoźka po weselu</option>
           </select>
           <span class="count" id="count"></span>
+        <span class="result-hint" id="resultHint"></span>
         </section>
       </div>
 
       <section class="table-card">
         <table>
           <thead>
-            <tr><th class="lp">Lp.</th><th>Imię</th><th>Godzina</th><th>Przystanek / lokalizacja</th><th>Pojazd</th></tr>
+            <tr data-lp="${g.lp}"><th class="lp">Lp.</th><th>Imię</th><th>Godzina</th><th>Przystanek / lokalizacja</th><th>Pojazd</th></tr>
           </thead>
           <tbody id="rows"></tbody>
         </table>
@@ -583,49 +614,111 @@
     const search = document.querySelector('#search');
     const vehicleFilter = document.querySelector('#vehicleFilter');
     const count = document.querySelector('#count');
-    function label(vehicle) { return vehicle === 'odwozka' ? 'tylko odwoźka po weselu' : vehicle; }
-    function escapeHtml(value) {
-      return String(value ?? '').replace(/[&<>"']/g, ch => ({
-        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-      }[ch]));
+
+    const resultHint = document.querySelector('#resultHint');
+    let smartKeyboardTimer;
+
+    function isLikelyMobile() {
+      return window.matchMedia('(max-width: 760px)').matches || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
     }
-    function normalize(value) {
-      return String(value ?? '')
+
+    function label(vehicle) {
+      if (vehicle === 'odwozka') return 'tylko odwoźka po weselu';
+      return vehicle;
+    }
+
+    function normalizeText(value) {
+      return String(value || '')
         .toLowerCase()
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '');
     }
+
+    function applySmartMobileBehavior(filtered, query) {
+      clearTimeout(smartKeyboardTimer);
+      if (!isLikelyMobile() || !query) {
+        if (resultHint) {
+          resultHint.textContent = '';
+          resultHint.classList.remove('show');
+        }
+        return;
+      }
+
+      if (filtered.length > 0 && filtered.length <= 3) {
+        smartKeyboardTimer = setTimeout(() => {
+          const first = document.querySelector('#rows tr');
+          const active = document.activeElement;
+
+          if (active && typeof active.blur === 'function') {
+            active.blur();
+          }
+
+          if (resultHint) {
+            resultHint.textContent = filtered.length === 1
+              ? 'Znaleziono 1 osobę. Wynik poniżej.'
+              : `Znaleziono ${filtered.length} osoby. Sprawdź szczegóły poniżej.`;
+            resultHint.classList.add('show');
+          }
+
+          setTimeout(() => {
+            if (first) {
+              first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              first.classList.add('result-focus');
+              setTimeout(() => first.classList.remove('result-focus'), 1800);
+            }
+          }, 120);
+        }, 900);
+      } else {
+        if (resultHint) {
+          resultHint.textContent = filtered.length > 3
+            ? `Znaleziono ${filtered.length} pozycji. Dopisz kolejne litery.`
+            : '';
+          resultHint.classList.toggle('show', filtered.length > 3);
+        }
+      }
+    }
+
     function render() {
-      const q = normalize(search.value.trim());
+      const qRaw = search.value.trim();
+      const q = normalizeText(qRaw);
       const f = vehicleFilter.value;
+
       const filtered = guests.filter(g => {
-        const haystack = normalize(`${g.lp} ${g.name} ${g.time} ${g.place} ${label(g.vehicle)}`);
+        const haystack = normalizeText(`${g.lp} ${g.name} ${g.time} ${g.place} ${label(g.vehicle)}`);
         return (!q || haystack.includes(q)) && (!f || g.vehicle === f);
       });
 
-      const html = filtered.map(g => {
-        const isKid = String(g.name).includes('<4');
-        const safeName = escapeHtml(g.name);
-        const safePlace = escapeHtml(g.vehicle === 'odwozka' ? '—' : g.place);
-        const safeTime = escapeHtml(g.time || '—');
-        const safeVehicle = escapeHtml(g.vehicle);
-        const safeLabel = escapeHtml(label(g.vehicle));
-        return `
-          <tr class="${isKid ? 'kid' : ''}" data-lp="${g.lp}" data-person-key="${g.lp}-${safeName}">
-            <td class="lp">${g.lp}</td>
-            <td>${safeName}</td>
-            <td class="time">${safeTime}</td>
-            <td>${safePlace}</td>
-            <td class="vehicle"><span class="badge ${safeVehicle}">${safeLabel}</span></td>
-          </tr>`;
-      }).join('');
+      rows.innerHTML = filtered.map(g => `
+        <tr data-lp="${g.lp}" class="${String(g.name).includes('<4') ? 'kid' : ''}">
+          <td class="lp">${g.lp}</td>
+          <td>${g.name}</td>
+          <td class="time">${g.time || '—'}</td>
+          <td>${g.vehicle === 'odwozka' ? '—' : g.place}</td>
+          <td class="vehicle"><span class="badge ${g.vehicle}">${label(g.vehicle)}</span></td>
+        </tr>
+      `).join('');
 
-      rows.innerHTML = html;
       count.textContent = `${filtered.length} / ${guests.length} pozycji`;
+      applySmartMobileBehavior(filtered, qRaw);
     }
+
     search.addEventListener('input', render);
-    vehicleFilter.addEventListener('change', render);
+    search.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        const first = document.querySelector('#rows tr');
+        search.blur();
+        if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    });
+    vehicleFilter.addEventListener('change', () => {
+      render();
+      if (document.activeElement && typeof document.activeElement.blur === 'function') {
+        document.activeElement.blur();
+      }
+    });
     render();
+
   </script>
 </body>
 </html>
