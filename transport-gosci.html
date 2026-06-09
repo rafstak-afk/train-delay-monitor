@@ -270,7 +270,7 @@
       <section class="table-card">
         <table>
           <thead>
-            <tr data-lp="${g.lp}"><th class="lp">Lp.</th><th>Imię</th><th>Godzina</th><th>Przystanek / lokalizacja</th><th>Pojazd</th></tr>
+            <tr><th class="lp">Lp.</th><th>Imię</th><th>Godzina</th><th>Przystanek / lokalizacja</th><th>Pojazd</th></tr>
           </thead>
           <tbody id="rows"></tbody>
         </table>
@@ -634,6 +634,24 @@
         .replace(/[\u0300-\u036f]/g, '');
     }
 
+
+    function scrollToFirstResult(first) {
+      if (!first) return;
+
+      const toolbar = document.querySelector('.toolbar-wrap');
+      const toolbarHeight = toolbar ? toolbar.getBoundingClientRect().height : 0;
+      const offset = toolbarHeight + 10;
+      const y = first.getBoundingClientRect().top + window.pageYOffset - offset;
+
+      window.scrollTo({
+        top: Math.max(0, y),
+        behavior: 'smooth'
+      });
+
+      first.classList.add('result-focus');
+      setTimeout(() => first.classList.remove('result-focus'), 1800);
+    }
+
     function applySmartMobileBehavior(filtered, query) {
       clearTimeout(smartKeyboardTimer);
 
@@ -666,11 +684,7 @@
           }
 
           setTimeout(() => {
-            if (first) {
-              first.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              first.classList.add('result-focus');
-              setTimeout(() => first.classList.remove('result-focus'), 1800);
-            }
+            scrollToFirstResult(first);
           }, 120);
         }, 900);
       } else {
@@ -711,7 +725,7 @@
         event.preventDefault();
         const first = document.querySelector('#rows tr');
         search.blur();
-        if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        scrollToFirstResult(first);
       }
     });
     vehicleFilter.addEventListener('change', () => {
