@@ -13,7 +13,7 @@
 <body>
 <div class="wrap">
 <h1>🔔 Alarmy pociągów</h1>
-<div class="version">v0.3.8.1 · alarmy używają głównego /train.html · bez lokalnego train.html</div>
+<div class="version">v0.3.9 · stabilne linkowanie biegu · bez zgadywania przez /api/train</div>
 <div class="panel">
   <div class="grid">
     <input id="stationInput" placeholder="Stacja pomocnicza, np. Tarnowskie Góry">
@@ -451,16 +451,10 @@ function hasRealRunTarget(d={}){
   return !!(normalizeDetailUrl(deepDetailLinkOf(d))||deepRunIdOf(d));
 }
 function rootTrainUrl(no,d={}){
-  // Źródło prawdy: rekord z cache tablicy stacji. Jeżeli tablica ma link biegu, otwieramy go bezpośrednio.
+  // v0.3.9: otwieramy WYŁĄCZNIE prawdziwy link z rekordu tablicy PLK.
+  // Nie robimy już planu B przez /train.html po runId, bo to kończy się HTTP 503 i szamańskim odświeżaniem.
   const dl=normalizeDetailUrl(deepDetailLinkOf(d));
   if(dl)return dl;
-  // Plan B: jeśli z rekordu tablicy wyciągniemy prawdziwy identyfikator kursu, odsyłamy do głównego widoku biegu z tym ID.
-  // Nie używamy gołego numeru jako ID, bo to wcześniej produkowało nekrolog.
-  const rid=deepRunIdOf(d);
-  if(rid){
-    const qs=new URLSearchParams({train:no||trainNoOf(d)||'',date:dateInput.value||'',station:d._station||stationInput.value.trim()||'',runId:rid,courseId:rid});
-    return '/train.html?'+qs.toString();
-  }
   return '';
 }
 
@@ -471,26 +465,19 @@ function cacheRunData(no,d={}){
   return key;
 }
 function trainRunUrl(no,d={}){
-  if(!hasRealRunTarget(d))return '';
-  const key=cacheRunData(no,d);
   const target=rootTrainUrl(no,d);
   if(!target)return '';
-  // Korzystamy z głównego /train.html, a nie z lokalnego /alarmy/train.html.
-  // Jeśli target to główny widok RafStaKa, dokładamy klucz rekordu z cache jako bonus diagnostyczny.
-  if(/^\/train\.html\?/i.test(target)){
-    const u=new URL(target, location.origin);
-    u.searchParams.set('rk', key);
-    return u.pathname + u.search;
-  }
+  cacheRunData(no,d);
   return target;
 }
+
 function trainRunLink(no,label,d={}){
   if(!no)return esc(label||'');
   const href=trainRunUrl(no,d);
   if(!href){
     return `<span class="train-link disabled" title="Brak linku biegu albo identyfikatora kursu w rekordzie tablicy. Front nie będzie zgadywał po samym numerze.">${esc(label||no)}</span><span class="idpill">brak linku PLK</span>`;
   }
-  return `<a class="train-link" href="${esc(href)}" target="_blank" title="Otwórz stabilny bieg pociągu ${esc(no)}">${esc(label||no)}</a><span class="idpill">bieg</span>`;
+  return `<a class="train-link" href="${esc(href)}" target="_blank" title="Otwórz bezpośredni link biegu z tablicy PLK ${esc(no)}">${esc(label||no)}</a><span class="idpill">bieg</span>`;
 }
 function stopName(s){return String(valOf(s,['station','stationName','name','stop','stopName','location'])||'').trim()}
 function routeStopsOf(d){
