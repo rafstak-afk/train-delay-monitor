@@ -1,291 +1,575 @@
-// functions/api/departures.js
-// RafStaK Alarmy v0.4.0
-// Cel: /api/departures ma zwracać nie tylko „ładne” pola do tabeli,
-// ale też link/identyfikatory biegu z surowego rekordu PLK.
-// Dzięki temu /alarmy/index.html może otworzyć prawdziwy bieg pociągu bez zgadywania po numerze.
+const PLK_BASE = "https://pdp-api.plk-sa.pl/api/v1";
 
-const API_BASE = 'https://pdp-api.plk-sa.pl';
-
-const JSON_HEADERS = {
-  'content-type': 'application/json; charset=utf-8',
-  'cache-control': 'no-store'
+const CACHE_TTL = {
+  STATION_SEARCH: 86400,
+  STATIONS_DICTIONARY: 86400,
+  FULL_SCHEDULES: 21600,
+  STATION_SCHEDULES: 300,
+  OPERATIONS: 30
 };
 
-// Awaryjne mapowanie tylko jako plan B. Jeżeli Twój dotychczasowy worker miał resolver stacji,
-// zostaw go i przenieś z tego pliku przede wszystkim funkcje: enrichDeparture(), deepFindLinks(), deepFindIds().
-const STATION_IDS = {
-  'katowice': '73312',
-  'tarnowskie gory': '73472',
-  'tarnowskie góry': '73472',
-  'chorzow batory': '73002',
-  'chorzów batory': '73002',
-  'gliwice': '73006'
-};
-
-export async function onRequest(context) {
+export async function onRequestGet(context) {
   const { request, env } = context;
   const url = new URL(request.url);
 
+  const stationName = (url.searchParams.get("station") || "").trim();
+  const date = url.searchParams.get("date") || localDateYYYYMMDD();
+  const time = url.searchParams.get("time") || currentTimeHHMM();
+  const limit = clamp(Number(url.searchParams.get("limit") || 20), 1, 80);
+
+  if (!stationName) {
+    return json({ error: "Brak parametru station" }, 400);
+  }
+
+  if (!env.PLK_API_KEY) {
+    return json({ error: "Brak zmiennej PLK_API_KEY" }, 500);
+  }
+
+  const headers = {
+    "X-API-Key": env.PLK_API_KEY,
+    "Accept": "application/json"
+  };
+
   try {
-    const station = (url.searchParams.get('station') || '').trim();
-    const stationId = (url.searchParams.get('stationId') || STATION_IDS[norm(station)] || '').trim();
-    const date = url.searchParams.get('date') || todayWarsaw();
-    const time = url.searchParams.get('time') || '00:00';
-    const limit = Math.min(Number(url.searchParams.get('limit') || 160), 500);
+    const station = await findStation(stationName, headers);
 
-    if (!station && !stationId) {
-      return json({ error: 'Brak parametru station albo stationId.' }, 400);
-    }
-    if (!stationId) {
-      return json({ error: 'Nie znam stationId dla stacji: ' + station, hint: 'Podaj stationId albo dopisz stację do STATION_IDS w workerze.' }, 404);
+    if (!station) {
+      return json({ error: "Nie znaleziono stacji", stationName }, 404);
     }
 
-    const apiKey = env.PLK_API_KEY || env.PDP_API_KEY || env.API_KEY || env.PLK_KEY || '';
-    if (!apiKey) return json({ error: 'Brak klucza API w env.PLK_API_KEY / env.PDP_API_KEY.' }, 500);
+    const stationSchedulesUrl =
+      `${PLK_BASE}/schedules?dateFrom=${date}&dateTo=${date}&stations=${station.id}`;
 
-    const upstreamUrl = new URL('/api/v1/operations', API_BASE);
-    upstreamUrl.searchParams.set('stations', stationId);
-    upstreamUrl.searchParams.set('withPlanned', 'true');
-    upstreamUrl.searchParams.set('pageSize', '10000');
+    const fullSchedulesUrl =
+      `${PLK_BASE}/schedules?dateFrom=${date}&dateTo=${date}`;
 
-    const r = await fetch(upstreamUrl.toString(), {
-      headers: {
-        'accept': 'application/json',
-        'x-api-key': apiKey,
-        'api-key': apiKey,
-        'authorization': apiKey.startsWith('Bearer ') ? apiKey : `Bearer ${apiKey}`
-      }
+    const operationsUrl =
+      `${PLK_BASE}/operations?stations=${station.id}&withPlanned=true&pageSize=10000`;
+
+    const stationsDictionaryUrl =
+      `${PLK_BASE}/dictionaries/stations?pageSize=100000`;
+
+    const [
+      stationSchedulesResult,
+      fullSchedulesResult,
+      operationsResult,
+      stationsDictionaryResult
+    ] = await Promise.all([
+      getJsonCached(stationSchedulesUrl, headers, CACHE_TTL.STATION_SCHEDULES),
+      getJsonCached(fullSchedulesUrl, headers, CACHE_TTL.FULL_SCHEDULES),
+      getJsonCached(operationsUrl, headers, CACHE_TTL.OPERATIONS),
+      getJsonCached(stationsDictionaryUrl, headers, CACHE_TTL.STATIONS_DICTIONARY)
+    ]);
+
+    const stationSchedulesRaw = stationSchedulesResult.data;
+    const fullSchedulesRaw = fullSchedulesResult.data;
+    const operationsRaw = operationsResult.data;
+    const stationsDictionaryRaw = stationsDictionaryResult.data;
+
+    const apiLimits = mergeApiLimits([
+      stationSchedulesResult.apiLimits,
+      fullSchedulesResult.apiLimits,
+      operationsResult.apiLimits,
+      stationsDictionaryResult.apiLimits
+    ]);
+
+    const cache = {
+      stationSchedules: stationSchedulesResult.cache,
+      fullSchedules: fullSchedulesResult.cache,
+      operations: operationsResult.cache,
+      stationsDictionary: stationsDictionaryResult.cache
+    };
+
+    const fullRoutesMap = buildFullRoutesMap(fullSchedulesRaw);
+    const stationNames = buildStationNameMap(fullSchedulesRaw, stationsDictionaryRaw);
+
+    const allDepartures = buildDepartures({
+      stationSchedulesRaw,
+      fullRoutesMap,
+      operationsRaw,
+      stationId: station.id,
+      stationNames,
+      date
     });
 
-    const text = await r.text();
-    let data;
-    try { data = JSON.parse(text); } catch { data = { rawText: text }; }
-    if (!r.ok) {
-      return json({ error: 'PLK API ' + r.status, details: data }, r.status);
-    }
-
-    const rows = pickArray(data).map(x => enrichDeparture(x, { station, stationId }));
-    const filtered = filterByDateTime(rows, date, time).slice(0, limit);
+    const departures = getDeparturesFromTime(allDepartures, time, limit);
 
     return json({
       station,
-      stationId,
+      generatedAt: new Date().toISOString(),
       date,
-      time,
-      count: filtered.length,
-      departures: filtered,
-      _debug: {
-        source: '/api/v1/operations',
-        rawCount: rows.length,
-        linkFieldsInjected: true,
-        note: 'Każdy rekord zawiera pola detailUrl/detailsUrl/trainUrl/plkLink, runId/courseId/journeyId oraz _raw.'
-      }
+      timeFrom: time,
+      limit,
+      apiLimits,
+      cache,
+      departures
     });
-  } catch (e) {
-    return json({ error: 'Błąd workera /api/departures', details: String(e && e.message || e) }, 500);
+
+  } catch (error) {
+    return json({
+      error: "Błąd API PLK",
+      details: error.message
+    }, 500);
   }
 }
 
-function json(obj, status = 200) {
-  return new Response(JSON.stringify(obj, null, 2), { status, headers: JSON_HEADERS });
-}
+async function findStation(name, headers) {
+  const url =
+    `${PLK_BASE}/dictionaries/stations?search=${encodeURIComponent(name)}&pageSize=20`;
 
-function norm(s) {
-  return String(s || '')
-    .trim()
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/ł/g, 'l')
-    .replace(/\s+/g, ' ');
-}
+  const response = await getJsonCached(url, headers, CACHE_TTL.STATION_SEARCH);
 
-function todayWarsaw() {
-  const d = new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Warsaw' }));
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
+  const data = response.data;
+  const stations = extractArray(data);
+  const wanted = normalize(name);
 
-function pickArray(data) {
-  if (Array.isArray(data)) return data;
-  for (const key of ['items', 'data', 'results', 'operations', 'departures', 'content', 'rows']) {
-    if (Array.isArray(data && data[key])) return data[key];
-  }
-  // czasem API opakowuje listę głębiej, więc szukamy pierwszej sensownej tablicy obiektów
-  const found = [];
-  walk(data, (v) => {
-    if (!found.length && Array.isArray(v) && v.some(x => x && typeof x === 'object')) found.push(v);
-  });
-  return found[0] || [];
-}
+  const found =
+    stations.find(s => normalize(s.name || s.stationName) === wanted) ||
+    stations[0];
 
-function val(obj, keys) {
-  for (const k of keys) {
-    const v = obj && obj[k];
-    if (v !== undefined && v !== null && String(v).trim() !== '') return v;
-  }
-  return '';
-}
-
-function enrichDeparture(raw, ctx) {
-  const links = deepFindLinks(raw);
-  const ids = deepFindIds(raw);
-
-  const trainNo = String(val(raw, ['train', 'trainNumber', 'number', 'commercialNumber', 'trainNo', 'nrPociagu', 'nrPociągu']) || ids.trainNumber || '').trim();
-  const planned = val(raw, ['plannedTime', 'scheduledTime', 'planTime', 'departureTime', 'time', 'plannedDepartureTime']);
-  const actual = val(raw, ['time', 'actualTime', 'realTime', 'estimatedTime', 'actualDepartureTime']) || planned;
-
-  const detailUrl = links[0] || '';
+  if (!found) return null;
 
   return {
-    // pola używane przez obecny front
-    train: trainNo,
-    trainNumber: trainNo,
-    category: val(raw, ['category', 'trainCategory', 'type', 'kind']),
-    name: val(raw, ['name', 'trainName', 'commercialName']),
-    carrier: val(raw, ['carrier', 'operator', 'company', 'railwayUndertaking']),
-    destination: stationName(val(raw, ['destination', 'to', 'targetStation', 'stationTo', 'finalStation', 'endStation'])),
-    origin: stationName(val(raw, ['origin', 'from', 'startStation', 'stationFrom', 'departureStation'])),
-    via: viaText(raw),
-    time: actual,
-    plannedTime: planned,
-    delay: Number(val(raw, ['delay', 'delayMinutes', 'delayInMinutes', 'delayedMinutes']) || 0),
-    status: val(raw, ['status', 'state', 'realizationStatus', 'operationStatus', 'trainStatus']),
-    statusCode: val(raw, ['statusCode', 'code', 'plkCode', 'plkStatus', 'kodPLK']),
-    platform: val(raw, ['platform', 'peron', 'platformNumber']),
-    track: val(raw, ['track', 'tor', 'trackNumber']),
-
-    // KLUCZOWE: pola linku i identyfikatorów dla alarmów
-    detailUrl,
-    detailsUrl: detailUrl,
-    trainUrl: detailUrl,
-    runUrl: detailUrl,
-    plkLink: detailUrl,
-    portalUrl: detailUrl,
-    link: detailUrl,
-    href: detailUrl,
-    url: detailUrl,
-
-    runId: ids.runId || '',
-    courseId: ids.courseId || '',
-    journeyId: ids.journeyId || '',
-    trainId: ids.trainId || '',
-    operationId: ids.operationId || '',
-    scheduleId: ids.scheduleId || '',
-    communicationId: ids.communicationId || '',
-    connectionId: ids.connectionId || '',
-
-    _station: ctx.station || '',
-    _stationId: ctx.stationId || '',
-    _links: links,
-    _ids: ids,
-    _raw: raw
+    id: found.id || found.stationId,
+    name: found.name || found.stationName
   };
 }
 
-function stationName(v) {
-  if (!v) return '';
-  if (typeof v === 'string') return v;
-  return val(v, ['name', 'stationName', 'displayName', 'shortName']) || String(v.id || v.stationId || '');
-}
-
-function viaText(raw) {
-  const v = val(raw, ['via', 'through', 'route', 'stops', 'intermediateStations']);
-  if (!v) return '';
-  if (typeof v === 'string') return v;
-  if (Array.isArray(v)) return v.map(stationName).filter(Boolean).join(', ');
-  return '';
-}
-
-function filterByDateTime(rows, date, time) {
-  // Nie wycinamy agresywnie, bo API PLK potrafi różnie formatować czasy.
-  // Jeśli jest data/czas w rekordzie, filtrujemy miękko od podanej godziny.
-  const min = String(time || '00:00').slice(0, 5);
-  return rows.filter(d => {
-    const t = hhmm(d.time || d.plannedTime);
-    if (!t) return true;
-    return t >= min;
+async function getJsonCached(url, headers, ttlSeconds) {
+  const cache = caches.default;
+  const cacheKey = new Request("https://cache.local/" + btoa(url), {
+    method: "GET"
   });
-}
 
-function hhmm(v) {
-  const m = String(v || '').match(/(\d{2}:\d{2})/);
-  return m ? m[1] : '';
-}
+  const cachedResponse = await cache.match(cacheKey);
 
-function deepFindLinks(root) {
-  const out = [];
-  const seen = new Set();
-  walk(root, (v, path) => {
-    if (typeof v !== 'string') return;
-    const s = v.trim();
-    const p = path.join('.');
-    if (!s) return;
-    const keyLooksLink = /(link|url|href|detail|details|run|journey|course|route|portal|plk|bieg|pociag|pociąg)/i.test(p);
-    const valueLooksLink = /^(https?:)?\/\//i.test(s) || /^\//.test(s) || /portalpasazera|plk-sa|\/Pociag|\/Train|\/Szczegoly|\/Details|bieg|journey|run|course/i.test(s);
-    if ((keyLooksLink || valueLooksLink) && !/^\d{1,8}$/.test(s)) {
-      const u = normalizeUrl(s);
-      if (u && !seen.has(u)) { seen.add(u); out.push(u); }
+  if (cachedResponse) {
+    const cachedData = await cachedResponse.json();
+
+    return {
+      data: cachedData,
+      apiLimits: {
+        available: false,
+        limit: null,
+        remaining: null,
+        reset: null
+      },
+      cache: "HIT"
+    };
+  }
+
+  const result = await getJsonWithMeta(url, headers);
+
+  const responseForCache = new Response(JSON.stringify(result.data), {
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": `public, max-age=${ttlSeconds}`
     }
   });
-  return out.sort((a, b) => linkScore(b) - linkScore(a));
+
+  await cache.put(cacheKey, responseForCache);
+
+  return {
+    ...result,
+    cache: "MISS"
+  };
 }
 
-function normalizeUrl(s) {
-  if (!s) return '';
-  if (/^\/\//.test(s)) return 'https:' + s;
-  if (/^https?:\/\//i.test(s)) return s;
-  if (/^\//.test(s)) return 'https://portalpasazera.pl' + s;
-  if (/portalpasazera|plk-sa/i.test(s)) return s.startsWith('http') ? s : 'https://' + s;
-  return s;
-}
+async function getJsonWithMeta(url, headers) {
+  const res = await fetch(url, { headers });
+  const text = await res.text();
 
-function linkScore(s) {
-  let n = 0;
-  if (/portalpasazera/i.test(s)) n += 50;
-  if (/pociag|pociąg|train|bieg|run|journey|course|szczeg|details/i.test(s)) n += 40;
-  if (/wyswietlacz|tablica|station/i.test(s)) n -= 20;
-  return n;
-}
-
-function deepFindIds(root) {
-  const ids = {};
-  const wanted = /(runId|courseId|journeyId|trainId|operationId|scheduleId|communicationId|connectionId|trainNumber|commercialNumber|number|id)$/i;
-  walk(root, (v, path) => {
-    const k = path[path.length - 1] || '';
-    if (!wanted.test(k)) return;
-    if (v === null || v === undefined || typeof v === 'object') return;
-    const s = String(v).trim();
-    if (!s) return;
-    const canonical = canonicalIdKey(k);
-    // Odrzuć rok jako rzekomy ID. Tak, serio, już nas to raz ugryzło.
-    if (canonical !== 'trainNumber' && /^20\d{2}$/.test(s)) return;
-    if (!ids[canonical]) ids[canonical] = s;
-  });
-  return ids;
-}
-
-function canonicalIdKey(k) {
-  const s = String(k).toLowerCase();
-  if (s.includes('run')) return 'runId';
-  if (s.includes('course')) return 'courseId';
-  if (s.includes('journey')) return 'journeyId';
-  if (s.includes('operation')) return 'operationId';
-  if (s.includes('schedule')) return 'scheduleId';
-  if (s.includes('communication')) return 'communicationId';
-  if (s.includes('connection')) return 'connectionId';
-  if (s.includes('train') && s.includes('id')) return 'trainId';
-  if (s.includes('train') || s.includes('commercial') || s === 'number') return 'trainNumber';
-  return k;
-}
-
-function walk(v, cb, path = [], seen = new WeakSet()) {
-  cb(v, path);
-  if (!v || typeof v !== 'object') return;
-  if (seen.has(v)) return;
-  seen.add(v);
-  if (Array.isArray(v)) {
-    v.forEach((x, i) => walk(x, cb, path.concat(String(i)), seen));
-  } else {
-    Object.entries(v).forEach(([k, x]) => walk(x, cb, path.concat(k), seen));
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status}: ${text.slice(0, 500)}`);
   }
+
+  return {
+    data: JSON.parse(text),
+    apiLimits: readApiLimits(res.headers)
+  };
+}
+
+function buildDepartures({
+  stationSchedulesRaw,
+  fullRoutesMap,
+  operationsRaw,
+  stationId,
+  stationNames,
+  date
+}) {
+  const stationRoutes = stationSchedulesRaw.routes || [];
+  const trains = operationsRaw.trains || [];
+
+  const operationsMap = new Map();
+
+  for (const train of trains) {
+    if (train.operatingDate && train.operatingDate !== date) {
+      continue;
+    }
+
+    const key = makeKey(train);
+
+    const stationOp = (train.stations || []).find(
+      s => Number(s.stationId) === Number(stationId)
+    );
+
+    if (key && stationOp) {
+      operationsMap.set(key, { train, station: stationOp });
+    }
+  }
+
+  const rows = [];
+
+  for (const stationRoute of stationRoutes) {
+    const key = makeKey(stationRoute);
+    const fullRoute = fullRoutesMap.get(key) || stationRoute;
+
+    const routeStations =
+      Array.isArray(fullRoute.stations) && fullRoute.stations.length
+        ? fullRoute.stations
+        : stationRoute.stations || [];
+
+    const stationPlan = (stationRoute.stations || []).find(
+      s => Number(s.stationId) === Number(stationId)
+    );
+
+    if (!stationPlan || !stationPlan.departureTime) continue;
+
+    const currentIndex = routeStations.findIndex(
+      s => Number(s.stationId) === Number(stationId)
+    );
+
+    const destinationStation =
+      routeStations.length
+        ? routeStations[routeStations.length - 1]
+        : null;
+
+    const destination =
+      stationName(destinationStation, stationNames) ||
+      fullRoute.destinationStationName ||
+      fullRoute.destination ||
+      "";
+
+    const via = currentIndex >= 0
+      ? routeStations
+          .slice(currentIndex + 1, currentIndex + 6)
+          .map(s => stationName(s, stationNames))
+          .filter(Boolean)
+          .filter(name => normalize(name) !== normalize(destination))
+          .join(", ")
+      : "";
+
+    const operation = operationsMap.get(key);
+    const opStation = operation?.station;
+
+    const plannedTime =
+      stationPlan.departureTime ||
+      opStation?.plannedDepartureTime ||
+      "";
+
+    const actualTime =
+      timeOnly(opStation?.actualDeparture) ||
+      timeOnly(opStation?.estimatedDeparture) ||
+      opStation?.plannedDepartureTime ||
+      plannedTime;
+
+    const delay =
+      typeof opStation?.departureDelayMinutes === "number"
+        ? opStation.departureDelayMinutes
+        : calculateDelay(plannedTime, actualTime);
+
+    rows.push({
+      time: shortTime(actualTime || plannedTime),
+      plannedTime: shortTime(plannedTime),
+      train: stationPlan.departureTrainNumber || fullRoute.nationalNumber || stationRoute.nationalNumber || "",
+      category: stationPlan.departureCommercialCategory || fullRoute.commercialCategorySymbol || stationRoute.commercialCategorySymbol || "",
+      name: fullRoute.name || stationRoute.name || "",
+      carrier: fullRoute.carrierCode || stationRoute.carrierCode || "",
+      destination,
+      via,
+      platform: stationPlan.departurePlatform || "",
+      track: stationPlan.departureTrack || "",
+      delay,
+      status: operation?.train?.trainStatus || "",
+      scheduleId: stationRoute.scheduleId,
+      orderId: stationRoute.orderId,
+      trainOrderId: stationRoute.trainOrderId
+    });
+  }
+
+  return rows
+    .filter(r => r.time)
+    .sort((a, b) => {
+      const am = effectiveMinutes(a);
+      const bm = effectiveMinutes(b);
+
+      if (am === null && bm === null) return 0;
+      if (am === null) return 1;
+      if (bm === null) return -1;
+
+      return am - bm;
+    });
+}
+
+function buildFullRoutesMap(fullSchedulesRaw) {
+  const map = new Map();
+  const routes = fullSchedulesRaw.routes || [];
+
+  for (const route of routes) {
+    const key = makeKey(route);
+    if (key) map.set(key, route);
+  }
+
+  return map;
+}
+
+function buildStationNameMap(fullSchedulesRaw, stationsDictionaryRaw) {
+  const map = new Map();
+
+  addStationNamesFromSchedules(map, fullSchedulesRaw);
+  addStationNamesFromDictionary(map, stationsDictionaryRaw);
+
+  return map;
+}
+
+function addStationNamesFromSchedules(map, schedulesRaw) {
+  const dictionaries = schedulesRaw?.dictionaries || {};
+
+  const possibleLists = [
+    dictionaries.stations,
+    dictionaries.station,
+    dictionaries.stopPoints,
+    schedulesRaw?.stations
+  ];
+
+  for (const list of possibleLists) {
+    addStationListToMap(map, list);
+  }
+}
+
+function addStationNamesFromDictionary(map, dictionaryRaw) {
+  const possibleLists = [
+    dictionaryRaw?.stations,
+    dictionaryRaw?.items,
+    dictionaryRaw?.results,
+    dictionaryRaw?.data,
+    dictionaryRaw
+  ];
+
+  for (const list of possibleLists) {
+    addStationListToMap(map, list);
+  }
+}
+
+function addStationListToMap(map, list) {
+  if (!Array.isArray(list)) return;
+
+  for (const item of list) {
+    const id =
+      item.id ||
+      item.stationId ||
+      item.stopPointId;
+
+    const name =
+      item.name ||
+      item.stationName ||
+      item.stopPointName;
+
+    if (id && name) {
+      map.set(Number(id), name);
+    }
+  }
+}
+
+function stationName(station, stationNames) {
+  if (!station) return "";
+
+  return (
+    station.name ||
+    station.stationName ||
+    station.station ||
+    stationNames.get(Number(station.stationId)) ||
+    stationNames.get(Number(station.id)) ||
+    ""
+  );
+}
+
+function getDeparturesFromTime(rows, time, limit) {
+  const fromMinutes = minutesFromTime(time);
+
+  if (fromMinutes === null) {
+    return rows.slice(0, limit);
+  }
+
+  return rows
+    .map(row => ({ ...row, _effectiveMinutes: effectiveMinutes(row) }))
+    .filter(row => {
+      if (row._effectiveMinutes === null) return false;
+      return row._effectiveMinutes >= fromMinutes - 5;
+    })
+    .sort((a, b) => a._effectiveMinutes - b._effectiveMinutes)
+    .slice(0, limit)
+    .map(({ _effectiveMinutes, ...row }) => row);
+}
+
+function effectiveMinutes(row) {
+  const plannedMinutes = minutesFromTime(row.plannedTime || row.time);
+  const displayedMinutes = minutesFromTime(row.time);
+  const delay = Number(row.delay || 0);
+
+  if (plannedMinutes !== null) {
+    return plannedMinutes + Math.max(delay, 0);
+  }
+
+  return displayedMinutes;
+}
+
+function readApiLimits(headers) {
+  const limit =
+    headers.get("x-ratelimit-limit") ||
+    headers.get("ratelimit-limit") ||
+    headers.get("x-rate-limit-limit") ||
+    headers.get("x-ratelimit-hourly-limit") ||
+    headers.get("x-ratelimit-daily-limit");
+
+  const remaining =
+    headers.get("x-ratelimit-remaining") ||
+    headers.get("ratelimit-remaining") ||
+    headers.get("x-rate-limit-remaining") ||
+    headers.get("x-ratelimit-hourly-remaining") ||
+    headers.get("x-ratelimit-daily-remaining");
+
+  const reset =
+    headers.get("x-ratelimit-reset") ||
+    headers.get("ratelimit-reset") ||
+    headers.get("x-rate-limit-reset");
+
+  return {
+    available: Boolean(limit || remaining || reset),
+    limit: limit ?? null,
+    remaining: remaining ?? null,
+    reset: reset ?? null
+  };
+}
+
+function mergeApiLimits(items) {
+  const availableItems = items.filter(item => item && item.available);
+
+  if (!availableItems.length) {
+    return {
+      available: false,
+      limit: null,
+      remaining: null,
+      reset: null
+    };
+  }
+
+  const remainingValues = availableItems
+    .map(item => Number(item.remaining))
+    .filter(Number.isFinite);
+
+  const limitValues = availableItems
+    .map(item => Number(item.limit))
+    .filter(Number.isFinite);
+
+  return {
+    available: true,
+    limit: limitValues.length ? String(Math.max(...limitValues)) : availableItems[0].limit,
+    remaining: remainingValues.length ? String(Math.min(...remainingValues)) : availableItems[0].remaining,
+    reset: availableItems.find(item => item.reset)?.reset ?? null
+  };
+}
+
+function makeKey(x) {
+  return [
+    x.scheduleId || "",
+    x.orderId || "",
+    x.trainOrderId || ""
+  ].join("|");
+}
+
+function localDateYYYYMMDD() {
+  const now = new Date();
+
+  return String(now.getFullYear()).padStart(4, "0") +
+    "-" +
+    String(now.getMonth() + 1).padStart(2, "0") +
+    "-" +
+    String(now.getDate()).padStart(2, "0");
+}
+
+function currentTimeHHMM() {
+  const now = new Date();
+
+  return String(now.getHours()).padStart(2, "0") +
+    ":" +
+    String(now.getMinutes()).padStart(2, "0");
+}
+
+function timeOnly(value) {
+  if (!value) return "";
+
+  const str = String(value);
+  const match = str.match(/T(\d{2}:\d{2})/);
+  if (match) return match[1];
+
+  const short = str.match(/^(\d{2}:\d{2})/);
+  return short ? short[1] : "";
+}
+
+function shortTime(value) {
+  if (!value) return "";
+
+  const match = String(value).match(/(\d{2}:\d{2})/);
+  return match ? match[1] : "";
+}
+
+function calculateDelay(planned, actual) {
+  const p = minutesFromTime(planned);
+  const a = minutesFromTime(actual);
+
+  if (p === null || a === null) return 0;
+
+  return a - p;
+}
+
+function minutesFromTime(time) {
+  const match = String(time || "").match(/(\d{2}):(\d{2})/);
+
+  if (!match) return null;
+
+  return Number(match[1]) * 60 + Number(match[2]);
+}
+
+function extractArray(data) {
+  if (Array.isArray(data)) return data;
+
+  return (
+    data?.stations ||
+    data?.items ||
+    data?.results ||
+    data?.data ||
+    []
+  );
+}
+
+function normalize(value) {
+  return String(value || "")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function clamp(value, min, max) {
+  if (!Number.isFinite(value)) return min;
+  return Math.max(min, Math.min(max, value));
+}
+
+function json(data, status = 200) {
+  return new Response(JSON.stringify(data, null, 2), {
+    status,
+    headers: {
+      "Content-Type": "application/json; charset=utf-8"
+    }
+  });
 }
