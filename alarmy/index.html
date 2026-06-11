@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="pl">
-<!-- app-version: alarmy-v0.4.3 notification-guard -->
+<!-- app-version: alarmy-v0.4.4 monitoring-fix-sort-desc -->
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Alarmy pociągów RafStaKa v0.4.2</title>
+<title>Alarmy pociągów RafStaKa v0.4.4</title>
 <style>
 :root{--bg:#101820;--panel:#1c2833;--card:#223244;--card2:#162433;--border:#34495e;--blue:#0b57d0;--green:#198754;--red:#dc3545;--yellow:#ffcc00;--muted:rgba(255,255,255,.68);--ok:#5dd39e;--bad:#ff6b6b}
 *{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#fff;padding:18px 18px 82px}.wrap{max-width:1040px;margin:0 auto}h1{text-align:center;margin:14px 0 5px;font-size:30px}.version{text-align:center;color:var(--muted);font-size:12px;margin-bottom:14px}.panel{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:14px;margin:12px 0}.grid{display:grid;grid-template-columns:1.2fr .62fr .62fr;gap:8px}.train-row{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:8px}input,select,textarea,button{border:0;border-radius:10px;padding:12px;font-size:15px}textarea{min-height:66px;resize:vertical;font-family:Arial,sans-serif}button{font-weight:900;cursor:pointer}.btn-blue{background:var(--blue);color:#fff}.btn-green{background:var(--green);color:#fff}.btn-red{background:var(--red);color:#fff}.btn-gray{background:#475569;color:#fff}.actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:10px}.help{font-size:13px;color:var(--muted);line-height:1.42}.help strong{color:#fff}.advanced{margin-top:10px}.advanced summary{cursor:pointer;color:#dbeafe;font-weight:900}.advanced-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px}.list{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.train-chip{display:inline-flex;align-items:center;gap:6px;background:#e5e7eb;color:#111827;border:0;border-radius:999px;padding:6px 8px 6px 11px;line-height:1;max-width:100%}.train-chip strong{font-size:13px;font-weight:900;color:#111827}.chip-x{width:16px;height:16px;border-radius:50%;border:1px solid #64748b;background:#f8fafc;color:#111827;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;line-height:1;padding:0;cursor:pointer}.chip-x:hover{background:#fee2e2;border-color:#dc2626;color:#991b1b}.result{display:grid;gap:10px;margin-top:10px}.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px}.card.alarm{border-color:#ef4444;background:#3b1d1d}.card.cancelled{border-color:#ef4444}.card.missing{border-color:#64748b;background:#1f2937}.card.warn{border-color:#eab308}.row{display:grid;grid-template-columns:92px 1fr 116px;gap:10px;align-items:start}.miniinfo{display:flex;gap:8px;flex-wrap:wrap;margin-top:7px}.miniinfo span{background:#0f172a;border:1px solid #334155;border-radius:999px;padding:3px 8px;font-size:12px;color:#dbeafe}.via{color:var(--muted);font-size:13px;line-height:1.28;margin-top:2px}.headline{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.time{font-size:24px;font-weight:900;color:var(--ok)}.delay{font-weight:900;color:var(--ok)}.delay.warn{color:var(--yellow)}.delay.bad{color:var(--bad)}.badge{display:inline-block;padding:4px 9px;border-radius:999px;font-size:12px;font-weight:900;background:#334155;color:#fff;margin-top:5px}.badge-red{background:#7f1d1d}.badge-yellow{background:#854d0e}.badge-green{background:#166534}.badge-gray{background:#475569}.muted{color:var(--muted);font-size:12px}.big{font-size:18px;font-weight:900}.train-run-link{color:#dbeafe;text-decoration:none;border-bottom:1px dotted #93c5fd}.train-run-link:hover{color:#fff;border-bottom-color:#fff}.train-link{color:#dbeafe;text-decoration:none;border-bottom:1px dotted rgba(219,234,254,.75)}.train-link:hover{color:#fff;border-bottom-color:#fff}.statusline{text-align:center;color:var(--muted);margin:10px 0;min-height:20px}.source{font-size:11px;color:var(--muted);margin-top:6px}.details{margin-top:8px;display:grid;gap:4px;font-size:12px;color:#dbeafe}.rawgrid{margin-top:8px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;font-size:11px;color:#cbd5e1}.rawgrid div{background:#0f172a;border:1px solid #334155;border-radius:8px;padding:5px}.rawgrid b{color:#fff}@media(max-width:740px){.rawgrid{grid-template-columns:1fr}}.details b{color:#fff}.route{margin-top:6px;font-size:12px;color:var(--muted);line-height:1.35}.train-link.disabled{color:#94a3b8;border-bottom:0;cursor:not-allowed}.idpill{display:inline-block;margin-left:6px;padding:2px 6px;border-radius:999px;background:#0f172a;border:1px solid #475569;color:#cbd5e1;font-size:10px;font-weight:900;vertical-align:middle}.bottom{position:fixed;left:50%;bottom:8px;transform:translateX(-50%);width:min(660px,calc(100vw - 16px));background:rgba(22,36,51,.97);border:1px solid var(--border);border-radius:14px;padding:7px;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;z-index:20}.bottom a,.bottom button{display:flex;align-items:center;justify-content:center;height:36px;border-radius:9px;background:#f2f4f8;color:#111827;text-decoration:none;font-size:12px;font-weight:900}.mini{font-size:12px;padding:8px 10px}.note{background:#0f172a;border:1px dashed #475569;border-radius:12px;padding:10px;margin-top:8px;color:#dbeafe;font-size:13px;line-height:1.35}.cachebox{background:#102235;border:1px solid #31516f;border-radius:12px;padding:10px;margin-top:10px;font-size:13px;color:#dbeafe}.cachebox b{color:#fff}.station-switches{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}.switch-card{background:#102235;border:1px solid #31516f;border-radius:12px;padding:10px;display:flex;align-items:center;justify-content:space-between;gap:8px}.switch-card span{font-weight:900;font-size:13px}.switch{position:relative;display:inline-block;width:48px;height:26px;flex:0 0 auto}.switch input{opacity:0;width:0;height:0}.slider{position:absolute;cursor:pointer;inset:0;background:#475569;border-radius:999px;transition:.18s}.slider:before{content:"";position:absolute;height:20px;width:20px;left:3px;top:3px;background:white;border-radius:50%;transition:.18s}.switch input:checked + .slider{background:#198754}.switch input:checked + .slider:before{transform:translateX(22px)}.station-summary{font-size:12px;color:#dbeafe;margin-top:8px;line-height:1.35}.custom-stations{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:8px}.custom-stations button{white-space:nowrap}.boardlist{display:grid;gap:6px;margin-top:8px;max-height:260px;overflow:auto}.boarditem{display:grid;grid-template-columns:78px 98px 1fr 100px;gap:8px;align-items:center;background:#0f172a;border:1px solid #334155;border-radius:10px;padding:7px}.boarditem .n{font-weight:900;color:#dbeafe}.boarditem .t{color:#5dd39e;font-weight:900}.boarditem button{padding:7px 9px;font-size:12px}.cache-ok{color:#5dd39e;font-weight:900}.cache-bad{color:#ffcc00;font-weight:900} .loader{display:none;margin-top:10px;background:#0f172a;border:1px solid #334155;border-radius:14px;padding:12px;color:#dbeafe;overflow:hidden}.loader.on{display:block}.rail-title{display:flex;align-items:center;justify-content:space-between;gap:10px;font-weight:900;margin-bottom:8px}.rail-title small{font-weight:700;color:var(--muted)}.rail-track{position:relative;height:30px;margin:8px 0 10px;border-top:3px double #64748b;border-bottom:3px double #64748b;overflow:hidden;border-radius:10px;background:linear-gradient(90deg,rgba(255,255,255,.04),rgba(255,255,255,.01))}.rail-train{position:absolute;left:-44px;top:2px;font-size:22px;filter:drop-shadow(0 2px 2px rgba(0,0,0,.45));animation:railRun 2.4s linear infinite}.loader.done .rail-train{animation-duration:1.2s}.rail-stations{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.rail-station{background:#111827;border:1px solid #334155;border-radius:10px;padding:7px 9px;font-size:12px;display:flex;align-items:center;justify-content:space-between;gap:8px}.rail-station b{font-size:12px}.rail-station .state{white-space:nowrap;color:var(--muted);font-weight:900}.rail-station.wait .state{color:#94a3b8}.rail-station.loading{border-color:#60a5fa}.rail-station.loading .state{color:#93c5fd}.rail-station.ok{border-color:#16a34a}.rail-station.ok .state{color:#5dd39e}.rail-station.err{border-color:#dc2626}.rail-station.err .state{color:#ff6b6b}.loader-mini{font-size:12px;color:var(--muted);margin-top:7px;line-height:1.35}@keyframes railRun{from{transform:translateX(0)}to{transform:translateX(calc(100vw + 110px))}}@media(max-width:740px){.rail-stations{grid-template-columns:1fr}.rail-title{align-items:flex-start;flex-direction:column}} .spinner{display:none}.pulse{animation:pulse 1s ease-in-out infinite}@keyframes pulse{0%,100%{opacity:.55}50%{opacity:1}}@media(max-width:740px){.boarditem{grid-template-columns:70px 82px 1fr}.boarditem button{grid-column:1/-1}.station-switches{grid-template-columns:1fr 1fr}.custom-stations{grid-template-columns:1fr}}@media(max-width:740px){body{padding:10px 8px 76px}h1{font-size:24px}.grid{grid-template-columns:1fr 1fr}.grid input:first-child{grid-column:1/-1}.train-row{grid-template-columns:1fr}.advanced-grid{grid-template-columns:1fr}.row{grid-template-columns:70px 1fr 86px}.time{font-size:22px}input,select,textarea,button{padding:10px;font-size:14px}}
@@ -553,7 +553,25 @@ function viaTextOf(d){
   const mid=stops.filter(x=>x&&x!==origin&&x!==dest).slice(0,6);
   return mid.join(', ');
 }
+
+function rowTimeSortValue(d){
+  const candidates=[actualTimeOf(d),plannedTimeOf(d),shortTime(d.time),shortTime(d.plannedTime),shortTime(d.departureTime),shortTime(d.arrivalTime)];
+  for(const v of candidates){
+    const m=String(v||'').match(/(\d{1,2}):(\d{2})/);
+    if(m)return Number(m[1])*60+Number(m[2]);
+  }
+  return -1;
+}
+function sortRowsLatestFirst(rows){
+  return [...(rows||[])].sort((a,b)=>{
+    const tb=rowTimeSortValue(b)-rowTimeSortValue(a);
+    if(tb)return tb;
+    return String(trainNoOf(a)||'').localeCompare(String(trainNoOf(b)||''),'pl',{numeric:true});
+  });
+}
+
 function renderResults(rows,missing,station,loadedCount){
+  rows=sortRowsLatestFirst(rows);
   const threshold=Number(thresholdInput.value||5);
   const cards=rows.map(d=>{
     const delay=delayOf(d),cancel=isCancelled(d),alarm=cancel||delay>=threshold,no=trainNoOf(d);
@@ -577,12 +595,14 @@ async function safeNotify(title, body){
     if(Notification.permission !== 'granted') return false;
     if('serviceWorker' in navigator){
       try{
-        const reg = await navigator.serviceWorker.ready;
+        const readyPromise = navigator.serviceWorker.ready;
+        const timeoutPromise = new Promise((_,reject)=>setTimeout(()=>reject(new Error('service worker timeout')),900));
+        const reg = await Promise.race([readyPromise, timeoutPromise]);
         if(reg && typeof reg.showNotification === 'function'){
           await reg.showNotification(title,{body,tag:'rafstak-train-alert',renotify:true});
           return true;
         }
-      }catch(_){/* Android/Chrome bez aktywnego SW: schodzimy do fallbacku */}
+      }catch(_){/* bez aktywnego Service Workera schodzimy do zwykłego Notification */}
     }
     try{
       new Notification(title,{body,tag:'rafstak-train-alert'});
@@ -603,9 +623,20 @@ async function checkNotifications(rows){
   setStatus('Alarm: '+msg);
 }
 async function toggleWatch(){
-  if(watchTimer){clearInterval(watchTimer);watchTimer=null;watchBtn.textContent='Monitoring: OFF';watchBtn.className='btn-red';setStatus('Monitoring wyłączony.');return}
-  await safeNotify('Alarmy pociągów','Monitoring włączony. Powiadomienia testowe działają, jeśli przeglądarka pozwala.').catch(()=>{});
-  watchTimer=setInterval(checkNow,180000);watchBtn.textContent='Monitoring: ON';watchBtn.className='btn-green';checkNow()
+  const btn=document.getElementById('watchBtn');
+  if(watchTimer){
+    clearInterval(watchTimer);
+    watchTimer=null;
+    if(btn){btn.textContent='Monitoring: OFF';btn.className='btn-red';}
+    setStatus('Monitoring wyłączony.');
+    return;
+  }
+  // Najpierw włączamy monitoring, a powiadomienie robimy w tle. Inaczej Android potrafi zawiesić cały przycisk.
+  watchTimer=setInterval(()=>checkNow({silentStart:true}),180000);
+  if(btn){btn.textContent='Monitoring: ON';btn.className='btn-green';}
+  setStatus('Monitoring włączony. Sprawdzam teraz i potem co 3 minuty.');
+  safeNotify('Alarmy pociągów','Monitoring włączony.').catch(()=>{});
+  checkNow({silentStart:true}).catch(e=>setStatus('Monitoring włączony, ale pierwsze sprawdzenie zgłosiło błąd: '+e.message));
 }
 </script>
 </body>
