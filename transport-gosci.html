@@ -3,9 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Transport gości do Kościoła</title>
+  <title>Transport gości weselnych</title>
   <style>
-
     :root {
       --bg: #0f172a;
       --card: #ffffff;
@@ -130,6 +129,14 @@
     }
     input { min-width: min(100%, 320px); flex: 1; }
     .count { color: var(--muted); font-size: 14px; white-space: nowrap; }
+    .result-hint {
+      display: none;
+      margin: 6px 0 0;
+      font-size: 13px;
+      color: #334155;
+      font-weight: 700;
+    }
+    .result-hint.show { display: block; }
     .table-card {
       overflow: auto;
       background: white;
@@ -141,6 +148,15 @@
     th, td { padding: 10px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
     th { background: #f1f5f9; position: sticky; top: 0; z-index: 1; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; }
     tr:hover { background: #f8fafc; }
+    tr.result-focus {
+      outline: 2px solid #2563eb;
+      outline-offset: 2px;
+      animation: focusPulse 1.6s ease-out 1;
+    }
+    @keyframes focusPulse {
+      0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, .35); }
+      100% { box-shadow: 0 0 0 10px rgba(37, 99, 235, 0); }
+    }
     .lp { width: 54px; text-align: right; color: var(--muted); }
     .time { white-space: nowrap; font-weight: 800; }
     .vehicle { white-space: nowrap; }
@@ -174,6 +190,7 @@
       .toolbar { display: grid; grid-template-columns: 1fr; gap: 8px; }
       input, select { width: 100%; font-size: 16px; padding: 12px; }
       .count { text-align: right; font-size: 12px; }
+      .result-hint { font-size: 12px; text-align: right; }
       .table-card { border: 0; box-shadow: none; background: transparent; overflow: visible; }
       table, thead, tbody, tr, td, th { display: block; }
       table { min-width: 0; }
@@ -187,6 +204,7 @@
         box-shadow: 0 4px 14px rgba(15, 23, 42, .05);
       }
       tr:hover { background: white; }
+      tr.result-focus { outline-offset: 1px; }
       td { border: 0; padding: 3px 0; }
       td.lp { float: right; width: auto; color: #94a3b8; font-size: 12px; }
       td:nth-child(2) { font-size: 17px; font-weight: 850; padding-right: 34px; }
@@ -196,37 +214,6 @@
       .badge { margin-top: 2px; }
       footer { font-size: 12px; padding: 10px 0; }
     }
-
-  
-    .result-hint {
-      display: none;
-      margin: 6px 0 0;
-      font-size: 13px;
-      color: #334155;
-      font-weight: 700;
-    }
-    .result-hint.show {
-      display: block;
-    }
-    tr.result-focus {
-      outline: 2px solid #2563eb;
-      outline-offset: 2px;
-      animation: focusPulse 1.6s ease-out 1;
-    }
-    @keyframes focusPulse {
-      0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, .35); }
-      100% { box-shadow: 0 0 0 10px rgba(37, 99, 235, 0); }
-    }
-    @media (max-width: 760px) {
-      .result-hint {
-        font-size: 12px;
-        text-align: right;
-      }
-      tr.result-focus {
-        outline-offset: 1px;
-      }
-    }
-
   </style>
 </head>
 <body>
@@ -255,7 +242,7 @@
 
       <div class="toolbar-wrap">
         <section class="toolbar" aria-label="Filtrowanie listy">
-          <input id="search" type="search" placeholder="Szukaj: imię, przystanek, pojazd..." />
+          <input id="search" type="search" placeholder="Szukaj: imię, przystanek, pojazd..." autocomplete="off" />
           <select id="vehicleFilter" aria-label="Filtr pojazdu">
             <option value="">Wszystkie pozycje</option>
             <option value="bus">Bus</option>
@@ -263,7 +250,7 @@
             <option value="odwozka">Tylko odwoźka po weselu</option>
           </select>
           <span class="count" id="count"></span>
-        <span class="result-hint" id="resultHint"></span>
+          <span class="result-hint" id="resultHint"></span>
         </section>
       </div>
 
@@ -275,7 +262,7 @@
           <tbody id="rows"></tbody>
         </table>
       </section>
-      <footer>Dane organizacyjne transportu gości. Wersja z poprawionym renderowaniem osób o tym samym imieniu. Minimalizm wdrożony, bo telefon to nie arkusz Excela na sterydach.</footer>
+      <footer>Dane organizacyjne transportu gości. Wersja mobilna, bo link z SMS-a ma pomagać, a nie wymagać kursu obsługi arkusza kalkulacyjnego.</footer>
     </div>
   </main>
   <script>
@@ -380,14 +367,14 @@
       },
       {
             "lp": 15,
-            "name": "Mikołaj",
+            "name": "Mikołaj <4 lata",
             "time": "13:30",
             "place": "Tarnowskie Góry Hotel Opera",
             "vehicle": "bus"
       },
       {
             "lp": 16,
-            "name": "Michalina",
+            "name": "Michalina <4 lata",
             "time": "13:30",
             "place": "Tarnowskie Góry Hotel Opera",
             "vehicle": "bus"
@@ -570,37 +557,37 @@
       {
             "lp": 42,
             "name": "Klaudiusz",
-            "time": "",
-            "place": "",
-            "vehicle": "odwozka"
+            "time": "12:15",
+            "place": "Bytom Miechowice Pętla",
+            "vehicle": "autokar"
       },
       {
             "lp": 43,
             "name": "Bożena",
-            "time": "",
-            "place": "",
-            "vehicle": "odwozka"
+            "time": "12:15",
+            "place": "Bytom Miechowice Pętla",
+            "vehicle": "autokar"
       },
       {
             "lp": 44,
             "name": "Julia",
-            "time": "",
-            "place": "",
-            "vehicle": "odwozka"
+            "time": "12:15",
+            "place": "Bytom Miechowice Pętla",
+            "vehicle": "autokar"
       },
       {
             "lp": 45,
             "name": "Natalia",
-            "time": "",
-            "place": "",
-            "vehicle": "odwozka"
+            "time": "12:15",
+            "place": "Bytom Miechowice Pętla",
+            "vehicle": "autokar"
       },
       {
             "lp": 46,
             "name": "Amelia <4 lata",
-            "time": "",
-            "place": "",
-            "vehicle": "odwozka"
+            "time": "12:15",
+            "place": "Bytom Miechowice Pętla",
+            "vehicle": "autokar"
       },
       {
             "lp": 47,
@@ -610,11 +597,11 @@
             "vehicle": "odwozka"
       }
 ];
+
     const rows = document.querySelector('#rows');
     const search = document.querySelector('#search');
     const vehicleFilter = document.querySelector('#vehicleFilter');
     const count = document.querySelector('#count');
-
     const resultHint = document.querySelector('#resultHint');
     let smartKeyboardTimer;
 
@@ -634,6 +621,14 @@
         .replace(/[\u0300-\u036f]/g, '');
     }
 
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
 
     function scrollToFirstResult(first) {
       if (!first) return;
@@ -706,12 +701,12 @@
       });
 
       rows.innerHTML = filtered.map(g => `
-        <tr data-lp="${g.lp}" class="${String(g.name).includes('<4') ? 'kid' : ''}">
-          <td class="lp">${g.lp}</td>
-          <td>${g.name}</td>
-          <td class="time">${g.time || '—'}</td>
-          <td>${g.vehicle === 'odwozka' ? '—' : g.place}</td>
-          <td class="vehicle"><span class="badge ${g.vehicle}">${label(g.vehicle)}</span></td>
+        <tr data-lp="${escapeHtml(g.lp)}" class="${String(g.name).includes('<4') ? 'kid' : ''}">
+          <td class="lp">${escapeHtml(g.lp)}</td>
+          <td>${escapeHtml(g.name)}</td>
+          <td class="time">${escapeHtml(g.time || '—')}</td>
+          <td>${g.vehicle === 'odwozka' ? '—' : escapeHtml(g.place)}</td>
+          <td class="vehicle"><span class="badge ${escapeHtml(g.vehicle)}">${escapeHtml(label(g.vehicle))}</span></td>
         </tr>
       `).join('');
 
@@ -735,7 +730,6 @@
       }
     });
     render();
-
   </script>
 </body>
 </html>
