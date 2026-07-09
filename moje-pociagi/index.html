@@ -104,19 +104,24 @@ function addItem(){
 function removeItem(i){const a=getItems();a.splice(i,1);setItems(a);loadMine()}
 function seed(){
   setItems([
-    {station:'Katowice',train:'3814'},
     {station:'Katowice',train:'3815'},
     {station:'Tarnowskie Góry',train:'40450'},
-    {station:'Chorzów Batory',train:'40921'}
+    {station:'Miasteczko Śląskie',train:'44226'},
+    {station:'Tarnowskie Góry',train:'40250'},
+    {station:'Chorzów Batory',train:'40658'},
+    {station:'Chorzów Batory',train:'40423'},
+    {station:'Katowice',train:'38107'},
+    {station:'Katowice',train:'40621'},
+    {station:'Chorzów Batory',train:'40211'}
   ]);
   loadMine();
 }
 
 async function fetchStation(station){
-  const slots=['00:00','06:00','12:00','18:00'];
+  const slots=['00:00','02:00','04:00','06:00','08:00','10:00','12:00','14:00','16:00','18:00','20:00','22:00'];
   const all=[];
   for(const time of slots){
-    const p=new URLSearchParams({station,date:today(),time,limit:'80'});
+    const p=new URLSearchParams({station,date:today(),time,limit:'300'});
     try{
       const r=await fetch('/api/departures?'+p.toString(),{headers:{Accept:'application/json'}});
       const data=await r.json();
@@ -125,8 +130,9 @@ async function fetchStation(station){
   }
   const map=new Map();
   for(const d of all){
-    const key=[d._station,d.train,d.plannedTime,d.time,d.destination].join('|');
-    if(d.train)map.set(key,d);
+    const trainNo=String(d.train||d.trainNumber||d.number||d.trainNo||'').trim();
+    const key=[d._station,trainNo,d.plannedTime,d.time,d.destination].join('|');
+    if(trainNo)map.set(key,{...d,train:trainNo});
   }
   return [...map.values()];
 }
@@ -183,7 +189,7 @@ async function loadMine(){
   await Promise.all(stations.map(async st=>{byStation[st]=await fetchStation(st)}));
   const html=arr.map(item=>{
     const rows=byStation[item.station]||[];
-    const hit=rows.find(d=>String(d.train)===String(item.train));
+    const hit=rows.find(d=>String(d.train||d.trainNumber||d.number||d.trainNo||'').trim()===String(item.train).trim());
     return cardFor(item,hit);
   }).join('');
   results.innerHTML=html;
