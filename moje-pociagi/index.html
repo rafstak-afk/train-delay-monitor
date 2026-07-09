@@ -25,7 +25,7 @@ button{font-weight:900;cursor:pointer}
 .station{font-size:12px;color:#93c5fd;font-weight:900;text-transform:uppercase}
 .main{font-size:17px;font-weight:900}
 .meta{font-size:12px;color:rgba(255,255,255,.7);margin-top:2px}
-.list{display:grid;gap:6px}
+.list{display:grid;gap:6px}.observed-summary{cursor:pointer;font-size:24px;font-weight:900;list-style:none}.observed-summary::-webkit-details-marker{display:none}.observed-summary:before{content:'▶ ';color:#93c5fd}.panel[open]>.observed-summary:before{content:'▼ ';color:#93c5fd}
 .item{display:grid;grid-template-columns:1fr 90px auto;gap:8px;align-items:center;background:#0f172a;border:1px solid #334155;border-radius:10px;padding:8px}
 .bottom{position:fixed;left:50%;bottom:8px;transform:translateX(-50%);width:min(660px,calc(100vw - 16px));background:rgba(22,36,51,.97);border:1px solid #34495e;border-radius:14px;padding:7px;display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .bottom a,.bottom button{display:flex;align-items:center;justify-content:center;height:36px;border-radius:9px;background:#f2f4f8;color:#111827;text-decoration:none;font-size:12px;font-weight:900}
@@ -45,10 +45,10 @@ button{font-weight:900;cursor:pointer}
   <div class="meta" style="margin-top:8px">Dodajesz parę: stacja + numer pociągu. Bez zgadywania, bez klikania po pięciu tablicach jak w jakimś cyfrowym labiryncie.</div>
 </div>
 
-<div class="panel">
-  <h2>Obserwowane</h2>
-  <div id="items" class="list"></div>
-</div>
+<details class="panel" id="observedBox">
+  <summary class="observed-summary">Obserwowane <span id="observedCount">(0)</span></summary>
+  <div id="items" class="list" style="margin-top:10px"></div>
+</details>
 
 <div class="panel">
   <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
@@ -82,6 +82,15 @@ function norm(v){return String(v||'').trim()}
 function getItems(){try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch{return[]}}
 function setItems(a){localStorage.setItem(KEY,JSON.stringify(a));renderItems()}
 function setStatus(t){status.textContent=t}
+function scrollToResults(){
+  const first=results.querySelector('.card');
+  const target=first||document.getElementById('results');
+  if(target)target.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function collapseObserved(){
+  const box=document.getElementById('observedBox');
+  if(box)box.open=false;
+}
 function shortTime(v){const m=String(v||'').match(/(\d{2}:\d{2})/);return m?m[1]:''}
 function delayClass(d){d=Number(d||0);return d>=15?'delay bad':d>=5?'delay warn':'delay'}
 
@@ -102,6 +111,12 @@ function carrierBadge(d){
   if(c.includes('KŚ')||c.includes('KS'))return '<span class="carrier ks">KŚ</span>';
   return '<span class="carrier other">'+esc(c||'PKP')+'</span>';
 }
+function trainDisplay(d,item){
+  const category=String(d.category||'').trim();
+  const name=String(d.name||d.trainName||'').trim();
+  const no=String(d.train||item.train||'').trim();
+  return [category,name,no].filter(Boolean).join(' ');
+}
 function timeToDeparture(d){
   const t=minutes(shortTime(d.time)||shortTime(d.plannedTime));
   if(t===null)return '';
@@ -113,6 +128,7 @@ function timeToDeparture(d){
 
 function renderItems(){
   const arr=getItems();
+  if(window.observedCount)observedCount.textContent='('+arr.length+')';
   items.innerHTML=arr.length?arr.map((x,i)=>`
     <div class="item">
       <div><b>${esc(x.station)}</b><div class="meta">${esc(x.label||'')}</div></div>
@@ -141,7 +157,8 @@ function seed(){
     {station:'Chorzów Batory',train:'40423'},
     {station:'Katowice',train:'38107'},
     {station:'Katowice',train:'40621'},
-    {station:'Chorzów Batory',train:'40211'}
+    {station:'Chorzów Batory',train:'40211'},
+    {station:'Chorzów Uniwersytet',train:'40468'}
   ]);
   loadMine();
 }
@@ -203,7 +220,7 @@ function cardFor(item,d){
           <div class="statuspill">${esc(timeToDeparture(d))}</div>
         </div>
         <div>
-          <div class="main">${carrierBadge(d)}${esc(d.train||item.train)}</div>
+          <div class="main">${carrierBadge(d)}${esc(trainDisplay(d,item))}</div>
           <div class="meta"><b style="color:white">${esc(d.destination||'')}</b></div>
           <div class="meta">${esc(d.via?'przez: '+d.via:'')}</div>
           <div class="meta">peron ${esc(d.platform||'—')} · tor ${esc(d.track||'—')} · ${esc(d.carrier||'')}</div>
@@ -229,7 +246,9 @@ async function loadMine(){
   }).sort((a,b)=>sortKey(a)-sortKey(b));
   const html=prepared.map(x=>cardFor(x.item,x.d)).join('');
   results.innerHTML=html;
+  collapseObserved();
   setStatus('Gotowe: '+new Date().toLocaleTimeString('pl-PL'));
+  setTimeout(scrollToResults,120);
 }
 
 function defaultItems(){
@@ -242,7 +261,8 @@ function defaultItems(){
     {station:'Chorzów Batory',train:'40423'},
     {station:'Katowice',train:'38107'},
     {station:'Katowice',train:'40621'},
-    {station:'Chorzów Batory',train:'40211'}
+    {station:'Chorzów Batory',train:'40211'},
+    {station:'Chorzów Uniwersytet',train:'40468'}
   ];
 }
 
