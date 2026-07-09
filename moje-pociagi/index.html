@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Moje pociągi</title>
+<style>
+body{margin:0;font-family:Arial,sans-serif;background:#101820;color:white;padding:14px 14px 82px}
+.wrap{max-width:900px;margin:0 auto}
+h1{text-align:center;margin:12px 0}
+.panel{background:#1c2833;border:1px solid #34495e;border-radius:16px;padding:14px;margin:12px 0}
+.row{display:grid;grid-template-columns:1fr 120px auto;gap:8px}
+input,button{border:0;border-radius:10px;padding:11px;font-size:15px}
+button{font-weight:900;cursor:pointer}
+.blue{background:#0b57d0;color:#fff}.green{background:#198754;color:#fff}.gray{background:#475569;color:#fff}.red{background:#dc3545;color:#fff}
+.card{background:#102235;border:1px solid #31516f;border-radius:12px;padding:10px;margin:8px 0}
+.train{display:grid;grid-template-columns:70px 1fr 70px;gap:8px;align-items:center}
+.time{font-size:22px;font-weight:900;color:#5dd39e}
+.delay{font-size:18px;font-weight:900;text-align:right;color:#5dd39e}
+.delay.warn{color:#ffcc00}.delay.bad{color:#ff6b6b}
+.station{font-size:12px;color:#93c5fd;font-weight:900;text-transform:uppercase}
+.main{font-size:17px;font-weight:900}
+.meta{font-size:12px;color:rgba(255,255,255,.7);margin-top:2px}
+.list{display:grid;gap:6px}
+.item{display:grid;grid-template-columns:1fr 90px auto;gap:8px;align-items:center;background:#0f172a;border:1px solid #334155;border-radius:10px;padding:8px}
+.bottom{position:fixed;left:50%;bottom:8px;transform:translateX(-50%);width:min(660px,calc(100vw - 16px));background:rgba(22,36,51,.97);border:1px solid #34495e;border-radius:14px;padding:7px;display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.bottom a,.bottom button{display:flex;align-items:center;justify-content:center;height:36px;border-radius:9px;background:#f2f4f8;color:#111827;text-decoration:none;font-size:12px;font-weight:900}
+@media(max-width:700px){.row{grid-template-columns:1fr}.item{grid-template-columns:1fr 80px auto}.train{grid-template-columns:58px 1fr 54px}.time{font-size:19px}.delay{font-size:15px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>⭐ Moje pociągi</h1>
+
+<div class="panel">
+  <div class="row">
+    <input id="stationInput" placeholder="Stacja, np. Katowice">
+    <input id="trainInput" placeholder="3814">
+    <button class="green" onclick="addItem()">Dodaj</button>
+  </div>
+  <div class="meta" style="margin-top:8px">Dodajesz parę: stacja + numer pociągu. Bez zgadywania, bez klikania po pięciu tablicach jak w jakimś cyfrowym labiryncie.</div>
+</div>
+
+<div class="panel">
+  <h2>Obserwowane</h2>
+  <div id="items" class="list"></div>
+</div>
+
+<div class="panel">
+  <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
+    <button class="blue" onclick="loadMine()">Odśwież</button>
+    <button class="gray" onclick="seed()">Wstaw przykłady</button>
+  </div>
+  <div id="status" class="meta" style="text-align:center;margin-top:10px">Gotowe.</div>
+</div>
+
+<div class="panel">
+  <h2>Wyniki</h2>
+  <div id="results"><div class="meta">Brak danych.</div></div>
+</div>
+</div>
+
+<div class="bottom">
+  <a href="/">🚆 Tablica</a>
+  <button onclick="loadMine()">⭐ Moje</button>
+  <a href="/alarmy/">🔔 Alarmy</a>
+</div>
+
+<script>
+const KEY='rafstakMojePociagiV01';
+
+function today(){
+  const d=new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'","&#039;")}
+function norm(v){return String(v||'').trim()}
+function getItems(){try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch{return[]}}
+function setItems(a){localStorage.setItem(KEY,JSON.stringify(a));renderItems()}
+function setStatus(t){status.textContent=t}
+function shortTime(v){const m=String(v||'').match(/(\d{2}:\d{2})/);return m?m[1]:''}
+function delayClass(d){d=Number(d||0);return d>=15?'delay bad':d>=5?'delay warn':'delay'}
+function delayText(d){d=Number(d||0);return d>0?'+'+d:'0'}
+
+function renderItems(){
+  const arr=getItems();
+  items.innerHTML=arr.length?arr.map((x,i)=>`
+    <div class="item">
+      <div><b>${esc(x.station)}</b><div class="meta">${esc(x.label||'')}</div></div>
+      <div><b>${esc(x.train)}</b></div>
+      <button class="red" onclick="removeItem(${i})">×</button>
+    </div>
+  `).join(''):'<div class="meta">Brak obserwowanych pociągów.</div>';
+}
+function addItem(){
+  const station=norm(stationInput.value), train=norm(trainInput.value).toUpperCase();
+  if(!station||!train){setStatus('Podaj stację i numer pociągu.');return}
+  const arr=getItems().filter(x=>!(x.station.toLowerCase()===station.toLowerCase()&&String(x.train)===train));
+  arr.push({station,train});
+  setItems(arr);
+  stationInput.value='';trainInput.value='';
+  loadMine();
+}
+function removeItem(i){const a=getItems();a.splice(i,1);setItems(a);loadMine()}
+function seed(){
+  setItems([
+    {station:'Katowice',train:'3814'},
+    {station:'Katowice',train:'3815'},
+    {station:'Tarnowskie Góry',train:'40450'},
+    {station:'Chorzów Batory',train:'40921'}
+  ]);
+  loadMine();
+}
+
+async function fetchStation(station){
+  const slots=['00:00','06:00','12:00','18:00'];
+  const all=[];
+  for(const time of slots){
+    const p=new URLSearchParams({station,date:today(),time,limit:'80'});
+    try{
+      const r=await fetch('/api/departures?'+p.toString(),{headers:{Accept:'application/json'}});
+      const data=await r.json();
+      if(Array.isArray(data.departures)) all.push(...data.departures.map(x=>({...x,_station:station})));
+    }catch(e){}
+  }
+  const map=new Map();
+  for(const d of all){
+    const key=[d._station,d.train,d.plannedTime,d.time,d.destination].join('|');
+    if(d.train)map.set(key,d);
+  }
+  return [...map.values()];
+}
+
+function trainUrl(d){
+  const p=new URLSearchParams();
+  p.set('train',d.train||'');
+  if(d.category)p.set('category',d.category);
+  if(d.name)p.set('name',d.name);
+  if(d.destination)p.set('destination',d.destination);
+  p.set('date',today());
+  if(d.scheduleId){p.set('scheduleId',d.scheduleId);p.set('scheduledId',d.scheduleId)}
+  if(d.orderId)p.set('orderId',d.orderId);
+  if(d.trainOrderId)p.set('trainOrderId',d.trainOrderId);
+  if(d._station)p.set('station',d._station);
+  return '/train?'+p.toString();
+}
+
+function cardFor(item,d){
+  if(!d){
+    return `<div class="card" style="border-color:#64748b">
+      <div class="station">${esc(item.station)}</div>
+      <div class="train">
+        <div class="time">—</div>
+        <div><div class="main">${esc(item.train)}</div><div class="meta">Nie znaleziono w tablicy</div></div>
+        <div class="delay bad">?</div>
+      </div>
+    </div>`;
+  }
+  const delay=Number(d.delay||0);
+  return `<a href="${esc(trainUrl(d))}" style="color:inherit;text-decoration:none">
+    <div class="card">
+      <div class="station">${esc(item.station)}</div>
+      <div class="train">
+        <div><div class="time">${esc(shortTime(d.time)||shortTime(d.plannedTime)||'—')}</div><div class="meta">${esc(shortTime(d.plannedTime)||'')}</div></div>
+        <div>
+          <div class="main">${esc([d.category,d.train].filter(Boolean).join(' '))}</div>
+          <div class="meta">${esc(d.destination||'')}</div>
+          <div class="meta">per. ${esc(d.platform||'—')} · tor ${esc(d.track||'—')}</div>
+        </div>
+        <div class="${delayClass(delay)}">${esc(delayText(delay))}</div>
+      </div>
+    </div>
+  </a>`;
+}
+
+async function loadMine(){
+  const arr=getItems();
+  if(!arr.length){results.innerHTML='<div class="meta">Dodaj pierwszy pociąg.</div>';return}
+  setStatus('Pobieram wybrane stacje...');
+  results.innerHTML='<div class="meta">Ładowanie...</div>';
+  const stations=[...new Set(arr.map(x=>x.station))];
+  const byStation={};
+  await Promise.all(stations.map(async st=>{byStation[st]=await fetchStation(st)}));
+  const html=arr.map(item=>{
+    const rows=byStation[item.station]||[];
+    const hit=rows.find(d=>String(d.train)===String(item.train));
+    return cardFor(item,hit);
+  }).join('');
+  results.innerHTML=html;
+  setStatus('Gotowe: '+new Date().toLocaleTimeString('pl-PL'));
+}
+document.addEventListener('DOMContentLoaded',()=>{renderItems(); if(getItems().length)loadMine();});
+</script>
+</body>
+</html>
