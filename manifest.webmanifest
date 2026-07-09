@@ -3,7 +3,7 @@
   "name": "Train Delay Monitor",
   "short_name": "Alarmy PKP",
   "description": "Monitor opóźnień i alarmów pociągów",
-  "start_url": "/alarmy/",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "background_color": "#111827",
