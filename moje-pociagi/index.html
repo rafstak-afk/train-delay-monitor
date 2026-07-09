@@ -14,14 +14,14 @@ input,button{border:0;border-radius:10px;padding:11px;font-size:15px}
 button{font-weight:900;cursor:pointer}
 .blue{background:#0b57d0;color:#fff}.green{background:#198754;color:#fff}.gray{background:#475569;color:#fff}.red{background:#dc3545;color:#fff}
 .card{background:#102235;border:1px solid #31516f;border-radius:12px;padding:10px;margin:8px 0}
-.train{display:grid;grid-template-columns:70px 1fr 70px;gap:8px;align-items:center}
-.time{font-size:22px;font-weight:900;color:#5dd39e}
-.delay{font-size:22px;font-weight:900;text-align:right;color:#5dd39e}
+.train{display:grid;grid-template-columns:86px 74px 1fr 34px;gap:8px;align-items:center}
+.time{font-size:22px;font-weight:900;color:#5dd39e;text-align:left}
+.delay{font-size:34px;font-weight:900;text-align:left;color:#5dd39e;line-height:1}
 .delay.warn{color:#ffcc00}.delay.bad{color:#ff6b6b}.carrier{display:inline-flex;align-items:center;justify-content:center;min-width:52px;height:24px;border-radius:999px;padding:3px 9px;font-size:12px;font-weight:900;margin-right:8px;letter-spacing:.3px}
 .carrier.ks{background:linear-gradient(135deg,#facc15 0 18%,#22c55e 18% 38%,#0ea5e9 38% 58%,#1d4ed8 58% 78%,#111827 78%);color:white;text-shadow:0 1px 2px #000}
 .carrier.ic{background:#111827;color:#fb923c;border:1px solid #fb923c;font-style:italic}
 .carrier.pr{background:#111827;color:#ff4444;border:1px solid #ff4444}
-.carrier.other{background:#334155;color:#dbeafe}.statuspill{display:inline-block;margin-top:5px;border-radius:999px;padding:3px 8px;font-size:11px;font-weight:900;background:#0f172a;color:#93c5fd}.card.hit{background:#0b1f35}.card.miss{border-color:#64748b;background:#111827}.card.bad{border-color:#ff6b6b}.card.warn{border-color:#ffcc00}
+.carrier.other{background:#334155;color:#dbeafe}.statuspill{display:block;margin-top:4px;border-radius:999px;padding:3px 7px;font-size:11px;font-weight:900;background:#0f172a;color:#93c5fd;text-align:center;white-space:nowrap}.refresh-mini{display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:999px;background:#0f172a;border:1px solid #334155;color:#dbeafe;font-size:15px;font-weight:900}.card.hit{background:#0b1f35}.card.miss{border-color:#64748b;background:#111827}.card.bad{border-color:#ff6b6b}.card.warn{border-color:#ffcc00}
 .station{font-size:12px;color:#93c5fd;font-weight:900;text-transform:uppercase}
 .main{font-size:17px;font-weight:900}
 .meta{font-size:12px;color:rgba(255,255,255,.7);margin-top:2px}
@@ -29,7 +29,7 @@ button{font-weight:900;cursor:pointer}
 .item{display:grid;grid-template-columns:1fr 90px auto;gap:8px;align-items:center;background:#0f172a;border:1px solid #334155;border-radius:10px;padding:8px}
 .bottom{position:fixed;left:50%;bottom:8px;transform:translateX(-50%);width:min(660px,calc(100vw - 16px));background:rgba(22,36,51,.97);border:1px solid #34495e;border-radius:14px;padding:7px;display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .bottom a,.bottom button{display:flex;align-items:center;justify-content:center;height:36px;border-radius:9px;background:#f2f4f8;color:#111827;text-decoration:none;font-size:12px;font-weight:900}
-@media(max-width:700px){.row{grid-template-columns:1fr}.item{grid-template-columns:1fr 80px auto}.train{grid-template-columns:58px 1fr 54px}.time{font-size:19px}.delay{font-size:15px}}
+@media(max-width:700px){.row{grid-template-columns:1fr}.item{grid-template-columns:1fr 80px auto}.train{grid-template-columns:72px 58px 1fr 30px}.time{font-size:18px}.delay{font-size:30px}.refresh-mini{width:28px;height:28px;font-size:14px}}
 </style>
 </head>
 <body>
@@ -202,9 +202,10 @@ function cardFor(item,d){
     return `<div class="card miss">
       <div class="station">${esc(item.station)}</div>
       <div class="train">
-        <div><div class="time">—</div><div class="meta">brak</div></div>
-        <div><div class="main">${esc(item.train)}</div><div class="meta">Nie znaleziono w tablicy</div></div>
         <div class="delay bad">?</div>
+        <div><div class="time">—</div><div class="statuspill">brak</div></div>
+        <div><div class="main">${esc(item.train)}</div><div class="meta">Nie znaleziono w tablicy</div></div>
+        <div class="refresh-mini">↻</div>
       </div>
     </div>`;
   }
@@ -214,9 +215,9 @@ function cardFor(item,d){
     <div class="${cls}">
       <div class="station">${esc(item.station)}</div>
       <div class="train">
+        <div class="${delayClass(delay)}">${esc(delayText(delay))}</div>
         <div>
           <div class="time">${esc(shortTime(d.time)||shortTime(d.plannedTime)||'—')}</div>
-          <div class="meta">${esc(shortTime(d.plannedTime)||'')} PLAN</div>
           <div class="statuspill">${esc(timeToDeparture(d))}</div>
         </div>
         <div>
@@ -225,7 +226,7 @@ function cardFor(item,d){
           <div class="meta">${esc(d.via?'przez: '+d.via:'')}</div>
           <div class="meta">peron ${esc(d.platform||'—')} · tor ${esc(d.track||'—')} · ${esc(d.carrier||'')}</div>
         </div>
-        <div class="${delayClass(delay)}">${esc(delayText(delay))}</div>
+        <div class="refresh-mini">↻</div>
       </div>
     </div>
   </a>`;
