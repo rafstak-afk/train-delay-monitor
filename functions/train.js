@@ -55,6 +55,17 @@ function pickName(v) {
 function collectStationNamesFromAny(obj, map = {}) {
   if (!obj || typeof obj !== 'object') return map;
 
+  // Słownik PLK może być zwrócony bezpośrednio jako tablica.
+  if (Array.isArray(obj)) {
+    for (const item of obj) {
+      if (!item || typeof item !== 'object') continue;
+      const id = item.id || item.stationId || item.stopPointId || item.stopId;
+      const name = pickName(item);
+      if (id && name) map[String(id)] = name;
+    }
+    return map;
+  }
+
   const dictSources = [
     obj.stationNames,
     obj.stations,
@@ -75,6 +86,9 @@ function collectStationNamesFromAny(obj, map = {}) {
   }
 
   const arrSources = [
+    Array.isArray(obj.data) ? obj.data : null,
+    Array.isArray(obj.items) ? obj.items : null,
+    Array.isArray(obj.results) ? obj.results : null,
     obj.route && obj.route.stations,
     obj.operation && obj.operation.stations,
     obj.trains,
@@ -112,6 +126,10 @@ async function resolveStationNames(ids, key) {
 
   const stationParam = encodeURIComponent(wanted.join(','));
   const probes = [
+    {
+      source: 'stations-dictionary',
+      path: '/dictionaries/stations?pageSize=100000'
+    },
     { source: 'operations', path: '/operations?stations=' + stationParam + '&withPlanned=true&fullRoutes=true&pageSize=500' },
     { source: 'schedules', path: '/schedules?stations=' + stationParam + '&dateFrom=' + new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Warsaw' }) + '&dateTo=' + new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Warsaw' }) + '&pageSize=500' }
   ];

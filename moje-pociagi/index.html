@@ -171,7 +171,14 @@ async function fetchStation(station){
     try{
       const r=await fetch('/api/departures?'+p.toString(),{headers:{Accept:'application/json'}});
       const data=await r.json();
-      if(Array.isArray(data.departures)) all.push(...data.departures.map(x=>({...x,_station:station})));
+      if(Array.isArray(data.departures)) {
+        all.push(...data.departures.map(x=>({
+          ...x,
+          _station: data.station?.name || station,
+          _stationId: data.station?.id || '',
+          _date: data.date || today()
+        })));
+      }
     }catch(e){}
   }
   const map=new Map();
@@ -189,11 +196,21 @@ function trainUrl(d){
   if(d.category)p.set('category',d.category);
   if(d.name)p.set('name',d.name);
   if(d.destination)p.set('destination',d.destination);
-  p.set('date',today());
-  if(d.scheduleId){p.set('scheduleId',d.scheduleId);p.set('scheduledId',d.scheduleId)}
-  if(d.orderId)p.set('orderId',d.orderId);
-  if(d.trainOrderId)p.set('trainOrderId',d.trainOrderId);
+  p.set('date',d._date||today());
+
+  const scheduleId=d.scheduleId||d.scheduledId||d.scheduleID||'';
+  const orderId=d.orderId||d.orderID||'';
+  const trainOrderId=d.trainOrderId||d.trainOrderID||'';
+
+  if(scheduleId){
+    p.set('scheduleId',scheduleId);
+    p.set('scheduledId',scheduleId);
+  }
+  if(orderId)p.set('orderId',orderId);
+  if(trainOrderId)p.set('trainOrderId',trainOrderId);
+  if(d._stationId)p.set('stationId',d._stationId);
   if(d._station)p.set('station',d._station);
+
   return '/train?'+p.toString();
 }
 
