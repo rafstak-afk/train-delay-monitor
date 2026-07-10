@@ -261,13 +261,52 @@ async function fetchAndRenderTrain(train,opts){
   q.set('orderId',opts.order);
   q.set('train',train);
   q.set('operatingDate',opts.date||todayIso());
+
   if(opts.trainOrderId)q.set('trainOrderId',opts.trainOrderId);
   if(opts.stationId)q.set('stationId',opts.stationId);
   if(opts.station)q.set('station',opts.station);
-  const r=await fetch('/api?'+q.toString(),{headers:{Accept:'application/json'}});
-  const data=await r.json();
-  if(!r.ok)throw new Error(data.error||data.details||'HTTP '+r.status);
-  await renderTrain(train,data);
+
+  const delays=[0,700,1600];
+
+  for(let attempt=0;attempt<delays.length;attempt++){
+    if(delays[attempt]){
+      setStatus('Pierwsza próba nie powiodła się. Ponawiam pobieranie...');
+      await new Promise(resolve=>setTimeout(resolve,delays[attempt]));
+    }
+
+    try{
+      const url='/api?'+q.toString()+'&_retry='+attempt;
+      const r=await fetch(url,{
+        headers:{Accept:'application/json'},
+        cache:'no-store'
+      });
+
+      const text=await r.text();
+      let data=null;
+
+      try{
+        data=JSON.parse(text);
+      }catch(_){
+        data=null;
+      }
+
+      if(r.ok && data){
+        await renderTrain(train,data);
+        return;
+      }
+
+      const message=
+        data?.error ||
+        data?.details ||
+        ('HTTP '+r.status);
+
+      if(attempt===delays.length-1){
+        throw new Error(message);
+      }
+    }catch(e){
+      if(attempt===delays.length-1)throw e;
+    }
+  }
 }
 
 async function loadTrain(){const train=(document.getElementById('trainInput').value||'').trim();if(!train){setStatus('Wpisz numer pociągu.');return}document.getElementById('trainInput').blur();setStatus('Pobieram bieg pociągu...');loading(train);const idp=detailsParams();const trainFromUrl=qs('train');const manualDifferent=trainFromUrl&&String(trainFromUrl)!==String(train);let schedule=idp.get('scheduleId')||idp.get('scheduledId');let order=idp.get('orderId');try{if(manualDifferent){const found=await findCourseFromOpenedContext(train,idp);if(found){await fetchAndRenderTrain(train,found);return}renderFallback(train,'Wpisałeś ręcznie inny numer pociągu. Szukałem go dla tej samej daty i stacji z otwartej tablicy, ale nie znalazłem jednoznacznego kursu z identyfikatorami PLK. Kliknij numer bezpośrednio z tablicy albo otwórz Portal Pasażera.');return}if(!schedule||!order){const found=await findCourseFromOpenedContext(train,idp);if(found){await fetchAndRenderTrain(train,found);return}renderFallback(train,'Do pełnego biegu potrzebny jest link z tablicy odjazdów z identyfikatorami kursu. Sam numer może oznaczać więcej niż jeden kurs.');return}await fetchAndRenderTrain(train,{schedule,order,trainOrderId:idp.get('trainOrderId'),stationId:idp.get('stationId'),station:idp.get('station'),date:idp.get('date')||todayIso()})}catch(e){document.getElementById('content').innerHTML='<div class="panel err">Nie udało się pobrać biegu pociągu: '+esc(e.message)+'</div>';setStatus('Błąd pobierania biegu pociągu.')}}
