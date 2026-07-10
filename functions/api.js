@@ -22,11 +22,19 @@ function trainNumberMatches(item, trainNo) {
   return candidates.some(v => String(v ?? '').trim() === wanted);
 }
 
+function validCourseId(value) {
+  const s = String(value ?? '').trim();
+  if (!s) return '';
+  if (/^20\d{2}$/.test(s)) return '';
+  if (/^\d{1,3}$/.test(s)) return '';
+  return s;
+}
+
 function pickTrainIds(item) {
   return {
-    scheduleId: item.scheduleId ?? item.sid,
-    orderId: item.orderId ?? item.oid,
-    trainOrderId: item.trainOrderId ?? item.toid,
+    scheduleId: validCourseId(item.scheduleId ?? item.sid),
+    orderId: validCourseId(item.orderId ?? item.oid),
+    trainOrderId: validCourseId(item.trainOrderId ?? item.toid),
     operatingDate: item.operatingDate ?? item.date ?? item.runDate
   };
 }
@@ -93,9 +101,9 @@ export async function onRequest(context) {
 
 
       if (action === 'train-route') {
-        let scheduleId = url.searchParams.get('scheduleId') || '';
-        let orderId = url.searchParams.get('orderId') || '';
-        let trainOrderId = url.searchParams.get('trainOrderId') || '';
+        let scheduleId = validCourseId(url.searchParams.get('scheduleId'));
+        let orderId = validCourseId(url.searchParams.get('orderId'));
+        let trainOrderId = validCourseId(url.searchParams.get('trainOrderId'));
         const train = url.searchParams.get('train') || '';
         const stationId = url.searchParams.get('stationId') || '';
         const station = url.searchParams.get('station') || '';
