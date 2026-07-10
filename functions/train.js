@@ -233,7 +233,39 @@ function isActuallyPassed(s,nm){return confirmedByApi(s)}
 function renderTime(s,state){const p=shortTime(plannedTime(s));const a=shortTime(actualTime(s));const show=a&&a!==p;const d=show?Math.max(0,(toMin(a)||0)-(toMin(p)||0)):0;const main=show?a:(p||a||'');const cls=state==='future'?'future':(show?'delay-'+delayClass(d):'ok');return '<div class="time '+cls+'">'+esc(main)+'</div>'+(show?'<div class="station-meta">plan '+esc(p)+'</div>':'')}
 function renderDelay(s){const p=toMin(plannedTime(s));const a=toMin(actualTime(s));const d=(p!=null&&a!=null)?Math.max(0,a-p):0;const cls=delayClass(d);return '<span class="delay '+cls+'">'+d+' min</span>'}
 function loading(train){document.getElementById('content').innerHTML='<div class="panel"><div class="loader"><div class="train-loader"><div class="track"></div><div class="train-dot">🚆</div></div><strong>Pobieram bieg pociągu '+esc(train)+'...</strong></div><div class="copy-note">Czekam na dane PLK. Spokojnie, to nie cisza, to informatyka.</div></div>'}
-async function resolveNamesForStations(stations,map){const ids=[...new Set(stations.map(stationId).filter(id=>id&&!map[id]))];if(!ids.length)return map;try{const r=await fetch('/train?action=station-names&ids='+encodeURIComponent(ids.join(',')),{headers:{Accept:'application/json'}});const data=await r.json();if(data&&data.names){for(const k in data.names){map[String(k)]=data.names[k]}}}catch(_){}return map}
+async function resolveNamesForStations(stations,map){
+  const ids=[
+    ...new Set(
+      stations
+        .map(stationId)
+        .filter(id=>id&&!map[id])
+    )
+  ];
+
+  if(!ids.length)return map;
+
+  try{
+    const r=await fetch(
+      '/api/stations?ids='+encodeURIComponent(ids.join(',')),
+      {
+        headers:{Accept:'application/json'},
+        cache:'no-store'
+      }
+    );
+
+    const data=await r.json();
+
+    if(data&&data.names){
+      for(const k in data.names){
+        map[String(k)]=data.names[k];
+      }
+    }
+  }catch(e){
+    console.warn('Nie udało się pobrać nazw stacji',e);
+  }
+
+  return map;
+}
 function summaryName(route,train){return [route.commercialCategorySymbol||qs('category')||'',route.nationalNumber||train,route.name||qs('name')||''].filter(Boolean).join(' ')}
 
 async function findCourseFromOpenedContext(train,idp){
