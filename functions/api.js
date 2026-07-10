@@ -23,11 +23,7 @@ function trainNumberMatches(item, trainNo) {
 }
 
 function validCourseId(value) {
-  const s = String(value ?? '').trim();
-  if (!s) return '';
-  if (/^20\d{2}$/.test(s)) return '';
-  if (/^\d{1,3}$/.test(s)) return '';
-  return s;
+  return String(value ?? '').trim();
 }
 
 function pickTrainIds(item) {
@@ -46,7 +42,7 @@ async function resolveTrainIdsFromOperations({ trainNo, stationId, operatingDate
     stations: String(stationId),
     withPlanned: 'true',
     fullRoutes: 'false',
-    pageSize: '10000'
+    pageSize: '500'
   });
   const data = await plkGet('/operations?' + qs.toString());
   const trains = arrifyPayload(data);
