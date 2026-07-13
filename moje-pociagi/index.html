@@ -361,7 +361,8 @@ async function loadMine(){
   setStatus(
     'Gotowe: '+
     new Date().toLocaleTimeString('pl-PL')+
-    ' · '+(lastDataSource || 'brak źródła')
+    ' · DS='+
+    JSON.stringify(dataSources)
   );
   setTimeout(scrollToResults,120);
 }
