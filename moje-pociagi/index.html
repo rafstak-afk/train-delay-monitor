@@ -308,7 +308,7 @@ function trainUrl(d){
 
 function cardFor(item,d){
   if(!d){
-    return `<div class="card-row">
+    return `<div class="card-row" data-station="${esc(item.station)}" data-train="${esc(item.train)}">
       <div class="card miss">
         <div class="station">${esc(item.station)}</div>
         <div class="train">
@@ -324,7 +324,7 @@ function cardFor(item,d){
   const delay=Number(d.delay||0);
   const cls=delay>=15?'card hit bad':delay>=5?'card hit warn':'card hit';
 
-  return `<div class="card-row">
+  return `<div class="card-row" data-station="${esc(item.station)}" data-train="${esc(item.train)}">
     <a href="${esc(trainUrl(d))}" style="color:inherit;text-decoration:none">
       <div class="${cls}">
         <div class="station">${esc(item.station)}</div>
@@ -363,16 +363,15 @@ async function refreshOne(station,train){
     === String(train).trim()
   );
 
-  const cards=[...document.querySelectorAll('.card-row')];
+  const row=document.querySelector(
+    `.card-row[data-station="${CSS.escape(station)}"][data-train="${CSS.escape(train)}"]`
+  );
 
-  for(const row of cards){
-    if(row.innerText.includes(train) && row.innerText.includes(station)){
-      row.outerHTML=cardFor(
-        {station,train},
-        hit
-      );
-      break;
-    }
+  if(row){
+    row.outerHTML=cardFor(
+      {station,train},
+      hit
+    );
   }
 
   setStatus(
