@@ -354,9 +354,33 @@ async function refreshOne(station,train){
   delete cache[station];
   setStationCache(cache);
 
-  await loadMine();
+  dataSources=[];
 
+  const rows=await fetchStation(station);
 
+  const hit=rows.find(d =>
+    String(d.train||d.trainNumber||d.number||d.trainNo||'').trim()
+    === String(train).trim()
+  );
+
+  const cards=[...document.querySelectorAll('.card-row')];
+
+  for(const row of cards){
+    if(row.innerText.includes(train) && row.innerText.includes(station)){
+      row.outerHTML=cardFor(
+        {station,train},
+        hit
+      );
+      break;
+    }
+  }
+
+  setStatus(
+    'Gotowe: '+
+    new Date().toLocaleTimeString('pl-PL')+
+    ' · DS='+
+    JSON.stringify(dataSources)
+  );
 }
 
 async function loadMine(){
