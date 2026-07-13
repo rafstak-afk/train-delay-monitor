@@ -72,6 +72,7 @@ button{font-weight:900;cursor:pointer}.refresh-mini{border:0;cursor:pointer}
 
 <script>
 const KEY='rafstakMojePociagiV01';
+const SCROLL_KEY='mojePociagiScrollV01';
 
 function today(){
   const d=new Date();
@@ -165,7 +166,7 @@ function seed(){
 
 
 const STATION_CACHE_KEY='mojePociagiStationCacheV01';
-const STATION_CACHE_TTL=60000;
+const STATION_CACHE_TTL=180000;
 let lastDataSource='';
 let dataSources=[];
 
@@ -192,15 +193,20 @@ async function fetchStation(station){
     Date.now()-cached.time < STATION_CACHE_TTL &&
     Array.isArray(cached.data)
   ){
-    const age=Math.floor((Date.now()-cached.time)/1000);
-    dataSources.push('⚡ cache '+age+' s temu');
+    const ageSec=Math.floor((Date.now()-cached.time)/1000);
+    const cacheTime=new Date(cached.time).toLocaleTimeString('pl-PL');
+
+    dataSources.push(
+      `⚡ ${station}: cache z ${cacheTime} (${ageSec}s temu)`
+    );
+
     return cached.data;
   }
 
   const params=new URLSearchParams({
     station,
     date:today(),
-    limit:'300'
+    limit:'100'
   });
 
   let departures=[];
@@ -265,7 +271,11 @@ async function fetchStation(station){
   };
 
   setStationCache(cache);
-  dataSources.push('🟢 API PLK teraz');
+  const apiTime=new Date().toLocaleTimeString('pl-PL');
+
+  dataSources.push(
+    `🟢 ${station}: API PLK ${apiTime}`
+  );
 
   return result;
 }
