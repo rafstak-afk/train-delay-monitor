@@ -317,7 +317,7 @@ function cardFor(item,d){
           <div><div class="main">${esc(item.train)}</div><div class="meta">Nie znaleziono w tablicy</div></div>
         </div>
       </div>
-      <button class="card-refresh" onclick="refreshOne('${esc(item.station)}','${esc(item.train)}')">↻</button>
+      <button type="button" class="card-refresh" onclick="refreshOne('${esc(item.station)}','${esc(item.train)}')">↻</button>
     </div>`;
   }
 
@@ -343,7 +343,7 @@ function cardFor(item,d){
         </div>
       </div>
     </a>
-    <button class="card-refresh" onclick="refreshOne('${esc(item.station)}','${esc(item.train)}')">↻</button>
+    <button type="button" class="card-refresh" onclick="refreshOne('${esc(item.station)}','${esc(item.train)}')">↻</button>
   </div>`;
 }
 
@@ -356,7 +356,7 @@ async function refreshOne(station,train){
 
   await loadMine();
 
-  setStatus(`Odświeżono ${station} ${train} ${new Date().toLocaleTimeString('pl-PL')}`);
+
 }
 
 async function loadMine(){
