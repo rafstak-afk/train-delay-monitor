@@ -14,6 +14,8 @@ input,button{border:0;border-radius:10px;padding:11px;font-size:15px}
 button{font-weight:900;cursor:pointer}.refresh-mini{border:0;cursor:pointer}
 .blue{background:#0b57d0;color:#fff}.green{background:#198754;color:#fff}.gray{background:#475569;color:#fff}.red{background:#dc3545;color:#fff}
 .card{background:#102235;border:1px solid #31516f;border-radius:12px;padding:10px;margin:8px 0}
+.card-row{display:grid;grid-template-columns:1fr 38px;gap:8px;align-items:center}
+.card-refresh{width:34px;height:34px;border-radius:50%;background:#0f172a;border:1px solid #334155;color:#dbeafe;font-size:18px;font-weight:900;cursor:pointer}
 .train{display:grid;grid-template-columns:86px 74px 1fr 34px;gap:8px;align-items:center}
 .time{font-size:22px;font-weight:900;color:#5dd39e;text-align:left}
 .delay{font-size:34px;font-weight:900;text-align:left;color:#5dd39e;line-height:1}
@@ -306,37 +308,55 @@ function trainUrl(d){
 
 function cardFor(item,d){
   if(!d){
-    return `<div class="card miss">
-      <div class="station">${esc(item.station)}</div>
-      <div class="train">
-        <div class="delay bad">?</div>
-        <div><div class="time">—</div><div class="timeline-sub">brak</div></div>
-        <div><div class="main">${esc(item.train)}</div><div class="meta">Nie znaleziono w tablicy</div></div>
-        <button class="refresh-mini" type="button" onclick="event.preventDefault();event.stopPropagation();loadMine();">↻</button>
+    return `<div class="card-row">
+      <div class="card miss">
+        <div class="station">${esc(item.station)}</div>
+        <div class="train">
+          <div class="delay bad">?</div>
+          <div><div class="time">—</div><div class="timeline-sub">brak</div></div>
+          <div><div class="main">${esc(item.train)}</div><div class="meta">Nie znaleziono w tablicy</div></div>
+        </div>
       </div>
+      <button class="card-refresh" onclick="refreshOne('${esc(item.station)}','${esc(item.train)}')">↻</button>
     </div>`;
   }
+
   const delay=Number(d.delay||0);
   const cls=delay>=15?'card hit bad':delay>=5?'card hit warn':'card hit';
-  return `<a href="${esc(trainUrl(d))}" style="color:inherit;text-decoration:none">
-    <div class="${cls}">
-      <div class="station">${esc(item.station)}</div>
-      <div class="train">
-        <div class="${delayClass(delay)}">${esc(delayText(delay))}</div>
-        <div>
-          <div class="time">${esc(shortTime(d.time)||shortTime(d.plannedTime)||'—')}</div>
-          <div class="timeline-sub">${esc(timeToDeparture(d))}</div>
+
+  return `<div class="card-row">
+    <a href="${esc(trainUrl(d))}" style="color:inherit;text-decoration:none">
+      <div class="${cls}">
+        <div class="station">${esc(item.station)}</div>
+        <div class="train">
+          <div class="${delayClass(delay)}">${esc(delayText(delay))}</div>
+          <div>
+            <div class="time">${esc(shortTime(d.time)||shortTime(d.plannedTime)||'—')}</div>
+            <div class="timeline-sub">${esc(timeToDeparture(d))}</div>
+          </div>
+          <div>
+            <div class="main">${carrierBadge(d)}${esc(trainCategoryLine(d,item))}</div>
+            <div class="meta"><b style="color:white">${esc(d.destination||'')}</b></div>
+            <div class="meta">${esc(d.via?'przez: '+d.via:'')}</div>
+            <div class="meta">peron ${esc(d.platform||'—')} · tor ${esc(d.track||'—')} · ${esc(d.carrier||'')}</div>
+          </div>
         </div>
-        <div>
-          <div class="main">${carrierBadge(d)}${esc(trainCategoryLine(d,item))}</div>
-          <div class="meta"><b style="color:white">${esc(d.destination||'')}</b></div>
-          <div class="meta">${esc(d.via?'przez: '+d.via:'')}</div>
-          <div class="meta">peron ${esc(d.platform||'—')} · tor ${esc(d.track||'—')} · ${esc(d.carrier||'')}</div>
-        </div>
-        <button class="refresh-mini" type="button" onclick="event.preventDefault();event.stopPropagation();loadMine();">↻</button>
       </div>
-    </div>
-  </a>`;
+    </a>
+    <button class="card-refresh" onclick="refreshOne('${esc(item.station)}','${esc(item.train)}')">↻</button>
+  </div>`;
+}
+
+async function refreshOne(station,train){
+  setStatus(`Odświeżam ${station} ${train}...`);
+
+  const cache=getStationCache();
+  delete cache[station];
+  setStationCache(cache);
+
+  await loadMine();
+
+  setStatus(`Odświeżono ${station} ${train} ${new Date().toLocaleTimeString('pl-PL')}`);
 }
 
 async function loadMine(){
