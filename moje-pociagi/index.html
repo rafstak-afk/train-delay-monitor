@@ -191,6 +191,8 @@ async function fetchStation(station){
     Date.now()-cached.time < STATION_CACHE_TTL &&
     Array.isArray(cached.data)
   ){
+    const age=Math.floor((Date.now()-cached.time)/1000);
+    lastDataSource='⚡ cache '+age+' s temu';
     return cached.data;
   }
 
