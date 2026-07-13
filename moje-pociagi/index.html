@@ -166,6 +166,7 @@ function seed(){
 
 const STATION_CACHE_KEY='mojePociagiStationCacheV01';
 const STATION_CACHE_TTL=60000;
+let lastDataSource='';
 
 function getStationCache(){
   try{
@@ -340,7 +341,7 @@ async function loadMine(){
   const html=prepared.map(x=>cardFor(x.item,x.d)).join('');
   results.innerHTML=html;
   collapseObserved();
-  setStatus('Gotowe: '+new Date().toLocaleTimeString('pl-PL'));
+  setStatus('Gotowe: '+new Date().toLocaleTimeString('pl-PL')+(lastDataSource?' · '+lastDataSource:''));
   setTimeout(scrollToResults,120);
 }
 
