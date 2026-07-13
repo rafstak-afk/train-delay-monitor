@@ -163,31 +163,106 @@ function seed(){
   loadMine();
 }
 
+
+const STATION_CACHE_KEY='mojePociagiStationCacheV01';
+const STATION_CACHE_TTL=60000;
+
+function getStationCache(){
+  try{
+    return JSON.parse(localStorage.getItem(STATION_CACHE_KEY)||'{}');
+  }catch{
+    return {};
+  }
+}
+
+function setStationCache(cache){
+  localStorage.setItem(STATION_CACHE_KEY,JSON.stringify(cache));
+}
+
 async function fetchStation(station){
-  const slots=['00:00','02:00','04:00','06:00','08:00','10:00','12:00','14:00','16:00','18:00','20:00','22:00'];
-  const all=[];
-  for(const time of slots){
-    const p=new URLSearchParams({station,date:today(),time,limit:'300'});
-    try{
-      const r=await fetch('/api/departures?'+p.toString(),{headers:{Accept:'application/json'}});
-      const data=await r.json();
-      if(Array.isArray(data.departures)) {
-        all.push(...data.departures.map(x=>({
-          ...x,
-          _station: data.station?.name || station,
-          _stationId: data.station?.id || '',
-          _date: data.date || today()
-        })));
-      }
-    }catch(e){}
+
+  const cache=getStationCache();
+  const cached=cache[station];
+
+  if(
+    cached &&
+    cached.time &&
+    Date.now()-cached.time < STATION_CACHE_TTL &&
+    Array.isArray(cached.data)
+  ){
+    return cached.data;
   }
+
+  const params=new URLSearchParams({
+    station,
+    date:today(),
+    limit:'300'
+  });
+
+  let departures=[];
+
+  try{
+
+    const r=await fetch('/api/departures?'+params.toString(),{
+      headers:{Accept:'application/json'}
+    });
+
+    const data=await r.json();
+
+    if(Array.isArray(data.departures)){
+      departures=data.departures.map(x=>({
+        ...x,
+        _station:data.station?.name || station,
+        _stationId:data.station?.id || '',
+        _date:data.date || today()
+      }));
+    }
+
+  }catch(e){
+
+    console.warn('Błąd pobierania stacji',station,e);
+
+    if(cached?.data){
+      return cached.data;
+    }
+
+  }
+
   const map=new Map();
-  for(const d of all){
-    const trainNo=String(d.train||d.trainNumber||d.number||d.trainNo||'').trim();
-    const key=[d._station,trainNo,d.plannedTime,d.time,d.destination].join('|');
-    if(trainNo)map.set(key,{...d,train:trainNo});
+
+  for(const d of departures){
+
+    const trainNo=String(
+      d.train ||
+      d.trainNumber ||
+      d.number ||
+      d.trainNo ||
+      ''
+    ).trim();
+
+    const key=[
+      d._station,
+      trainNo,
+      d.plannedTime,
+      d.time,
+      d.destination
+    ].join('|');
+
+    if(trainNo){
+      map.set(key,{...d,train:trainNo});
+    }
   }
-  return [...map.values()];
+
+  const result=[...map.values()];
+
+  cache[station]={
+    time:Date.now(),
+    data:result
+  };
+
+  setStationCache(cache);
+
+  return result;
 }
 
 function trainUrl(d){
@@ -290,6 +365,20 @@ document.addEventListener('DOMContentLoaded',()=>{
   }
   renderItems();
   loadMine();
+});
+
+
+window.addEventListener('scroll',()=>{
+  sessionStorage.setItem(SCROLL_KEY,String(window.scrollY));
+},{passive:true});
+
+window.addEventListener('pageshow',()=>{
+  const y=sessionStorage.getItem(SCROLL_KEY);
+  if(y){
+    requestAnimationFrame(()=>{
+      window.scrollTo(0,Number(y));
+    });
+  }
 });
 
 </script>
