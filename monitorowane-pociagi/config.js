@@ -1,0 +1,13 @@
+window.MONITORED_TRAINS = [
+  {station:'Katowice',stationId:'73312',train:'3815'},
+  {station:'Tarnowskie Góry',stationId:'71001',train:'40450'},
+  {station:'Miasteczko Śląskie',stationId:'71027',train:'44226'},
+  {station:'Tarnowskie Góry',stationId:'71001',train:'40250'},
+  {station:'Chorzów Batory',stationId:'73106',train:'40658'},
+  {station:'Chorzów Batory',stationId:'73106',train:'40423'},
+  {station:'Katowice',stationId:'73312',train:'38107'},
+  {station:'Katowice',stationId:'73312',train:'40621'},
+  {station:'Chorzów Batory',stationId:'73106',train:'40211'},
+  {station:'Chorzów Uniwersytet',stationId:'280443',train:'40468'},
+  {station:'Katowice',stationId:'73312',train:'63102'}
+];
