@@ -107,13 +107,7 @@ export async function onRequest(context) {
 
         const trains = arrifyPayload(data);
 
-        return json({
-          stationId,
-          payloadKeys: Object.keys(data || {}),
-          trainsCount: Array.isArray(trains) ? trains.length : 0,
-          sample: Array.isArray(trains) ? trains[0] : trains,
-          raw: trains?.[0] || null
-        });
+        return json(data);
       }
 
 
