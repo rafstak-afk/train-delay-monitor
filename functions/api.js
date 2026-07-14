@@ -96,6 +96,27 @@ export async function onRequest(context) {
 
 
 
+      if (action === 'operations-debug') {
+        const stationId = url.searchParams.get('stationId') || '71001';
+
+        const data = await plkGet(
+          '/operations?stations=' +
+          encodeURIComponent(stationId) +
+          '&withPlanned=true&pageSize=20'
+        );
+
+        const trains = arrifyPayload(data);
+
+        return json({
+          stationId,
+          payloadKeys: Object.keys(data || {}),
+          trainsCount: Array.isArray(trains) ? trains.length : 0,
+          sample: Array.isArray(trains) ? trains.slice(0, 3) : trains
+        });
+      }
+
+
+
       if (action === 'train-route') {
         let scheduleId = validCourseId(url.searchParams.get('scheduleId'));
         let orderId = validCourseId(url.searchParams.get('orderId'));
