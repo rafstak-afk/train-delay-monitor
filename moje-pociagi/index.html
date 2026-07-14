@@ -85,6 +85,13 @@ function norm(v){return String(v||'').trim()}
 function getItems(){try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch{return[]}}
 function setItems(a){localStorage.setItem(KEY,JSON.stringify(a));renderItems()}
 function setStatus(t){status.textContent=t}
+
+function setRefreshState(button,loading){
+  if(!button)return;
+  button.disabled=loading;
+  button.classList.toggle('refreshing',loading);
+  button.textContent=loading?'🚆':'↻';
+}
 function scrollToResults(){
   const first=results.querySelector('.card');
   const target=first||document.getElementById('results');
@@ -348,11 +355,18 @@ function cardFor(item,d){
 }
 
 async function refreshOne(station,train){
-  setStatus(`Odświeżam ${station} ${train}...`);
+  const row=document.querySelector(
+    `.card-row[data-station="${CSS.escape(station)}"][data-train="${CSS.escape(train)}"]`
+  );
+  const button=row?.querySelector('.card-refresh');
 
-  dataSources=[];
+  setRefreshState(button,true);
+  setStatus(`🚆 Pobieram ${station} ${train}...`);
 
-  const rows=await fetchStation(station);
+  try{
+    dataSources=[];
+
+    const rows=await fetchStation(station);
 
   const hit=rows.find(d =>
     String(d.train||d.trainNumber||d.number||d.trainNo||'').trim()
@@ -370,12 +384,15 @@ async function refreshOne(station,train){
     );
   }
 
-  setStatus(
-    'Gotowe: '+
-    new Date().toLocaleTimeString('pl-PL')+
-    ' · DS='+
-    JSON.stringify(dataSources)
-  );
+    setStatus(
+      'Gotowe: '+
+      new Date().toLocaleTimeString('pl-PL')+
+      ' · DS='+
+      JSON.stringify(dataSources)
+    );
+  }finally{
+    setRefreshState(button,false);
+  }
 }
 
 async function loadMine(){
