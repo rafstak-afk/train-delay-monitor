@@ -350,10 +350,6 @@ function cardFor(item,d){
 async function refreshOne(station,train){
   setStatus(`Odświeżam ${station} ${train}...`);
 
-  const cache=getStationCache();
-  delete cache[station];
-  setStationCache(cache);
-
   dataSources=[];
 
   const rows=await fetchStation(station);
