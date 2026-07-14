@@ -15,7 +15,7 @@ button{font-weight:900;cursor:pointer}.refresh-mini{border:0;cursor:pointer}
 .blue{background:#0b57d0;color:#fff}.green{background:#198754;color:#fff}.gray{background:#475569;color:#fff}.red{background:#dc3545;color:#fff}
 .card{background:#102235;border:1px solid #31516f;border-radius:12px;padding:10px;margin:8px 0}
 .card-row{display:grid;grid-template-columns:1fr 38px;gap:8px;align-items:center}
-.card-refresh{width:34px;height:34px;border-radius:50%;background:#0f172a;border:1px solid #334155;color:#dbeafe;font-size:18px;font-weight:900;cursor:pointer}.card-refresh.refreshing{animation:spin .8s linear infinite}.card-refresh:disabled{opacity:.6;cursor:wait}@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.card-refresh{width:34px;height:34px;border-radius:50%;background:#0f172a;border:1px solid #334155;color:#dbeafe;font-size:18px;font-weight:900;cursor:pointer}
 .train{display:grid;grid-template-columns:86px 74px 1fr 34px;gap:8px;align-items:center}
 .time{font-size:22px;font-weight:900;color:#5dd39e;text-align:left}
 .delay{font-size:34px;font-weight:900;text-align:left;color:#5dd39e;line-height:1}
@@ -85,13 +85,6 @@ function norm(v){return String(v||'').trim()}
 function getItems(){try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch{return[]}}
 function setItems(a){localStorage.setItem(KEY,JSON.stringify(a));renderItems()}
 function setStatus(t){status.textContent=t}
-
-function setRefreshState(button,loading){
-  if(!button)return;
-  button.disabled=loading;
-  button.classList.toggle('refreshing',loading);
-  button.textContent=loading?'🚆':'↻';
-}
 function scrollToResults(){
   const first=results.querySelector('.card');
   const target=first||document.getElementById('results');
@@ -355,13 +348,7 @@ function cardFor(item,d){
 }
 
 async function refreshOne(station,train){
-  const row=document.querySelector(
-    `.card-row[data-station="${CSS.escape(station)}"][data-train="${CSS.escape(train)}"]`
-  );
-  const button=row?.querySelector('.card-refresh');
-
-  setRefreshState(button,true);
-  setStatus(`🚆 Pobieram ${station} ${train}...`);
+  setStatus(`Odświeżam ${station} ${train}...`);
 
   dataSources=[];
 
@@ -383,10 +370,8 @@ async function refreshOne(station,train){
     );
   }
 
-  setRefreshState(button,false);
-
   setStatus(
-    'Gotowe: ',
+    'Gotowe: '+
     new Date().toLocaleTimeString('pl-PL')+
     ' · DS='+
     JSON.stringify(dataSources)
@@ -412,10 +397,8 @@ async function loadMine(){
   results.innerHTML=html;
   collapseObserved();
   lastDataSource=[...new Set(dataSources)].join(' | ');
-  setRefreshState(button,false);
-
   setStatus(
-    'Gotowe: ',
+    'Gotowe: '+
     new Date().toLocaleTimeString('pl-PL')+
     ' · DS='+
     JSON.stringify(dataSources)
