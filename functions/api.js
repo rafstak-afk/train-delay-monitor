@@ -107,7 +107,11 @@ export async function onRequest(context) {
 
         const trains = arrifyPayload(data);
 
-        return json(data);
+        
+return json({
+  firstTrain: data?.trains?.[0] || null
+});
+
       }
 
 
