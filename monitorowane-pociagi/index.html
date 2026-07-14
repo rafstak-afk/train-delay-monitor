@@ -4,19 +4,21 @@
 <meta charset="utf-8">
 <title>Monitorowane pociągi</title>
 
-<script src="./config.jsle>
-body{margin:0;padding:20px;background:#101820;color:white;font-family:Arial,sans-serif}
-h1{margin-top:0}
-.toolbar{margin:15px 0}
-.btn{
-  background:#0b57d0;
+<script src="./config.js"></script>
+
+<style>
+body{
+  margin:0;
+  padding:20px;
+  background:#101820;
   color:white;
-  border:0;
-  border-radius:8px;
-  padding:10px 16px;
-  cursor:pointer;
-  font-weight:bold;
+  font-family:Arial,sans-serif;
 }
+
+h1{
+  margin-top:0;
+}
+
 .card{
   background:#1c2833;
   border:1px solid #34495e;
@@ -24,21 +26,28 @@ h1{margin-top:0}
   padding:12px;
   margin-bottom:10px;
 }
-.station{color:#8ec5ff;font-size:12px;font-weight:bold}
-.train{font-size:24px;font-weight:bold}
-.status{margin-top:8px;color:#ffcc00}
-.count{margin-bottom:16px;opacity:.8}
+
+.station{
+  color:#8ec5ff;
+  font-size:12px;
+  font-weight:bold;
+}
+
+.train{
+  font-size:24px;
+  font-weight:bold;
+}
+
+.count{
+  margin-bottom:16px;
+  opacity:.8;
+}
 </style>
+
 </head>
 <body>
 
 <h1>📡 Monitorowane pociągi</h1>
-
-<div class="toolbar">
-  <button class="btn" onclick="refreshIds()">
-    🔄 ODNÓW ID DNIA
-  </button>
-</div>
 
 <div id="count" class="count"></div>
 <div id="list"></div>
@@ -47,29 +56,17 @@ h1{margin-top:0}
 
 const trains = window.MONITORED_TRAINS || [];
 
-function render() {
-  document.getElementById('count').textContent =
-    'Monitorowanych pociągów: ' + trains.length;
+document.getElementById('count').textContent =
+  'Monitorowanych pociągów: ' + trains.length;
 
-  document.getElementById('list').innerHTML =
-    trains.map(t => `
-      <div class="card">
-        <div class="station">${t.station}</div>
-        <div class="train">${t.train}</div>
-        <div>stationId: ${t.stationId}</div>
-
-        <div class="status">
-          🟡 Brak identyfikatorów dnia
-        </div>
-      </div>
-    `).join('');
-}
-
-function refreshIds(){
-  alert('Następny etap: pobieranie scheduleId/orderId dla wszystkich pociągów');
-}
-
-render();
+document.getElementById('list').innerHTML =
+  trains.map(t => `
+    <div class="card">
+      <div class="station">${t.station}</div>
+      <div class="train">${t.train}</div>
+      <div>stationId: ${t.stationId}</div>
+    </div>
+  `).join('');
 
 </script>
 
