@@ -111,7 +111,7 @@ export async function onRequest(context) {
           stationId,
           payloadKeys: Object.keys(data || {}),
           trainsCount: Array.isArray(trains) ? trains.length : 0,
-          sample: Array.isArray(trains) ? trains.slice(0, 3) : trains
+          sample: Array.isArray(trains) ? trains[0] : trains
         });
       }
 
