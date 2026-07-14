@@ -237,7 +237,7 @@ async function fetchStation(station){
       }));
     }
 
-  }catch(e){
+  }catch(e){\n    console.error('REFRESH ERROR', e);
 
     console.warn('Błąd pobierania stacji',station,e);
 
@@ -361,12 +361,12 @@ async function refreshOne(station,train){
   const button=row?.querySelector('.card-refresh');
 
   setRefreshState(button,true);
-  setStatus(`🚆 Pobieram ${station} ${train}...`);
+  console.log('REFRESH START', station, train);\n  setStatus(`🚆 Pobieram ${station} ${train}...`);
 
   try{
     dataSources=[];
 
-    const rows=await fetchStation(station);
+    console.log('FETCH STATION START', station);\n    const rows=await fetchStation(station);\n    console.log('FETCH STATION END', rows.length);
 
   const hit=rows.find(d =>
     String(d.train||d.trainNumber||d.number||d.trainNo||'').trim()
@@ -391,7 +391,7 @@ async function refreshOne(station,train){
       JSON.stringify(dataSources)
     );
 
-  }catch(e){
+  }catch(e){\n    console.error('REFRESH ERROR', e);
     console.warn('Błąd odświeżania',e);
     setStatus('Błąd odświeżania: '+e.message);
   }finally{
