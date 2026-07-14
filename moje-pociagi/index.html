@@ -390,8 +390,15 @@ async function refreshOne(station,train){
       ' · DS='+
       JSON.stringify(dataSources)
     );
+
+  }catch(e){
+    console.warn('Błąd odświeżania',e);
+    setStatus('Błąd odświeżania: '+e.message);
   }finally{
-    setRefreshState(button,false);
+    const currentRow=document.querySelector(
+      `.card-row[data-station="${CSS.escape(station)}"][data-train="${CSS.escape(train)}"]`
+    );
+    setRefreshState(currentRow?.querySelector('.card-refresh'),false);
   }
 }
 
