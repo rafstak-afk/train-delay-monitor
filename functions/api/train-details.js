@@ -53,7 +53,6 @@ export async function onRequestGet(context) {
       {
         train: item.train,
         station: item.station,
-        found: item.found,
 
         category: item.category,
         name: item.name,
@@ -92,4 +91,3 @@ export async function onRequestGet(context) {
     }
   );
 }
-``
