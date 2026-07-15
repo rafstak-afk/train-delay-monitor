@@ -48,6 +48,74 @@ export async function onRequestGet(context) {
     );
   }
 
+  let trainStatus = null;
+  let lastConfirmedStationId = null;
+  let lastConfirmedStation = null;
+  let lastConfirmedTime = null;
+
+  try {
+
+    const today =
+      new Date()
+        .toISOString()
+        .slice(0, 10);
+
+    const debugResponse =
+      await fetch(
+        `${origin}/api/debug-train` +
+        `?date=${today}` +
+        `&scheduleId=${item.scheduleId}` +
+        `&orderId=${item.orderId}` +
+        `&trainOrderId=${item.trainOrderId}`
+      );
+
+    const debugData =
+      await debugResponse.json();
+
+    trainStatus =
+      debugData.operation?.trainStatus || null;
+
+    const stations =
+      debugData.operation?.stations || [];
+
+    const confirmed =
+      stations.filter(
+        s => s.isConfirmed === true
+      );
+
+    const last =
+      confirmed.length
+        ? confirmed[confirmed.length - 1]
+        : null;
+
+    if (last) {
+
+      lastConfirmedStationId =
+        String(last.stationId);
+
+      lastConfirmedTime =
+        last.actualDeparture ||
+        last.actualArrival ||
+        null;
+
+      const stationsResponse =
+        await fetch(
+          `${origin}/api/stations?ids=${lastConfirmedStationId}`
+        );
+
+      const stationsData =
+        await stationsResponse.json();
+
+      lastConfirmedStation =
+        stationsData.names?.[
+          lastConfirmedStationId
+        ] || null;
+    }
+
+  } catch (err) {
+    console.error(err);
+  }
+
   return new Response(
     JSON.stringify(
       {
@@ -70,11 +138,11 @@ export async function onRequestGet(context) {
           ? "W ruchu"
           : "Nie znaleziono",
 
-        trainStatus: null,
+        trainStatus,
 
-        lastConfirmedStationId: null,
-        lastConfirmedStation: null,
-        lastConfirmedTime: null,
+        lastConfirmedStationId,
+        lastConfirmedStation,
+        lastConfirmedTime,
 
         route: []
       },
