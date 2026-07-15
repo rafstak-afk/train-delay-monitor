@@ -1,13 +1,91 @@
 [
-  {"station":"Katowice","stationId":"73312","train":"3815"},
-  {"station":"Tarnowskie Góry","stationId":"71001","train":"40450"},
-  {"station":"Miasteczko Śląskie","stationId":"71027","train":"44226"},
-  {"station":"Tarnowskie Góry","stationId":"71001","train":"40250"},
-  {"station":"Chorzów Batory","stationId":"73106","train":"40658"},
-  {"station":"Chorzów Batory","stationId":"73106","train":"40423"},
-  {"station":"Katowice","stationId":"73312","train":"38107"},
-  {"station":"Katowice","stationId":"73312","train":"40621"},
-  {"station":"Chorzów Batory","stationId":"73106","train":"40211"},
-  {"station":"Chorzów Uniwersytet","stationId":"280443","train":"40468"},
-  {"station":"Katowice","stationId":"73312","train":"63102"}
+  {
+    "station": "Katowice",
+    "lookupStation": "Katowice",
+    "stationId": "73312",
+    "train": "3815",
+    "scheduleId": null,
+    "trainOrderId": null
+  },
+  {
+    "station": "Tarnowskie Góry",
+    "lookupStation": "Tarnowskie Góry",
+    "stationId": "71001",
+    "train": "40450",
+    "scheduleId": null,
+    "trainOrderId": null
+  },
+  {
+    "station": "Miasteczko Śląskie",
+    "lookupStation": "Miasteczko Śląskie",
+    "stationId": "71027",
+    "train": "44226",
+    "scheduleId": null,
+    "trainOrderId": null
+  },
+  {
+    "station": "Tarnowskie Góry",
+    "lookupStation": "Tarnowskie Góry",
+    "stationId": "71001",
+    "train": "40250",
+    "scheduleId": null,
+    "trainOrderId": null
+  },
+
+  {
+    "station": "Chorzów Batory",
+    "lookupStation": "Bytom Karb",
+    "stationId": "73106",
+    "train": "40658",
+    "scheduleId": null,
+    "trainOrderId": null
+  },
+  {
+    "station": "Chorzów Batory",
+    "lookupStation": "Bytom Karb",
+    "stationId": "73106",
+    "train": "40423",
+    "scheduleId": null,
+    "trainOrderId": 364027405
+  },
+  {
+    "station": "Katowice",
+    "lookupStation": "Katowice",
+    "stationId": "73312",
+    "train": "38107",
+    "scheduleId": 2026,
+    "trainOrderId": 413879751
+  },
+  {
+    "station": "Katowice",
+    "lookupStation": "Katowice",
+    "stationId": "73312",
+    "train": "40621",
+    "scheduleId": 2026,
+    "trainOrderId": 269894091
+  },
+  {
+    "station": "Chorzów Batory",
+    "lookupStation": "Bytom Karb",
+    "stationId": "73106",
+    "train": "40211",
+    "scheduleId": 2026,
+    "trainOrderId": 588558457
+  },
+  {
+    "station": "Chorzów Uniwersytet",
+    "lookupStation": "Bytom Karb",
+    "stationId": "280443",
+    "train": "40468",
+    "scheduleId": 2026,
+    "trainOrderId": 410897428
+  },
+  {
+    "station": "Katowice",
+    "lookupStation": "Katowice",
+    "stationId": "73312",
+    "train": "63102",
+    "scheduleId": 2026,
+    "trainOrderId": 316600533
+  }
 ]
