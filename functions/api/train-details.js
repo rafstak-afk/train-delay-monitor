@@ -93,10 +93,15 @@ export async function onRequestGet(context) {
       lastConfirmedStationId =
         String(last.stationId);
 
-      lastConfirmedTime =
+      const confirmedDateTime =
         last.actualDeparture ||
         last.actualArrival ||
         null;
+
+      lastConfirmedTime =
+        confirmedDateTime
+          ? confirmedDateTime.slice(11, 19)
+          : null;
 
       const stationsResponse =
         await fetch(
