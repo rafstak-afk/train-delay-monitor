@@ -26,14 +26,20 @@ body{
   font-weight:bold;
 }
 
-.small{
-  opacity:.8;
-}
-
 .delay{
-  font-size:32px;
+  font-size:28px;
   font-weight:bold;
   color:#f1c40f;
+}
+
+.label{
+  opacity:.8;
+  margin-top:10px;
+}
+
+.value{
+  font-size:20px;
+  font-weight:bold;
 }
 
 a{
@@ -45,30 +51,55 @@ a{
 <body>
 
 <p>
-  <a href="/monitorowane-pociagi/wrót do monitora
+  <a href="/monitorowane-poci← Powrót do monitora
   </a>
 </p>
 
 <div class="card">
-  <div id="train" class="big">Ładowanie...</div>
+
+  <div id="train" class="big">
+    Ładowanie...
+  </div>
 
   <div id="destination"></div>
 
-  <br>
+  <div id="delay" class="delay"></div>
 
   <div id="status"></div>
-
-  <div id="delay" class="delay"></div>
 
   <div id="platform"></div>
 
   <div id="track"></div>
+
 </div>
 
 <div class="card">
-  <h3>Identyfikatory PLK</h3>
+
+  <div class="label">
+    Ostatnia potwierdzona stacja
+  </div>
+
+  <div
+    id="lastConfirmedStation"
+    class="value">
+    -
+  </div>
+
+  <div
+    id="lastConfirmedTime">
+    -
+  </div>
+
+</div>
+
+<div class="card">
+
+  <div class="label">
+    Identyfikatory PLK
+  </div>
 
   <div id="ids"></div>
+
 </div>
 
 <script>
@@ -79,34 +110,43 @@ const params =
 const train =
   params.get('train') || '';
 
-fetch(`/api/train-details?train=${encodeURIComponent(train)}`)
-  .then(r => r.json())
-  .then(data => {
+fetch(
+  `/api/train-details?train=${encodeURIComponent(train)}`
+)
+.then(r => r.json())
+.then(data => {
 
-    document.getElementById('train').textContent =
-      `${data.category || ''} ${data.name || ''} ${data.train || ''}`;
+  document.getElementById('train').textContent =
+    `${data.category || ''} ${data.name || ''} ${data.train || ''}`;
 
-    document.getElementById('destination').textContent =
-      `Cel: ${data.destination || '-'}`;
+  document.getElementById('destination').textContent =
+    `Cel podróży: ${data.destination || '-'}`;
 
-    document.getElementById('status').textContent =
-      `Status: ${data.status || '-'}`;
+  document.getElementById('delay').textContent =
+    `Opóźnienie: ${data.delay ?? 0} min`;
 
-    document.getElementById('delay').textContent =
-      `Opóźnienie: ${data.delay ?? 0} min`;
+  document.getElementById('status').textContent =
+    `Status: ${data.status || '-'}`;
 
-    document.getElementById('platform').textContent =
-      `Peron: ${data.platform || '-'}`;
+  document.getElementById('platform').textContent =
+    `Peron: ${data.platform || '-'}`;
 
-    document.getElementById('track').textContent =
-      `Tor: ${data.track || '-'}`;
+  document.getElementById('track').textContent =
+    `Tor: ${data.track || '-'}`;
 
-    document.getElementById('ids').innerHTML = `
-      scheduleId: ${data.scheduleId || '-'}<br>
-      orderId: ${data.orderId || '-'}<br>
-      trainOrderId: ${data.trainOrderId || '-'}
+  document.getElementById('lastConfirmedStation').textContent =
+    data.lastConfirmedStation || '-';
+
+  document.getElementById('lastConfirmedTime').textContent =
+    data.lastConfirmedTime || '-';
+
+  document.getElementById('ids').innerHTML =
+    `
+    scheduleId: ${data.scheduleId || '-'}<br>
+    orderId: ${data.orderId || '-'}<br>
+    trainOrderId: ${data.trainOrderId || '-'}
     `;
-  });
+});
 
 </script>
 
