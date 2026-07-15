@@ -31,6 +31,33 @@ h1{
   font-size:13px;
 }
 
+.alerts{
+  margin-bottom:12px;
+}
+
+.alertPanel{
+  background:#341616;
+  border:1px solid #e74c3c;
+  border-radius:16px;
+  padding:12px;
+}
+
+.alertTitle{
+  font-weight:700;
+  margin-bottom:8px;
+}
+
+.alertItem{
+  padding:4px 0;
+}
+
+.alertOk{
+  background:#14301f;
+  border:1px solid #2ecc71;
+  border-radius:16px;
+  padding:12px;
+}
+
 .list{
   display:flex;
   flex-direction:column;
@@ -41,11 +68,9 @@ h1{
   display:block;
   text-decoration:none;
   color:white;
-
   background:#1c2833;
   border:1px solid #34495e;
   border-radius:16px;
-
   padding:14px;
 }
 
@@ -65,6 +90,18 @@ h1{
   display:flex;
   justify-content:space-between;
   align-items:flex-start;
+  gap:12px;
+}
+
+.left{
+  flex:1;
+}
+
+.station{
+  color:#8ec5ff;
+  font-size:12px;
+  font-weight:600;
+  margin-bottom:6px;
 }
 
 .train{
@@ -83,16 +120,16 @@ h1{
   font-size:14px;
 }
 
-.station{
-  color:#8ec5ff;
-  font-size:12px;
-  font-weight:600;
-  margin-bottom:6px;
+.time{
+  margin-top:6px;
+  font-size:14px;
+  color:#d5dbe0;
 }
 
 .delay{
-  font-size:24px;
+  font-size:30px;
   font-weight:700;
+  white-space:nowrap;
 }
 
 .green{
@@ -111,17 +148,18 @@ h1{
   color:#e74c3c;
 }
 
-.bottom{
-  margin-top:8px;
+.meta{
+  margin-top:10px;
   display:flex;
-  justify-content:space-between;
-  font-size:13px;
+  gap:8px;
+  flex-wrap:wrap;
 }
 
 .badge{
   background:#16222d;
   padding:4px 8px;
   border-radius:999px;
+  font-size:12px;
 }
 
 </style>
@@ -134,6 +172,8 @@ h1{
 <div id="info" class="info">
 Ładowanie...
 </div>
+
+<div id="alerts" class="alerts"></div>
 
 <div id="list" class="list"></div>
 
@@ -159,21 +199,51 @@ async function loadData() {
     ${new Date(data.generatedAt).toLocaleString('pl-PL')}
     `;
 
+  const alarms =
+    data.trains.filter(
+      t => Number(t.delay || 0) >= 15
+    );
+
+  document.getElementById('alerts').innerHTML =
+    alarms.length
+    ? `
+      <div class="alertPanel">
+
+        <div class="alertTitle">
+          🚨 Alarmy
+        </div>
+
+        ${alarms.map(t => `
+          <div class="alertItem">
+            ${t.train}
+            ${t.name || ''}
+            (+${t.delay} min)
+          </div>
+        `).join('')}
+
+      </div>
+    `
+    : `
+      <div class="alertOk">
+        ✅ Brak alarmów
+      </div>
+    `;
+
   document.getElementById('list').innerHTML =
     data.trains
       .sort((a,b)=>
-        (b.delay || 0) -
-        (a.delay || 0)
+        Number(b.delay || 0) -
+        Number(a.delay || 0)
       )
       .map(t => {
 
         const cls =
           t.found ? 'ok' : 'missing';
 
-        let delayClass = 'green';
-
         const delay =
           Number(t.delay || 0);
+
+        let delayClass = 'green';
 
         if (delay > 30) {
           delayClass = 'red';
@@ -186,18 +256,17 @@ async function loadData() {
         }
 
         return `
-
         <a
           class="card ${cls}"
           href="/monitorowane-pociagi/train.html?train=${encodeURIComponent(t.train)}">
 
-          <div class="station">
-            ${t.station}
-          </div>
-
           <div class="top">
 
-            <div>
+            <div class="left">
+
+              <div class="station">
+                ${t.station}
+              </div>
 
               <div class="train">
                 ${t.train}
@@ -211,11 +280,15 @@ async function loadData() {
                 → ${t.destination || ''}
               </div>
 
+              <div class="time">
+                🕒 ${t.time || t.plannedTime || '-'}
+              </div>
+
             </div>
 
             <div class="delay ${delayClass}">
               ${t.found
-                ? '+' + (t.delay ?? 0)
+                ? `+${delay}`
                 : '---'}
             </div>
 
@@ -223,8 +296,9 @@ async function loadData() {
 
           ${
             t.found
-              ? `
-              <div class="bottom">
+            ? `
+              <div class="meta">
+
                 <span class="badge">
                   P${t.platform || '-'}
                 </span>
@@ -232,13 +306,14 @@ async function loadData() {
                 <span class="badge">
                   T${t.track || '-'}
                 </span>
+
               </div>
-              `
-              : `
-              <div class="bottom">
+            `
+            : `
+              <div class="meta">
                 NIE ZNALEZIONO
               </div>
-              `
+            `
           }
 
         </a>
