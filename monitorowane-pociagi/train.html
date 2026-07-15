@@ -26,12 +26,18 @@ body{
   font-weight:bold;
 }
 
-a{
-  color:#8ec5ff;
+.small{
+  opacity:.8;
 }
 
-.route{
-  margin-top:20px;
+.delay{
+  font-size:32px;
+  font-weight:bold;
+  color:#f1c40f;
+}
+
+a{
+  color:#8ec5ff;
 }
 </style>
 
@@ -39,26 +45,30 @@ a{
 <body>
 
 <p>
-  <a href="/monitorowane-pociagiowrót do monitora
+  <a href="/monitorowane-pociagi/wrót do monitora
   </a>
 </p>
 
 <div class="card">
-  <div id="train" class="big"></div>
+  <div id="train" class="big">Ładowanie...</div>
+
+  <div id="destination"></div>
+
+  <br>
 
   <div id="status"></div>
 
-  <div id="lastStation"></div>
+  <div id="delay" class="delay"></div>
 
-  <div id="lastTime"></div>
+  <div id="platform"></div>
+
+  <div id="track"></div>
 </div>
 
 <div class="card">
-  <h3>Trasa pociągu</h3>
+  <h3>Identyfikatory PLK</h3>
 
-  <div id="route" class="route">
-    Brak danych
-  </div>
+  <div id="ids"></div>
 </div>
 
 <script>
@@ -69,33 +79,33 @@ const params =
 const train =
   params.get('train') || '';
 
-document.getElementById('train').textContent =
-  train;
-
 fetch(`/api/train-details?train=${encodeURIComponent(train)}`)
   .then(r => r.json())
   .then(data => {
 
+    document.getElementById('train').textContent =
+      `${data.category || ''} ${data.name || ''} ${data.train || ''}`;
+
+    document.getElementById('destination').textContent =
+      `Cel: ${data.destination || '-'}`;
+
     document.getElementById('status').textContent =
-      'Status: ' + (data.status || '-');
+      `Status: ${data.status || '-'}`;
 
-    document.getElementById('lastStation').textContent =
-      'Ostatnia potwierdzona stacja: ' +
-      (data.lastConfirmedStation || '-');
+    document.getElementById('delay').textContent =
+      `Opóźnienie: ${data.delay ?? 0} min`;
 
-    document.getElementById('lastTime').textContent =
-      'Czas: ' +
-      (data.lastConfirmedTime || '-');
+    document.getElementById('platform').textContent =
+      `Peron: ${data.platform || '-'}`;
 
-    if (Array.isArray(data.route)) {
+    document.getElementById('track').textContent =
+      `Tor: ${data.track || '-'}`;
 
-      document.getElementById('route').innerHTML =
-        data.route.length
-          ? data.route.join('<br>')
-          : 'Brak danych';
-
-    }
-
+    document.getElementById('ids').innerHTML = `
+      scheduleId: ${data.scheduleId || '-'}<br>
+      orderId: ${data.orderId || '-'}<br>
+      trainOrderId: ${data.trainOrderId || '-'}
+    `;
   });
 
 </script>
