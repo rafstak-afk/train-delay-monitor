@@ -1,35 +1,14 @@
 export async function onRequestGet(context) {
-  const url = new URL(context.request.url);
-
   const train =
-    url.searchParams.get("train") || "";
-
-  if (!train) {
-    return new Response(
-      JSON.stringify(
-        {
-          error: "Brak parametru train"
-        },
-        null,
-        2
-      ),
-      {
-        status: 400,
-        headers: {
-          "Content-Type": "application/json"
-        }
-      }
-    );
-  }
+    new URL(context.request.url)
+      .searchParams.get("train") || "";
 
   return new Response(
     JSON.stringify(
       {
         train,
-        status: "TODO",
-        lastConfirmedStation: null,
-        lastConfirmedTime: null,
-        route: []
+        status: "W ruchu",
+        message: "train-details działa"
       },
       null,
       2
@@ -37,9 +16,7 @@ export async function onRequestGet(context) {
     {
       headers: {
         "Content-Type":
-          "application/json; charset=utf-8",
-        "Cache-Control":
-          "no-store"
+          "application/json; charset=utf-8"
       }
     }
   );
