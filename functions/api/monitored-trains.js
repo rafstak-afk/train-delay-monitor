@@ -24,23 +24,38 @@ export async function onRequestGet(context) {
   await Promise.all(
     stations.map(async station => {
       try {
-        const url =
-          `${origin}/api/departures?station=` +
-          encodeURIComponent(station) +
-          `&limit=100`;
+        const response = await fetch(
+          `${origin}/api/departures?station=${encodeURIComponent(
+            station
+          )}&limit=100`
+        );
 
-        const response = await fetch(url);
         const data = await response.json();
 
         departuresByStation[station] =
           Array.isArray(data.departures)
             ? data.departures
             : [];
-      } catch (error) {
+      } catch (e) {
         departuresByStation[station] = [];
       }
     })
   );
+
+  const debug = {};
+
+  for (const station of stations) {
+    debug[station] = (departuresByStation[station] || [])
+      .slice(0, 50)
+      .map(x => ({
+        train: x.train,
+        name: x.name,
+        destination: x.destination,
+        category: x.category,
+        trainOrderId: x.trainOrderId,
+        scheduleId: x.scheduleId
+      }));
+  }
 
   const trains = MONITORED_TRAINS.map(item => {
     const rows = departuresByStation[item.station] || [];
@@ -48,10 +63,10 @@ export async function onRequestGet(context) {
     const hit = rows.find(row => {
       const trainNo = String(
         row.train ||
-        row.trainNumber ||
-        row.number ||
-        row.trainNo ||
-        ""
+          row.trainNumber ||
+          row.number ||
+          row.trainNo ||
+          ""
       ).trim();
 
       return trainNo === item.train;
@@ -88,6 +103,7 @@ export async function onRequestGet(context) {
         stationCount: stations.length,
         trainCount: trains.length,
         foundCount: trains.filter(t => t.found).length,
+        debug,
         trains
       },
       null,
