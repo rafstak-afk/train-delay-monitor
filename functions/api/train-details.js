@@ -1,7 +1,8 @@
 export async function onRequestGet(context) {
+  const url = new URL(context.request.url);
+
   const train =
-    new URL(context.request.url)
-      .searchParams.get("train") || "";
+    url.searchParams.get("train") || "";
 
   if (!train) {
     return new Response(
@@ -17,7 +18,7 @@ export async function onRequestGet(context) {
     );
   }
 
-  const origin = new URL(context.request.url).origin;
+  const origin = url.origin;
 
   const monitorResponse =
     await fetch(
@@ -48,34 +49,39 @@ export async function onRequestGet(context) {
   }
 
   return new Response(
-    JSON.stringify({
-      train: item.train,
-      station: item.station,
-      found: item.found,
+    JSON.stringify(
+      {
+        train: item.train,
+        station: item.station,
+        found: item.found,
 
-      category: item.category,
-      name: item.name,
-      destination: item.destination,
+        category: item.category,
+        name: item.name,
+        destination: item.destination,
 
-      delay: item.delay,
-      platform: item.platform,
-      track: item.track,
+        delay: item.delay,
+        platform: item.platform,
+        track: item.track,
 
-      scheduleId: item.scheduleId,
-      orderId: item.orderId,
-      trainOrderId: item.trainOrderId,
+        scheduleId: item.scheduleId,
+        orderId: item.orderId,
+        trainOrderId: item.trainOrderId,
 
-      status: item.found
-        ? "W ruchu"
-        : "Nie znaleziono",
+        status: item.found
+          ? "W ruchu"
+          : "Nie znaleziono",
 
-      lastConfirmedStation: null,
-      lastConfirmedTime: null,
+        trainStatus: null,
 
-      route: []
-    },
-    null,
-    2),
+        lastConfirmedStationId: null,
+        lastConfirmedStation: null,
+        lastConfirmedTime: null,
+
+        route: []
+      },
+      null,
+      2
+    ),
     {
       headers: {
         "Content-Type":
@@ -86,3 +92,4 @@ export async function onRequestGet(context) {
     }
   );
 }
+``
