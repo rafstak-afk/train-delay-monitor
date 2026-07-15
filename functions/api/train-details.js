@@ -53,6 +53,8 @@ export async function onRequestGet(context) {
   let lastConfirmedStation = null;
   let lastConfirmedTime = null;
 
+  let route = [];
+
   try {
 
     const today =
@@ -75,11 +77,19 @@ export async function onRequestGet(context) {
     trainStatus =
       debugData.operation?.trainStatus || null;
 
-    const stations =
+    const operationStations =
       debugData.operation?.stations || [];
 
+    const routeStations =
+      debugData.route?.stations || [];
+
+    route =
+      routeStations.map(s => ({
+        stationId: String(s.stationId)
+      }));
+
     const confirmed =
-      stations.filter(
+      operationStations.filter(
         s => s.isConfirmed === true
       );
 
@@ -149,7 +159,7 @@ export async function onRequestGet(context) {
         lastConfirmedStation,
         lastConfirmedTime,
 
-        route: []
+        route
       },
       null,
       2
