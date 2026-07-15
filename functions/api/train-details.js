@@ -83,10 +83,38 @@ export async function onRequestGet(context) {
     const routeStations =
       debugData.route?.stations || [];
 
-    route =
-      routeStations.map(s => ({
-        stationId: String(s.stationId)
-      }));
+    const stationIds =
+      [...new Set(
+        routeStations.map(
+          s => String(s.stationId)
+        )
+      )];
+
+    if (stationIds.length) {
+
+      const stationsResponse =
+        await fetch(
+          `${origin}/api/stations?ids=` +
+          stationIds.join(',')
+        );
+
+      const stationsData =
+        await stationsResponse.json();
+
+      const stationNames =
+        stationsData.names || {};
+
+      route =
+        routeStations.map(s => ({
+          stationId:
+            String(s.stationId),
+
+          stationName:
+            stationNames[
+              String(s.stationId)
+            ] || null
+        }));
+    }
 
     const confirmed =
       operationStations.filter(
@@ -113,18 +141,34 @@ export async function onRequestGet(context) {
           ? confirmedDateTime.slice(11, 19)
           : null;
 
-      const stationsResponse =
-        await fetch(
-          `${origin}/api/stations?ids=${lastConfirmedStationId}`
-        );
+      if (!route.length) {
 
-      const stationsData =
-        await stationsResponse.json();
+        const stationsResponse =
+          await fetch(
+            `${origin}/api/stations?ids=${lastConfirmedStationId}`
+          );
 
-      lastConfirmedStation =
-        stationsData.names?.[
-          lastConfirmedStationId
-        ] || null;
+        const stationsData =
+          await stationsResponse.json();
+
+        lastConfirmedStation =
+          stationsData.names?.[
+            lastConfirmedStationId
+          ] || null;
+
+      } else {
+
+        const found =
+          route.find(
+            r =>
+              r.stationId ===
+              lastConfirmedStationId
+          );
+
+        lastConfirmedStation =
+          found?.stationName ||
+          null;
+      }
     }
 
   } catch (err) {
