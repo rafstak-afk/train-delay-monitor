@@ -2,85 +2,148 @@
 <html lang="pl">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Szczegóły pociągu</title>
 
 <style>
+
+*{
+  box-sizing:border-box;
+}
+
 body{
   margin:0;
-  padding:20px;
+  padding:12px;
   background:#101820;
-  color:white;
-  font-family:Arial,sans-serif;
+  color:#fff;
+  font-family:Segoe UI,Arial,sans-serif;
+}
+
+a{
+  color:#8ec5ff;
+  text-decoration:none;
 }
 
 .card{
   background:#1c2833;
   border:1px solid #34495e;
-  border-radius:10px;
-  padding:20px;
-  margin-bottom:20px;
+  border-radius:16px;
+  padding:16px;
+  margin-bottom:12px;
 }
 
-.big{
-  font-size:36px;
-  font-weight:bold;
+.trainNumber{
+  font-size:30px;
+  font-weight:700;
+}
+
+.trainName{
+  font-size:20px;
+  margin-top:4px;
+}
+
+.destination{
+  color:#9ecfff;
+  margin-top:6px;
 }
 
 .delay{
-  font-size:28px;
-  font-weight:bold;
+  margin-top:14px;
+  font-size:34px;
+  font-weight:700;
+}
+
+.delay.good{
+  color:#2ecc71;
+}
+
+.delay.medium{
   color:#f1c40f;
 }
 
+.delay.bad{
+  color:#e74c3c;
+}
+
 .label{
-  opacity:.8;
-  margin-top:10px;
-  margin-bottom:8px;
+  font-size:12px;
+  color:#95a5a6;
+  letter-spacing:.5px;
+  text-transform:uppercase;
+  margin-bottom:6px;
 }
 
 .value{
-  font-size:20px;
-  font-weight:bold;
+  font-size:22px;
+  font-weight:600;
+}
+
+.meta{
+  margin-top:12px;
+  line-height:1.7;
 }
 
 .route{
-  columns:2;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
 }
 
-.route div{
-  padding:4px 0;
-  border-bottom:1px solid #2c3e50;
+.routeItem{
+  padding:10px 12px;
+  border-radius:10px;
+  background:#16222d;
 }
 
-a{
-  color:#8ec5ff;
+.routePast{
+  opacity:.65;
 }
+
+.routeCurrent{
+  background:#245d34;
+  font-weight:700;
+  border:1px solid #2ecc71;
+}
+
+.routeFuture{
+  opacity:1;
+}
+
+.small{
+  font-size:12px;
+  opacity:.75;
+}
+
 </style>
 </head>
 
 <body>
 
 <p>
-  /monitorowane-pociagi/
-    ← Powrót do monitora
-  </a>
+/monitorowane-pociagi/
+← Powrót do monitora
+</a>
 </p>
 
 <div class="card">
 
-  <div id="train" class="big">
-    Ładowanie...
+  <div class="trainNumber" id="trainNumber">
+    ...
   </div>
 
-  <div id="destination"></div>
+  <div class="trainName" id="trainName"></div>
 
-  <div id="delay" class="delay"></div>
+  <div class="destination" id="destination"></div>
 
-  <div id="status"></div>
+  <div id="delay" class="delay">
+    ...
+  </div>
 
-  <div id="platform"></div>
-
-  <div id="track"></div>
+  <div class="meta">
+    <div id="status"></div>
+    <div id="platform"></div>
+    <div id="track"></div>
+  </div>
 
 </div>
 
@@ -94,9 +157,7 @@ a{
     -
   </div>
 
-  <div id="lastConfirmedTime">
-    -
-  </div>
+  <div id="lastConfirmedTime"></div>
 
 </div>
 
@@ -109,16 +170,6 @@ a{
   <div id="route" class="route">
     Ładowanie...
   </div>
-
-</div>
-
-<div class="card">
-
-  <div class="label">
-    Identyfikatory PLK
-  </div>
-
-  <div id="ids"></div>
 
 </div>
 
@@ -136,14 +187,39 @@ fetch(
 .then(r => r.json())
 .then(data => {
 
-  document.getElementById('train').textContent =
-    `${data.category || ''} ${data.name || ''} ${data.train || ''}`;
+  document.getElementById('trainNumber').textContent =
+    `${data.category || ''} ${data.train || ''}`;
+
+  document.getElementById('trainName').textContent =
+    data.name || '';
 
   document.getElementById('destination').textContent =
-    `Cel podróży: ${data.destination || '-'}`;
+    `→ ${data.destination || '-'}`;
 
-  document.getElementById('delay').textContent =
-    `Opóźnienie: ${data.delay ?? 0} min`;
+  const delay =
+    Number(data.delay || 0);
+
+  const delayElement =
+    document.getElementById('delay');
+
+  delayElement.textContent =
+    `+${delay} min`;
+
+  delayElement.classList.remove(
+    'good',
+    'medium',
+    'bad'
+  );
+
+  if (delay <= 5) {
+    delayElement.classList.add('good');
+  }
+  else if (delay <= 15) {
+    delayElement.classList.add('medium');
+  }
+  else {
+    delayElement.classList.add('bad');
+  }
 
   document.getElementById('status').textContent =
     `Status: ${data.status || '-'} (${data.trainStatus || '-'})`;
@@ -160,19 +236,40 @@ fetch(
   document.getElementById('lastConfirmedTime').textContent =
     data.lastConfirmedTime || '-';
 
-  document.getElementById('ids').innerHTML =
-    `
-    scheduleId: ${data.scheduleId || '-'}<br>
-    orderId: ${data.orderId || '-'}<br>
-    trainOrderId: ${data.trainOrderId || '-'}
-    `;
+  const current =
+    data.lastConfirmedStation;
+
+  let currentReached = false;
 
   document.getElementById('route').innerHTML =
     (data.route || [])
-      .map(
-        s => `<div>${s.stationName || s.stationId}</div>`
-      )
+      .map(station => {
+
+        let cls = 'routeFuture';
+        let icon = '○';
+
+        if (!currentReached) {
+          cls = 'routePast';
+          icon = '●';
+        }
+
+        if (
+          station.stationName === current
+        ) {
+          cls = 'routeCurrent';
+          icon = '▶';
+          currentReached = true;
+        }
+
+        return `
+          <div class="routeItem ${cls}">
+            ${icon}
+            ${station.stationName || station.stationId}
+          </div>
+        `;
+      })
       .join('');
+
 });
 
 </script>
