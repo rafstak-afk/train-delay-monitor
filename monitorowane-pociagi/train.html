@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+
 <title>Szczegóły pociągu</title>
 
 <style>
@@ -38,18 +39,18 @@ a{
 }
 
 .trainName{
-  font-size:20px;
+  font-size:22px;
   margin-top:4px;
 }
 
 .destination{
   color:#9ecfff;
-  margin-top:6px;
+  margin-top:4px;
 }
 
 .delay{
-  margin-top:14px;
-  font-size:34px;
+  margin-top:12px;
+  font-size:38px;
   font-weight:700;
 }
 
@@ -67,51 +68,90 @@ a{
 
 .label{
   font-size:12px;
-  color:#95a5a6;
   letter-spacing:.5px;
   text-transform:uppercase;
+  color:#95a5a6;
   margin-bottom:6px;
 }
 
 .value{
-  font-size:22px;
-  font-weight:600;
+  font-size:24px;
+  font-weight:700;
 }
 
 .meta{
-  margin-top:12px;
+  margin-top:10px;
   line-height:1.7;
 }
 
 .route{
   display:flex;
   flex-direction:column;
-  gap:6px;
+  gap:8px;
 }
 
 .routeItem{
-  padding:10px 12px;
-  border-radius:10px;
   background:#16222d;
+  border-radius:12px;
+  padding:12px;
+  border:1px solid transparent;
 }
 
 .routePast{
-  opacity:.65;
+  opacity:.75;
 }
 
 .routeCurrent{
-  background:#245d34;
-  font-weight:700;
-  border:1px solid #2ecc71;
+  border-color:#2ecc71;
+  background:#1d4f31;
 }
 
 .routeFuture{
   opacity:1;
 }
 
-.small{
-  font-size:12px;
-  opacity:.75;
+.routeHeader{
+  font-size:18px;
+  font-weight:700;
+}
+
+.routeSub{
+  margin-top:4px;
+  font-size:13px;
+  opacity:.8;
+}
+
+.loadingOverlay{
+  position:fixed;
+  inset:0;
+  background:#101820;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  z-index:9999;
+}
+
+.spinner{
+  width:60px;
+  height:60px;
+
+  border:5px solid #34495e;
+  border-top:5px solid #2ecc71;
+
+  border-radius:50%;
+
+  animation:spin 1s linear infinite;
+}
+
+.loadingText{
+  margin-top:18px;
+  font-size:18px;
+}
+
+@keyframes spin{
+  from{transform:rotate(0deg);}
+  to{transform:rotate(360deg);}
 }
 
 </style>
@@ -119,21 +159,30 @@ a{
 
 <body>
 
+<div id="loading" class="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loadingText">
+    Pobieranie danych pociągu...
+  </div>
+</div>
+
 <p>
-/monitorowane-pociagi/
-← Powrót do monitora
-</a>
+  /monitorowane-pociagi/
+    ← Powrót do monitora
+  </a>
 </p>
 
 <div class="card">
 
-  <div class="trainNumber" id="trainNumber">
+  <div id="trainNumber" class="trainNumber">
     ...
   </div>
 
-  <div class="trainName" id="trainName"></div>
+  <div id="trainName" class="trainName">
+  </div>
 
-  <div class="destination" id="destination"></div>
+  <div id="destination" class="destination">
+  </div>
 
   <div id="delay" class="delay">
     ...
@@ -153,11 +202,15 @@ a{
     Ostatnia potwierdzona stacja
   </div>
 
-  <div id="lastConfirmedStation" class="value">
+  <div
+    id="lastConfirmedStation"
+    class="value">
     -
   </div>
 
-  <div id="lastConfirmedTime"></div>
+  <div id="lastConfirmedTime">
+    -
+  </div>
 
 </div>
 
@@ -187,6 +240,10 @@ fetch(
 .then(r => r.json())
 .then(data => {
 
+  document
+    .getElementById('loading')
+    .remove();
+
   document.getElementById('trainNumber').textContent =
     `${data.category || ''} ${data.train || ''}`;
 
@@ -203,7 +260,7 @@ fetch(
     document.getElementById('delay');
 
   delayElement.textContent =
-    `+${delay} min`;
+    `${delay > 0 ? '+' : ''}${delay} min`;
 
   delayElement.classList.remove(
     'good',
@@ -263,13 +320,31 @@ fetch(
 
         return `
           <div class="routeItem ${cls}">
-            ${icon}
-            ${station.stationName || station.stationId}
+            <div class="routeHeader">
+              ${icon}
+              ${station.stationName || station.stationId}
+            </div>
+
+            <div class="routeSub">
+              ID: ${station.stationId}
+            </div>
           </div>
         `;
       })
       .join('');
 
+})
+.catch(err => {
+
+  document
+    .getElementById('loading')
+    .remove();
+
+  alert(
+    'Nie udało się pobrać danych pociągu.'
+  );
+
+  console.error(err);
 });
 
 </script>
