@@ -25,6 +25,11 @@ a{
   text-decoration:none;
 }
 
+.back{
+  display:inline-block;
+  margin-bottom:12px;
+}
+
 .card{
   background:#1c2833;
   border:1px solid #34495e;
@@ -33,13 +38,25 @@ a{
   margin-bottom:12px;
 }
 
+.headerRow{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:12px;
+}
+
+.trainInfo{
+  flex:1;
+}
+
 .trainNumber{
-  font-size:30px;
+  font-size:18px;
   font-weight:700;
 }
 
 .trainName{
-  font-size:22px;
+  font-size:28px;
+  font-weight:700;
   margin-top:4px;
 }
 
@@ -49,9 +66,9 @@ a{
 }
 
 .delay{
-  margin-top:12px;
-  font-size:38px;
+  font-size:42px;
   font-weight:700;
+  white-space:nowrap;
 }
 
 .delay.good{
@@ -66,22 +83,36 @@ a{
   color:#e74c3c;
 }
 
+.badges{
+  margin-top:12px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+}
+
+.badge{
+  background:#16222d;
+  padding:6px 10px;
+  border-radius:999px;
+  font-size:12px;
+}
+
 .label{
   font-size:12px;
-  letter-spacing:.5px;
-  text-transform:uppercase;
   color:#95a5a6;
+  text-transform:uppercase;
+  letter-spacing:.5px;
   margin-bottom:6px;
 }
 
 .value{
-  font-size:24px;
+  font-size:26px;
   font-weight:700;
 }
 
-.meta{
-  margin-top:10px;
-  line-height:1.7;
+.time{
+  font-size:18px;
+  margin-top:4px;
 }
 
 .route{
@@ -94,31 +125,30 @@ a{
   background:#16222d;
   border-radius:12px;
   padding:12px;
-  border:1px solid transparent;
 }
 
 .routePast{
-  opacity:.75;
+  opacity:.7;
 }
 
 .routeCurrent{
-  border-color:#2ecc71;
-  background:#1d4f31;
+  background:#1f5a35;
+  border:1px solid #2ecc71;
 }
 
 .routeFuture{
   opacity:1;
 }
 
-.routeHeader{
-  font-size:18px;
-  font-weight:700;
+.routeName{
+  font-size:17px;
+  font-weight:600;
 }
 
-.routeSub{
+.routeMeta{
+  font-size:12px;
+  color:#a0b3c0;
   margin-top:4px;
-  font-size:13px;
-  opacity:.8;
 }
 
 .loadingOverlay{
@@ -150,8 +180,12 @@ a{
 }
 
 @keyframes spin{
-  from{transform:rotate(0deg);}
-  to{transform:rotate(360deg);}
+  from{
+    transform:rotate(0deg);
+  }
+  to{
+    transform:rotate(360deg);
+  }
 }
 
 </style>
@@ -166,32 +200,57 @@ a{
   </div>
 </div>
 
-<p>
-  /monitorowane-pociagi/
-    ← Powrót do monitora
-  </a>
-</p>
+<a
+  class="back"
+  href="/monitorowane-pociagi/">
+  ← Powrass="card">
 
-<div class="card">
+  <div class="headerRow">
 
-  <div id="trainNumber" class="trainNumber">
-    ...
+    <div class="trainInfo">
+
+      <div
+        id="trainNumber"
+        class="trainNumber">
+      </div>
+
+      <div
+        id="trainName"
+        class="trainName">
+      </div>
+
+      <div
+        id="destination"
+        class="destination">
+      </div>
+
+    </div>
+
+    <div
+      id="delay"
+      class="delay">
+      ...
+    </div>
+
   </div>
 
-  <div id="trainName" class="trainName">
-  </div>
+  <div class="badges">
 
-  <div id="destination" class="destination">
-  </div>
+    <div
+      id="status"
+      class="badge">
+    </div>
 
-  <div id="delay" class="delay">
-    ...
-  </div>
+    <div
+      id="platform"
+      class="badge">
+    </div>
 
-  <div class="meta">
-    <div id="status"></div>
-    <div id="platform"></div>
-    <div id="track"></div>
+    <div
+      id="track"
+      class="badge">
+    </div>
+
   </div>
 
 </div>
@@ -208,8 +267,9 @@ a{
     -
   </div>
 
-  <div id="lastConfirmedTime">
-    -
+  <div
+    id="lastConfirmedTime"
+    class="time">
   </div>
 
 </div>
@@ -220,7 +280,9 @@ a{
     Trasa przejazdu
   </div>
 
-  <div id="route" class="route">
+  <div
+    id="route"
+    class="route">
     Ładowanie...
   </div>
 
@@ -240,17 +302,23 @@ fetch(
 .then(r => r.json())
 .then(data => {
 
-  document
-    .getElementById('loading')
-    .remove();
+  document.getElementById(
+    'loading'
+  ).remove();
 
-  document.getElementById('trainNumber').textContent =
+  document.getElementById(
+    'trainNumber'
+  ).textContent =
     `${data.category || ''} ${data.train || ''}`;
 
-  document.getElementById('trainName').textContent =
+  document.getElementById(
+    'trainName'
+  ).textContent =
     data.name || '';
 
-  document.getElementById('destination').textContent =
+  document.getElementById(
+    'destination'
+  ).textContent =
     `→ ${data.destination || '-'}`;
 
   const delay =
@@ -260,7 +328,7 @@ fetch(
     document.getElementById('delay');
 
   delayElement.textContent =
-    `${delay > 0 ? '+' : ''}${delay} min`;
+    `${delay > 0 ? '+' : ''}${delay}`;
 
   delayElement.classList.remove(
     'good',
@@ -278,19 +346,29 @@ fetch(
     delayElement.classList.add('bad');
   }
 
-  document.getElementById('status').textContent =
-    `Status: ${data.status || '-'} (${data.trainStatus || '-'})`;
+  document.getElementById(
+    'status'
+  ).textContent =
+    data.status || '-';
 
-  document.getElementById('platform').textContent =
-    `Peron: ${data.platform || '-'}`;
+  document.getElementById(
+    'platform'
+  ).textContent =
+    `Peron ${data.platform || '-'}`;
 
-  document.getElementById('track').textContent =
-    `Tor: ${data.track || '-'}`;
+  document.getElementById(
+    'track'
+  ).textContent =
+    `Tor ${data.track || '-'}`;
 
-  document.getElementById('lastConfirmedStation').textContent =
+  document.getElementById(
+    'lastConfirmedStation'
+  ).textContent =
     data.lastConfirmedStation || '-';
 
-  document.getElementById('lastConfirmedTime').textContent =
+  document.getElementById(
+    'lastConfirmedTime'
+  ).textContent =
     data.lastConfirmedTime || '-';
 
   const current =
@@ -298,50 +376,48 @@ fetch(
 
   let currentReached = false;
 
-  document.getElementById('route').innerHTML =
+  document.getElementById(
+    'route'
+  ).innerHTML =
     (data.route || [])
-      .map(station => {
+    .map(station => {
 
-        let cls = 'routeFuture';
-        let icon = '○';
+      let cls = 'routeFuture';
+      let icon = '○';
 
-        if (!currentReached) {
-          cls = 'routePast';
-          icon = '●';
-        }
+      if (!currentReached) {
+        cls = 'routePast';
+        icon = '✓';
+      }
 
-        if (
-          station.stationName === current
-        ) {
-          cls = 'routeCurrent';
-          icon = '▶';
-          currentReached = true;
-        }
+      if (
+        station.stationName === current
+      ) {
+        cls = 'routeCurrent';
+        icon = '▶';
+        currentReached = true;
+      }
 
-        return `
-          <div class="routeItem ${cls}">
-            <div class="routeHeader">
-              ${icon}
-              ${station.stationName || station.stationId}
-            </div>
-
-            <div class="routeSub">
-              ID: ${station.stationId}
-            </div>
+      return `
+        <div class="routeItem ${cls}">
+          <div class="routeName">
+            ${icon}
+            ${station.stationName || station.stationId}
           </div>
-        `;
-      })
-      .join('');
+        </div>
+      `;
+    })
+    .join('');
 
 })
 .catch(err => {
 
-  document
-    .getElementById('loading')
-    .remove();
+  document.getElementById(
+    'loading'
+  ).remove();
 
   alert(
-    'Nie udało się pobrać danych pociągu.'
+    'Nie udało się pobrać danych.'
   );
 
   console.error(err);
