@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<title>Szczegóły pociągu</title>
+
+<style>
+body{
+  margin:0;
+  padding:20px;
+  background:#101820;
+  color:white;
+  font-family:Arial,sans-serif;
+}
+
+.card{
+  background:#1c2833;
+  border:1px solid #34495e;
+  border-radius:10px;
+  padding:20px;
+  margin-bottom:20px;
+}
+
+.big{
+  font-size:36px;
+  font-weight:bold;
+}
+
+a{
+  color:#8ec5ff;
+}
+</style>
+
+</head>
+<body>
+
+<p>
+<a href="/monitorowane-pociagi/">← Powrót do monitora<div class="card">
+  <div id="train" class="big"></div>
+
+  <div id="status"></div>
+
+  <div id="lastStation"></div>
+
+  <div id="lastTime"></div>
+</div>
+
+<script>
+
+const params =
+  new URLSearchParams(location.search);
+
+const train =
+  params.get('train') || '';
+
+document.getElementById('train').textContent =
+  train;
+
+fetch(`/api/train-details?train=${encodeURIComponent(train)}`)
+  .then(r => r.json())
+  .then(data => {
+
+    document.getElementById('status').textContent =
+      'Status: ' + (data.status || '-');
+
+    document.getElementById('lastStation').textContent =
+      'Ostatnia potwierdzona stacja: ' +
+      (data.lastConfirmedStation || '-');
+
+    document.getElementById('lastTime').textContent =
+      'Czas: ' +
+      (data.lastConfirmedTime || '-');
+
+  });
+
+</script>
+
+</body>
+</html>
