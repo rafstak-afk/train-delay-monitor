@@ -3,12 +3,17 @@ const MONITORED_TRAINS = [
   { station: "Tarnowskie Góry", train: "40450" },
   { station: "Miasteczko Śląskie", train: "44226" },
   { station: "Tarnowskie Góry", train: "40250" },
-  { station: "Chorzów Batory", train: "40658" },
-  { station: "Chorzów Batory", train: "40423" },
+
+  // remont do 31.07.2026
+  { station: "Tarnowskie Góry", train: "40423" },
+  { station: "Tarnowskie Góry", train: "40211" },
+  { station: "Tarnowskie Góry", train: "40468" },
+
   { station: "Katowice", train: "38107" },
-  { station: "Katowice", train: "40621" },
-  { station: "Chorzów Batory", train: "40211" },
-  { station: "Chorzów Uniwersytet", train: "40468" },
+  { station: "Chorzów Uniwersytet", train: "40621" },
+
+  { station: "Bytom Karb", train: "40658" },
+
   { station: "Katowice", train: "63102" }
 ];
 
