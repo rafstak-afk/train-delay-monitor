@@ -1,26 +1,16 @@
-export async function onRequestGet() {
+export async function onRequestGet(context) {
+  const origin = new URL(context.request.url).origin;
+
+  const url =
+    `${origin}/api/departures?station=` +
+    encodeURIComponent("Katowice") +
+    "&limit=100";
+
+  const r = await fetch(url);
+  const data = await r.json();
+
   return new Response(
-    JSON.stringify(
-      {
-        ok: true,
-        message: "monitored-trains endpoint działa",
-        monitored: [
-          { station: "Katowice", train: "3815" },
-          { station: "Tarnowskie Góry", train: "40450" },
-          { station: "Miasteczko Śląskie", train: "44226" },
-          { station: "Tarnowskie Góry", train: "40250" },
-          { station: "Chorzów Batory", train: "40658" },
-          { station: "Chorzów Batory", train: "40423" },
-          { station: "Katowice", train: "38107" },
-          { station: "Katowice", train: "40621" },
-          { station: "Chorzów Batory", train: "40211" },
-          { station: "Chorzów Uniwersytet", train: "40468" },
-          { station: "Katowice", train: "63102" }
-        ]
-      },
-      null,
-      2
-    ),
+    JSON.stringify(data, null, 2),
     {
       headers: {
         "Content-Type": "application/json; charset=utf-8"
