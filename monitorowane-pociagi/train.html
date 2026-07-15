@@ -35,6 +35,7 @@ body{
 .label{
   opacity:.8;
   margin-top:10px;
+  margin-bottom:8px;
 }
 
 .value{
@@ -42,16 +43,26 @@ body{
   font-weight:bold;
 }
 
+.route{
+  columns:2;
+}
+
+.route div{
+  padding:4px 0;
+  border-bottom:1px solid #2c3e50;
+}
+
 a{
   color:#8ec5ff;
 }
 </style>
-
 </head>
+
 <body>
 
 <p>
-  <a href="/monitorowane-poci← Powrót do monitora
+  /monitorowane-pociagi/
+    ← Powrót do monitora
   </a>
 </p>
 
@@ -79,15 +90,24 @@ a{
     Ostatnia potwierdzona stacja
   </div>
 
-  <div
-    id="lastConfirmedStation"
-    class="value">
+  <div id="lastConfirmedStation" class="value">
     -
   </div>
 
-  <div
-    id="lastConfirmedTime">
+  <div id="lastConfirmedTime">
     -
+  </div>
+
+</div>
+
+<div class="card">
+
+  <div class="label">
+    Trasa przejazdu
+  </div>
+
+  <div id="route" class="route">
+    Ładowanie...
   </div>
 
 </div>
@@ -126,7 +146,7 @@ fetch(
     `Opóźnienie: ${data.delay ?? 0} min`;
 
   document.getElementById('status').textContent =
-    `Status: ${data.status || '-'}`;
+    `Status: ${data.status || '-'} (${data.trainStatus || '-'})`;
 
   document.getElementById('platform').textContent =
     `Peron: ${data.platform || '-'}`;
@@ -146,6 +166,13 @@ fetch(
     orderId: ${data.orderId || '-'}<br>
     trainOrderId: ${data.trainOrderId || '-'}
     `;
+
+  document.getElementById('route').innerHTML =
+    (data.route || [])
+      .map(
+        s => `<div>${s.stationName || s.stationId}</div>`
+      )
+      .join('');
 });
 
 </script>
