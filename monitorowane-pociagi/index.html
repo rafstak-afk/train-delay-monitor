@@ -2,32 +2,55 @@
 <html lang="pl">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
 <title>Monitor pociągów</title>
 
 <style>
+
+*{
+  box-sizing:border-box;
+}
+
 body{
   margin:0;
-  padding:20px;
+  padding:12px;
   background:#101820;
   color:white;
-  font-family:Arial,sans-serif;
+  font-family:Segoe UI,Arial,sans-serif;
 }
 
 h1{
-  margin-top:0;
+  margin:0 0 10px 0;
+  font-size:28px;
 }
 
 .info{
-  margin-bottom:20px;
+  margin-bottom:12px;
   opacity:.8;
+  font-size:13px;
+}
+
+.list{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
 }
 
 .card{
+  display:block;
+  text-decoration:none;
+  color:white;
+
   background:#1c2833;
   border:1px solid #34495e;
-  border-radius:10px;
-  padding:12px;
-  margin-bottom:10px;
+  border-radius:16px;
+
+  padding:14px;
+}
+
+.card:active{
+  transform:scale(.99);
 }
 
 .ok{
@@ -38,40 +61,81 @@ h1{
   border-left:6px solid #e74c3c;
 }
 
+.top{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+}
+
 .train{
-  font-size:24px;
-  font-weight:bold;
+  font-size:26px;
+  font-weight:700;
+}
+
+.name{
+  font-size:18px;
+  margin-top:2px;
+}
+
+.destination{
+  color:#9ecfff;
+  margin-top:2px;
+  font-size:14px;
 }
 
 .station{
   color:#8ec5ff;
   font-size:12px;
-  font-weight:bold;
-  margin-bottom:5px;
+  font-weight:600;
+  margin-bottom:6px;
 }
 
 .delay{
-  font-size:18px;
-  font-weight:bold;
+  font-size:24px;
+  font-weight:700;
 }
 
 .green{
   color:#2ecc71;
 }
 
+.yellow{
+  color:#f1c40f;
+}
+
+.orange{
+  color:#f39c12;
+}
+
 .red{
   color:#e74c3c;
 }
-</style>
 
+.bottom{
+  margin-top:8px;
+  display:flex;
+  justify-content:space-between;
+  font-size:13px;
+}
+
+.badge{
+  background:#16222d;
+  padding:4px 8px;
+  border-radius:999px;
+}
+
+</style>
 </head>
+
 <body>
 
 <h1>🚆 Monitor pociągów</h1>
 
-<div id="info" class="info">Ładowanie...</div>
+<div id="info" class="info">
+Ładowanie...
+</div>
 
-<div id="list"></div>
+<div id="list" class="list"></div>
 
 <script>
 
@@ -96,53 +160,91 @@ async function loadData() {
     `;
 
   document.getElementById('list').innerHTML =
-    data.trains.map(t => {
+    data.trains
+      .sort((a,b)=>
+        (b.delay || 0) -
+        (a.delay || 0)
+      )
+      .map(t => {
 
-      const cls =
-        t.found ? 'ok' : 'missing';
+        const cls =
+          t.found ? 'ok' : 'missing';
 
-      const delayClass =
-        (t.delay || 0) > 0
-          ? 'red'
-          : 'green';
+        let delayClass = 'green';
 
-      return `
-        <div class="card ${cls}">
+        const delay =
+          Number(t.delay || 0);
+
+        if (delay > 30) {
+          delayClass = 'red';
+        }
+        else if (delay > 15) {
+          delayClass = 'orange';
+        }
+        else if (delay > 5) {
+          delayClass = 'yellow';
+        }
+
+        return `
+
+        <a
+          class="card ${cls}"
+          href="/monitorowane-pociagi/train.html?train=${encodeURIComponent(t.train)}">
+
           <div class="station">
             ${t.station}
           </div>
 
-          <div class="train">
-            ${t.train}
-          </div>
+          <div class="top">
 
-          <div>
-            ${t.name || '-'}
-          </div>
+            <div>
 
-          <div>
-            ${t.destination || ''}
-          </div>
+              <div class="train">
+                ${t.train}
+              </div>
 
-          <div class="delay ${delayClass}">
-            ${
-              t.found
-                ? `Opóźnienie: ${t.delay ?? 0} min`
-                : 'NIE ZNALEZIONO'
-            }
+              <div class="name">
+                ${t.name || '-'}
+              </div>
+
+              <div class="destination">
+                → ${t.destination || ''}
+              </div>
+
+            </div>
+
+            <div class="delay ${delayClass}">
+              ${t.found
+                ? '+' + (t.delay ?? 0)
+                : '---'}
+            </div>
+
           </div>
 
           ${
             t.found
               ? `
-              <div>Peron: ${t.platform || '-'}</div>
-              <div>Tor: ${t.track || '-'}</div>
+              <div class="bottom">
+                <span class="badge">
+                  P${t.platform || '-'}
+                </span>
+
+                <span class="badge">
+                  T${t.track || '-'}
+                </span>
+              </div>
               `
-              : ''
+              : `
+              <div class="bottom">
+                NIE ZNALEZIONO
+              </div>
+              `
           }
-        </div>
-      `;
-    }).join('');
+
+        </a>
+        `;
+      })
+      .join('');
 }
 
 loadData();
