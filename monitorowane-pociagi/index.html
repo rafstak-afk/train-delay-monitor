@@ -281,8 +281,18 @@ async function loadData() {
               </div>
 
               <div class="time">
-                🕒 ${t.time || t.plannedTime || '-'}
-              </div>
+  🕒 ${t.time || t.plannedTime || '-'}
+</div>
+
+${
+  t.via
+    ? `
+      <div class="time">
+        przez: ${t.via}
+      </div>
+    `
+    : ''
+}
 
             </div>
 
