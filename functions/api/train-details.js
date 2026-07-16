@@ -224,9 +224,22 @@ route =
       }
     }
 
-  } catch (err) {
-    console.error(err);
-  }
+  } 
+catch (err) {
+  return new Response(
+    JSON.stringify({
+      error: err.message,
+      stack: String(err.stack || "")
+    }, null, 2),
+    {
+      status: 500,
+      headers: {
+        "Content-Type": "application/json"
+      }
+    }
+  );
+}
+
 
   return new Response(
     JSON.stringify(
