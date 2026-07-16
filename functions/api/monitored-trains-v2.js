@@ -70,8 +70,12 @@ export async function onRequestGet(context) {
       track: hit?.track ?? "",
       category: hit?.category ?? "",
       name: hit?.name ?? "",
-      destination: hit?.destination ?? "",
-      scheduleId: hit?.scheduleId ?? null,
+      
+destination: hit?.destination ?? "",
+via: hit?.via ?? "",
+
+scheduleId: hit?.scheduleId ?? null,
+
       orderId: hit?.orderId ?? null,
       trainOrderId: hit?.trainOrderId ?? null
     };
