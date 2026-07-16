@@ -104,16 +104,69 @@ export async function onRequestGet(context) {
       const stationNames =
         stationsData.names || {};
 
-      route =
-        routeStations.map(s => ({
-          stationId:
-            String(s.stationId),
 
-          stationName:
-            stationNames[
-              String(s.stationId)
-            ] || null
-        }));
+route =
+  routeStations.map((s, index) => {
+
+    const op =
+      operationStations[index] || {};
+
+    const plannedTime =
+      op.plannedDepartureTime ||
+      op.plannedArrivalTime ||
+      s.departureTime ||
+      s.arrivalTime ||
+      null;
+
+    const actualTime =
+      op.actualDeparture
+        ? op.actualDeparture.slice(11,16)
+        : (
+            op.actualArrival
+              ? op.actualArrival.slice(11,16)
+              : null
+          );
+
+    const delayMinutes =
+      op.departureDelayMinutes ??
+      op.arrivalDelayMinutes ??
+      0;
+
+    return {
+      stationId:
+        String(s.stationId),
+
+      stationName:
+        stationNames[
+          String(s.stationId)
+        ] || null,
+
+      plannedTime:
+        plannedTime
+          ? plannedTime.slice(0,5)
+          : null,
+
+      actualTime,
+
+      delayMinutes,
+
+      platform:
+        s.departurePlatform ||
+        s.arrivalPlatform ||
+        null,
+
+      track:
+        s.departureTrack ||
+        s.arrivalTrack ||
+        null,
+
+      confirmed:
+        op.isConfirmed === true
+    };
+  });
+
+
+
     }
 
     const confirmed =
