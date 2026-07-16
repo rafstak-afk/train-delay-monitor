@@ -18,137 +18,364 @@ body{
   background:#101820;
   color:#fff;
   font-family:Segoe UI,Arial,sans-serif;
+  line-height:1.5;
 }
 
 a{
   color:#8ec5ff;
   text-decoration:none;
+  transition:color 0.2s;
+}
+
+a:hover{
+  color:#aed9ff;
 }
 
 .back{
   display:inline-block;
-  margin-bottom:12px;
+  margin-bottom:16px;
+  font-size:16px;
+  padding:8px 0;
 }
 
 .card{
   background:#1c2833;
   border:1px solid #34495e;
   border-radius:16px;
-  padding:16px;
-  margin-bottom:12px;
+  padding:clamp(12px, 4vw, 20px);
+  margin-bottom:16px;
+}
+
+/* Hero Card - Sticky */
+.heroCard{
+  position:sticky;
+  top:12px;
+  z-index:100;
+  background:linear-gradient(135deg, #1c2833 0%, #252f3d 100%);
+  box-shadow:0 4px 12px rgba(0,0,0,0.3);
 }
 
 .headerRow{
   display:flex;
   justify-content:space-between;
   align-items:flex-start;
-  gap:12px;
+  gap:clamp(12px, 4vw, 24px);
+  flex-wrap:wrap;
+}
+
+@media(max-width:640px){
+  .headerRow{
+    flex-direction:column;
+    align-items:stretch;
+  }
 }
 
 .trainInfo{
   flex:1;
+  min-width:0;
 }
 
 .trainNumber{
-  font-size:18px;
-  font-weight:700;
+  font-size:clamp(14px, 3.5vw, 16px);
+  font-weight:600;
+  color:#95a5a6;
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+  margin-bottom:4px;
 }
 
 .trainName{
-  font-size:28px;
+  font-size:clamp(24px, 6vw, 32px);
   font-weight:700;
-  margin-top:4px;
+  line-height:1.2;
+  margin-bottom:4px;
+  word-break:break-word;
 }
 
 .destination{
   color:#9ecfff;
+  font-size:clamp(14px, 4vw, 16px);
   margin-top:4px;
 }
 
+.delayContainer{
+  display:flex;
+  align-items:baseline;
+  gap:8px;
+  justify-content:flex-end;
+}
+
+@media(max-width:640px){
+  .delayContainer{
+    justify-content:flex-start;
+    margin-top:12px;
+  }
+}
+
+.delayIndicator{
+  width:12px;
+  height:12px;
+  border-radius:50%;
+  flex-shrink:0;
+}
+
 .delay{
-  font-size:42px;
+  font-size:clamp(48px, 14vw, 72px);
   font-weight:700;
   white-space:nowrap;
+  line-height:1;
 }
 
 .delay.good{
   color:#2ecc71;
 }
 
+.delay.good ~ .delayIndicator{
+  background:#2ecc71;
+}
+
 .delay.medium{
   color:#f1c40f;
+}
+
+.delay.medium ~ .delayIndicator{
+  background:#f1c40f;
 }
 
 .delay.bad{
   color:#e74c3c;
 }
 
+.delay.bad ~ .delayIndicator{
+  background:#e74c3c;
+}
+
 .badges{
   margin-top:12px;
   display:flex;
   flex-wrap:wrap;
-  gap:6px;
+  gap:8px;
 }
 
 .badge{
   background:#16222d;
-  padding:6px 10px;
+  padding:clamp(6px, 2vw, 8px) clamp(10px, 3vw, 12px);
   border-radius:999px;
-  font-size:12px;
+  font-size:clamp(11px, 2.5vw, 13px);
+  border:1px solid #34495e;
+  transition:all 0.2s;
 }
 
-.label{
-  font-size:12px;
+.badge:hover{
+  background:#1f2d38;
+}
+
+/* Current Position Card */
+.currentPositionCard{
+  background:#0f3d1f;
+  border:2px solid #2ecc71;
+  padding:clamp(16px, 5vw, 24px);
+}
+
+.currentPositionLabel{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:clamp(11px, 2.5vw, 12px);
   color:#95a5a6;
   text-transform:uppercase;
-  letter-spacing:.5px;
-  margin-bottom:6px;
+  letter-spacing:0.5px;
+  margin-bottom:12px;
+}
+
+.currentPositionLabel::before{
+  content:'🚆';
+  font-size:clamp(16px, 4vw, 20px);
+}
+
+.currentPositionName{
+  font-size:clamp(22px, 5vw, 28px);
+  font-weight:700;
+  color:#2ecc71;
+  margin-bottom:8px;
+  word-break:break-word;
+}
+
+.currentPositionTime{
+  font-size:clamp(13px, 3vw, 15px);
+  color:#9ecfff;
+}
+
+/* Labels and Values */
+.label{
+  font-size:clamp(11px, 2.5vw, 12px);
+  color:#95a5a6;
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+  margin-bottom:8px;
 }
 
 .value{
-  font-size:26px;
+  font-size:clamp(20px, 5vw, 26px);
   font-weight:700;
+  line-height:1.3;
 }
 
 .time{
-  font-size:18px;
+  font-size:clamp(13px, 3vw, 15px);
   margin-top:4px;
+  color:#9ecfff;
+}
+
+/* Route Timeline */
+.routeLabel{
+  font-size:clamp(11px, 2.5vw, 12px);
+  color:#95a5a6;
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+  margin-bottom:12px;
 }
 
 .route{
   display:flex;
   flex-direction:column;
-  gap:8px;
+  gap:0;
 }
 
 .routeItem{
+  position:relative;
   background:#16222d;
   border-radius:12px;
-  padding:12px;
+  padding:clamp(12px, 3vw, 16px) clamp(12px, 3vw, 16px) clamp(12px, 3vw, 16px) clamp(32px, 8vw, 40px);
+  margin-bottom:0;
+  transition:all 0.2s;
+  border:1px solid transparent;
+}
+
+.routeItem:not(:last-child)::after{
+  content:'';
+  position:absolute;
+  left:clamp(10px, 4vw, 14px);
+  top:100%;
+  width:2px;
+  height:clamp(12px, 3vw, 16px);
+  opacity:0.3;
 }
 
 .routePast{
-  opacity:.7;
+  opacity:0.65;
+}
+
+.routePast::after{
+  background:#a0b3c0;
 }
 
 .routeCurrent{
   background:#1f5a35;
-  border:1px solid #2ecc71;
+  border-color:#2ecc71;
+  border-width:2px;
+}
+
+.routeCurrent::after{
+  background:#2ecc71;
+  opacity:0.8;
+  height:clamp(16px, 4vw, 20px);
 }
 
 .routeFuture{
   opacity:1;
 }
 
+.routeFuture::after{
+  border-left:2px dashed #34495e;
+  background:transparent;
+}
+
+.routeItemDot{
+  position:absolute;
+  left:clamp(8px, 3.5vw, 12px);
+  top:clamp(14px, 3vw, 18px);
+  width:clamp(10px, 3vw, 14px);
+  height:clamp(10px, 3vw, 14px);
+  background:#16222d;
+  border:2px solid #a0b3c0;
+  border-radius:50%;
+  font-size:clamp(10px, 3vw, 12px);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:transparent;
+  z-index:2;
+}
+
+.routePast .routeItemDot{
+  border-color:#2ecc71;
+  color:#2ecc71;
+  font-size:clamp(12px, 3vw, 14px);
+}
+
+.routePast .routeItemDot::before{
+  content:'✅';
+}
+
+.routeCurrent .routeItemDot{
+  border-color:#2ecc71;
+  background:#2ecc71;
+  font-size:clamp(14px, 4vw, 16px);
+  color:#1f5a35;
+}
+
+.routeCurrent .routeItemDot::before{
+  content:'🚆';
+}
+
+.routeFuture .routeItemDot{
+  border-color:#34495e;
+  font-size:clamp(12px, 3vw, 14px);
+}
+
+.routeFuture .routeItemDot::before{
+  content:'⏳';
+  color:#f39c12;
+}
+
 .routeName{
-  font-size:17px;
+  font-size:clamp(15px, 4vw, 17px);
   font-weight:600;
+  margin-bottom:4px;
+  word-break:break-word;
 }
 
 .routeMeta{
-  font-size:12px;
+  font-size:clamp(12px, 3vw, 13px);
   color:#a0b3c0;
-  margin-top:4px;
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+}
+
+.routeTime{
+  font-weight:600;
+}
+
+.routeDelay{
+  padding:0 6px;
+  border-radius:4px;
+}
+
+.routeDelay.good{
+  background:rgba(46,204,113,0.2);
+  color:#2ecc71;
+}
+
+.routeDelay.medium{
+  background:rgba(241,196,15,0.2);
+  color:#f1c40f;
+}
+
+.routeDelay.bad{
+  background:rgba(231,76,60,0.2);
+  color:#e74c3c;
 }
 
 .loadingOverlay{
@@ -165,18 +392,15 @@ a{
 .spinner{
   width:60px;
   height:60px;
-
   border:5px solid #34495e;
   border-top:5px solid #2ecc71;
-
   border-radius:50%;
-
   animation:spin 1s linear infinite;
 }
 
 .loadingText{
   margin-top:18px;
-  font-size:18px;
+  font-size:clamp(16px, 4vw, 18px);
 }
 
 @keyframes spin{
@@ -185,6 +409,21 @@ a{
   }
   to{
     transform:rotate(360deg);
+  }
+}
+
+/* Scroll state - opcjonalnie zmniejsz hero */
+@media(max-width:768px){
+  body.scrolled .heroCard{
+    padding:clamp(8px, 3vw, 12px);
+  }
+
+  body.scrolled .trainName{
+    font-size:clamp(20px, 5vw, 24px);
+  }
+
+  body.scrolled .delay{
+    font-size:clamp(36px, 10vw, 48px);
   }
 }
 
@@ -203,7 +442,10 @@ a{
 <a
   class="back"
   href="/monitorowane-pociagi/">
-  ← Powrass="card">
+  ← Powrót
+</a>
+
+<div class="heroCard card">
 
   <div class="headerRow">
 
@@ -226,10 +468,16 @@ a{
 
     </div>
 
-    <div
-      id="delay"
-      class="delay">
-      ...
+    <div class="delayContainer">
+      <div
+        id="delay"
+        class="delay">
+        ...
+      </div>
+      <div
+        id="delayIndicator"
+        class="delayIndicator">
+      </div>
     </div>
 
   </div>
@@ -255,28 +503,11 @@ a{
 
 </div>
 
-<div class="card">
-
-  <div class="label">
-    Ostatnia potwierdzona stacja
-  </div>
-
-  <div
-    id="lastConfirmedStation"
-    class="value">
-    -
-  </div>
-
-  <div
-    id="lastConfirmedTime"
-    class="time">
-  </div>
-
-</div>
+<div id="currentPositionContainer"></div>
 
 <div class="card">
 
-  <div class="label">
+  <div class="routeLabel">
     Trasa przejazdu
   </div>
 
@@ -328,7 +559,7 @@ fetch(
     document.getElementById('delay');
 
   delayElement.textContent =
-    `${delay > 0 ? '+' : ''}${delay}`;
+    `${delay > 0 ? '+' : ''}${delay} min`;
 
   delayElement.classList.remove(
     'good',
@@ -361,15 +592,27 @@ fetch(
   ).textContent =
     `Tor ${data.track || '-'}`;
 
-  document.getElementById(
-    'lastConfirmedStation'
-  ).textContent =
-    data.lastConfirmedStation || '-';
+  const currentStation = data.lastConfirmedStation || '-';
+  const currentTime = data.lastConfirmedTime || '-';
+
+  const currentPositionHTML = `
+    <div class="currentPositionCard card">
+      <div class="currentPositionLabel">
+        BIEŻĄCA POZYCJA
+      </div>
+      <div class="currentPositionName">
+        ${currentStation}
+      </div>
+      <div class="currentPositionTime">
+        ${currentTime ? `Potwierdzona o ${currentTime}` : 'Brak danych'}
+      </div>
+    </div>
+  `;
 
   document.getElementById(
-    'lastConfirmedTime'
-  ).textContent =
-    data.lastConfirmedTime || '-';
+    'currentPositionContainer'
+  ).innerHTML =
+    currentPositionHTML;
 
   const current =
     data.lastConfirmedStation;
@@ -380,30 +623,47 @@ fetch(
     'route'
   ).innerHTML =
     (data.route || [])
-    .map(station => {
+    .map((station, index) => {
 
       let cls = 'routeFuture';
-      let icon = '○';
 
       if (!currentReached) {
         cls = 'routePast';
-        icon = '✓';
       }
 
       if (
         station.stationName === current
       ) {
         cls = 'routeCurrent';
-        icon = '▶';
         currentReached = true;
       }
 
+      const stationName = station.stationName || station.stationId || 'Nieznana stacja';
+      const stationTime = station.arrivalTime || station.departureTime || '';
+      const stationDelay = Number(station.delay || 0);
+
+      let delayClass = 'good';
+      if (stationDelay > 5 && stationDelay <= 15) {
+        delayClass = 'medium';
+      } else if (stationDelay > 15) {
+        delayClass = 'bad';
+      }
+
+      const delayBadgeHTML = stationDelay > 0 
+        ? `<span class="routeDelay ${delayClass}">+${stationDelay} min</span>`
+        : '';
+
+      const timeHTML = stationTime
+        ? `<span class="routeTime">${stationTime}</span>${delayBadgeHTML}`
+        : '';
+
       return `
         <div class="routeItem ${cls}">
+          <div class="routeItemDot"></div>
           <div class="routeName">
-            ${icon}
-            ${station.stationName || station.stationId}
+            ${stationName}
           </div>
+          ${timeHTML ? `<div class="routeMeta">${timeHTML}</div>` : ''}
         </div>
       `;
     })
@@ -421,6 +681,17 @@ fetch(
   );
 
   console.error(err);
+});
+
+/* Scroll listener - opcjonalne zmniejszanie hero */
+let scrollTimeout;
+window.addEventListener('scroll', () => {
+  clearTimeout(scrollTimeout);
+  if (window.scrollY > 100) {
+    document.body.classList.add('scrolled');
+  } else {
+    document.body.classList.remove('scrolled');
+  }
 });
 
 </script>
