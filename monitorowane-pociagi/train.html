@@ -457,7 +457,7 @@ a:hover{
 
 .routeMeta{
   display:grid;
-  grid-template-columns:repeat(auto-fit, minmax(120px, 1fr));
+  grid-template-columns:repeat(auto-fit, minmax(100px, 1fr));
   gap:12px;
   margin-top:8px;
 }
@@ -711,9 +711,10 @@ fetch(`/api/train-details?train=${encodeURIComponent(train)}`)
       }
 
       const stationName = station.stationName || station.stationId || 'Nieznana stacja';
-      const plannedTime = station.plannedTime || station.scheduledTime || '';
-      const actualTime = station.actualTime || station.arrivalTime || station.departureTime || '';
-      const stationDelay = Number(station.delay || 0);
+      const plannedTime = station.plannedTime || '';
+      const actualTime = station.actualTime || '';
+      const stationDelay = Number(station.delayMinutes || 0);
+      const confirmed = station.confirmed === true;
 
       let delayClass = 'good';
       if (stationDelay > 5 && stationDelay <= 15) {
@@ -732,6 +733,7 @@ fetch(`/api/train-details?train=${encodeURIComponent(train)}`)
           <div class="routeMeta">
             ${plannedTime ? `<div class="routeMetaItem"><div class="routeMetaLabel">Plan</div><div class="routeMetaValue">${plannedTime}</div></div>` : ''}
             ${actualTime ? `<div class="routeMetaItem"><div class="routeMetaLabel">Rzecz</div><div class="routeMetaValue">${actualTime}</div></div>` : ''}
+            ${confirmed ? `<div class="routeMetaItem"><div class="routeMetaLabel">Status</div><div class="routeMetaValue" style="color: #2ecc71;">✓ Potwierdz.</div></div>` : ''}
           </div>
           ${delayBadgeHTML}
         </div>
