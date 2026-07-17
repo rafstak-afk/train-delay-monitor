@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Szczegóły pociągu</title>
+
+<style>
+
+*{
+  box-sizing:border-box;
+}
+
+body{
+  margin:0;
+  padding:12px;
+  background:#101820;
+  color:#fff;
+  font-family:Segoe UI,Arial,sans-serif;
+}
+
+a{
+  color:#8ec5ff;
+  text-decoration:none;
+}
+
+.back{
+  display:inline-block;
+  margin-bottom:12px;
+}
+
+.card{
+  background:#1c2833;
+  border:1px solid #34495e;
+  border-radius:16px;
+  padding:16px;
+  margin-bottom:12px;
+}
+
+.headerRow{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:12px;
+}
+
+.trainInfo{
+  flex:1;
+}
+
+.trainNumber{
+  font-size:18px;
+  font-weight:700;
+}
+
+.trainName{
+  font-size:28px;
+  font-weight:700;
+  margin-top:4px;
+}
+
+.destination{
+  color:#9ecfff;
+  margin-top:4px;
+}
+
+.delay{
+  font-size:72px;
+  font-weight:700;
+  white-space:nowrap;
+}
+
+.delay.good{
+  color:#2ecc71;
+}
+
+.delay.medium{
+  color:#f1c40f;
+}
+
+.delay.bad{
+  color:#e74c3c;
+}
+
+.badges{
+  margin-top:12px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+}
+
+.badge{
+  background:#16222d;
+  padding:6px 10px;
+  border-radius:999px;
+  font-size:12px;
+}
+
+.label{
+  font-size:12px;
+  color:#95a5a6;
+  text-transform:uppercase;
+  letter-spacing:.5px;
+  margin-bottom:6px;
+}
+
+.value{
+  font-size:26px;
+  font-weight:700;
+}
+
+.time{
+  font-size:18px;
+  margin-top:4px;
+}
+
+.route{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+
+.routeItem{
+  background:#16222d;
+  border-radius:12px;
+  padding:12px;
+}
+
+.routePast{
+  opacity:.7;
+}
+
+.routeCurrent{
+  background:#1f5a35;
+  border:1px solid #2ecc71;
+}
+
+.routeFuture{
+  opacity:1;
+}
+
+.routeName{
+  font-size:17px;
+  font-weight:600;
+}
+
+.routeMeta{
+  font-size:12px;
+  color:#a0b3c0;
+  margin-top:4px;
+}
+
+.loadingOverlay{
+  position:fixed;
+  inset:0;
+  background:#101820;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  z-index:9999;
+}
+
+.spinner{
+  width:60px;
+  height:60px;
+
+  border:5px solid #34495e;
+  border-top:5px solid #2ecc71;
+
+  border-radius:50%;
+
+  animation:spin 1s linear infinite;
+}
+
+.loadingText{
+  margin-top:18px;
+  font-size:18px;
+}
+
+@keyframes spin{
+  from{
+    transform:rotate(0deg);
+  }
+  to{
+    transform:rotate(360deg);
+  }
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="loading" class="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loadingText">
+    Pobieranie danych pociągu...
+  </div>
+</div>
+
+<a
+  class="back"
+  href="/monitorowane-pociagi/">
+  ← Powrót
+</a>
+
+<div class="card">
+
+  <div class="headerRow">
+
+    <div class="trainInfo">
+
+      <div
+        id="trainNumber"
+        class="trainNumber">
+      </div>
+
+      <div
+        id="trainName"
+        class="trainName">
+      </div>
+
+      <div
+        id="destination"
+        class="destination">
+      </div>
+
+    </div>
+
+    <div
+      id="delay"
+      class="delay">
+      ...
+    </div>
+
+  </div>
+
+  <div class="badges">
+
+    <div
+      id="status"
+      class="badge">
+    </div>
+
+    <div
+      id="platform"
+      class="badge">
+    </div>
+
+    <div
+      id="track"
+      class="badge">
+    </div>
+
+  </div>
+
+</div>
+
+<div class="card">
+
+  <div class="label">
+    Ostatnia potwierdzona stacja
+  </div>
+
+  <div
+    id="lastConfirmedStation"
+    class="value">
+    -
+  </div>
+
+  <div
+    id="lastConfirmedTime"
+    class="time">
+  </div>
+
+</div>
+
+<div class="card">
+
+  <div class="label">
+    Trasa przejazdu
+  </div>
+
+  <div
+    id="route"
+    class="route">
+    Ładowanie...
+  </div>
+
+</div>
+
+<script>
+
+const params =
+  new URLSearchParams(location.search);
+
+const train =
+  params.get('train') || '';
+
+fetch(
+  `/api/train-details?train=${encodeURIComponent(train)}`
+)
+.then(r => r.json())
+.then(data => {
+
+  document.getElementById(
+    'loading'
+  ).remove();
+
+  document.getElementById(
+    'trainNumber'
+  ).textContent =
+    `${data.category || ''} ${data.train || ''}`;
+
+  document.getElementById(
+    'trainName'
+  ).textContent =
+    data.name || '';
+
+  document.getElementById(
+    'destination'
+  ).textContent =
+    `→ ${data.destination || '-'}`;
+
+  const delay =
+    Number(data.delay || 0);
+
+  const delayElement =
+    document.getElementById('delay');
+
+  delayElement.textContent =
+    `${delay > 0 ? '+' : ''}${delay}`;
+
+  delayElement.classList.remove(
+    'good',
+    'medium',
+    'bad'
+  );
+
+  if (delay <= 5) {
+    delayElement.classList.add('good');
+  }
+  else if (delay <= 15) {
+    delayElement.classList.add('medium');
+  }
+  else {
+    delayElement.classList.add('bad');
+  }
+
+  document.getElementById(
+    'status'
+  ).textContent =
+    data.status || '-';
+
+  document.getElementById(
+    'platform'
+  ).textContent =
+    `Peron ${data.platform || '-'}`;
+
+  document.getElementById(
+    'track'
+  ).textContent =
+    `Tor ${data.track || '-'}`;
+
+  document.getElementById(
+    'lastConfirmedStation'
+  ).textContent =
+    data.lastConfirmedStation || '-';
+
+  document.getElementById(
+    'lastConfirmedTime'
+  ).textContent =
+    data.lastConfirmedTime || '-';
+
+  const current =
+    data.lastConfirmedStation;
+
+  let currentReached = false;
+
+  document.getElementById(
+    'route'
+  ).innerHTML =
+    (data.route || [])
+    .map(station => {
+
+      let cls = 'routeFuture';
+      let icon = '○';
+
+      if (!currentReached) {
+        cls = 'routePast';
+        icon = '✓';
+      }
+
+      if (
+        station.stationName === current
+      ) {
+        cls = 'routeCurrent';
+        icon = '▶';
+        currentReached = true;
+      }
+
+      return `
+        <div class="routeItem ${cls}">
+          <div class="routeName">
+            ${icon}
+            ${station.stationName || station.stationId}
+          </div>
+        </div>
+      `;
+    })
+    .join('');
+
+})
+.catch(err => {
+
+  document.getElementById(
+    'loading'
+  ).remove();
+
+  alert(
+    'Nie udało się pobrać danych.'
+  );
+
+  console.error(err);
+});
+
+</script>
+
+</body>
+</html>
