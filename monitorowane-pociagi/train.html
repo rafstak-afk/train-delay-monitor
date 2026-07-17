@@ -18,137 +18,491 @@ body{
   background:#101820;
   color:#fff;
   font-family:Segoe UI,Arial,sans-serif;
+  line-height:1.5;
 }
 
 a{
   color:#8ec5ff;
   text-decoration:none;
+  transition:color 0.2s;
+}
+
+a:hover{
+  color:#aed9ff;
 }
 
 .back{
   display:inline-block;
-  margin-bottom:12px;
+  margin-bottom:16px;
+  font-size:16px;
+  padding:8px 0;
 }
 
 .card{
   background:#1c2833;
   border:1px solid #34495e;
   border-radius:16px;
-  padding:16px;
-  margin-bottom:12px;
+  padding:clamp(12px, 4vw, 20px);
+  margin-bottom:16px;
+}
+
+/* Hero Card - Sticky */
+.heroCard{
+  position:sticky;
+  top:12px;
+  z-index:100;
+  border:2px solid;
+  border-color:inherit;
+  box-shadow:0 4px 16px rgba(0,0,0,0.4);
+}
+
+.heroCard.ic{
+  background:linear-gradient(135deg, rgba(52, 152, 219, 0.1) 0%, rgba(41, 128, 185, 0.05) 100%);
+  border-color:#3498db;
+}
+
+.heroCard.tlk{
+  background:linear-gradient(135deg, rgba(230, 126, 34, 0.1) 0%, rgba(207, 102, 19, 0.05) 100%);
+  border-color:#e67e22;
+}
+
+.heroCard.os{
+  background:linear-gradient(135deg, rgba(149, 165, 166, 0.1) 0%, rgba(127, 140, 141, 0.05) 100%);
+  border-color:#95a5a6;
+}
+
+.heroCard.r{
+  background:linear-gradient(135deg, rgba(22, 160, 133, 0.1) 0%, rgba(22, 160, 133, 0.05) 100%);
+  border-color:#16a085;
+}
+
+.heroCard.reg{
+  background:linear-gradient(135deg, rgba(39, 174, 96, 0.1) 0%, rgba(39, 174, 96, 0.05) 100%);
+  border-color:#27ae60;
 }
 
 .headerRow{
   display:flex;
   justify-content:space-between;
   align-items:flex-start;
-  gap:12px;
+  gap:clamp(12px, 4vw, 24px);
+}
+
+@media(max-width:640px){
+  .headerRow{
+    flex-direction:column;
+  }
 }
 
 .trainInfo{
   flex:1;
+  min-width:0;
+}
+
+.trainCategory{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:4px 10px;
+  border-radius:6px;
+  font-size:clamp(11px, 2.5vw, 12px);
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+  margin-bottom:8px;
+  background:rgba(255,255,255,0.1);
+  border:1px solid;
+  border-color:inherit;
+}
+
+.trainCategory span{
+  font-size:clamp(14px, 3vw, 16px);
 }
 
 .trainNumber{
-  font-size:18px;
-  font-weight:700;
+  font-size:clamp(12px, 3vw, 14px);
+  font-weight:600;
+  color:#95a5a6;
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+  margin-bottom:4px;
 }
 
 .trainName{
-  font-size:28px;
+  font-size:clamp(18px, 5vw, 24px);
   font-weight:700;
-  margin-top:4px;
+  line-height:1.3;
+  margin-bottom:6px;
+  word-break:break-word;
 }
 
 .destination{
   color:#9ecfff;
-  margin-top:4px;
+  font-size:clamp(13px, 3.5vw, 15px);
+}
+
+.delayContainer{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-shrink:0;
+}
+
+.delayIndicator{
+  width:10px;
+  height:10px;
+  border-radius:50%;
+  flex-shrink:0;
 }
 
 .delay{
-  font-size:42px;
+  font-size:clamp(28px, 7vw, 42px);
   font-weight:700;
   white-space:nowrap;
+  line-height:1.1;
 }
 
 .delay.good{
   color:#2ecc71;
 }
 
+.delay.good ~ .delayIndicator{
+  background:#2ecc71;
+  box-shadow:0 0 8px #2ecc71;
+}
+
 .delay.medium{
   color:#f1c40f;
+}
+
+.delay.medium ~ .delayIndicator{
+  background:#f1c40f;
+  box-shadow:0 0 8px #f1c40f;
 }
 
 .delay.bad{
   color:#e74c3c;
 }
 
+.delay.bad ~ .delayIndicator{
+  background:#e74c3c;
+  box-shadow:0 0 8px #e74c3c;
+}
+
 .badges{
   margin-top:12px;
   display:flex;
   flex-wrap:wrap;
-  gap:6px;
+  gap:8px;
 }
 
 .badge{
-  background:#16222d;
-  padding:6px 10px;
-  border-radius:999px;
-  font-size:12px;
+  background:rgba(22, 34, 45, 0.8);
+  padding:clamp(6px, 2vw, 8px) clamp(10px, 3vw, 12px);
+  border-radius:8px;
+  font-size:clamp(11px, 2.5vw, 13px);
+  border:1px solid #34495e;
+  transition:all 0.2s;
+  display:flex;
+  align-items:center;
+  gap:6px;
 }
 
-.label{
-  font-size:12px;
+.badge:hover{
+  background:#1f2d38;
+  border-color:#3498db;
+}
+
+/* Current Position Card */
+.currentPositionCard{
+  background:#0f3d1f;
+  border:2px solid #2ecc71;
+  padding:clamp(16px, 5vw, 24px);
+  position:relative;
+  overflow:hidden;
+}
+
+.currentPositionCard::before{
+  content:'';
+  position:absolute;
+  top:0;
+  right:0;
+  width:100px;
+  height:100%;
+  background:radial-gradient(circle, rgba(46,204,113,0.1) 0%, transparent 70%);
+  pointer-events:none;
+}
+
+.currentPositionLabel{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:clamp(11px, 2.5vw, 12px);
   color:#95a5a6;
   text-transform:uppercase;
-  letter-spacing:.5px;
-  margin-bottom:6px;
+  letter-spacing:0.5px;
+  margin-bottom:12px;
+  position:relative;
+  z-index:1;
+}
+
+.currentPositionLabel::before{
+  content:'🚆';
+  font-size:clamp(16px, 4vw, 20px);
+  animation:pulse 2s ease-in-out infinite;
+}
+
+.currentPositionName{
+  font-size:clamp(18px, 5vw, 24px);
+  font-weight:700;
+  color:#2ecc71;
+  margin-bottom:8px;
+  word-break:break-word;
+  position:relative;
+  z-index:1;
+}
+
+.currentPositionInfo{
+  display:flex;
+  gap:16px;
+  flex-wrap:wrap;
+  position:relative;
+  z-index:1;
+}
+
+.currentPositionTime{
+  font-size:clamp(12px, 3vw, 14px);
+  color:#9ecfff;
+}
+
+.currentPositionStatus{
+  font-size:clamp(11px, 2.5vw, 12px);
+  padding:2px 8px;
+  background:rgba(46,204,113,0.2);
+  border:1px solid #2ecc71;
+  border-radius:4px;
+  color:#2ecc71;
+  font-weight:600;
+}
+
+@keyframes pulse{
+  0%, 100%{
+    opacity:1;
+  }
+  50%{
+    opacity:0.6;
+  }
+}
+
+/* Labels and Values */
+.label{
+  font-size:clamp(11px, 2.5vw, 12px);
+  color:#95a5a6;
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+  margin-bottom:8px;
 }
 
 .value{
-  font-size:26px;
+  font-size:clamp(18px, 4.5vw, 24px);
   font-weight:700;
+  line-height:1.3;
 }
 
 .time{
-  font-size:18px;
+  font-size:clamp(12px, 3vw, 14px);
   margin-top:4px;
+  color:#9ecfff;
+}
+
+/* Route Timeline */
+.routeLabel{
+  font-size:clamp(11px, 2.5vw, 12px);
+  color:#95a5a6;
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+  margin-bottom:12px;
 }
 
 .route{
   display:flex;
   flex-direction:column;
-  gap:8px;
+  gap:0;
 }
 
 .routeItem{
+  position:relative;
   background:#16222d;
   border-radius:12px;
-  padding:12px;
+  padding:clamp(12px, 3vw, 16px) clamp(12px, 3vw, 16px) clamp(12px, 3vw, 16px) clamp(40px, 8vw, 50px);
+  margin-bottom:0;
+  transition:all 0.2s;
+  border:1px solid transparent;
+  display:flex;
+  gap:16px;
+  align-items:flex-start;
+}
+
+.routeItem:not(:last-child)::after{
+  content:'';
+  position:absolute;
+  left:clamp(12px, 4vw, 16px);
+  top:100%;
+  width:2px;
+  height:clamp(12px, 3vw, 16px);
+  opacity:0.3;
 }
 
 .routePast{
-  opacity:.7;
+  opacity:0.65;
+}
+
+.routePast::after{
+  background:#a0b3c0;
 }
 
 .routeCurrent{
-  background:#1f5a35;
-  border:1px solid #2ecc71;
+  background:linear-gradient(90deg, rgba(31, 90, 53, 0.5) 0%, transparent 100%);
+  border-color:#2ecc71;
+  border-width:2px;
+}
+
+.routeCurrent::after{
+  background:#2ecc71;
+  opacity:0.8;
+  height:clamp(16px, 4vw, 20px);
 }
 
 .routeFuture{
   opacity:1;
 }
 
+.routeFuture::after{
+  border-left:2px dashed #34495e;
+  background:transparent;
+}
+
+.routeItemDot{
+  position:absolute;
+  left:clamp(8px, 3.5vw, 12px);
+  top:clamp(14px, 3vw, 18px);
+  width:clamp(12px, 3.5vw, 16px);
+  height:clamp(12px, 3.5vw, 16px);
+  background:#16222d;
+  border:2px solid #a0b3c0;
+  border-radius:50%;
+  font-size:clamp(11px, 3vw, 13px);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:transparent;
+  z-index:2;
+  flex-shrink:0;
+}
+
+.routePast .routeItemDot{
+  border-color:#2ecc71;
+  background:#2ecc71;
+  color:#0f3d1f;
+  font-size:clamp(12px, 3.5vw, 14px);
+}
+
+.routePast .routeItemDot::before{
+  content:'✅';
+}
+
+.routeCurrent .routeItemDot{
+  border-color:#2ecc71;
+  background:#2ecc71;
+  font-size:clamp(14px, 4vw, 16px);
+  color:#1f5a35;
+  animation:bounce 1s ease-in-out infinite;
+}
+
+.routeCurrent .routeItemDot::before{
+  content:'🚆';
+}
+
+.routeFuture .routeItemDot{
+  border-color:#34495e;
+  font-size:clamp(12px, 3.5vw, 14px);
+}
+
+.routeFuture .routeItemDot::before{
+  content:'⏳';
+  color:#f39c12;
+}
+
+@keyframes bounce{
+  0%, 100%{
+    transform:scale(1);
+  }
+  50%{
+    transform:scale(1.15);
+  }
+}
+
+.routeContent{
+  flex:1;
+  min-width:0;
+}
+
 .routeName{
-  font-size:17px;
+  font-size:clamp(14px, 3.5vw, 16px);
   font-weight:600;
+  margin-bottom:6px;
+  word-break:break-word;
+  color:#fff;
 }
 
 .routeMeta{
-  font-size:12px;
-  color:#a0b3c0;
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(100px, 1fr));
+  gap:12px;
+  margin-top:8px;
+}
+
+.routeMetaItem{
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+
+.routeMetaLabel{
+  font-size:clamp(10px, 2vw, 11px);
+  color:#7f8c8d;
+  text-transform:uppercase;
+  letter-spacing:0.3px;
+}
+
+.routeMetaValue{
+  font-size:clamp(12px, 2.8vw, 14px);
+  font-weight:600;
+  color:#ecf0f1;
+}
+
+.routeDelay{
+  font-size:clamp(11px, 2.5vw, 12px);
+  font-weight:600;
+  padding:2px 6px;
+  border-radius:4px;
+  display:inline-block;
   margin-top:4px;
+}
+
+.routeDelay.good{
+  background:rgba(46,204,113,0.2);
+  color:#2ecc71;
+}
+
+.routeDelay.medium{
+  background:rgba(241,196,15,0.2);
+  color:#f1c40f;
+}
+
+.routeDelay.bad{
+  background:rgba(231,76,60,0.2);
+  color:#e74c3c;
 }
 
 .loadingOverlay{
@@ -165,18 +519,15 @@ a{
 .spinner{
   width:60px;
   height:60px;
-
   border:5px solid #34495e;
   border-top:5px solid #2ecc71;
-
   border-radius:50%;
-
   animation:spin 1s linear infinite;
 }
 
 .loadingText{
   margin-top:18px;
-  font-size:18px;
+  font-size:clamp(14px, 3.5vw, 16px);
 }
 
 @keyframes spin{
@@ -185,6 +536,21 @@ a{
   }
   to{
     transform:rotate(360deg);
+  }
+}
+
+/* Scroll state */
+@media(max-width:768px){
+  body.scrolled .heroCard{
+    padding:clamp(8px, 3vw, 12px);
+  }
+
+  body.scrolled .trainName{
+    font-size:clamp(14px, 4vw, 18px);
+  }
+
+  body.scrolled .delay{
+    font-size:clamp(24px, 6vw, 32px);
   }
 }
 
@@ -206,224 +572,191 @@ a{
   ← Powrót
 </a>
 
-<div class="card">
+<div id="heroCard" class="heroCard card">
+<div id="heroCard" class="heroCard card">
 
   <div class="headerRow">
 
     <div class="trainInfo">
 
-      <div
-        id="trainNumber"
-        class="trainNumber">
+      <div id="trainCategory" class="trainCategory">
+        <span id="categoryIcon">🚆</span>
+        <span id="categoryText">Pociąg</span>
       </div>
 
-      <div
-        id="trainName"
-        class="trainName">
-      </div>
+      <div id="trainNumber" class="trainNumber"></div>
 
-      <div
-        id="destination"
-        class="destination">
-      </div>
+      <div id="trainName" class="trainName"></div>
+
+      <div id="destination" class="destination"></div>
 
     </div>
 
-    <div
-      id="delay"
-      class="delay">
-      ...
+    <div class="delayContainer">
+      <div id="delay" class="delay">...</div>
+      <div id="delayIndicator" class="delayIndicator"></div>
     </div>
 
   </div>
 
   <div class="badges">
-
-    <div
-      id="status"
-      class="badge">
+    <div id="status" class="badge"></div>
+    <div id="platform" class="badge">
+      <span>🛤️</span>
+      <span id="platformText"></span>
     </div>
-
-    <div
-      id="platform"
-      class="badge">
+    <div id="track" class="badge">
+      <span>📍</span>
+      <span id="trackText"></span>
     </div>
-
-    <div
-      id="track"
-      class="badge">
-    </div>
-
   </div>
 
 </div>
 
-<div class="card">
+<div id="currentPositionContainer"></div>
 
-  <div class="label">
-    Ostatnia potwierdzona stacja
-  </div>
-
-  <div
-    id="lastConfirmedStation"
-    class="value">
-    -
-  </div>
-
-  <div
-    id="lastConfirmedTime"
-    class="time">
-  </div>
-
-</div>
-
-<div class="card">
-
-  <div class="label">
-    Trasa przejazdu
-  </div>
-
-  <div
-    id="route"
-    class="route">
-    Ładowanie...
-  </div>
-
+<div id="heroCard" class="heroCard card">
+  <div class="routeLabel">Trasa przejazdu</div>
+  <div id="route" class="route">Ładowanie...</div>
 </div>
 
 <script>
 
-const params =
-  new URLSearchParams(location.search);
+const categoryMap = {
+  'IC': { icon: '🚄', color: '#3498db', label: 'Intercity' },
+  'TLK': { icon: '🚆', color: '#e67e22', label: 'TLK' },
+  'Os': { icon: '🚂', color: '#95a5a6', label: 'Osobowy' },
+  'R': { icon: '🚃', color: '#16a085', label: 'Regionalny' },
+  'REG': { icon: '🚂', color: '#27ae60', label: 'Regional' },
+  'EIC': { icon: '🚅', color: '#9b59b6', label: 'Express IC' }
+};
 
-const train =
-  params.get('train') || '';
+const params = new URLSearchParams(location.search);
+const train = params.get('train') || '';
 
-fetch(
-  `/api/train-details?train=${encodeURIComponent(train)}`
-)
+fetch(`/api/train-details?train=${encodeURIComponent(train)}`)
 .then(r => r.json())
 .then(data => {
 
-  document.getElementById(
-    'loading'
-  ).remove();
+  document.getElementById('loading').remove();
 
-  document.getElementById(
-    'trainNumber'
-  ).textContent =
+  const category = (data.category || '').toUpperCase().trim();
+  const categoryInfo = categoryMap[category] || categoryMap['TLK'];
+  
+  const heroCard = document.getElementById('heroCard');
+  const categoryClass = category.toLowerCase().replace(/\s+/g, '');
+  heroCard.classList.add(categoryClass || 'tlk');
+
+  document.getElementById('categoryIcon').textContent = categoryInfo.icon;
+  document.getElementById('categoryText').textContent = categoryInfo.label;
+
+  document.getElementById('trainNumber').textContent = 
     `${data.category || ''} ${data.train || ''}`;
 
-  document.getElementById(
-    'trainName'
-  ).textContent =
+  document.getElementById('trainName').textContent = 
     data.name || '';
 
-  document.getElementById(
-    'destination'
-  ).textContent =
+  document.getElementById('destination').textContent = 
     `→ ${data.destination || '-'}`;
 
-  const delay =
-    Number(data.delay || 0);
+  const delay = Number(data.delay || 0);
+  const delayElement = document.getElementById('delay');
 
-  const delayElement =
-    document.getElementById('delay');
-
-  delayElement.textContent =
-    `${delay > 0 ? '+' : ''}${delay}`;
-
-  delayElement.classList.remove(
-    'good',
-    'medium',
-    'bad'
-  );
+  delayElement.textContent = `${delay > 0 ? '+' : ''}${delay} min`;
+  delayElement.classList.remove('good', 'medium', 'bad');
 
   if (delay <= 5) {
     delayElement.classList.add('good');
-  }
-  else if (delay <= 15) {
+  } else if (delay <= 15) {
     delayElement.classList.add('medium');
-  }
-  else {
+  } else {
     delayElement.classList.add('bad');
   }
 
-  document.getElementById(
-    'status'
-  ).textContent =
-    data.status || '-';
+  document.getElementById('status').textContent = data.status || '-';
+  document.getElementById('platformText').textContent = `Peron ${data.platform || '-'}`;
+  document.getElementById('trackText').textContent = `Tor ${data.track || '-'}`;
 
-  document.getElementById(
-    'platform'
-  ).textContent =
-    `Peron ${data.platform || '-'}`;
+  const currentStation = data.lastConfirmedStation || '-';
+  const currentTime = data.lastConfirmedTime || '-';
 
-  document.getElementById(
-    'track'
-  ).textContent =
-    `Tor ${data.track || '-'}`;
+  const statusText = delay <= 5 ? 'NA CZAS' : (delay <= 15 ? 'OPÓŹNIONY' : 'ZNACZNE OPÓŹNIENIE');
+  const statusEmoji = delay <= 5 ? '✅' : (delay <= 15 ? '⚠️' : '🔴');
 
-  document.getElementById(
-    'lastConfirmedStation'
-  ).textContent =
-    data.lastConfirmedStation || '-';
+  const currentPositionHTML = `
+    <div class="currentPositionCard card">
+      <div class="currentPositionLabel">BIEŻĄCA POZYCJA</div>
+      <div class="currentPositionName">${currentStation}</div>
+      <div class="currentPositionInfo">
+        <div class="currentPositionTime">📍 Potwierdzona o ${currentTime !== '-' ? currentTime : 'brak danych'}</div>
+        <div class="currentPositionStatus">${statusEmoji} ${statusText}</div>
+      </div>
+    </div>
+  `;
 
-  document.getElementById(
-    'lastConfirmedTime'
-  ).textContent =
-    data.lastConfirmedTime || '-';
+  document.getElementById('currentPositionContainer').innerHTML = currentPositionHTML;
 
-  const current =
-    data.lastConfirmedStation;
-
+  const current = data.lastConfirmedStation;
   let currentReached = false;
 
-  document.getElementById(
-    'route'
-  ).innerHTML =
-    (data.route || [])
-    .map(station => {
+  document.getElementById('route').innerHTML = (data.route || [])
+    .map((station, index) => {
 
       let cls = 'routeFuture';
-      let icon = '○';
-
       if (!currentReached) {
         cls = 'routePast';
-        icon = '✓';
       }
-
-      if (
-        station.stationName === current
-      ) {
+      if (station.stationName === current) {
         cls = 'routeCurrent';
-        icon = '▶';
         currentReached = true;
       }
 
-      return `
-        <div class="routeItem ${cls}">
-          <div class="routeName">
-            ${icon}
-            ${station.stationName || station.stationId}
+      const stationName = station.stationName || station.stationId || 'Nieznana stacja';
+      const plannedTime = station.plannedTime || '';
+      const actualTime = station.actualTime || '';
+      const stationDelay = Number(station.delayMinutes || 0);
+      const confirmed = station.confirmed === true;
+
+      let delayClass = 'good';
+      if (stationDelay > 5 && stationDelay <= 15) {
+        delayClass = 'medium';
+      } else if (stationDelay > 15) {
+        delayClass = 'bad';
+      }
+
+      const delayBadgeHTML = stationDelay > 0 
+        ? `<div class="routeDelay ${delayClass}">+${stationDelay} min</div>`
+        : '';
+
+      const metaHTML = `
+        <div class="routeContent">
+          <div class="routeName">${stationName}</div>
+          <div class="routeMeta">
+            ${plannedTime ? `<div class="routeMetaItem"><div class="routeMetaLabel">Plan</div><div class="routeMetaValue">${plannedTime}</div></div>` : ''}
+            ${actualTime ? `<div class="routeMetaItem"><div class="routeMetaLabel">Rzecz</div><div class="routeMetaValue">${actualTime}</div></div>` : ''}
+            ${confirmed ? `<div class="routeMetaItem"><div class="routeMetaLabel">Status</div><div class="routeMetaValue" style="color: #2ecc71;">✓ Potwierdz.</div></div>` : ''}
           </div>
+          ${delayBadgeHTML}
         </div>
       `;
+
+      return `<div class="routeItem ${cls}"><div class="routeItemDot"></div>${metaHTML}</div>`;
     })
     .join('');
 
 })
 .catch(err => {
-
-  document.getElementById(
-    'loading'
-  ).remove();
-
-  alert(
-    'Nie udało się pobrać danych.'
-  );
-
+  document.getElementById('loading').remove();
+  alert('Nie udało się pobrać danych.');
   console.error(err);
+});
+
+window.addEventListener('scroll', () => {
+  if (window.scrollY > 100) {
+    document.body.classList.add('scrolled');
+  } else {
+    document.body.classList.remove('scrolled');
+  }
 });
 
 </script>

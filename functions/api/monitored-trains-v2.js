@@ -39,9 +39,13 @@ export async function onRequestGet(context) {
           Array.isArray(data.departures)
             ? data.departures
             : [];
-      } catch {
-        departuresByStation[station] = [];
-      }
+     
+} catch (err) {
+  departuresByStation[station] = [];
+  departuresByStation[station]._error = "Błąd pobierania danych PLK";
+}
+
+
     })
   );
 
@@ -62,6 +66,10 @@ export async function onRequestGet(context) {
       station: item.station,
       train: item.train,
       found: !!hit,
+reason: hit
+  ? ""
+  : departuresByStation[item.station]?._error ||
+    "Pociągu nie ma w pobranych danych",
       delay: hit?.delay ?? null,
       status: hit?.status ?? "",
       plannedTime: hit?.plannedTime ?? "",
