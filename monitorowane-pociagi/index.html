@@ -339,10 +339,48 @@ ${
       .join('');
 }
 
-loadData();
+const SCROLL_KEY = 'monitorowanePociagiScrollV01';
+
+function saveScroll(){
+  sessionStorage.setItem(
+    SCROLL_KEY,
+    String(window.scrollY)
+  );
+}
+
+function restoreScroll(){
+  const y = Number(
+    sessionStorage.getItem(SCROLL_KEY) || 0
+  );
+
+  if(y > 0){
+    setTimeout(()=>{
+      window.scrollTo({
+        top:y,
+        behavior:'instant'
+      });
+    },100);
+  }
+}
+
+window.addEventListener(
+  'scroll',
+  saveScroll
+);
+
+loadData().then(()=>{
+  restoreScroll();
+});
 
 setInterval(
-  loadData,
+  ()=>{
+    saveScroll();
+
+    loadData().then(()=>{
+      restoreScroll();
+    });
+
+  },
   60000
 );
 
