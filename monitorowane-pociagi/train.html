@@ -693,7 +693,12 @@ fetch(`/api/train-details?train=${encodeURIComponent(train)}`)
     </div>
   `;
 
-  document.getElementById('currentPositionContainer').innerHTML = currentPositionHTML;
+  const currentPositionContainer = document.getElementById('currentPositionContainer');
+
+  if (currentPositionContainer) {
+    currentPositionContainer.replaceChildren();
+    currentPositionContainer.insertAdjacentHTML('beforeend', currentPositionHTML);
+  }
 
   const current = data.lastConfirmedStation;
   let currentReached = false;
