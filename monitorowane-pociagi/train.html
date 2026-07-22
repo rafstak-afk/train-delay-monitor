@@ -690,7 +690,7 @@ fetch(`/api/train-details?train=${encodeURIComponent(train)}`)
   const statusEmoji = delay <= 5 ? '✅' : (delay <= 15 ? '⚠️' : '🔴');
 
   const currentPositionHTML = `
-    <div class="currentPositionCard card">
+    <div class="currentPositionCard">
       <div class="currentPositionLabel">BIEŻĄCA POZYCJA</div>
       <div class="currentPositionName">${currentStation}</div>
       <div class="currentPositionInfo">
