@@ -388,3 +388,46 @@ setInterval(
 
 </body>
 </html>
+
+<!-- DODATKOWE STYLE UX DLA LISTY POCIĄGÓW -->
+<style>
+  /* Pływający przycisk odświeżania w prawym dolnym rogu */
+  .fab-refresh {
+    position: fixed !important;
+    bottom: 24px !important;
+    right: 24px !important;
+    width: 56px !important;
+    height: 56px !important;
+    border-radius: 50% !important;
+    background-color: #0066cc !important;
+    color: #ffffff !important;
+    border: none !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 99999 !important;
+    cursor: pointer !important;
+  }
+
+  /* Zmniejszenie kafelków na liście (kompaktowe) */
+  .train-card, .card, [class*="card"], [class*="train-"] {
+    padding: 8px 12px !important;
+    margin-bottom: 8px !important;
+  }
+
+  /* DUŻE GODZINY CZYTELNE W BIEGU */
+  .time-main, .time, .delay-time, [class*="time"] {
+    font-size: 1.5rem !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.5px !important;
+  }
+</style>
+
+<!-- Przycisk odświeżania pod kciuk -->
+<button class="fab-refresh" onclick="location.reload()" aria-label="Odśwież stronę">
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21.5 2v6h-6M2.5 22v-6h6"></path>
+    <path d="M2 11.5a10 10 0 0 1 18.8-4.3L21.5 8M22 12.5a10 10 0 0 1-18.8 4.2L2.5 16"></path>
+  </svg>
+</button>
