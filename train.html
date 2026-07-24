@@ -70,3 +70,58 @@ document.addEventListener('DOMContentLoaded',()=>{const n=qs('train');if(n){trai
 </script>
 </body>
 </html>
+
+<!-- BEZWZGLĘDNE WYMUSZENIE UKŁADU KOMPAKTOWEGO DLA TRASY -->
+<style>
+  /* 1. Maksymalne spłaszczenie wierszy stacji i kafelków */
+  main div, section div, article, .card, [class*="card"], [class*="stop-"], [class*="station-"] {
+    padding-top: 2px !important;
+    padding-bottom: 2px !important;
+    margin-top: 2px !important;
+    margin-bottom: 3px !important;
+    min-height: 0 !important;
+  }
+
+  /* 2. Wyczyszczenie zbędnych odstępów tekstowych */
+  p, span, h1, h2, h3, h4 {
+    margin: 1px 0 !important;
+    line-height: 1.15 !important;
+  }
+
+  /* 3. Powiększenie i pogrubienie godzin (PLAN i RZECZ) */
+  [class*="time"], [class*="godzin"], [class*="plan"], [class*="rzecz"] {
+    font-size: 1.25rem !important;
+    font-weight: 900 !important;
+  }
+
+  /* 4. Pogrubienie nazw stacji */
+  h2, h3, h4, strong, b, [class*="stacj"], [class*="train"] {
+    font-weight: 800 !important;
+  }
+
+  /* 5. Pływający przycisk odświeżania pod kciuk */
+  .fab-refresh-global {
+    position: fixed !important;
+    bottom: 20px !important;
+    right: 20px !important;
+    width: 52px !important;
+    height: 52px !important;
+    border-radius: 50% !important;
+    background-color: #0066cc !important;
+    color: #ffffff !important;
+    border: none !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 999999 !important;
+    cursor: pointer !important;
+  }
+</style>
+
+<button class="fab-refresh-global" onclick="location.reload()" aria-label="Odśwież">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21.5 2v6h-6M2.5 22v-6h6"></path>
+    <path d="M2 11.5a10 10 0 0 1 18.8-4.3L21.5 8M22 12.5a10 10 0 0 1-18.8 4.2L2.5 16"></path>
+  </svg>
+</button>
