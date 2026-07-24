@@ -1,127 +1,297 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Bieg pociągu</title>
-<style>
-:root{--bg:#101820;--panel:#1c2833;--card:#223244;--border:#34495e;--text:#fff;--muted:#b8c3cf;--green:#5dd39e;--yellow:#ffcc00;--red:#ff4d4d;--violet:#c084fc;--blue:#0b57d0;--grey:#4b5563}
-*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text);padding:22px}.wrap{max-width:980px;margin:0 auto}.top{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}h1{margin:0;font-size:30px}.back{background:var(--grey);color:#fff;text-decoration:none;border-radius:10px;padding:11px 16px;font-weight:800}.panel{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px;margin:14px 0}.search{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}.search input{min-width:240px;border:0;border-radius:10px;padding:13px;font-size:18px}.btn{border:0;border-radius:10px;padding:13px 17px;background:var(--blue);color:#fff;font-weight:800;cursor:pointer}.btn2{display:inline-block;border-radius:10px;padding:12px 16px;background:#198754;color:#fff;text-decoration:none;font-weight:800;margin-top:12px}.btn3{display:inline-block;border:0;border-radius:10px;padding:8px 10px;background:var(--grey);color:#fff;text-decoration:none;font-weight:800;margin-left:8px}.muted{opacity:.76}.err{background:#3b1d1d;border:1px solid #dc3545;color:#ffd6d6;border-radius:10px;padding:12px;margin-top:12px}.ok{color:var(--green);font-weight:800}.warn{color:var(--yellow);font-weight:800}.meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:10px}.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px}.card .label{font-size:14px;color:var(--muted);margin-bottom:4px}.card .value{font-size:22px;font-weight:900}.route{margin-top:12px}.section-title{font-size:24px;margin:0 0 12px}.station{display:grid;grid-template-columns:110px 1fr 170px 110px;gap:12px;padding:12px 4px;border-bottom:1px solid rgba(255,255,255,.12);align-items:center}.station:last-child{border-bottom:0}.station.passed{opacity:.72}.station.current{background:#263b52;border-radius:10px;opacity:1;padding-left:10px;padding-right:10px}.station.next{background:rgba(255,204,0,.08);border-radius:10px;padding-left:10px;padding-right:10px}.badge{font-size:12px;border-radius:999px;padding:4px 9px;background:var(--grey);display:inline-block;font-weight:900;text-align:center}.badge.passed{background:#198754}.badge.current{background:var(--yellow);color:#102027}.badge.next{background:#0dcaf0;color:#102027}.badge.plan{background:#334155;color:#cbd5e1}.station-name{font-size:18px;font-weight:900}.station-id{font-size:12px;color:var(--muted);margin-top:2px}.small{font-size:12px;color:var(--muted)}.timebox{text-align:left}.time-one{font-size:18px;font-weight:900;color:var(--green)}.time-real{font-size:19px;font-weight:900}.time-plan{font-size:13px;color:var(--muted);margin-bottom:2px}.delay-low{color:var(--yellow)}.delay-mid{color:var(--red)}.delay-high{color:var(--violet)}.platform{font-size:17px;font-weight:800}.status-help{font-size:13px;color:var(--muted);line-height:1.35;margin-top:5px}@media(max-width:720px){body{padding:10px}h1{font-size:24px}.top{justify-content:flex-start}.search input,.btn,.back{width:100%;text-align:center}.station{grid-template-columns:82px 1fr;gap:8px}.station .timebox,.station .platform-wrap{grid-column:2}.station-name{font-size:16px}.panel{padding:12px}.card .value{font-size:19px}}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Podgląd Pociągu - Redesign</title>
+  <style>
+    :root {
+      --bg-primary: #0f172a;
+      --card-bg: #1e293b;
+      --card-border: #334155;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent-green: #2ecc71;
+      --accent-orange: #f39c12;
+      --accent-red: #e74c3c;
+      --line-past: #475569;
+      --line-future: #3b82f6;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      padding: 16px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 600px;
+    }
+
+    /* Karta Nagłówkowa */
+    .train-header-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+    }
+
+    .train-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .train-number {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #60a5fa;
+    }
+
+    .status-badge {
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .status-badge.on-time { 
+      background: rgba(46, 204, 113, 0.15); 
+      color: var(--accent-green); 
+      border: 1px solid var(--accent-green); 
+    }
+    
+    .status-badge.delayed { 
+      background: rgba(231, 76, 60, 0.15); 
+      color: var(--accent-red); 
+      border: 1px solid var(--accent-red); 
+    }
+
+    .train-relation {
+      font-size: 1.15rem;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: #fff;
+    }
+
+    .last-update-info {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      border-top: 1px solid var(--card-border);
+      padding-top: 10px;
+      margin-top: 5px;
+    }
+
+    /* Oś Czasu (Timeline) */
+    .timeline-container {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 24px 20px;
+    }
+
+    .timeline-item {
+      display: flex;
+      position: relative;
+      min-height: 70px;
+    }
+
+    .timeline-item:not(:last-child)::before {
+      content: '';
+      position: absolute;
+      left: 15px;
+      top: 30px;
+      bottom: -10px;
+      width: 3px;
+      background: var(--line-past);
+      z-index: 1;
+    }
+
+    .timeline-item.future:not(:last-child)::before {
+      background: var(--card-border);
+    }
+
+    .timeline-marker {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--card-bg);
+      border: 3px solid var(--line-past);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2;
+      font-size: 0.85rem;
+      font-weight: bold;
+      flex-shrink: 0;
+      margin-right: 16px;
+    }
+
+    .timeline-item.passed .timeline-marker {
+      border-color: var(--accent-green);
+      color: var(--accent-green);
+    }
+
+    .timeline-item.current .timeline-marker {
+      border-color: #3b82f6;
+      background: #3b82f6;
+      color: #fff;
+      box-shadow: 0 0 12px rgba(59, 130, 246, 0.8);
+      animation: pulse 2s infinite;
+    }
+
+    .timeline-content {
+      flex-grow: 1;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding-bottom: 20px;
+    }
+
+    .station-name {
+      font-weight: 600;
+      font-size: 1rem;
+    }
+
+    .station-meta {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .time-box {
+      text-align: right;
+    }
+
+    .time-plan {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .time-plan.strike {
+      text-decoration: line-through;
+      margin-right: 4px;
+    }
+
+    .time-real {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--accent-red);
+    }
+
+    .time-normal {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+      70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+    }
+  </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="top"><h1>🚆 Bieg pociągu</h1></div>
-  <div class="search">
-    <input id="trainInput" placeholder="Wpisz numer pociągu..." inputmode="numeric" />
-    <button class="btn" onclick="loadTrain()">Pokaż</button>
-    <a class="back" href="/">← Tablica</a>
+
+  <div class="app-container" id="app">
+    <!-- Zawartość generowana przez JS -->
   </div>
-  <div id="status" class="muted" style="text-align:center;margin:14px 0">Kliknij numer pociągu na tablicy albo wpisz numer ręcznie.</div>
-  <div id="result"></div>
-</div>
-<script>
-function qs(name){return new URLSearchParams(location.search).get(name)||''}
-function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}
-function short(v){if(!v)return'';const m=String(v).match(/(\d{2}:\d{2})/);return m?m[1]:String(v)}
-function setStatus(t){document.getElementById('status').textContent=t}
-function portalUrl(n){return 'https://portalpasazera.pl/';}
-function copyText(text){navigator.clipboard?.writeText(text).then(()=>setStatus('Skopiowano do schowka.')).catch(()=>setStatus('Nie udało się skopiować.'))}
-const STATUS_MAP={P:['Kurs aktywny / w realizacji','Kod PLK: P. Pociąg jest w biegu albo w bieżącej obsłudze systemu. To nie jest komunikat pasażerski, więc tłumaczymy go po ludzku.'],C:['Odwołany','Kod PLK: C. Kurs odwołany.'],X:['Odwołany','Kod PLK: X. Kurs odwołany.'],S:['Rozkładowy','Kod PLK: S. Dane bez potwierdzenia bieżącej realizacji.'],R:['W ruchu','Kod PLK: R. Pociąg w ruchu.'],Z:['Zakończony','Kod PLK: Z. Bieg zakończony.']};
-const STATION_NAMES={
-  '73312':'Katowice','71001':'Tarnowskie Góry','73106':'Chorzów Batory','62653':'Częstochowa','63552':'Lubliniec','69708':'Kalety',
-  '72272':'Katowice Zawodzie','72306':'Sosnowiec Główny','71068':'Miasteczko Śląskie','71050':'Kalety','71043':'Koszęcin'
-};
-function addQueryStationName(map){const sid=qs('stationId'), sname=qs('station');if(sid&&sname)map[String(sid)]=sname.replaceAll('+',' ')}
-function makeStationNameMap(data){const map={...STATION_NAMES};addQueryStationName(map);const sources=[data.stationNames,data.stations,data.dictionaries?.stations,data.route?.stationNames,data.operation?.stationNames];for(const src of sources){if(!src)continue;for(const [k,v] of Object.entries(src)){map[String(k)]=typeof v==='string'?v:(v?.name||v?.stationName||v?.shortName||'')}}const all=[...(data.route?.stations||[]),...(data.operation?.stations||[])];for(const s of all){const id=s.stationId||s.stopId;if(!id)continue;const n=s.stationName||s.name||s.stopName||s.station;if(n)map[String(id)]=n}return map}
-function stationLabel(s,map){const id=String(s.stationId||s.stopId||'');const n=s.stationName||s.name||s.stopName||s.station||map[id];return n?`${n} · ID ${id}`:`stacja ID ${id}`}
-function stationTitle(s,map){const id=String(s.stationId||s.stopId||'');return s.stationName||s.name||s.stopName||s.station||map[id]||`stacja ID ${id}`}
-function getOperationStations(data){return (data.operation&&Array.isArray(data.operation.stations))?data.operation.stations:[]}
-function getRouteStations(data){return (data.route&&Array.isArray(data.route.stations))?data.route.stations:[]}
-function seqOf(s,i){return Number(s.orderNumber||s.plannedSequenceNumber||s.actualSequenceNumber||i+1)}
-function timeToMin(t){const m=short(t).match(/^(\d{2}):(\d{2})$/);return m?Number(m[1])*60+Number(m[2]):null}
-function nowMinWarsaw(){const parts=new Date().toLocaleTimeString('pl-PL',{timeZone:'Europe/Warsaw',hour12:false,hour:'2-digit',minute:'2-digit'}).split(':').map(Number);return parts[0]*60+parts[1]}
-function getPlanned(o,s){return o.plannedDepartureTime||o.plannedArrivalTime||o.plannedDeparture||o.plannedArrival||s.departureTime||s.arrivalTime||''}
-function getActual(o){return o.actualDepartureTime||o.actualArrivalTime||o.actualDeparture||o.actualArrival||''}
-function delayMinutes(planned,actual){const p=timeToMin(planned),a=timeToMin(actual);if(p==null||a==null)return 0;return a-p}
-function delayClass(d){return d>=20?'delay-high':d>10?'delay-mid':d>0?'delay-low':''}
-function renderTime(planned,actual){const p=short(planned),a=short(actual);if(!a||a===p){return `<div class="time-one">${esc(p||a||'')}</div>`}const d=Math.max(0,delayMinutes(p,a));return `<div class="time-plan">plan ${esc(p)}</div><div class="time-real ${delayClass(d)}">real ${esc(a)}</div>`}
-function findLastConfirmed(ops){let last=null;for(const s of ops){if(s.isConfirmed===true)last=s}return last}
-function render(data, trainNo){
-  const result=document.getElementById('result');const route=data.route||{};const op=data.operation||{};const map=makeStationNameMap(data);
-  const routeStations=getRouteStations(data);const ops=getOperationStations(data);const lastConfirmed=findLastConfirmed(ops);
-  const title=[route.commercialCategorySymbol||qs('category'),route.nationalNumber||trainNo,route.name||qs('name')].filter(Boolean).join(' ');
-  const status=STATUS_MAP[op.trainStatus]||[op.trainStatus?`Kod statusu: ${op.trainStatus}`:'brak danych','Nie mamy słownika dla tego kodu z API.'];
-  let lastName='brak potwierdzonej stacji';let lastTime='';if(lastConfirmed){lastName=stationLabel(lastConfirmed,map);lastTime=short(lastConfirmed.actualDeparture||lastConfirmed.actualArrival||lastConfirmed.plannedDeparture||lastConfirmed.plannedArrival)}
-  let html=`<div class="panel"><div class="meta"><div class="card"><div class="label">Pociąg</div><div class="value">${esc(title||('Pociąg '+trainNo))}</div><div class="status-help">Status: ${esc(status[0])}<br>${esc(status[1])}</div></div><div class="card"><div class="label">Ostatnia potwierdzona stacja</div><div class="value">${esc(lastName)}</div><div class="status-help">${esc(lastTime)}</div></div></div><a class="btn2" href="${esc(portalUrl(trainNo))}" target="_blank" rel="noopener">Otwórz Portal Pasażera</a><button class="btn3" onclick="copyText(summaryText)">Kopiuj podsumowanie</button></div>`;
-  window.summaryText=`${title||('Pociąg '+trainNo)}\nStatus: ${status[0]}\nOstatnia potwierdzona stacja: ${lastName}${lastTime?' '+lastTime:''}`;
-  if(!routeStations.length&&!ops.length){html+=`<div class="panel"><div class="err">Nie udało się pobrać przebiegu z lokalnego API. Użyj przycisku Portal Pasażera.</div></div>`;result.innerHTML=html;return}
-  const opBySeq={};ops.forEach((s,i)=>{const seq=seqOf(s,i);opBySeq[seq]=s});const lastSeq=lastConfirmed?seqOf(lastConfirmed,0):null;
-  const all=(routeStations.length?routeStations:ops).map((s,i)=>({s,seq:seqOf(s,i)})).sort((a,b)=>a.seq-b.seq);
-  const nMin=nowMinWarsaw();let firstFutureSeq=null;for(const row of all){const o=opBySeq[row.seq]||ops.find(x=>String(x.stationId)===String(row.s.stationId))||{};const p=getPlanned(o,row.s);const pm=timeToMin(p);if(pm!=null&&pm>=nMin&&firstFutureSeq==null)firstFutureSeq=row.seq}
-  const rows=all.map(({s,seq})=>{const o=opBySeq[seq]||ops.find(x=>String(x.stationId)===String(s.stationId))||{};const planned=getPlanned(o,s);const actual=getActual(o);let state='plan';let badge='plan';let text='plan';
-    if(lastSeq!==null){if(seq<lastSeq){state='passed';badge='passed';text='zaliczona'}else if(seq===lastSeq){state='current';badge='current';text='ostatnia'}else if(seq===lastSeq+1){state='next';badge='next';text='następna'}else{text='przed'}}
-    else if(firstFutureSeq!==null){if(seq===firstFutureSeq){state='next';badge='next';text='następna'}else if(seq<firstFutureSeq){state='plan';badge='plan';text='wg planu minęła'}else{text='przed'}}
-    const platform=[s.departurePlatform||s.arrivalPlatform||'',s.departureTrack||s.arrivalTrack||''].filter(Boolean).join(' / ');
-    return `<div class="station ${state}"><div><span class="badge ${badge}">${esc(text)}</span></div><div><div class="station-name">${esc(stationTitle(s,map))}</div><div class="station-id">ID ${esc(s.stationId||s.stopId||'')} · kolejność: ${esc(seq)}</div></div><div class="timebox">${renderTime(planned,actual)}</div><div class="platform-wrap"><div class="small">peron / tor</div><div class="platform">${esc(platform||'—')}</div></div></div>`}).join('');
-  html+=`<div class="panel"><h2 class="section-title">Trasa stacja po stacji</h2><div class="route">${rows}</div></div>`;result.innerHTML=html}
-async function loadTrain(){const n=document.getElementById('trainInput').value.trim();if(!n){setStatus('Wpisz numer pociągu.');return}setStatus('Pobieram bieg pociągu '+n+'...');document.getElementById('trainInput').blur();const p=new URLSearchParams();const date=qs('date'),scheduleId=qs('scheduleId'),orderId=qs('orderId'),trainOrderId=qs('trainOrderId');if(date)p.set('date',date);if(scheduleId)p.set('scheduleId',scheduleId);if(orderId)p.set('orderId',orderId);if(trainOrderId)p.set('trainOrderId',trainOrderId);try{if(!scheduleId||!orderId||!trainOrderId)throw new Error('Brak identyfikatorów kursu z tablicy. Kliknij numer pociągu na głównej tablicy.');const r=await fetch('/api/debug-train?'+p.toString(),{headers:{Accept:'application/json'}});const data=await r.json();if(!r.ok)throw new Error(data.error||data.details||('HTTP '+r.status));render(data,n);setStatus('Gotowe.')}catch(e){document.getElementById('result').innerHTML=`<div class="panel"><h2>Pociąg ${esc(n)}</h2><div class="err">${esc(e.message)}</div><a class="btn2" href="${esc(portalUrl(n))}" target="_blank" rel="noopener">Otwórz w Portal Pasażera</a></div>`;setStatus('Nie udało się pobrać pełnego biegu lokalnie.')}}
-document.addEventListener('DOMContentLoaded',()=>{const n=qs('train');if(n){trainInput.value=n;loadTrain()}});
-</script>
+
+  <script>
+    // Przykładowe dane do wygenerowania widoku
+    const trainData = {
+      number: "KS 40612",
+      from: "Katowice",
+      to: "Zwardoń",
+      delay: 12,
+      lastConfirmedStation: "Tychy",
+      lastConfirmedTime: "14:05",
+      stations: [
+        { name: "Katowice", planTime: "13:45", realTime: "13:45", delay: 0, passed: true, isCurrent: false, confirmed: true },
+        { name: "Katowice Ligota", planTime: "13:52", realTime: "13:54", delay: 2, passed: true, isCurrent: false, confirmed: true },
+        { name: "Tychy", planTime: "14:02", realTime: "14:14", delay: 12, passed: false, isCurrent: true, confirmed: true, platform: "2" },
+        { name: "Pszczyna", planTime: "14:20", realTime: "14:32", delay: 12, passed: false, isCurrent: false, confirmed: false },
+        { name: "Czechowice-Dziedzice", planTime: "14:31", realTime: "14:43", delay: 12, passed: false, isCurrent: false, confirmed: false },
+        { name: "Bielsko-Biała Główna", planTime: "14:45", realTime: "14:57", delay: 12, passed: false, isCurrent: false, confirmed: false }
+      ]
+    };
+
+    function renderTrainView(data) {
+      const container = document.getElementById('app');
+      const isDelayed = data.delay > 5;
+      const statusClass = isDelayed ? 'delayed' : 'on-time';
+      const statusText = isDelayed ? `+${data.delay} MIN OPÓŹNIENIA` : 'NA CZAS';
+
+      const headerHTML = `
+        <div class="train-header-card">
+          <div class="train-title-row">
+            <span class="train-number">🚆 ${data.number}</span>
+            <span class="status-badge ${statusClass}">${statusText}</span>
+          </div>
+          <div class="train-relation">
+            ${data.from} ➔ ${data.to}
+          </div>
+          <div class="last-update-info">
+            📍 Ostatnio potwierdzony: <strong>${data.lastConfirmedStation}</strong> (godz. ${data.lastConfirmedTime})
+          </div>
+        </div>
+      `;
+
+      const routeHTML = data.stations.map((station, index) => {
+        let markerIcon = index + 1;
+        let itemClass = 'future';
+
+        if (station.passed) {
+          markerIcon = '✓';
+          itemClass = 'passed';
+        } else if (station.isCurrent) {
+          markerIcon = '📍';
+          itemClass = 'current';
+        }
+
+        const hasDelay = station.delay > 0;
+
+        return `
+          <div class="timeline-item ${itemClass}">
+            <div class="timeline-marker">${markerIcon}</div>
+            <div class="timeline-content">
+              <div class="station-info">
+                <div class="station-name">${station.name}</div>
+                <div class="station-meta">
+                  ${station.confirmed ? '<span style="color: var(--accent-green);">✓ Potwierdzona</span>' : 'Oczekuje'}
+                  ${station.platform ? ` • Peron ${station.platform}` : ''}
+                </div>
+              </div>
+              <div class="time-box">
+                ${hasDelay ? `
+                  <span class="time-plan strike">${station.planTime}</span>
+                  <span class="time-real">${station.realTime}</span>
+                ` : `
+                  <span class="time-normal">${station.planTime}</span>
+                `}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      container.innerHTML = headerHTML + `<div class="timeline-container">${routeHTML}</div>`;
+    }
+
+    // Uruchomienie renderowania
+    renderTrainView(trainData);
+  </script>
 </body>
 </html>
-
-<!-- BEZWZGLĘDNE WYMUSZENIE UKŁADU KOMPAKTOWEGO DLA TRASY -->
-<style>
-  /* 1. Maksymalne spłaszczenie wierszy stacji i kafelków */
-  main div, section div, article, .card, [class*="card"], [class*="stop-"], [class*="station-"] {
-    padding-top: 2px !important;
-    padding-bottom: 2px !important;
-    margin-top: 2px !important;
-    margin-bottom: 3px !important;
-    min-height: 0 !important;
-  }
-
-  /* 2. Wyczyszczenie zbędnych odstępów tekstowych */
-  p, span, h1, h2, h3, h4 {
-    margin: 1px 0 !important;
-    line-height: 1.15 !important;
-  }
-
-  /* 3. Powiększenie i pogrubienie godzin (PLAN i RZECZ) */
-  [class*="time"], [class*="godzin"], [class*="plan"], [class*="rzecz"] {
-    font-size: 1.25rem !important;
-    font-weight: 900 !important;
-  }
-
-  /* 4. Pogrubienie nazw stacji */
-  h2, h3, h4, strong, b, [class*="stacj"], [class*="train"] {
-    font-weight: 800 !important;
-  }
-
-  /* 5. Pływający przycisk odświeżania pod kciuk */
-  .fab-refresh-global {
-    position: fixed !important;
-    bottom: 20px !important;
-    right: 20px !important;
-    width: 52px !important;
-    height: 52px !important;
-    border-radius: 50% !important;
-    background-color: #0066cc !important;
-    color: #ffffff !important;
-    border: none !important;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.5) !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    z-index: 999999 !important;
-    cursor: pointer !important;
-  }
-</style>
-
-<button class="fab-refresh-global" onclick="location.reload()" aria-label="Odśwież">
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M21.5 2v6h-6M2.5 22v-6h6"></path>
-    <path d="M2 11.5a10 10 0 0 1 18.8-4.3L21.5 8M22 12.5a10 10 0 0 1-18.8 4.2L2.5 16"></path>
-  </svg>
-</button>
