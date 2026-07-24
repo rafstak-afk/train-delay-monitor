@@ -1,826 +1,297 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-
-<title>Szczegóły pociągu</title>
-
-<style>
-
-*{
-  box-sizing:border-box;
-}
-
-body{
-  margin:0;
-  padding:12px;
-  background:#101820;
-  color:#fff;
-  font-family:Segoe UI,Arial,sans-serif;
-  line-height:1.5;
-}
-
-a{
-  color:#8ec5ff;
-  text-decoration:none;
-  transition:color 0.2s;
-}
-
-a:hover{
-  color:#aed9ff;
-}
-
-.back{
-  display:inline-block;
-  margin-bottom:16px;
-  font-size:16px;
-  padding:8px 0;
-}
-
-.card{
-  background:#1c2833;
-  border:1px solid #34495e;
-  border-radius:16px;
-  padding:clamp(12px, 4vw, 20px);
-  margin-bottom:16px;
-}
-
-/* Hero Card - Sticky */
-.heroCard{
-  position:sticky;
-  top:12px;
-  z-index:100;
-  border:2px solid;
-  border-color:inherit;
-  box-shadow:0 4px 16px rgba(0,0,0,0.4);
-}
-
-.routeCard{
-  position:static;
-  border:1px solid #34495e;
-  box-shadow:none;
-}
-
-.heroCard.ic{
-  background:linear-gradient(135deg, rgba(52, 152, 219, 0.1) 0%, rgba(41, 128, 185, 0.05) 100%);
-  border-color:#3498db;
-}
-
-.heroCard.tlk{
-  background:linear-gradient(135deg, rgba(230, 126, 34, 0.1) 0%, rgba(207, 102, 19, 0.05) 100%);
-  border-color:#e67e22;
-}
-
-.heroCard.os{
-  background:linear-gradient(135deg, rgba(149, 165, 166, 0.1) 0%, rgba(127, 140, 141, 0.05) 100%);
-  border-color:#95a5a6;
-}
-
-.heroCard.r{
-  background:linear-gradient(135deg, rgba(22, 160, 133, 0.1) 0%, rgba(22, 160, 133, 0.05) 100%);
-  border-color:#16a085;
-}
-
-.heroCard.reg{
-  background:linear-gradient(135deg, rgba(39, 174, 96, 0.1) 0%, rgba(39, 174, 96, 0.05) 100%);
-  border-color:#27ae60;
-}
-
-.headerRow{
-  display:flex;
-  justify-content:space-between;
-  align-items:flex-start;
-  gap:clamp(12px, 4vw, 24px);
-}
-
-@media(max-width:640px){
-  .headerRow{
-    flex-direction:column;
-  }
-}
-
-.trainInfo{
-  flex:1;
-  min-width:0;
-}
-
-.trainCategory{
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
-  padding:4px 10px;
-  border-radius:6px;
-  font-size:clamp(11px, 2.5vw, 12px);
-  font-weight:600;
-  text-transform:uppercase;
-  letter-spacing:0.5px;
-  margin-bottom:8px;
-  background:rgba(255,255,255,0.1);
-  border:1px solid;
-  border-color:inherit;
-}
-
-.trainCategory span{
-  font-size:clamp(14px, 3vw, 16px);
-}
-
-.trainNumber{
-  font-size:clamp(12px, 3vw, 14px);
-  font-weight:600;
-  color:#95a5a6;
-  text-transform:uppercase;
-  letter-spacing:0.5px;
-  margin-bottom:4px;
-}
-
-.trainName{
-  font-size:clamp(18px, 5vw, 24px);
-  font-weight:700;
-  line-height:1.3;
-  margin-bottom:6px;
-  word-break:break-word;
-}
-
-.destination{
-  color:#9ecfff;
-  font-size:clamp(13px, 3.5vw, 15px);
-}
-
-.delayContainer{
-  display:flex;
-  align-items:center;
-  gap:8px;
-  flex-shrink:0;
-}
-
-.delayIndicator{
-  width:10px;
-  height:10px;
-  border-radius:50%;
-  flex-shrink:0;
-}
-
-.delay{
-  font-size:clamp(28px, 7vw, 42px);
-  font-weight:700;
-  white-space:nowrap;
-  line-height:1.1;
-}
-
-.delay.good{
-  color:#2ecc71;
-}
-
-.delay.good ~ .delayIndicator{
-  background:#2ecc71;
-  box-shadow:0 0 8px #2ecc71;
-}
-
-.delay.medium{
-  color:#f1c40f;
-}
-
-.delay.medium ~ .delayIndicator{
-  background:#f1c40f;
-  box-shadow:0 0 8px #f1c40f;
-}
-
-.delay.bad{
-  color:#e74c3c;
-}
-
-.delay.bad ~ .delayIndicator{
-  background:#e74c3c;
-  box-shadow:0 0 8px #e74c3c;
-}
-
-.badges{
-  margin-top:12px;
-  display:flex;
-  flex-wrap:wrap;
-  gap:8px;
-}
-
-.badge{
-  background:rgba(22, 34, 45, 0.8);
-  padding:clamp(6px, 2vw, 8px) clamp(10px, 3vw, 12px);
-  border-radius:8px;
-  font-size:clamp(11px, 2.5vw, 13px);
-  border:1px solid #34495e;
-  transition:all 0.2s;
-  display:flex;
-  align-items:center;
-  gap:6px;
-}
-
-.badge:hover{
-  background:#1f2d38;
-  border-color:#3498db;
-}
-
-/* Current Position Card */
-.currentPositionCard{
-  background:#0f3d1f;
-  border:2px solid #2ecc71;
-  padding:clamp(16px, 5vw, 24px);
-  position:relative;
-  overflow:hidden;
-}
-
-.currentPositionCard::before{
-  content:'';
-  position:absolute;
-  top:0;
-  right:0;
-  width:100px;
-  height:100%;
-  background:radial-gradient(circle, rgba(46,204,113,0.1) 0%, transparent 70%);
-  pointer-events:none;
-}
-
-.currentPositionLabel{
-  display:flex;
-  align-items:center;
-  gap:8px;
-  font-size:clamp(11px, 2.5vw, 12px);
-  color:#95a5a6;
-  text-transform:uppercase;
-  letter-spacing:0.5px;
-  margin-bottom:12px;
-  position:relative;
-  z-index:1;
-}
-
-.currentPositionLabel::before{
-  content:'🚆';
-  font-size:clamp(16px, 4vw, 20px);
-  animation:pulse 2s ease-in-out infinite;
-}
-
-.currentPositionName{
-  font-size:clamp(18px, 5vw, 24px);
-  font-weight:700;
-  color:#2ecc71;
-  margin-bottom:8px;
-  word-break:break-word;
-  position:relative;
-  z-index:1;
-}
-
-.currentPositionInfo{
-  display:flex;
-  gap:16px;
-  flex-wrap:wrap;
-  position:relative;
-  z-index:1;
-}
-
-.currentPositionTime{
-  font-size:clamp(12px, 3vw, 14px);
-  color:#9ecfff;
-}
-
-.currentPositionStatus{
-  font-size:clamp(11px, 2.5vw, 12px);
-  padding:2px 8px;
-  background:rgba(46,204,113,0.2);
-  border:1px solid #2ecc71;
-  border-radius:4px;
-  color:#2ecc71;
-  font-weight:600;
-}
-
-@keyframes pulse{
-  0%, 100%{
-    opacity:1;
-  }
-  50%{
-    opacity:0.6;
-  }
-}
-
-/* Labels and Values */
-.label{
-  font-size:clamp(11px, 2.5vw, 12px);
-  color:#95a5a6;
-  text-transform:uppercase;
-  letter-spacing:0.5px;
-  margin-bottom:8px;
-}
-
-.value{
-  font-size:clamp(18px, 4.5vw, 24px);
-  font-weight:700;
-  line-height:1.3;
-}
-
-.time{
-  font-size:clamp(12px, 3vw, 14px);
-  margin-top:4px;
-  color:#9ecfff;
-}
-
-/* Route Timeline */
-.routeLabel{
-  font-size:clamp(11px, 2.5vw, 12px);
-  color:#95a5a6;
-  text-transform:uppercase;
-  letter-spacing:0.5px;
-  margin-bottom:12px;
-}
-
-.route{
-  display:flex;
-  flex-direction:column;
-  gap:0;
-}
-
-.routeItem{
-  position:relative;
-  background:#16222d;
-  border-radius:12px;
-  padding:clamp(12px, 3vw, 16px) clamp(12px, 3vw, 16px) clamp(12px, 3vw, 16px) clamp(40px, 8vw, 50px);
-  margin-bottom:0;
-  transition:all 0.2s;
-  border:1px solid transparent;
-  display:flex;
-  gap:16px;
-  align-items:flex-start;
-}
-
-.routeItem:not(:last-child)::after{
-  content:'';
-  position:absolute;
-  left:clamp(12px, 4vw, 16px);
-  top:100%;
-  width:2px;
-  height:clamp(12px, 3vw, 16px);
-  opacity:0.3;
-}
-
-.routePast{
-  opacity:0.65;
-}
-
-.routePast::after{
-  background:#a0b3c0;
-}
-
-.routeCurrent{
-  background:linear-gradient(90deg, rgba(31, 90, 53, 0.5) 0%, transparent 100%);
-  border-color:#2ecc71;
-  border-width:2px;
-}
-
-.routeCurrent::after{
-  background:#2ecc71;
-  opacity:0.8;
-  height:clamp(16px, 4vw, 20px);
-}
-
-.routeFuture{
-  opacity:1;
-}
-
-.routeFuture::after{
-  border-left:2px dashed #34495e;
-  background:transparent;
-}
-
-.routeItemDot{
-  position:absolute;
-  left:clamp(8px, 3.5vw, 12px);
-  top:clamp(14px, 3vw, 18px);
-  width:clamp(12px, 3.5vw, 16px);
-  height:clamp(12px, 3.5vw, 16px);
-  background:#16222d;
-  border:2px solid #a0b3c0;
-  border-radius:50%;
-  font-size:clamp(11px, 3vw, 13px);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  color:transparent;
-  z-index:2;
-  flex-shrink:0;
-}
-
-.routePast .routeItemDot{
-  border-color:#2ecc71;
-  background:#2ecc71;
-  color:#0f3d1f;
-  font-size:clamp(12px, 3.5vw, 14px);
-}
-
-.routePast .routeItemDot::before{
-  content:'✅';
-}
-
-.routeCurrent .routeItemDot{
-  border-color:#2ecc71;
-  background:#2ecc71;
-  font-size:clamp(14px, 4vw, 16px);
-  color:#1f5a35;
-  animation:bounce 1s ease-in-out infinite;
-}
-
-.routeCurrent .routeItemDot::before{
-  content:'🚆';
-}
-
-.routeFuture .routeItemDot{
-  border-color:#34495e;
-  font-size:clamp(12px, 3.5vw, 14px);
-}
-
-.routeFuture .routeItemDot::before{
-  content:'⏳';
-  color:#f39c12;
-}
-
-@keyframes bounce{
-  0%, 100%{
-    transform:scale(1);
-  }
-  50%{
-    transform:scale(1.15);
-  }
-}
-
-.routeContent{
-  flex:1;
-  min-width:0;
-}
-
-.routeName{
-  font-size:clamp(14px, 3.5vw, 16px);
-  font-weight:600;
-  margin-bottom:6px;
-  word-break:break-word;
-  color:#fff;
-}
-
-.routeMeta{
-  display:grid;
-  grid-template-columns:repeat(auto-fit, minmax(100px, 1fr));
-  gap:12px;
-  margin-top:8px;
-}
-
-.routeMetaItem{
-  display:flex;
-  flex-direction:column;
-  gap:2px;
-}
-
-.routeMetaLabel{
-  font-size:clamp(10px, 2vw, 11px);
-  color:#7f8c8d;
-  text-transform:uppercase;
-  letter-spacing:0.3px;
-}
-
-.routeMetaValue{
-  font-size:clamp(12px, 2.8vw, 14px);
-  font-weight:600;
-  color:#ecf0f1;
-}
-
-.routeDelay{
-  font-size:clamp(11px, 2.5vw, 12px);
-  font-weight:600;
-  padding:2px 6px;
-  border-radius:4px;
-  display:inline-block;
-  margin-top:4px;
-}
-
-.routeDelay.good{
-  background:rgba(46,204,113,0.2);
-  color:#2ecc71;
-}
-
-.routeDelay.medium{
-  background:rgba(241,196,15,0.2);
-  color:#f1c40f;
-}
-
-.routeDelay.bad{
-  background:rgba(231,76,60,0.2);
-  color:#e74c3c;
-}
-
-.loadingOverlay{
-  position:fixed;
-  inset:0;
-  background:#101820;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  z-index:9999;
-}
-
-.spinner{
-  width:60px;
-  height:60px;
-  border:5px solid #34495e;
-  border-top:5px solid #2ecc71;
-  border-radius:50%;
-  animation:spin 1s linear infinite;
-}
-
-.loadingText{
-  margin-top:18px;
-  font-size:clamp(14px, 3.5vw, 16px);
-}
-
-@keyframes spin{
-  from{
-    transform:rotate(0deg);
-  }
-  to{
-    transform:rotate(360deg);
-  }
-}
-
-/* Scroll state */
-@media(max-width:768px){
-  body.scrolled .heroCard{
-    padding:clamp(8px, 3vw, 12px);
-  }
-
-  body.scrolled .trainName{
-    font-size:clamp(14px, 4vw, 18px);
-  }
-
-  body.scrolled .delay{
-    font-size:clamp(24px, 6vw, 32px);
-  }
-}
-
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Podgląd Pociągu - Redesign</title>
+  <style>
+    :root {
+      --bg-primary: #0f172a;
+      --card-bg: #1e293b;
+      --card-border: #334155;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent-green: #2ecc71;
+      --accent-orange: #f39c12;
+      --accent-red: #e74c3c;
+      --line-past: #475569;
+      --line-future: #3b82f6;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      padding: 16px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 600px;
+    }
+
+    /* Karta Nagłówkowa */
+    .train-header-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+    }
+
+    .train-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .train-number {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #60a5fa;
+    }
+
+    .status-badge {
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .status-badge.on-time { 
+      background: rgba(46, 204, 113, 0.15); 
+      color: var(--accent-green); 
+      border: 1px solid var(--accent-green); 
+    }
+    
+    .status-badge.delayed { 
+      background: rgba(231, 76, 60, 0.15); 
+      color: var(--accent-red); 
+      border: 1px solid var(--accent-red); 
+    }
+
+    .train-relation {
+      font-size: 1.15rem;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: #fff;
+    }
+
+    .last-update-info {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      border-top: 1px solid var(--card-border);
+      padding-top: 10px;
+      margin-top: 5px;
+    }
+
+    /* Oś Czasu (Timeline) */
+    .timeline-container {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 24px 20px;
+    }
+
+    .timeline-item {
+      display: flex;
+      position: relative;
+      min-height: 70px;
+    }
+
+    .timeline-item:not(:last-child)::before {
+      content: '';
+      position: absolute;
+      left: 15px;
+      top: 30px;
+      bottom: -10px;
+      width: 3px;
+      background: var(--line-past);
+      z-index: 1;
+    }
+
+    .timeline-item.future:not(:last-child)::before {
+      background: var(--card-border);
+    }
+
+    .timeline-marker {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--card-bg);
+      border: 3px solid var(--line-past);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2;
+      font-size: 0.85rem;
+      font-weight: bold;
+      flex-shrink: 0;
+      margin-right: 16px;
+    }
+
+    .timeline-item.passed .timeline-marker {
+      border-color: var(--accent-green);
+      color: var(--accent-green);
+    }
+
+    .timeline-item.current .timeline-marker {
+      border-color: #3b82f6;
+      background: #3b82f6;
+      color: #fff;
+      box-shadow: 0 0 12px rgba(59, 130, 246, 0.8);
+      animation: pulse 2s infinite;
+    }
+
+    .timeline-content {
+      flex-grow: 1;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding-bottom: 20px;
+    }
+
+    .station-name {
+      font-weight: 600;
+      font-size: 1rem;
+    }
+
+    .station-meta {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .time-box {
+      text-align: right;
+    }
+
+    .time-plan {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .time-plan.strike {
+      text-decoration: line-through;
+      margin-right: 4px;
+    }
+
+    .time-real {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--accent-red);
+    }
+
+    .time-normal {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+      70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+    }
+  </style>
 </head>
-
 <body>
 
-<div id="loading" class="loadingOverlay">
-  <div class="spinner"></div>
-  <div class="loadingText">
-    Pobieranie danych pociągu...
-  </div>
-</div>
-
-<a
-  class="back"
-  href="/monitorowane-pociagi/">
-  ← Powrót
-</a>
-
-<div id="heroCard" class="heroCard card">
-
-  <div class="headerRow">
-
-    <div class="trainInfo">
-
-      <div id="trainCategory" class="trainCategory">
-        <span id="categoryIcon">🚆</span>
-        <span id="categoryText">Pociąg</span>
-      </div>
-
-      <div id="trainNumber" class="trainNumber"></div>
-
-      <div id="trainName" class="trainName"></div>
-
-        <div id="currentPositionContainer"></div>
-
-      <div id="destination" class="destination"></div>
-
-    </div>
-
-    <div class="delayContainer">
-      <div id="delay" class="delay">...</div>
-      <div id="delayIndicator" class="delayIndicator"></div>
-    </div>
-
+  <div class="app-container" id="app">
+    <!-- Zawartość generowana przez JS -->
   </div>
 
-  <div class="badges">
-    <div id="status" class="badge"></div>
-    <div id="platform" class="badge">
-      <span>🛤️</span>
-      <span id="platformText"></span>
-    </div>
-    <div id="track" class="badge">
-      <span>📍</span>
-      <span id="trackText"></span>
-    </div>
-  </div>
+  <script>
+    // Przykładowe dane do wygenerowania widoku
+    const trainData = {
+      number: "KS 40612",
+      from: "Katowice",
+      to: "Zwardoń",
+      delay: 12,
+      lastConfirmedStation: "Tychy",
+      lastConfirmedTime: "14:05",
+      stations: [
+        { name: "Katowice", planTime: "13:45", realTime: "13:45", delay: 0, passed: true, isCurrent: false, confirmed: true },
+        { name: "Katowice Ligota", planTime: "13:52", realTime: "13:54", delay: 2, passed: true, isCurrent: false, confirmed: true },
+        { name: "Tychy", planTime: "14:02", realTime: "14:14", delay: 12, passed: false, isCurrent: true, confirmed: true, platform: "2" },
+        { name: "Pszczyna", planTime: "14:20", realTime: "14:32", delay: 12, passed: false, isCurrent: false, confirmed: false },
+        { name: "Czechowice-Dziedzice", planTime: "14:31", realTime: "14:43", delay: 12, passed: false, isCurrent: false, confirmed: false },
+        { name: "Bielsko-Biała Główna", planTime: "14:45", realTime: "14:57", delay: 12, passed: false, isCurrent: false, confirmed: false }
+      ]
+    };
 
-</div>
+    function renderTrainView(data) {
+      const container = document.getElementById('app');
+      const isDelayed = data.delay > 5;
+      const statusClass = isDelayed ? 'delayed' : 'on-time';
+      const statusText = isDelayed ? `+${data.delay} MIN OPÓŹNIENIA` : 'NA CZAS';
 
-
-<div id="routeCard" class="routeCard">
-  <div class="routeLabel">Trasa przejazdu</div>
-  <div id="route" class="route">Ładowanie...</div>
-</div>
-
-<script>
-
-const categoryMap = {
-  'IC': { icon: '🚄', color: '#3498db', label: 'Intercity' },
-  'TLK': { icon: '🚆', color: '#e67e22', label: 'TLK' },
-  'Os': { icon: '🚂', color: '#95a5a6', label: 'Osobowy' },
-  'R': { icon: '🚃', color: '#16a085', label: 'Regionalny' },
-  'REG': { icon: '🚂', color: '#27ae60', label: 'Regional' },
-  'EIC': { icon: '🚅', color: '#9b59b6', label: 'Express IC' }
-};
-
-const params = new URLSearchParams(location.search);
-const train = params.get('train') || '';
-
-fetch(`/api/train-details?train=${encodeURIComponent(train)}`)
-.then(r => r.json())
-.then(data => {
-
-  document.getElementById('loading').remove();
-
-  const category = (data.category || '').toUpperCase().trim();
-  const categoryInfo = categoryMap[category] || categoryMap['TLK'];
-  
-  const heroCard = document.getElementById('heroCard');
-  const categoryClass = category.toLowerCase().replace(/\s+/g, '');
-  heroCard.classList.add(categoryClass || 'tlk');
-
-  document.getElementById('categoryIcon').textContent = categoryInfo.icon;
-  document.getElementById('categoryText').textContent = categoryInfo.label;
-
-  document.getElementById('trainNumber').textContent = 
-    `${data.category || ''} ${data.train || ''}`;
-
-  document.getElementById('trainName').textContent = 
-    data.name || '';
-
-  document.getElementById('destination').textContent = 
-    `→ ${data.destination || '-'}`;
-
-  const delay = Number(data.delay || 0);
-  const delayElement = document.getElementById('delay');
-
-  delayElement.textContent = `${delay > 0 ? '+' : ''}${delay} min`;
-  delayElement.classList.remove('good', 'medium', 'bad');
-
-  if (delay <= 5) {
-    delayElement.classList.add('good');
-  } else if (delay <= 15) {
-    delayElement.classList.add('medium');
-  } else {
-    delayElement.classList.add('bad');
-  }
-
-  document.getElementById('status').textContent = data.status || '-';
-  document.getElementById('platformText').textContent = `Peron ${data.platform || '-'}`;
-  document.getElementById('trackText').textContent = `Tor ${data.track || '-'}`;
-
-  const currentStation = data.lastConfirmedStation || '-';
-  const currentTime = data.lastConfirmedTime || '-';
-
-  const statusText = delay <= 5 ? 'NA CZAS' : (delay <= 15 ? 'OPÓŹNIONY' : 'ZNACZNE OPÓŹNIENIE');
-  const statusEmoji = delay <= 5 ? '✅' : (delay <= 15 ? '⚠️' : '🔴');
-
-  const currentPositionHTML = `
-    <div class="currentPositionCard">
-      <div class="currentPositionLabel">BIEŻĄCA POZYCJA</div>
-      <div class="currentPositionName">${currentStation}</div>
-      <div class="currentPositionInfo">
-        <div class="currentPositionTime">📍 Potwierdzona o ${currentTime !== '-' ? currentTime : 'brak danych'}</div>
-        <div class="currentPositionStatus">${statusEmoji} ${statusText}</div>
-      </div>
-    </div>
-  `;
-
-  const currentPositionContainer = document.getElementById('currentPositionContainer');
-
-  if (currentPositionContainer) {
-    currentPositionContainer.replaceChildren();
-    currentPositionContainer.insertAdjacentHTML('beforeend', currentPositionHTML);
-  }
-
-  const current = data.lastConfirmedStation;
-  let currentReached = false;
-
-  document.getElementById('route').innerHTML = (data.route || [])
-    .map((station, index) => {
-
-      let cls = 'routeFuture';
-      if (!currentReached) {
-        cls = 'routePast';
-      }
-      if (station.stationName === current) {
-        cls = 'routeCurrent';
-        currentReached = true;
-      }
-
-      const stationName = station.stationName || station.stationId || 'Nieznana stacja';
-      const plannedTime = station.plannedTime || '';
-      const actualTime = station.actualTime || '';
-      const stationDelay = Number(station.delayMinutes || 0);
-      const confirmed = station.confirmed === true;
-
-      let delayClass = 'good';
-      if (stationDelay > 5 && stationDelay <= 15) {
-        delayClass = 'medium';
-      } else if (stationDelay > 15) {
-        delayClass = 'bad';
-      }
-
-      const delayBadgeHTML = stationDelay > 0 
-        ? `<div class="routeDelay ${delayClass}">+${stationDelay} min</div>`
-        : '';
-
-      const metaHTML = `
-        <div class="routeContent">
-          <div class="routeName">${stationName}</div>
-          <div class="routeMeta">
-            ${plannedTime ? `<div class="routeMetaItem"><div class="routeMetaLabel">Plan</div><div class="routeMetaValue">${plannedTime}</div></div>` : ''}
-            ${actualTime ? `<div class="routeMetaItem"><div class="routeMetaLabel">Rzecz</div><div class="routeMetaValue">${actualTime}</div></div>` : ''}
-            ${confirmed ? `<div class="routeMetaItem"><div class="routeMetaLabel">Status</div><div class="routeMetaValue" style="color: #2ecc71;">✓ Potwierdz.</div></div>` : ''}
+      const headerHTML = `
+        <div class="train-header-card">
+          <div class="train-title-row">
+            <span class="train-number">🚆 ${data.number}</span>
+            <span class="status-badge ${statusClass}">${statusText}</span>
           </div>
-          ${delayBadgeHTML}
+          <div class="train-relation">
+            ${data.from} ➔ ${data.to}
+          </div>
+          <div class="last-update-info">
+            📍 Ostatnio potwierdzony: <strong>${data.lastConfirmedStation}</strong> (godz. ${data.lastConfirmedTime})
+          </div>
         </div>
       `;
 
-      return `<div class="routeItem ${cls}"><div class="routeItemDot"></div>${metaHTML}</div>`;
-    })
-    .join('');
+      const routeHTML = data.stations.map((station, index) => {
+        let markerIcon = index + 1;
+        let itemClass = 'future';
 
-})
-.catch(err => {
-  document.getElementById('loading').remove();
-  alert('Nie udało się pobrać danych.');
-  console.error(err);
-});
+        if (station.passed) {
+          markerIcon = '✓';
+          itemClass = 'passed';
+        } else if (station.isCurrent) {
+          markerIcon = '📍';
+          itemClass = 'current';
+        }
 
-window.addEventListener('scroll', () => {
-  if (window.scrollY > 100) {
-    document.body.classList.add('scrolled');
-  } else {
-    document.body.classList.remove('scrolled');
-  }
-});
+        const hasDelay = station.delay > 0;
 
-</script>
+        return `
+          <div class="timeline-item ${itemClass}">
+            <div class="timeline-marker">${markerIcon}</div>
+            <div class="timeline-content">
+              <div class="station-info">
+                <div class="station-name">${station.name}</div>
+                <div class="station-meta">
+                  ${station.confirmed ? '<span style="color: var(--accent-green);">✓ Potwierdzona</span>' : 'Oczekuje'}
+                  ${station.platform ? ` • Peron ${station.platform}` : ''}
+                </div>
+              </div>
+              <div class="time-box">
+                ${hasDelay ? `
+                  <span class="time-plan strike">${station.planTime}</span>
+                  <span class="time-real">${station.realTime}</span>
+                ` : `
+                  <span class="time-normal">${station.planTime}</span>
+                `}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
 
+      container.innerHTML = headerHTML + `<div class="timeline-container">${routeHTML}</div>`;
+    }
+
+    // Uruchomienie renderowania
+    renderTrainView(trainData);
+  </script>
 </body>
 </html>
-
-<!-- DODATKOWE STYLE UX (DOPISANE NA KOŃCU) -->
-<style>
-  /* Pływający przycisk odświeżania pod kciuk */
-  .fab-refresh {
-    position: fixed !important;
-    bottom: 24px !important;
-    right: 24px !important;
-    width: 56px !important;
-    height: 56px !important;
-    border-radius: 50% !important;
-    background-color: #0066cc !important;
-    color: #ffffff !important;
-    border: none !important;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    z-index: 99999 !important;
-    cursor: pointer !important;
-  }
-
-  /* Zmniejszenie kafelków do max 3 linii i małego paddingu */
-  .train-card, .card, [class*="train-"] {
-    padding: 8px 12px !important;
-    margin-bottom: 8px !important;
-    max-height: none !important;
-  }
-
-  /* GIGANTYCZNE GODZINY CZYTELNE W BIEGU */
-  .time-main, .time, .delay-time, [class*="time"] {
-    font-size: 1.5rem !important;
-    font-weight: 800 !important;
-    letter-spacing: -0.5px !important;
-  }
-
-  .time-old, .scheduled-time {
-    font-size: 0.85rem !important;
-    text-decoration: line-through !important;
-    opacity: 0.7 !important;
-  }
-</style>
-
-<!-- Przycisk odświeżania na dole strony -->
-<button class="fab-refresh" onclick="location.reload()" aria-label="Odśwież stronę">
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M21.5 2v6h-6M2.5 22v-6h6"></path>
-    <path d="M2 11.5a10 10 0 0 1 18.8-4.3L21.5 8M22 12.5a10 10 0 0 1-18.8 4.2L2.5 16"></path>
-  </svg>
-</button>
