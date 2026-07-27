@@ -3,352 +3,208 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-
-<title>Moje pociągi</title>
-
+<title>Monitor pociągów</title>
 <style>
 * { box-sizing: border-box; }
 body {
   margin: 0 auto;
-  padding: 8px;
-  max-width: 700px;
-  background: #101820;
+  padding: 4px;
+  width: 100%;
+  max-width: 100%;
+  background: #0b131e;
   color: white;
-  font-family: Segoe UI, Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
 }
 
-h1 { margin: 0 0 8px 0; font-size: 18px; font-weight: 700; }
-.info { margin-bottom: 8px; opacity: .8; font-size: 11px; }
-.alerts { margin-bottom: 8px; }
-.alertPanel { background: #341616; border: 1px solid #e74c3c; border-radius: 8px; padding: 8px; }
-.alertTitle { font-weight: 700; margin-bottom: 4px; font-size: 13px; }
-.alertItem { padding: 2px 0; font-size: 12px; }
-.alertOk { background: #14301f; border: 1px solid #2ecc71; border-radius: 8px; padding: 6px 10px; font-size: 12px; }
+h1 { margin: 4px 6px 6px 6px; font-size: 16px; font-weight: 700; }
+.info { margin: 0 6px 6px 6px; opacity: .8; font-size: 10px; }
+.alerts { margin: 0 4px 6px 4px; }
+.alertPanel { background: #341616; border: 1px solid #e74c3c; border-radius: 6px; padding: 4px 8px; }
+.alertTitle { font-weight: 700; font-size: 11px; }
+.alertItem { font-size: 10px; }
+.alertOk { background: #14301f; border: 1px solid #2ecc71; border-radius: 6px; padding: 4px 8px; font-size: 11px; }
 
-.list { display: flex; flex-direction: column; gap: 6px; }
+.list { display: flex; flex-direction: column; gap: 4px; width: 100%; }
 
-/* DENSE CARD LAYOUT */
+/* DWUSZPAL T TABLICY PLK / DOCELOWEJ APKI Z 3 CZASAMI */
 .card {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 85px 1fr auto;
   align-items: center;
+  gap: 8px;
   text-decoration: none;
   color: white;
-  background: #1c2833;
-  border: 1px solid #34495e;
-  border-radius: 8px;
-  padding: 8px 10px;
+  background: #111d2c;
+  border: 1px solid #1e2d40;
+  border-radius: 6px;
+  padding: 6px 8px;
+  width: 100%;
 }
-.card:active { transform: scale(.99); }
+.card:active { background: #1a2a3f; }
 .ok { border-left: 4px solid #2ecc71; }
 .missing { border-left: 4px solid #e74c3c; }
 
-.left { flex: 1; min-width: 0; padding-right: 8px; }
-.right { text-align: right; flex-shrink: 0; }
+/* KOLUMNA 1: 3 CZASY (PLAN, RZECZYWISTY, OPÓŹNIENIE) */
+.col-time {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+}
+.time-planned { font-size: 10px; color: #94a3b8; line-height: 1; text-decoration: line-through; }
+.time-planned.no-delay { text-decoration: none; display: none; }
+.time-real { font-size: 15px; font-weight: 800; line-height: 1.1; color: #38bdf8; }
+.delay-badge {
+  display: inline-block;
+  margin-top: 2px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+.delay-badge.green { background: #14532d; color: #4ade80; }
+.delay-badge.yellow { background: #713f12; color: #facc15; }
+.delay-badge.orange { background: #7c2d12; color: #fb923c; }
+.delay-badge.red { background: #7f1d1d; color: #f87171; }
 
-.station { color: #8ec5ff; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
-.train-row { display: flex; align-items: baseline; gap: 6px; flex-wrap: nowrap; overflow: hidden; }
-.train { font-size: 18px; font-weight: 700; line-height: 1.1; white-space: nowrap; }
-.name { font-size: 13px; color: #e2e8f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.destination { color: #9ecfff; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+/* KOLUMNA 2: POCIĄG, STACJA DOCELOWA I PRZEZ */
+.col-main { min-width: 0; overflow: hidden; }
+.train-header { display: flex; align-items: center; gap: 4px; white-space: nowrap; overflow: hidden; }
+.train-type { background: #0284c7; color: white; font-size: 9px; font-weight: 800; padding: 0 3px; border-radius: 2px; }
+.train-num { font-size: 12px; font-weight: 700; color: #e2e8f0; }
+.train-name { font-size: 11px; color: #94a3b8; overflow: hidden; text-overflow: ellipsis; }
 
-.time { font-size: 13px; font-weight: 600; color: #d5dbe0; }
-.delay { font-size: 20px; font-weight: 700; white-space: nowrap; line-height: 1; margin-top: 2px; }
+.destination { font-size: 13px; font-weight: 800; color: #ffffff; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-.green { color: #2ecc71; }
-.yellow { color: #f1c40f; }
-.orange { color: #f39c12; }
-.red { color: #e74c3c; }
+/* STACJE PRZEZ */
+.via-list {
+  font-size: 10px;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
+  line-height: 1.2;
+}
 
-.meta { display: flex; gap: 4px; margin-top: 4px; }
-.badge { background: #16222d; padding: 1px 5px; border-radius: 4px; font-size: 10px; color: #a0aec0; }
+/* KOLUMNA 3: PERON / TOR */
+.col-right {
+  text-align: right;
+  font-size: 10px;
+  color: #cbd5e1;
+  white-space: nowrap;
+}
+.platform-track { font-size: 11px; font-weight: 700; color: #f1f5f9; }
 </style>
-
 </head>
 
 <body>
 
 <h1>🚆 Monitor pociągów</h1>
-
-<div id="info" class="info">
-Ładowanie...
-</div>
-
+<div id="info" class="info">Ładowanie...</div>
 <div id="alerts" class="alerts"></div>
-
 <div id="list" class="list"></div>
 
 <script>
+function calculateRealTime(timeStr, delayMin) {
+  if (!timeStr || timeStr === '-') return '-';
+  const parts = timeStr.split(':');
+  if (parts.length < 2) return timeStr;
+  
+  let date = new Date();
+  date.setHours(parseInt(parts[0], 10));
+  date.setMinutes(parseInt(parts[1], 10) + parseInt(delayMin || 0, 10));
+  
+  const h = String(date.getHours()).padStart(2, '0');
+  const m = String(date.getMinutes()).padStart(2, '0');
+  return `${h}:${m}`;
+}
 
 async function loadData() {
+  let data = { trains: [], foundCount: 0, trainCount: 0 };
+  
+  try {
+    const response = await fetch('/api/monitored-trains-v2');
+    data = await response.json();
+  } catch (e) {
+    console.warn("Błąd API", e);
+  }
 
-  const response =
-    await fetch('/api/monitored-trains-v2');
+  document.getElementById('info').innerHTML = `
+    Znaleziono: <b>${data.foundCount}</b> z <b>${data.trainCount}</b> | Odświeżono: ${new Date(data.generatedAt || Date.now()).toLocaleTimeString('pl-PL')}
+  `;
 
-  const data =
-    await response.json();
+  const alarms = data.trains.filter(t => Number(t.delay || 0) >= 15);
 
-  document.getElementById('info').innerHTML =
-    `
-    Znaleziono:
-    <b>${data.foundCount}</b>
-    z
-    <b>${data.trainCount}</b>
-    monitorowanych pociągów
-    <br>
-    Aktualizacja:
-    ${new Date(data.generatedAt).toLocaleString('pl-PL')}
-    `;
+  document.getElementById('alerts').innerHTML = alarms.length ? `
+    <div class="alertPanel">
+      <div class="alertTitle">🚨 Alarmy (${alarms.length})</div>
+      ${alarms.map(t => `<div class="alertItem">${t.train} ${t.name || ''} (+${t.delay}m)</div>`).join('')}
+    </div>
+  ` : `
+    <div class="alertOk">✅ Brak alarmów</div>
+  `;
 
-  const alarms =
-    data.trains.filter(
-      t => Number(t.delay || 0) >= 15
-    );
+  document.getElementById('list').innerHTML = data.trains
+    .sort((a,b) => Number(b.delay || 0) - Number(a.delay || 0))
+    .map(t => {
+      const cls = t.found ? 'ok' : 'missing';
+      const delay = Number(t.delay || 0);
+      let delayClass = 'green';
+      let delayText = '0 min';
+      
+      if (delay > 30) { delayClass = 'red'; delayText = `~${delay}'`; }
+      else if (delay > 15) { delayClass = 'orange'; delayText = `~${delay}'`; }
+      else if (delay > 5) { delayClass = 'yellow'; delayText = `~${delay}'`; }
+      else if (delay > 0) { delayClass = 'yellow'; delayText = `+${delay}'`; }
 
-  document.getElementById('alerts').innerHTML =
-    alarms.length
-    ? `
-      <div class="alertPanel">
+      const plannedTime = t.time || t.plannedTime || '-';
+      const realTime = t.found && delay > 0 ? calculateRealTime(plannedTime, delay) : plannedTime;
 
-        <div class="alertTitle">
-          🚨 Alarmy
+      const queryParams = new URLSearchParams({
+        train: t.train || '',
+        station: t.station || '',
+        stationId: t.stationId || '73312',
+        scheduleId: t.scheduleId || '2026',
+        trainOrderId: t.trainOrderId || ''
+      }).toString();
+
+      return `
+      <a class="card ${cls}" href="/monitorowane-pociagi/train.html?${queryParams}">
+        <!-- KOLUMNA 1: TRZY CZASY -->
+        <div class="col-time">
+          ${delay > 0 ? `<div class="time-planned">plan: ${plannedTime}</div>` : ''}
+          <div class="time-real">${realTime}</div>
+          <div class="delay-badge ${delayClass}">${delay > 0 ? delayText : 'NA CZAS'}</div>
         </div>
 
-        ${alarms.map(t => `
-          <div class="alertItem">
-            ${t.train}
-            ${t.name || ''}
-            (+${t.delay} min)
+        <!-- KOLUMNA 2: POCIĄG, CEL I PRZEZ -->
+        <div class="col-main">
+          <div class="train-header">
+            <span class="train-type">${t.category || 'IC'}</span>
+            <span class="train-num">${t.train}</span>
+            <span class="train-name">${t.name || ''}</span>
           </div>
-        `).join('')}
+          <div class="destination">${t.destination || '-'}</div>
+          ${t.via ? `<div class="via-list">przez: ${t.via}</div>` : ''}
+        </div>
 
-      </div>
-    `
-    : `
-      <div class="alertOk">
-        ✅ Brak alarmów
-      </div>
-    `;
-
-  document.getElementById('list').innerHTML =
-    data.trains
-      .sort((a,b)=>
-        Number(b.delay || 0) -
-        Number(a.delay || 0)
-      )
-      .map(t => {
-
-        const cls =
-          t.found ? 'ok' : 'missing';
-
-        const delay =
-          Number(t.delay || 0);
-
-        let delayClass = 'green';
-
-        if (delay > 30) {
-          delayClass = 'red';
-        }
-        else if (delay > 15) {
-          delayClass = 'orange';
-        }
-        else if (delay > 5) {
-          delayClass = 'yellow';
-        }
-
-        return `
-        <a
-          class="card ${cls}"
-          href="/monitorowane-pociagi/train.html?train=${encodeURIComponent(t.train)}">
-
-          <div class="top">
-
-            <div class="left">
-
-              <div class="station">
-                ${t.station}
-              </div>
-
-              <div class="train">
-                ${t.train}
-              </div>
-
-              <div class="name">
-                ${t.name || '-'}
-              </div>
-
-              <div class="destination">
-                → ${t.destination || ''}
-              </div>
-
-              <div class="time">
-  🕒 ${t.time || t.plannedTime || '-'}
-</div>
-
-${
-  t.via
-    ? `
-      <div class="time">
-        przez: ${t.via}
-      </div>
-    `
-    : ''
+        <!-- KOLUMNA 3: PERON / TOR -->
+        <div class="col-right">
+          ${t.found ? `
+            <div class="platform-track">p. ${t.platform || '-'} · t. ${t.track || '-'}</div>
+          ` : 'brak danych'}
+        </div>
+      </a>
+      `;
+    }).join('');
 }
 
-            </div>
-
-            <div class="delay ${delayClass}">
-              ${t.found
-                ? `+${delay}`
-                : '---'}
-            </div>
-
-          </div>
-
-          ${
-            t.found
-            ? `
-              <div class="meta">
-
-                <span class="badge">
-                  P${t.platform || '-'}
-                </span>
-
-                <span class="badge">
-                  T${t.track || '-'}
-                </span>
-
-              </div>
-            `
-: `
-  <div class="meta">
-    ${t.reason}
-  </div>
-`
-
-
-          }
-
-        </a>
-        `;
-      })
-      .join('');
-}
-
-const SCROLL_KEY = 'monitorowanePociagiScrollV01';
-
-function saveScroll(){
-  sessionStorage.setItem(
-    SCROLL_KEY,
-    String(window.scrollY)
-  );
-}
-
-function restoreScroll(){
-  const y = Number(
-    sessionStorage.getItem(SCROLL_KEY) || 0
-  );
-
-  if(y > 0){
-    setTimeout(()=>{
-      window.scrollTo({
-        top:y,
-        behavior:'instant'
-      });
-    },100);
-  }
-}
-
-window.addEventListener(
-  'scroll',
-  saveScroll
-);
-
-loadData().then(()=>{
-  restoreScroll();
-});
-
-setInterval(
-  ()=>{
-    saveScroll();
-
-    loadData().then(()=>{
-      restoreScroll();
-    });
-
-  },
-  60000
-);
-
+loadData();
+setInterval(loadData, 60000);
 </script>
 
 </body>
 </html>
-
-<!-- DODATKOWE STYLE UX DLA LISTY POCIĄGÓW -->
-<style>
-* { box-sizing: border-box; }
-body {
-  margin: 0 auto;
-  padding: 8px;
-  max-width: 700px;
-  background: #101820;
-  color: white;
-  font-family: Segoe UI, Arial, sans-serif;
-}
-
-h1 { margin: 0 0 8px 0; font-size: 18px; font-weight: 700; }
-.info { margin-bottom: 8px; opacity: .8; font-size: 11px; }
-.alerts { margin-bottom: 8px; }
-.alertPanel { background: #341616; border: 1px solid #e74c3c; border-radius: 8px; padding: 8px; }
-.alertTitle { font-weight: 700; margin-bottom: 4px; font-size: 13px; }
-.alertItem { padding: 2px 0; font-size: 12px; }
-.alertOk { background: #14301f; border: 1px solid #2ecc71; border-radius: 8px; padding: 6px 10px; font-size: 12px; }
-
-.list { display: flex; flex-direction: column; gap: 6px; }
-
-/* DENSE CARD LAYOUT */
-.card {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  text-decoration: none;
-  color: white;
-  background: #1c2833;
-  border: 1px solid #34495e;
-  border-radius: 8px;
-  padding: 8px 10px;
-}
-.card:active { transform: scale(.99); }
-.ok { border-left: 4px solid #2ecc71; }
-.missing { border-left: 4px solid #e74c3c; }
-
-.left { flex: 1; min-width: 0; padding-right: 8px; }
-.right { text-align: right; flex-shrink: 0; }
-
-.station { color: #8ec5ff; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
-.train-row { display: flex; align-items: baseline; gap: 6px; flex-wrap: nowrap; overflow: hidden; }
-.train { font-size: 18px; font-weight: 700; line-height: 1.1; white-space: nowrap; }
-.name { font-size: 13px; color: #e2e8f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.destination { color: #9ecfff; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
-
-.time { font-size: 13px; font-weight: 600; color: #d5dbe0; }
-.delay { font-size: 20px; font-weight: 700; white-space: nowrap; line-height: 1; margin-top: 2px; }
-
-.green { color: #2ecc71; }
-.yellow { color: #f1c40f; }
-.orange { color: #f39c12; }
-.red { color: #e74c3c; }
-
-.meta { display: flex; gap: 4px; margin-top: 4px; }
-.badge { background: #16222d; padding: 1px 5px; border-radius: 4px; font-size: 10px; color: #a0aec0; }
-</style>
-
-
-<!-- Przycisk odświeżania pod kciuk -->
-<button class="fab-refresh" onclick="location.reload()" aria-label="Odśwież stronę">
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M21.5 2v6h-6M2.5 22v-6h6"></path>
-    <path d="M2 11.5a10 10 0 0 1 18.8-4.3L21.5 8M22 12.5a10 10 0 0 1-18.8 4.2L2.5 16"></path>
-  </svg>
-</button>
