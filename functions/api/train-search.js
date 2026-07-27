@@ -34,6 +34,7 @@ export async function onRequestGet(context) {
     return new Response(
       JSON.stringify({
         found: true,
+        route: route,
         trainData: {
           train: trainNum,
           station: stMatch.name || stMatch.stationName || stationName,
@@ -43,7 +44,7 @@ export async function onRequestGet(context) {
           platform: stMatch.platform || "-",
           track: stMatch.track || "-",
           destination: lastStation?.name || lastStation?.stationName || "",
-          category: data.category || "IC",
+          category: data.category || "TLK",
           trainOrderId: data.trainOrderId || data.id || null
         }
       }),
