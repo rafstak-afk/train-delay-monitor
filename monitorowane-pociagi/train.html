@@ -14,7 +14,6 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
 }
 
-/* KOMPAKTOWY, PRZYKLEJONY HEADER */
 .sticky-header {
   position: sticky;
   top: 0;
@@ -50,7 +49,6 @@ body {
 .delay-box.yellow { color: #facc15; }
 .delay-box.green { color: #4ade80; }
 
-/* KONTENER TRASY */
 .route-container { padding: 8px 6px; }
 .route-title { font-size: 11px; font-weight: 800; color: #6b7280; text-transform: uppercase; margin: 4px 0 8px 4px; letter-spacing: 0.5px; }
 
@@ -76,7 +74,6 @@ body {
 .st-name { font-weight: 800; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 14px; }
 .st-platform { font-size: 11px; color: #9ca3af; margin-top: 2px; font-weight: 700; }
 
-/* POWIĘKSZONE GODZINY (WYSOKI KONTRAST DLA BIEGU W SŁOŃCU) */
 .col-st-times { text-align: right; white-space: nowrap; }
 .time-p { font-size: 11px; color: #6b7280; text-decoration: line-through; line-height: 1; font-weight: 600; }
 .time-p.no-strike { text-decoration: none; color: #9ca3af; }
@@ -154,11 +151,11 @@ async function loadTrainDetails() {
     const t = data.trains ? data.trains.find(x => x.train === trainNum) : null;
 
     if (t) {
-      document.getElementById('hCarrier').innerText = t.carrier || t.category || 'IC';
+      document.getElementById('hCarrier').innerText = t.category || 'TLK';
       document.getElementById('hRoute').innerText = `${t.station} → ${t.destination || '---'}`;
       
       const mainDelay = Number(t.delay || 0);
-      const mainPlanned = t.time || '--:--';
+      const mainPlanned = t.plannedTime || t.time || '--:--';
       const mainReal = mainDelay > 0 ? calculateRealTime(mainPlanned, mainDelay) : mainPlanned;
       
       document.getElementById('hTime').innerText = mainReal;
@@ -173,26 +170,28 @@ async function loadTrainDetails() {
 
       let stations = [];
 
-      // Jeśli mamy trainOrderId, pobieramy pełny rozkład z API
+      // Pobieranie trasy po trainOrderId
       if (t.trainOrderId) {
         try {
           const routeRes = await fetch(`/api/train-details?trainOrderId=${encodeURIComponent(t.trainOrderId)}&train=${encodeURIComponent(trainNum)}`);
-          const routeData = await routeRes.json();
-          if (routeData.route && routeData.route.length > 0) {
-            stations = routeData.route;
+          if (routeRes.ok) {
+            const routeData = await routeRes.json();
+            if (routeData.route && routeData.route.length > 0) {
+              stations = routeData.route;
+            }
           }
         } catch (err) {
           console.warn("Błąd pobierania trasy po trainOrderId", err);
         }
       }
 
-      // Fallback, gdy brak trainOrderId lub błąd połączenia
+      // Fallback z listy via
       if (stations.length === 0) {
         const viaArray = t.via ? t.via.split(',').map(s => s.trim()) : [];
         const rawList = [t.station, ...viaArray, t.destination].filter(Boolean);
         stations = rawList.map((stName, idx) => ({
           name: stName,
-          plannedTime: idx === 0 ? t.time : '--:--',
+          plannedTime: idx === 0 ? mainPlanned : '--:--',
           delay: idx === 0 ? mainDelay : 0,
           platform: idx === 0 ? t.platform : '-',
           track: idx === 0 ? t.track : '-'
@@ -203,7 +202,7 @@ async function loadTrainDetails() {
         const stName = st.name || 'Stacja';
         const isCurrent = stName.toLowerCase() === currentStation.toLowerCase() || stName.toLowerCase() === t.station.toLowerCase();
         const delay = Number(st.delay !== undefined ? st.delay : mainDelay);
-        const plannedTime = st.plannedTime || '--:--';
+        const plannedTime = st.plannedTime || st.departureTimePlanned || '--:--';
         const realTime = st.realTime || (plannedTime !== '--:--' ? calculateRealTime(plannedTime, delay) : '--:--');
         
         let delayClass = 'green';
@@ -230,14 +229,6 @@ async function loadTrainDetails() {
           </div>
         `;
       }).join('');
-
-      // Auto-scroll do aktualnej/ostatniej potwierdzonej stacji
-      setTimeout(() => {
-        const activeEl = document.getElementById('activeStation');
-        if (activeEl) {
-          activeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-      }, 150);
 
     } else {
       document.getElementById('routeList').innerHTML = `
