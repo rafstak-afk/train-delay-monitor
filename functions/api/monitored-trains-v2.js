@@ -13,8 +13,6 @@ const MONITORED_TRAINS = [
   { station: "Chorzów Uniwersytet", train: "40621" },
 
   { station: "Bytom Karb", train: "40658" },
-  
-  // Szczecin Główny
   { station: "Szczecin Główny", train: "83194" },
 
   { station: "Katowice", train: "63102" }
@@ -29,22 +27,18 @@ export async function onRequestGet(context) {
 
   const departuresByStation = {};
 
+  // Pobieramy tablice odjazdów dla zdefiniowanych stacji
   await Promise.all(
     stations.map(async station => {
       try {
         const response = await fetch(
           `${origin}/api/departures?station=${encodeURIComponent(station)}&limit=100`
         );
-
+        if (!response.ok) throw new Error("HTTP error");
         const data = await response.json();
-
-        departuresByStation[station] =
-          Array.isArray(data.departures)
-            ? data.departures
-            : [];
+        departuresByStation[station] = Array.isArray(data.departures) ? data.departures : [];
       } catch (err) {
         departuresByStation[station] = [];
-        departuresByStation[station]._error = "Błąd pobierania danych PLK";
       }
     })
   );
@@ -54,11 +48,7 @@ export async function onRequestGet(context) {
 
     const hit = rows.find(row =>
       String(
-        row.train ??
-        row.trainNumber ??
-        row.number ??
-        row.trainNo ??
-        ""
+        row.train ?? row.trainNumber ?? row.number ?? row.trainNo ?? ""
       ).trim() === String(item.train).trim()
     );
 
@@ -66,10 +56,7 @@ export async function onRequestGet(context) {
       station: item.station,
       train: item.train,
       found: !!hit,
-      reason: hit
-        ? ""
-        : departuresByStation[item.station]?._error ||
-          "Pociągu nie ma w pobranych danych PLK",
+      reason: hit ? "" : "Pociągu nie ma w pobranych danych PLK",
       delay: hit?.delay ?? 0,
       status: hit?.status ?? "",
       plannedTime: hit?.plannedTime ?? hit?.time ?? "--:--",
