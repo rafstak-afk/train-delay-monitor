@@ -13,6 +13,7 @@ const MONITORED_TRAINS = [
   { station: "Chorzów Uniwersytet", train: "40621" },
 
   { station: "Bytom Karb", train: "40658" },
+  { station: "Bytom", train: "83194" },
 
   { station: "Katowice", train: "63102" }
 ];
@@ -39,13 +40,10 @@ export async function onRequestGet(context) {
           Array.isArray(data.departures)
             ? data.departures
             : [];
-     
-} catch (err) {
-  departuresByStation[station] = [];
-  departuresByStation[station]._error = "Błąd pobierania danych PLK";
-}
-
-
+      } catch (err) {
+        departuresByStation[station] = [];
+        departuresByStation[station]._error = "Błąd pobierania danych PLK";
+      }
     })
   );
 
@@ -66,10 +64,10 @@ export async function onRequestGet(context) {
       station: item.station,
       train: item.train,
       found: !!hit,
-reason: hit
-  ? ""
-  : departuresByStation[item.station]?._error ||
-    "Pociągu nie ma w pobranych danych",
+      reason: hit
+        ? ""
+        : departuresByStation[item.station]?._error ||
+          "Pociągu nie ma w pobranych danych",
       delay: hit?.delay ?? null,
       status: hit?.status ?? "",
       plannedTime: hit?.plannedTime ?? "",
@@ -78,12 +76,9 @@ reason: hit
       track: hit?.track ?? "",
       category: hit?.category ?? "",
       name: hit?.name ?? "",
-      
-destination: hit?.destination ?? "",
-via: hit?.via ?? "",
-
-scheduleId: hit?.scheduleId ?? null,
-
+      destination: hit?.destination ?? "",
+      via: hit?.via ?? "",
+      scheduleId: hit?.scheduleId ?? null,
       orderId: hit?.orderId ?? null,
       trainOrderId: hit?.trainOrderId ?? null
     };
