@@ -27,16 +27,18 @@ export async function onRequestGet(context) {
 
   const departuresByStation = {};
 
-  // Pobieramy tablice odjazdów dla zdefiniowanych stacji
   await Promise.all(
     stations.map(async station => {
       try {
         const response = await fetch(
           `${origin}/api/departures?station=${encodeURIComponent(station)}&limit=100`
         );
-        if (!response.ok) throw new Error("HTTP error");
-        const data = await response.json();
-        departuresByStation[station] = Array.isArray(data.departures) ? data.departures : [];
+        if (response.ok) {
+          const data = await response.json();
+          departuresByStation[station] = Array.isArray(data.departures) ? data.departures : [];
+        } else {
+          departuresByStation[station] = [];
+        }
       } catch (err) {
         departuresByStation[station] = [];
       }
