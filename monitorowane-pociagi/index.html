@@ -11,13 +11,13 @@ body {
   padding: 4px;
   width: 100%;
   max-width: 100%;
-  background: #0b131e;
+  background: #000000; /* Głęboka czarna tło dla maksymalnego kontrastu w słońcu */
   color: white;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
 }
 
-h1 { margin: 4px 6px 6px 6px; font-size: 16px; font-weight: 700; }
-.info { margin: 0 6px 6px 6px; opacity: .8; font-size: 10px; }
+h1 { margin: 4px 6px 6px 6px; font-size: 16px; font-weight: 700; color: #ffffff; }
+.info { margin: 0 6px 6px 6px; color: #94a3b8; font-size: 10px; }
 .alerts { margin: 0 4px 6px 4px; }
 .alertPanel { background: #341616; border: 1px solid #e74c3c; border-radius: 6px; padding: 4px 8px; }
 .alertTitle { font-weight: 700; font-size: 11px; }
@@ -26,77 +26,105 @@ h1 { margin: 4px 6px 6px 6px; font-size: 16px; font-weight: 700; }
 
 .list { display: flex; flex-direction: column; gap: 4px; width: 100%; }
 
-/* DWUSZPAL T TABLICY PLK / DOCELOWEJ APKI Z 3 CZASAMI */
+/* KARTA - WYSOCKI KONTRAST */
 .card {
   display: grid;
-  grid-template-columns: 85px 1fr auto;
+  grid-template-columns: 100px 1fr auto;
   align-items: center;
   gap: 8px;
   text-decoration: none;
   color: white;
-  background: #111d2c;
-  border: 1px solid #1e2d40;
+  background: #111827;
+  border: 1px solid #374151;
   border-radius: 6px;
   padding: 6px 8px;
   width: 100%;
 }
-.card:active { background: #1a2a3f; }
-.ok { border-left: 4px solid #2ecc71; }
-.missing { border-left: 4px solid #e74c3c; }
+.card:active { background: #1f2937; }
+.ok { border-left: 5px solid #22c55e; }
+.missing { border-left: 5px solid #ef4444; }
 
-/* KOLUMNA 1: 3 CZASY (PLAN, RZECZYWISTY, OPÓŹNIENIE) */
+/* KOLUMNA 1: GIGANTYCZNE GODZINY */
 .col-time {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
 }
-.time-planned { font-size: 10px; color: #94a3b8; line-height: 1; text-decoration: line-through; }
-.time-planned.no-delay { text-decoration: none; display: none; }
-.time-real { font-size: 15px; font-weight: 800; line-height: 1.1; color: #38bdf8; }
+.time-planned {
+  font-size: 11px;
+  font-weight: 600;
+  color: #9ca3af;
+  line-height: 1;
+}
+.time-planned-strike {
+  text-decoration: line-through;
+  color: #6b7280;
+}
+/* GODZINA RZECZYWISTA - BARDZO DUŻA I WYTŁUSZCZONA */
+.time-real {
+  font-size: 23px;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.5px;
+  margin: 2px 0 3px 0;
+  color: #38bdf8;
+}
+
+/* BADGE OPÓŹNIENIA */
 .delay-badge {
   display: inline-block;
-  margin-top: 2px;
-  padding: 1px 4px;
+  padding: 2px 5px;
   border-radius: 3px;
-  font-size: 9px;
-  font-weight: 800;
-  line-height: 1.1;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
   white-space: nowrap;
 }
-.delay-badge.green { background: #14532d; color: #4ade80; }
-.delay-badge.yellow { background: #713f12; color: #facc15; }
-.delay-badge.orange { background: #7c2d12; color: #fb923c; }
-.delay-badge.red { background: #7f1d1d; color: #f87171; }
+.delay-badge.green { background: #15803d; color: #ffffff; }
+.delay-badge.yellow { background: #a16207; color: #ffffff; }
+.delay-badge.orange { background: #c2410c; color: #ffffff; }
+.delay-badge.red { background: #b91c1c; color: #ffffff; }
 
-/* KOLUMNA 2: POCIĄG, STACJA DOCELOWA I PRZEZ */
+/* KOLUMNA 2: INFORMACJE O POCIĄGU */
 .col-main { min-width: 0; overflow: hidden; }
-.train-header { display: flex; align-items: center; gap: 4px; white-space: nowrap; overflow: hidden; }
-.train-type { background: #0284c7; color: white; font-size: 9px; font-weight: 800; padding: 0 3px; border-radius: 2px; }
-.train-num { font-size: 12px; font-weight: 700; color: #e2e8f0; }
-.train-name { font-size: 11px; color: #94a3b8; overflow: hidden; text-overflow: ellipsis; }
+.train-header { display: flex; align-items: center; gap: 5px; white-space: nowrap; overflow: hidden; }
 
-.destination { font-size: 13px; font-weight: 800; color: #ffffff; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* TEKSTOWY BADGE PRZEWOŹNIKA ZAMIAST LOGO */
+.carrier-badge {
+  background: #374151;
+  color: #f3f4f6;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 1px 4px;
+  border-radius: 3px;
+  border: 1px solid #4b5563;
+}
+.train-num { font-size: 12px; font-weight: 700; color: #f9fafb; }
+.train-name { font-size: 11px; color: #9ca3af; overflow: hidden; text-overflow: ellipsis; }
+
+.destination { font-size: 14px; font-weight: 800; color: #ffffff; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* STACJE PRZEZ */
 .via-list {
   font-size: 10px;
-  color: #94a3b8;
+  color: #9ca3af;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-top: 1px;
-  line-height: 1.2;
+  margin-top: 2px;
+  line-height: 1.1;
 }
 
-/* KOLUMNA 3: PERON / TOR */
+/* KOLUMNA 3: PERON I TOR */
 .col-right {
   text-align: right;
   font-size: 10px;
-  color: #cbd5e1;
+  color: #d1d5db;
   white-space: nowrap;
 }
-.platform-track { font-size: 11px; font-weight: 700; color: #f1f5f9; }
+.platform-track { font-size: 12px; font-weight: 800; color: #ffffff; }
+.carrier-text { font-size: 9px; color: #6b7280; margin-top: 2px; text-transform: uppercase; }
 </style>
 </head>
 
@@ -153,15 +181,30 @@ async function loadData() {
       const cls = t.found ? 'ok' : 'missing';
       const delay = Number(t.delay || 0);
       let delayClass = 'green';
-      let delayText = '0 min';
+      let delayText = 'OK';
+      let realTimeColor = '#38bdf8'; // domyślny jaskrawy niebieski
       
-      if (delay > 30) { delayClass = 'red'; delayText = `~${delay}'`; }
-      else if (delay > 15) { delayClass = 'orange'; delayText = `~${delay}'`; }
-      else if (delay > 5) { delayClass = 'yellow'; delayText = `~${delay}'`; }
-      else if (delay > 0) { delayClass = 'yellow'; delayText = `+${delay}'`; }
+      if (delay > 30) {
+        delayClass = 'red';
+        delayText = `+${delay}'`;
+        realTimeColor = '#f87171'; // jasny czerwony
+      } else if (delay > 15) {
+        delayClass = 'orange';
+        delayText = `+${delay}'`;
+        realTimeColor = '#fb923c'; // pomarańczowy
+      } else if (delay > 5) {
+        delayClass = 'yellow';
+        delayText = `+${delay}'`;
+        realTimeColor = '#facc15'; // żółty
+      } else if (delay > 0) {
+        delayClass = 'yellow';
+        delayText = `+${delay}'`;
+        realTimeColor = '#facc15';
+      }
 
       const plannedTime = t.time || t.plannedTime || '-';
       const realTime = t.found && delay > 0 ? calculateRealTime(plannedTime, delay) : plannedTime;
+      const carrier = t.carrier || t.category || 'PKP';
 
       const queryParams = new URLSearchParams({
         train: t.train || '',
@@ -173,17 +216,19 @@ async function loadData() {
 
       return `
       <a class="card ${cls}" href="/monitorowane-pociagi/train.html?${queryParams}">
-        <!-- KOLUMNA 1: TRZY CZASY -->
+        <!-- KOLUMNA 1: TRZY CZASY I BARDZO DUŻA GODZINA RZECZYWISTA -->
         <div class="col-time">
-          ${delay > 0 ? `<div class="time-planned">plan: ${plannedTime}</div>` : ''}
-          <div class="time-real">${realTime}</div>
+          <div class="time-planned ${delay > 0 ? 'time-planned-strike' : ''}">
+            ${plannedTime}
+          </div>
+          <div class="time-real" style="color: ${realTimeColor}">${realTime}</div>
           <div class="delay-badge ${delayClass}">${delay > 0 ? delayText : 'NA CZAS'}</div>
         </div>
 
-        <!-- KOLUMNA 2: POCIĄG, CEL I PRZEZ -->
+        <!-- KOLUMNA 2: PRZEWOŹNIK (TEKSTOWY BADGE), POCIĄG, CEL I PRZEZ -->
         <div class="col-main">
           <div class="train-header">
-            <span class="train-type">${t.category || 'IC'}</span>
+            <span class="carrier-badge">${carrier}</span>
             <span class="train-num">${t.train}</span>
             <span class="train-name">${t.name || ''}</span>
           </div>
@@ -191,10 +236,11 @@ async function loadData() {
           ${t.via ? `<div class="via-list">przez: ${t.via}</div>` : ''}
         </div>
 
-        <!-- KOLUMNA 3: PERON / TOR -->
+        <!-- KOLUMNA 3: PERON, TOR, PRZEWOŹNIK -->
         <div class="col-right">
           ${t.found ? `
             <div class="platform-track">p. ${t.platform || '-'} · t. ${t.track || '-'}</div>
+            <div class="carrier-text">${carrier}</div>
           ` : 'brak danych'}
         </div>
       </a>
