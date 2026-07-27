@@ -14,14 +14,14 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
 }
 
-/* STICKY HEADER */
+/* KOMPAKTOWY, PRZYKLEJONY HEADER */
 .sticky-header {
   position: sticky;
   top: 0;
   z-index: 1000;
   background: #111827;
   border-bottom: 2px solid #374151;
-  padding: 6px 10px;
+  padding: 8px 10px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -32,66 +32,63 @@ body {
 .back-link {
   color: #38bdf8;
   text-decoration: none;
-  font-size: 18px;
-  font-weight: 800;
-  padding: 2px 6px;
+  font-size: 22px;
+  font-weight: 900;
+  padding: 2px 8px;
 }
 
 .train-summary { flex: 1; min-width: 0; }
 .train-title-row { display: flex; align-items: center; gap: 6px; white-space: nowrap; overflow: hidden; }
-.carrier-tag { background: #374151; color: #f3f4f6; font-size: 9px; font-weight: 800; padding: 1px 4px; border-radius: 3px; }
-.train-number { font-size: 13px; font-weight: 800; color: #ffffff; }
-.train-route { font-size: 11px; color: #9ca3af; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.carrier-tag { background: #374151; color: #f3f4f6; font-size: 10px; font-weight: 800; padding: 2px 5px; border-radius: 3px; }
+.train-number { font-size: 15px; font-weight: 900; color: #ffffff; }
+.train-route { font-size: 11px; color: #9ca3af; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
 
 .train-status { text-align: right; flex-shrink: 0; }
-.time-box { font-size: 16px; font-weight: 900; color: #38bdf8; line-height: 1; }
-.delay-box { font-size: 10px; font-weight: 800; margin-top: 2px; }
+.time-box { font-size: 20px; font-weight: 900; color: #38bdf8; line-height: 1; }
+.delay-box { font-size: 11px; font-weight: 900; margin-top: 2px; }
 .delay-box.red { color: #f87171; }
 .delay-box.yellow { color: #facc15; }
 .delay-box.green { color: #4ade80; }
 
 /* KONTENER TRASY */
-.route-container { padding: 6px; }
-.route-title { font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; margin: 4px 0 6px 4px; }
+.route-container { padding: 8px 6px; }
+.route-title { font-size: 11px; font-weight: 800; color: #6b7280; text-transform: uppercase; margin: 4px 0 8px 4px; letter-spacing: 0.5px; }
 
-/* PEŁNA SIATKA DLA KAŻDEJ STACJI (STACJA | PERON/TOR | PLAN -> RZECZ | DELAY) */
-.station-list { display: flex; flex-direction: column; gap: 3px; }
+.station-list { display: flex; flex-direction: column; gap: 6px; }
 
 .station-row {
   display: grid;
   grid-template-columns: 1fr auto auto;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   background: #111827;
   border: 1px solid #1f2937;
-  border-radius: 4px;
-  padding: 5px 8px;
-  font-size: 11px;
+  border-radius: 6px;
+  padding: 8px 10px;
 }
 
 .station-row.current {
-  border: 1px solid #38bdf8;
+  border: 2px solid #38bdf8;
   background: #0f172a;
 }
 
-.station-row.passed { opacity: 0.55; }
-
 .col-st-info { min-width: 0; overflow: hidden; }
-.st-name { font-weight: 700; color: #f3f4f6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px; }
-.st-platform { font-size: 10px; color: #9ca3af; margin-top: 1px; }
+.st-name { font-weight: 800; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 14px; }
+.st-platform { font-size: 11px; color: #9ca3af; margin-top: 2px; font-weight: 700; }
 
+/* POWIĘKSZONE GODZINY (WYSOKI KONTRAST DLA BIEGU W SŁOŃCU) */
 .col-st-times { text-align: right; white-space: nowrap; }
-.time-p { font-size: 10px; color: #6b7280; text-decoration: line-through; line-height: 1; }
+.time-p { font-size: 11px; color: #6b7280; text-decoration: line-through; line-height: 1; font-weight: 600; }
 .time-p.no-strike { text-decoration: none; color: #9ca3af; }
-.time-r { font-size: 13px; font-weight: 800; color: #38bdf8; line-height: 1.1; }
+.time-r { font-size: 18px; font-weight: 900; color: #38bdf8; line-height: 1.1; margin-top: 1px; }
 
-.col-st-delay { min-width: 42px; text-align: right; }
+.col-st-delay { min-width: 44px; text-align: right; }
 .st-delay-badge {
   display: inline-block;
-  padding: 1px 4px;
-  border-radius: 3px;
-  font-size: 9px;
-  font-weight: 800;
+  padding: 3px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 900;
   line-height: 1;
 }
 .st-delay-badge.green { background: #15803d; color: #ffffff; }
@@ -123,15 +120,17 @@ body {
 <div class="route-container">
   <div class="route-title">Pełna trasa przejazdu</div>
   <div id="routeList" class="station-list">
-    <div style="padding: 12px; text-align: center; color: #9ca3af; font-size: 12px;">Ładowanie tras...</div>
+    <div style="padding: 16px; text-align: center; color: #9ca3af; font-size: 13px;">Pobieranie pełnej trasy z PLK...</div>
   </div>
 </div>
 
 <script>
 function calculateRealTime(timeStr, delayMin) {
-  if (!timeStr || timeStr === '-') return '-';
+  if (!timeStr || timeStr === '-' || timeStr === '--:--') return '--:--';
   const parts = timeStr.split(':');
-  if (parts.length < 2) return timeStr;
+  if (parts.length < 2 || isNaN(parseInt(parts[0], 10)) || isNaN(parseInt(parts[1], 10))) {
+    return '--:--';
+  }
   
   let date = new Date();
   date.setHours(parseInt(parts[0], 10));
@@ -172,15 +171,25 @@ async function loadTrainDetails() {
         delayEl.className = 'delay-box green';
       }
 
-      // Generowanie pełnej listy stacji z obiektu trasy (route) lub fallback z via
       let stations = [];
-      if (t.route && Array.isArray(t.route) && t.route.length > 0) {
-        stations = t.route;
-      } else {
-        // Zapasowa rekonstrukcja z obecnych pól
+
+      // Jeśli mamy trainOrderId, pobieramy pełny rozkład z API
+      if (t.trainOrderId) {
+        try {
+          const routeRes = await fetch(`/api/train-details?trainOrderId=${encodeURIComponent(t.trainOrderId)}&train=${encodeURIComponent(trainNum)}`);
+          const routeData = await routeRes.json();
+          if (routeData.route && routeData.route.length > 0) {
+            stations = routeData.route;
+          }
+        } catch (err) {
+          console.warn("Błąd pobierania trasy po trainOrderId", err);
+        }
+      }
+
+      // Fallback, gdy brak trainOrderId lub błąd połączenia
+      if (stations.length === 0) {
         const viaArray = t.via ? t.via.split(',').map(s => s.trim()) : [];
         const rawList = [t.station, ...viaArray, t.destination].filter(Boolean);
-        
         stations = rawList.map((stName, idx) => ({
           name: stName,
           plannedTime: idx === 0 ? t.time : '--:--',
@@ -191,11 +200,11 @@ async function loadTrainDetails() {
       }
 
       document.getElementById('routeList').innerHTML = stations.map((st) => {
-        const stName = st.name || st.stationName || 'Stacja';
+        const stName = st.name || 'Stacja';
         const isCurrent = stName.toLowerCase() === currentStation.toLowerCase() || stName.toLowerCase() === t.station.toLowerCase();
-        const delay = Number(st.delay || mainDelay || 0);
-        const plannedTime = st.plannedTime || st.time || '--:--';
-        const realTime = delay > 0 ? calculateRealTime(plannedTime, delay) : plannedTime;
+        const delay = Number(st.delay !== undefined ? st.delay : mainDelay);
+        const plannedTime = st.plannedTime || '--:--';
+        const realTime = st.realTime || (plannedTime !== '--:--' ? calculateRealTime(plannedTime, delay) : '--:--');
         
         let delayClass = 'green';
         let delayText = 'OK';
@@ -204,14 +213,14 @@ async function loadTrainDetails() {
         else if (delay > 0) { delayClass = 'yellow'; delayText = `+${delay}'`; }
 
         return `
-          <div class="station-row ${isCurrent ? 'current' : ''}">
+          <div class="station-row ${isCurrent ? 'current' : ''}" id="${isCurrent ? 'activeStation' : ''}">
             <div class="col-st-info">
               <div class="st-name">${isCurrent ? '🎯 ' : ''}${stName}</div>
               <div class="st-platform">peron ${st.platform || '-'} · tor ${st.track || '-'}</div>
             </div>
 
             <div class="col-st-times">
-              ${delay > 0 ? `<div class="time-p">${plannedTime}</div>` : `<div class="time-p no-strike">${plannedTime}</div>`}
+              ${delay > 0 && plannedTime !== '--:--' ? `<div class="time-p">${plannedTime}</div>` : `<div class="time-p no-strike">${plannedTime}</div>`}
               <div class="time-r" style="color: ${delay > 0 ? '#f87171' : '#38bdf8'}">${realTime}</div>
             </div>
 
@@ -222,17 +231,25 @@ async function loadTrainDetails() {
         `;
       }).join('');
 
+      // Auto-scroll do aktualnej/ostatniej potwierdzonej stacji
+      setTimeout(() => {
+        const activeEl = document.getElementById('activeStation');
+        if (activeEl) {
+          activeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 150);
+
     } else {
       document.getElementById('routeList').innerHTML = `
-        <div style="padding: 12px; text-align: center; color: #f87171; font-size: 12px;">
-          Brak szczegółowej trasy dla pociągu ${trainNum}.
+        <div style="padding: 16px; text-align: center; color: #f87171; font-size: 13px;">
+          Brak danych dla pociągu ${trainNum}.
         </div>
       `;
     }
   } catch (e) {
     document.getElementById('routeList').innerHTML = `
-      <div style="padding: 12px; text-align: center; color: #f87171; font-size: 12px;">
-        Błąd pobierania trasy z serwera.
+      <div style="padding: 16px; text-align: center; color: #f87171; font-size: 13px;">
+        Błąd połączenia z serwerem.
       </div>
     `;
   }
