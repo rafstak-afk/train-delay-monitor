@@ -13,7 +13,7 @@ const MONITORED_TRAINS = [
   { station: "Chorzów Uniwersytet", train: "40621" },
 
   { station: "Bytom Karb", train: "40658" },
-  { station: "Bytom", train: "83194" },
+  { station: "Szczecin Główny", train: "83194" },
 
   { station: "Katowice", train: "63102" }
 ];
