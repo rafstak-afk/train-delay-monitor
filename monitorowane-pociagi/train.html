@@ -14,7 +14,7 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
 }
 
-/* PRZYKLEJONA DO GÓRY KOMPAKTOWA BELKA (STICKY HEADER) */
+/* STICKY HEADER */
 .sticky-header {
   position: sticky;
   top: 0;
@@ -37,112 +37,72 @@ body {
   padding: 2px 6px;
 }
 
-.train-summary {
-  flex: 1;
-  min-width: 0;
-}
+.train-summary { flex: 1; min-width: 0; }
+.train-title-row { display: flex; align-items: center; gap: 6px; white-space: nowrap; overflow: hidden; }
+.carrier-tag { background: #374151; color: #f3f4f6; font-size: 9px; font-weight: 800; padding: 1px 4px; border-radius: 3px; }
+.train-number { font-size: 13px; font-weight: 800; color: #ffffff; }
+.train-route { font-size: 11px; color: #9ca3af; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-.train-title-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-.carrier-tag {
-  background: #374151;
-  color: #f3f4f6;
-  font-size: 9px;
-  font-weight: 800;
-  padding: 1px 4px;
-  border-radius: 3px;
-}
-
-.train-number {
-  font-size: 13px;
-  font-weight: 800;
-  color: #ffffff;
-}
-
-.train-route {
-  font-size: 11px;
-  color: #9ca3af;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.train-status {
-  text-align: right;
-  flex-shrink: 0;
-}
-
-.time-box {
-  font-size: 16px;
-  font-weight: 900;
-  color: #38bdf8;
-  line-height: 1;
-}
-
-.delay-box {
-  font-size: 10px;
-  font-weight: 800;
-  margin-top: 2px;
-}
+.train-status { text-align: right; flex-shrink: 0; }
+.time-box { font-size: 16px; font-weight: 900; color: #38bdf8; line-height: 1; }
+.delay-box { font-size: 10px; font-weight: 800; margin-top: 2px; }
 .delay-box.red { color: #f87171; }
 .delay-box.yellow { color: #facc15; }
 .delay-box.green { color: #4ade80; }
 
 /* KONTENER TRASY */
-.route-container {
-  padding: 8px;
-}
+.route-container { padding: 6px; }
+.route-title { font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; margin: 4px 0 6px 4px; }
 
-.route-title {
-  font-size: 11px;
-  font-weight: 700;
-  color: #6b7280;
-  text-transform: uppercase;
-  margin: 6px 0;
-  padding-left: 4px;
-}
+/* PEŁNA SIATKA DLA KAŻDEJ STACJI (STACJA | PERON/TOR | PLAN -> RZECZ | DELAY) */
+.station-list { display: flex; flex-direction: column; gap: 3px; }
 
-/* KOMPAKTOWE WIERSZE STACJI */
-.station-list {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.station-item {
+.station-row {
   display: grid;
-  grid-template-columns: 24px 1fr auto;
+  grid-template-columns: 1fr auto auto;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   background: #111827;
   border: 1px solid #1f2937;
   border-radius: 4px;
-  padding: 6px 8px;
-  font-size: 12px;
+  padding: 5px 8px;
+  font-size: 11px;
 }
 
-.station-item.passed { opacity: 0.5; }
-.station-item.current {
+.station-row.current {
   border: 1px solid #38bdf8;
   background: #0f172a;
 }
 
-.icon-col { text-align: center; font-size: 12px; }
-.name-col { font-weight: 600; color: #f3f4f6; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.time-col { text-align: right; font-weight: 700; color: #38bdf8; font-size: 11px; }
-.delay-col { font-size: 10px; color: #f87171; margin-left: 4px; }
+.station-row.passed { opacity: 0.55; }
+
+.col-st-info { min-width: 0; overflow: hidden; }
+.st-name { font-weight: 700; color: #f3f4f6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px; }
+.st-platform { font-size: 10px; color: #9ca3af; margin-top: 1px; }
+
+.col-st-times { text-align: right; white-space: nowrap; }
+.time-p { font-size: 10px; color: #6b7280; text-decoration: line-through; line-height: 1; }
+.time-p.no-strike { text-decoration: none; color: #9ca3af; }
+.time-r { font-size: 13px; font-weight: 800; color: #38bdf8; line-height: 1.1; }
+
+.col-st-delay { min-width: 42px; text-align: right; }
+.st-delay-badge {
+  display: inline-block;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1;
+}
+.st-delay-badge.green { background: #15803d; color: #ffffff; }
+.st-delay-badge.yellow { background: #a16207; color: #ffffff; }
+.st-delay-badge.orange { background: #c2410c; color: #ffffff; }
+.st-delay-badge.red { background: #b91c1c; color: #ffffff; }
 </style>
 </head>
 
 <body>
 
-<!-- NIEPRZESUWNA (STICKY) BELEK NAGŁÓWKA -->
 <div class="sticky-header">
   <a href="/monitorowane-pociagi/" class="back-link">←</a>
   
@@ -160,22 +120,33 @@ body {
   </div>
 </div>
 
-<!-- CONTAINER NA TRASĘ -->
 <div class="route-container">
-  <div class="route-title">Trasa przejazdu</div>
+  <div class="route-title">Pełna trasa przejazdu</div>
   <div id="routeList" class="station-list">
-    <div style="padding: 12px; text-align: center; color: #9ca3af; font-size: 12px;">Ładowanie stacji...</div>
+    <div style="padding: 12px; text-align: center; color: #9ca3af; font-size: 12px;">Ładowanie tras...</div>
   </div>
 </div>
 
 <script>
+function calculateRealTime(timeStr, delayMin) {
+  if (!timeStr || timeStr === '-') return '-';
+  const parts = timeStr.split(':');
+  if (parts.length < 2) return timeStr;
+  
+  let date = new Date();
+  date.setHours(parseInt(parts[0], 10));
+  date.setMinutes(parseInt(parts[1], 10) + parseInt(delayMin || 0, 10));
+  
+  const h = String(date.getHours()).padStart(2, '0');
+  const m = String(date.getMinutes()).padStart(2, '0');
+  return `${h}:${m}`;
+}
+
 const params = new URLSearchParams(window.location.search);
-const trainNum = params.get('train') || 'Pociąg';
-const station = params.get('station') || '';
-const stationId = params.get('stationId') || '73312';
+const trainNum = params.get('train') || '';
+const currentStation = params.get('station') || '';
 
 document.getElementById('hTrainNum').innerText = trainNum;
-document.getElementById('hRoute').innerText = station ? `Stacja: ${station}` : 'Trasa pociągu';
 
 async function loadTrainDetails() {
   try {
@@ -186,39 +157,71 @@ async function loadTrainDetails() {
     if (t) {
       document.getElementById('hCarrier').innerText = t.carrier || t.category || 'IC';
       document.getElementById('hRoute').innerText = `${t.station} → ${t.destination || '---'}`;
-      document.getElementById('hTime').innerText = t.time || '--:--';
       
-      const delay = Number(t.delay || 0);
+      const mainDelay = Number(t.delay || 0);
+      const mainPlanned = t.time || '--:--';
+      const mainReal = mainDelay > 0 ? calculateRealTime(mainPlanned, mainDelay) : mainPlanned;
+      
+      document.getElementById('hTime').innerText = mainReal;
       const delayEl = document.getElementById('hDelay');
-      if (delay > 0) {
-        delayEl.innerText = `+${delay} min`;
+      if (mainDelay > 0) {
+        delayEl.innerText = `+${mainDelay} min`;
         delayEl.className = 'delay-box red';
       } else {
         delayEl.innerText = 'NA CZAS';
         delayEl.className = 'delay-box green';
       }
 
-      // Generowanie listy stacji (jeśli via istnieje w danych lub mock)
-      let viaStations = [];
-      if (t.via) {
-        viaStations = t.via.split(',').map(s => s.trim());
+      // Generowanie pełnej listy stacji z obiektu trasy (route) lub fallback z via
+      let stations = [];
+      if (t.route && Array.isArray(t.route) && t.route.length > 0) {
+        stations = t.route;
+      } else {
+        // Zapasowa rekonstrukcja z obecnych pól
+        const viaArray = t.via ? t.via.split(',').map(s => s.trim()) : [];
+        const rawList = [t.station, ...viaArray, t.destination].filter(Boolean);
+        
+        stations = rawList.map((stName, idx) => ({
+          name: stName,
+          plannedTime: idx === 0 ? t.time : '--:--',
+          delay: idx === 0 ? mainDelay : 0,
+          platform: idx === 0 ? t.platform : '-',
+          track: idx === 0 ? t.track : '-'
+        }));
       }
 
-      const fullRoute = [t.station, ...viaStations, t.destination].filter(Boolean);
+      document.getElementById('routeList').innerHTML = stations.map((st) => {
+        const stName = st.name || st.stationName || 'Stacja';
+        const isCurrent = stName.toLowerCase() === currentStation.toLowerCase() || stName.toLowerCase() === t.station.toLowerCase();
+        const delay = Number(st.delay || mainDelay || 0);
+        const plannedTime = st.plannedTime || st.time || '--:--';
+        const realTime = delay > 0 ? calculateRealTime(plannedTime, delay) : plannedTime;
+        
+        let delayClass = 'green';
+        let delayText = 'OK';
+        if (delay > 30) { delayClass = 'red'; delayText = `+${delay}'`; }
+        else if (delay > 15) { delayClass = 'orange'; delayText = `+${delay}'`; }
+        else if (delay > 0) { delayClass = 'yellow'; delayText = `+${delay}'`; }
 
-      document.getElementById('routeList').innerHTML = fullRoute.map((stName, idx) => {
-        const isCurrent = idx === 0;
         return `
-          <div class="station-item ${isCurrent ? 'current' : ''}">
-            <div class="icon-col">${isCurrent ? '🎯' : '•'}</div>
-            <div class="name-col">${stName}</div>
-            <div class="time-col">
-              ${isCurrent ? (t.time || '--:--') : '--:--'}
-              ${isCurrent && delay > 0 ? `<span class="delay-col">+${delay}'</span>` : ''}
+          <div class="station-row ${isCurrent ? 'current' : ''}">
+            <div class="col-st-info">
+              <div class="st-name">${isCurrent ? '🎯 ' : ''}${stName}</div>
+              <div class="st-platform">peron ${st.platform || '-'} · tor ${st.track || '-'}</div>
+            </div>
+
+            <div class="col-st-times">
+              ${delay > 0 ? `<div class="time-p">${plannedTime}</div>` : `<div class="time-p no-strike">${plannedTime}</div>`}
+              <div class="time-r" style="color: ${delay > 0 ? '#f87171' : '#38bdf8'}">${realTime}</div>
+            </div>
+
+            <div class="col-st-delay">
+              <span class="st-delay-badge ${delayClass}">${delay > 0 ? delayText : 'OK'}</span>
             </div>
           </div>
         `;
       }).join('');
+
     } else {
       document.getElementById('routeList').innerHTML = `
         <div style="padding: 12px; text-align: center; color: #f87171; font-size: 12px;">
