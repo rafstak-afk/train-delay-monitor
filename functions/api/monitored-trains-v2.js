@@ -13,7 +13,9 @@ const MONITORED_TRAINS = [
   { station: "Chorzów Uniwersytet", train: "40621" },
 
   { station: "Bytom Karb", train: "40658" },
-  { station: "Szczecin Główny", train: "83194" },
+  
+  // Pociąg dalekobieżny z wymuszonym szukaniem bezpośrednim
+  { station: "Szczecin Główny", train: "83194", directLookup: true },
 
   { station: "Katowice", train: "63102" }
 ];
@@ -27,62 +29,70 @@ export async function onRequestGet(context) {
 
   const departuresByStation = {};
 
+  // 1. Pobieramy tablice odjazdów ze stacji
   await Promise.all(
     stations.map(async station => {
       try {
         const response = await fetch(
           `${origin}/api/departures?station=${encodeURIComponent(station)}&limit=100`
         );
-
         const data = await response.json();
-
-        departuresByStation[station] =
-          Array.isArray(data.departures)
-            ? data.departures
-            : [];
+        departuresByStation[station] = Array.isArray(data.departures) ? data.departures : [];
       } catch (err) {
         departuresByStation[station] = [];
-        departuresByStation[station]._error = "Błąd pobierania danych PLK";
       }
     })
   );
 
-  const trains = MONITORED_TRAINS.map(item => {
-    const rows = departuresByStation[item.station] || [];
+  // 2. Dopasowujemy pociągi, a dla brakujących/dalekobieżnych wykonujemy Direct Lookup
+  const trains = await Promise.all(
+    MONITORED_TRAINS.map(async item => {
+      const rows = departuresByStation[item.station] || [];
 
-    const hit = rows.find(row =>
-      String(
-        row.train ??
-        row.trainNumber ??
-        row.number ??
-        row.trainNo ??
-        ""
-      ).trim() === String(item.train).trim()
-    );
+      let hit = rows.find(row =>
+        String(
+          row.train ?? row.trainNumber ?? row.number ?? row.trainNo ?? ""
+        ).trim() === String(item.train).trim()
+      );
 
-    return {
-      station: item.station,
-      train: item.train,
-      found: !!hit,
-      reason: hit
-        ? ""
-        : departuresByStation[item.station]?._error ||
-          "Pociągu nie ma w pobranych danych",
-      delay: hit?.delay ?? null,
-      status: hit?.status ?? "",
-      plannedTime: hit?.plannedTime ?? "",
-      time: hit?.time ?? "",
-      platform: hit?.platform ?? "",
-      track: hit?.track ?? "",
-      category: hit?.category ?? "",
-      name: hit?.name ?? "",
-      destination: hit?.destination ?? "",
-      via: hit?.via ?? "",
-      scheduleId: hit?.scheduleId ?? null,
-      orderId: hit?.orderId ?? null,
-      trainOrderId: hit?.trainOrderId ?? null
-    };
-  });
+      // Jeżeli nie znaleziono na tablicy odjazdów (np. poza oknem czasowym), szukamy bezpośrednio po numerze pociągu
+      if (!hit) {
+        try {
+          const directRes = await fetch(
+            `${origin}/api/train-search?train=${encodeURIComponent(item.train)}&station=${encodeURIComponent(item.station)}`
+          );
+          if (directRes.ok) {
+            const directData = await directRes.json();
+            if (directData && directData.found) {
+              hit = directData.trainData;
+            }
+          }
+        } catch (e) {
+          // Fallback w przypadku błędu wyszukiwania
+        }
+      }
+
+      return {
+        station: item.station,
+        train: item.train,
+        found: !!hit,
+        reason: hit ? "" : "Pociąg poza oknem odjazdów i brakiem w rozkładzie na dziś",
+        delay: hit?.delay ?? 0,
+        status: hit?.status ?? "",
+        plannedTime: hit?.plannedTime ?? hit?.time ?? "--:--",
+        time: hit?.time ?? "--:--",
+        platform: hit?.platform ?? "-",
+        track: hit?.track ?? "-",
+        category: hit?.category ?? "IC",
+        name: hit?.name ?? "",
+        destination: hit?.destination ?? "",
+        via: hit?.via ?? "",
+        scheduleId: hit?.scheduleId ?? null,
+        orderId: hit?.orderId ?? null,
+        trainOrderId: hit?.trainOrderId ?? hit?.id ?? null
+      };
+    })
+  );
 
   return new Response(
     JSON.stringify(
