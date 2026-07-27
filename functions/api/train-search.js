@@ -9,7 +9,6 @@ export async function onRequestGet(context) {
   }
 
   try {
-    // Odpytujemy bezpośrednio o trasę/bieg pociągu po jego numerze
     const response = await fetch(`${origin}/api/route?train=${encodeURIComponent(trainNum)}`);
     if (!response.ok) {
       return new Response(JSON.stringify({ found: false }));
@@ -22,28 +21,28 @@ export async function onRequestGet(context) {
       return new Response(JSON.stringify({ found: false }));
     }
 
-    // Szukamy wybranej stacji na trasie
     let stMatch = route.find(s => 
       (s.name || s.stationName || "").toLowerCase().includes((stationName || "").toLowerCase())
     );
 
-    // Jeśli pociąg już minął stację lub jej nie dopasowano, bierzemy pierwszą/aktualną stację z trasy
     if (!stMatch) {
       stMatch = route[0];
     }
+
+    const lastStation = route[route.length - 1];
 
     return new Response(
       JSON.stringify({
         found: true,
         trainData: {
           train: trainNum,
-          station: stMatch.name || stationName,
+          station: stMatch.name || stMatch.stationName || stationName,
           plannedTime: stMatch.plannedTime || stMatch.departureTimePlanned || stMatch.time || "--:--",
           time: stMatch.realTime || stMatch.plannedTime || stMatch.time || "--:--",
           delay: stMatch.delay !== undefined ? Number(stMatch.delay) : 0,
           platform: stMatch.platform || "-",
           track: stMatch.track || "-",
-          destination: route[route.length - 1]?.name || route[route.length - 1]?.stationName || "",
+          destination: lastStation?.name || lastStation?.stationName || "",
           category: data.category || "IC",
           trainOrderId: data.trainOrderId || data.id || null
         }
