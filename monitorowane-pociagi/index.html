@@ -7,167 +7,63 @@
 <title>Moje pociągi</title>
 
 <style>
-
-*{
-  box-sizing:border-box;
+* { box-sizing: border-box; }
+body {
+  margin: 0 auto;
+  padding: 8px;
+  max-width: 700px;
+  background: #101820;
+  color: white;
+  font-family: Segoe UI, Arial, sans-serif;
 }
 
-body{
-  margin:0 auto;
-  padding:12px;
-  max-width:700px;
-  background:#101820;
-  color:white;
-  font-family:Segoe UI,Arial,sans-serif;
-}
+h1 { margin: 0 0 8px 0; font-size: 18px; font-weight: 700; }
+.info { margin-bottom: 8px; opacity: .8; font-size: 11px; }
+.alerts { margin-bottom: 8px; }
+.alertPanel { background: #341616; border: 1px solid #e74c3c; border-radius: 8px; padding: 8px; }
+.alertTitle { font-weight: 700; margin-bottom: 4px; font-size: 13px; }
+.alertItem { padding: 2px 0; font-size: 12px; }
+.alertOk { background: #14301f; border: 1px solid #2ecc71; border-radius: 8px; padding: 6px 10px; font-size: 12px; }
 
-h1{
-  margin:0 0 18px 0;
-  font-size:22px;
-  font-weight:700;
-  letter-spacing:.2px;
-}
+.list { display: flex; flex-direction: column; gap: 6px; }
 
-.info{
-  margin-bottom:12px;
-  opacity:.8;
-  font-size:13px;
+/* DENSE CARD LAYOUT */
+.card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-decoration: none;
+  color: white;
+  background: #1c2833;
+  border: 1px solid #34495e;
+  border-radius: 8px;
+  padding: 8px 10px;
 }
+.card:active { transform: scale(.99); }
+.ok { border-left: 4px solid #2ecc71; }
+.missing { border-left: 4px solid #e74c3c; }
 
-.alerts{
-  margin-bottom:12px;
-}
+.left { flex: 1; min-width: 0; padding-right: 8px; }
+.right { text-align: right; flex-shrink: 0; }
 
-.alertPanel{
-  background:#341616;
-  border:1px solid #e74c3c;
-  border-radius:16px;
-  padding:12px;
-}
+.station { color: #8ec5ff; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
+.train-row { display: flex; align-items: baseline; gap: 6px; flex-wrap: nowrap; overflow: hidden; }
+.train { font-size: 18px; font-weight: 700; line-height: 1.1; white-space: nowrap; }
+.name { font-size: 13px; color: #e2e8f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.destination { color: #9ecfff; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
 
-.alertTitle{
-  font-weight:700;
-  margin-bottom:8px;
-}
+.time { font-size: 13px; font-weight: 600; color: #d5dbe0; }
+.delay { font-size: 20px; font-weight: 700; white-space: nowrap; line-height: 1; margin-top: 2px; }
 
-.alertItem{
-  padding:4px 0;
-}
+.green { color: #2ecc71; }
+.yellow { color: #f1c40f; }
+.orange { color: #f39c12; }
+.red { color: #e74c3c; }
 
-.alertOk{
-  background:#14301f;
-  border:1px solid #2ecc71;
-  border-radius:16px;
-  padding:12px;
-}
-
-.list{
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-}
-
-.card{
-  display:block;
-  text-decoration:none;
-  color:white;
-  background:#1c2833;
-  border:1px solid #34495e;
-  border-radius:16px;
-  padding:14px;
-}
-
-.card:active{
-  transform:scale(.99);
-}
-
-.ok{
-  border-left:6px solid #2ecc71;
-}
-
-.missing{
-  border-left:6px solid #e74c3c;
-}
-
-.top{
-  display:flex;
-  justify-content:space-between;
-  align-items:flex-start;
-  gap:12px;
-}
-
-.left{
-  flex:1;
-}
-
-.station{
-  color:#8ec5ff;
-  font-size:12px;
-  font-weight:600;
-  margin-bottom:6px;
-}
-
-.train{
-  font-size:24px;
-  font-weight:700;
-}
-
-.name{
-  font-size:16px;
-  margin-top:2px;
-}
-
-.destination{
-  color:#9ecfff;
-  margin-top:2px;
-  font-size:14px;
-}
-
-.time{
-  margin-top:6px;
-  font-size:14px;
-  color:#d5dbe0;
-}
-
-.delay{
-  font-size:26px;
-  font-weight:700;
-  white-space:nowrap;
-  min-width:72px;
-  text-align:right;
-}
-
-.green{
-  color:#2ecc71;
-}
-
-.yellow{
-  color:#f1c40f;
-}
-
-.orange{
-  color:#f39c12;
-}
-
-.red{
-  color:#e74c3c;
-}
-
-.meta{
-  margin-top:10px;
-  display:flex;
-  gap:8px;
-  flex-wrap:wrap;
-}
-
-.badge{
-  background:#16222d;
-  padding:4px 8px;
-  border-radius:999px;
-  font-size:12px;
-}
-
+.meta { display: flex; gap: 4px; margin-top: 4px; }
+.badge { background: #16222d; padding: 1px 5px; border-radius: 4px; font-size: 10px; color: #a0aec0; }
 </style>
+
 </head>
 
 <body>
@@ -391,38 +287,63 @@ setInterval(
 
 <!-- DODATKOWE STYLE UX DLA LISTY POCIĄGÓW -->
 <style>
-  /* Pływający przycisk odświeżania w prawym dolnym rogu */
-  .fab-refresh {
-    position: fixed !important;
-    bottom: 24px !important;
-    right: 24px !important;
-    width: 56px !important;
-    height: 56px !important;
-    border-radius: 50% !important;
-    background-color: #0066cc !important;
-    color: #ffffff !important;
-    border: none !important;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    z-index: 99999 !important;
-    cursor: pointer !important;
-  }
+* { box-sizing: border-box; }
+body {
+  margin: 0 auto;
+  padding: 8px;
+  max-width: 700px;
+  background: #101820;
+  color: white;
+  font-family: Segoe UI, Arial, sans-serif;
+}
 
-  /* Zmniejszenie kafelków na liście (kompaktowe) */
-  .train-card, .card, [class*="card"], [class*="train-"] {
-    padding: 8px 12px !important;
-    margin-bottom: 8px !important;
-  }
+h1 { margin: 0 0 8px 0; font-size: 18px; font-weight: 700; }
+.info { margin-bottom: 8px; opacity: .8; font-size: 11px; }
+.alerts { margin-bottom: 8px; }
+.alertPanel { background: #341616; border: 1px solid #e74c3c; border-radius: 8px; padding: 8px; }
+.alertTitle { font-weight: 700; margin-bottom: 4px; font-size: 13px; }
+.alertItem { padding: 2px 0; font-size: 12px; }
+.alertOk { background: #14301f; border: 1px solid #2ecc71; border-radius: 8px; padding: 6px 10px; font-size: 12px; }
 
-  /* DUŻE GODZINY CZYTELNE W BIEGU */
-  .time-main, .time, .delay-time, [class*="time"] {
-    font-size: 1.5rem !important;
-    font-weight: 800 !important;
-    letter-spacing: -0.5px !important;
-  }
+.list { display: flex; flex-direction: column; gap: 6px; }
+
+/* DENSE CARD LAYOUT */
+.card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-decoration: none;
+  color: white;
+  background: #1c2833;
+  border: 1px solid #34495e;
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+.card:active { transform: scale(.99); }
+.ok { border-left: 4px solid #2ecc71; }
+.missing { border-left: 4px solid #e74c3c; }
+
+.left { flex: 1; min-width: 0; padding-right: 8px; }
+.right { text-align: right; flex-shrink: 0; }
+
+.station { color: #8ec5ff; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
+.train-row { display: flex; align-items: baseline; gap: 6px; flex-wrap: nowrap; overflow: hidden; }
+.train { font-size: 18px; font-weight: 700; line-height: 1.1; white-space: nowrap; }
+.name { font-size: 13px; color: #e2e8f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.destination { color: #9ecfff; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+
+.time { font-size: 13px; font-weight: 600; color: #d5dbe0; }
+.delay { font-size: 20px; font-weight: 700; white-space: nowrap; line-height: 1; margin-top: 2px; }
+
+.green { color: #2ecc71; }
+.yellow { color: #f1c40f; }
+.orange { color: #f39c12; }
+.red { color: #e74c3c; }
+
+.meta { display: flex; gap: 4px; margin-top: 4px; }
+.badge { background: #16222d; padding: 1px 5px; border-radius: 4px; font-size: 10px; color: #a0aec0; }
 </style>
+
 
 <!-- Przycisk odświeżania pod kciuk -->
 <button class="fab-refresh" onclick="location.reload()" aria-label="Odśwież stronę">
