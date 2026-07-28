@@ -3,18 +3,13 @@ const MONITORED_TRAINS = [
   { station: "Tarnowskie Góry", train: "40450" },
   { station: "Miasteczko Śląskie", train: "44226" },
   { station: "Tarnowskie Góry", train: "40250" },
-
-  // objazdy do 31.07.2026
   { station: "Tarnowskie Góry", train: "40423" },
   { station: "Tarnowskie Góry", train: "40211" },
   { station: "Tarnowskie Góry", train: "40468" },
-
   { station: "Katowice", train: "38107" },
   { station: "Chorzów Uniwersytet", train: "40621" },
-
   { station: "Bytom Karb", train: "40658" },
   { station: "Szczecin Główny", train: "83194" },
-
   { station: "Katowice", train: "63102" }
 ];
 
@@ -22,11 +17,9 @@ export async function onRequestGet(context) {
   const { request } = context;
   const origin = new URL(request.url).origin;
 
-  // Unikalne stacje
   const stations = [...new Set(MONITORED_TRAINS.map(x => x.station))];
   const departuresByStation = {};
 
-  // Równoległe pobranie z wyłapywaniem błędów pojedynczych stacji
   await Promise.all(
     stations.map(async (station) => {
       try {
@@ -54,14 +47,14 @@ export async function onRequestGet(context) {
       station: item.station,
       train: item.train,
       found: !!hit,
-      reason: hit ? "" : "Pociągu nie ma w pobranych danych PLK",
+      reason: hit ? "" : "Brak danych w API PLK",
       delay: hit?.delay ?? 0,
       status: hit?.status ?? "",
       plannedTime: hit?.plannedTime ?? hit?.time ?? "--:--",
       time: hit?.time ?? "--:--",
       platform: hit?.platform ?? "-",
       track: hit?.track ?? "-",
-      category: hit?.category || "Os",
+      category: hit?.category || "R",
       name: hit?.name ?? "",
       destination: hit?.destination ?? "",
       via: hit?.via ?? "",
@@ -74,15 +67,12 @@ export async function onRequestGet(context) {
   return new Response(
     JSON.stringify({
       generatedAt: new Date().toISOString(),
-      stationCount: stations.length,
-      trainCount: trains.length,
-      foundCount: trains.filter(t => t.found).length,
       trains
     }),
     {
       headers: {
         "Content-Type": "application/json; charset=utf-8",
-        "Cache-Control": "no-store, no-cache, must-revalidate"
+        "Cache-Control": "no-store"
       }
     }
   );
