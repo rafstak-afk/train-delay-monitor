@@ -1,270 +1,422 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Szczegóły pociągu</title>
-<style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  background: #090d16;
-  color: #f3f4f6;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  display: flex;
-  justify-content: center;
-  min-height: 100vh;
-}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Szczegóły pociągu - Monitorowane Pociągi</title>
+    <style>
+        :root {
+            --bg-color: #0b0e14;
+            --card-bg: #161b26;
+            --card-border: #232d3f;
+            --accent-color: #38bdf8;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --status-ok-bg: #15803d;
+            --status-ok-text: #ffffff;
+            --status-delay-bg: #b91c1c;
+            --status-delay-text: #ffffff;
+            --active-glow: rgba(56, 189, 248, 0.25);
+        }
 
-.app-container {
-  width: 100%;
-  max-width: 650px;
-  background: #0d1322;
-  min-height: 100vh;
-  border-left: 1px solid #1f2937;
-  border-right: 1px solid #1f2937;
-  display: flex;
-  flex-direction: column;
-}
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
 
-.top-bar {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  background: #111827;
-  border-bottom: 1px solid #1f2937;
-  padding: 12px 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            padding: 16px;
+            max-width: 850px;
+            margin: 0 auto;
+            line-height: 1.5;
+        }
 
-.back-btn {
-  color: #38bdf8;
-  text-decoration: none;
-  font-size: 22px;
-  font-weight: bold;
-  padding-right: 12px;
-}
+        /* Przycisk powrotu */
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--accent-color);
+            text-decoration: none;
+            font-size: 1.05rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding: 6px 12px;
+            background: rgba(56, 189, 248, 0.1);
+            border-radius: 8px;
+        }
 
-.head-info { flex: 1; }
-.badge { background: #1f2937; color: #38bdf8; font-size: 11px; font-weight: 800; padding: 2px 6px; border-radius: 4px; border: 1px solid #374151; }
-.train-id { font-size: 16px; font-weight: 900; margin-left: 6px; color: #fff; }
-.route-text { font-size: 12px; color: #9ca3af; margin-top: 3px; }
+        /* Nagłówek Główny */
+        .train-header-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+        }
 
-.head-status { text-align: right; }
-.time-big { font-size: 18px; font-weight: 900; color: #38bdf8; line-height: 1; }
-.status-tag { font-size: 11px; font-weight: 900; color: #4ade80; margin-top: 4px; }
-.status-tag.red { color: #f87171; }
+        .train-title-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
 
-.section-label {
-  font-size: 11px;
-  font-weight: 800;
-  color: #6b7280;
-  text-transform: uppercase;
-  padding: 14px 16px 8px 16px;
-  letter-spacing: 0.5px;
-}
+        .train-number {
+            background: #0f172a;
+            border: 1px solid #334155;
+            color: var(--accent-color);
+            font-size: 1.6rem;
+            font-weight: 900;
+            padding: 6px 18px;
+            border-radius: 10px;
+            letter-spacing: 0.05em;
+        }
 
-.station-list { padding: 0 12px 20px 12px; display: flex; flex-direction: column; gap: 6px; }
+        .train-time-main {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #38bdf8;
+        }
 
-.st-card {
-  background: #111827;
-  border: 1px solid #1f2937;
-  border-radius: 8px;
-  padding: 10px 12px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
+        .train-route-main {
+            font-size: 1.45rem;
+            font-weight: 800;
+            color: var(--text-main);
+            margin-bottom: 12px;
+        }
 
-.st-card.active {
-  border: 1px solid #38bdf8;
-  background: #0f172a;
-}
+        /* Wymienione wszystkie stacje PRZEZ */
+        .via-stations-bar {
+            background: rgba(255, 255, 255, 0.04);
+            border-left: 4px solid var(--accent-color);
+            padding: 10px 14px;
+            border-radius: 0 8px 8px 0;
+            font-size: 1rem;
+            color: var(--text-muted);
+            margin-bottom: 20px;
+            word-break: break-word;
+        }
 
-.st-left { flex: 1; min-width: 0; }
-.st-name { font-size: 13px; font-weight: 800; color: #f3f4f6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.st-sub { font-size: 11px; color: #6b7280; margin-top: 2px; }
+        .via-stations-bar strong {
+            color: var(--text-main);
+        }
 
-.st-right { text-align: right; margin-left: 12px; display: flex; align-items: center; gap: 8px; }
-.st-times { display: flex; flex-direction: column; align-items: flex-end; }
-.st-time-p { font-size: 10px; color: #6b7280; text-decoration: line-through; }
-.st-time-p.clean { text-decoration: none; color: #9ca3af; }
-.st-time-r { font-size: 15px; font-weight: 900; color: #38bdf8; line-height: 1.1; }
+        /* GŁÓWNY BANER: Ostatnia potwierdzona stacja */
+        .last-confirmed-box {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.9));
+            border: 2px solid var(--accent-color);
+            border-radius: 12px;
+            padding: 18px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            box-shadow: 0 0 20px var(--active-glow);
+        }
 
-.st-badge {
-  font-size: 10px;
-  font-weight: 900;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: #15803d;
-  color: #fff;
-}
-.st-badge.red { background: #b91c1c; }
-</style>
+        .last-confirmed-label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--accent-color);
+            font-weight: 800;
+        }
+
+        .last-confirmed-details {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .station-name-highlight {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #ffffff;
+        }
+
+        .time-and-status {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .confirmed-time {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #f1f5f9;
+        }
+
+        .badge-status {
+            background: var(--status-ok-bg);
+            color: var(--status-ok-text);
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 800;
+            letter-spacing: 0.02em;
+        }
+
+        /* Sekcja Tras Przejazdu */
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 16px;
+            padding-left: 4px;
+        }
+
+        .timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* Karta pojedynczej stacji */
+        .station-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            transition: all 0.2s ease;
+        }
+
+        .station-card.confirmed-active {
+            border: 2px solid var(--accent-color);
+            background: #1e293b;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.15);
+        }
+
+        .station-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .station-title {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #ffffff;
+        }
+
+        .station-subtext {
+            font-size: 1rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .station-metrics {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            text-align: right;
+        }
+
+        .time-box {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .scheduled-time {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            text-decoration: line-through;
+        }
+
+        .actual-time {
+            font-size: 1.4rem;
+            font-weight: 900;
+            color: #ffffff;
+        }
+
+        .badge-ok {
+            background: #166534;
+            color: #4ade80;
+            border: 1px solid #22c55e;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: 800;
+            font-size: 0.95rem;
+        }
+
+        @media (max-width: 600px) {
+            .station-card {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .station-metrics {
+                width: 100%;
+                justify-content: space-between;
+                border-top: 1px solid rgba(255, 255, 255, 0.05);
+                padding-top: 10px;
+                margin-top: 4px;
+            }
+            .time-box {
+                align-items: flex-start;
+            }
+        }
+    </style>
 </head>
 <body>
 
-<div class="app-container">
-  <div class="top-bar">
-    <a href="/monitorowane-pociagi/" class="back-btn">←</a>
-    <div class="head-info">
-      <div>
-        <span class="badge" id="hCategory">---</span>
-        <span class="train-id" id="hTrain">---</span>
-      </div>
-      <div class="route-text" id="hRoute">Ładowanie...</div>
-    </div>
-    <div class="head-status">
-      <div class="time-big" id="hTime">--:--</div>
-      <div class="status-tag" id="hDelay">---</div>
-    </div>
-  </div>
+    <a href="./index.html" class="back-link">← Powrót do monitorowanych</a>
 
-  <div class="section-label">Pełna trasa przejazdu</div>
-  <div class="station-list" id="stList">
-    <div style="text-align: center; color: #6b7280; padding: 30px; font-size: 13px;">Pobieranie pełnej trasy...</div>
-  </div>
-</div>
-
-<script>
-const params = new URLSearchParams(window.location.search);
-const trainNum = params.get('train') || '';
-const currentStation = params.get('station') || '';
-const trainOrderId = params.get('trainOrderId') || '';
-
-document.getElementById('hTrain').innerText = trainNum;
-
-async function load() {
-  const stList = document.getElementById('stList');
-
-  // 1. Najpierw szukamy w pamięci podręcznej z głównej listy
-  let cachedTrain = null;
-  try {
-    const cached = localStorage.getItem('monitored_trains_cache');
-    if (cached) {
-      const { data } = JSON.parse(cached);
-      cachedTrain = (data.trains || []).find(x => String(x.train) === String(trainNum));
-    }
-  } catch(e) {}
-
-  // 2. Próba pobrania ze szczegółowego API PLK
-  if (trainOrderId) {
-    try {
-      const res = await fetch(`/api/train-details?trainOrderId=${encodeURIComponent(trainOrderId)}`);
-      if (res.ok) {
-        const routeData = await res.json();
-        const route = routeData.route || routeData.stations || [];
-        if (route.length > 0) {
-          renderRoute(route, routeData);
-          return;
-        }
-      }
-    } catch(e) {}
-  }
-
-  // 3. Rezerwowe odtworzenie trasy od stacji początkowej (FROM -> VIA -> DESTINATION)
-  if (cachedTrain) {
-    renderFallback(cachedTrain);
-    return;
-  }
-
-  stList.innerHTML = '<div style="text-align:center;padding:30px;color:#f87171;font-size:13px;">Nie udało się pobrać szczegółów trasy.</div>';
-}
-
-function renderRoute(route, meta) {
-  document.getElementById('hCategory').innerText = meta.category || 'Os';
-  document.getElementById('hRoute').innerText = `${route[0]?.name || ''} → ${route[route.length - 1]?.name || ''}`;
-  
-  const activeSt = route.find(s => s.name?.toLowerCase().includes(currentStation.toLowerCase())) || route[0];
-  document.getElementById('hTime').innerText = activeSt?.time || activeSt?.plannedTime || '--:--';
-  
-  const delay = Number(activeSt?.delay || 0);
-  const delayEl = document.getElementById('hDelay');
-  if (delay > 0) {
-    delayEl.innerText = `+${delay} MIN`;
-    delayEl.className = 'status-tag red';
-  } else {
-    delayEl.innerText = 'NA CZAS';
-    delayEl.className = 'status-tag';
-  }
-
-  document.getElementById('stList').innerHTML = route.map(st => {
-    const name = st.name || st.stationName || 'Stacja';
-    const isCurrent = name.toLowerCase().includes(currentStation.toLowerCase());
-    const stDelay = Number(st.delay || 0);
-    const pTime = st.plannedTime || '--:--';
-    const rTime = st.time || st.realTime || pTime;
-
-    return `
-      <div class="st-card ${isCurrent ? 'active' : ''}">
-        <div class="st-left">
-          <div class="st-name">${isCurrent ? '🎯 ' : ''}${name}</div>
-          <div class="st-sub">peron ${st.platform || '-'} · tor ${st.track || '-'}</div>
+    <header class="train-header-card">
+        <div class="train-title-row">
+            <span class="train-number" id="trainNumber">IC 3815</span>
+            <span class="train-time-main" id="trainTimeHeader">14:49</span>
         </div>
-        <div class="st-right">
-          <div class="st-times">
-            ${stDelay > 0 && pTime !== '--:--' ? `<div class="st-time-p">${pTime}</div>` : `<div class="st-time-p clean">${pTime}</div>`}
-            <div class="st-time-r" style="color:${stDelay > 0 ? '#f87171' : '#38bdf8'}">${rTime}</div>
-          </div>
-          <span class="st-badge ${stDelay > 0 ? 'red' : ''}">${stDelay > 0 ? '+' + stDelay : 'OK'}</span>
+
+        <div class="train-route-main" id="trainRouteHeader">
+            Katowice → Szczecin Główny
         </div>
-      </div>
-    `;
-  }).join('');
-}
 
-function renderFallback(t) {
-  document.getElementById('hCategory').innerText = t.category || 'Os';
-  
-  // Jeśli API podało stację wyjściową (from), to od niej zaczynamy!
-  const startStation = t.from || t.station;
-  document.getElementById('hRoute').innerText = `${startStation} → ${t.destination || '---'}`;
-  document.getElementById('hTime').innerText = t.time || t.plannedTime || '--:--';
-  
-  let viaArray = [];
-  if (t.via) {
-    viaArray = t.via.split(',').map(s => s.trim()).filter(Boolean);
-  }
-
-  // Tworzymy ciąg: [Start] -> [stacje z via, o ile nie są startem] -> [Meta]
-  const fullPath = [];
-  if (startStation) fullPath.push(startStation);
-
-  viaArray.forEach(v => {
-    if (!fullPath.some(s => s.toLowerCase() === v.toLowerCase())) {
-      fullPath.push(v);
-    }
-  });
-
-  if (t.destination && !fullPath.some(s => s.toLowerCase() === t.destination.toLowerCase())) {
-    fullPath.push(t.destination);
-  }
-
-  document.getElementById('stList').innerHTML = fullPath.map((stName, idx) => {
-    const isCurrent = stName.toLowerCase() === t.station.toLowerCase();
-    const pTime = isCurrent ? t.plannedTime : '--:--';
-    const rTime = isCurrent ? (t.time || t.plannedTime) : '--:--';
-
-    return `
-      <div class="st-card ${isCurrent ? 'active' : ''}">
-        <div class="st-left">
-          <div class="st-name">${isCurrent ? '🎯 ' : ''}${stName}</div>
-          <div class="st-sub">${isCurrent ? `peron ${t.platform || '-'} · tor ${t.track || '-'}` : 'stacja przejazdowa'}</div>
+        <!-- STACJE PRZEZ (Kompletne zestawienie) -->
+        <div class="via-stations-bar" id="viaStationsBar">
+            <strong>PRZEZ:</strong> Bytom • Gliwice • Kędzierzyn-Koźle • Opole Główne • Wrocław Główny
         </div>
-        <div class="st-right">
-          <div class="st-times">
-            <div class="st-time-p clean">${pTime}</div>
-            <div class="st-time-r">${rTime}</div>
-          </div>
-          <span class="st-badge">OK</span>
-        </div>
-      </div>
-    `;
-  }).join('');
-}
 
-load();
-</script>
+        <!-- NAGŁÓWEK OSTATNIEJ POTWIERDZONEJ STACJI -->
+        <div class="last-confirmed-box">
+            <div class="last-confirmed-label">Ostatnia potwierdzona stacja</div>
+            <div class="last-confirmed-details">
+                <div class="station-name-highlight" id="lastConfirmedStation">Katowice</div>
+                <div class="time-and-status">
+                    <span class="confirmed-time" id="lastConfirmedTime">Godz. 14:49</span>
+                    <span class="badge-status" id="lastConfirmedStatus">OK (0 min)</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="section-title" id="routeSectionTitle">PEŁNA TRASA PRZEJAZDU (7 STACJI)</div>
+
+        <div class="timeline" id="timelineContainer">
+            <!-- Stacja 1 -->
+            <div class="station-card confirmed-active">
+                <div class="station-info">
+                    <div class="station-title">Katowice</div>
+                    <div class="station-subtext">peron 1 · tor 9 (Stacja początkowa)</div>
+                </div>
+                <div class="station-metrics">
+                    <div class="time-box">
+                        <span class="actual-time">14:49</span>
+                    </div>
+                    <span class="badge-ok">OK</span>
+                </div>
+            </div>
+
+            <!-- Stacja 2 -->
+            <div class="station-card">
+                <div class="station-info">
+                    <div class="station-title">Bytom</div>
+                    <div class="station-subtext">stacja przejazdowa</div>
+                </div>
+                <div class="station-metrics">
+                    <div class="time-box">
+                        <span class="actual-time">15:12</span>
+                    </div>
+                    <span class="badge-ok">OK</span>
+                </div>
+            </div>
+
+            <!-- Stacja 3 -->
+            <div class="station-card">
+                <div class="station-info">
+                    <div class="station-title">Gliwice</div>
+                    <div class="station-subtext">peron 2 · tor 4</div>
+                </div>
+                <div class="station-metrics">
+                    <div class="time-box">
+                        <span class="actual-time">15:34</span>
+                    </div>
+                    <span class="badge-ok">OK</span>
+                </div>
+            </div>
+
+            <!-- Stacja 4 -->
+            <div class="station-card">
+                <div class="station-info">
+                    <div class="station-title">Kędzierzyn-Koźle</div>
+                    <div class="station-subtext">stacja przejazdowa</div>
+                </div>
+                <div class="station-metrics">
+                    <div class="time-box">
+                        <span class="actual-time">16:01</span>
+                    </div>
+                    <span class="badge-ok">OK</span>
+                </div>
+            </div>
+
+            <!-- Stacja 5 -->
+            <div class="station-card">
+                <div class="station-info">
+                    <div class="station-title">Opole Główne</div>
+                    <div class="station-subtext">peron 1 · tor 2</div>
+                </div>
+                <div class="station-metrics">
+                    <div class="time-box">
+                        <span class="actual-time">16:32</span>
+                    </div>
+                    <span class="badge-ok">OK</span>
+                </div>
+            </div>
+
+            <!-- Stacja 6 -->
+            <div class="station-card">
+                <div class="station-info">
+                    <div class="station-title">Wrocław Główny</div>
+                    <div class="station-subtext">peron 3 · tor 1</div>
+                </div>
+                <div class="station-metrics">
+                    <div class="time-box">
+                        <span class="actual-time">17:25</span>
+                    </div>
+                    <span class="badge-ok">OK</span>
+                </div>
+            </div>
+
+            <!-- Stacja 7 -->
+            <div class="station-card">
+                <div class="station-info">
+                    <div class="station-title">Szczecin Główny</div>
+                    <div class="station-subtext">stacja końcowa</div>
+                </div>
+                <div class="station-metrics">
+                    <div class="time-box">
+                        <span class="actual-time">20:45</span>
+                    </div>
+                    <span class="badge-ok">OK</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Logika dynamicznego ładowania danych z URL (np. ?id=3815)
+        document.addEventListener("DOMContentLoaded", function () {
+            const params = new URLSearchParams(window.location.search);
+            const trainId = params.get("id") || params.get("train") || "3815";
+            
+            // Tutaj w razie potrzeby można połączyć się z API /api/train-details?num=
+            console.log("Załadowano podgląd dla pociągu ID:", trainId);
+        });
+    </script>
 </body>
 </html>
