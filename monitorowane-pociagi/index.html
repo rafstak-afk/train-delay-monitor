@@ -3,162 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitorowane Pociągi</title>
+    <title>Tablica Monitorowania Pociągów</title>
     <style>
         :root {
-            --bg-color: #0b0e14;
-            --card-bg: #161b26;
-            --card-border: #232d3f;
-            --accent-color: #38bdf8;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --status-ok-bg: rgba(34, 197, 94, 0.15);
-            --status-ok-border: #22c55e;
-            --status-ok-text: #4ade80;
+            --bg-main: #0a0e17;
+            --panel-bg: #111827;
+            --panel-border: #1f293d;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --accent-green: #10b981;
+            --accent-blue: #2563eb;
             --status-delay-bg: rgba(239, 68, 68, 0.15);
-            --status-delay-border: #ef4444;
             --status-delay-text: #f87171;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            padding: 20px;
-            max-width: 900px;
-            margin: 0 auto;
-        }
-
-        header {
-            margin-bottom: 24px;
-            padding-bottom: 16px;
-            border-bottom: 1px solid var(--card-border);
-        }
-
-        h1 {
-            font-size: 1.8rem;
-            font-weight: 800;
-            color: var(--text-main);
-            letter-spacing: -0.02em;
-        }
-
-        .subtitle {
-            color: var(--text-muted);
-            font-size: 1rem;
-            margin-top: 4px;
-        }
-
-        .trains-list {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        .train-card {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            border-radius: 12px;
-            padding: 20px;
-            text-decoration: none;
-            color: inherit;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            transition: transform 0.15s ease, border-color 0.15s ease;
-        }
-
-        .train-card:hover {
-            transform: translateY(-2px);
-            border-color: var(--accent-color);
-        }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .train-badge {
-            background: #1e293b;
-            border: 1px solid #334155;
-            color: var(--accent-color);
-            padding: 6px 14px;
-            border-radius: 8px;
-            font-weight: 800;
-            font-size: 1.1rem;
-            letter-spacing: 0.05em;
-        }
-
-        .status-pill {
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 0.95rem;
-            font-weight: 700;
-            border: 1px solid transparent;
-        }
-
-        .status-ok {
-            background: var(--status-ok-bg);
-            border-color: var(--status-ok-border);
-            color: var(--status-ok-text);
-        }
-
-        .status-delay {
-            background: var(--status-delay-bg);
-            border-color: var(--status-delay-border);
-            color: var(--status-delay-text);
-        }
-
-        .route-info {
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: var(--text-main);
-        }
-
-        .last-update-info {
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 8px;
-            padding: 10px 14px;
-            font-size: 0.95rem;
-            color: var(--text-muted);
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .last-update-info strong {
-            color: var(--text-main);
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background-color: var(--bg-main); color: var(--text-main); padding: 16px; max-width: 960px; margin: 0 auto; font-size: 14px; }
+        header { margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--panel-border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+        h1 { font-size: 1.4rem; font-weight: 800; color: #ffffff; display: flex; align-items: center; gap: 8px; }
+        .header-controls { display: flex; gap: 8px; }
+        .btn-sm { background: #1f293d; border: 1px solid #374151; color: #ffffff; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: 700; cursor: pointer; }
+        .system-status-bar { width: 100%; background: rgba(16, 185, 129, 0.1); border: 1px solid var(--accent-green); color: #34d399; padding: 8px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: 700; margin-bottom: 16px; display: flex; justify-content: space-between; }
+        .board-list { display: flex; flex-direction: column; gap: 12px; }
+        .board-record-card { background: #0f172a; border: 1px solid var(--panel-border); border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 16px; text-decoration: none; color: inherit; }
+        .board-left { display: flex; align-items: center; gap: 16px; }
+        .station-status-big { display: flex; flex-direction: column; min-width: 110px; }
+        .station-status-big .city { font-size: 0.95rem; font-weight: 700; color: #ffffff; }
+        .station-status-big .delay-num { font-size: 1.8rem; font-weight: 900; line-height: 1; margin-top: 2px; }
+        .delay-num.ok { color: var(--accent-green); }
+        .delay-num.delayed { color: #f87171; }
+        .time-group { display: flex; flex-direction: column; min-width: 80px; }
+        .time-group .time-main { font-size: 1.3rem; font-weight: 800; color: var(--accent-green); }
+        .time-group .time-sub { font-size: 0.8rem; color: #60a5fa; font-weight: 600; }
+        .board-right { display: flex; flex-direction: column; align-items: flex-end; text-align: right; gap: 3px; }
+        .train-header-line { display: flex; align-items: center; gap: 8px; }
+        .tag-category { background: #7c2d12; color: #fdba74; font-style: italic; padding: 2px 6px; border-radius: 10px; font-size: 0.75rem; font-weight: 700; }
+        .train-name-title { font-size: 1.1rem; font-weight: 800; color: #ffffff; }
+        .dest-title { font-size: 0.95rem; font-weight: 700; color: #ffffff; }
+        .via-line, .details-line { font-size: 0.8rem; color: var(--text-muted); }
     </style>
 </head>
 <body>
-
     <header>
-        <h1>Monitorowane Pociągi</h1>
-        <p class="subtitle">Podgląd na żywo pozycji i opóźnień wybranych połączeń</p>
+        <h1>🖥️ Tablica Monitorowania</h1>
+        <div class="header-controls">
+            <button class="btn-sm" onclick="fetchMonitoredTrains(true)">🔄 Odśwież</button>
+        </div>
+        <div class="system-status-bar" id="statusBar">
+            <span>Stan systemu: Pobieranie danych...</span>
+            <span id="updateTime">--:--:--</span>
+        </div>
     </header>
 
-    <main class="trains-list" id="trainsList">
-        <!-- Pociąg IC 3815 -->
-        <a href="train.html?id=3815" class="train-card">
-            <div class="card-header">
-                <span class="train-badge">IC 3815</span>
-                <span class="status-pill status-ok">W planie (0 min)</span>
-            </div>
-            <div class="route-info">
-                Katowice → Szczecin Główny
-            </div>
-            <div class="last-update-info">
-                <span>Ostatnia stacja: <strong>Katowice</strong></span>
-                <span>Potwierdzenie: <strong>14:49</strong></span>
-            </div>
-        </a>
+    <main class="board-list" id="boardContainer">
+        <div style="text-align:center; padding: 40px; color: var(--text-muted);">
+            Ładowanie listy monitorowanych pociągów...
+        </div>
     </main>
 
+    <script>
+        async function fetchMonitoredTrains() {
+            const container = document.getElementById('boardContainer');
+            const statusEl = document.getElementById('statusBar');
+            const updateTimeEl = document.getElementById('updateTime');
+
+            try {
+                const res = await fetch('/api/monitored-trains-v2');
+                const data = await res.json();
+                const trains = data.trains || [];
+                
+                updateTimeEl.innerText = new Date().toTimeString().split(' ')[0];
+                statusEl.children[0].innerText = `✓ Połączono z PLK. Monitorowane połączenia: ${trains.length}`;
+
+                container.innerHTML = trains.map(t => {
+                    const delay = Number(t.delay || 0);
+                    const delayClass = delay > 0 ? 'delayed' : 'ok';
+                    const targetUrl = `train.html?train=${encodeURIComponent(t.train)}`;
+
+                    return `
+                        <a href="${targetUrl}" class="board-record-card">
+                            <div class="board-left">
+                                <div class="station-status-big">
+                                    <span class="city">${t.station}</span>
+                                    <span class="delay-num ${delayClass}">${delay}</span>
+                                </div>
+                                <div class="time-group">
+                                    <span class="time-main">${t.time || '--:--'}</span>
+                                    <span class="time-sub">odjazd</span>
+                                </div>
+                            </div>
+                            <div class="board-right">
+                                <div class="train-header-line">
+                                    <span class="tag-category">${t.category || 'IC'}</span>
+                                    <span class="train-name-title">${t.train} ${t.name || ''}</span>
+                                </div>
+                                <div class="dest-title">${t.destination || ''}</div>
+                                ${t.via ? `<div class="via-line">przez: ${t.via}</div>` : ''}
+                                <div class="details-line">peron ${t.platform || '-'} · tor ${t.track || '-'}</div>
+                            </div>
+                        </a>
+                    `;
+                }).join('');
+            } catch (err) {
+                statusEl.children[0].innerText = '⚠️ Błąd pobierania danych';
+            }
+        }
+        fetchMonitoredTrains();
+    </script>
 </body>
 </html>
