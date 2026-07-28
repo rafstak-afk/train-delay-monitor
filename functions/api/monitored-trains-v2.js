@@ -2,7 +2,6 @@ export async function onRequest(context) {
   const url = new URL(context.request.url);
   const baseUrl = url.origin;
 
-  // Lista obserwowanych pociągów i odpytywanych stacji
   const monitored = [
     { station: 'Katowice', train: '3815' },
     { station: 'Bytom Karb', train: '40360' },
@@ -18,18 +17,22 @@ export async function onRequest(context) {
     { station: 'Chorzów Uniwersytet', train: '40468' }
   ];
 
+  // Pomocnicza funkcja do wyciągania samych cyfr z numeru pociągu (np. "IC 3815/6" -> "3815")
+  const getDigits = (val) => String(val || '').replace(/\D/g, '');
+
   try {
     const uniqueStations = [...new Set(monitored.map(m => m.station))];
     const todayStr = new Date().toISOString().split('T')[0];
 
-    // Pobieranie żywych danych ze stacji
     const stationDataMap = {};
+
+    // Pobieranie odjazdów dla każdej unikalnej stacji
     await Promise.all(uniqueStations.map(async (st) => {
       try {
-        const res = await fetch(`${baseUrl}/api/departures?station=${encodeURIComponent(st)}&date=${todayStr}&limit=100`);
+        const res = await fetch(`${baseUrl}/api/departures?station=${encodeURIComponent(st)}&date=${todayStr}`);
         if (res.ok) {
           const json = await res.json();
-          stationDataMap[st] = json.departures || [];
+          stationDataMap[st] = json.departures || json.trains || json.data || (Array.isArray(json) ? json : []);
         } else {
           stationDataMap[st] = [];
         }
@@ -38,12 +41,15 @@ export async function onRequest(context) {
       }
     }));
 
-    // Dopasowanie żywych pociągów
     const resultTrains = monitored.map(item => {
       const departures = stationDataMap[item.station] || [];
+      const targetDigits = getDigits(item.train);
+
+      // Elastyczne szukanie pociągu po cyfrach w numerze
       const match = departures.find(d => {
-        const num = String(d.train || d.trainNumber || d.number || d.trainNo || '').trim();
-        return num === item.train;
+        const dNum = String(d.train || d.trainNumber || d.number || d.id || '');
+        const dDigits = getDigits(dNum);
+        return dDigits.includes(targetDigits) || targetDigits.includes(dDigits);
       });
 
       if (!match) {
@@ -58,20 +64,19 @@ export async function onRequest(context) {
         queryStation: item.station,
         train: item.train,
         found: true,
-        category: match.category || match.type || 'Pociąg',
+        category: match.category || match.type || match.line || '',
         name: match.name || match.trainName || '',
-        carrier: match.carrier || match.operator || 'PKP',
-        origin: match.origin || match.from || match.startStation || 'Stacja początkowa',
-        destination: match.destination || match.to || 'Stacja docelowa',
-        plannedTime: match.plannedTime || match.scheduleTime || '--:--',
-        actualTime: match.time || match.actualTime || match.plannedTime || '--:--',
+        carrier: match.carrier || match.operator || (item.train.length === 5 ? 'KŚ' : 'IC'),
+        origin: match.origin || match.from || match.startStation || match.firstStation || 'Stacja początkowa',
+        destination: match.destination || match.to || match.endStation || 'Stacja docelowa',
+        plannedTime: match.plannedTime || match.scheduleTime || match.time || '--:--',
+        actualTime: match.actualTime || match.time || match.plannedTime || '--:--',
         delay: Number(match.delay || 0),
-        platform: match.platform || '—',
-        track: match.track || '—',
-        via: match.via || '',
-        // Ostatnia potwierdzona stacja i czas minięcia z API PLK
-        lastConfirmedStation: match.lastStation || match.lastReportedStation || match.currentStation || 'W trasie',
-        lastConfirmedTime: match.lastReportedTime || match.lastStationTime || match.time || ''
+        platform: match.platform || match.peron || '—',
+        track: match.track || match.tor || '—',
+        via: match.via || match.viaStations || '',
+        lastConfirmedStation: match.lastStation || match.lastReportedStation || match.currentStation || match.origin || 'W trasie',
+        lastConfirmedTime: match.lastReportedTime || match.lastStationTime || match.actualTime || ''
       };
     });
 
@@ -79,9 +84,13 @@ export async function onRequest(context) {
       timestamp: new Date().toISOString(),
       trains: resultTrains
     }), {
-      headers: { "Content-Type": "application/json;charset=UTF-8", "Access-Control-Allow-Origin": "*" }
+      headers: { 
+        "Content-Type": "application/json;charset=UTF-8", 
+        "Access-Control-Allow-Origin": "*" 
+      }
     });
+
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+    return new Response(JSON.stringify({ error: err.message, trains: [] }), { status: 500 });
   }
 }
