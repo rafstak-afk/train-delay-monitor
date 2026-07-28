@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bieg pociągu - System Monitorowania</title>
+    <title>Bieg Pociągu - Szczegóły</title>
     <style>
         :root {
             --bg-main: #0a0e17;
@@ -11,571 +11,89 @@
             --panel-border: #1f293d;
             --text-main: #f3f4f6;
             --text-muted: #9ca3af;
-            
-            --status-zaliczona-bg: #064e3b;
-            --status-zaliczona-text: #34d399;
-            
-            --status-ostatnia-bg: #78350f;
-            --status-ostatnia-border: #eab308;
-            --status-ostatnia-text: #fde047;
-            
-            --status-nastepna-bg: #1e3a8a;
-            --status-nastepna-text: #60a5fa;
-            
-            --status-przed-bg: #374151;
-            --status-przed-text: #d1d5db;
-
-            --accent-blue: #2563eb;
             --accent-green: #10b981;
+            --accent-blue: #3b82f6;
+            --accent-red: #ef4444;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background-color: var(--bg-main); color: var(--text-main); padding: 20px; max-width: 800px; margin: 0 auto; font-size: 14px; }
+        
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 12px; border-bottom: 1px solid var(--panel-border); }
+        h1 { font-size: 1.3rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 8px; }
+        .btn-back { background: #1f293d; border: 1px solid #374151; color: #fff; padding: 8px 14px; border-radius: 6px; text-decoration: none; font-weight: 700; font-size: 0.85rem; }
+        .btn-back:hover { background: #374151; }
 
-        body {
-            background-color: var(--bg-main);
-            color: var(--text-main);
-            padding: 16px;
-            max-width: 960px;
-            margin: 0 auto;
-            font-size: 14px;
-        }
+        .train-summary { background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 8px; padding: 16px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .train-badge { background: #7c2d12; color: #fdba74; font-weight: 800; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem; margin-right: 8px; }
+        .train-title { font-size: 1.2rem; font-weight: 800; color: #fff; }
+        .delay-status { padding: 4px 10px; border-radius: 20px; font-weight: 800; font-size: 0.85rem; }
+        .delay-status.ok { background: rgba(16, 185, 129, 0.2); color: var(--accent-green); }
+        .delay-status.delayed { background: rgba(239, 68, 68, 0.2); color: var(--accent-red); }
 
-        /* 1. GÓRNY KAFEL MONITOROWANIA */
-        .board-record-card {
-            background: #0f172a;
-            border: 1px solid var(--panel-border);
-            border-radius: 8px;
-            padding: 14px 18px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 16px;
-            margin-bottom: 24px;
-        }
-
-        .board-left {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-
-        .station-status-big {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .station-status-big .city {
-            font-size: 1rem;
-            font-weight: 700;
-            color: #ffffff;
-        }
-
-        .station-status-big .delay-num {
-            font-size: 2.2rem;
-            font-weight: 900;
-            color: var(--accent-green);
-            line-height: 1;
-            margin-top: 2px;
-        }
-
-        .time-group {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .time-group .time-main {
-            font-size: 1.5rem;
-            font-weight: 800;
-            color: var(--accent-green);
-        }
-
-        .time-group .time-sub {
-            font-size: 0.85rem;
-            color: #60a5fa;
-            font-weight: 600;
-        }
-
-        .board-right {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 4px;
-        }
-
-        .train-header-line {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .tag-category {
-            background: #7c2d12;
-            color: #fdba74;
-            font-style: italic;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 0.8rem;
-            font-weight: 700;
-        }
-
-        .train-name-title {
-            font-size: 1.25rem;
-            font-weight: 800;
-            color: #ffffff;
-        }
-
-        .dest-title {
-            font-size: 1.05rem;
-            font-weight: 700;
-            color: #ffffff;
-        }
-
-        .via-line, .details-line {
-            font-size: 0.88rem;
-            color: var(--text-muted);
-        }
-
-        /* 2. FORMULARZ "BIEG POCIĄGU" */
-        .section-header-center {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .section-header-center h2 {
-            font-size: 1.6rem;
-            font-weight: 800;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 12px;
-        }
-
-        .search-row {
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-            margin-bottom: 6px;
-        }
-
-        .input-train {
-            background: #ffffff;
-            color: #000000;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            padding: 8px 14px;
-            font-size: 1.1rem;
-            font-weight: 700;
-            width: 180px;
-            text-align: center;
-        }
-
-        .btn-blue {
-            background: var(--accent-blue);
-            color: #ffffff;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
-            font-weight: 700;
-            cursor: pointer;
-        }
-
-        .btn-gray {
-            background: #374151;
-            color: #ffffff;
-            border: 1px solid #4b5563;
-            padding: 8px 16px;
-            border-radius: 6px;
-            font-weight: 700;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-        }
-
-        .status-msg {
-            color: var(--text-muted);
-            font-size: 0.85rem;
-        }
-
-        /* 3. PODSUMOWANIE DWOISTE */
-        .summary-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-            margin-bottom: 24px;
-        }
-
-        .summary-card {
-            background: var(--panel-bg);
-            border: 1px solid var(--panel-border);
-            border-radius: 8px;
-            padding: 16px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-
-        .card-label {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            margin-bottom: 4px;
-        }
-
-        .card-value-big {
-            font-size: 1.3rem;
-            font-weight: 800;
-            color: #ffffff;
-            margin-bottom: 4px;
-        }
-
-        .card-substatus {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            margin-bottom: 14px;
-        }
-
-        .card-actions {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        .btn-green-sm {
-            background: #059669;
-            color: #ffffff;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-weight: 700;
-            font-size: 0.85rem;
-            cursor: pointer;
-            text-decoration: none;
-        }
-
-        .btn-dark-sm {
-            background: #374151;
-            color: #ffffff;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-weight: 700;
-            font-size: 0.85rem;
-            cursor: pointer;
-        }
-
-        .confirmed-time-large {
-            font-size: 1.4rem;
-            font-weight: 800;
-            color: #ffffff;
-            margin-top: 6px;
-        }
-
-        /* 4. TRASA STACJA PO STACJI */
-        .route-section-title {
-            font-size: 1.2rem;
-            font-weight: 800;
-            margin-bottom: 4px;
-        }
-
-        .route-subtitle {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            font-style: italic;
-            margin-bottom: 14px;
-        }
-
-        .stations-list {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .station-row {
-            background: var(--panel-bg);
-            border: 1px solid var(--panel-border);
-            border-radius: 6px;
-            padding: 10px 14px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .station-row.is-last {
-            border: 1px solid var(--status-ostatnia-border);
-            background: #1c1917;
-        }
-
-        .station-row.is-next {
-            border: 1px solid var(--accent-blue);
-        }
-
-        .row-left {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-        }
-
-        .badge-status {
-            padding: 3px 10px;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            font-weight: 800;
-            min-width: 80px;
-            text-align: center;
-        }
-
-        .badge-zaliczona { background: var(--status-zaliczona-bg); color: var(--status-zaliczona-text); }
-        .badge-ostatnia  { background: var(--status-ostatnia-bg); color: var(--status-ostatnia-text); border: 1px solid var(--status-ostatnia-border); }
-        .badge-nastepna  { background: var(--status-nastepna-bg); color: var(--status-nastepna-text); }
-        .badge-przed     { background: var(--status-przed-bg); color: var(--status-przed-text); }
-
-        .station-meta {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .station-name {
-            font-size: 1.05rem;
-            font-weight: 800;
-            color: #ffffff;
-        }
-
-        .station-subinfo {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-        }
-
-        .row-right {
-            display: flex;
-            align-items: center;
-            gap: 24px;
-        }
-
-        .time-col {
-            text-align: right;
-            min-width: 60px;
-        }
-
-        .time-col .main-time {
-            font-size: 1.15rem;
-            font-weight: 800;
-            color: #ffffff;
-        }
-
-        .time-col .plan-time {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-        }
-
-        .delay-col {
-            text-align: center;
-            min-width: 80px;
-        }
-
-        .delay-col .delay-label {
-            font-size: 0.7rem;
-            color: var(--text-muted);
-            display: block;
-        }
-
-        .delay-col .delay-val {
-            font-size: 0.95rem;
-            font-weight: 800;
-        }
-
-        .delay-col .delay-val.ok { color: #34d399; }
-        .delay-col .delay-val.delayed { color: #fde047; }
-
-        .track-col {
-            text-align: right;
-            min-width: 70px;
-        }
-
-        .track-col .track-label {
-            font-size: 0.7rem;
-            color: var(--text-muted);
-            display: block;
-        }
-
-        .track-col .track-val {
-            font-size: 0.95rem;
-            font-weight: 800;
-            color: #ffffff;
-        }
-
-        @media (max-width: 700px) {
-            .board-record-card { flex-direction: column; align-items: flex-start; }
-            .summary-grid { grid-template-columns: 1fr; }
-            .station-row { flex-direction: column; align-items: flex-start; gap: 10px; }
-            .row-right { width: 100%; justify-content: space-between; border-top: 1px solid var(--panel-border); padding-top: 8px; }
-        }
+        .timeline { position: relative; padding-left: 20px; margin-top: 20px; border-left: 2px solid var(--panel-border); }
+        .station-row { position: relative; padding: 12px 0 12px 24px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+        .station-row::before { content: ''; position: absolute; left: -27px; top: 18px; width: 12px; height: 12px; border-radius: 50%; background: var(--panel-border); border: 2px solid var(--bg-main); }
+        .station-row.passed::before { background: var(--accent-blue); }
+        .station-row.current::before { background: var(--accent-green); box-shadow: 0 0 10px var(--accent-green); }
+        
+        .station-name { font-size: 1rem; font-weight: 700; color: #fff; }
+        .station-times { font-size: 0.85rem; color: var(--text-muted); margin-top: 4px; display: flex; gap: 16px; }
+        .platform-info { font-size: 0.8rem; color: #60a5fa; margin-top: 2px; }
     </style>
 </head>
 <body>
 
-    <!-- 1. RECORD Z TABLICY MONITOROWANIA -->
-    <div class="board-record-card" id="topBoardRecord">
-        <div class="board-left">
-            <div class="station-status-big">
-                <span class="city" id="topStation">Katowice</span>
-                <span class="delay-num" id="topDelay">0</span>
-            </div>
-            <div class="time-group">
-                <span class="time-main" id="topTime">14:49</span>
-                <span class="time-sub" id="topTimeSub">za 143 min</span>
-            </div>
+    <header>
+        <h1>ℹ️ Bieg pociągu</h1>
+        <a href="index.html" class="btn-back">← Tablica</a>
+    </header>
+
+    <div class="train-summary">
+        <div>
+            <div><span class="train-badge">IC 3815</span><span class="train-title">MATEJKO</span></div>
+            <div style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Katowice → Szczecin Główny</div>
         </div>
-        <div class="board-right">
-            <div class="train-header-line">
-                <span class="tag-category" id="topCategory">IC</span>
-                <span class="train-name-title" id="topTrainTitle">IC MATEJKO 3815</span>
-            </div>
-            <div class="dest-title" id="topDest">Szczecin Główny</div>
-            <div class="via-line" id="topVia">przez: Bytom, Gliwice, Kędzierzyn-Koźle, Opole Główne, Wrocław Główny</div>
-            <div class="details-line" id="topDetails">peron 1 · tor 9 · IC</div>
-        </div>
+        <div class="delay-status ok">W planie (0 min)</div>
     </div>
 
-    <!-- 2. BIEG POCIĄGU - WYSZUKIWARKA -->
-    <div class="section-header-center">
-        <h2>🛈 Bieg pociągu</h2>
-        <form class="search-row" onsubmit="handleSearch(event)">
-            <input type="text" class="input-train" id="trainInput" value="3815">
-            <button type="submit" class="btn-blue">Pokaż</button>
-            <a href="index.html" class="btn-gray">← Tablica</a>
-        </form>
-        <div class="status-msg" id="statusMsg">Gotowe.</div>
-    </div>
-
-    <!-- 3. DWUDZIELNE PODSUMOWANIE -->
-    <div class="summary-grid">
-        <div class="summary-card">
-            <div>
-                <div class="card-label">Pociąg</div>
-                <div class="card-value-big" id="summaryTrainName">IC 3814 MATEJKO</div>
-                <div class="card-substatus" id="summaryTrainStatus">Status: W ruchu / potwierdzony (Kod PLK: 1)</div>
-            </div>
-            <div class="card-actions">
-                <a href="https://portalpasazera.pl" target="_blank" class="btn-green-sm">Otwórz Portal Pasażera</a>
-                <button class="btn-dark-sm" onclick="copySummary()">Kopiuj podsumowanie</button>
-            </div>
-        </div>
-
-        <div class="summary-card">
-            <div>
-                <div class="card-label">Ostatnia potwierdzona stacja</div>
-                <div class="card-value-big" id="lastStationName">Rzeszów Główny</div>
-                <div class="confirmed-time-large" id="lastStationTime">12:15</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 4. TRASA STACJA PO STACJI -->
-    <div>
-        <div class="route-section-title">Trasa stacja po stacji</div>
-        <div class="route-subtitle">„Zaliczona” tylko przy potwierdzeniu API. Gdy czas już minął, a API nie potwierdza stacji, pokazujemy „BRAK INFO Z API”</div>
-
-        <div class="stations-list" id="stationsTimeline">
-            <!-- Stacje generowane dynamicznie przez JS -->
-        </div>
+    <div class="timeline" id="timelineContainer">
+        <!-- Stacje wygenerowane dynamicznie -->
     </div>
 
     <script>
-        function handleSearch(e) {
-            e.preventDefault();
-            const trainNum = document.getElementById('trainInput').value.trim();
-            if (trainNum) {
-                window.location.search = `?train=${encodeURIComponent(trainNum)}`;
-            }
-        }
+        const stations = [
+            { name: "Katowice", time: "14:49", actual: "14:49", platform: "1/9", status: "passed" },
+            { name: "Zabrze", time: "15:04", actual: "15:04", platform: "1/1", status: "passed" },
+            { name: "Gliwice", time: "15:13", actual: "15:13", platform: "2/3", status: "current" },
+            { name: "Kędzierzyn-Koźle", time: "15:38", actual: "15:38", platform: "1/2", status: "future" },
+            { name: "Opole Główny", time: "16:05", actual: "16:05", platform: "3/1", status: "future" },
+            { name: "Brzeg", time: "16:28", actual: "16:28", platform: "1/1", status: "future" },
+            { name: "Oława", time: "16:40", actual: "16:40", platform: "2/1", status: "future" },
+            { name: "Wrocław Główny", time: "17:02", actual: "17:05", platform: "4/8", status: "future" },
+            { name: "Legnica", time: "17:48", actual: "17:48", platform: "2/1", status: "future" },
+            { name: "Lubin", time: "18:05", actual: "18:05", platform: "1/2", status: "future" },
+            { name: "Głogów", time: "18:32", actual: "18:32", platform: "2/2", status: "future" },
+            { name: "Zielona Góra Główna", time: "19:15", actual: "19:15", platform: "1/1", status: "future" },
+            { name: "Świebodzin", time: "19:42", actual: "19:42", platform: "1/2", status: "future" },
+            { name: "Zbąszynek", time: "19:55", actual: "19:55", platform: "3/1", status: "future" },
+            { name: "Rzepin", time: "20:25", actual: "20:25", platform: "2/1", status: "future" },
+            { name: "Kostrzyn", time: "20:50", actual: "20:50", platform: "1/1", status: "future" },
+            { name: "Gryfino", time: "21:35", actual: "21:35", platform: "1/2", status: "future" },
+            { name: "Szczecin Główny", time: "21:54", actual: "21:54", platform: "3/1", status: "future" }
+        ];
 
-        function copySummary() {
-            const text = `${document.getElementById('summaryTrainName').innerText} - Ostatnia stacja: ${document.getElementById('lastStationName').innerText} (${document.getElementById('lastStationTime').innerText})`;
-            navigator.clipboard.writeText(text);
-            alert("Skopiowano podsumowanie do schowka!");
-        }
-
-        // Domyślny render przykładowy lub pobieranie danych z API
-        async function loadTrainDetails() {
-            const params = new URLSearchParams(window.location.search);
-            const trainNum = params.get('train') || params.get('id') || '3815';
-            document.getElementById('trainInput').value = trainNum;
-
-            try {
-                const res = await fetch(`/api/train-details?num=${encodeURIComponent(trainNum)}`);
-                if (res.ok) {
-                    const data = await res.json();
-                    renderView(data);
-                    return;
-                }
-            } catch(e) {}
-
-            // Fallback render danych statycznych/testowych jeśli API nie zwróci odpowiedzi
-            renderFallbackData(trainNum);
-        }
-
-        function renderFallbackData(num) {
-            document.getElementById('summaryTrainName').innerText = `IC ${num} MATEJKO`;
-            document.getElementById('lastStationName').innerText = "Rzeszów Główny";
-            document.getElementById('lastStationTime').innerText = "12:15";
-
-            const mockStations = [
-                { name: 'Przemyśl Główny', code: '84400', seq: 2, time: '11:10', delay: 0, platform: '2 / 2', status: 'zaliczona' },
-                { name: 'Przemyśl Zasanie', code: '84434', seq: 4, time: '11:13', delay: 0, platform: '2 / 2', status: 'zaliczona' },
-                { name: 'Jarosław', code: '83261', seq: 10, time: '11:35', delay: 0, platform: '2 / 2', status: 'zaliczona' },
-                { name: 'Przeworsk', code: '83105', seq: 12, time: '11:46', delay: 0, platform: '1 / 2', status: 'zaliczona' },
-                { name: 'Łańcut', code: '83022', seq: 15, time: '11:59', delay: 0, platform: '1 / 2', status: 'zaliczona' },
-                { name: 'Rzeszów Główny', code: '82669', seq: 17, time: '12:15', delay: 0, platform: '2 / 2', status: 'ostatnia' },
-                { name: 'Dębica', code: '81208', seq: 22, time: '12:39', planTime: 'plan 12:38', delay: 1, platform: '2 / 2', status: 'nastepna' },
-                { name: 'Tarnów', code: '80630', seq: 26, time: '12:56', delay: 0, platform: '1 / 2', status: 'przed' }
-            ];
-
-            renderTimeline(mockStations);
-        }
-
-        function renderTimeline(stations) {
-            const container = document.getElementById('stationsTimeline');
-            container.innerHTML = stations.map(s => {
-                let rowClass = 'station-row';
-                let badgeClass = 'badge-przed';
-                
-                if (s.status === 'zaliczona') badgeClass = 'badge-zaliczona';
-                if (s.status === 'ostatnia') { badgeClass = 'badge-ostatnia'; rowClass += ' is-last'; }
-                if (s.status === 'nastepna') { badgeClass = 'badge-nastepna'; rowClass += ' is-next'; }
-
-                return `
-                    <div class="${rowClass}">
-                        <div class="row-left">
-                            <span class="badge-status ${badgeClass}">${s.status}</span>
-                            <div class="station-meta">
-                                <span class="station-name">${s.name}</span>
-                                <span class="station-subinfo">ID ${s.code || 'PLK'} · kolejność: ${s.seq || '-'} · nazwa: słownik PLK / cache</span>
-                            </div>
-                        </div>
-                        <div class="row-right">
-                            <div class="time-col">
-                                <div class="main-time">${s.time}</div>
-                                ${s.planTime ? `<div class="plan-time">${s.planTime}</div>` : ''}
-                            </div>
-                            <div class="delay-col">
-                                <span class="delay-label">opóźnienie</span>
-                                <span class="delay-val ${s.delay > 0 ? 'delayed' : 'ok'}">${s.delay} min</span>
-                            </div>
-                            <div class="track-col">
-                                <span class="track-label">peron / tor</span>
-                                <span class="track-val">${s.platform || '-'}</span>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        loadTrainDetails();
+        const container = document.getElementById('timelineContainer');
+        container.innerHTML = stations.map(s => `
+            <div class="station-row ${s.status}">
+                <div class="station-name">${s.name}</div>
+                <div class="station-times">
+                    <span>Plan: <b>${s.time}</b></span>
+                    <span>Wyjazd/Przyjazd: <b>${s.actual}</b></span>
+                </div>
+                <div class="platform-info">Peron ${s.platform.split('/')[0]}, tor ${s.platform.split('/')[1] || '1'}</div>
+            </div>
+        `).join('');
     </script>
 </body>
 </html>
