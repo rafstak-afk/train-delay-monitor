@@ -3,420 +3,695 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Szczegóły pociągu - Monitorowane Pociągi</title>
+    <title>Bieg pociągu - System Monitorowania</title>
     <style>
         :root {
-            --bg-color: #0b0e14;
-            --card-bg: #161b26;
-            --card-border: #232d3f;
-            --accent-color: #38bdf8;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --status-ok-bg: #15803d;
-            --status-ok-text: #ffffff;
-            --status-delay-bg: #b91c1c;
-            --status-delay-text: #ffffff;
-            --active-glow: rgba(56, 189, 248, 0.25);
+            --bg-main: #0a0e17;
+            --panel-bg: #111827;
+            --panel-border: #1f293d;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            
+            /* Statusy stacji */
+            --status-zaliczona-bg: #064e3b;
+            --status-zaliczona-text: #34d399;
+            
+            --status-ostatnia-bg: #78350f;
+            --status-ostatnia-border: #eab308;
+            --status-ostatnia-text: #fde047;
+            
+            --status-nastepna-bg: #1e3a8a;
+            --status-nastepna-text: #60a5fa;
+            
+            --status-przed-bg: #374151;
+            --status-przed-text: #d1d5db;
+
+            --accent-blue: #2563eb;
+            --accent-green: #10b981;
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
 
         body {
-            background-color: var(--bg-color);
+            background-color: var(--bg-main);
             color: var(--text-main);
             padding: 16px;
-            max-width: 850px;
+            max-width: 960px;
             margin: 0 auto;
-            line-height: 1.5;
+            font-size: 14px;
         }
 
-        /* Przycisk powrotu */
-        .back-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            color: var(--accent-color);
-            text-decoration: none;
-            font-size: 1.05rem;
-            font-weight: 600;
-            margin-bottom: 20px;
-            padding: 6px 12px;
-            background: rgba(56, 189, 248, 0.1);
+        /* 1. GÓRNY KAFEL MONITOROWANIA (TABLICA) */
+        .board-record-card {
+            background: #0f172a;
+            border: 1px solid #1e293b;
             border-radius: 8px;
-        }
-
-        /* Nagłówek Główny */
-        .train-header-card {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            border-radius: 16px;
-            padding: 24px;
-            margin-bottom: 24px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
-        }
-
-        .train-title-row {
+            padding: 14px 18px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 12px;
-            margin-bottom: 12px;
-            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 24px;
         }
 
-        .train-number {
-            background: #0f172a;
-            border: 1px solid #334155;
-            color: var(--accent-color);
-            font-size: 1.6rem;
-            font-weight: 900;
-            padding: 6px 18px;
-            border-radius: 10px;
-            letter-spacing: 0.05em;
+        .board-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
         }
 
-        .train-time-main {
-            font-size: 1.8rem;
-            font-weight: 800;
-            color: #38bdf8;
-        }
-
-        .train-route-main {
-            font-size: 1.45rem;
-            font-weight: 800;
-            color: var(--text-main);
-            margin-bottom: 12px;
-        }
-
-        /* Wymienione wszystkie stacje PRZEZ */
-        .via-stations-bar {
-            background: rgba(255, 255, 255, 0.04);
-            border-left: 4px solid var(--accent-color);
-            padding: 10px 14px;
-            border-radius: 0 8px 8px 0;
-            font-size: 1rem;
-            color: var(--text-muted);
-            margin-bottom: 20px;
-            word-break: break-word;
-        }
-
-        .via-stations-bar strong {
-            color: var(--text-main);
-        }
-
-        /* GŁÓWNY BANER: Ostatnia potwierdzona stacja */
-        .last-confirmed-box {
-            background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.9));
-            border: 2px solid var(--accent-color);
-            border-radius: 12px;
-            padding: 18px 20px;
+        .station-status-big {
             display: flex;
             flex-direction: column;
-            gap: 8px;
-            box-shadow: 0 0 20px var(--active-glow);
         }
 
-        .last-confirmed-label {
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: var(--accent-color);
-            font-weight: 800;
-        }
-
-        .last-confirmed-details {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 12px;
-        }
-
-        .station-name-highlight {
-            font-size: 1.5rem;
-            font-weight: 800;
+        .station-status-big .city {
+            font-size: 1rem;
+            font-weight: 700;
             color: #ffffff;
         }
 
-        .time-and-status {
-            display: flex;
-            align-items: center;
-            gap: 12px;
+        .station-status-big .delay-num {
+            font-size: 2.2rem;
+            font-weight: 900;
+            color: #10b981;
+            line-height: 1;
+            margin-top: 2px;
         }
 
-        .confirmed-time {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: #f1f5f9;
-        }
-
-        .badge-status {
-            background: var(--status-ok-bg);
-            color: var(--status-ok-text);
-            padding: 6px 14px;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 800;
-            letter-spacing: 0.02em;
-        }
-
-        /* Sekcja Tras Przejazdu */
-        .section-title {
-            font-size: 1.1rem;
-            font-weight: 800;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            margin-bottom: 16px;
-            padding-left: 4px;
-        }
-
-        .timeline {
+        .time-group {
             display: flex;
             flex-direction: column;
-            gap: 12px;
         }
 
-        /* Karta pojedynczej stacji */
-        .station-card {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            border-radius: 12px;
-            padding: 16px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 16px;
-            transition: all 0.2s ease;
+        .time-group .time-main {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #10b981;
         }
 
-        .station-card.confirmed-active {
-            border: 2px solid var(--accent-color);
-            background: #1e293b;
-            box-shadow: 0 0 15px rgba(56, 189, 248, 0.15);
+        .time-group .time-sub {
+            font-size: 0.85rem;
+            color: #60a5fa;
+            font-weight: 600;
         }
 
-        .station-info {
+        .board-right {
             display: flex;
             flex-direction: column;
+            align-items: flex-start;
             gap: 4px;
         }
 
-        .station-title {
+        .train-header-line {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .tag-category {
+            background: #7c2d12;
+            color: #fdba74;
+            font-style: italic;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .train-name-title {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #ffffff;
+            letter-spacing: 0.02em;
+        }
+
+        .dest-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .via-line, .details-line {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+        }
+
+        /* 2. NAGŁÓWEK "BIEG POCIĄGU" + FORMULARZ */
+        .section-header-center {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .section-header-center h2 {
+            font-size: 1.6rem;
+            font-weight: 800;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .search-row {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .input-train {
+            background: #ffffff;
+            color: #000000;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            padding: 8px 14px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            width: 180px;
+            text-align: center;
+        }
+
+        .btn-blue {
+            background: #1d4ed8;
+            color: #ffffff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .btn-gray {
+            background: #374151;
+            color: #ffffff;
+            border: 1px solid #4b5563;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .status-msg {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        /* 3. PODSOWANIE DWOISTE (2 KAFLE OBOK SIEBIE) */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .summary-card {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 8px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .card-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .card-value-big {
             font-size: 1.3rem;
             font-weight: 800;
             color: #ffffff;
+            margin-bottom: 4px;
         }
 
-        .station-subtext {
-            font-size: 1rem;
+        .card-substatus {
+            font-size: 0.85rem;
             color: var(--text-muted);
-            font-weight: 500;
+            margin-bottom: 14px;
         }
 
-        .station-metrics {
+        .card-actions {
             display: flex;
-            align-items: center;
-            gap: 16px;
-            text-align: right;
+            gap: 8px;
+            flex-wrap: wrap;
         }
 
-        .time-box {
+        .btn-green-sm {
+            background: #059669;
+            color: #ffffff;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .btn-dark-sm {
+            background: #374151;
+            color: #ffffff;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+
+        .confirmed-time-large {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: #ffffff;
+            margin-top: 6px;
+        }
+
+        /* 4. TRASA STACJA PO STACJI */
+        .route-section-title {
+            font-size: 1.2rem;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .route-subtitle {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-style: italic;
+            margin-bottom: 14px;
+        }
+
+        .stations-list {
             display: flex;
             flex-direction: column;
-            align-items: flex-end;
+            gap: 8px;
         }
 
-        .scheduled-time {
-            font-size: 0.9rem;
-            color: var(--text-muted);
-            text-decoration: line-through;
+        .station-row {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 6px;
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
 
-        .actual-time {
-            font-size: 1.4rem;
-            font-weight: 900;
+        /* Wyróżnienie ostatniej stacji */
+        .station-row.is-last {
+            border: 1px solid var(--status-ostatnia-border);
+            background: #1c1917;
+        }
+
+        .station-row.is-next {
+            border: 1px solid #2563eb;
+        }
+
+        .row-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .badge-status {
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .badge-zaliczona { background: var(--status-zaliczona-bg); color: var(--status-zaliczona-text); }
+        .badge-ostatnia  { background: var(--status-ostatnia-bg); color: var(--status-ostatnia-text); border: 1px solid var(--status-ostatnia-border); }
+        .badge-nastepna  { background: var(--status-nastepna-bg); color: var(--status-nastepna-text); }
+        .badge-przed     { background: var(--status-przed-bg); color: var(--status-przed-text); }
+
+        .station-meta {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .station-name {
+            font-size: 1.05rem;
+            font-weight: 800;
             color: #ffffff;
         }
 
-        .badge-ok {
-            background: #166534;
-            color: #4ade80;
-            border: 1px solid #22c55e;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-weight: 800;
-            font-size: 0.95rem;
+        .station-subinfo {
+            font-size: 0.75rem;
+            color: var(--text-muted);
         }
 
-        @media (max-width: 600px) {
-            .station-card {
+        .row-right {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .time-col {
+            text-align: right;
+            min-width: 60px;
+        }
+
+        .time-col .main-time {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: #ffffff;
+        }
+
+        .time-col .plan-time {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .delay-col {
+            text-align: center;
+            min-width: 80px;
+        }
+
+        .delay-col .delay-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            display: block;
+        }
+
+        .delay-col .delay-val {
+            font-size: 0.95rem;
+            font-weight: 800;
+        }
+
+        .delay-col .delay-val.ok { color: #34d399; }
+        .delay-col .delay-val.delayed { color: #fde047; }
+
+        .track-col {
+            text-align: right;
+            min-width: 70px;
+        }
+
+        .track-col .track-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            display: block;
+        }
+
+        .track-col .track-val {
+            font-size: 0.95rem;
+            font-weight: 800;
+            color: #ffffff;
+        }
+
+        @media (max-width: 700px) {
+            .board-record-card {
                 flex-direction: column;
                 align-items: flex-start;
             }
-            .station-metrics {
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+            .station-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            .row-right {
                 width: 100%;
                 justify-content: space-between;
-                border-top: 1px solid rgba(255, 255, 255, 0.05);
-                padding-top: 10px;
-                margin-top: 4px;
-            }
-            .time-box {
-                align-items: flex-start;
+                border-top: 1px solid var(--panel-border);
+                padding-top: 8px;
             }
         }
     </style>
 </head>
 <body>
 
-    <a href="./index.html" class="back-link">← Powrót do monitorowanych</a>
-
-    <header class="train-header-card">
-        <div class="train-title-row">
-            <span class="train-number" id="trainNumber">IC 3815</span>
-            <span class="train-time-main" id="trainTimeHeader">14:49</span>
-        </div>
-
-        <div class="train-route-main" id="trainRouteHeader">
-            Katowice → Szczecin Główny
-        </div>
-
-        <!-- STACJE PRZEZ (Kompletne zestawienie) -->
-        <div class="via-stations-bar" id="viaStationsBar">
-            <strong>PRZEZ:</strong> Bytom • Gliwice • Kędzierzyn-Koźle • Opole Główne • Wrocław Główny
-        </div>
-
-        <!-- NAGŁÓWEK OSTATNIEJ POTWIERDZONEJ STACJI -->
-        <div class="last-confirmed-box">
-            <div class="last-confirmed-label">Ostatnia potwierdzona stacja</div>
-            <div class="last-confirmed-details">
-                <div class="station-name-highlight" id="lastConfirmedStation">Katowice</div>
-                <div class="time-and-status">
-                    <span class="confirmed-time" id="lastConfirmedTime">Godz. 14:49</span>
-                    <span class="badge-status" id="lastConfirmedStatus">OK (0 min)</span>
-                </div>
+    <!-- 1. RECORD Z TABLICY MONITOROWANIA -->
+    <div class="board-record-card">
+        <div class="board-left">
+            <div class="station-status-big">
+                <span class="city">Katowice</span>
+                <span class="delay-num">0</span>
+            </div>
+            <div class="time-group">
+                <span class="time-main">14:49</span>
+                <span class="time-sub">za 143 min</span>
             </div>
         </div>
-    </header>
+        <div class="board-right">
+            <div class="train-header-line">
+                <span class="tag-category">IC</span>
+                <span class="train-name-title">IC MATEJKO 3815</span>
+            </div>
+            <div class="dest-title">Szczecin Główny</div>
+            <div class="via-line">przez: Bytom, Gliwice, Kędzierzyn-Koźle, Opole Główne, Wrocław Główny</div>
+            <div class="details-line">peron 1 · tor 9 · IC</div>
+        </div>
+    </div>
 
-    <main>
-        <div class="section-title" id="routeSectionTitle">PEŁNA TRASA PRZEJAZDU (7 STACJI)</div>
+    <!-- 2. BIEG POCIĄGU - WYSZUKIWARKA -->
+    <div class="section-header-center">
+        <h2>🛈 Bieg pociągu</h2>
+        <div class="search-row">
+            <input type="text" class="input-train" value="3815" id="trainInput">
+            <button class="btn-blue">Pokaż</button>
+            <a href="index.html" class="btn-gray">← Tablica</a>
+        </div>
+        <div class="status-msg">Gotowe.</div>
+    </div>
 
-        <div class="timeline" id="timelineContainer">
+    <!-- 3. DWUDZIELNE PODSUMOWANIE -->
+    <div class="summary-grid">
+        <div class="summary-card">
+            <div>
+                <div class="card-label">Pociąg</div>
+                <div class="card-value-big" id="summaryTrainName">IC 3814 MATEJKO</div>
+                <div class="card-substatus">Status: W ruchu / potwierdzony (Kod PLK: 1)</div>
+            </div>
+            <div class="card-actions">
+                <a href="#" class="btn-green-sm">Otwórz Portal Pasażera</a>
+                <button class="btn-dark-sm">Kopiuj podsumowanie</button>
+            </div>
+        </div>
+
+        <div class="summary-card">
+            <div>
+                <div class="card-label">Ostatnia potwierdzona stacja</div>
+                <div class="card-value-big" id="lastConfirmedStationName">Rzeszów Główny</div>
+                <div class="confirmed-time-large" id="lastConfirmedStationTime">12:15</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. TRASA STACJA PO STACJI -->
+    <div>
+        <div class="route-section-title">Trasa stacja po stacji</div>
+        <div class="route-subtitle">„Zaliczona” tylko przy potwierdzeniu API. Gdy czas już minął, a API nie potwierdza stacji, pokazujemy „BRAK INFO Z API”</div>
+
+        <div class="stations-list" id="stationsTimeline">
             <!-- Stacja 1 -->
-            <div class="station-card confirmed-active">
-                <div class="station-info">
-                    <div class="station-title">Katowice</div>
-                    <div class="station-subtext">peron 1 · tor 9 (Stacja początkowa)</div>
-                </div>
-                <div class="station-metrics">
-                    <div class="time-box">
-                        <span class="actual-time">14:49</span>
+            <div class="station-row">
+                <div class="row-left">
+                    <span class="badge-status badge-zaliczona">zaliczona</span>
+                    <div class="station-meta">
+                        <span class="station-name">Przemyśl Główny</span>
+                        <span class="station-subinfo">ID 84400 · kolejność: 2 · nazwa: słownik PLK / cache</span>
                     </div>
-                    <span class="badge-ok">OK</span>
+                </div>
+                <div class="row-right">
+                    <div class="time-col">
+                        <div class="main-time">11:10</div>
+                    </div>
+                    <div class="delay-col">
+                        <span class="delay-label">opóźnienie</span>
+                        <span class="delay-val ok">0 min</span>
+                    </div>
+                    <div class="track-col">
+                        <span class="track-label">peron / tor</span>
+                        <span class="track-val">2 / 2</span>
+                    </div>
                 </div>
             </div>
 
             <!-- Stacja 2 -->
-            <div class="station-card">
-                <div class="station-info">
-                    <div class="station-title">Bytom</div>
-                    <div class="station-subtext">stacja przejazdowa</div>
-                </div>
-                <div class="station-metrics">
-                    <div class="time-box">
-                        <span class="actual-time">15:12</span>
+            <div class="station-row">
+                <div class="row-left">
+                    <span class="badge-status badge-zaliczona">zaliczona</span>
+                    <div class="station-meta">
+                        <span class="station-name">Przemyśl Zasanie</span>
+                        <span class="station-subinfo">ID 84434 · kolejność: 4 · nazwa: słownik PLK / cache</span>
                     </div>
-                    <span class="badge-ok">OK</span>
+                </div>
+                <div class="row-right">
+                    <div class="time-col">
+                        <div class="main-time">11:13</div>
+                    </div>
+                    <div class="delay-col">
+                        <span class="delay-label">opóźnienie</span>
+                        <span class="delay-val ok">0 min</span>
+                    </div>
+                    <div class="track-col">
+                        <span class="track-label">peron / tor</span>
+                        <span class="track-val">2 / 2</span>
+                    </div>
                 </div>
             </div>
 
             <!-- Stacja 3 -->
-            <div class="station-card">
-                <div class="station-info">
-                    <div class="station-title">Gliwice</div>
-                    <div class="station-subtext">peron 2 · tor 4</div>
-                </div>
-                <div class="station-metrics">
-                    <div class="time-box">
-                        <span class="actual-time">15:34</span>
+            <div class="station-row">
+                <div class="row-left">
+                    <span class="badge-status badge-zaliczona">zaliczona</span>
+                    <div class="station-meta">
+                        <span class="station-name">Jarosław</span>
+                        <span class="station-subinfo">ID 83261 · kolejność: 10 · nazwa: słownik PLK / cache</span>
                     </div>
-                    <span class="badge-ok">OK</span>
+                </div>
+                <div class="row-right">
+                    <div class="time-col">
+                        <div class="main-time">11:35</div>
+                    </div>
+                    <div class="delay-col">
+                        <span class="delay-label">opóźnienie</span>
+                        <span class="delay-val ok">0 min</span>
+                    </div>
+                    <div class="track-col">
+                        <span class="track-label">peron / tor</span>
+                        <span class="track-val">2 / 2</span>
+                    </div>
                 </div>
             </div>
 
             <!-- Stacja 4 -->
-            <div class="station-card">
-                <div class="station-info">
-                    <div class="station-title">Kędzierzyn-Koźle</div>
-                    <div class="station-subtext">stacja przejazdowa</div>
-                </div>
-                <div class="station-metrics">
-                    <div class="time-box">
-                        <span class="actual-time">16:01</span>
+            <div class="station-row">
+                <div class="row-left">
+                    <span class="badge-status badge-zaliczona">zaliczona</span>
+                    <div class="station-meta">
+                        <span class="station-name">Przeworsk</span>
+                        <span class="station-subinfo">ID 83105 · kolejność: 12 · nazwa: słownik PLK / cache</span>
                     </div>
-                    <span class="badge-ok">OK</span>
+                </div>
+                <div class="row-right">
+                    <div class="time-col">
+                        <div class="main-time">11:46</div>
+                    </div>
+                    <div class="delay-col">
+                        <span class="delay-label">opóźnienie</span>
+                        <span class="delay-val ok">0 min</span>
+                    </div>
+                    <div class="track-col">
+                        <span class="track-label">peron / tor</span>
+                        <span class="track-val">1 / 2</span>
+                    </div>
                 </div>
             </div>
 
             <!-- Stacja 5 -->
-            <div class="station-card">
-                <div class="station-info">
-                    <div class="station-title">Opole Główne</div>
-                    <div class="station-subtext">peron 1 · tor 2</div>
-                </div>
-                <div class="station-metrics">
-                    <div class="time-box">
-                        <span class="actual-time">16:32</span>
+            <div class="station-row">
+                <div class="row-left">
+                    <span class="badge-status badge-zaliczona">zaliczona</span>
+                    <div class="station-meta">
+                        <span class="station-name">Łańcut</span>
+                        <span class="station-subinfo">ID 83022 · kolejność: 15 · nazwa: słownik PLK / cache</span>
                     </div>
-                    <span class="badge-ok">OK</span>
+                </div>
+                <div class="row-right">
+                    <div class="time-col">
+                        <div class="main-time">11:59</div>
+                    </div>
+                    <div class="delay-col">
+                        <span class="delay-label">opóźnienie</span>
+                        <span class="delay-val ok">0 min</span>
+                    </div>
+                    <div class="track-col">
+                        <span class="track-label">peron / tor</span>
+                        <span class="track-val">1 / 2</span>
+                    </div>
                 </div>
             </div>
 
-            <!-- Stacja 6 -->
-            <div class="station-card">
-                <div class="station-info">
-                    <div class="station-title">Wrocław Główny</div>
-                    <div class="station-subtext">peron 3 · tor 1</div>
-                </div>
-                <div class="station-metrics">
-                    <div class="time-box">
-                        <span class="actual-time">17:25</span>
+            <!-- OSTATNIA POTWIERDZONA (WYRÓŻNIONA) -->
+            <div class="station-row is-last">
+                <div class="row-left">
+                    <span class="badge-status badge-ostatnia">ostatnia</span>
+                    <div class="station-meta">
+                        <span class="station-name">Rzeszów Główny</span>
+                        <span class="station-subinfo">ID 82669 · kolejność: 17 · nazwa: słownik PLK / cache</span>
                     </div>
-                    <span class="badge-ok">OK</span>
+                </div>
+                <div class="row-right">
+                    <div class="time-col">
+                        <div class="main-time">12:15</div>
+                    </div>
+                    <div class="delay-col">
+                        <span class="delay-label">opóźnienie</span>
+                        <span class="delay-val ok">0 min</span>
+                    </div>
+                    <div class="track-col">
+                        <span class="track-label">peron / tor</span>
+                        <span class="track-val">2 / 2</span>
+                    </div>
                 </div>
             </div>
 
-            <!-- Stacja 7 -->
-            <div class="station-card">
-                <div class="station-info">
-                    <div class="station-title">Szczecin Główny</div>
-                    <div class="station-subtext">stacja końcowa</div>
-                </div>
-                <div class="station-metrics">
-                    <div class="time-box">
-                        <span class="actual-time">20:45</span>
+            <!-- NASTĘPNA STACJA -->
+            <div class="station-row is-next">
+                <div class="row-left">
+                    <span class="badge-status badge-nastepna">następna</span>
+                    <div class="station-meta">
+                        <span class="station-name">Dębica</span>
+                        <span class="station-subinfo">ID 81208 · kolejność: 22 · nazwa: słownik PLK / cache</span>
                     </div>
-                    <span class="badge-ok">OK</span>
+                </div>
+                <div class="row-right">
+                    <div class="time-col">
+                        <div class="main-time">12:39</div>
+                        <div class="plan-time">plan 12:38</div>
+                    </div>
+                    <div class="delay-col">
+                        <span class="delay-label">opóźnienie</span>
+                        <span class="delay-val delayed">1 min</span>
+                    </div>
+                    <div class="track-col">
+                        <span class="track-label">peron / tor</span>
+                        <span class="track-val">2 / 2</span>
+                    </div>
                 </div>
             </div>
+
+            <!-- KOLEJNE STACJE -->
+            <div class="station-row">
+                <div class="row-left">
+                    <span class="badge-status badge-przed">przed</span>
+                    <div class="station-meta">
+                        <span class="station-name">Tarnów</span>
+                        <span class="station-subinfo">ID 80630 · kolejność: 26 · nazwa: słownik PLK / cache</span>
+                    </div>
+                </div>
+                <div class="row-right">
+                    <div class="time-col">
+                        <div class="main-time">12:56</div>
+                    </div>
+                    <div class="delay-col">
+                        <span class="delay-label">opóźnienie</span>
+                        <span class="delay-val ok">0 min</span>
+                    </div>
+                    <div class="track-col">
+                        <span class="track-label">peron / tor</span>
+                        <span class="track-val">1 / 2</span>
+                    </div>
+                </div>
+            </div>
+
         </div>
-    </main>
+    </div>
 
-    <script>
-        // Logika dynamicznego ładowania danych z URL (np. ?id=3815)
-        document.addEventListener("DOMContentLoaded", function () {
-            const params = new URLSearchParams(window.location.search);
-            const trainId = params.get("id") || params.get("train") || "3815";
-            
-            // Tutaj w razie potrzeby można połączyć się z API /api/train-details?num=
-            console.log("Załadowano podgląd dla pociągu ID:", trainId);
-        });
-    </script>
 </body>
 </html>
