@@ -138,7 +138,17 @@ document.getElementById('hTrain').innerText = trainNum;
 async function load() {
   const stList = document.getElementById('stList');
 
-  // Próba pobrania ze szczegółowego API PLK
+  // 1. Najpierw szukamy w pamięci podręcznej z głównej listy
+  let cachedTrain = null;
+  try {
+    const cached = localStorage.getItem('monitored_trains_cache');
+    if (cached) {
+      const { data } = JSON.parse(cached);
+      cachedTrain = (data.trains || []).find(x => String(x.train) === String(trainNum));
+    }
+  } catch(e) {}
+
+  // 2. Próba pobrania ze szczegółowego API PLK
   if (trainOrderId) {
     try {
       const res = await fetch(`/api/train-details?trainOrderId=${encodeURIComponent(trainOrderId)}`);
@@ -153,24 +163,17 @@ async function load() {
     } catch(e) {}
   }
 
-  // Odczyt z pamięci lokalnej (fallback z pola via)
-  try {
-    const cached = localStorage.getItem('monitored_trains_cache');
-    if (cached) {
-      const { data } = JSON.parse(cached);
-      const t = (data.trains || []).find(x => String(x.train) === String(trainNum));
-      if (t) {
-        renderFallback(t);
-        return;
-      }
-    }
-  } catch(e) {}
+  // 3. Rezerwowe odtworzenie trasy od stacji początkowej (FROM -> VIA -> DESTINATION)
+  if (cachedTrain) {
+    renderFallback(cachedTrain);
+    return;
+  }
 
   stList.innerHTML = '<div style="text-align:center;padding:30px;color:#f87171;font-size:13px;">Nie udało się pobrać szczegółów trasy.</div>';
 }
 
 function renderRoute(route, meta) {
-  document.getElementById('hCategory').innerText = meta.category || 'R';
+  document.getElementById('hCategory').innerText = meta.category || 'Os';
   document.getElementById('hRoute').innerText = `${route[0]?.name || ''} → ${route[route.length - 1]?.name || ''}`;
   
   const activeSt = route.find(s => s.name?.toLowerCase().includes(currentStation.toLowerCase())) || route[0];
@@ -212,8 +215,11 @@ function renderRoute(route, meta) {
 }
 
 function renderFallback(t) {
-  document.getElementById('hCategory').innerText = t.category || 'R';
-  document.getElementById('hRoute').innerText = `${t.station} → ${t.destination || '---'}`;
+  document.getElementById('hCategory').innerText = t.category || 'Os';
+  
+  // Jeśli API podało stację wyjściową (from), to od niej zaczynamy!
+  const startStation = t.from || t.station;
+  document.getElementById('hRoute').innerText = `${startStation} → ${t.destination || '---'}`;
   document.getElementById('hTime').innerText = t.time || t.plannedTime || '--:--';
   
   let viaArray = [];
@@ -221,21 +227,30 @@ function renderFallback(t) {
     viaArray = t.via.split(',').map(s => s.trim()).filter(Boolean);
   }
 
-  const fullPath = [t.station, ...viaArray];
-  if (t.destination && !fullPath.map(s => s.toLowerCase()).includes(t.destination.toLowerCase())) {
+  // Tworzymy ciąg: [Start] -> [stacje z via, o ile nie są startem] -> [Meta]
+  const fullPath = [];
+  if (startStation) fullPath.push(startStation);
+
+  viaArray.forEach(v => {
+    if (!fullPath.some(s => s.toLowerCase() === v.toLowerCase())) {
+      fullPath.push(v);
+    }
+  });
+
+  if (t.destination && !fullPath.some(s => s.toLowerCase() === t.destination.toLowerCase())) {
     fullPath.push(t.destination);
   }
 
   document.getElementById('stList').innerHTML = fullPath.map((stName, idx) => {
     const isCurrent = stName.toLowerCase() === t.station.toLowerCase();
-    const pTime = idx === 0 ? t.plannedTime : '--:--';
-    const rTime = idx === 0 ? (t.time || t.plannedTime) : '--:--';
+    const pTime = isCurrent ? t.plannedTime : '--:--';
+    const rTime = isCurrent ? (t.time || t.plannedTime) : '--:--';
 
     return `
       <div class="st-card ${isCurrent ? 'active' : ''}">
         <div class="st-left">
           <div class="st-name">${isCurrent ? '🎯 ' : ''}${stName}</div>
-          <div class="st-sub">${idx === 0 ? `peron ${t.platform || '-'} · tor ${t.track || '-'}` : 'stacja pośrednia'}</div>
+          <div class="st-sub">${isCurrent ? `peron ${t.platform || '-'} · tor ${t.track || '-'}` : 'stacja przejazdowa'}</div>
         </div>
         <div class="st-right">
           <div class="st-times">
