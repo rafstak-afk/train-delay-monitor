@@ -1,93 +1,85 @@
 export async function onRequest(context) {
+  const url = new URL(context.request.url);
+  const baseUrl = url.origin;
+
+  // Lista obserwowanych pociągów i odpytywanych stacji
+  const monitored = [
+    { station: 'Katowice', train: '3815' },
+    { station: 'Bytom Karb', train: '40360' },
+    { station: 'Katowice', train: '38107' },
+    { station: 'Katowice', train: '40621' },
+    { station: 'Katowice', train: '63102' },
+    { station: 'Tarnowskie Góry', train: '40450' },
+    { station: 'Miasteczko Śląskie', train: '44226' },
+    { station: 'Tarnowskie Góry', train: '40250' },
+    { station: 'Chorzów Batory', train: '40658' },
+    { station: 'Chorzów Batory', train: '40423' },
+    { station: 'Chorzów Batory', train: '40211' },
+    { station: 'Chorzów Uniwersytet', train: '40468' }
+  ];
+
   try {
-    const monitoredTrains = [
-      {
-        train: "3815",
-        category: "IC",
-        name: "MATEJKO",
-        station: "Katowice",
-        destination: "Szczecin Główny",
-        time: "14:49",
-        plannedTime: "14:49",
-        delay: 0,
-        platform: "1",
-        track: "9",
-        carrier: "IC",
-        via: "Bytom, Gliwice, Kędzierzyn-Koźle, Opole Główny"
-      },
-      {
-        train: "40360",
-        category: "OsP S9",
-        name: "",
-        station: "Bytom Karb",
-        destination: "Bytom",
-        time: "14:56",
-        plannedTime: "14:56",
-        delay: 0,
-        platform: "2",
-        track: "2",
-        carrier: "KŚ",
-        via: "Bytom Główny"
-      },
-      {
-        train: "38107",
-        category: "TLK",
-        name: "OSTERWA",
-        station: "Katowice",
-        destination: "Szczecin Główny",
-        time: "15:24",
-        plannedTime: "15:24",
-        delay: 0,
-        platform: "1",
-        track: "7",
-        carrier: "IC",
-        via: "Chorzów Miasto, Bytom, Tarnowskie Góry"
-      },
-      {
-        train: "40621",
-        category: "Os S1",
-        name: "",
-        station: "Katowice",
-        destination: "Gliwice",
-        time: "15:37",
-        plannedTime: "15:37",
-        delay: 0,
-        platform: "1",
-        track: "7",
-        carrier: "KŚ",
-        via: "Katowice Załęże, Chorzów Batory, Świętochłowice"
-      },
-      {
-        train: "63102",
-        category: "TLK",
-        name: "SUDETY",
-        station: "Katowice",
-        destination: "Kraków Główny",
-        time: "12:03",
-        plannedTime: "12:03",
-        delay: 19,
-        platform: "1",
-        track: "7",
-        carrier: "IC",
-        via: "Mysłowice, Jaworzno Szczakowa, Trzebinia"
-      },
-      { train: "40450", category: "KŚ", name: "", station: "Tarnowskie Góry", destination: "Katowice", time: "16:10", plannedTime: "16:10", delay: 0, platform: "1", track: "2", carrier: "KŚ", via: "Nakło Śląskie, Radzionków" },
-      { train: "44226", category: "KŚ", name: "", station: "Miasteczko Śląskie", destination: "Tarnowskie Góry", time: "16:25", plannedTime: "16:25", delay: 0, platform: "1", track: "1", carrier: "KŚ", via: "Tarnowskie Góry" },
-      { train: "40250", category: "KŚ", name: "", station: "Tarnowskie Góry", destination: "Katowice", time: "17:02", plannedTime: "17:02", delay: 0, platform: "2", track: "1", carrier: "KŚ", via: "Bytom, Chorzów Batory" },
-      { train: "40658", category: "KŚ", name: "", station: "Chorzów Batory", destination: "Gliwice", time: "17:15", plannedTime: "17:15", delay: 0, platform: "1", track: "2", carrier: "KŚ", via: "Świętochłowice, Ruda Śląska" },
-      { train: "40423", category: "KŚ", name: "", station: "Chorzów Batory", destination: "Katowice", time: "17:40", plannedTime: "17:40", delay: 0, platform: "2", track: "1", carrier: "KŚ", via: "Katowice Załęże" },
-      { train: "40211", category: "KŚ", name: "", station: "Chorzów Batory", destination: "Katowice", time: "18:05", plannedTime: "18:05", delay: 0, platform: "2", track: "1", carrier: "KŚ", via: "Katowice Załęże" },
-      { train: "40468", category: "KŚ", name: "", station: "Chorzów Uniwersytet", destination: "Bytom", time: "18:30", plannedTime: "18:30", delay: 0, platform: "1", track: "1", carrier: "KŚ", via: "Chorzów Stary" }
-    ];
+    const uniqueStations = [...new Set(monitored.map(m => m.station))];
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    // Pobieranie żywych danych ze stacji
+    const stationDataMap = {};
+    await Promise.all(uniqueStations.map(async (st) => {
+      try {
+        const res = await fetch(`${baseUrl}/api/departures?station=${encodeURIComponent(st)}&date=${todayStr}&limit=100`);
+        if (res.ok) {
+          const json = await res.json();
+          stationDataMap[st] = json.departures || [];
+        } else {
+          stationDataMap[st] = [];
+        }
+      } catch (e) {
+        stationDataMap[st] = [];
+      }
+    }));
+
+    // Dopasowanie żywych pociągów
+    const resultTrains = monitored.map(item => {
+      const departures = stationDataMap[item.station] || [];
+      const match = departures.find(d => {
+        const num = String(d.train || d.trainNumber || d.number || d.trainNo || '').trim();
+        return num === item.train;
+      });
+
+      if (!match) {
+        return {
+          queryStation: item.station,
+          train: item.train,
+          found: false
+        };
+      }
+
+      return {
+        queryStation: item.station,
+        train: item.train,
+        found: true,
+        category: match.category || match.type || 'Pociąg',
+        name: match.name || match.trainName || '',
+        carrier: match.carrier || match.operator || 'PKP',
+        origin: match.origin || match.from || match.startStation || 'Stacja początkowa',
+        destination: match.destination || match.to || 'Stacja docelowa',
+        plannedTime: match.plannedTime || match.scheduleTime || '--:--',
+        actualTime: match.time || match.actualTime || match.plannedTime || '--:--',
+        delay: Number(match.delay || 0),
+        platform: match.platform || '—',
+        track: match.track || '—',
+        via: match.via || '',
+        // Ostatnia potwierdzona stacja i czas minięcia z API PLK
+        lastConfirmedStation: match.lastStation || match.lastReportedStation || match.currentStation || 'W trasie',
+        lastConfirmedTime: match.lastReportedTime || match.lastStationTime || match.time || ''
+      };
+    });
 
     return new Response(JSON.stringify({
-      foundCount: monitoredTrains.length,
-      trains: monitoredTrains
+      timestamp: new Date().toISOString(),
+      trains: resultTrains
     }), {
-      headers: {
-        "Content-Type": "application/json;charset=UTF-8",
-        "Access-Control-Allow-Origin": "*"
-      }
+      headers: { "Content-Type": "application/json;charset=UTF-8", "Access-Control-Allow-Origin": "*" }
     });
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), { status: 500 });
