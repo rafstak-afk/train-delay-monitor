@@ -6,28 +6,28 @@
     <title>Bieg Pociągu</title>
     <style>
         :root {
-            --bg-main: #0a0e17;
-            --panel-bg: #111827;
-            --panel-border: #1f293d;
-            --text-main: #f3f4f6;
-            --text-muted: #9ca3af;
-            --accent-green: #10b981;
-            --accent-blue: #3b82f6;
-            --accent-red: #ef4444;
+            --bg-main: #101820;
+            --panel-bg: #102235;
+            --panel-border: #31516f;
+            --text-main: #ffffff;
+            --text-muted: #93c5fd;
+            --accent-green: #5dd39e;
+            --accent-blue: #38bdf8;
+            --accent-red: #ff6b6b;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        body { background-color: var(--bg-main); color: var(--text-main); padding: 16px; max-width: 800px; margin: 0 auto; font-size: 14px; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
+        body { background-color: var(--bg-main); color: var(--text-main); padding: 16px; max-width: 800px; margin: 0 auto; }
         
         header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--panel-border); }
-        h1 { font-size: 1.2rem; font-weight: 800; color: #fff; }
-        .btn-back { background: #1f293d; border: 1px solid #374151; color: #fff; padding: 8px 14px; border-radius: 6px; text-decoration: none; font-weight: 700; }
+        h1 { font-size: 1.2rem; font-weight: 900; }
+        .btn-back { background: #0b57d0; color: #fff; padding: 8px 14px; border-radius: 8px; text-decoration: none; font-weight: 900; }
 
-        .train-card { background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 8px; padding: 16px; margin-bottom: 20px; }
-        .train-no { font-size: 1.3rem; font-weight: 900; color: #60a5fa; }
-        .train-route { font-size: 0.95rem; font-weight: 700; color: #fff; margin-top: 4px; }
+        .train-card { background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 12px; padding: 16px; margin-bottom: 20px; }
+        .train-no { font-size: 1.3rem; font-weight: 900; color: var(--accent-blue); }
+        .train-route { font-size: 0.95rem; font-weight: 700; color: #fff; margin-top: 6px; }
         
-        .last-report-badge { background: rgba(59, 130, 246, 0.15); border: 1px solid var(--accent-blue); color: #93c5fd; padding: 8px 12px; border-radius: 6px; margin-top: 10px; font-weight: 700; font-size: 0.85rem; }
+        .last-report-badge { background: rgba(56, 189, 248, 0.15); border: 1px solid var(--accent-blue); color: #e0f2fe; padding: 8px 12px; border-radius: 6px; margin-top: 10px; font-weight: 700; font-size: 0.85rem; }
 
         .timeline { position: relative; padding-left: 20px; margin-top: 20px; border-left: 2px solid var(--panel-border); }
         .station-row { position: relative; padding: 10px 0 10px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
@@ -37,7 +37,7 @@
         .station-row.current::before { background: var(--accent-green); box-shadow: 0 0 10px var(--accent-green); }
         
         .station-name { font-size: 0.95rem; font-weight: 700; color: #fff; }
-        .station-times { font-size: 0.82rem; color: var(--text-muted); margin-top: 2px; display: flex; gap: 12px; }
+        .station-times { font-size: 0.82rem; color: var(--text-muted); margin-top: 4px; display: flex; gap: 12px; }
     </style>
 </head>
 <body>
@@ -48,9 +48,9 @@
     </header>
 
     <div class="train-card" id="trainCard">
-        <div class="train-no" id="trainNumber">Ładowanie...</div>
+        <div class="train-no" id="trainNumber">Pobieranie...</div>
         <div class="train-route" id="trainRoute"></div>
-        <div class="last-report-badge" id="lastReport">📍 Pobieranie pozycji pociągu...</div>
+        <div class="last-report-badge" id="lastReport">📍 Pobieranie pozycji...</div>
     </div>
 
     <div class="timeline" id="timelineContainer"></div>
@@ -67,43 +67,45 @@
             }
 
             document.getElementById('trainNumber').innerText = "Pociąg " + trainNo;
+            document.getElementById('trainTitleHeader').innerText = trainNo;
 
             try {
-                // Dynamiczny strzał do backendu API po pełną trasę
+                // Odpytanie API o trasę pociągu
                 const res = await fetch(`/api/departures?train=${encodeURIComponent(trainNo)}&station=${encodeURIComponent(queryStation || '')}`);
                 const data = await res.json();
                 
-                // Jeśli API zwraca pełną listę stacji dla pociągu:
-                const stations = data.stations || data.stops || [];
-                const info = data.info || {};
+                const stations = data.stations || data.stops || data.route || [];
+                const info = data.info || data.train || {};
 
-                if (info.origin && info.destination) {
-                    document.getElementById('trainRoute').innerText = `${info.origin} ➔ ${info.destination}`;
+                if (info.origin || info.destination) {
+                    document.getElementById('trainRoute').innerText = `${info.origin || '—'} ➔ ${info.destination || '—'}`;
                 }
                 
-                if (info.lastStation) {
-                    document.getElementById('lastReport').innerHTML = `📍 Ostatnie potwierdzenie: <b>${info.lastStation}</b> ${info.lastTime ? '(' + info.lastTime + ')' : ''}`;
+                if (info.lastStation || info.lastReportedStation) {
+                    const lastSt = info.lastStation || info.lastReportedStation;
+                    const lastTm = info.lastTime || info.lastReportedTime || '';
+                    document.getElementById('lastReport').innerHTML = `📍 Ostatnie potwierdzenie: <b>${lastSt}</b> ${lastTm ? '(' + lastTm + ')' : ''}`;
                 } else {
                     document.getElementById('lastReport').style.display = 'none';
                 }
 
-                if (stations.length === 0) {
-                    document.getElementById('timelineContainer').innerHTML = '<div style="color:var(--text-muted)">Brak szczegółowego rozkładu dla tego połączenia.</div>';
+                if (!stations || stations.length === 0) {
+                    document.getElementById('timelineContainer').innerHTML = '<div style="color:var(--text-muted); padding:10px;">Brak danych szczegółowych trasy dla tego pociągu w żywym API.</div>';
                     return;
                 }
 
                 document.getElementById('timelineContainer').innerHTML = stations.map(s => `
                     <div class="station-row ${s.passed ? 'passed' : s.isCurrent ? 'current' : ''}">
-                        <div class="station-name">${s.name}</div>
+                        <div class="station-name">${s.name || s.station}</div>
                         <div class="station-times">
-                            <span>Plan: <b>${s.plannedTime || '--:--'}</b></span>
-                            <span>Wyjazd/Przyjazd: <b>${s.actualTime || s.plannedTime || '--:--'}</b></span>
+                            <span>Plan: <b>${s.plannedTime || s.schedule || '--:--'}</b></span>
+                            <span>Czas: <b>${s.actualTime || s.time || s.plannedTime || '--:--'}</b></span>
                         </div>
                     </div>
                 `).join('');
 
             } catch (err) {
-                document.getElementById('timelineContainer').innerHTML = '<div style="color:var(--accent-red)">Błąd ładowania szczegółów tras.</div>';
+                document.getElementById('timelineContainer').innerHTML = '<div style="color:var(--accent-red); padding:10px;">Błąd pobierania trasy z serwera.</div>';
             }
         }
 
