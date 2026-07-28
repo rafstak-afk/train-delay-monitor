@@ -37,6 +37,23 @@ body {
 
 .title-row { display: flex; align-items: center; justify-content: space-between; }
 .title { font-size: 18px; font-weight: 800; color: #f9fafb; display: flex; align-items: center; gap: 8px; }
+.actions { display: flex; gap: 12px; align-items: center; }
+
+.btn-action {
+  background: #1f2937;
+  border: 1px solid #374151;
+  color: #38bdf8;
+  font-size: 11px;
+  font-weight: bold;
+  padding: 4px 8px;
+  border-radius: 5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.btn-action:hover { background: #374151; }
+
 .sub-info { font-size: 11px; color: #6b7280; margin-top: 3px; }
 
 .status-bar {
@@ -51,6 +68,12 @@ body {
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+.status-bar.has-alerts {
+  background: #7f1d1d;
+  color: #fca5a5;
+  border-color: #dc2626;
 }
 
 .train-list { padding: 12px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
@@ -70,21 +93,35 @@ body {
 
 .train-card:hover { background: #1f2937; border-color: #374151; }
 
-.left-col { display: flex; flex-direction: column; align-items: flex-start; min-width: 65px; }
+.left-col { display: flex; flex-direction: column; align-items: flex-start; min-width: 75px; }
 .time-main { font-size: 17px; font-weight: 900; color: #38bdf8; line-height: 1; }
-.delay-tag { font-size: 10px; font-weight: 900; color: #4ade80; margin-top: 4px; padding: 2px 4px; border-radius: 3px; background: rgba(74, 222, 128, 0.1); }
-.delay-tag.red { color: #f87171; background: rgba(248, 113, 113, 0.1); }
+.time-main.no-time { color: #4b5563; }
+
+.delay-tag {
+  font-size: 10px;
+  font-weight: 900;
+  color: #4ade80;
+  margin-top: 4px;
+  padding: 2px 5px;
+  border-radius: 3px;
+  background: rgba(74, 222, 128, 0.1);
+  display: inline-block;
+}
+
+.delay-tag.red { color: #f87171; background: rgba(248, 113, 113, 0.15); }
+.delay-tag.none { color: #6b7280; background: rgba(107, 114, 128, 0.15); }
 
 .mid-col { flex: 1; padding: 0 12px; min-width: 0; }
 .train-head { display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
 .cat-badge { font-size: 10px; font-weight: 800; background: #374151; color: #f3f4f6; padding: 1px 5px; border-radius: 3px; }
 .train-num { font-size: 14px; font-weight: 900; color: #fff; }
 .dest-text { font-size: 13px; font-weight: 700; color: #e5e7eb; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dest-text.muted { color: #6b7280; font-weight: normal; font-style: italic; }
 .via-text { font-size: 11px; color: #6b7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
 .monitored-from { font-size: 10px; color: #38bdf8; font-weight: 700; margin-top: 3px; }
 
 .right-col { text-align: right; font-size: 11px; color: #9ca3af; font-weight: 700; }
-.no-data { font-size: 11px; color: #6b7280; font-style: italic; }
+.no-data { font-size: 11px; color: #4b5563; font-style: italic; }
 </style>
 </head>
 <body>
@@ -93,10 +130,13 @@ body {
   <div class="header">
     <div class="title-row">
       <div class="title">🚆 Monitor pociągów</div>
-      <button onclick="refreshData(true)" style="background:none; border:none; color:#38bdf8; font-size:12px; cursor:pointer; font-weight:bold;">🔄 Odśwież</button>
+      <div class="actions">
+        <button class="btn-action" id="btnNotify" onclick="requestNotificationPermission()">🔔 Powiadomienia</button>
+        <button class="btn-action" onclick="refreshData(true)">🔄 Odśwież</button>
+      </div>
     </div>
     <div class="sub-info" id="subInfo">Ładowanie...</div>
-    <div class="status-bar">✓ Brak alarmów opóźnień</div>
+    <div class="status-bar" id="statusBar">Ładowanie statusu...</div>
   </div>
 
   <div class="train-list" id="trainList">
@@ -106,13 +146,81 @@ body {
 
 <script>
 const CACHE_KEY = 'monitored_trains_cache';
-const CACHE_TTL = 3 * 60 * 1000; // 3 minuty
+const NOTIFIED_KEY = 'monitored_trains_notified';
+const CACHE_TTL = 3 * 60 * 1000;
+
+function updateNotifyButton() {
+  const btn = document.getElementById('btnNotify');
+  if (!("Notification" in window)) {
+    btn.style.display = 'none';
+    return;
+  }
+  if (Notification.permission === "granted") {
+    btn.innerText = "🔔 Włączone";
+    btn.style.color = "#4ade80";
+  } else if (Notification.permission === "denied") {
+    btn.innerText = "🔕 Zablokowane";
+    btn.style.color = "#f87171";
+  } else {
+    btn.innerText = "🔔 Włącz alerty";
+  }
+}
+
+async function requestNotificationPermission() {
+  if (!("Notification" in window)) {
+    alert("Twoja przeglądarka nie wspiera powiadomień systemowych.");
+    return;
+  }
+  const perm = await Notification.requestPermission();
+  updateNotifyButton();
+  if (perm === "granted") {
+    new Notification("Monitor Pociągów", {
+      body: "Powiadomienia zostały pomyślnie włączone!",
+      icon: "https://fav.farm/🚆"
+    });
+  }
+}
+
+function triggerAlertNotification(delayedTrains) {
+  if (!("Notification" in window) || Notification.permission !== "granted") return;
+
+  let notifiedMap = {};
+  try {
+    notifiedMap = JSON.parse(localStorage.getItem(NOTIFIED_KEY) || '{}');
+  } catch(e) {}
+
+  delayedTrains.forEach(t => {
+    const key = `${t.train}_${t.station}`;
+    const lastDelay = notifiedMap[key] || 0;
+
+    // Wysyłamy powiadomienie tylko jeśli opóźnienie wzrosło lub pojawiło się po raz pierwszy
+    if (t.delay > lastDelay) {
+      notifiedMap[key] = t.delay;
+
+      const title = `⚠️ ALARM: Pociąg ${t.category || ''} ${t.train} (+${t.delay} min)`;
+      const body = `Stacja: ${t.station}\nRelacja do: ${t.destination || 'b/d'}\nPlanowy odjazd: ${t.plannedTime || t.time}`;
+
+      new Notification(title, {
+        body,
+        icon: "https://fav.farm/⚠️",
+        tag: key, // Podmienia stare powiadomienie dla tego samego pociągu
+        renotify: true
+      });
+
+      // Wibracja na telefonach
+      if ("vibrate" in navigator) {
+        navigator.vibrate([200, 100, 200]);
+      }
+    }
+  });
+
+  localStorage.setItem(NOTIFIED_KEY, JSON.stringify(notifiedMap));
+}
 
 async function refreshData(force = false) {
   const listEl = document.getElementById('trainList');
-  const subEl = document.getElementById('subInfo');
-
   const cached = localStorage.getItem(CACHE_KEY);
+
   if (!force && cached) {
     try {
       const { time, data } = JSON.parse(cached);
@@ -143,40 +251,71 @@ async function refreshData(force = false) {
 function render(data, updatedDate) {
   const listEl = document.getElementById('trainList');
   const subEl = document.getElementById('subInfo');
+  const statusEl = document.getElementById('statusBar');
 
   const trains = data.trains || [];
   const timeStr = updatedDate.toTimeString().split(' ')[0];
+  
+  const delayedTrains = trains.filter(t => t.found && Number(t.delay || 0) > 0);
+  
+  if (delayedTrains.length > 0) {
+    statusEl.className = 'status-bar has-alerts';
+    statusEl.innerText = `⚠️ ALARM: Znaleziono ${delayedTrains.length} opóźniony(ch) pociąg(ów)!`;
+    
+    // Wywołanie powiadomienia wyskakującego w przeglądarce/systemie
+    triggerAlertNotification(delayedTrains);
+  } else {
+    statusEl.className = 'status-bar';
+    statusEl.innerText = '✓ Brak alarmów opóźnień';
+  }
+
   subEl.innerText = `Znaleziono: ${data.foundCount || 0} z ${data.trainCount || trains.length} | Odświeżono: ${timeStr}`;
 
   listEl.innerHTML = trains.map(t => {
+    const isFound = t.found;
     const delay = Number(t.delay || 0);
-    const timeDisplay = t.time && t.time !== '--:--' ? t.time : t.plannedTime;
+    const timeDisplay = isFound ? (t.time && t.time !== '--:--' ? t.time : t.plannedTime) : '--:--';
     const detailsUrl = `/monitorowane-pociagi/train.html?train=${encodeURIComponent(t.train)}&station=${encodeURIComponent(t.station)}&trainOrderId=${encodeURIComponent(t.trainOrderId || '')}`;
+
+    let statusTag = '';
+    if (!isFound) {
+      statusTag = `<div class="delay-tag none">BRAK DANYCH</div>`;
+    } else if (delay > 0) {
+      statusTag = `<div class="delay-tag red">+${delay} MIN</div>`;
+    } else {
+      statusTag = `<div class="delay-tag">NA CZAS</div>`;
+    }
 
     return `
       <a href="${detailsUrl}" class="train-card">
         <div class="left-col">
-          <div class="time-main">${timeDisplay || '--:--'}</div>
-          <div class="delay-tag ${delay > 0 ? 'red' : ''}">${delay > 0 ? '+' + delay + ' MIN' : 'NA CZAS'}</div>
+          <div class="time-main ${!isFound ? 'no-time' : ''}">${timeDisplay}</div>
+          ${statusTag}
         </div>
         <div class="mid-col">
           <div class="train-head">
             <span class="cat-badge">${t.category || 'PKP'}</span>
             <span class="train-num">${t.train}</span>
           </div>
-          <div class="dest-text">${t.destination ? t.destination : (t.found ? 'Stacja docelowa b/d' : 'Brak danych')}</div>
-          ${t.via ? `<div class="via-text">przez: ${t.via}</div>` : ''}
+          <div class="dest-text ${!isFound ? 'muted' : ''}">
+            ${isFound ? (t.destination || 'Stacja docelowa b/d') : 'Brak danych w PLK'}
+          </div>
+          ${t.via && isFound ? `<div class="via-text">przez: ${t.via}</div>` : ''}
           <div class="monitored-from">📍 Stacja: ${t.station}</div>
         </div>
         <div class="right-col">
-          ${t.platform && t.platform !== '-' ? `p. ${t.platform} · t. ${t.track}` : '<span class="no-data">brak danych</span>'}
+          ${isFound && t.platform && t.platform !== '-' ? `p. ${t.platform} · t. ${t.track}` : '<span class="no-data">brak danych</span>'}
         </div>
       </a>
     `;
   }).join('');
 }
 
+updateNotifyButton();
 refreshData();
+
+// Automatyczne sprawdzanie opóźnień w tle co 60 sekund
+setInterval(() => refreshData(true), 60000);
 </script>
 </body>
 </html>
