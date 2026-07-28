@@ -15,19 +15,20 @@ const MONITORED_TRAINS = [
 
 export async function onRequestGet(context) {
   const { request } = context;
-  const origin = new URL(request.url).origin;
+  const originUrl = new URL(request.url).origin;
 
   const stations = [...new Set(MONITORED_TRAINS.map(x => x.station))];
   const departuresByStation = {};
 
+  // Pobieramy dane bezpiecznie - jeśli jedna stacja zawiedzie, reszta działa
   await Promise.all(
     stations.map(async (station) => {
       try {
-        const url = `${origin}/api/departures?station=${encodeURIComponent(station)}&limit=100`;
+        const url = `${originUrl}/api/departures?station=${encodeURIComponent(station)}&limit=100`;
         const res = await fetch(url);
         if (res.ok) {
           const data = await res.json();
-          departuresByStation[station] = Array.isArray(data.departures) ? data.departures : [];
+          departuresByStation[station] = Array.isArray(data.departures) ? data.departures : (data.trains || []);
         } else {
           departuresByStation[station] = [];
         }
@@ -37,11 +38,15 @@ export async function onRequestGet(context) {
     })
   );
 
+  let foundCount = 0;
+
   const trains = MONITORED_TRAINS.map(item => {
     const rows = departuresByStation[item.station] || [];
     const hit = rows.find(row => 
       String(row.train || row.trainNumber || row.number || "").trim() === String(item.train).trim()
     );
+
+    if (hit) foundCount++;
 
     return {
       station: item.station,
@@ -54,9 +59,10 @@ export async function onRequestGet(context) {
       time: hit?.time ?? "--:--",
       platform: hit?.platform ?? "-",
       track: hit?.track ?? "-",
-      category: hit?.category || "R",
+      category: hit?.category || "Os",
       name: hit?.name ?? "",
-      destination: hit?.destination ?? "",
+      from: hit?.from || hit?.origin || "", // Prawdziwa stacja początkowa (np. Katowice)
+      destination: hit?.destination || hit?.to || "",
       via: hit?.via ?? "",
       scheduleId: hit?.scheduleId ?? null,
       orderId: hit?.orderId ?? null,
@@ -67,6 +73,8 @@ export async function onRequestGet(context) {
   return new Response(
     JSON.stringify({
       generatedAt: new Date().toISOString(),
+      foundCount,
+      trainCount: trains.length,
       trains
     }),
     {
