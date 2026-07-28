@@ -138,7 +138,7 @@ document.getElementById('hTrain').innerText = trainNum;
 async function load() {
   const stList = document.getElementById('stList');
 
-  // Próba pobrania pełnej trasy pociągu (od pierwszej do ostatniej stacji)
+  // Próba pobrania ze szczegółowego API PLK
   if (trainOrderId) {
     try {
       const res = await fetch(`/api/train-details?trainOrderId=${encodeURIComponent(trainOrderId)}`);
@@ -153,7 +153,7 @@ async function load() {
     } catch(e) {}
   }
 
-  // Fallback z pamięci/listy
+  // Odczyt z pamięci lokalnej (fallback z pola via)
   try {
     const cached = localStorage.getItem('monitored_trains_cache');
     if (cached) {
@@ -170,7 +170,7 @@ async function load() {
 }
 
 function renderRoute(route, meta) {
-  document.getElementById('hCategory').innerText = meta.category || 'PKP';
+  document.getElementById('hCategory').innerText = meta.category || 'R';
   document.getElementById('hRoute').innerText = `${route[0]?.name || ''} → ${route[route.length - 1]?.name || ''}`;
   
   const activeSt = route.find(s => s.name?.toLowerCase().includes(currentStation.toLowerCase())) || route[0];
@@ -212,16 +212,22 @@ function renderRoute(route, meta) {
 }
 
 function renderFallback(t) {
-  document.getElementById('hCategory').innerText = t.category || 'PKP';
+  document.getElementById('hCategory').innerText = t.category || 'R';
   document.getElementById('hRoute').innerText = `${t.station} → ${t.destination || '---'}`;
   document.getElementById('hTime').innerText = t.time || t.plannedTime || '--:--';
   
-  const viaStations = t.via ? t.via.split(',').map(s => s.trim()).filter(Boolean) : [];
-  const rawNames = [t.station, ...viaStations];
-  if (t.destination && !rawNames.includes(t.destination)) rawNames.push(t.destination);
+  let viaArray = [];
+  if (t.via) {
+    viaArray = t.via.split(',').map(s => s.trim()).filter(Boolean);
+  }
 
-  document.getElementById('stList').innerHTML = rawNames.map((stName, idx) => {
-    const isCurrent = stName.toLowerCase().includes(currentStation.toLowerCase());
+  const fullPath = [t.station, ...viaArray];
+  if (t.destination && !fullPath.map(s => s.toLowerCase()).includes(t.destination.toLowerCase())) {
+    fullPath.push(t.destination);
+  }
+
+  document.getElementById('stList').innerHTML = fullPath.map((stName, idx) => {
+    const isCurrent = stName.toLowerCase() === t.station.toLowerCase();
     const pTime = idx === 0 ? t.plannedTime : '--:--';
     const rTime = idx === 0 ? (t.time || t.plannedTime) : '--:--';
 
@@ -229,7 +235,7 @@ function renderFallback(t) {
       <div class="st-card ${isCurrent ? 'active' : ''}">
         <div class="st-left">
           <div class="st-name">${isCurrent ? '🎯 ' : ''}${stName}</div>
-          <div class="st-sub">peron ${idx === 0 ? (t.platform || '-') : '-'} · tor ${idx === 0 ? (t.track || '-') : '-'}</div>
+          <div class="st-sub">${idx === 0 ? `peron ${t.platform || '-'} · tor ${t.track || '-'}` : 'stacja pośrednia'}</div>
         </div>
         <div class="st-right">
           <div class="st-times">
