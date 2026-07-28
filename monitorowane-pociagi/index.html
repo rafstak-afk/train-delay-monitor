@@ -2,255 +2,181 @@
 <html lang="pl">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Monitor pociągów</title>
 <style>
-* { box-sizing: border-box; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
 body {
-  margin: 0 auto;
-  padding: 4px;
-  width: 100%;
-  max-width: 100%;
-  background: #000000; /* Głęboka czarna tło dla maksymalnego kontrastu w słońcu */
-  color: white;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  background: #090d16;
+  color: #f3f4f6;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
 }
 
-h1 { margin: 4px 6px 6px 6px; font-size: 16px; font-weight: 700; color: #ffffff; }
-.info { margin: 0 6px 6px 6px; color: #94a3b8; font-size: 10px; }
-.alerts { margin: 0 4px 6px 4px; }
-.alertPanel { background: #341616; border: 1px solid #e74c3c; border-radius: 6px; padding: 4px 8px; }
-.alertTitle { font-weight: 700; font-size: 11px; }
-.alertItem { font-size: 10px; }
-.alertOk { background: #14301f; border: 1px solid #2ecc71; border-radius: 6px; padding: 4px 8px; font-size: 11px; }
-
-.list { display: flex; flex-direction: column; gap: 4px; width: 100%; }
-
-/* KARTA - WYSOCKI KONTRAST */
-.card {
-  display: grid;
-  grid-template-columns: 100px 1fr auto;
-  align-items: center;
-  gap: 8px;
-  text-decoration: none;
-  color: white;
-  background: #111827;
-  border: 1px solid #374151;
-  border-radius: 6px;
-  padding: 6px 8px;
+.app-container {
   width: 100%;
-}
-.card:active { background: #1f2937; }
-.ok { border-left: 5px solid #22c55e; }
-.missing { border-left: 5px solid #ef4444; }
-
-/* KOLUMNA 1: GIGANTYCZNE GODZINY */
-.col-time {
+  max-width: 650px;
+  background: #0d1322;
+  min-height: 100vh;
+  border-left: 1px solid #1f2937;
+  border-right: 1px solid #1f2937;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-}
-.time-planned {
-  font-size: 11px;
-  font-weight: 600;
-  color: #9ca3af;
-  line-height: 1;
-}
-.time-planned-strike {
-  text-decoration: line-through;
-  color: #6b7280;
-}
-/* GODZINA RZECZYWISTA - BARDZO DUŻA I WYTŁUSZCZONA */
-.time-real {
-  font-size: 23px;
-  font-weight: 900;
-  line-height: 1;
-  letter-spacing: -0.5px;
-  margin: 2px 0 3px 0;
-  color: #38bdf8;
 }
 
-/* BADGE OPÓŹNIENIA */
-.delay-badge {
-  display: inline-block;
-  padding: 2px 5px;
-  border-radius: 3px;
-  font-size: 10px;
-  font-weight: 900;
-  line-height: 1;
-  white-space: nowrap;
-}
-.delay-badge.green { background: #15803d; color: #ffffff; }
-.delay-badge.yellow { background: #a16207; color: #ffffff; }
-.delay-badge.orange { background: #c2410c; color: #ffffff; }
-.delay-badge.red { background: #b91c1c; color: #ffffff; }
-
-/* KOLUMNA 2: INFORMACJE O POCIĄGU */
-.col-main { min-width: 0; overflow: hidden; }
-.train-header { display: flex; align-items: center; gap: 5px; white-space: nowrap; overflow: hidden; }
-
-/* TEKSTOWY BADGE PRZEWOŹNIKA ZAMIAST LOGO */
-.carrier-badge {
-  background: #374151;
-  color: #f3f4f6;
-  font-size: 10px;
-  font-weight: 800;
-  padding: 1px 4px;
-  border-radius: 3px;
-  border: 1px solid #4b5563;
-}
-.train-num { font-size: 12px; font-weight: 700; color: #f9fafb; }
-.train-name { font-size: 11px; color: #9ca3af; overflow: hidden; text-overflow: ellipsis; }
-
-.destination { font-size: 14px; font-weight: 800; color: #ffffff; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-/* STACJE PRZEZ */
-.via-list {
-  font-size: 10px;
-  color: #9ca3af;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-top: 2px;
-  line-height: 1.1;
+.header {
+  padding: 14px 16px;
+  background: #111827;
+  border-bottom: 1px solid #1f2937;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
-/* KOLUMNA 3: PERON I TOR */
-.col-right {
-  text-align: right;
-  font-size: 10px;
-  color: #d1d5db;
-  white-space: nowrap;
+.title-row { display: flex; align-items: center; justify-content: space-between; }
+.title { font-size: 18px; font-weight: 800; color: #f9fafb; display: flex; align-items: center; gap: 8px; }
+.sub-info { font-size: 11px; color: #6b7280; margin-top: 3px; }
+
+.status-bar {
+  margin-top: 10px;
+  background: #064e3b;
+  color: #34d399;
+  border: 1px solid #059669;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
-.platform-track { font-size: 12px; font-weight: 800; color: #ffffff; }
-.carrier-text { font-size: 9px; color: #6b7280; margin-top: 2px; text-transform: uppercase; }
+
+.train-list { padding: 12px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+
+.train-card {
+  background: #111827;
+  border: 1px solid #1f2937;
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.train-card:hover { background: #1f2937; border-color: #374151; }
+
+.left-col { display: flex; flex-direction: column; align-items: flex-start; min-width: 65px; }
+.time-main { font-size: 17px; font-weight: 900; color: #38bdf8; line-height: 1; }
+.delay-tag { font-size: 10px; font-weight: 900; color: #4ade80; margin-top: 4px; padding: 2px 4px; border-radius: 3px; background: rgba(74, 222, 128, 0.1); }
+.delay-tag.red { color: #f87171; background: rgba(248, 113, 113, 0.1); }
+
+.mid-col { flex: 1; padding: 0 12px; min-width: 0; }
+.train-head { display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
+.cat-badge { font-size: 10px; font-weight: 800; background: #374151; color: #f3f4f6; padding: 1px 5px; border-radius: 3px; }
+.train-num { font-size: 14px; font-weight: 900; color: #fff; }
+.dest-text { font-size: 13px; font-weight: 700; color: #e5e7eb; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.via-text { font-size: 11px; color: #6b7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+.monitored-from { font-size: 10px; color: #38bdf8; font-weight: 700; margin-top: 3px; }
+
+.right-col { text-align: right; font-size: 11px; color: #9ca3af; font-weight: 700; }
+.no-data { font-size: 11px; color: #6b7280; font-style: italic; }
 </style>
 </head>
-
 <body>
 
-<h1>🚆 Monitor pociągów</h1>
-<div id="info" class="info">Ładowanie...</div>
-<div id="alerts" class="alerts"></div>
-<div id="list" class="list"></div>
+<div class="app-container">
+  <div class="header">
+    <div class="title-row">
+      <div class="title">🚆 Monitor pociągów</div>
+      <button onclick="refreshData(true)" style="background:none; border:none; color:#38bdf8; font-size:12px; cursor:pointer; font-weight:bold;">🔄 Odśwież</button>
+    </div>
+    <div class="sub-info" id="subInfo">Ładowanie...</div>
+    <div class="status-bar">✓ Brak alarmów opóźnień</div>
+  </div>
+
+  <div class="train-list" id="trainList">
+    <div style="text-align: center; color: #6b7280; padding: 30px; font-size: 13px;">Pobieranie listy pociągów...</div>
+  </div>
+</div>
 
 <script>
-function calculateRealTime(timeStr, delayMin) {
-  if (!timeStr || timeStr === '-') return '-';
-  const parts = timeStr.split(':');
-  if (parts.length < 2) return timeStr;
-  
-  let date = new Date();
-  date.setHours(parseInt(parts[0], 10));
-  date.setMinutes(parseInt(parts[1], 10) + parseInt(delayMin || 0, 10));
-  
-  const h = String(date.getHours()).padStart(2, '0');
-  const m = String(date.getMinutes()).padStart(2, '0');
-  return `${h}:${m}`;
-}
+const CACHE_KEY = 'monitored_trains_cache';
+const CACHE_TTL = 3 * 60 * 1000; // 3 minuty
 
-async function loadData() {
-  let data = { trains: [], foundCount: 0, trainCount: 0 };
-  
-  try {
-    const response = await fetch('/api/monitored-trains-v2');
-    data = await response.json();
-  } catch (e) {
-    console.warn("Błąd API", e);
+async function refreshData(force = false) {
+  const listEl = document.getElementById('trainList');
+  const subEl = document.getElementById('subInfo');
+
+  const cached = localStorage.getItem(CACHE_KEY);
+  if (!force && cached) {
+    try {
+      const { time, data } = JSON.parse(cached);
+      if (Date.now() - time < CACHE_TTL) {
+        render(data, new Date(time));
+        return;
+      }
+    } catch(e) {}
   }
 
-  document.getElementById('info').innerHTML = `
-    Znaleziono: <b>${data.foundCount}</b> z <b>${data.trainCount}</b> | Odświeżono: ${new Date(data.generatedAt || Date.now()).toLocaleTimeString('pl-PL')}
-  `;
+  try {
+    const res = await fetch('/api/monitored-trains-v2');
+    if (!res.ok) throw new Error("API Error");
+    const data = await res.json();
 
-  const alarms = data.trains.filter(t => Number(t.delay || 0) >= 15);
-
-  document.getElementById('alerts').innerHTML = alarms.length ? `
-    <div class="alertPanel">
-      <div class="alertTitle">🚨 Alarmy (${alarms.length})</div>
-      ${alarms.map(t => `<div class="alertItem">${t.train} ${t.name || ''} (+${t.delay}m)</div>`).join('')}
-    </div>
-  ` : `
-    <div class="alertOk">✅ Brak alarmów</div>
-  `;
-
-  document.getElementById('list').innerHTML = data.trains
-    .sort((a,b) => Number(b.delay || 0) - Number(a.delay || 0))
-    .map(t => {
-      const cls = t.found ? 'ok' : 'missing';
-      const delay = Number(t.delay || 0);
-      let delayClass = 'green';
-      let delayText = 'OK';
-      let realTimeColor = '#38bdf8'; // domyślny jaskrawy niebieski
-      
-      if (delay > 30) {
-        delayClass = 'red';
-        delayText = `+${delay}'`;
-        realTimeColor = '#f87171'; // jasny czerwony
-      } else if (delay > 15) {
-        delayClass = 'orange';
-        delayText = `+${delay}'`;
-        realTimeColor = '#fb923c'; // pomarańczowy
-      } else if (delay > 5) {
-        delayClass = 'yellow';
-        delayText = `+${delay}'`;
-        realTimeColor = '#facc15'; // żółty
-      } else if (delay > 0) {
-        delayClass = 'yellow';
-        delayText = `+${delay}'`;
-        realTimeColor = '#facc15';
-      }
-
-      const plannedTime = t.time || t.plannedTime || '-';
-      const realTime = t.found && delay > 0 ? calculateRealTime(plannedTime, delay) : plannedTime;
-      const carrier = t.carrier || t.category || 'PKP';
-
-      const queryParams = new URLSearchParams({
-        train: t.train || '',
-        station: t.station || '',
-        stationId: t.stationId || '73312',
-        scheduleId: t.scheduleId || '2026',
-        trainOrderId: t.trainOrderId || ''
-      }).toString();
-
-      return `
-      <a class="card ${cls}" href="/monitorowane-pociagi/train.html?${queryParams}">
-        <!-- KOLUMNA 1: TRZY CZASY I BARDZO DUŻA GODZINA RZECZYWISTA -->
-        <div class="col-time">
-          <div class="time-planned ${delay > 0 ? 'time-planned-strike' : ''}">
-            ${plannedTime}
-          </div>
-          <div class="time-real" style="color: ${realTimeColor}">${realTime}</div>
-          <div class="delay-badge ${delayClass}">${delay > 0 ? delayText : 'NA CZAS'}</div>
-        </div>
-
-        <!-- KOLUMNA 2: PRZEWOŹNIK (TEKSTOWY BADGE), POCIĄG, CEL I PRZEZ -->
-        <div class="col-main">
-          <div class="train-header">
-            <span class="carrier-badge">${carrier}</span>
-            <span class="train-num">${t.train}</span>
-            <span class="train-name">${t.name || ''}</span>
-          </div>
-          <div class="destination">${t.destination || '-'}</div>
-          ${t.via ? `<div class="via-list">przez: ${t.via}</div>` : ''}
-        </div>
-
-        <!-- KOLUMNA 3: PERON, TOR, PRZEWOŹNIK -->
-        <div class="col-right">
-          ${t.found ? `
-            <div class="platform-track">p. ${t.platform || '-'} · t. ${t.track || '-'}</div>
-            <div class="carrier-text">${carrier}</div>
-          ` : 'brak danych'}
-        </div>
-      </a>
-      `;
-    }).join('');
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ time: Date.now(), data }));
+    render(data, new Date());
+  } catch(err) {
+    if (cached) {
+      const { time, data } = JSON.parse(cached);
+      render(data, new Date(time));
+    } else {
+      listEl.innerHTML = '<div style="text-align:center;padding:30px;color:#f87171;font-size:13px;">Błąd połączenia z serwerem.</div>';
+    }
+  }
 }
 
-loadData();
-setInterval(loadData, 60000);
-</script>
+function render(data, updatedDate) {
+  const listEl = document.getElementById('trainList');
+  const subEl = document.getElementById('subInfo');
 
+  const trains = data.trains || [];
+  const timeStr = updatedDate.toTimeString().split(' ')[0];
+  subEl.innerText = `Znaleziono: ${data.foundCount || 0} z ${data.trainCount || trains.length} | Odświeżono: ${timeStr}`;
+
+  listEl.innerHTML = trains.map(t => {
+    const delay = Number(t.delay || 0);
+    const timeDisplay = t.time && t.time !== '--:--' ? t.time : t.plannedTime;
+    const detailsUrl = `/monitorowane-pociagi/train.html?train=${encodeURIComponent(t.train)}&station=${encodeURIComponent(t.station)}&trainOrderId=${encodeURIComponent(t.trainOrderId || '')}`;
+
+    return `
+      <a href="${detailsUrl}" class="train-card">
+        <div class="left-col">
+          <div class="time-main">${timeDisplay || '--:--'}</div>
+          <div class="delay-tag ${delay > 0 ? 'red' : ''}">${delay > 0 ? '+' + delay + ' MIN' : 'NA CZAS'}</div>
+        </div>
+        <div class="mid-col">
+          <div class="train-head">
+            <span class="cat-badge">${t.category || 'PKP'}</span>
+            <span class="train-num">${t.train}</span>
+          </div>
+          <div class="dest-text">${t.destination ? t.destination : (t.found ? 'Stacja docelowa b/d' : 'Brak danych')}</div>
+          ${t.via ? `<div class="via-text">przez: ${t.via}</div>` : ''}
+          <div class="monitored-from">📍 Stacja: ${t.station}</div>
+        </div>
+        <div class="right-col">
+          ${t.platform && t.platform !== '-' ? `p. ${t.platform} · t. ${t.track}` : '<span class="no-data">brak danych</span>'}
+        </div>
+      </a>
+    `;
+  }).join('');
+}
+
+refreshData();
+</script>
 </body>
 </html>
