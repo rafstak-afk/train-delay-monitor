@@ -17,27 +17,28 @@
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
-        body { background-color: var(--bg-main); color: var(--text-main); padding: 16px; max-width: 800px; margin: 0 auto; }
+        body { background-color: var(--bg-main); color: var(--text-main); padding: 16px; max-width: 800px; margin: 0 auto; font-size: 15px; }
         
         header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--panel-border); }
-        h1 { font-size: 1.2rem; font-weight: 900; }
+        h1 { font-size: 1.3rem; font-weight: 900; }
         .btn-back { background: #0b57d0; color: #fff; padding: 8px 14px; border-radius: 8px; text-decoration: none; font-weight: 900; }
 
-        .train-card { background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 12px; padding: 16px; margin-bottom: 20px; }
-        .train-no { font-size: 1.3rem; font-weight: 900; color: var(--accent-blue); }
-        .train-route { font-size: 0.95rem; font-weight: 700; color: #fff; margin-top: 6px; }
+        .train-card { background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 12px; padding: 16px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 8px; }
+        .train-no { font-size: 1.4rem; font-weight: 900; color: var(--accent-blue); }
+        .train-route { font-size: 1rem; font-weight: 800; color: #fff; }
         
-        .last-report-badge { background: rgba(56, 189, 248, 0.15); border: 1px solid var(--accent-blue); color: #e0f2fe; padding: 8px 12px; border-radius: 6px; margin-top: 10px; font-weight: 700; font-size: 0.85rem; }
+        .delay-banner { background: rgba(255, 107, 107, 0.2); border: 1px solid var(--accent-red); color: #ff9999; padding: 8px 12px; border-radius: 8px; font-weight: 900; font-size: 14px; }
+        .last-report-badge { background: rgba(56, 189, 248, 0.15); border: 1px solid var(--accent-blue); color: #e0f2fe; padding: 8px 12px; border-radius: 8px; font-weight: 700; font-size: 14px; }
 
-        .timeline { position: relative; padding-left: 20px; margin-top: 20px; border-left: 2px solid var(--panel-border); }
-        .station-row { position: relative; padding: 10px 0 10px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
-        .station-row::before { content: ''; position: absolute; left: -26px; top: 16px; width: 10px; height: 10px; border-radius: 50%; background: var(--panel-border); }
+        .timeline { position: relative; padding-left: 24px; margin-top: 20px; border-left: 3px solid var(--panel-border); }
+        .station-row { position: relative; padding: 12px 0 12px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+        .station-row::before { content: ''; position: absolute; left: -31px; top: 18px; width: 12px; height: 12px; border-radius: 50%; background: var(--panel-border); }
         
         .station-row.passed::before { background: var(--accent-blue); }
-        .station-row.current::before { background: var(--accent-green); box-shadow: 0 0 10px var(--accent-green); }
+        .station-row.current::before { background: var(--accent-green); box-shadow: 0 0 12px var(--accent-green); }
         
-        .station-name { font-size: 0.95rem; font-weight: 700; color: #fff; }
-        .station-times { font-size: 0.82rem; color: var(--text-muted); margin-top: 4px; display: flex; gap: 12px; }
+        .station-name { font-size: 1rem; font-weight: 800; color: #fff; }
+        .station-times { font-size: 0.9rem; color: var(--text-muted); margin-top: 4px; display: flex; gap: 16px; }
     </style>
 </head>
 <body>
@@ -50,6 +51,7 @@
     <div class="train-card" id="trainCard">
         <div class="train-no" id="trainNumber">Pobieranie...</div>
         <div class="train-route" id="trainRoute"></div>
+        <div id="delayBannerContainer"></div>
         <div class="last-report-badge" id="lastReport">📍 Pobieranie pozycji...</div>
     </div>
 
@@ -58,7 +60,6 @@
     <script>
         const urlParams = new URLSearchParams(window.location.search);
         const trainNo = urlParams.get('train');
-        const queryStation = urlParams.get('station');
 
         async function loadTrainSchedule() {
             if (!trainNo) {
@@ -66,40 +67,36 @@
                 return;
             }
 
-            document.getElementById('trainNumber').innerText = "Pociąg " + trainNo;
             document.getElementById('trainTitleHeader').innerText = trainNo;
 
             try {
-                // Odpytanie API o trasę pociągu
-                const res = await fetch(`/api/departures?train=${encodeURIComponent(trainNo)}&station=${encodeURIComponent(queryStation || '')}`);
+                const res = await fetch(`/api/monitored-trains-v2?train=${encodeURIComponent(trainNo)}`);
                 const data = await res.json();
                 
-                const stations = data.stations || data.stops || data.route || [];
-                const info = data.info || data.train || {};
+                const info = data.info || {};
+                const stops = data.stops || [];
 
-                if (info.origin || info.destination) {
-                    document.getElementById('trainRoute').innerText = `${info.origin || '—'} ➔ ${info.destination || '—'}`;
-                }
+                document.getElementById('trainNumber').innerText = `${info.category} ${info.name ? info.name + ' ' : ''}${trainNo}`;
+                document.getElementById('trainRoute').innerText = `Z: ${info.origin} ➔ Do: ${info.destination}`;
                 
-                if (info.lastStation || info.lastReportedStation) {
-                    const lastSt = info.lastStation || info.lastReportedStation;
-                    const lastTm = info.lastTime || info.lastReportedTime || '';
-                    document.getElementById('lastReport').innerHTML = `📍 Ostatnie potwierdzenie: <b>${lastSt}</b> ${lastTm ? '(' + lastTm + ')' : ''}`;
-                } else {
-                    document.getElementById('lastReport').style.display = 'none';
+                if (info.delay > 0) {
+                    document.getElementById('delayBannerContainer').innerHTML = `
+                        <div class="delay-banner">⚠️ POCIĄG OPÓŹNIONY O +${info.delay} MINUT</div>
+                    `;
                 }
 
-                if (!stations || stations.length === 0) {
-                    document.getElementById('timelineContainer').innerHTML = '<div style="color:var(--text-muted); padding:10px;">Brak danych szczegółowych trasy dla tego pociągu w żywym API.</div>';
+                document.getElementById('lastReport').innerHTML = `📍 Ostatnia potwierdzona stacja: <b>${info.lastStation}</b> (${info.lastTime})`;
+
+                if (stops.length === 0) {
+                    document.getElementById('timelineContainer').innerHTML = '<div style="color:var(--text-muted); padding:10px;">Brak danych trasy dla tego pociągu.</div>';
                     return;
                 }
 
-                document.getElementById('timelineContainer').innerHTML = stations.map(s => `
+                document.getElementById('timelineContainer').innerHTML = stops.map(s => `
                     <div class="station-row ${s.passed ? 'passed' : s.isCurrent ? 'current' : ''}">
-                        <div class="station-name">${s.name || s.station}</div>
+                        <div class="station-name">${s.name}</div>
                         <div class="station-times">
-                            <span>Plan: <b>${s.plannedTime || s.schedule || '--:--'}</b></span>
-                            <span>Czas: <b>${s.actualTime || s.time || s.plannedTime || '--:--'}</b></span>
+                            <span>Status: <b>${s.passed ? 'Minęły' : s.isCurrent ? 'Na stacji / Wjazd' : 'Planowany'}</b></span>
                         </div>
                     </div>
                 `).join('');
