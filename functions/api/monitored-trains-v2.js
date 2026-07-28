@@ -19,27 +19,26 @@ const MONITORED_TRAINS = [
 ];
 
 export async function onRequestGet(context) {
-  const origin = new URL(context.request.url).origin;
+  const { request } = context;
+  const origin = new URL(request.url).origin;
 
-  const stations = [
-    ...new Set(MONITORED_TRAINS.map(x => x.station))
-  ];
-
+  // Unikalne stacje
+  const stations = [...new Set(MONITORED_TRAINS.map(x => x.station))];
   const departuresByStation = {};
 
+  // Równoległe pobranie z wyłapywaniem błędów pojedynczych stacji
   await Promise.all(
-    stations.map(async station => {
+    stations.map(async (station) => {
       try {
-        const response = await fetch(
-          `${origin}/api/departures?station=${encodeURIComponent(station)}&limit=100`
-        );
-        if (response.ok) {
-          const data = await response.json();
+        const url = `${origin}/api/departures?station=${encodeURIComponent(station)}&limit=100`;
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
           departuresByStation[station] = Array.isArray(data.departures) ? data.departures : [];
         } else {
           departuresByStation[station] = [];
         }
-      } catch (err) {
+      } catch (e) {
         departuresByStation[station] = [];
       }
     })
@@ -47,11 +46,8 @@ export async function onRequestGet(context) {
 
   const trains = MONITORED_TRAINS.map(item => {
     const rows = departuresByStation[item.station] || [];
-
-    const hit = rows.find(row =>
-      String(
-        row.train ?? row.trainNumber ?? row.number ?? row.trainNo ?? ""
-      ).trim() === String(item.train).trim()
+    const hit = rows.find(row => 
+      String(row.train || row.trainNumber || row.number || "").trim() === String(item.train).trim()
     );
 
     return {
@@ -65,7 +61,7 @@ export async function onRequestGet(context) {
       time: hit?.time ?? "--:--",
       platform: hit?.platform ?? "-",
       track: hit?.track ?? "-",
-      category: hit?.category ?? "",
+      category: hit?.category || "Os",
       name: hit?.name ?? "",
       destination: hit?.destination ?? "",
       via: hit?.via ?? "",
@@ -76,21 +72,17 @@ export async function onRequestGet(context) {
   });
 
   return new Response(
-    JSON.stringify(
-      {
-        generatedAt: new Date().toISOString(),
-        stationCount: stations.length,
-        trainCount: trains.length,
-        foundCount: trains.filter(t => t.found).length,
-        trains
-      },
-      null,
-      2
-    ),
+    JSON.stringify({
+      generatedAt: new Date().toISOString(),
+      stationCount: stations.length,
+      trainCount: trains.length,
+      foundCount: trains.filter(t => t.found).length,
+      trains
+    }),
     {
       headers: {
         "Content-Type": "application/json; charset=utf-8",
-        "Cache-Control": "no-store"
+        "Cache-Control": "no-store, no-cache, must-revalidate"
       }
     }
   );
