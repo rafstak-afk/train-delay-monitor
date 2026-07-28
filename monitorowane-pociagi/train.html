@@ -2,252 +2,207 @@
 <html lang="pl">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Szczegóły pociągu</title>
 <style>
-* { box-sizing: border-box; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
 body {
-  margin: 0;
-  padding: 0;
-  background: #000000;
-  color: white;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  background: #090d16;
+  color: #f3f4f6;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  padding-bottom: 20px;
 }
 
-.sticky-header {
+.top-bar {
   position: sticky;
   top: 0;
-  z-index: 1000;
+  z-index: 100;
   background: #111827;
-  border-bottom: 2px solid #374151;
-  padding: 8px 10px;
+  border-bottom: 1px solid #1f2937;
+  padding: 12px 16px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  justify-content: space-between;
 }
 
-.back-link {
+.back-btn {
   color: #38bdf8;
   text-decoration: none;
   font-size: 22px;
-  font-weight: 900;
-  padding: 2px 8px;
+  font-weight: bold;
+  padding-right: 12px;
 }
 
-.train-summary { flex: 1; min-width: 0; }
-.train-title-row { display: flex; align-items: center; gap: 6px; white-space: nowrap; overflow: hidden; }
-.carrier-tag { background: #374151; color: #f3f4f6; font-size: 10px; font-weight: 800; padding: 2px 5px; border-radius: 3px; }
-.train-number { font-size: 15px; font-weight: 900; color: #ffffff; }
-.train-route { font-size: 11px; color: #9ca3af; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+.head-info { flex: 1; }
+.badge { background: #1f2937; color: #38bdf8; font-size: 11px; font-weight: 800; padding: 2px 6px; border-radius: 4px; border: 1px solid #374151; }
+.train-id { font-size: 18px; font-weight: 900; margin-left: 6px; letter-spacing: 0.5px; }
+.route-text { font-size: 12px; color: #9ca3af; margin-top: 4px; }
 
-.train-status { text-align: right; flex-shrink: 0; }
-.time-box { font-size: 20px; font-weight: 900; color: #38bdf8; line-height: 1; }
-.delay-box { font-size: 11px; font-weight: 900; margin-top: 2px; }
-.delay-box.red { color: #f87171; }
-.delay-box.yellow { color: #facc15; }
-.delay-box.green { color: #4ade80; }
+.head-status { text-align: right; }
+.time-big { font-size: 20px; font-weight: 900; color: #38bdf8; line-height: 1; }
+.status-tag { font-size: 11px; font-weight: 900; color: #4ade80; margin-top: 4px; }
+.status-tag.red { color: #f87171; }
 
-.route-container { padding: 8px 6px; }
-.route-title { font-size: 11px; font-weight: 800; color: #6b7280; text-transform: uppercase; margin: 4px 0 8px 4px; letter-spacing: 0.5px; }
+.section-label {
+  font-size: 11px;
+  font-weight: 800;
+  color: #6b7280;
+  text-transform: uppercase;
+  padding: 14px 16px 8px 16px;
+  letter-spacing: 0.5px;
+}
 
-.station-list { display: flex; flex-direction: column; gap: 6px; }
+.station-list { padding: 0 12px; display: flex; flex-direction: column; gap: 6px; }
 
-.station-row {
-  display: grid;
-  grid-template-columns: 1fr auto auto;
-  align-items: center;
-  gap: 8px;
+.st-card {
   background: #111827;
   border: 1px solid #1f2937;
-  border-radius: 6px;
-  padding: 8px 10px;
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
-.station-row.current {
-  border: 2px solid #38bdf8;
+.st-card.active {
+  border: 1px solid #38bdf8;
   background: #0f172a;
 }
 
-.col-st-info { min-width: 0; overflow: hidden; }
-.st-name { font-weight: 800; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 14px; }
-.st-platform { font-size: 11px; color: #9ca3af; margin-top: 2px; font-weight: 700; }
+.st-left { flex: 1; min-width: 0; }
+.st-name { font-size: 14px; font-weight: 800; color: #f3f4f6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.st-sub { font-size: 11px; color: #6b7280; margin-top: 2px; }
 
-.col-st-times { text-align: right; white-space: nowrap; }
-.time-p { font-size: 11px; color: #6b7280; text-decoration: line-through; line-height: 1; font-weight: 600; }
-.time-p.no-strike { text-decoration: none; color: #9ca3af; }
-.time-r { font-size: 18px; font-weight: 900; color: #38bdf8; line-height: 1.1; margin-top: 1px; }
+.st-right { text-align: right; margin-left: 12px; display: flex; align-items: center; gap: 10px; }
+.st-times { display: flex; flex-direction: column; align-items: flex-end; }
+.st-time-p { font-size: 11px; color: #6b7280; text-decoration: line-through; }
+.st-time-p.clean { text-decoration: none; color: #9ca3af; }
+.st-time-r { font-size: 16px; font-weight: 900; color: #38bdf8; line-height: 1.1; }
 
-.col-st-delay { min-width: 44px; text-align: right; }
-.st-delay-badge {
-  display: inline-block;
+.st-badge {
+  font-size: 10px;
+  font-weight: 900;
   padding: 3px 6px;
   border-radius: 4px;
-  font-size: 11px;
-  font-weight: 900;
-  line-height: 1;
+  background: #15803d;
+  color: #fff;
 }
-.st-delay-badge.green { background: #15803d; color: #ffffff; }
-.st-delay-badge.yellow { background: #a16207; color: #ffffff; }
-.st-delay-badge.orange { background: #c2410c; color: #ffffff; }
-.st-delay-badge.red { background: #b91c1c; color: #ffffff; }
+.st-badge.red { background: #b91c1c; }
 </style>
 </head>
-
 <body>
 
-<div class="sticky-header">
-  <a href="/monitorowane-pociagi/" class="back-link">←</a>
-  
-  <div class="train-summary">
-    <div class="train-title-row">
-      <span class="carrier-tag" id="hCarrier">PKP</span>
-      <span class="train-number" id="hTrainNum">Ładowanie...</span>
+<div class="top-bar">
+  <a href="/monitorowane-pociagi/" class="back-btn">←</a>
+  <div class="head-info">
+    <div>
+      <span class="badge" id="hCategory">---</span>
+      <span class="train-id" id="hTrain">---</span>
     </div>
-    <div class="train-route" id="hRoute">---</div>
+    <div class="route-text" id="hRoute">Ładowanie...</div>
   </div>
-
-  <div class="train-status">
-    <div class="time-box" id="hTime">--:--</div>
-    <div class="delay-box green" id="hDelay">---</div>
+  <div class="head-status">
+    <div class="time-big" id="hTime">--:--</div>
+    <div class="status-tag" id="hDelay">---</div>
   </div>
 </div>
 
-<div class="route-container">
-  <div class="route-title">Pełna trasa przejazdu</div>
-  <div id="routeList" class="station-list">
-    <div style="padding: 16px; text-align: center; color: #9ca3af; font-size: 13px;">Pobieranie pełnej trasy z PLK...</div>
-  </div>
+<div class="section-label">Pełna trasa przejazdu</div>
+<div class="station-list" id="stList">
+  <div style="text-align: center; color: #6b7280; padding: 20px; font-size: 13px;">Pobieranie trasy...</div>
 </div>
 
 <script>
-function calculateRealTime(timeStr, delayMin) {
-  if (!timeStr || timeStr === '-' || timeStr === '--:--') return '--:--';
-  const parts = timeStr.split(':');
-  if (parts.length < 2 || isNaN(parseInt(parts[0], 10)) || isNaN(parseInt(parts[1], 10))) {
-    return '--:--';
-  }
-  
-  let date = new Date();
-  date.setHours(parseInt(parts[0], 10));
-  date.setMinutes(parseInt(parts[1], 10) + parseInt(delayMin || 0, 10));
-  
-  const h = String(date.getHours()).padStart(2, '0');
-  const m = String(date.getMinutes()).padStart(2, '0');
-  return `${h}:${m}`;
-}
-
 const params = new URLSearchParams(window.location.search);
 const trainNum = params.get('train') || '';
 const currentStation = params.get('station') || '';
 
-document.getElementById('hTrainNum').innerText = trainNum;
+document.getElementById('hTrain').innerText = trainNum;
 
-async function loadTrainDetails() {
+async function load() {
   try {
-    const res = await fetch(`/api/monitored-trains-v2`);
+    const res = await fetch('/api/monitored-trains-v2');
     const data = await res.json();
-    const t = data.trains ? data.trains.find(x => x.train === trainNum) : null;
+    const t = (data.trains || []).find(x => String(x.train) === String(trainNum));
 
-    if (t) {
-      document.getElementById('hCarrier').innerText = t.category || 'TLK';
-      document.getElementById('hRoute').innerText = `${t.station} → ${t.destination || '---'}`;
-      
-      const mainDelay = Number(t.delay || 0);
-      const mainPlanned = t.plannedTime || t.time || '--:--';
-      const mainReal = mainDelay > 0 ? calculateRealTime(mainPlanned, mainDelay) : mainPlanned;
-      
-      document.getElementById('hTime').innerText = mainReal;
-      const delayEl = document.getElementById('hDelay');
-      if (mainDelay > 0) {
-        delayEl.innerText = `+${mainDelay} min`;
-        delayEl.className = 'delay-box red';
-      } else {
-        delayEl.innerText = 'NA CZAS';
-        delayEl.className = 'delay-box green';
-      }
+    if (!t) {
+      document.getElementById('stList').innerHTML = '<div style="text-align:center;padding:20px;color:#f87171;font-size:13px;">Nie znaleziono danych pociągu.</div>';
+      return;
+    }
 
-      let stations = [];
-
-      // Pobieranie trasy po trainOrderId
-      if (t.trainOrderId) {
-        try {
-          const routeRes = await fetch(`/api/train-details?trainOrderId=${encodeURIComponent(t.trainOrderId)}&train=${encodeURIComponent(trainNum)}`);
-          if (routeRes.ok) {
-            const routeData = await routeRes.json();
-            if (routeData.route && routeData.route.length > 0) {
-              stations = routeData.route;
-            }
-          }
-        } catch (err) {
-          console.warn("Błąd pobierania trasy po trainOrderId", err);
-        }
-      }
-
-      // Fallback z listy via
-      if (stations.length === 0) {
-        const viaArray = t.via ? t.via.split(',').map(s => s.trim()) : [];
-        const rawList = [t.station, ...viaArray, t.destination].filter(Boolean);
-        stations = rawList.map((stName, idx) => ({
-          name: stName,
-          plannedTime: idx === 0 ? mainPlanned : '--:--',
-          delay: idx === 0 ? mainDelay : 0,
-          platform: idx === 0 ? t.platform : '-',
-          track: idx === 0 ? t.track : '-'
-        }));
-      }
-
-      document.getElementById('routeList').innerHTML = stations.map((st) => {
-        const stName = st.name || 'Stacja';
-        const isCurrent = stName.toLowerCase() === currentStation.toLowerCase() || stName.toLowerCase() === t.station.toLowerCase();
-        const delay = Number(st.delay !== undefined ? st.delay : mainDelay);
-        const plannedTime = st.plannedTime || st.departureTimePlanned || '--:--';
-        const realTime = st.realTime || (plannedTime !== '--:--' ? calculateRealTime(plannedTime, delay) : '--:--');
-        
-        let delayClass = 'green';
-        let delayText = 'OK';
-        if (delay > 30) { delayClass = 'red'; delayText = `+${delay}'`; }
-        else if (delay > 15) { delayClass = 'orange'; delayText = `+${delay}'`; }
-        else if (delay > 0) { delayClass = 'yellow'; delayText = `+${delay}'`; }
-
-        return `
-          <div class="station-row ${isCurrent ? 'current' : ''}" id="${isCurrent ? 'activeStation' : ''}">
-            <div class="col-st-info">
-              <div class="st-name">${isCurrent ? '🎯 ' : ''}${stName}</div>
-              <div class="st-platform">peron ${st.platform || '-'} · tor ${st.track || '-'}</div>
-            </div>
-
-            <div class="col-st-times">
-              ${delay > 0 && plannedTime !== '--:--' ? `<div class="time-p">${plannedTime}</div>` : `<div class="time-p no-strike">${plannedTime}</div>`}
-              <div class="time-r" style="color: ${delay > 0 ? '#f87171' : '#38bdf8'}">${realTime}</div>
-            </div>
-
-            <div class="col-st-delay">
-              <span class="st-delay-badge ${delayClass}">${delay > 0 ? delayText : 'OK'}</span>
-            </div>
-          </div>
-        `;
-      }).join('');
-
+    document.getElementById('hCategory').innerText = t.category || 'Os';
+    document.getElementById('hRoute').innerText = `${t.station} → ${t.destination || '---'}`;
+    document.getElementById('hTime').innerText = t.time || t.plannedTime || '--:--';
+    
+    const delay = Number(t.delay || 0);
+    const delayEl = document.getElementById('hDelay');
+    if (delay > 0) {
+      delayEl.innerText = `+${delay} MIN`;
+      delayEl.className = 'status-tag red';
     } else {
-      document.getElementById('routeList').innerHTML = `
-        <div style="padding: 16px; text-align: center; color: #f87171; font-size: 13px;">
-          Brak danych dla pociągu ${trainNum}.
+      delayEl.innerText = 'NA CZAS';
+      delayEl.className = 'status-tag';
+    }
+
+    let list = [];
+
+    // Próba pobrania ze szczegółowego rozkładu jazdy
+    if (t.trainOrderId) {
+      try {
+        const rRes = await fetch(`/api/train-details?trainOrderId=${encodeURIComponent(t.trainOrderId)}`);
+        if (rRes.ok) {
+          const rData = await rRes.json();
+          if (rData.route && rData.route.length > 0) list = rData.route;
+        }
+      } catch (e) {}
+    }
+
+    // Jeśli brak szczegółowego rozkładu, budujemy trasę z pola 'via' (zwracanego w JSON)
+    if (list.length === 0) {
+      const viaStations = t.via ? t.via.split(',').map(s => s.trim()).filter(Boolean) : [];
+      const rawNames = [t.station, ...viaStations];
+      if (t.destination && !rawNames.includes(t.destination)) rawNames.push(t.destination);
+
+      list = rawNames.map((stName, idx) => ({
+        name: stName,
+        plannedTime: idx === 0 ? t.plannedTime : '--:--',
+        realTime: idx === 0 ? t.time : '--:--',
+        platform: idx === 0 ? t.platform : '-',
+        track: idx === 0 ? t.track : '-',
+        delay: idx === 0 ? delay : 0
+      }));
+    }
+
+    document.getElementById('stList').innerHTML = list.map(st => {
+      const name = st.name || st.stationName || 'Stacja';
+      const isCurrent = name.toLowerCase().includes(currentStation.toLowerCase()) || name.toLowerCase().includes(t.station.toLowerCase());
+      const stDelay = Number(st.delay !== undefined ? st.delay : delay);
+      const pTime = st.plannedTime || st.departureTimePlanned || '--:--';
+      const rTime = st.realTime || st.time || pTime;
+
+      return `
+        <div class="st-card ${isCurrent ? 'active' : ''}">
+          <div class="st-left">
+            <div class="st-name">${isCurrent ? '🎯 ' : ''}${name}</div>
+            <div class="st-sub">peron ${st.platform || '-'} · tor ${st.track || '-'}</div>
+          </div>
+          <div class="st-right">
+            <div class="st-times">
+              ${stDelay > 0 && pTime !== '--:--' ? `<div class="st-time-p">${pTime}</div>` : `<div class="st-time-p clean">${pTime}</div>`}
+              <div class="st-time-r" style="color:${stDelay > 0 ? '#f87171' : '#38bdf8'}">${rTime}</div>
+            </div>
+            <span class="st-badge ${stDelay > 0 ? 'red' : ''}">${stDelay > 0 ? '+' + stDelay : 'OK'}</span>
+          </div>
         </div>
       `;
-    }
-  } catch (e) {
-    document.getElementById('routeList').innerHTML = `
-      <div style="padding: 16px; text-align: center; color: #f87171; font-size: 13px;">
-        Błąd połączenia z serwerem.
-      </div>
-    `;
+    }).join('');
+
+  } catch (err) {
+    document.getElementById('stList').innerHTML = '<div style="text-align:center;padding:20px;color:#f87171;font-size:13px;">Błąd pobierania trasy.</div>';
   }
 }
 
-loadTrainDetails();
+load();
 </script>
-
 </body>
 </html>
