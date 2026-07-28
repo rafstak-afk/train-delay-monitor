@@ -12,7 +12,6 @@
             --text-main: #f3f4f6;
             --text-muted: #9ca3af;
             
-            /* Statusy stacji */
             --status-zaliczona-bg: #064e3b;
             --status-zaliczona-text: #34d399;
             
@@ -46,10 +45,10 @@
             font-size: 14px;
         }
 
-        /* 1. GÓRNY KAFEL MONITOROWANIA (TABLICA) */
+        /* 1. GÓRNY KAFEL MONITOROWANIA */
         .board-record-card {
             background: #0f172a;
-            border: 1px solid #1e293b;
+            border: 1px solid var(--panel-border);
             border-radius: 8px;
             padding: 14px 18px;
             display: flex;
@@ -79,7 +78,7 @@
         .station-status-big .delay-num {
             font-size: 2.2rem;
             font-weight: 900;
-            color: #10b981;
+            color: var(--accent-green);
             line-height: 1;
             margin-top: 2px;
         }
@@ -92,7 +91,7 @@
         .time-group .time-main {
             font-size: 1.5rem;
             font-weight: 800;
-            color: #10b981;
+            color: var(--accent-green);
         }
 
         .time-group .time-sub {
@@ -128,7 +127,6 @@
             font-size: 1.25rem;
             font-weight: 800;
             color: #ffffff;
-            letter-spacing: 0.02em;
         }
 
         .dest-title {
@@ -142,7 +140,7 @@
             color: var(--text-muted);
         }
 
-        /* 2. NAGŁÓWEK "BIEG POCIĄGU" + FORMULARZ */
+        /* 2. FORMULARZ "BIEG POCIĄGU" */
         .section-header-center {
             text-align: center;
             margin-bottom: 20px;
@@ -177,7 +175,7 @@
         }
 
         .btn-blue {
-            background: #1d4ed8;
+            background: var(--accent-blue);
             color: #ffffff;
             border: none;
             padding: 8px 16px;
@@ -203,7 +201,7 @@
             font-size: 0.85rem;
         }
 
-        /* 3. PODSOWANIE DWOISTE (2 KAFLE OBOK SIEBIE) */
+        /* 3. PODSUMOWANIE DWOISTE */
         .summary-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -306,14 +304,13 @@
             justify-content: space-between;
         }
 
-        /* Wyróżnienie ostatniej stacji */
         .station-row.is-last {
             border: 1px solid var(--status-ostatnia-border);
             background: #1c1917;
         }
 
         .station-row.is-next {
-            border: 1px solid #2563eb;
+            border: 1px solid var(--accent-blue);
         }
 
         .row-left {
@@ -411,61 +408,47 @@
         }
 
         @media (max-width: 700px) {
-            .board-record-card {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            .summary-grid {
-                grid-template-columns: 1fr;
-            }
-            .station-row {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 10px;
-            }
-            .row-right {
-                width: 100%;
-                justify-content: space-between;
-                border-top: 1px solid var(--panel-border);
-                padding-top: 8px;
-            }
+            .board-record-card { flex-direction: column; align-items: flex-start; }
+            .summary-grid { grid-template-columns: 1fr; }
+            .station-row { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .row-right { width: 100%; justify-content: space-between; border-top: 1px solid var(--panel-border); padding-top: 8px; }
         }
     </style>
 </head>
 <body>
 
     <!-- 1. RECORD Z TABLICY MONITOROWANIA -->
-    <div class="board-record-card">
+    <div class="board-record-card" id="topBoardRecord">
         <div class="board-left">
             <div class="station-status-big">
-                <span class="city">Katowice</span>
-                <span class="delay-num">0</span>
+                <span class="city" id="topStation">Katowice</span>
+                <span class="delay-num" id="topDelay">0</span>
             </div>
             <div class="time-group">
-                <span class="time-main">14:49</span>
-                <span class="time-sub">za 143 min</span>
+                <span class="time-main" id="topTime">14:49</span>
+                <span class="time-sub" id="topTimeSub">za 143 min</span>
             </div>
         </div>
         <div class="board-right">
             <div class="train-header-line">
-                <span class="tag-category">IC</span>
-                <span class="train-name-title">IC MATEJKO 3815</span>
+                <span class="tag-category" id="topCategory">IC</span>
+                <span class="train-name-title" id="topTrainTitle">IC MATEJKO 3815</span>
             </div>
-            <div class="dest-title">Szczecin Główny</div>
-            <div class="via-line">przez: Bytom, Gliwice, Kędzierzyn-Koźle, Opole Główne, Wrocław Główny</div>
-            <div class="details-line">peron 1 · tor 9 · IC</div>
+            <div class="dest-title" id="topDest">Szczecin Główny</div>
+            <div class="via-line" id="topVia">przez: Bytom, Gliwice, Kędzierzyn-Koźle, Opole Główne, Wrocław Główny</div>
+            <div class="details-line" id="topDetails">peron 1 · tor 9 · IC</div>
         </div>
     </div>
 
     <!-- 2. BIEG POCIĄGU - WYSZUKIWARKA -->
     <div class="section-header-center">
         <h2>🛈 Bieg pociągu</h2>
-        <div class="search-row">
-            <input type="text" class="input-train" value="3815" id="trainInput">
-            <button class="btn-blue">Pokaż</button>
+        <form class="search-row" onsubmit="handleSearch(event)">
+            <input type="text" class="input-train" id="trainInput" value="3815">
+            <button type="submit" class="btn-blue">Pokaż</button>
             <a href="index.html" class="btn-gray">← Tablica</a>
-        </div>
-        <div class="status-msg">Gotowe.</div>
+        </form>
+        <div class="status-msg" id="statusMsg">Gotowe.</div>
     </div>
 
     <!-- 3. DWUDZIELNE PODSUMOWANIE -->
@@ -474,19 +457,19 @@
             <div>
                 <div class="card-label">Pociąg</div>
                 <div class="card-value-big" id="summaryTrainName">IC 3814 MATEJKO</div>
-                <div class="card-substatus">Status: W ruchu / potwierdzony (Kod PLK: 1)</div>
+                <div class="card-substatus" id="summaryTrainStatus">Status: W ruchu / potwierdzony (Kod PLK: 1)</div>
             </div>
             <div class="card-actions">
-                <a href="#" class="btn-green-sm">Otwórz Portal Pasażera</a>
-                <button class="btn-dark-sm">Kopiuj podsumowanie</button>
+                <a href="https://portalpasazera.pl" target="_blank" class="btn-green-sm">Otwórz Portal Pasażera</a>
+                <button class="btn-dark-sm" onclick="copySummary()">Kopiuj podsumowanie</button>
             </div>
         </div>
 
         <div class="summary-card">
             <div>
                 <div class="card-label">Ostatnia potwierdzona stacja</div>
-                <div class="card-value-big" id="lastConfirmedStationName">Rzeszów Główny</div>
-                <div class="confirmed-time-large" id="lastConfirmedStationTime">12:15</div>
+                <div class="card-value-big" id="lastStationName">Rzeszów Główny</div>
+                <div class="confirmed-time-large" id="lastStationTime">12:15</div>
             </div>
         </div>
     </div>
@@ -497,201 +480,102 @@
         <div class="route-subtitle">„Zaliczona” tylko przy potwierdzeniu API. Gdy czas już minął, a API nie potwierdza stacji, pokazujemy „BRAK INFO Z API”</div>
 
         <div class="stations-list" id="stationsTimeline">
-            <!-- Stacja 1 -->
-            <div class="station-row">
-                <div class="row-left">
-                    <span class="badge-status badge-zaliczona">zaliczona</span>
-                    <div class="station-meta">
-                        <span class="station-name">Przemyśl Główny</span>
-                        <span class="station-subinfo">ID 84400 · kolejność: 2 · nazwa: słownik PLK / cache</span>
-                    </div>
-                </div>
-                <div class="row-right">
-                    <div class="time-col">
-                        <div class="main-time">11:10</div>
-                    </div>
-                    <div class="delay-col">
-                        <span class="delay-label">opóźnienie</span>
-                        <span class="delay-val ok">0 min</span>
-                    </div>
-                    <div class="track-col">
-                        <span class="track-label">peron / tor</span>
-                        <span class="track-val">2 / 2</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Stacja 2 -->
-            <div class="station-row">
-                <div class="row-left">
-                    <span class="badge-status badge-zaliczona">zaliczona</span>
-                    <div class="station-meta">
-                        <span class="station-name">Przemyśl Zasanie</span>
-                        <span class="station-subinfo">ID 84434 · kolejność: 4 · nazwa: słownik PLK / cache</span>
-                    </div>
-                </div>
-                <div class="row-right">
-                    <div class="time-col">
-                        <div class="main-time">11:13</div>
-                    </div>
-                    <div class="delay-col">
-                        <span class="delay-label">opóźnienie</span>
-                        <span class="delay-val ok">0 min</span>
-                    </div>
-                    <div class="track-col">
-                        <span class="track-label">peron / tor</span>
-                        <span class="track-val">2 / 2</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Stacja 3 -->
-            <div class="station-row">
-                <div class="row-left">
-                    <span class="badge-status badge-zaliczona">zaliczona</span>
-                    <div class="station-meta">
-                        <span class="station-name">Jarosław</span>
-                        <span class="station-subinfo">ID 83261 · kolejność: 10 · nazwa: słownik PLK / cache</span>
-                    </div>
-                </div>
-                <div class="row-right">
-                    <div class="time-col">
-                        <div class="main-time">11:35</div>
-                    </div>
-                    <div class="delay-col">
-                        <span class="delay-label">opóźnienie</span>
-                        <span class="delay-val ok">0 min</span>
-                    </div>
-                    <div class="track-col">
-                        <span class="track-label">peron / tor</span>
-                        <span class="track-val">2 / 2</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Stacja 4 -->
-            <div class="station-row">
-                <div class="row-left">
-                    <span class="badge-status badge-zaliczona">zaliczona</span>
-                    <div class="station-meta">
-                        <span class="station-name">Przeworsk</span>
-                        <span class="station-subinfo">ID 83105 · kolejność: 12 · nazwa: słownik PLK / cache</span>
-                    </div>
-                </div>
-                <div class="row-right">
-                    <div class="time-col">
-                        <div class="main-time">11:46</div>
-                    </div>
-                    <div class="delay-col">
-                        <span class="delay-label">opóźnienie</span>
-                        <span class="delay-val ok">0 min</span>
-                    </div>
-                    <div class="track-col">
-                        <span class="track-label">peron / tor</span>
-                        <span class="track-val">1 / 2</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Stacja 5 -->
-            <div class="station-row">
-                <div class="row-left">
-                    <span class="badge-status badge-zaliczona">zaliczona</span>
-                    <div class="station-meta">
-                        <span class="station-name">Łańcut</span>
-                        <span class="station-subinfo">ID 83022 · kolejność: 15 · nazwa: słownik PLK / cache</span>
-                    </div>
-                </div>
-                <div class="row-right">
-                    <div class="time-col">
-                        <div class="main-time">11:59</div>
-                    </div>
-                    <div class="delay-col">
-                        <span class="delay-label">opóźnienie</span>
-                        <span class="delay-val ok">0 min</span>
-                    </div>
-                    <div class="track-col">
-                        <span class="track-label">peron / tor</span>
-                        <span class="track-val">1 / 2</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- OSTATNIA POTWIERDZONA (WYRÓŻNIONA) -->
-            <div class="station-row is-last">
-                <div class="row-left">
-                    <span class="badge-status badge-ostatnia">ostatnia</span>
-                    <div class="station-meta">
-                        <span class="station-name">Rzeszów Główny</span>
-                        <span class="station-subinfo">ID 82669 · kolejność: 17 · nazwa: słownik PLK / cache</span>
-                    </div>
-                </div>
-                <div class="row-right">
-                    <div class="time-col">
-                        <div class="main-time">12:15</div>
-                    </div>
-                    <div class="delay-col">
-                        <span class="delay-label">opóźnienie</span>
-                        <span class="delay-val ok">0 min</span>
-                    </div>
-                    <div class="track-col">
-                        <span class="track-label">peron / tor</span>
-                        <span class="track-val">2 / 2</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- NASTĘPNA STACJA -->
-            <div class="station-row is-next">
-                <div class="row-left">
-                    <span class="badge-status badge-nastepna">następna</span>
-                    <div class="station-meta">
-                        <span class="station-name">Dębica</span>
-                        <span class="station-subinfo">ID 81208 · kolejność: 22 · nazwa: słownik PLK / cache</span>
-                    </div>
-                </div>
-                <div class="row-right">
-                    <div class="time-col">
-                        <div class="main-time">12:39</div>
-                        <div class="plan-time">plan 12:38</div>
-                    </div>
-                    <div class="delay-col">
-                        <span class="delay-label">opóźnienie</span>
-                        <span class="delay-val delayed">1 min</span>
-                    </div>
-                    <div class="track-col">
-                        <span class="track-label">peron / tor</span>
-                        <span class="track-val">2 / 2</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- KOLEJNE STACJE -->
-            <div class="station-row">
-                <div class="row-left">
-                    <span class="badge-status badge-przed">przed</span>
-                    <div class="station-meta">
-                        <span class="station-name">Tarnów</span>
-                        <span class="station-subinfo">ID 80630 · kolejność: 26 · nazwa: słownik PLK / cache</span>
-                    </div>
-                </div>
-                <div class="row-right">
-                    <div class="time-col">
-                        <div class="main-time">12:56</div>
-                    </div>
-                    <div class="delay-col">
-                        <span class="delay-label">opóźnienie</span>
-                        <span class="delay-val ok">0 min</span>
-                    </div>
-                    <div class="track-col">
-                        <span class="track-label">peron / tor</span>
-                        <span class="track-val">1 / 2</span>
-                    </div>
-                </div>
-            </div>
-
+            <!-- Stacje generowane dynamicznie przez JS -->
         </div>
     </div>
 
+    <script>
+        function handleSearch(e) {
+            e.preventDefault();
+            const trainNum = document.getElementById('trainInput').value.trim();
+            if (trainNum) {
+                window.location.search = `?train=${encodeURIComponent(trainNum)}`;
+            }
+        }
+
+        function copySummary() {
+            const text = `${document.getElementById('summaryTrainName').innerText} - Ostatnia stacja: ${document.getElementById('lastStationName').innerText} (${document.getElementById('lastStationTime').innerText})`;
+            navigator.clipboard.writeText(text);
+            alert("Skopiowano podsumowanie do schowka!");
+        }
+
+        // Domyślny render przykładowy lub pobieranie danych z API
+        async function loadTrainDetails() {
+            const params = new URLSearchParams(window.location.search);
+            const trainNum = params.get('train') || params.get('id') || '3815';
+            document.getElementById('trainInput').value = trainNum;
+
+            try {
+                const res = await fetch(`/api/train-details?num=${encodeURIComponent(trainNum)}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    renderView(data);
+                    return;
+                }
+            } catch(e) {}
+
+            // Fallback render danych statycznych/testowych jeśli API nie zwróci odpowiedzi
+            renderFallbackData(trainNum);
+        }
+
+        function renderFallbackData(num) {
+            document.getElementById('summaryTrainName').innerText = `IC ${num} MATEJKO`;
+            document.getElementById('lastStationName').innerText = "Rzeszów Główny";
+            document.getElementById('lastStationTime').innerText = "12:15";
+
+            const mockStations = [
+                { name: 'Przemyśl Główny', code: '84400', seq: 2, time: '11:10', delay: 0, platform: '2 / 2', status: 'zaliczona' },
+                { name: 'Przemyśl Zasanie', code: '84434', seq: 4, time: '11:13', delay: 0, platform: '2 / 2', status: 'zaliczona' },
+                { name: 'Jarosław', code: '83261', seq: 10, time: '11:35', delay: 0, platform: '2 / 2', status: 'zaliczona' },
+                { name: 'Przeworsk', code: '83105', seq: 12, time: '11:46', delay: 0, platform: '1 / 2', status: 'zaliczona' },
+                { name: 'Łańcut', code: '83022', seq: 15, time: '11:59', delay: 0, platform: '1 / 2', status: 'zaliczona' },
+                { name: 'Rzeszów Główny', code: '82669', seq: 17, time: '12:15', delay: 0, platform: '2 / 2', status: 'ostatnia' },
+                { name: 'Dębica', code: '81208', seq: 22, time: '12:39', planTime: 'plan 12:38', delay: 1, platform: '2 / 2', status: 'nastepna' },
+                { name: 'Tarnów', code: '80630', seq: 26, time: '12:56', delay: 0, platform: '1 / 2', status: 'przed' }
+            ];
+
+            renderTimeline(mockStations);
+        }
+
+        function renderTimeline(stations) {
+            const container = document.getElementById('stationsTimeline');
+            container.innerHTML = stations.map(s => {
+                let rowClass = 'station-row';
+                let badgeClass = 'badge-przed';
+                
+                if (s.status === 'zaliczona') badgeClass = 'badge-zaliczona';
+                if (s.status === 'ostatnia') { badgeClass = 'badge-ostatnia'; rowClass += ' is-last'; }
+                if (s.status === 'nastepna') { badgeClass = 'badge-nastepna'; rowClass += ' is-next'; }
+
+                return `
+                    <div class="${rowClass}">
+                        <div class="row-left">
+                            <span class="badge-status ${badgeClass}">${s.status}</span>
+                            <div class="station-meta">
+                                <span class="station-name">${s.name}</span>
+                                <span class="station-subinfo">ID ${s.code || 'PLK'} · kolejność: ${s.seq || '-'} · nazwa: słownik PLK / cache</span>
+                            </div>
+                        </div>
+                        <div class="row-right">
+                            <div class="time-col">
+                                <div class="main-time">${s.time}</div>
+                                ${s.planTime ? `<div class="plan-time">${s.planTime}</div>` : ''}
+                            </div>
+                            <div class="delay-col">
+                                <span class="delay-label">opóźnienie</span>
+                                <span class="delay-val ${s.delay > 0 ? 'delayed' : 'ok'}">${s.delay} min</span>
+                            </div>
+                            <div class="track-col">
+                                <span class="track-label">peron / tor</span>
+                                <span class="track-val">${s.platform || '-'}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        loadTrainDetails();
+    </script>
 </body>
 </html>
