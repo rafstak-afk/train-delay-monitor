@@ -14,37 +14,52 @@
             --accent-green: #5dd39e;
             --accent-red: #ff6b6b;
             --accent-yellow: #ffcc00;
+            --accent-blue: #38bdf8;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
         body { background-color: var(--bg-main); color: var(--text-main); padding: 12px; max-width: 900px; margin: 0 auto; font-size: 15px; }
 
-        header { margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--panel-border); display: flex; justify-content: space-between; align-items: center; }
+        header { margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--panel-border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
         h1 { font-size: 1.4rem; font-weight: 900; }
+
+        .top-bar-actions { display: flex; align-items: center; gap: 12px; }
+        .timer-badge { font-size: 13px; color: var(--text-muted); font-weight: 700; background: rgba(255,255,255,0.05); padding: 6px 10px; border-radius: 6px; border: 1px solid var(--panel-border); }
+
+        .global-alert-panel {
+            background: rgba(255, 107, 107, 0.12);
+            border: 1px solid var(--accent-red);
+            border-radius: 10px;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .alert-summary { font-size: 15px; font-weight: 800; color: #ff9999; display: flex; align-items: center; gap: 8px; }
+        
+        .btn-notify {
+            background: var(--accent-red);
+            color: #fff;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-weight: 900;
+            font-size: 13px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-notify.enabled { background: var(--accent-green); color: #101820; }
 
         .board-list { display: flex; flex-direction: column; gap: 10px; width: 100%; }
 
-        .card {
-            background: var(--panel-bg);
-            border: 1px solid var(--panel-border);
-            border-radius: 12px;
-            padding: 14px;
-            text-decoration: none;
-            color: inherit;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
+        .card { background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 12px; padding: 14px; text-decoration: none; color: inherit; display: flex; flex-direction: column; gap: 8px; }
         .station-header { font-size: 18px; color: var(--text-muted); font-weight: 900; border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 4px; }
 
-        .train-row {
-            display: grid;
-            grid-template-columns: 80px 95px 1fr;
-            gap: 12px;
-            align-items: center;
-        }
-
+        .train-row { display: grid; grid-template-columns: 80px 95px 1fr; gap: 12px; align-items: center; }
         .delay { font-size: 34px; font-weight: 900; color: var(--accent-green); line-height: 1; }
         .delay.bad { color: var(--accent-red); }
 
@@ -53,69 +68,88 @@
         .time-main.delayed { color: var(--accent-red); }
         .time-sub { font-size: 13px; font-weight: 700; color: var(--text-muted); }
 
-        .info-box { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-
+        .info-box { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
         .train-title { font-size: 18px; font-weight: 900; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
-        .carrier-badge {
-            font-size: 12px;
-            padding: 2px 8px;
-            border-radius: 999px;
-            font-weight: 900;
-        }
+        .carrier-badge { font-size: 12px; padding: 2px 8px; border-radius: 999px; font-weight: 900; }
         .carrier-badge.ks { background: #0072bc; color: #ffffff; border: 1px solid #38bdf8; }
         .carrier-badge.ic { background: #111827; color: #fb923c; border: 1px solid #fb923c; }
 
         .route-line { font-size: 15px; font-weight: 800; color: #ffffff; }
         .route-line span { color: var(--text-muted); font-weight: normal; }
 
-        /* Baner ostrzeżenia o opóźnieniu */
-        .delay-alert-banner {
-            background: rgba(255, 107, 107, 0.2);
-            border: 1px solid var(--accent-red);
-            color: #ff9999;
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-size: 13px;
-            font-weight: 900;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            margin-top: 2px;
-        }
-
-        .last-confirmed-box {
-            background: rgba(15, 23, 42, 0.8);
-            border-left: 3px solid #38bdf8;
-            padding: 6px 10px;
-            margin-top: 2px;
-            border-radius: 4px;
-            font-size: 13.5px;
-            color: #e0f2fe;
-        }
-
-        .via-line { font-size: 13.5px; color: rgba(255, 255, 255, 0.85); line-height: 1.3; }
+        .last-confirmed-box { background: rgba(15, 23, 42, 0.8); border-left: 3px solid #38bdf8; padding: 6px 10px; border-radius: 4px; font-size: 13.5px; color: #e0f2fe; }
+        .via-line { font-size: 13.5px; color: rgba(255, 255, 255, 0.85); }
         .meta-line { font-size: 13.5px; color: rgba(255, 255, 255, 0.7); }
-
-        @media (max-width: 580px) {
-            .train-row { grid-template-columns: 65px 85px 1fr; gap: 8px; }
-            .delay { font-size: 28px; }
-            .time-main { font-size: 19px; }
-            .train-title { font-size: 16px; }
-        }
     </style>
 </head>
 <body>
     <header>
         <h1>🖥️ Tablica Monitorowania</h1>
-        <button style="background:#0b57d0; color:#fff; border:0; padding:8px 14px; border-radius:8px; font-weight:900; cursor:pointer;" onclick="fetchMonitoredTrains()">↻ Odśwież</button>
+        <div class="top-bar-actions">
+            <div class="timer-badge">⏱️ Odświeżenie za: <span id="countdown">5:00</span></div>
+            <button style="background:#0b57d0; color:#fff; border:0; padding:8px 14px; border-radius:8px; font-weight:900; cursor:pointer;" onclick="manualRefresh()">↻ Odśwież teraz</button>
+        </div>
     </header>
+
+    <div class="global-alert-panel">
+        <div class="alert-summary" id="alertSummaryText">
+            ⚠️ Ładowanie statusu opóźnień...
+        </div>
+        <button class="btn-notify" id="btnNotify" onclick="toggleNotifications()">
+            🔔 Włącz powiadomienia o opóźnieniach
+        </button>
+    </div>
 
     <main class="board-list" id="boardContainer">
         <div style="color: var(--text-muted); text-align:center; padding:20px;">Ładowanie danych z API...</div>
     </main>
 
     <script>
+        const REFRESH_INTERVAL_SECONDS = 300; // 5 minut
+        let countdownSeconds = REFRESH_INTERVAL_SECONDS;
+
+        function formatTime(sec) {
+            const m = Math.floor(sec / 60);
+            const s = sec % 60;
+            return `${m}:${s < 10 ? '0' : ''}${s}`;
+        }
+
+        function updateTimer() {
+            countdownSeconds--;
+            if (countdownSeconds <= 0) {
+                fetchMonitoredTrains();
+                countdownSeconds = REFRESH_INTERVAL_SECONDS;
+            }
+            document.getElementById('countdown').innerText = formatTime(countdownSeconds);
+        }
+
+        setInterval(updateTimer, 1000);
+
+        function manualRefresh() {
+            fetchMonitoredTrains();
+            countdownSeconds = REFRESH_INTERVAL_SECONDS;
+            document.getElementById('countdown').innerText = formatTime(countdownSeconds);
+        }
+
+        function toggleNotifications() {
+            if (!("Notification" in window)) {
+                alert("Twoja przeglądarka nie wspiera powiadomień Web Push.");
+                return;
+            }
+
+            Notification.requestPermission().then(permission => {
+                const btn = document.getElementById('btnNotify');
+                if (permission === "granted") {
+                    btn.classList.add('enabled');
+                    btn.innerText = "✅ Powiadomienia włączone";
+                    new Notification("Tablica Monitorowania", { body: "Powiadomienia o opóźnieniach są aktywne." });
+                } else {
+                    alert("Nie wyrażono zgody na powiadomienia.");
+                }
+            });
+        }
+
         async function fetchMonitoredTrains() {
             const container = document.getElementById('boardContainer');
             try {
@@ -123,15 +157,24 @@
                 const data = await res.json();
                 const trains = data.trains || [];
 
+                const delayedTrains = trains.filter(t => Number(t.delay) > 0);
+                const totalDelayMin = delayedTrains.reduce((acc, curr) => acc + Number(curr.delay), 0);
+
+                const summaryEl = document.getElementById('alertSummaryText');
+                if (delayedTrains.length > 0) {
+                    summaryEl.innerHTML = `⚠️ UWAGA: <b>${delayedTrains.length}</b> pociąg(ów) opóźnionych (Łącznie +${totalDelayMin} min)`;
+                } else {
+                    summaryEl.innerHTML = `✅ Wszystkie monitorowane pociągi kursują zgodnie z planem`;
+                }
+
                 container.innerHTML = trains.map(t => {
                     const delay = Number(t.delay || 0);
                     const delayCls = delay > 0 ? 'delay bad' : 'delay';
                     const delayTxt = delay > 0 ? '+' + delay : '0';
                     const carrierCls = (t.carrier || '').toUpperCase().includes('KŚ') ? 'ks' : 'ic';
-                    const targetUrl = `train.html?train=${encodeURIComponent(t.train)}`;
 
                     return `
-                        <a href="${targetUrl}" class="card">
+                        <a href="train.html?train=${encodeURIComponent(t.train)}" class="card">
                             <div class="station-header">${t.queryStation}</div>
                             <div class="train-row">
                                 <div class="${delayCls}">${delayTxt}</div>
@@ -148,12 +191,6 @@
                                     <div class="route-line">
                                         <span>Z:</span> <b>${t.origin}</b> ➔ <span>Do:</span> <b>${t.destination}</b>
                                     </div>
-
-                                    ${delay > 0 ? `
-                                        <div class="delay-alert-banner">
-                                            ⚠️ OPÓŹNIENIE: +${delay} MINUT
-                                        </div>
-                                    ` : ''}
 
                                     <div class="last-confirmed-box">
                                         📍 Ostatnie zgłoszenie: <b>${t.lastConfirmedStation}</b> (${t.lastConfirmedTime})
