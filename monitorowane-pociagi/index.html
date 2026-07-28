@@ -17,91 +17,91 @@
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
-        body { background-color: var(--bg-main); color: var(--text-main); padding: 12px; max-width: 900px; margin: 0 auto; overflow-x: hidden; }
+        body { background-color: var(--bg-main); color: var(--text-main); padding: 12px; max-width: 900px; margin: 0 auto; font-size: 15px; }
 
-        header { margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--panel-border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
-        h1 { font-size: 1.3rem; font-weight: 900; }
+        header { margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--panel-border); display: flex; justify-content: space-between; align-items: center; }
+        h1 { font-size: 1.4rem; font-weight: 900; }
 
-        .board-list { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+        .board-list { display: flex; flex-direction: column; gap: 10px; width: 100%; }
 
         .card {
             background: var(--panel-bg);
             border: 1px solid var(--panel-border);
             border-radius: 12px;
-            padding: 10px 14px;
+            padding: 14px;
             text-decoration: none;
             color: inherit;
             display: flex;
             flex-direction: column;
-            gap: 6px;
-            width: 100%;
+            gap: 8px;
         }
-        .card.miss { border-color: #64748b; background: #111827; }
 
-        .station-header { font-size: 15px; color: var(--text-muted); font-weight: 900; }
+        .station-header { font-size: 18px; color: var(--text-muted); font-weight: 900; border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 4px; }
 
         .train-row {
             display: grid;
-            grid-template-columns: 75px 80px 1fr;
-            gap: 10px;
+            grid-template-columns: 80px 95px 1fr;
+            gap: 12px;
             align-items: center;
         }
 
-        .delay { font-size: 30px; font-weight: 900; color: var(--accent-green); line-height: 1; }
-        .delay.warn { color: var(--accent-yellow); }
+        .delay { font-size: 34px; font-weight: 900; color: var(--accent-green); line-height: 1; }
         .delay.bad { color: var(--accent-red); }
 
         .time-box { display: flex; flex-direction: column; }
-        .time-main { font-size: 20px; font-weight: 900; color: var(--accent-green); }
-        .time-sub { font-size: 11px; font-weight: 900; color: var(--text-muted); }
+        .time-main { font-size: 22px; font-weight: 900; color: var(--accent-green); }
+        .time-main.delayed { color: var(--accent-red); }
+        .time-sub { font-size: 13px; font-weight: 700; color: var(--text-muted); }
 
-        .info-box { display: flex; flex-direction: column; min-width: 0; overflow-wrap: anywhere; }
+        .info-box { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 
-        .train-title { font-size: 16px; font-weight: 900; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+        .train-title { font-size: 18px; font-weight: 900; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
-        /* KŚ na niebiesko! */
         .carrier-badge {
-            background: #111827;
-            color: #fb923c;
-            border: 1px solid #fb923c;
-            font-style: italic;
-            font-size: 11px;
-            padding: 1px 7px;
+            font-size: 12px;
+            padding: 2px 8px;
             border-radius: 999px;
             font-weight: 900;
         }
-        .carrier-badge.ks {
-            background: #0072bc !important;
-            color: #ffffff !important;
-            border: 1px solid #38bdf8 !important;
-            font-style: normal !important;
-        }
-        .carrier-badge.ic {
-            background: #111827;
-            color: #fb923c;
-            border: 1px solid #fb923c;
-        }
+        .carrier-badge.ks { background: #0072bc; color: #ffffff; border: 1px solid #38bdf8; }
+        .carrier-badge.ic { background: #111827; color: #fb923c; border: 1px solid #fb923c; }
 
-        .route-line { font-size: 13px; font-weight: 700; color: #ffffff; margin-top: 3px; }
+        .route-line { font-size: 15px; font-weight: 800; color: #ffffff; }
         .route-line span { color: var(--text-muted); font-weight: normal; }
+
+        /* Baner ostrzeżenia o opóźnieniu */
+        .delay-alert-banner {
+            background: rgba(255, 107, 107, 0.2);
+            border: 1px solid var(--accent-red);
+            color: #ff9999;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 900;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 2px;
+        }
 
         .last-confirmed-box {
             background: rgba(15, 23, 42, 0.8);
             border-left: 3px solid #38bdf8;
-            padding: 4px 8px;
-            margin-top: 4px;
+            padding: 6px 10px;
+            margin-top: 2px;
             border-radius: 4px;
-            font-size: 11px;
+            font-size: 13.5px;
             color: #e0f2fe;
         }
 
-        .via-line { font-size: 12px; color: rgba(255, 255, 255, 0.75); margin-top: 2px; line-height: 1.25; }
-        .meta-line { font-size: 12px; color: rgba(255, 255, 255, 0.6); margin-top: 2px; }
+        .via-line { font-size: 13.5px; color: rgba(255, 255, 255, 0.85); line-height: 1.3; }
+        .meta-line { font-size: 13.5px; color: rgba(255, 255, 255, 0.7); }
 
         @media (max-width: 580px) {
-            .train-row { grid-template-columns: 60px 70px 1fr; gap: 6px; }
-            .delay { font-size: 24px; }
-            .time-main { font-size: 17px; }
+            .train-row { grid-template-columns: 65px 85px 1fr; gap: 8px; }
+            .delay { font-size: 28px; }
+            .time-main { font-size: 19px; }
+            .train-title { font-size: 16px; }
         }
     </style>
 </head>
@@ -112,17 +112,10 @@
     </header>
 
     <main class="board-list" id="boardContainer">
-        <div style="color: var(--text-muted); text-align:center; padding:20px;">Ładowanie aktualnych danych z API...</div>
+        <div style="color: var(--text-muted); text-align:center; padding:20px;">Ładowanie danych z API...</div>
     </main>
 
     <script>
-        function getCarrierClass(carrier) {
-            const c = String(carrier || '').toUpperCase();
-            if (c.includes('KŚ') || c.includes('KS')) return 'ks';
-            if (c.includes('IC') || c.includes('TLK')) return 'ic';
-            return 'other';
-        }
-
         async function fetchMonitoredTrains() {
             const container = document.getElementById('boardContainer');
             try {
@@ -131,27 +124,11 @@
                 const trains = data.trains || [];
 
                 container.innerHTML = trains.map(t => {
-                    if (!t.found) {
-                        return `
-                            <div class="card miss">
-                                <div class="station-header">${t.queryStation}</div>
-                                <div class="train-row">
-                                    <div class="delay bad">?</div>
-                                    <div class="time-box"><span class="time-main">—</span><span class="time-sub">brak</span></div>
-                                    <div class="info-box">
-                                        <div class="train-title">${t.train}</div>
-                                        <div class="route-line">Nie znaleziono w aktualnej tablicy stacji</div>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                    }
-
                     const delay = Number(t.delay || 0);
-                    const delayCls = delay >= 15 ? 'delay bad' : delay >= 5 ? 'delay warn' : 'delay';
+                    const delayCls = delay > 0 ? 'delay bad' : 'delay';
                     const delayTxt = delay > 0 ? '+' + delay : '0';
-                    const carrierCls = getCarrierClass(t.carrier);
-                    const targetUrl = `train.html?train=${encodeURIComponent(t.train)}&station=${encodeURIComponent(t.queryStation)}`;
+                    const carrierCls = (t.carrier || '').toUpperCase().includes('KŚ') ? 'ks' : 'ic';
+                    const targetUrl = `train.html?train=${encodeURIComponent(t.train)}`;
 
                     return `
                         <a href="${targetUrl}" class="card">
@@ -159,7 +136,7 @@
                             <div class="train-row">
                                 <div class="${delayCls}">${delayTxt}</div>
                                 <div class="time-box">
-                                    <span class="time-main">${t.actualTime}</span>
+                                    <span class="time-main ${delay > 0 ? 'delayed' : ''}">${t.actualTime}</span>
                                     <span class="time-sub">plan: ${t.plannedTime}</span>
                                 </div>
                                 <div class="info-box">
@@ -167,12 +144,21 @@
                                         <span class="carrier-badge ${carrierCls}">${t.carrier}</span>
                                         ${t.category} ${t.name ? t.name + ' ' : ''}${t.train}
                                     </div>
+                                    
                                     <div class="route-line">
-                                        <span>Z:</span> ${t.origin} ➔ <span>Do:</span> ${t.destination}
+                                        <span>Z:</span> <b>${t.origin}</b> ➔ <span>Do:</span> <b>${t.destination}</b>
                                     </div>
+
+                                    ${delay > 0 ? `
+                                        <div class="delay-alert-banner">
+                                            ⚠️ OPÓŹNIENIE: +${delay} MINUT
+                                        </div>
+                                    ` : ''}
+
                                     <div class="last-confirmed-box">
-                                        📍 Ostatnie zgłoszenie: <b>${t.lastConfirmedStation}</b> ${t.lastConfirmedTime ? '(' + t.lastConfirmedTime + ')' : ''}
+                                        📍 Ostatnie zgłoszenie: <b>${t.lastConfirmedStation}</b> (${t.lastConfirmedTime})
                                     </div>
+
                                     ${t.via ? `<div class="via-line">przez: ${t.via}</div>` : ''}
                                     <div class="meta-line">peron ${t.platform} · tor ${t.track}</div>
                                 </div>
@@ -181,7 +167,7 @@
                     `;
                 }).join('');
             } catch (err) {
-                container.innerHTML = '<div style="color:var(--accent-red); text-align:center;">Błąd pobierania danych. Sprawdź połączenie z serwerem API.</div>';
+                container.innerHTML = '<div style="color:var(--accent-red); text-align:center;">Błąd pobierania danych.</div>';
             }
         }
 
