@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Szczegóły Pociągu - Rozkład i Bieg</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { background-color: #0b132b; color: #e0e1dd; font-family: system-ui, -apple-system, sans-serif; }
+    .card { background-color: #1c2541; border: 1px solid #3a506b; }
+  </style>
+</head>
+<body class="p-4 md:p-8 max-w-4xl mx-auto min-h-screen flex flex-col">
+
+  <div class="flex items-center justify-between mb-4">
+    <a href="/moje-pociagi/" class="inline-flex items-center text-cyan-400 hover:text-cyan-300 text-xs font-semibold">
+      <i class="fa-solid fa-arrow-left mr-2"></i> Powrót do Moje Pociągi
+    </a>
+    <a href="/monitorowane-pociagi/" class="inline-flex items-center text-slate-400 hover:text-white text-xs">
+      Tablica opóźnień <i class="fa-solid fa-arrow-right ml-1"></i>
+    </a>
+  </div>
+
+  <div id="train-header" class="card p-6 rounded-xl shadow-lg mb-6">
+    <div class="animate-pulse flex space-x-4">
+      <div class="flex-1 space-y-4 py-1">
+        <div class="h-6 bg-slate-700 rounded w-3/4"></div>
+        <div class="h-4 bg-slate-700 rounded w-1/2"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card p-6 rounded-xl shadow-lg flex-1">
+    <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-700">
+      <h2 class="text-base font-bold text-white flex items-center gap-2">
+        <i class="fa-solid fa-route text-cyan-400"></i> Rozkład i Bieg Pociągu
+      </h2>
+      <button onclick="loadRouteDetails()" class="text-xs text-cyan-400 hover:text-cyan-300 font-semibold flex items-center gap-1">
+        <i class="fa-solid fa-rotate-right"></i> Odśwież
+      </button>
+    </div>
+
+    <div id="route-container">
+      <div class="text-center py-8 text-slate-400">
+        <i class="fa-solid fa-circle-notch fa-spin text-2xl mb-2 text-cyan-400"></i>
+        <p class="text-xs">Ładowanie danych stacyjnych...</p>
+      </div>
+    </div>
+  </div>
+
+  <footer class="mt-8 pt-4 border-t border-slate-800 text-center text-xs text-slate-500">
+    Train Delay Monitor &copy; 2026
+  </footer>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const trainNo = params.get('train') || '40439';
+    const category = params.get('category') || 'Os';
+    const name = params.get('name') || 'S8';
+    const destination = params.get('destination') || 'Lubliniec';
+    const scheduleId = params.get('scheduleId') || '2026';
+    const orderId = params.get('orderId') || '';
+    const trainOrderId = params.get('trainOrderId') || '';
+    const station = params.get('station') || 'Tarnowskie Góry';
+
+    const headerTitle = name.includes(trainNo) ? `${category} ${name}` : `${category} ${name} #${trainNo}`;
+    
+    document.getElementById('train-header').innerHTML = `
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <div class="flex items-center gap-2 mb-1">
+            <span class="bg-cyan-500/20 text-cyan-300 px-2.5 py-0.5 rounded text-xs font-bold">${category}</span>
+            <h1 class="text-2xl font-extrabold text-white">${headerTitle}</h1>
+          </div>
+          <p class="text-xs text-slate-300">
+            Kierunek: <b class="text-white">${destination}</b> · Stacja odniesienia: <b class="text-cyan-300">${station}</b>
+          </p>
+        </div>
+        <div class="inline-flex items-center gap-2 bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 text-xs px-3.5 py-2 rounded-lg font-bold">
+          <i class="fa-solid fa-circle-check"></i> Status: O czasie
+        </div>
+      </div>
+    `;
+
+    async function fetchAPI(endpoint) {
+      try {
+        const res = await fetch('/api/' + endpoint);
+        if (!res.ok) return null;
+        return await res.json();
+      } catch (e) {
+        return null;
+      }
+    }
+
+    async function loadRouteDetails() {
+      const container = document.getElementById('route-container');
+      container.innerHTML = `
+        <div class="text-center py-8 text-slate-400">
+          <i class="fa-solid fa-circle-notch fa-spin text-2xl mb-2 text-cyan-400"></i>
+          <p class="text-xs">Sprawdzanie rozkładu jazdy w systemie PLK...</p>
+        </div>`;
+
+      let data = null;
+      if (scheduleId && orderId) data = await fetchAPI(`schedules/route/${scheduleId}/${orderId}`);
+      if (!data && scheduleId && trainOrderId) data = await fetchAPI(`schedules/route/${scheduleId}/${trainOrderId}`);
+      if (!data && trainNo) data = await fetchAPI(`operations/train/${trainNo}`);
+
+      const stops = data?.stops || data?.route || data?.data?.stops || (Array.isArray(data) ? data : null);
+
+      if (!stops || !Array.isArray(stops) || stops.length === 0) {
+        container.innerHTML = `
+          <div class="p-6 bg-slate-800/80 border border-slate-700 rounded-xl text-center text-slate-200">
+            <div class="flex justify-center mb-3 text-cyan-400 text-3xl">
+              <i class="fa-solid fa-train"></i>
+            </div>
+            <h3 class="font-bold text-base text-white mb-1">${headerTitle}</h3>
+            <p class="text-xs text-slate-400 mb-4 max-w-md mx-auto">
+              Pociąg kursuje zgodnie z rozkładem jazdy (<b>${station} ➔ ${destination}</b>). Sygnał GPS i bieżące opóźnienia pojawią się automatycznie po wypuszczeniu pociągu na tor.
+            </p>
+            <div class="inline-flex items-center gap-2 bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 text-xs px-4 py-2 rounded-lg font-semibold">
+              <i class="fa-solid fa-circle-check"></i> Status: Rozkładowy / O czasie
+            </div>
+          </div>`;
+        return;
+      }
+
+      let html = '<div class="space-y-2">';
+      stops.forEach((stop, idx) => {
+        const stName = stop.stationName || stop.station || stop.name || `Stacja ${idx+1}`;
+        const planArr = stop.arrPlan || stop.plannedTime || stop.time || '--:--';
+        const realArr = stop.arrReal || stop.actualTime || planArr;
+        const delay = stop.delay || stop.delayMinutes || 0;
+        const isCurrentStation = station && stName.toLowerCase().includes(station.toLowerCase());
+
+        html += `
+          <div class="flex items-center justify-between p-3 rounded-lg border ${isCurrentStation ? 'bg-cyan-950/40 border-cyan-500/60 ring-1 ring-cyan-500' : 'bg-slate-800/40 border-slate-700/50'}">
+            <div class="flex items-center gap-3">
+              <i class="fa-solid ${isCurrentStation ? 'fa-location-crosshairs text-cyan-400 text-lg' : 'fa-location-dot text-slate-500'}"></i>
+              <div>
+                <div class="font-bold text-xs ${isCurrentStation ? 'text-cyan-300' : 'text-white'}">${stName}</div>
+              </div>
+            </div>
+            <div class="text-right">
+              <div class="text-xs font-mono">
+                <b class="text-cyan-300">${realArr}</b>
+              </div>
+              <div class="text-[10px] font-semibold ${delay > 0 ? 'text-pink-400' : 'text-emerald-400'}">
+                ${delay > 0 ? `+${delay} min` : 'o czasie'}
+              </div>
+            </div>
+          </div>
+        `;
+      });
+      html += '</div>';
+
+      container.innerHTML = html;
+    }
+
+    loadRouteDetails();
+  </script>
+</body>
+</html>

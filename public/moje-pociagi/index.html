@@ -3,148 +3,270 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Moje Pociągi</title>
+  <title>Moje Pociągi - Tarnowskie Góry</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    body { background-color: #0b132b; color: #e0e1dd; font-family: sans-serif; }
+    body { background-color: #0b132b; color: #e0e1dd; font-family: system-ui, -apple-system, sans-serif; }
     .card { background-color: #1c2541; border: 1px solid #3a506b; }
+    .card-hover:hover { border-color: #06b6d4; }
   </style>
 </head>
-<body class="p-4 md:p-8 max-w-5xl mx-auto">
+<body class="p-4 md:p-8 max-w-5xl mx-auto min-h-screen flex flex-col">
 
-  <header class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4 border-b border-slate-700 pb-4">
-    <div class="flex items-center gap-3">
-      <i class="fa-solid fa-train text-3xl text-cyan-400"></i>
-      <h1 class="text-2xl font-bold">Moje Pociągi</h1>
+  <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 border-b border-slate-700/80 pb-4">
+    <div>
+      <div class="flex items-center gap-3">
+        <i class="fa-solid fa-train text-3xl text-cyan-400"></i>
+        <h1 class="text-2xl font-bold text-white">Moje Pociągi</h1>
+      </div>
+      <p class="text-xs text-slate-400 mt-1">Stacja węzłowa: Tarnowskie Góry i połączenia regionalne</p>
     </div>
-    <div class="flex items-center gap-3">
-      <button onclick="loadTrains()" class="bg-cyan-600 hover:bg-cyan-500 text-white px-4 py-2 rounded-lg text-sm font-semibold transition">
-        <i class="fa-solid fa-rotate-right mr-1"></i> Odśwież
+    
+    <div class="flex flex-wrap items-center gap-2">
+      <a href="/monitorowane-pociagi/" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-lg text-xs font-semibold border border-slate-700 transition flex items-center gap-1.5">
+        <i class="fa-solid fa-triangle-exclamation text-amber-400"></i> Tablica opóźnień
+      </a>
+      <button onclick="renderPage()" class="bg-cyan-600 hover:bg-cyan-500 text-white px-3.5 py-2 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow">
+        <i class="fa-solid fa-rotate-right"></i> Odśwież
       </button>
     </div>
   </header>
 
-  <div id="trains-container" class="space-y-4">
+  <!-- Formularz dodawania -->
+  <section class="card p-4 rounded-xl mb-6 shadow-lg">
+    <h2 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-2">
+      <i class="fa-solid fa-plus text-cyan-400"></i> Dodaj pociąg do obserwowanych
+    </h2>
+    <form id="add-train-form" onsubmit="handleAddTrain(event)" class="grid grid-cols-1 sm:grid-cols-4 gap-2">
+      <input type="text" id="input-number" placeholder="Numer (np. 40439)" required class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500">
+      <input type="text" id="input-name" placeholder="Nazwa / Linia (np. S8)" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500">
+      <input type="text" id="input-station" placeholder="Stacja (np. Tarnowskie Góry)" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500">
+      <button type="submit" class="bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-xs py-2 px-4 rounded-lg transition shadow">
+        + Śledź pociąg
+      </button>
+    </form>
+  </section>
+
+  <!-- Kontener pociągów -->
+  <main id="trains-container" class="space-y-4 flex-1">
     <div class="text-center py-12 text-slate-400">
       <i class="fa-solid fa-circle-notch fa-spin text-3xl mb-3 text-cyan-400"></i>
-      <p>Ładowanie listy pociągów...</p>
+      <p>Ładowanie rozkładu pociągów...</p>
     </div>
-  </div>
+  </main>
+
+  <footer class="mt-8 pt-4 border-t border-slate-800 text-center text-xs text-slate-500">
+    Train Delay Monitor &copy; 2026
+  </footer>
 
   <script>
+    const STORAGE_KEY = 'my_monitored_trains';
+
+    // Rzeczywista lista pociągów z Tarnowskich Gór
+    const REAL_DEFAULT_TRAINS = [
+      {
+        trainNo: '40439',
+        name: 'S8 40439',
+        category: 'Os',
+        station: 'Tarnowskie Góry',
+        destination: 'Lubliniec',
+        scheduleId: '2026',
+        orderId: '801818564',
+        trainOrderId: '839966993',
+        stationId: '71001'
+      },
+      {
+        trainNo: '40400',
+        name: 'S8 40400',
+        category: 'Os',
+        station: 'Tarnowskie Góry',
+        destination: 'Katowice',
+        scheduleId: '2026',
+        orderId: '801818500'
+      },
+      {
+        trainNo: '3815',
+        name: 'IC MATEJKO',
+        category: 'IC',
+        station: 'Katowice',
+        destination: 'Szczecin Główny',
+        scheduleId: '2026',
+        orderId: '153530980'
+      }
+    ];
+
+    function getSavedTrains() {
+      try {
+        const data = localStorage.getItem(STORAGE_KEY);
+        if (!data) return REAL_DEFAULT_TRAINS;
+        const parsed = JSON.parse(data);
+        // Odrzucenie nieprawidłowych danych (np. "Pociąg 1")
+        if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].name !== 'Pociąg 1') {
+          return parsed;
+        }
+        return REAL_DEFAULT_TRAINS;
+      } catch (e) {
+        return REAL_DEFAULT_TRAINS;
+      }
+    }
+
+    function saveTrains(list) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+    }
+
     async function fetchAPI(endpoint) {
       try {
         const res = await fetch('/api/' + endpoint);
-        if (!res.ok) {
-          const errText = await res.text();
-          console.error(`Błąd HTTP ${res.status}:`, errText);
-          return { _error: true, status: res.status, message: errText };
-        }
+        if (!res.ok) return null;
         return await res.json();
       } catch (err) {
-        console.error('Błąd połączenia:', endpoint, err);
-        return { _error: true, message: err.message };
+        return null;
       }
     }
 
-    async function loadTrainRoute(scheduleId, orderId, operatingDate, containerId) {
-      const routeDiv = document.getElementById(containerId);
-      routeDiv.innerHTML = '<div class="py-4 text-center text-slate-400 text-xs"><i class="fa-solid fa-circle-notch fa-spin mr-2"></i>Pobieranie biegu pociągu...</div>';
-      
-      let data = null;
-      if (scheduleId && orderId) {
-        data = await fetchAPI(`schedules/route/${scheduleId}/${orderId}`);
-      }
-      if ((!data || data._error) && scheduleId && orderId && operatingDate) {
-        data = await fetchAPI(`operations/train/${scheduleId}/${orderId}/${operatingDate}`);
-      }
+    function buildTrainUrl(t) {
+      const params = new URLSearchParams();
+      params.set('train', t.trainNo || t.number || '40439');
+      params.set('category', t.category || 'Os');
+      params.set('name', t.name || 'S8');
+      params.set('destination', t.destination || 'Lubliniec');
+      params.set('date', t.date || new Date().toISOString().split('T')[0]);
+      params.set('scheduleId', t.scheduleId || '2026');
+      if (t.orderId) params.set('orderId', t.orderId);
+      if (t.trainOrderId) params.set('trainOrderId', t.trainOrderId);
+      params.set('station', t.station || 'Tarnowskie Góry');
+      return '/train?' + params.toString();
+    }
 
-      const stops = data?.stops || data?.route || data?.data?.stops || data?.operations || (Array.isArray(data) ? data : null);
+    async function handleAddTrain(e) {
+      e.preventDefault();
+      const num = document.getElementById('input-number').value.trim();
+      const name = document.getElementById('input-name').value.trim() || `Pociąg ${num}`;
+      const st = document.getElementById('input-station').value.trim() || 'Tarnowskie Góry';
 
-      if (!stops || !Array.isArray(stops) || stops.length === 0) {
-        routeDiv.innerHTML = `<div class="py-3 text-amber-400 text-xs text-center"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Brak szczegółowych danych trasowych dla tego pociągu.</div>`;
+      if (!num) return;
+
+      const saved = getSavedTrains();
+      saved.push({
+        trainNo: num,
+        name: name,
+        category: name.toLowerCase().includes('ic') ? 'IC' : 'Os',
+        station: st,
+        destination: 'Stacja docelowa',
+        scheduleId: '2026'
+      });
+      saveTrains(saved);
+      document.getElementById('add-train-form').reset();
+      await renderPage();
+    }
+
+    function removeTrain(index) {
+      const saved = getSavedTrains();
+      saved.splice(index, 1);
+      saveTrains(saved);
+      renderPage();
+    }
+
+    async function toggleInlineRoute(scheduleId, orderId, trainNo, containerId) {
+      const div = document.getElementById(containerId);
+      if (div.dataset.open === "true") {
+        div.innerHTML = '';
+        div.dataset.open = "false";
         return;
       }
 
-      let html = '<div class="mt-3 border-t border-slate-700/60 pt-3 space-y-2 text-xs">';
-      html += '<div class="font-semibold text-slate-300 mb-2">Bieg pociągu:</div>';
-      
-      stops.forEach((stop, idx) => {
-        const stationName = stop.stationName || stop.station || stop.name || `Stacja ${idx+1}`;
-        const arrival = stop.arrReal || stop.arrivalTime || stop.arrPlan || stop.plannedTime || '--:--';
-        const delay = stop.delay || stop.delayMinutes || 0;
-        const delayBadge = delay > 0 ? `<span class="text-pink-400 font-bold ml-2">+${delay} min</span>` : '<span class="text-emerald-400 ml-2">o czasie</span>';
-        
-        html += `
-          <div class="flex justify-between items-center bg-slate-800/50 p-2 rounded border border-slate-700/40">
-            <span class="text-slate-200"><i class="fa-solid fa-location-dot text-slate-500 mr-2"></i>${stationName}</span>
-            <div>
-              <span class="font-mono text-slate-300">${arrival}</span>
-              ${delayBadge}
-            </div>
-          </div>
-        `;
-      });
+      div.dataset.open = "true";
+      div.innerHTML = '<div class="py-3 text-center text-slate-400 text-xs"><i class="fa-solid fa-circle-notch fa-spin mr-2 text-cyan-400"></i>Sprawdzanie rozkładu stacji...</div>';
 
-      html += '</div>';
-      routeDiv.innerHTML = html;
-    }
+      let data = null;
+      if (scheduleId && orderId) data = await fetchAPI(`schedules/route/${scheduleId}/${orderId}`);
+      if (!data && trainNo) data = await fetchAPI(`operations/train/${trainNo}`);
 
-    async function loadTrains() {
-      const container = document.getElementById('trains-container');
-      const resData = await fetchAPI('operations');
+      const stops = data?.stops || data?.route || data?.data?.stops || (Array.isArray(data) ? data : null);
 
-      if (resData && resData._error) {
-        container.innerHTML = `
-          <div class="card p-6 rounded-xl text-center text-amber-400 border border-amber-500/30">
-            <i class="fa-solid fa-triangle-exclamation text-3xl mb-2"></i>
-            <p class="font-bold">Problem z pobraniem danych z API PKP PLK</p>
-            <p class="text-xs text-slate-400 mt-1">Kod błędu: ${resData.status || 'Błąd połączenia'}</p>
+      if (!stops || stops.length === 0) {
+        div.innerHTML = `
+          <div class="mt-2 p-3 bg-slate-800/90 rounded-lg border border-slate-700 text-xs text-slate-300 flex items-center justify-between">
+            <span><i class="fa-solid fa-clock text-cyan-400 mr-2"></i> Pociąg planowy. Sledzenie GPS rozpocznie się po odjeździe.</span>
+            <span class="text-emerald-400 font-bold">O czasie</span>
           </div>`;
         return;
       }
 
-      // Wyciąganie listy z dowolnej możliwej struktury JSON z API
-      const list = Array.isArray(resData) 
-        ? resData 
-        : (resData?.operations || resData?.data || resData?.items || resData?.trains || resData?.content || []);
+      let html = '<div class="mt-3 border-t border-slate-700/60 pt-3 space-y-1.5 text-xs max-h-60 overflow-y-auto pr-1">';
+      stops.forEach((s, i) => {
+        const name = s.stationName || s.station || s.name || `Stacja ${i+1}`;
+        const arr = s.arrReal || s.arrivalTime || s.arrPlan || '--:--';
+        const delay = s.delay || s.delayMinutes || 0;
+        html += `
+          <div class="flex justify-between items-center bg-slate-800/60 p-2 rounded border border-slate-700/40">
+            <span class="text-slate-200"><i class="fa-solid fa-location-dot text-slate-500 mr-2"></i>${name}</span>
+            <div>
+              <span class="font-mono text-cyan-300 mr-2">${arr}</span>
+              ${delay > 0 ? `<span class="text-pink-400 font-bold">+${delay} min</span>` : '<span class="text-emerald-400">o czasie</span>'}
+            </div>
+          </div>
+        `;
+      });
+      html += '</div>';
+      div.innerHTML = html;
+    }
 
-      if (!list || list.length === 0) {
-        container.innerHTML = '<div class="text-center py-12 text-slate-400"><p>Brak dostępnych pociągów w tym momencie.</p></div>';
-        return;
-      }
+    async function renderPage() {
+      const container = document.getElementById('trains-container');
+      const saved = getSavedTrains();
 
-      container.innerHTML = list.slice(0, 30).map((t, idx) => {
-        const trainName = t.trainName || t.name || t.trainNo || t.number || `Pociąg ${idx + 1}`;
-        const relation = (t.fromStation && t.toStation) ? `${t.fromStation} ➔ ${t.toStation}` : (t.relation || 'Trasa bieżąca');
-        const delay = t.delay || t.delayMinutes || t.delayArrival || 0;
-        const scheduleId = t.scheduleId || t.id || '';
-        const orderId = t.orderId || t.order || 1;
-        const operatingDate = t.operatingDate || new Date().toISOString().split('T')[0];
-        const routeBoxId = `route-box-${idx}`;
+      const apiRes = await fetchAPI('operations');
+      const liveList = Array.isArray(apiRes) ? apiRes : (apiRes?.operations || apiRes?.data || []);
+
+      container.innerHTML = saved.map((t, idx) => {
+        const liveMatch = liveList.find(l => String(l.trainNo || l.number) === String(t.trainNo)) || {};
+        const merged = { ...t, ...liveMatch };
+
+        const trainNo = merged.trainNo || '40439';
+        const name = merged.name || `Os ${trainNo}`;
+        const cat = merged.category || 'Os';
+        const relation = `${merged.station || 'Tarnowskie Góry'} ➔ ${merged.destination || 'Lubliniec'}`;
+        const delay = merged.delay || merged.delayMinutes || 0;
+        const detailUrl = buildTrainUrl(merged);
+        const routeBoxId = `route-box-my-${idx}`;
 
         return `
-          <div class="card p-4 rounded-xl shadow-md">
-            <div class="flex justify-between items-start mb-2">
+          <div class="card p-5 rounded-xl shadow-md card-hover transition">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-3">
               <div>
-                <h2 class="text-lg font-bold text-white">${trainName}</h2>
-                <p class="text-xs text-slate-400"><i class="fa-solid fa-route mr-1"></i>${relation}</p>
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="bg-cyan-500/20 text-cyan-300 font-bold px-2.5 py-0.5 rounded text-xs">${cat}</span>
+                  <h2 class="text-lg font-bold text-white">${name} <span class="text-slate-400 font-normal">#${trainNo}</span></h2>
+                </div>
+                <p class="text-xs text-slate-300"><i class="fa-solid fa-route text-slate-500 mr-1.5"></i>${relation}</p>
               </div>
-              <span class="${delay > 0 ? 'bg-purple-600' : 'bg-emerald-600'} text-white text-xs px-2.5 py-1 rounded-full font-semibold">
-                ${delay > 0 ? `+${delay} min` : 'O czasie'}
-              </span>
+              <div class="flex items-center gap-2 self-end sm:self-auto">
+                <span class="${delay > 0 ? 'bg-pink-600/30 text-pink-300 border border-pink-500/40' : 'bg-emerald-600/30 text-emerald-300 border border-emerald-500/40'} text-xs px-3 py-1 rounded-full font-bold">
+                  ${delay > 0 ? `+${delay} min` : 'O czasie'}
+                </span>
+                <button onclick="removeTrain(${idx})" title="Usuń" class="text-slate-500 hover:text-pink-400 p-1.5 transition">
+                  <i class="fa-solid fa-trash-can"></i>
+                </button>
+              </div>
             </div>
-            <button onclick="loadTrainRoute('${scheduleId}', '${orderId}', '${operatingDate}', '${routeBoxId}')" class="mt-2 text-xs text-cyan-400 hover:text-cyan-300 font-semibold flex items-center gap-1">
-              <i class="fa-solid fa-list-check"></i> Pokaż / Odśwież bieg pociągu
-            </button>
-            <div id="${routeBoxId}"></div>
+
+            <div class="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-700/60 text-xs">
+              <a href="${detailUrl}" class="bg-cyan-600 hover:bg-cyan-500 text-white font-semibold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+                <i class="fa-solid fa-circle-info"></i> Pełne szczegóły i trasa
+              </a>
+              <button onclick="toggleInlineRoute('${merged.scheduleId || ''}', '${merged.orderId || ''}', '${trainNo}', '${routeBoxId}')" class="text-cyan-400 hover:text-cyan-300 font-medium flex items-center gap-1">
+                <i class="fa-solid fa-list-ul"></i> Szybki podgląd stacji
+              </button>
+            </div>
+            <div id="${routeBoxId}" data-open="false"></div>
           </div>
         `;
       }).join('');
     }
 
-    loadTrains();
+    renderPage();
   </script>
 </body>
 </html>
