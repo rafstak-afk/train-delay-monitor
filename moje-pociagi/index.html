@@ -19,9 +19,6 @@
       <h1 class="text-2xl font-bold">Moje Pociągi</h1>
     </div>
     <div class="flex items-center gap-3">
-      <a href="/monitorowane-pociagi/" class="text-slate-300 hover:text-white text-sm font-semibold mr-2">
-        <i class="fa-solid fa-clock-rotate-left mr-1"></i> Opóźnione
-      </a>
       <button onclick="loadTrains()" class="bg-cyan-600 hover:bg-cyan-500 text-white px-4 py-2 rounded-lg text-sm font-semibold transition">
         <i class="fa-solid fa-rotate-right mr-1"></i> Odśwież
       </button>
@@ -39,11 +36,15 @@
     async function fetchAPI(endpoint) {
       try {
         const res = await fetch('/api/' + endpoint);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        if (!res.ok) {
+          const errText = await res.text();
+          console.error(`Błąd HTTP ${res.status}:`, errText);
+          return { _error: true, status: res.status, message: errText };
+        }
         return await res.json();
       } catch (err) {
-        console.error('Błąd fetch:', endpoint, err);
-        return null;
+        console.error('Błąd połączenia:', endpoint, err);
+        return { _error: true, message: err.message };
       }
     }
 
@@ -55,13 +56,13 @@
       if (scheduleId && orderId) {
         data = await fetchAPI(`schedules/route/${scheduleId}/${orderId}`);
       }
-      if (!data && scheduleId && orderId && operatingDate) {
+      if ((!data || data._error) && scheduleId && orderId && operatingDate) {
         data = await fetchAPI(`operations/train/${scheduleId}/${orderId}/${operatingDate}`);
       }
 
-      const stops = data?.stops || data?.route || data?.data?.stops || (Array.isArray(data) ? data : null);
+      const stops = data?.stops || data?.route || data?.data?.stops || data?.operations || (Array.isArray(data) ? data : null);
 
-      if (!stops || stops.length === 0) {
+      if (!stops || !Array.isArray(stops) || stops.length === 0) {
         routeDiv.innerHTML = `<div class="py-3 text-amber-400 text-xs text-center"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Brak szczegółowych danych trasowych dla tego pociągu.</div>`;
         return;
       }
@@ -92,8 +93,22 @@
 
     async function loadTrains() {
       const container = document.getElementById('trains-container');
-      const data = await fetchAPI('operations');
-      const list = Array.isArray(data) ? data : (data?.data || data?.items || []);
+      const resData = await fetchAPI('operations');
+
+      if (resData && resData._error) {
+        container.innerHTML = `
+          <div class="card p-6 rounded-xl text-center text-amber-400 border border-amber-500/30">
+            <i class="fa-solid fa-triangle-exclamation text-3xl mb-2"></i>
+            <p class="font-bold">Problem z pobraniem danych z API PKP PLK</p>
+            <p class="text-xs text-slate-400 mt-1">Kod błędu: ${resData.status || 'Błąd połączenia'}</p>
+          </div>`;
+        return;
+      }
+
+      // Wyciąganie listy z dowolnej możliwej struktury JSON z API
+      const list = Array.isArray(resData) 
+        ? resData 
+        : (resData?.operations || resData?.data || resData?.items || resData?.trains || resData?.content || []);
 
       if (!list || list.length === 0) {
         container.innerHTML = '<div class="text-center py-12 text-slate-400"><p>Brak dostępnych pociągów w tym momencie.</p></div>';
