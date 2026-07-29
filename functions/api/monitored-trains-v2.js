@@ -1,116 +1,89 @@
-const MONITORED_TRAINS = [
-  { station: "Katowice", train: "3815" },
-  { station: "Tarnowskie Góry", train: "40450" },
-  { station: "Miasteczko Śląskie", train: "44226" },
-  { station: "Tarnowskie Góry", train: "40250" },
+export async function onRequest(context) {
+  const url = new URL(context.request.url);
+  const trainParam = url.searchParams.get('train');
 
-  // objazdy do 31.07.2026
-  { station: "Tarnowskie Góry", train: "40423" },
-  { station: "Tarnowskie Góry", train: "40211" },
-  { station: "Tarnowskie Góry", train: "40468" },
+  // Baza monitorowanych pociągów z ich rzeczywistymi stacjami startowymi i trasami
+  const trainDatabase = {
+    "3815": { category: "IC", name: "MATEJKO", carrier: "IC", origin: "Katowice", destination: "Szczecin Główny", via: "Bytom, Gliwice, Kędzierzyn-Koźle, Opole Główny", stops: ["Katowice", "Zabrze", "Gliwice", "Kędzierzyn-Koźle", "Opole Główny", "Wrocław Główny", "Poznań Główny", "Szczecin Główny"] },
+    "40360": { category: "OsP S9", name: "", carrier: "KŚ", origin: "Gliwice", destination: "Bytom", via: "Bytom Karb, Bytom Główny", stops: ["Gliwice", "Bytom Karb", "Bytom"] },
+    "38107": { category: "TLK", name: "OSTERWA", carrier: "IC", origin: "Kraków Główny", destination: "Szczecin Główny", via: "Katowice, Chorzów Miasto, Bytom, Tarnowskie Góry", stops: ["Kraków Główny", "Katowice", "Chorzów Miasto", "Bytom", "Tarnowskie Góry", "Poznań Główny", "Szczecin Główny"] },
+    "40621": { category: "Os S1", name: "", carrier: "KŚ", origin: "Częstochowa", destination: "Gliwice", via: "Katowice Załęże, Chorzów Batory, Świętochłowice", stops: ["Częstochowa", "Katowice", "Katowice Załęże", "Chorzów Batory", "Świętochłowice", "Ruda Śląska", "Gliwice"] },
+    "63102": { category: "TLK", name: "SUDETY", carrier: "IC", origin: "Jelenia Góra", destination: "Kraków Główny", via: "Mysłowice, Jaworzno Szczakowa, Trzebinia", stops: ["Jelenia Góra", "Wałbrzych Główny", "Kłodzko Główny", "Nysa", "Prudnik", "Katowice", "Mysłowice", "Jaworzno Szczakowa", "Trzebinia", "Kraków Główny"] },
+    "40450": { category: "Os S8", name: "", carrier: "KŚ", origin: "Tarnowskie Góry", destination: "Katowice", via: "Nakło Śląskie, Radzionków, Bytom", stops: ["Tarnowskie Góry", "Nakło Śląskie", "Radzionków", "Bytom", "Chorzów Batory", "Katowice"] },
+    "44226": { category: "Os S8", name: "", carrier: "KŚ", origin: "Miasteczko Śląskie", destination: "Katowice", via: "Tarnowskie Góry, Bytom", stops: ["Miasteczko Śląskie", "Tarnowskie Góry", "Bytom", "Katowice"] },
+    "40250": { category: "Os S8", name: "", carrier: "KŚ", origin: "Tarnowskie Góry", destination: "Katowice", via: "Bytom, Chorzów Batory", stops: ["Tarnowskie Góry", "Bytom", "Chorzów Batory", "Katowice"] },
+    "40658": { category: "Os S1", name: "", carrier: "KŚ", origin: "Katowice", destination: "Gliwice", via: "Chorzów Batory, Świętochłowice, Ruda Śląska", stops: ["Katowice", "Chorzów Batory", "Świętochłowice", "Ruda Śląska", "Gliwice"] },
+    "40423": { category: "Os S8", name: "", carrier: "KŚ", origin: "Tarnowskie Góry", destination: "Katowice", via: "Chorzów Batory, Katowice Załęże", stops: ["Tarnowskie Góry", "Bytom", "Chorzów Batory", "Katowice Załęże", "Katowice"] },
+    "40211": { category: "Os S8", name: "", carrier: "KŚ", origin: "Lubliniec", destination: "Katowice", via: "Tarnowskie Góry, Chorzów Batory", stops: ["Lubliniec", "Tarnowskie Góry", "Bytom", "Chorzów Batory", "Katowice"] },
+    "40468": { category: "Os S9", name: "", carrier: "KŚ", origin: "Katowice", destination: "Bytom", via: "Chorzów Uniwersytet, Chorzów Stary", stops: ["Katowice", "Chorzów Uniwersytet", "Chorzów Stary", "Bytom"] }
+  };
 
-  { station: "Katowice", train: "38107" },
-  { station: "Chorzów Uniwersytet", train: "40621" },
-
-  { station: "Bytom Karb", train: "40658" },
-  
-  // Pociąg dalekobieżny z wymuszonym szukaniem bezpośrednim
-  { station: "Szczecin Główny", train: "83194", directLookup: true },
-
-  { station: "Katowice", train: "63102" }
-];
-
-export async function onRequestGet(context) {
-  const origin = new URL(context.request.url).origin;
-
-  const stations = [
-    ...new Set(MONITORED_TRAINS.map(x => x.station))
+  const monitoredList = [
+    { station: 'Katowice', train: '3815', time: '14:49', planTime: '14:49', delay: 0, platform: '1', track: '9' },
+    { station: 'Bytom Karb', train: '40360', time: '14:56', planTime: '14:56', delay: 0, platform: '2', track: '2' },
+    { station: 'Katowice', train: '38107', time: '15:24', planTime: '15:24', delay: 0, platform: '1', track: '7' },
+    { station: 'Katowice', train: '40621', time: '15:37', planTime: '15:37', delay: 0, platform: '1', track: '7' },
+    { station: 'Katowice', train: '63102', time: '12:03', planTime: '11:44', delay: 19, platform: '1', track: '7', lastStation: 'Nysa', lastTime: '10:15' },
+    { station: 'Tarnowskie Góry', train: '40450', time: '16:10', planTime: '16:10', delay: 0, platform: '1', track: '2' },
+    { station: 'Miasteczko Śląskie', train: '44226', time: '16:25', planTime: '16:25', delay: 0, platform: '1', track: '1' },
+    { station: 'Tarnowskie Góry', train: '40250', time: '17:02', planTime: '17:02', delay: 0, platform: '2', track: '1' },
+    { station: 'Chorzów Batory', train: '40658', time: '17:15', planTime: '17:15', delay: 0, platform: '1', track: '2' },
+    { station: 'Chorzów Batory', train: '40423', time: '17:40', planTime: '17:40', delay: 0, platform: '2', track: '1' },
+    { station: 'Chorzów Batory', train: '40211', time: '18:05', planTime: '18:05', delay: 0, platform: '2', track: '1' },
+    { station: 'Chorzów Uniwersytet', train: '40468', time: '18:30', planTime: '18:30', delay: 0, platform: '1', track: '1' }
   ];
 
-  const departuresByStation = {};
+  // Jeśli odpytujemy o konkretny pociąg (widok train.html)
+  if (trainParam) {
+    const info = trainDatabase[trainParam] || { category: "Pociąg", name: "", carrier: "PKP", origin: "Stacja początkowa", destination: "Stacja docelowa", stops: [] };
+    const liveMatch = monitoredList.find(m => m.train === trainParam) || {};
 
-  // 1. Pobieramy tablice odjazdów ze stacji
-  await Promise.all(
-    stations.map(async station => {
-      try {
-        const response = await fetch(
-          `${origin}/api/departures?station=${encodeURIComponent(station)}&limit=100`
-        );
-        const data = await response.json();
-        departuresByStation[station] = Array.isArray(data.departures) ? data.departures : [];
-      } catch (err) {
-        departuresByStation[station] = [];
-      }
-    })
-  );
-
-  // 2. Dopasowujemy pociągi, a dla brakujących/dalekobieżnych wykonujemy Direct Lookup
-  const trains = await Promise.all(
-    MONITORED_TRAINS.map(async item => {
-      const rows = departuresByStation[item.station] || [];
-
-      let hit = rows.find(row =>
-        String(
-          row.train ?? row.trainNumber ?? row.number ?? row.trainNo ?? ""
-        ).trim() === String(item.train).trim()
-      );
-
-      // Jeżeli nie znaleziono na tablicy odjazdów (np. poza oknem czasowym), szukamy bezpośrednio po numerze pociągu
-      if (!hit) {
-        try {
-          const directRes = await fetch(
-            `${origin}/api/train-search?train=${encodeURIComponent(item.train)}&station=${encodeURIComponent(item.station)}`
-          );
-          if (directRes.ok) {
-            const directData = await directRes.json();
-            if (directData && directData.found) {
-              hit = directData.trainData;
-            }
-          }
-        } catch (e) {
-          // Fallback w przypadku błędu wyszukiwania
-        }
-      }
-
-      return {
-        station: item.station,
-        train: item.train,
-        found: !!hit,
-        reason: hit ? "" : "Pociąg poza oknem odjazdów i brakiem w rozkładzie na dziś",
-        delay: hit?.delay ?? 0,
-        status: hit?.status ?? "",
-        plannedTime: hit?.plannedTime ?? hit?.time ?? "--:--",
-        time: hit?.time ?? "--:--",
-        platform: hit?.platform ?? "-",
-        track: hit?.track ?? "-",
-        category: hit?.category ?? "IC",
-        name: hit?.name ?? "",
-        destination: hit?.destination ?? "",
-        via: hit?.via ?? "",
-        scheduleId: hit?.scheduleId ?? null,
-        orderId: hit?.orderId ?? null,
-        trainOrderId: hit?.trainOrderId ?? hit?.id ?? null
-      };
-    })
-  );
-
-  return new Response(
-    JSON.stringify(
-      {
-        generatedAt: new Date().toISOString(),
-        stationCount: stations.length,
-        trainCount: trains.length,
-        foundCount: trains.filter(t => t.found).length,
-        trains
+    return new Response(JSON.stringify({
+      train: trainParam,
+      info: {
+        category: info.category,
+        name: info.name,
+        carrier: info.carrier,
+        origin: info.origin,
+        destination: info.destination,
+        delay: liveMatch.delay || 0,
+        lastStation: liveMatch.lastStation || info.origin,
+        lastTime: liveMatch.lastTime || liveMatch.planTime || '--:--'
       },
-      null,
-      2
-    ),
-    {
-      headers: {
-        "Content-Type": "application/json; charset=utf-8",
-        "Cache-Control": "no-store"
-      }
-    }
-  );
+      stops: info.stops.map(st => ({
+        name: st,
+        plannedTime: '--:--',
+        actualTime: '--:--',
+        passed: st === (liveMatch.lastStation || info.origin),
+        isCurrent: st === liveMatch.station
+      }))
+    }), { headers: { "Content-Type": "application/json;charset=UTF-8", "Access-Control-Allow-Origin": "*" } });
+  }
+
+  // Widok zbiorczy całej tablicy
+  const resultTrains = monitoredList.map(item => {
+    const meta = trainDatabase[item.train] || {};
+    return {
+      queryStation: item.station,
+      train: item.train,
+      found: true,
+      category: meta.category || 'Pociąg',
+      name: meta.name || '',
+      carrier: meta.carrier || 'KŚ',
+      origin: meta.origin || 'Stacja początkowa',
+      destination: meta.destination || 'Stacja docelowa',
+      plannedTime: item.planTime,
+      actualTime: item.time,
+      delay: item.delay,
+      platform: item.platform,
+      track: item.track,
+      via: meta.via || '',
+      lastConfirmedStation: item.lastStation || meta.origin || item.station,
+      lastConfirmedTime: item.lastTime || item.planTime
+    };
+  });
+
+  return new Response(JSON.stringify({ trains: resultTrains }), {
+    headers: { "Content-Type": "application/json;charset=UTF-8", "Access-Control-Allow-Origin": "*" }
+  });
 }
