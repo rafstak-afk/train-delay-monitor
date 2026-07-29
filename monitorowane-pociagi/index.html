@@ -1,214 +1,186 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tablica Monitorowania</title>
-    <style>
-        :root {
-            --bg-main: #101820;
-            --panel-bg: #102235;
-            --panel-border: #31516f;
-            --text-main: #ffffff;
-            --text-muted: #93c5fd;
-            --accent-green: #5dd39e;
-            --accent-red: #ff6b6b;
-            --accent-yellow: #ffcc00;
-            --accent-blue: #38bdf8;
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
-        body { background-color: var(--bg-main); color: var(--text-main); padding: 12px; max-width: 900px; margin: 0 auto; font-size: 15px; }
-
-        header { margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--panel-border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
-        h1 { font-size: 1.4rem; font-weight: 900; }
-
-        .top-bar-actions { display: flex; align-items: center; gap: 12px; }
-        .timer-badge { font-size: 13px; color: var(--text-muted); font-weight: 700; background: rgba(255,255,255,0.05); padding: 6px 10px; border-radius: 6px; border: 1px solid var(--panel-border); }
-
-        .global-alert-panel {
-            background: rgba(255, 107, 107, 0.12);
-            border: 1px solid var(--accent-red);
-            border-radius: 10px;
-            padding: 12px 16px;
-            margin-bottom: 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .alert-summary { font-size: 15px; font-weight: 800; color: #ff9999; display: flex; align-items: center; gap: 8px; }
-        
-        .btn-notify {
-            background: var(--accent-red);
-            color: #fff;
-            border: none;
-            padding: 8px 14px;
-            border-radius: 8px;
-            font-weight: 900;
-            font-size: 13px;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .btn-notify.enabled { background: var(--accent-green); color: #101820; }
-
-        .board-list { display: flex; flex-direction: column; gap: 10px; width: 100%; }
-
-        .card { background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 12px; padding: 14px; text-decoration: none; color: inherit; display: flex; flex-direction: column; gap: 8px; }
-        .station-header { font-size: 18px; color: var(--text-muted); font-weight: 900; border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 4px; }
-
-        .train-row { display: grid; grid-template-columns: 80px 95px 1fr; gap: 12px; align-items: center; }
-        .delay { font-size: 34px; font-weight: 900; color: var(--accent-green); line-height: 1; }
-        .delay.bad { color: var(--accent-red); }
-
-        .time-box { display: flex; flex-direction: column; }
-        .time-main { font-size: 22px; font-weight: 900; color: var(--accent-green); }
-        .time-main.delayed { color: var(--accent-red); }
-        .time-sub { font-size: 13px; font-weight: 700; color: var(--text-muted); }
-
-        .info-box { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-        .train-title { font-size: 18px; font-weight: 900; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-
-        .carrier-badge { font-size: 12px; padding: 2px 8px; border-radius: 999px; font-weight: 900; }
-        .carrier-badge.ks { background: #0072bc; color: #ffffff; border: 1px solid #38bdf8; }
-        .carrier-badge.ic { background: #111827; color: #fb923c; border: 1px solid #fb923c; }
-
-        .route-line { font-size: 15px; font-weight: 800; color: #ffffff; }
-        .route-line span { color: var(--text-muted); font-weight: normal; }
-
-        .last-confirmed-box { background: rgba(15, 23, 42, 0.8); border-left: 3px solid #38bdf8; padding: 6px 10px; border-radius: 4px; font-size: 13.5px; color: #e0f2fe; }
-        .via-line { font-size: 13.5px; color: rgba(255, 255, 255, 0.85); }
-        .meta-line { font-size: 13.5px; color: rgba(255, 255, 255, 0.7); }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tablica Monitorowania Pociągów</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { background-color: #0b132b; color: #e0e1dd; font-family: sans-serif; }
+    .card { background-color: #1c2541; border: 1px solid #3a506b; }
+    .badge-delay { background-color: #7209b7; color: #fff; }
+    .badge-on-time { background-color: #38b000; color: #fff; }
+  </style>
 </head>
-<body>
-    <header>
-        <h1>🖥️ Tablica Monitorowania</h1>
-        <div class="top-bar-actions">
-            <div class="timer-badge">⏱️ Odświeżenie za: <span id="countdown">5:00</span></div>
-            <button style="background:#0b57d0; color:#fff; border:0; padding:8px 14px; border-radius:8px; font-weight:900; cursor:pointer;" onclick="manualRefresh()">↻ Odśwież teraz</button>
-        </div>
-    </header>
+<body class="p-4 md:p-8 max-w-5xl mx-auto">
 
-    <div class="global-alert-panel">
-        <div class="alert-summary" id="alertSummaryText">
-            ⚠️ Ładowanie statusu opóźnień...
-        </div>
-        <button class="btn-notify" id="btnNotify" onclick="toggleNotifications()">
-            🔔 Włącz powiadomienia o opóźnieniach
-        </button>
+  <header class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4 border-b border-slate-700 pb-4">
+    <div class="flex items-center gap-3">
+      <i class="fa-solid fa-train-subway text-3xl text-cyan-400"></i>
+      <h1 class="text-2xl font-bold">Tablica Monitorowania Pociągów</h1>
     </div>
+    <div class="flex items-center gap-3">
+      <span id="refresh-counter" class="text-xs text-slate-400">Odświeżenie za: <b id="timer">60</b>s</span>
+      <button onclick="loadMonitoredTrains()" class="bg-cyan-600 hover:bg-cyan-500 text-white px-4 py-2 rounded-lg text-sm font-semibold transition">
+        <i class="fa-solid fa-rotate-right mr-1"></i> Odśwież teraz
+      </button>
+    </div>
+  </header>
 
-    <main class="board-list" id="boardContainer">
-        <div style="color: var(--text-muted); text-align:center; padding:20px;">Ładowanie danych z API...</div>
-    </main>
+  <div id="alert-banner" class="hidden mb-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 flex justify-between items-center">
+    <div class="flex items-center gap-2">
+      <i class="fa-solid fa-triangle-exclamation text-amber-400 text-xl"></i>
+      <span id="alert-text" class="font-medium"></span>
+    </div>
+  </div>
 
-    <script>
-        const REFRESH_INTERVAL_SECONDS = 300; // 5 minut
-        let countdownSeconds = REFRESH_INTERVAL_SECONDS;
+  <div id="trains-container" class="space-y-4">
+    <div class="text-center py-12 text-slate-400">
+      <i class="fa-solid fa-circle-notch fa-spin text-3xl mb-3 text-cyan-400"></i>
+      <p>Pobieranie aktualnych rozkładów i tras...</p>
+    </div>
+  </div>
 
-        function formatTime(sec) {
-            const m = Math.floor(sec / 60);
-            const s = sec % 60;
-            return `${m}:${s < 10 ? '0' : ''}${s}`;
+  <script>
+    let countdown = 60;
+
+    async function fetchAPI(endpoint) {
+      try {
+        const res = await fetch('/api/' + endpoint);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return await res.json();
+      } catch (err) {
+        console.error('Błąd pobierania:', endpoint, err);
+        return null;
+      }
+    }
+
+    async function loadMonitoredTrains() {
+      const container = document.getElementById('trains-container');
+      const alertBanner = document.getElementById('alert-banner');
+      const alertText = document.getElementById('alert-text');
+      
+      const operationsData = await fetchAPI('operations');
+      
+      if (!operationsData || !Array.isArray(operationsData) || operationsData.length === 0) {
+        container.innerHTML = `
+          <div class="card p-8 rounded-xl text-center text-slate-400">
+            <i class="fa-solid fa-triangle-exclamation text-3xl mb-2 text-amber-400"></i>
+            <p>Brak aktywnych opóźnionych lub monitorowanych pociągów.</p>
+          </div>`;
+        alertBanner.classList.add('hidden');
+        return;
+      }
+
+      let totalDelayed = 0;
+      let totalMinutes = 0;
+      let html = '';
+
+      for (const train of operationsData) {
+        const delay = train.delay || train.delayMinutes || 0;
+        if (delay > 0) {
+          totalDelayed++;
+          totalMinutes += delay;
         }
 
-        function updateTimer() {
-            countdownSeconds--;
-            if (countdownSeconds <= 0) {
-                fetchMonitoredTrains();
-                countdownSeconds = REFRESH_INTERVAL_SECONDS;
-            }
-            document.getElementById('countdown').innerText = formatTime(countdownSeconds);
+        const trainName = train.trainName || train.name || `Pociąg ${train.trainNumber || ''}`;
+        const trainNo = train.trainNumber || '';
+        const category = train.category || 'IC';
+        const fromStation = train.from || train.origin || 'Stacja początkowa';
+        const toStation = train.to || train.destination || 'Stacja docelowa';
+        const lastLocation = train.lastStation || train.currentStation || 'W drodze';
+        const lastTime = train.lastReportTime || '--:--';
+
+        let routeHtml = '';
+        if (train.scheduleId || train.id) {
+          const routeData = await fetchAPI(`schedules/route/${train.scheduleId || train.id}`);
+          if (routeData && Array.isArray(routeData.stops)) {
+            routeHtml = routeData.stops.map(stop => {
+              const stopDelay = stop.delay > 0 ? `<span class="text-amber-400 font-bold">+${stop.delay} min</span>` : '<span class="text-emerald-400">o czasie</span>';
+              const peronTor = (stop.platform || stop.track) ? `peron ${stop.platform || '-'} · tor ${stop.track || '-'}` : 'b.d.';
+              const isPassed = stop.passed ? 'opacity-50' : 'font-semibold';
+              
+              return `
+                <div class="flex items-center justify-between py-2 border-b border-slate-700/50 text-sm ${isPassed}">
+                  <div class="flex items-center gap-3">
+                    <i class="${stop.passed ? 'fa-regular fa-circle-check text-slate-500' : 'fa-solid fa-location-dot text-cyan-400'}"></i>
+                    <div>
+                      <div class="text-white">${stop.stationName}</div>
+                      <div class="text-xs text-slate-400">${peronTor}</div>
+                    </div>
+                  </div>
+                  <div class="text-right">
+                    <div><span class="text-slate-400 line-through text-xs mr-1">${stop.plannedTime || ''}</span> <b class="text-cyan-300">${stop.actualTime || stop.plannedTime}</b></div>
+                    <div class="text-xs">${stopDelay}</div>
+                  </div>
+                </div>
+              `;
+            }).join('');
+          }
         }
 
-        setInterval(updateTimer, 1000);
-
-        function manualRefresh() {
-            fetchMonitoredTrains();
-            countdownSeconds = REFRESH_INTERVAL_SECONDS;
-            document.getElementById('countdown').innerText = formatTime(countdownSeconds);
+        if (!routeHtml) {
+          routeHtml = '<p class="text-xs text-slate-400 italic py-2">Brak szczegółowych danych stacyjnych dla tej trasy.</p>';
         }
 
-        function toggleNotifications() {
-            if (!("Notification" in window)) {
-                alert("Twoja przeglądarka nie wspiera powiadomień Web Push.");
-                return;
-            }
+        html += `
+          <div class="card rounded-xl p-5 shadow-lg">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-700/60 pb-4 gap-4">
+              <div class="flex items-center gap-4">
+                <div class="text-3xl font-black ${delay > 0 ? 'text-amber-400' : 'text-emerald-400'}">
+                  ${delay > 0 ? `+${delay}` : '0'}
+                  <span class="text-xs block text-slate-400 font-normal">min opóźnienia</span>
+                </div>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span class="bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded text-xs font-bold">${category}</span>
+                    <h2 class="text-xl font-bold text-white">${trainName} ${trainNo}</h2>
+                  </div>
+                  <p class="text-sm text-slate-300 mt-1">
+                    Z: <b>${fromStation}</b> ➔ Do: <b>${toStation}</b>
+                  </p>
+                </div>
+              </div>
+              <div class="text-right w-full md:w-auto bg-slate-800/50 p-3 rounded-lg border border-slate-700">
+                <div class="text-xs text-slate-400">Ostatnie zgłoszenie:</div>
+                <div class="text-sm font-semibold text-cyan-300"><i class="fa-solid fa-map-pin mr-1 text-red-400"></i>${lastLocation} (${lastTime})</div>
+              </div>
+            </div>
 
-            Notification.requestPermission().then(permission => {
-                const btn = document.getElementById('btnNotify');
-                if (permission === "granted") {
-                    btn.classList.add('enabled');
-                    btn.innerText = "✅ Powiadomienia włączone";
-                    new Notification("Tablica Monitorowania", { body: "Powiadomienia o opóźnieniach są aktywne." });
-                } else {
-                    alert("Nie wyrażono zgody na powiadomienia.");
-                }
-            });
-        }
+            <details class="mt-4 group">
+              <summary class="cursor-pointer text-sm font-semibold text-cyan-400 hover:text-cyan-300 flex items-center justify-between select-none">
+                <span><i class="fa-solid fa-route mr-2"></i>Pełny bieg pociągu (Rozkład i Stacje)</span>
+                <i class="fa-solid fa-chevron-down transition-transform group-open:rotate-180"></i>
+              </summary>
+              <div class="mt-3 pt-3 border-t border-slate-700/40 space-y-1">
+                ${routeHtml}
+              </div>
+            </details>
+          </div>
+        `;
+      }
 
-        async function fetchMonitoredTrains() {
-            const container = document.getElementById('boardContainer');
-            try {
-                const res = await fetch('/api/monitored-trains-v2');
-                const data = await res.json();
-                const trains = data.trains || [];
+      container.innerHTML = html;
 
-                const delayedTrains = trains.filter(t => Number(t.delay) > 0);
-                const totalDelayMin = delayedTrains.reduce((acc, curr) => acc + Number(curr.delay), 0);
+      if (totalDelayed > 0) {
+        alertText.innerHTML = `UWAGA: <b>${totalDelayed}</b> pociąg(ów) opóźnionych (Łącznie +${totalMinutes} min)`;
+        alertBanner.classList.remove('hidden');
+      } else {
+        alertBanner.classList.add('hidden');
+      }
+    }
 
-                const summaryEl = document.getElementById('alertSummaryText');
-                if (delayedTrains.length > 0) {
-                    summaryEl.innerHTML = `⚠️ UWAGA: <b>${delayedTrains.length}</b> pociąg(ów) opóźnionych (Łącznie +${totalDelayMin} min)`;
-                } else {
-                    summaryEl.innerHTML = `✅ Wszystkie monitorowane pociągi kursują zgodnie z planem`;
-                }
+    setInterval(() => {
+      countdown--;
+      document.getElementById('timer').innerText = countdown;
+      if (countdown <= 0) {
+        countdown = 60;
+        loadMonitoredTrains();
+      }
+    }, 1000);
 
-                container.innerHTML = trains.map(t => {
-                    const delay = Number(t.delay || 0);
-                    const delayCls = delay > 0 ? 'delay bad' : 'delay';
-                    const delayTxt = delay > 0 ? '+' + delay : '0';
-                    const carrierCls = (t.carrier || '').toUpperCase().includes('KŚ') ? 'ks' : 'ic';
-
-                    return `
-                        <a href="train.html?train=${encodeURIComponent(t.train)}" class="card">
-                            <div class="station-header">${t.queryStation}</div>
-                            <div class="train-row">
-                                <div class="${delayCls}">${delayTxt}</div>
-                                <div class="time-box">
-                                    <span class="time-main ${delay > 0 ? 'delayed' : ''}">${t.actualTime}</span>
-                                    <span class="time-sub">plan: ${t.plannedTime}</span>
-                                </div>
-                                <div class="info-box">
-                                    <div class="train-title">
-                                        <span class="carrier-badge ${carrierCls}">${t.carrier}</span>
-                                        ${t.category} ${t.name ? t.name + ' ' : ''}${t.train}
-                                    </div>
-                                    
-                                    <div class="route-line">
-                                        <span>Z:</span> <b>${t.origin}</b> ➔ <span>Do:</span> <b>${t.destination}</b>
-                                    </div>
-
-                                    <div class="last-confirmed-box">
-                                        📍 Ostatnie zgłoszenie: <b>${t.lastConfirmedStation}</b> (${t.lastConfirmedTime})
-                                    </div>
-
-                                    ${t.via ? `<div class="via-line">przez: ${t.via}</div>` : ''}
-                                    <div class="meta-line">peron ${t.platform} · tor ${t.track}</div>
-                                </div>
-                            </div>
-                        </a>
-                    `;
-                }).join('');
-            } catch (err) {
-                container.innerHTML = '<div style="color:var(--accent-red); text-align:center;">Błąd pobierania danych.</div>';
-            }
-        }
-
-        fetchMonitoredTrains();
-    </script>
+    loadMonitoredTrains();
+  </script>
 </body>
 </html>
