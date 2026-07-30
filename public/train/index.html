@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bieg Pociągu - Szczegóły</title>
+  <title>Bieg Pociągu</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
@@ -14,29 +14,21 @@
 <body class="p-4 md:p-8 max-w-4xl mx-auto min-h-screen flex flex-col">
 
   <div class="flex items-center justify-between mb-4">
-    <a href="/moje-pociagi/" class="inline-flex items-center text-cyan-400 hover:text-cyan-300 text-xs font-semibold">
-      <i class="fa-solid fa-arrow-left mr-2"></i> Powrót do Moje Pociągi
-    </a>
-    <a href="/monitorowane-pociagi/" class="inline-flex items-center text-slate-400 hover:text-white text-xs">
-      Tablica opóźnień <i class="fa-solid fa-arrow-right ml-1"></i>
+    <a href="/monitorowane-pociagi/" class="inline-flex items-center text-cyan-400 hover:text-cyan-300 text-xs font-semibold">
+      <i class="fa-solid fa-arrow-left mr-2"></i> Powrót do Tablicy Monitorowania
     </a>
   </div>
 
   <div id="train-header" class="card p-6 rounded-xl shadow-lg mb-6">
-    <div class="animate-pulse flex space-x-4">
-      <div class="flex-1 space-y-4 py-1">
-        <div class="h-6 bg-slate-700 rounded w-3/4"></div>
-        <div class="h-4 bg-slate-700 rounded w-1/2"></div>
-      </div>
-    </div>
+    <!-- Wypełniane dynamicznie -->
   </div>
 
   <div class="card p-6 rounded-xl shadow-lg flex-1">
     <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-700">
       <h2 class="text-base font-bold text-white flex items-center gap-2">
-        <i class="fa-solid fa-route text-cyan-400"></i> Rozkład i Trasa Pociągu
+        <i class="fa-solid fa-route text-cyan-400"></i> Rozkład i Bieg Pociągu
       </h2>
-      <button onclick="loadRouteDetails()" class="text-xs text-cyan-400 hover:text-cyan-300 font-semibold flex items-center gap-1">
+      <button onclick="loadRoute()" class="text-xs text-cyan-400 hover:text-cyan-300 font-semibold flex items-center gap-1">
         <i class="fa-solid fa-rotate-right"></i> Odśwież
       </button>
     </div>
@@ -44,7 +36,7 @@
     <div id="route-container">
       <div class="text-center py-8 text-slate-400">
         <i class="fa-solid fa-circle-notch fa-spin text-2xl mb-2 text-cyan-400"></i>
-        <p class="text-xs">Ładowanie rozkładu z systemu PLK...</p>
+        <p class="text-xs">Ładowanie rozkładu jazdy...</p>
       </div>
     </div>
   </div>
@@ -55,26 +47,18 @@
 
   <script>
     const params = new URLSearchParams(window.location.search);
-    const trainNo = params.get('train') || '34015';
-    const category = params.get('category') || 'IC';
-    const name = params.get('name') || 'CARPATIA';
-    const destination = params.get('destination') || 'Muenchen Hbf';
-    const scheduleId = params.get('scheduleId') || '2026';
-    const orderId = params.get('orderId') || '';
-    const trainOrderId = params.get('trainOrderId') || '';
-    const station = params.get('station') || 'Tarnowskie Góry';
+    const trainNo = params.get('train') || '40450';
+    const station = params.get('station') || 'Stacja';
+    const destination = params.get('destination') || 'Kierunek';
 
-    const headerTitle = name.includes(trainNo) ? `${category} ${name}` : `${category} ${name} #${trainNo}`;
-    
     document.getElementById('train-header').innerHTML = `
       <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <div class="flex items-center gap-2 mb-1">
-            <span class="bg-cyan-500/20 text-cyan-300 px-2.5 py-0.5 rounded text-xs font-bold">${category}</span>
-            <h1 class="text-2xl font-extrabold text-white">${headerTitle}</h1>
+            <span class="bg-cyan-500/20 text-cyan-300 px-2.5 py-0.5 rounded text-xs font-bold">Pociąg #${trainNo}</span>
           </div>
           <p class="text-xs text-slate-300">
-            Relacja: <b class="text-white">${station} ➔ ${destination}</b>
+            Stacja odniesienia: <b class="text-cyan-300">${station}</b> ➔ Kierunek: <b class="text-white">${destination}</b>
           </p>
         </div>
         <div class="inline-flex items-center gap-2 bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 text-xs px-3.5 py-2 rounded-lg font-bold">
@@ -83,40 +67,30 @@
       </div>
     `;
 
-    async function fetchAPI(endpoint) {
-      try {
-        const res = await fetch('/api/' + endpoint);
-        if (!res.ok) return null;
-        return await res.json();
-      } catch (e) {
-        return null;
-      }
-    }
-
-    async function loadRouteDetails() {
+    async function loadRoute() {
       const container = document.getElementById('route-container');
-      container.innerHTML = `
-        <div class="text-center py-8 text-slate-400">
-          <i class="fa-solid fa-circle-notch fa-spin text-2xl mb-2 text-cyan-400"></i>
-          <p class="text-xs">Sprawdzanie połączenia z serwerem PLK...</p>
-        </div>`;
+      
+      let stops = null;
+      try {
+        const res = await fetch(`/api/operations/train/${trainNo}`);
+        if (res.ok) {
+          const data = await res.json();
+          stops = data?.stops || data?.route || (Array.isArray(data) ? data : null);
+        }
+      } catch (e) {
+        stops = null;
+      }
 
-      let data = null;
-      if (scheduleId && orderId) data = await fetchAPI(`schedules/route/${scheduleId}/${orderId}`);
-      if (!data && scheduleId && trainOrderId) data = await fetchAPI(`schedules/route/${scheduleId}/${trainOrderId}`);
-      if (!data && trainNo) data = await fetchAPI(`operations/train/${trainNo}`);
-
-      const stops = data?.stops || data?.route || data?.data?.stops || (Array.isArray(data) ? data : null);
-
+      // Bezpieczny fallback w przypadku braku danych / statusu 404
       if (!stops || !Array.isArray(stops) || stops.length === 0) {
         container.innerHTML = `
           <div class="p-6 bg-slate-800/80 border border-slate-700 rounded-xl text-center text-slate-200">
             <div class="flex justify-center mb-3 text-cyan-400 text-3xl">
               <i class="fa-solid fa-train"></i>
             </div>
-            <h3 class="font-bold text-base text-white mb-1">${headerTitle}</h3>
+            <h3 class="font-bold text-base text-white mb-1">Pociąg #${trainNo}</h3>
             <p class="text-xs text-slate-300 mb-4 max-w-md mx-auto">
-              Pociąg znajduje się w rozkładzie jazdy (<b>kierunek: ${destination}</b>). Śledzenie pozycji GPS rozpoczyna się w momencie wypuszczenia składu na tor.
+              Pociąg znajduje się w rozkładzie jazdy. Śledzenie w czasie rzeczywistym aktywuje się w momencie odjazdu ze stacji początkowej.
             </p>
             <div class="inline-flex items-center gap-2 bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 text-xs px-4 py-2 rounded-lg font-semibold">
               <i class="fa-solid fa-circle-check"></i> Status: Rozkładowy (O czasie)
@@ -131,20 +105,16 @@
         const planArr = stop.arrPlan || stop.plannedTime || stop.time || '--:--';
         const realArr = stop.arrReal || stop.actualTime || planArr;
         const delay = stop.delay || stop.delayMinutes || 0;
-        const isCurrentStation = station && stName.toLowerCase().includes(station.toLowerCase());
+        const isCurrent = station && stName.toLowerCase().includes(station.toLowerCase());
 
         html += `
-          <div class="flex items-center justify-between p-3 rounded-lg border ${isCurrentStation ? 'bg-cyan-950/40 border-cyan-500/60 ring-1 ring-cyan-500' : 'bg-slate-800/40 border-slate-700/50'}">
+          <div class="flex items-center justify-between p-3 rounded-lg border ${isCurrent ? 'bg-cyan-950/40 border-cyan-500/60 ring-1 ring-cyan-500' : 'bg-slate-800/40 border-slate-700/50'}">
             <div class="flex items-center gap-3">
-              <i class="fa-solid ${isCurrentStation ? 'fa-location-crosshairs text-cyan-400 text-lg' : 'fa-location-dot text-slate-500'}"></i>
-              <div>
-                <div class="font-bold text-xs ${isCurrentStation ? 'text-cyan-300' : 'text-white'}">${stName}</div>
-              </div>
+              <i class="fa-solid ${isCurrent ? 'fa-location-crosshairs text-cyan-400' : 'fa-location-dot text-slate-500'}"></i>
+              <div class="font-bold text-xs ${isCurrent ? 'text-cyan-300' : 'text-white'}">${stName}</div>
             </div>
             <div class="text-right">
-              <div class="text-xs font-mono">
-                <b class="text-cyan-300">${realArr}</b>
-              </div>
+              <div class="text-xs font-mono font-bold text-cyan-300">${realArr}</div>
               <div class="text-[10px] font-semibold ${delay > 0 ? 'text-pink-400' : 'text-emerald-400'}">
                 ${delay > 0 ? `+${delay} min` : 'o czasie'}
               </div>
@@ -157,7 +127,7 @@
       container.innerHTML = html;
     }
 
-    loadRouteDetails();
+    loadRoute();
   </script>
 </body>
 </html>
