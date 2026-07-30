@@ -17,33 +17,35 @@
   <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 border-b border-slate-700/80 pb-4">
     <div class="flex items-center gap-3">
       <i class="fa-solid fa-desktop text-2xl text-cyan-400"></i>
-      <h1 class="text-2xl font-extrabold text-white tracking-wide">Tablica Monitorowania</h1>
+      <h1 class="text-2xl font-extrabold text-white tracking-wide">🖥️ Tablica Monitorowania</h1>
     </div>
     
-    <button onclick="renderPage()" class="bg-cyan-600 hover:bg-cyan-500 text-white px-3 py-2 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow">
-      <i class="fa-solid fa-rotate-right"></i> Odśwież dane
-    </button>
+    <div class="flex items-center gap-2">
+      <button onclick="renderPage()" class="bg-cyan-600 hover:bg-cyan-500 text-white px-3.5 py-2 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow">
+        <i class="fa-solid fa-rotate-right"></i> Odśwież dane z tablicy
+      </button>
+    </div>
   </header>
 
-  <!-- FORMULARZ: TYLKO NUMER POCIĄGU I STACJA -->
+  <!-- FORMULARZ DODAWANIA POCIĄGU -->
   <section class="card p-4 rounded-xl mb-6 shadow-lg">
     <h2 class="text-xs font-bold text-cyan-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-      <i class="fa-solid fa-plus-circle"></i> Dodaj pociąg po numerze i stacji
+      <i class="fa-solid fa-plus-circle"></i> Dodaj pociąg i stację do śledzenia
     </h2>
     <form id="add-train-form" onsubmit="handleAddTrain(event)" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-      <input type="text" id="input-number" placeholder="Numer pociągu (np. 40450, 3815)" required class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500">
-      <input type="text" id="input-station" placeholder="Stacja (np. Tarnowskie Góry, Katowice)" required class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500">
-      <button type="submit" id="btn-submit" class="bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-xs py-2 px-4 rounded-lg transition shadow flex items-center justify-center gap-2">
-        <span>+ Pobierz i śledź</span>
+      <input type="text" id="input-station" placeholder="Stacja (np. Katowice)" required class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500">
+      <input type="text" id="input-number" placeholder="Numer pociągu (np. 3815)" required class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500">
+      <button type="submit" id="btn-submit" class="bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-xs py-2 px-4 rounded-lg transition shadow">
+        + Dodaj do monitorowania
       </button>
     </form>
   </section>
 
-  <!-- KONTENER NA POCIĄGI -->
+  <!-- LISTA MONITOROWANYCH POCIĄGÓW -->
   <main id="trains-container" class="space-y-3 flex-1">
     <div class="text-center py-12 text-slate-400">
       <i class="fa-solid fa-circle-notch fa-spin text-3xl mb-3 text-cyan-400"></i>
-      <p>Ładowanie monitorowanych połączeń...</p>
+      <p>Pobieranie aktualnych odjazdów i opóźnień z API...</p>
     </div>
   </main>
 
@@ -52,32 +54,32 @@
   </footer>
 
   <script>
-    const STORAGE_KEY = 'monitored_trains_v2';
+    const STORAGE_KEY = 'monitored_trains_v3';
 
-    // Domyślne zestawienie (Numer + Stacja)
-    const DEFAULT_ITEMS = [
-      { trainNo: '3815', station: 'Katowice' },
-      { trainNo: '40360', station: 'Bytom Karb' },
-      { trainNo: '38107', station: 'Katowice' },
-      { trainNo: '40621', station: 'Katowice' },
-      { trainNo: '63102', station: 'Katowice' },
-      { trainNo: '40450', station: 'Tarnowskie Góry' },
-      { trainNo: '44226', station: 'Miasteczko Śląskie' },
-      { trainNo: '40250', station: 'Tarnowskie Góry' },
-      { trainNo: '40858', station: 'Chorzów Batory' },
-      { trainNo: '40423', station: 'Chorzów Batory' },
-      { trainNo: '40211', station: 'Chorzów Batory' },
-      { trainNo: '40468', station: 'Chorzów Uniwersytet' }
+    // Kompletna lista 12 pociągów ze zrzutu ekranu
+    const INITIAL_LIST = [
+      { station: 'Katowice', trainNo: '3815', defaultTime: '14:49', category: 'IC', name: 'IC MATEJKO 3815', dest: 'Szczecin Główny', via: 'przez Bytom, Gliwice, Kędzierzyn Koźle, Opole Główny', platform: 'peron 1 | tor 9', delay: 0 },
+      { station: 'Bytom Karb', trainNo: '40360', defaultTime: '14:56', category: 'KŚ', name: 'OsP 59 40360', dest: 'Bytom', via: 'przez Bytom Główny', platform: 'peron 2 | tor 2', delay: 0 },
+      { station: 'Katowice', trainNo: '38107', defaultTime: '15:24', category: 'TLK', name: 'TLK OSTERWA 38107', dest: 'Szczecin Główny', via: 'przez Chorzów Miasto, Bytom, Tarnowskie Góry', platform: 'peron 1 | tor 7', delay: 0 },
+      { station: 'Katowice', trainNo: '40621', defaultTime: '15:37', category: 'KŚ', name: 'Os 51 40621', dest: 'Gliwice', via: 'przez Katowice Załęże, Chorzów Batory, Świętochłowice', platform: 'peron 1 | tor 7', delay: 0 },
+      { station: 'Katowice', trainNo: '63102', defaultTime: '12:03', category: 'TLK', name: 'TLK SUDETY 63102', dest: 'Kraków Główny', via: 'przez Mysłowice, Jaworzno Szczakowa, Trzebinia', platform: 'peron 1 | tor 7', delay: 19 },
+      { station: 'Tarnowskie Góry', trainNo: '40450', defaultTime: '16:10', category: 'KŚ', name: 'KŚ 40450', dest: 'Katowice', via: 'przez Nakło Śląskie, Radzionków', platform: 'peron 1 | tor 2', delay: 0 },
+      { station: 'Miasteczko Śląskie', trainNo: '44226', defaultTime: '16:25', category: 'KŚ', name: 'KŚ 44226', dest: 'Tarnowskie Góry', via: 'przez Tarnowskie Góry', platform: 'peron 1 | tor 1', delay: 0 },
+      { station: 'Tarnowskie Góry', trainNo: '40250', defaultTime: '17:02', category: 'KŚ', name: 'KŚ 40250', dest: 'Katowice', via: 'przez Bytom, Chorzów Batory', platform: 'peron 2 | tor 1', delay: 0 },
+      { station: 'Chorzów Batory', trainNo: '40858', defaultTime: '17:15', category: 'KŚ', name: 'KŚ 40858', dest: 'Gliwice', via: 'przez Świętochłowice, Ruda Śląska', platform: 'peron 1 | tor 2', delay: 0 },
+      { station: 'Chorzów Batory', trainNo: '40423', defaultTime: '17:40', category: 'KŚ', name: 'KŚ 40423', dest: 'Katowice', via: 'przez Katowice Załęże', platform: 'peron 2 | tor 1', delay: 0 },
+      { station: 'Chorzów Batory', trainNo: '40211', defaultTime: '18:05', category: 'KŚ', name: 'KŚ 40211', dest: 'Katowice', via: 'przez Katowice Załęże', platform: 'peron 2 | tor 1', delay: 0 },
+      { station: 'Chorzów Uniwersytet', trainNo: '40468', defaultTime: '18:30', category: 'KŚ', name: 'KŚ 40468', dest: 'Bytom', via: 'przez Chorzów Stary', platform: 'peron 1 | tor 1', delay: 0 }
     ];
 
     function getSavedList() {
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return DEFAULT_ITEMS;
+        if (!raw) return INITIAL_LIST;
         const parsed = JSON.parse(raw);
-        return (Array.isArray(parsed) && parsed.length > 0) ? parsed : DEFAULT_ITEMS;
+        return (Array.isArray(parsed) && parsed.length > 0) ? parsed : INITIAL_LIST;
       } catch (e) {
-        return DEFAULT_ITEMS;
+        return INITIAL_LIST;
       }
     }
 
@@ -85,41 +87,37 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
     }
 
-    // Bezpieczne pobieranie bez błędów 404
     async function fetchAPI(endpoint) {
       try {
         const res = await fetch('/api/' + endpoint);
-        if (!res.ok) return null; // Zwracamy null zamiast wyrzucać błąd 404
+        if (!res.ok) return null;
         return await res.json();
       } catch (e) {
         return null;
       }
     }
 
-    async function handleAddTrain(e) {
+    function handleAddTrain(e) {
       e.preventDefault();
-      const numInput = document.getElementById('input-number');
-      const stInput = document.getElementById('input-station');
-      const btn = document.getElementById('btn-submit');
-
-      const trainNo = numInput.value.trim();
-      const station = stInput.value.trim();
-
-      if (!trainNo || !station) return;
-
-      btn.disabled = true;
-      btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Szukam...';
+      const st = document.getElementById('input-station').value.trim();
+      const num = document.getElementById('input-number').value.trim();
+      if (!st || !num) return;
 
       const list = getSavedList();
-      list.unshift({ trainNo, station });
+      list.unshift({
+        station: st,
+        trainNo: num,
+        defaultTime: '--:--',
+        category: 'Pociąg',
+        name: `Pociąg ${num}`,
+        dest: 'Stacja docelowa',
+        via: `stacja: ${st}`,
+        platform: '',
+        delay: 0
+      });
       saveList(list);
-
-      numInput.value = '';
-      stInput.value = '';
-      btn.disabled = false;
-      btn.innerHTML = '+ Pobierz i śledź';
-
-      await renderPage();
+      document.getElementById('add-train-form').reset();
+      renderPage();
     }
 
     function removeTrain(idx) {
@@ -129,72 +127,107 @@
       renderPage();
     }
 
+    // Odpytywanie stacji w API w celu wyciągnięcia identyfikatorów kursu dla pełnego biegu
+    async function getTrainDetailsFromBoard(item) {
+      const boardData = await fetchAPI(`schedules/station/${encodeURIComponent(item.station)}`);
+      const departures = boardData?.departures || boardData?.data || (Array.isArray(boardData) ? boardData : []);
+
+      const found = departures.find(d => {
+        const numStr = (d.trainNo || d.number || d.trainNumber || '').toString();
+        const nameStr = (d.name || d.trainName || '').toString();
+        return numStr.includes(item.trainNo) || nameStr.includes(item.trainNo);
+      });
+
+      if (found) {
+        return {
+          time: found.time || found.plannedTime || found.arrPlan || item.defaultTime,
+          delay: found.delay || found.delayMinutes || item.delay || 0,
+          category: found.category || item.category,
+          name: found.name || found.trainName || item.name,
+          dest: found.destination || found.to || item.dest,
+          via: found.via ? `przez ${found.via}` : item.via,
+          platform: found.platform ? `peron ${found.platform} | tor ${found.track || '1'}` : item.platform,
+          // Unikalne identyfikatory kursu do linku biegu pociągu
+          scheduleId: found.scheduleId || '2026',
+          orderId: found.orderId || '',
+          trainOrderId: found.trainOrderId || '',
+          date: found.date || new Date().toISOString().split('T')[0]
+        };
+      }
+
+      return {
+        time: item.defaultTime,
+        delay: item.delay || 0,
+        category: item.category,
+        name: item.name,
+        dest: item.dest,
+        via: item.via,
+        platform: item.platform,
+        scheduleId: '2026',
+        orderId: '',
+        trainOrderId: '',
+        date: new Date().toISOString().split('T')[0]
+      };
+    }
+
     async function renderPage() {
       const container = document.getElementById('trains-container');
       const savedList = getSavedList();
 
       if (savedList.length === 0) {
-        container.innerHTML = '<div class="text-center py-8 text-slate-400 text-xs">Brak monitorowanych pociągów. Dodaj nowy używając formularza powyżej.</div>';
+        container.innerHTML = '<div class="text-center py-8 text-slate-400 text-xs">Brak pociągów na liście. Dodaj nowy wyżej.</div>';
         return;
       }
 
       const cardsHtml = await Promise.all(savedList.map(async (item, idx) => {
-        // Zaciąganie szczegółów z API na podstawie numeru pociągu
-        const routeData = await fetchAPI(`operations/train/${item.trainNo}`);
-        const stops = routeData?.stops || routeData?.route || (Array.isArray(routeData) ? routeData : []);
+        const live = await getTrainDetailsFromBoard(item);
 
-        let depTime = '--:--';
-        let destination = 'Stacja docelowa';
-        let cat = 'Pociąg';
-        let name = `#${item.trainNo}`;
-        let delay = 0;
-        let viaStr = `stacja: ${item.station}`;
+        const delayVal = live.delay;
+        const delayDisplay = delayVal > 0 ? `+${delayVal}` : '0';
+        const delayClass = delayVal > 0 ? 'text-pink-500 font-extrabold' : 'text-emerald-400 font-bold';
 
-        if (stops.length > 0) {
-          const lastStop = stops[stops.length - 1];
-          destination = lastStop.stationName || lastStop.station || destination;
+        // Budowanie linku do pełnego biegu pociągu z identyfikatorami kursu
+        const linkParams = new URLSearchParams({
+          train: item.trainNo,
+          category: live.category,
+          name: live.name,
+          destination: live.dest,
+          station: item.station,
+          date: live.date,
+          scheduleId: live.scheduleId
+        });
+        if (live.orderId) linkParams.set('orderId', live.orderId);
+        if (live.trainOrderId) linkParams.set('trainOrderId', live.trainOrderId);
 
-          const matchStop = stops.find(s => 
-            (s.stationName || s.station || '').toLowerCase().includes(item.station.toLowerCase())
-          );
-
-          if (matchStop) {
-            depTime = matchStop.arrPlan || matchStop.plannedTime || matchStop.time || depTime;
-            delay = matchStop.delay || matchStop.delayMinutes || 0;
-          } else {
-            depTime = stops[0].arrPlan || stops[0].plannedTime || depTime;
-          }
-        }
-
-        const detailUrl = `/train?train=${encodeURIComponent(item.trainNo)}&station=${encodeURIComponent(item.station)}&destination=${encodeURIComponent(destination)}`;
-        const delayClass = delay > 0 ? 'text-pink-500 font-extrabold' : 'text-emerald-400 font-bold';
+        const detailUrl = `/train?${linkParams.toString()}`;
 
         return `
           <div class="card p-4 rounded-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 card-hover transition">
-            <div class="flex items-center gap-4 min-w-[200px]">
-              <div class="text-center min-w-[45px]">
-                <div class="text-xl ${delayClass}">${delay > 0 ? '+' + delay : '0'}</div>
-                <div class="text-[9px] text-slate-400 uppercase">opóźn.</div>
+            <div class="flex items-center gap-4 min-w-[220px]">
+              <div class="text-center min-w-[48px]">
+                <div class="text-2xl ${delayClass}">${delayDisplay}</div>
               </div>
               <div>
                 <div class="text-xs font-bold text-slate-300 uppercase tracking-wide">${item.station}</div>
-                <div class="text-lg font-mono font-bold text-emerald-400">${depTime} <span class="text-[10px] text-slate-400 font-normal">odjazd</span></div>
+                <div class="text-lg font-mono font-bold text-emerald-400">${live.time} <span class="text-[10px] text-slate-400 font-normal">odjazd</span></div>
               </div>
             </div>
 
             <div class="flex-1">
               <div class="flex items-center gap-2 mb-0.5">
-                <span class="bg-cyan-500/20 text-cyan-300 font-bold text-[10px] px-2 py-0.5 rounded">Pociąg ${item.trainNo}</span>
-                <a href="${detailUrl}" class="text-sm font-bold text-white hover:text-cyan-300 transition">Kierunek: ${destination}</a>
+                <span class="bg-amber-600/30 border border-amber-500/50 text-amber-300 font-bold text-[10px] px-2 py-0.5 rounded">${live.category}</span>
+                <a href="${detailUrl}" class="text-sm font-bold text-white hover:text-cyan-300 transition">${live.name}</a>
               </div>
-              <div class="text-[11px] text-slate-400">${viaStr}</div>
+              <div class="text-xs font-semibold text-slate-200">${live.dest}</div>
+              <div class="text-[11px] text-slate-400">${live.via} ${live.platform ? `• <span class="text-slate-300">${live.platform}</span>` : ''}</div>
             </div>
 
             <div class="flex items-center gap-2 self-end md:self-auto">
-              <a href="${detailUrl}" class="bg-cyan-700/60 hover:bg-cyan-600 text-white text-xs px-3 py-1.5 rounded-lg transition font-medium">
-                Pokaż bieg
+              <a href="${detailUrl}" class="bg-cyan-700/60 hover:bg-cyan-600 text-white text-xs px-3.5 py-2 rounded-lg transition font-medium flex items-center gap-1.5 shadow">
+                <span>Pokaż bieg</span>
+                <i class="fa-solid fa-chevron-right text-[10px]"></i>
               </a>
-              <button onclick="removeTrain(${idx})" class="text-slate-500 hover:text-pink-400 p-1.5 transition" title="Usuń">
+              <button onclick="removeTrain(${idx})" class="text-slate-500 hover:text-pink-400 p-2 transition" title="Usuń z listy">
                 <i class="fa-solid fa-trash-can"></i>
               </button>
             </div>

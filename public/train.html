@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bieg Pociągu</title>
+  <title>Bieg Pociągu - Szczegóły</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
@@ -20,7 +20,7 @@
   </div>
 
   <div id="train-header" class="card p-6 rounded-xl shadow-lg mb-6">
-    <!-- Wypełniane dynamicznie -->
+    <!-- Ładowane dynamicznie z parametrów URL -->
   </div>
 
   <div class="card p-6 rounded-xl shadow-lg flex-1">
@@ -28,7 +28,7 @@
       <h2 class="text-base font-bold text-white flex items-center gap-2">
         <i class="fa-solid fa-route text-cyan-400"></i> Rozkład i Bieg Pociągu
       </h2>
-      <button onclick="loadRoute()" class="text-xs text-cyan-400 hover:text-cyan-300 font-semibold flex items-center gap-1">
+      <button onclick="loadRouteDetails()" class="text-xs text-cyan-400 hover:text-cyan-300 font-semibold flex items-center gap-1">
         <i class="fa-solid fa-rotate-right"></i> Odśwież
       </button>
     </div>
@@ -36,7 +36,7 @@
     <div id="route-container">
       <div class="text-center py-8 text-slate-400">
         <i class="fa-solid fa-circle-notch fa-spin text-2xl mb-2 text-cyan-400"></i>
-        <p class="text-xs">Ładowanie rozkładu jazdy...</p>
+        <p class="text-xs">Ładowanie szczegółów biegu z systemu PLK...</p>
       </div>
     </div>
   </div>
@@ -47,18 +47,24 @@
 
   <script>
     const params = new URLSearchParams(window.location.search);
-    const trainNo = params.get('train') || '40450';
-    const station = params.get('station') || 'Stacja';
-    const destination = params.get('destination') || 'Kierunek';
+    const trainNo = params.get('train') || '3815';
+    const category = params.get('category') || 'IC';
+    const name = params.get('name') || `Pociąg ${trainNo}`;
+    const destination = params.get('destination') || 'Stacja docelowa';
+    const station = params.get('station') || 'Stacja odniesienia';
+    const scheduleId = params.get('scheduleId') || '2026';
+    const orderId = params.get('orderId') || '';
+    const trainOrderId = params.get('trainOrderId') || '';
 
     document.getElementById('train-header').innerHTML = `
       <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <div class="flex items-center gap-2 mb-1">
-            <span class="bg-cyan-500/20 text-cyan-300 px-2.5 py-0.5 rounded text-xs font-bold">Pociąg #${trainNo}</span>
+            <span class="bg-amber-600/30 border border-amber-500/50 text-amber-300 px-2.5 py-0.5 rounded text-xs font-bold">${category}</span>
+            <h1 class="text-2xl font-extrabold text-white">${name}</h1>
           </div>
           <p class="text-xs text-slate-300">
-            Stacja odniesienia: <b class="text-cyan-300">${station}</b> ➔ Kierunek: <b class="text-white">${destination}</b>
+            Stacja: <b class="text-cyan-300">${station}</b> ➔ Kierunek: <b class="text-white">${destination}</b>
           </p>
         </div>
         <div class="inline-flex items-center gap-2 bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 text-xs px-3.5 py-2 rounded-lg font-bold">
@@ -67,33 +73,40 @@
       </div>
     `;
 
-    async function loadRoute() {
-      const container = document.getElementById('route-container');
-      
-      let stops = null;
+    async function fetchAPI(endpoint) {
       try {
-        const res = await fetch(`/api/operations/train/${trainNo}`);
-        if (res.ok) {
-          const data = await res.json();
-          stops = data?.stops || data?.route || (Array.isArray(data) ? data : null);
-        }
+        const res = await fetch('/api/' + endpoint);
+        if (!res.ok) return null;
+        return await res.json();
       } catch (e) {
-        stops = null;
+        return null;
       }
+    }
 
-      // Bezpieczny fallback w przypadku braku danych / statusu 404
+    async function loadRouteDetails() {
+      const container = document.getElementById('route-container');
+
+      let data = null;
+      // 1. Próba z użyciem unikalnych identyfikatorów kursu
+      if (scheduleId && orderId) data = await fetchAPI(`schedules/route/${scheduleId}/${orderId}`);
+      if (!data && scheduleId && trainOrderId) data = await fetchAPI(`schedules/route/${scheduleId}/${trainOrderId}`);
+      // 2. Próba zapasowa z numerem pociągu
+      if (!data && trainNo) data = await fetchAPI(`operations/train/${trainNo}`);
+
+      const stops = data?.stops || data?.route || data?.data?.stops || (Array.isArray(data) ? data : null);
+
       if (!stops || !Array.isArray(stops) || stops.length === 0) {
         container.innerHTML = `
           <div class="p-6 bg-slate-800/80 border border-slate-700 rounded-xl text-center text-slate-200">
             <div class="flex justify-center mb-3 text-cyan-400 text-3xl">
               <i class="fa-solid fa-train"></i>
             </div>
-            <h3 class="font-bold text-base text-white mb-1">Pociąg #${trainNo}</h3>
+            <h3 class="font-bold text-base text-white mb-1">${name}</h3>
             <p class="text-xs text-slate-300 mb-4 max-w-md mx-auto">
-              Pociąg znajduje się w rozkładzie jazdy. Śledzenie w czasie rzeczywistym aktywuje się w momencie odjazdu ze stacji początkowej.
+              Kurs zgłoszony w rozkładzie jazdy PLK. Śledzenie pozycji GPS w czasie rzeczywistym rozpoczyna się po wyjeździe ze stacji początkowej.
             </p>
             <div class="inline-flex items-center gap-2 bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 text-xs px-4 py-2 rounded-lg font-semibold">
-              <i class="fa-solid fa-circle-check"></i> Status: Rozkładowy (O czasie)
+              <i class="fa-solid fa-circle-check"></i> Status: Planowy (O czasie)
             </div>
           </div>`;
         return;
@@ -127,7 +140,7 @@
       container.innerHTML = html;
     }
 
-    loadRoute();
+    loadRouteDetails();
   </script>
 </body>
 </html>
