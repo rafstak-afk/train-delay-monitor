@@ -20,15 +20,15 @@
   </div>
 
   <div id="train-header" class="card p-6 rounded-xl shadow-lg mb-6">
-    <!-- Ładowane dynamicznie z parametrów URL -->
+    <!-- Ładowane dynamicznie -->
   </div>
 
   <div class="card p-6 rounded-xl shadow-lg flex-1">
     <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-700">
       <h2 class="text-base font-bold text-white flex items-center gap-2">
-        <i class="fa-solid fa-route text-cyan-400"></i> Rozkład i Bieg Pociągu
+        <i class="fa-solid fa-route text-cyan-400"></i> Bieg Pociągu i Stacje Pośrednie
       </h2>
-      <button onclick="loadRouteDetails()" class="text-xs text-cyan-400 hover:text-cyan-300 font-semibold flex items-center gap-1">
+      <button onclick="loadRoute()" class="text-xs text-cyan-400 hover:text-cyan-300 font-semibold flex items-center gap-1">
         <i class="fa-solid fa-rotate-right"></i> Odśwież
       </button>
     </div>
@@ -36,7 +36,7 @@
     <div id="route-container">
       <div class="text-center py-8 text-slate-400">
         <i class="fa-solid fa-circle-notch fa-spin text-2xl mb-2 text-cyan-400"></i>
-        <p class="text-xs">Ładowanie szczegółów biegu z systemu PLK...</p>
+        <p class="text-xs">Ładowanie szczegółowych przystanków z API...</p>
       </div>
     </div>
   </div>
@@ -47,31 +47,35 @@
 
   <script>
     const params = new URLSearchParams(window.location.search);
-    const trainNo = params.get('train') || '3815';
-    const category = params.get('category') || 'IC';
-    const name = params.get('name') || `Pociąg ${trainNo}`;
-    const destination = params.get('destination') || 'Stacja docelowa';
-    const station = params.get('station') || 'Stacja odniesienia';
-    const scheduleId = params.get('scheduleId') || '2026';
-    const orderId = params.get('orderId') || '';
-    const trainOrderId = params.get('trainOrderId') || '';
+    const trainNo = params.get('train') || '';
+    const station = params.get('station') || '';
+    let category = params.get('category') || 'Pociąg';
+    let name = params.get('name') || `Pociąg #${trainNo}`;
+    let destination = params.get('destination') || 'Stacja docelowa';
+    let scheduleId = params.get('scheduleId') || '';
+    let orderId = params.get('orderId') || '';
+    let trainOrderId = params.get('trainOrderId') || '';
 
-    document.getElementById('train-header').innerHTML = `
-      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <div class="flex items-center gap-2 mb-1">
-            <span class="bg-amber-600/30 border border-amber-500/50 text-amber-300 px-2.5 py-0.5 rounded text-xs font-bold">${category}</span>
-            <h1 class="text-2xl font-extrabold text-white">${name}</h1>
+    function renderHeader(statusText = 'Ładowanie danych...') {
+      document.getElementById('train-header').innerHTML = `
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <span class="bg-amber-600/30 border border-amber-500/50 text-amber-300 px-2.5 py-0.5 rounded text-xs font-bold">${category}</span>
+              <h1 class="text-2xl font-extrabold text-white">${name}</h1>
+            </div>
+            <p class="text-xs text-slate-300">
+              Stacja odniesienia: <b class="text-cyan-300">${station || 'Brak'}</b> ➔ Kierunek: <b class="text-white">${destination}</b>
+            </p>
           </div>
-          <p class="text-xs text-slate-300">
-            Stacja: <b class="text-cyan-300">${station}</b> ➔ Kierunek: <b class="text-white">${destination}</b>
-          </p>
+          <div class="inline-flex items-center gap-2 bg-slate-800 border border-slate-700 text-cyan-300 text-xs px-3.5 py-2 rounded-lg font-bold">
+            <i class="fa-solid fa-circle-info"></i> ${statusText}
+          </div>
         </div>
-        <div class="inline-flex items-center gap-2 bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 text-xs px-3.5 py-2 rounded-lg font-bold">
-          <i class="fa-solid fa-circle-check"></i> Status: Planowy / O czasie
-        </div>
-      </div>
-    `;
+      `;
+    }
+
+    renderHeader('Pobieranie biegu...');
 
     async function fetchAPI(endpoint) {
       try {
@@ -83,19 +87,61 @@
       }
     }
 
-    async function loadRouteDetails() {
+    async function resolveCourseIdentifiers() {
+      if (!station || !trainNo) return;
+      const boardData = await fetchAPI(`schedules/station/${encodeURIComponent(station)}`);
+      
+      let departures = [];
+      if (Array.isArray(boardData)) departures = boardData;
+      else if (boardData?.departures) departures = boardData.departures;
+      else if (boardData?.data) departures = boardData.data;
+
+      const found = departures.find(d => {
+        const n = (d.trainNo || d.number || d.trainNumber || d.symbol || '').toString();
+        const full = (d.name || d.trainName || '').toString();
+        return n === trainNo || n.includes(trainNo) || full.includes(trainNo);
+      });
+
+      if (found) {
+        scheduleId = found.scheduleId || scheduleId;
+        orderId = found.orderId || orderId;
+        trainOrderId = found.trainOrderId || trainOrderId;
+        category = found.category || category;
+        name = found.name || name;
+        destination = found.destination || found.to || destination;
+        renderHeader('Kurs zlokalizowany w API');
+      }
+    }
+
+    async function loadRoute() {
       const container = document.getElementById('route-container');
 
-      let data = null;
-      // 1. Próba z użyciem unikalnych identyfikatorów kursu
-      if (scheduleId && orderId) data = await fetchAPI(`schedules/route/${scheduleId}/${orderId}`);
-      if (!data && scheduleId && trainOrderId) data = await fetchAPI(`schedules/route/${scheduleId}/${trainOrderId}`);
-      // 2. Próba zapasowa z numerem pociągu
-      if (!data && trainNo) data = await fetchAPI(`operations/train/${trainNo}`);
+      // Jeśli brakuje identyfikatorów, próba wyciągnięcia z tablicy stacji
+      if (!scheduleId && !orderId && station && trainNo) {
+        await resolveCourseIdentifiers();
+      }
 
-      const stops = data?.stops || data?.route || data?.data?.stops || (Array.isArray(data) ? data : null);
+      let routeData = null;
 
-      if (!stops || !Array.isArray(stops) || stops.length === 0) {
+      // 1. Próba pobrania po identyfikatorze kursu
+      if (scheduleId && orderId) {
+        routeData = await fetchAPI(`schedules/route/${scheduleId}/${orderId}`);
+      }
+      if (!routeData && scheduleId && trainOrderId) {
+        routeData = await fetchAPI(`schedules/route/${scheduleId}/${trainOrderId}`);
+      }
+      // 2. Próba bezpośrednia po numerze pociągu
+      if (!routeData && trainNo) {
+        routeData = await fetchAPI(`operations/train/${trainNo}`);
+      }
+
+      let stops = [];
+      if (Array.isArray(routeData)) stops = routeData;
+      else if (routeData?.stops) stops = routeData.stops;
+      else if (routeData?.route) stops = routeData.route;
+      else if (routeData?.data?.stops) stops = routeData.data.stops;
+
+      if (!stops || stops.length === 0) {
         container.innerHTML = `
           <div class="p-6 bg-slate-800/80 border border-slate-700 rounded-xl text-center text-slate-200">
             <div class="flex justify-center mb-3 text-cyan-400 text-3xl">
@@ -103,21 +149,21 @@
             </div>
             <h3 class="font-bold text-base text-white mb-1">${name}</h3>
             <p class="text-xs text-slate-300 mb-4 max-w-md mx-auto">
-              Kurs zgłoszony w rozkładzie jazdy PLK. Śledzenie pozycji GPS w czasie rzeczywistym rozpoczyna się po wyjeździe ze stacji początkowej.
+              Brak dostępnego szczegółowego biegu pociągu w API PLK. Kurs może jeszcze nie posiadać nadanego sygnału GPS lub nie rozpoczął biegu ze stacji początkowej.
             </p>
-            <div class="inline-flex items-center gap-2 bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 text-xs px-4 py-2 rounded-lg font-semibold">
-              <i class="fa-solid fa-circle-check"></i> Status: Planowy (O czasie)
-            </div>
           </div>`;
+        renderHeader('Brak szczegółów trasy');
         return;
       }
+
+      renderHeader('Trasa wczytana pomyślnie');
 
       let html = '<div class="space-y-2">';
       stops.forEach((stop, idx) => {
         const stName = stop.stationName || stop.station || stop.name || `Stacja ${idx+1}`;
-        const planArr = stop.arrPlan || stop.plannedTime || stop.time || '--:--';
+        const planArr = stop.arrPlan || stop.plannedTime || stop.time || stop.arr || '--:--';
         const realArr = stop.arrReal || stop.actualTime || planArr;
-        const delay = stop.delay || stop.delayMinutes || 0;
+        const delay = parseInt(stop.delay || stop.delayMinutes || 0, 10);
         const isCurrent = station && stName.toLowerCase().includes(station.toLowerCase());
 
         html += `
@@ -127,7 +173,7 @@
               <div class="font-bold text-xs ${isCurrent ? 'text-cyan-300' : 'text-white'}">${stName}</div>
             </div>
             <div class="text-right">
-              <div class="text-xs font-mono font-bold text-cyan-300">${realArr}</div>
+              <div class="text-xs font-mono font-bold text-cyan-300">${realArr} ${realArr !== planArr ? `<span class="text-[10px] text-slate-400 line-through">${planArr}</span>` : ''}</div>
               <div class="text-[10px] font-semibold ${delay > 0 ? 'text-pink-400' : 'text-emerald-400'}">
                 ${delay > 0 ? `+${delay} min` : 'o czasie'}
               </div>
@@ -140,7 +186,7 @@
       container.innerHTML = html;
     }
 
-    loadRouteDetails();
+    loadRoute();
   </script>
 </body>
 </html>
