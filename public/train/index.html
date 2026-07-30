@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Szczegóły Pociągu - Rozkład i Bieg</title>
+  <title>Bieg Pociągu - Szczegóły</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
@@ -34,7 +34,7 @@
   <div class="card p-6 rounded-xl shadow-lg flex-1">
     <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-700">
       <h2 class="text-base font-bold text-white flex items-center gap-2">
-        <i class="fa-solid fa-route text-cyan-400"></i> Rozkład i Bieg Pociągu
+        <i class="fa-solid fa-route text-cyan-400"></i> Rozkład i Trasa Pociągu
       </h2>
       <button onclick="loadRouteDetails()" class="text-xs text-cyan-400 hover:text-cyan-300 font-semibold flex items-center gap-1">
         <i class="fa-solid fa-rotate-right"></i> Odśwież
@@ -44,7 +44,7 @@
     <div id="route-container">
       <div class="text-center py-8 text-slate-400">
         <i class="fa-solid fa-circle-notch fa-spin text-2xl mb-2 text-cyan-400"></i>
-        <p class="text-xs">Ładowanie danych stacyjnych...</p>
+        <p class="text-xs">Ładowanie rozkładu z systemu PLK...</p>
       </div>
     </div>
   </div>
@@ -55,10 +55,10 @@
 
   <script>
     const params = new URLSearchParams(window.location.search);
-    const trainNo = params.get('train') || '40439';
-    const category = params.get('category') || 'Os';
-    const name = params.get('name') || 'S8';
-    const destination = params.get('destination') || 'Lubliniec';
+    const trainNo = params.get('train') || '34015';
+    const category = params.get('category') || 'IC';
+    const name = params.get('name') || 'CARPATIA';
+    const destination = params.get('destination') || 'Muenchen Hbf';
     const scheduleId = params.get('scheduleId') || '2026';
     const orderId = params.get('orderId') || '';
     const trainOrderId = params.get('trainOrderId') || '';
@@ -74,11 +74,11 @@
             <h1 class="text-2xl font-extrabold text-white">${headerTitle}</h1>
           </div>
           <p class="text-xs text-slate-300">
-            Kierunek: <b class="text-white">${destination}</b> · Stacja odniesienia: <b class="text-cyan-300">${station}</b>
+            Relacja: <b class="text-white">${station} ➔ ${destination}</b>
           </p>
         </div>
         <div class="inline-flex items-center gap-2 bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 text-xs px-3.5 py-2 rounded-lg font-bold">
-          <i class="fa-solid fa-circle-check"></i> Status: O czasie
+          <i class="fa-solid fa-circle-check"></i> Status: Planowy / O czasie
         </div>
       </div>
     `;
@@ -98,7 +98,7 @@
       container.innerHTML = `
         <div class="text-center py-8 text-slate-400">
           <i class="fa-solid fa-circle-notch fa-spin text-2xl mb-2 text-cyan-400"></i>
-          <p class="text-xs">Sprawdzanie rozkładu jazdy w systemie PLK...</p>
+          <p class="text-xs">Sprawdzanie połączenia z serwerem PLK...</p>
         </div>`;
 
       let data = null;
@@ -115,11 +115,11 @@
               <i class="fa-solid fa-train"></i>
             </div>
             <h3 class="font-bold text-base text-white mb-1">${headerTitle}</h3>
-            <p class="text-xs text-slate-400 mb-4 max-w-md mx-auto">
-              Pociąg kursuje zgodnie z rozkładem jazdy (<b>${station} ➔ ${destination}</b>). Sygnał GPS i bieżące opóźnienia pojawią się automatycznie po wypuszczeniu pociągu na tor.
+            <p class="text-xs text-slate-300 mb-4 max-w-md mx-auto">
+              Pociąg znajduje się w rozkładzie jazdy (<b>kierunek: ${destination}</b>). Śledzenie pozycji GPS rozpoczyna się w momencie wypuszczenia składu na tor.
             </p>
             <div class="inline-flex items-center gap-2 bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 text-xs px-4 py-2 rounded-lg font-semibold">
-              <i class="fa-solid fa-circle-check"></i> Status: Rozkładowy / O czasie
+              <i class="fa-solid fa-circle-check"></i> Status: Rozkładowy (O czasie)
             </div>
           </div>`;
         return;
