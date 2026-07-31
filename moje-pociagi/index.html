@@ -3,264 +3,157 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tablica Monitorowania Pociągów</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <title>Tablica Monitorowania - Moje Pociągi</title>
   <style>
-    body { background-color: #0b132b; color: #e0e1dd; font-family: system-ui, -apple-system, sans-serif; }
-    .card { background-color: #1c2541; border: 1px solid #3a506b; }
-    .card-hover:hover { border-color: #06b6d4; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background-color: #0b132b; color: #ffffff; min-height: 100vh; padding: 20px; }
+    .container { max-width: 1000px; margin: 0 auto; }
+    
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 1px solid #1c2541; padding-bottom: 15px; }
+    header h1 { font-size: 1.8rem; color: #48cae4; display: flex; align-items: center; gap: 10px; }
+    
+    .btn-refresh { background-color: #0077b6; color: #fff; border: none; padding: 10px 18px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+    .btn-refresh:hover { background-color: #0096c7; }
+
+    .add-box { background-color: #1c2541; border: 1px solid #3a506b; border-radius: 8px; padding: 15px; margin-bottom: 25px; }
+    .add-box h3 { color: #48cae4; font-size: 0.9rem; text-transform: uppercase; margin-bottom: 12px; }
+    .input-group { display: flex; gap: 10px; flex-wrap: wrap; }
+    .input-group input { flex: 1; min-width: 200px; padding: 10px; background-color: #0b132b; border: 1px solid #3a506b; border-radius: 5px; color: #fff; }
+    .btn-add { background-color: #00b4d8; color: #0b132b; border: none; padding: 10px 20px; font-weight: bold; border-radius: 5px; cursor: pointer; }
+
+    .train-list { display: flex; flex-direction: column; gap: 12px; }
+    .train-card { background-color: #1c2541; border: 1px solid #3a506b; border-radius: 8px; padding: 15px 20px; display: flex; align-items: center; justify-content: space-between; gap: 15px; }
+    
+    .badge-status { width: 50px; height: 50px; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; font-size: 0.8rem; text-align: center; }
+    .status-ok { background-color: #1b4332; color: #52b788; border: 1px solid #2d6a4f; }
+    .status-delay { background-color: #4a1525; color: #ff4d6d; border: 1px solid #800f2f; }
+
+    .train-info { flex: 1; }
+    .station-title { font-size: 1.1rem; font-weight: bold; text-transform: uppercase; color: #ffffff; }
+    .train-sub { font-size: 0.85rem; color: #a0aab2; margin-top: 4px; }
+    .train-tag { background-color: #3a506b; color: #e0e1dd; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; margin-left: 8px; }
+
+    .actions { display: flex; gap: 10px; align-items: center; }
+    .btn-search { background-color: #2b2d42; color: #edf2f4; border: 1px solid #8d99ae; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-size: 0.85rem; }
+    .btn-delete { background-color: transparent; border: none; color: #6c757d; cursor: pointer; font-size: 1.1rem; }
+    .btn-delete:hover { color: #ff4d6d; }
   </style>
 </head>
-<body class="p-4 md:p-8 max-w-5xl mx-auto min-h-screen flex flex-col">
+<body>
 
-  <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 border-b border-slate-700/80 pb-4">
-    <div class="flex items-center gap-3">
-      <i class="fa-solid fa-desktop text-2xl text-cyan-400"></i>
-      <h1 class="text-2xl font-extrabold text-white tracking-wide">Tablica Monitorowania</h1>
-    </div>
-    
-    <button onclick="renderPage()" class="bg-cyan-600 hover:bg-cyan-500 text-white px-3.5 py-2 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow">
-      <i class="fa-solid fa-rotate-right"></i> Odśwież dane z API
-    </button>
+<div class="container">
+  <header>
+    <h1>🖥️ Tablica Monitorowania</h1>
+    <button class="btn-refresh" onclick="loadTrains()">🔄 Odśwież dane z API</button>
   </header>
 
-  <!-- FORMULARZ: DODAWANIE POCIĄGU -->
-  <section class="card p-4 rounded-xl mb-6 shadow-lg">
-    <h2 class="text-xs font-bold text-cyan-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-      <i class="fa-solid fa-plus-circle"></i> Dodaj pociąg i stację do śledzenia
-    </h2>
-    <form id="add-train-form" onsubmit="handleAddTrain(event)" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-      <input type="text" id="input-station" placeholder="Stacja (np. Katowice)" required class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500">
-      <input type="text" id="input-number" placeholder="Numer pociągu (np. 3815)" required class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500">
-      <button type="submit" id="btn-submit" class="bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-xs py-2 px-4 rounded-lg transition shadow">
-        + Dodaj do listy
-      </button>
-    </form>
-  </section>
-
-  <!-- LISTA POCIĄGÓW -->
-  <main id="trains-container" class="space-y-3 flex-1">
-    <div class="text-center py-12 text-slate-400">
-      <i class="fa-solid fa-circle-notch fa-spin text-3xl mb-3 text-cyan-400"></i>
-      <p>Pobieranie tablic odjazdów z API...</p>
+  <div class="add-box">
+    <h3>⊕ DODAJ POCIĄG I STACJĘ DO ŚLEDZENIA</h3>
+    <div class="input-group">
+      <input type="text" id="input-station" placeholder="Stacja (np. Katowice)">
+      <input type="text" id="input-number" placeholder="Numer pociągu (np. 3815)">
+      <button class="btn-add" onclick="addNewTrain()">+ Dodaj do listy</button>
     </div>
-  </main>
+  </div>
 
-  <footer class="mt-8 pt-4 border-t border-slate-800 text-center text-xs text-slate-500">
-    Train Delay Monitor &copy; 2026
-  </footer>
+  <div class="train-list" id="train-list">
+    <!-- Lista generowana dynamicznie -->
+  </div>
+</div>
 
-  <script>
-    const STORAGE_KEY = 'monitored_trains_v4';
+<script>
+  const DEFAULT_TRAINS = [
+    { station: 'KATOWICE', number: '3815', desc: 'Rozkład jazdy PLK dla stacji Katowice' },
+    { station: 'BYTOM KARB', number: '40360', desc: 'Rozkład jazdy PLK dla stacji Bytom Karb' },
+    { station: 'KATOWICE', number: '38107', desc: 'Rozkład jazdy PLK dla stacji Katowice' },
+    { station: 'KATOWICE', number: '40621', desc: 'Rozkład jazdy PLK dla stacji Katowice' },
+    { station: 'KATOWICE', number: '63102', desc: 'Rozkład jazdy PLK dla stacji Katowice' },
+    { station: 'TARNOWSKIE GÓRY', number: '40450', desc: 'Rozkład jazdy PLK dla stacji Tarnowskie Góry' },
+    { station: 'MIASTECZKO ŚLĄSKIE', number: '44226', desc: 'Rozkład jazdy PLK dla stacji Miasteczko Śląskie' },
+    { station: 'TARNOWSKIE GÓRY', number: '40250', desc: 'Rozkład jazdy PLK dla stacji Tarnowskie Góry' },
+    { station: 'CHORZÓW BATORY', number: '40858', desc: 'Rozkład jazdy PLK dla stacji Chorzów Batory' },
+    { station: 'CHORZÓW BATORY', number: '40423', desc: 'Rozkład jazdy PLK dla stacji Chorzów Batory' },
+    { station: 'CHORZÓW BATORY', number: '40211', desc: 'Rozkład jazdy PLK dla stacji Chorzów Batory' },
+    { station: 'CHORZÓW BATORY', number: '40468', desc: 'Rozkład jazdy PLK dla stacji Chorzów Batory' }
+  ];
 
-    // Domyślne pary (Stacja + Numer Pociągu) BEZ żadnych sztucznych godzin ani nazw
-    const DEFAULT_ITEMS = [
-      { station: 'Katowice', trainNo: '3815' },
-      { station: 'Bytom Karb', trainNo: '40360' },
-      { station: 'Katowice', trainNo: '38107' },
-      { station: 'Katowice', trainNo: '40621' },
-      { station: 'Katowice', trainNo: '63102' },
-      { station: 'Tarnowskie Góry', trainNo: '40450' },
-      { station: 'Miasteczko Śląskie', trainNo: '44226' },
-      { station: 'Tarnowskie Góry', trainNo: '40250' },
-      { station: 'Chorzów Batory', trainNo: '40858' },
-      { station: 'Chorzów Batory', trainNo: '40423' },
-      { station: 'Chorzów Batory', trainNo: '40211' },
-      { station: 'Chorzów Uniwersytet', trainNo: '40468' }
-    ];
+  function getSavedTrains() {
+    const saved = localStorage.getItem('moje_pociagi_list');
+    return saved ? JSON.parse(saved) : DEFAULT_TRAINS;
+  }
 
-    function getSavedList() {
+  function saveTrains(list) {
+    localStorage.setItem('moje_pociagi_list', JSON.stringify(list));
+  }
+
+  async function loadTrains() {
+    const list = getSavedTrains();
+    const container = document.getElementById('train-list');
+    container.innerHTML = '';
+
+    for (const item of list) {
+      let delayText = '0 min';
+      let statusClass = 'status-ok';
+      let infoText = item.desc;
+
       try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return DEFAULT_ITEMS;
-        const parsed = JSON.parse(raw);
-        return (Array.isArray(parsed) && parsed.length > 0) ? parsed : DEFAULT_ITEMS;
-      } catch (e) {
-        return DEFAULT_ITEMS;
-      }
-    }
-
-    function saveList(list) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-    }
-
-    async function fetchAPI(endpoint) {
-      try {
-        const res = await fetch('/api/' + endpoint);
-        if (!res.ok) return null;
-        return await res.json();
-      } catch (e) {
-        return null;
-      }
-    }
-
-    function handleAddTrain(e) {
-      e.preventDefault();
-      const st = document.getElementById('input-station').value.trim();
-      const num = document.getElementById('input-number').value.trim();
-      if (!st || !num) return;
-
-      const list = getSavedList();
-      list.unshift({ station: st, trainNo: num });
-      saveList(list);
-      document.getElementById('add-train-form').reset();
-      renderPage();
-    }
-
-    function removeTrain(idx) {
-      const list = getSavedList();
-      list.splice(idx, 1);
-      saveList(list);
-      renderPage();
-    }
-
-    // Odpytywanie API o tablicę stacji i szukanie konkretnego pociągu
-    async function fetchLiveTrainData(station, trainNo) {
-      const boardData = await fetchAPI(`schedules/station/${encodeURIComponent(station)}`);
-      
-      let departures = [];
-      if (Array.isArray(boardData)) {
-        departures = boardData;
-      } else if (boardData?.departures) {
-        departures = boardData.departures;
-      } else if (boardData?.data) {
-        departures = boardData.data;
-      }
-
-      // Szukamy pociągu po numerze w tablicy odjazdów
-      const found = departures.find(d => {
-        const n = (d.trainNo || d.number || d.trainNumber || d.symbol || '').toString();
-        const full = (d.name || d.trainName || '').toString();
-        return n === trainNo || n.includes(trainNo) || full.includes(trainNo);
-      });
-
-      if (found) {
-        return {
-          found: true,
-          time: found.time || found.plannedTime || found.arrPlan || '--:--',
-          delay: parseInt(found.delay || found.delayMinutes || 0, 10),
-          category: found.category || found.type || 'Pociąg',
-          name: found.name || found.trainName || `Pociąg ${trainNo}`,
-          destination: found.destination || found.to || found.direction || 'Stacja docelowa',
-          via: found.via ? `przez ${found.via}` : '',
-          platform: found.platform ? `peron ${found.platform}${found.track ? ` | tor ${found.track}` : ''}` : '',
-          // Identyfikatory kursu do wygenerowania pełnego linku biegu
-          scheduleId: found.scheduleId || '',
-          orderId: found.orderId || '',
-          trainOrderId: found.trainOrderId || '',
-          date: found.date || new Date().toISOString().split('T')[0]
-        };
-      }
-
-      // Jeśli API nie zwróciło pociągu dla tej stacji
-      return { found: false };
-    }
-
-    async function renderPage() {
-      const container = document.getElementById('trains-container');
-      const savedList = getSavedList();
-
-      if (savedList.length === 0) {
-        container.innerHTML = '<div class="text-center py-8 text-slate-400 text-xs">Brak pociągów na liście. Dodaj pociąg używając formularza wyżej.</div>';
-        return;
-      }
-
-      const cardsHtml = await Promise.all(savedList.map(async (item, idx) => {
-        const live = await fetchLiveTrainData(item.station, item.trainNo);
-
-        if (!live.found) {
-          // Prawdziwy stan: brak pociągu w rozkładzie z API dla wybranej stacji
-          const fallbackUrl = `/train?train=${encodeURIComponent(item.trainNo)}&station=${encodeURIComponent(item.station)}`;
-          return `
-            <div class="card p-4 rounded-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 card-hover transition opacity-80">
-              <div class="flex items-center gap-4 min-w-[200px]">
-                <div class="text-center min-w-[48px]">
-                  <div class="text-xl text-slate-500 font-bold">?</div>
-                  <div class="text-[9px] text-slate-500 uppercase">brak danych</div>
-                </div>
-                <div>
-                  <div class="text-xs font-bold text-slate-300 uppercase tracking-wide">${item.station}</div>
-                  <div class="text-sm font-mono text-slate-400">Brak w rozkładzie stacji</div>
-                </div>
-              </div>
-
-              <div class="flex-1">
-                <div class="flex items-center gap-2 mb-0.5">
-                  <span class="bg-slate-700 text-slate-300 font-bold text-[10px] px-2 py-0.5 rounded">Pociąg #${item.trainNo}</span>
-                </div>
-                <div class="text-xs text-slate-400">Brak aktywnego kursu w rozkładzie PLK dla stacji ${item.station}.</div>
-              </div>
-
-              <div class="flex items-center gap-2 self-end md:self-auto">
-                <a href="${fallbackUrl}" class="bg-slate-700 hover:bg-slate-600 text-white text-xs px-3.5 py-2 rounded-lg transition font-medium">
-                  Szukaj biegu
-                </a>
-                <button onclick="removeTrain(${idx})" class="text-slate-500 hover:text-pink-400 p-2 transition" title="Usuń z listy">
-                  <i class="fa-solid fa-trash-can"></i>
-                </button>
-              </div>
-            </div>
-          `;
+        const res = await fetch(`/api/trains/${item.number}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.delayMinutes > 0) {
+            delayText = `+${data.delayMinutes} min`;
+            statusClass = 'status-delay';
+          }
+          infoText = `${data.origin || item.station} ➔ ${data.destination || 'Trasa'}`;
         }
+      } catch (e) {
+        // Fallback w przypadku braku połączenia / braku aktywnego kursu w API
+      }
 
-        // Pociąg odnaleziony w API stacji
-        const delayClass = live.delay > 0 ? 'text-pink-500 font-extrabold' : 'text-emerald-400 font-bold';
-        const delayDisplay = live.delay > 0 ? `+${live.delay}` : '0';
-
-        const detailParams = new URLSearchParams({
-          train: item.trainNo,
-          station: item.station,
-          category: live.category,
-          name: live.name,
-          destination: live.destination,
-          scheduleId: live.scheduleId,
-          orderId: live.orderId,
-          trainOrderId: live.trainOrderId,
-          date: live.date
-        });
-
-        const detailUrl = `/train?${detailParams.toString()}`;
-
-        return `
-          <div class="card p-4 rounded-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 card-hover transition">
-            <div class="flex items-center gap-4 min-w-[220px]">
-              <div class="text-center min-w-[48px]">
-                <div class="text-2xl ${delayClass}">${delayDisplay}</div>
-                <div class="text-[9px] text-slate-400 uppercase">opóźn. min</div>
-              </div>
-              <div>
-                <div class="text-xs font-bold text-slate-300 uppercase tracking-wide">${item.station}</div>
-                <div class="text-lg font-mono font-bold text-emerald-400">${live.time} <span class="text-[10px] text-slate-400 font-normal">odjazd</span></div>
-              </div>
-            </div>
-
-            <div class="flex-1">
-              <div class="flex items-center gap-2 mb-0.5">
-                <span class="bg-amber-600/30 border border-amber-500/50 text-amber-300 font-bold text-[10px] px-2 py-0.5 rounded">${live.category}</span>
-                <a href="${detailUrl}" class="text-sm font-bold text-white hover:text-cyan-300 transition">${live.name}</a>
-              </div>
-              <div class="text-xs font-semibold text-slate-200">${live.destination}</div>
-              <div class="text-[11px] text-slate-400">${live.via} ${live.platform ? `• <span class="text-slate-300">${live.platform}</span>` : ''}</div>
-            </div>
-
-            <div class="flex items-center gap-2 self-end md:self-auto">
-              <a href="${detailUrl}" class="bg-cyan-700/60 hover:bg-cyan-600 text-white text-xs px-3.5 py-2 rounded-lg transition font-medium flex items-center gap-1.5 shadow">
-                <span>Pokaż bieg</span>
-                <i class="fa-solid fa-chevron-right text-[10px]"></i>
-              </a>
-              <button onclick="removeTrain(${idx})" class="text-slate-500 hover:text-pink-400 p-2 transition" title="Usuń z listy">
-                <i class="fa-solid fa-trash-can"></i>
-              </button>
-            </div>
+      const card = document.createElement('div');
+      card.className = 'train-card';
+      card.innerHTML = `
+        <div class="badge-status ${statusClass}">
+          <span>${delayText === '0 min' ? 'OK' : 'OPÓŹN.'}</span>
+          <span style="font-size:0.7rem">${delayText}</span>
+        </div>
+        <div class="train-info">
+          <div>
+            <span class="station-title">${item.station}</span>
+            <span class="train-tag">Pociąg #${item.number}</span>
           </div>
-        `;
-      }));
-
-      container.innerHTML = cardsHtml.join('');
+          <div class="train-sub">${infoText}</div>
+        </div>
+        <div class="actions">
+          <button class="btn-search">Szukaj biegu</button>
+          <button class="btn-delete" onclick="deleteTrain('${item.number}')">🗑️</button>
+        </div>
+      `;
+      container.appendChild(card);
     }
+  }
 
-    renderPage();
-  </script>
+  function addNewTrain() {
+    const st = document.getElementById('input-station').value.trim().toUpperCase();
+    const num = document.getElementById('input-number').value.trim();
+    if (!st || !num) return alert('Wpisz stację i numer pociągu');
+
+    const list = getSavedTrains();
+    list.push({ station: st, number: num, desc: `Rozkład jazdy PLK dla stacji ${st}` });
+    saveTrains(list);
+    document.getElementById('input-station').value = '';
+    document.getElementById('input-number').value = '';
+    loadTrains();
+  }
+
+  function deleteTrain(number) {
+    let list = getSavedTrains();
+    list = list.filter(t => t.number !== number);
+    saveTrains(list);
+    loadTrains();
+  }
+
+  document.addEventListener('DOMContentLoaded', loadTrains);
+</script>
 </body>
 </html>
