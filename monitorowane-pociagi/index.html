@@ -1,76 +1,79 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Monitorowane Pociągi</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Monitorowane Pociągi - Train Delay Monitor</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
   <div class="app-container">
-
-    <!-- WIDOK 1: MONITOROWANE POCIĄGI & WYSZUKIWARKA -->
-    <main id="monitored-view" class="view active">
+    <!-- WIDOK 1: LISTA MONITOROWANYCH POCIĄGÓW -->
+    <main id="listView" class="view active">
       <header class="page-header">
-        <h1>Monitorowane Pociągi</h1>
-        <p id="cache-status-text" class="status-subtitle">Ostatnia aktualizacja: --:--</p>
+        <h1>Monitorowane pociągi</h1>
+        <p class="subtitle">Śledź opóźnienia i bieg Twoich pociągów na żywo</p>
       </header>
 
-      <!-- Panel Wyszukiwania Stacji -->
+      <!-- SEKCJA WYSZUKIWANIA I TABLICY ODJAZDÓW -->
       <section class="search-section">
         <div class="search-box">
-          <input type="text" id="station-input" placeholder="Wyszukaj stację (np. Warszawa Centralna)..." autocomplete="off">
-          <ul id="autocomplete-results" class="autocomplete-list hidden"></ul>
+          <input type="text" id="stationInput" placeholder="Szukaj stacji..." autocomplete="off" />
+          <ul id="autocompleteList" class="autocomplete-list hidden"></ul>
         </div>
-
-        <!-- Tablica Odjazdów Wybranej Stacji -->
-        <div id="departures-panel" class="departures-panel hidden">
-          <div class="panel-header">
-            <h3>Odjazdy ze stacji: <span id="selected-station-name"></span></h3>
-            <button id="btn-close-departures" class="btn-close">✕</button>
+        <div id="departuresSection" class="departures-section hidden">
+          <div class="section-title-row">
+            <h3 id="departuresTitle">Tablica odjazdów</h3>
+            <button id="closeDeparturesBtn" class="btn-text">Zamknij</button>
           </div>
-          <ul id="departures-list" class="departures-list"></ul>
+          <div id="departuresList" class="departures-list"></div>
         </div>
       </section>
 
-      <!-- Lista Kafelków Pociągów -->
+      <!-- KAFELKI MONITOROWANYCH POCIĄGÓW -->
       <section class="monitored-section">
-        <h2>Twoja lista pociągów</h2>
-        <div id="monitored-grid" class="monitored-grid">
-          <!-- Kafelki generowane dynamicznie -->
+        <div id="monitoredList" class="monitored-grid"></div>
+        <div id="emptyState" class="empty-state hidden">
+          <span class="empty-icon">🚆</span>
+          <p>Brak monitorowanych pociągów.</p>
+          <small>Wyszukaj stację powyżej i kliknij (+), aby dodać pociąg do listy.</small>
         </div>
       </section>
     </main>
 
     <!-- WIDOK 2: SZCZEGÓŁY BIEGU POCIĄGU -->
-    <main id="details-view" class="view hidden">
-      <button id="btn-back" class="btn-back">⬅ Powrót do monitorowanych</button>
-
+    <main id="detailsView" class="view hidden">
       <header class="details-header">
-        <div class="title-group">
-          <h2 id="train-title">---</h2>
-          <span id="train-delay-badge" class="badge">-- min</span>
+        <button id="backToListBtn" class="btn-back">
+          <span class="arrow">⬅</span> Powrót do monitorowanych
+        </button>
+        <div class="train-summary">
+          <div class="train-title-group">
+            <h2 id="detailTrainName">---</h2>
+            <span id="detailTrainNumber" class="train-number-badge">---</span>
+          </div>
+          <div id="detailTotalDelay" class="total-delay-badge">---</div>
         </div>
-        <p id="train-route-subtitle" class="route-subtitle">-- ➔ --</p>
       </header>
 
-      <!-- Oś Czasu Trasy Pociągu -->
-      <section class="route-timeline-section">
-        <h3>Trasa i Stacje</h3>
-        <div id="route-timeline" class="route-timeline">
-          <!-- Wiersze stacji generowane dynamicznie z API -->
-        </div>
+      <!-- OS CZASU (TRASA KROK PO KROKU) -->
+      <section class="route-timeline-container">
+        <h3>Bieg pociągu (Trasa krok po kroku)</h3>
+        <div id="routeTimeline" class="timeline"></div>
       </section>
     </main>
-
   </div>
 
-  <!-- PŁYWĄCY PRZYCISK ODŚWIEŻANIA (FAB) -->
-  <button id="fab-refresh" class="fab-refresh" title="Wymuś odświeżenie danych z API">
-    <span class="icon">🔄</span>
+  <!-- PŁYWAJĄCY PRZYCISK ODŚWIEŻANIA (FAB) -->
+  <button id="fabRefresh" class="fab" title="Odśwież dane z API" aria-label="Odśwież dane z API">
+    <span class="fab-icon">🔄</span>
   </button>
 
+  <script src="config.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
