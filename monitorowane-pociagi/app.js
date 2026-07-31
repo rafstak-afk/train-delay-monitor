@@ -1,21 +1,28 @@
 /**
- * Application Core Logic & State Management
+ * Monitorowane Pociągi - Core Logic z listą pociągów strategicznych
  */
 
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minut cache
 
+// Lista Twoich strategicznych pociągów
+const STRATEGIC_TRAIN_IDS = [
+  '3815', '40360', '38107', '40621', 
+  '63102', '40450', '44226', '40250', 
+  '40858', '40423', '40211', '40468'
+];
+
 // Stan aplikacji
 const state = {
-  monitoredTrainIds: JSON.parse(localStorage.getItem('monitored_trains')) || ['IC13100', 'KM91234'],
+  monitoredTrainIds: JSON.parse(localStorage.getItem('monitored_trains')) || STRATEGIC_TRAIN_IDS,
   cache: {
     trainsData: null,
     lastFetchTime: 0,
-    detailsCache: {} // trainId -> { timestamp, data }
+    detailsCache: {}
   },
   activeTrainId: null
 };
 
-// Referencje do elementów DOM
+// Referencje DOM
 const DOM = {
   monitoredView: document.getElementById('monitored-view'),
   detailsView: document.getElementById('details-view'),
@@ -37,78 +44,54 @@ const DOM = {
   routeTimeline: document.getElementById('route-timeline')
 };
 
-// --- MOCK DATA (Zapewnia działanie nawet gdy brak fizycznego API) ---
-const MOCK_DATA = {
-  trains: [
-    { id: 'IC13100', number: 'IC 13100', name: 'Mazovia', origin: 'Warszawa Centralna', destination: 'Kraków Główny', delayMinutes: 12 },
-    { id: 'KM91234', number: 'KM 91234', name: '', origin: 'Skierniewice', destination: 'Warszawa Wschodnia', delayMinutes: 0 },
-    { id: 'TLK35100', number: 'TLK 35100', name: 'Słoneczny', origin: 'Gdynia Główna', destination: 'Zakopane', delayMinutes: 25 }
-  ],
-  details: {
-    'IC13100': {
-      id: 'IC13100',
-      number: 'IC 13100',
-      name: 'Mazovia',
-      origin: 'Warszawa Centralna',
-      destination: 'Kraków Główny',
-      delayMinutes: 12,
-      stations: [
-        { stationName: 'Warszawa Centralna', platform: '3', track: '2', scheduledTime: '14:25', actualTime: '14:25', delay: 0 },
-        { stationName: 'Warszawa Zachodnia', platform: '2', track: '1', scheduledTime: '14:30', actualTime: '14:32', delay: 2 },
-        { stationName: 'Radom Główny', platform: '1', track: '1', scheduledTime: '15:40', actualTime: '15:52', delay: 12 },
-        { stationName: 'Kielce Główna', platform: '2', track: '4', scheduledTime: '16:45', actualTime: '16:57', delay: 12 },
-        { stationName: 'Kraków Główny', platform: '4', track: '2', scheduledTime: '18:10', actualTime: '18:22', delay: 12 }
-      ]
-    },
-    'KM91234': {
-      id: 'KM91234',
-      number: 'KM 91234',
-      name: '',
-      origin: 'Skierniewice',
-      destination: 'Warszawa Wschodnia',
-      delayMinutes: 0,
-      stations: [
-        { stationName: 'Skierniewice', platform: '1', track: '2', scheduledTime: '07:10', actualTime: '07:10', delay: 0 },
-        { stationName: 'Żyrardów', platform: '2', track: '1', scheduledTime: '07:25', actualTime: '07:25', delay: 0 },
-        { stationName: 'Warszawa Zachodnia', platform: '4', track: '3', scheduledTime: '08:02', actualTime: '08:02', delay: 0 },
-        { stationName: 'Warszawa Centralna', platform: '2', track: '1', scheduledTime: '08:08', actualTime: '08:08', delay: 0 },
-        { stationName: 'Warszawa Wschodnia', platform: '3', track: '5', scheduledTime: '08:15', actualTime: '08:15', delay: 0 }
-      ]
-    }
-  }
+// --- MOCK / FALLBACK DATA DLA POCIĄGÓW STRATEGICZNYCH ---
+const STRATEGIC_MOCKS = {
+  '3815': { id: '3815', number: 'KS 3815', name: '', origin: 'Katowice', destination: 'Zwardoń', delayMinutes: 0 },
+  '40360': { id: '40360', number: 'KS 40360', name: '', origin: 'Bytom Karb', destination: 'Katowice', delayMinutes: 5 },
+  '38107': { id: '38107', number: 'KS 38107', name: '', origin: 'Katowice', destination: 'Żywiec', delayMinutes: 0 },
+  '40621': { id: '40621', number: 'KS 40621', name: '', origin: 'Katowice', destination: 'Gliwice', delayMinutes: 12 },
+  '63102': { id: '63102', number: 'KS 63102', name: '', origin: 'Katowice', destination: 'Kraków Główny', delayMinutes: 0 },
+  '40450': { id: '40450', number: 'KS 40450', name: '', origin: 'Tarnowskie Góry', destination: 'Katowice', delayMinutes: 2 },
+  '44226': { id: '44226', number: 'KS 44226', name: '', origin: 'Miasteczko Śląskie', destination: 'Katowice', delayMinutes: 0 },
+  '40250': { id: '40250', number: 'KS 40250', name: '', origin: 'Tarnowskie Góry', destination: 'Częstochowa', delayMinutes: 0 },
+  '40858': { id: '40858', number: 'KS 40858', name: '', origin: 'Chorzów Batory', destination: 'Gliwice', delayMinutes: 0 },
+  '40423': { id: '40423', number: 'KS 40423', name: '', origin: 'Chorzów Batory', destination: 'Tarnowskie Góry', delayMinutes: 18 },
+  '40211': { id: '40211', number: 'KS 40211', name: '', origin: 'Chorzów Batory', destination: 'Katowice', delayMinutes: 0 },
+  '40468': { id: '40468', number: 'KS 40468', name: '', origin: 'Chorzów Batory', destination: 'Katowice', delayMinutes: 0 }
 };
 
-// --- API FETCHERS (Pobierają z serwera, a w razie błędu zwracają MOCK) ---
+// --- POBIERANIE DANYCH Z API LUB FALLBACK ---
 
 async function apiFetchMonitoredTrains(ids) {
   try {
     const res = await fetch(`/api/monitored-trains?ids=${ids.join(',')}`);
-    if (!res.ok) throw new Error('API Unavailable');
+    if (!res.ok) throw new Error('API Offline');
     return await res.json();
   } catch (err) {
-    // Fallback do Mock Data
-    return MOCK_DATA.trains.filter(t => ids.includes(t.id));
+    // Generowanie listy na podstawie danych strategicznych
+    return ids.map(id => STRATEGIC_MOCKS[id] || {
+      id: id,
+      number: `Pociąg #${id}`,
+      origin: 'Stacja Początkowa',
+      destination: 'Stacja Docelowa',
+      delayMinutes: 0
+    });
   }
 }
 
 async function apiFetchTrainDetails(trainId) {
   try {
     const res = await fetch(`/api/trains/${trainId}`);
-    if (!res.ok) throw new Error('API Unavailable');
+    if (!res.ok) throw new Error('API Offline');
     return await res.json();
   } catch (err) {
-    // Fallback do Mock Data
-    if (MOCK_DATA.details[trainId]) return MOCK_DATA.details[trainId];
+    const baseInfo = STRATEGIC_MOCKS[trainId] || { number: trainId, origin: 'Stacja A', destination: 'Stacja B', delayMinutes: 0 };
     return {
-      id: trainId,
-      number: trainId,
-      name: 'Pociąg Testowy',
-      origin: 'Stacja A',
-      destination: 'Stacja B',
-      delayMinutes: 5,
+      ...baseInfo,
       stations: [
-        { stationName: 'Stacja Początkowa', platform: '1', track: '1', scheduledTime: '12:00', actualTime: '12:00', delay: 0 },
-        { stationName: 'Stacja Końcowa', platform: '2', track: '1', scheduledTime: '13:00', actualTime: '13:05', delay: 5 }
+        { stationName: baseInfo.origin, platform: '1', track: '1', scheduledTime: '08:00', actualTime: '08:00', delay: 0 },
+        { stationName: 'Stacja Pośrednia', platform: '2', track: '1', scheduledTime: '08:20', actualTime: baseInfo.delayMinutes > 0 ? `08:${20 + baseInfo.delayMinutes}` : '08:20', delay: baseInfo.delayMinutes },
+        { stationName: baseInfo.destination, platform: '1', track: '2', scheduledTime: '08:45', actualTime: baseInfo.delayMinutes > 0 ? `08:${45 + baseInfo.delayMinutes}` : '08:45', delay: baseInfo.delayMinutes }
       ]
     };
   }
@@ -117,10 +100,10 @@ async function apiFetchTrainDetails(trainId) {
 async function apiSearchStations(query) {
   try {
     const res = await fetch(`/api/stations?q=${encodeURIComponent(query)}`);
-    if (!res.ok) throw new Error('API Unavailable');
+    if (!res.ok) throw new Error('API Offline');
     return await res.json();
   } catch (err) {
-    const list = ['Warszawa Centralna', 'Kraków Główny', 'Katowice', 'Poznań Główny', 'Gdańsk Główny'];
+    const list = ['Katowice', 'Bytom Karb', 'Tarnowskie Góry', 'Miasteczko Śląskie', 'Chorzów Batory'];
     return list.filter(s => s.toLowerCase().includes(query.toLowerCase())).map((name, i) => ({ id: `st_${i}`, name }));
   }
 }
@@ -128,17 +111,17 @@ async function apiSearchStations(query) {
 async function apiFetchDepartures(stationId) {
   try {
     const res = await fetch(`/api/departures?stationId=${encodeURIComponent(stationId)}`);
-    if (!res.ok) throw new Error('API Unavailable');
+    if (!res.ok) throw new Error('API Offline');
     return await res.json();
   } catch (err) {
     return [
-      { trainId: 'TLK35100', trainNumber: 'TLK 35100', destination: 'Zakopane', scheduledTime: '15:10' },
-      { trainId: 'IC13100', trainNumber: 'IC 13100', destination: 'Kraków Główny', scheduledTime: '15:35' }
+      { trainId: '3815', trainNumber: 'KS 3815', destination: 'Zwardoń', scheduledTime: '14:15' },
+      { trainId: '40621', trainNumber: 'KS 40621', destination: 'Gliwice', scheduledTime: '14:40' }
     ];
   }
 }
 
-// --- ZARZĄDZANIE PAMIĘCIĄ PODRĘCZNĄ I DANYMI ---
+// --- LOGIKA PAMIĘCI PODRĘCZNEJ (CACHE 5 MIN) ---
 
 async function loadMonitoredTrains(forceRefresh = false) {
   const now = Date.now();
@@ -160,7 +143,7 @@ async function loadMonitoredTrains(forceRefresh = false) {
     
     renderMonitoredGrid(data);
   } catch (err) {
-    console.error('Błąd ładowania pociągów:', err);
+    console.error('Błąd ładowania:', err);
   } finally {
     DOM.fabRefresh.classList.remove('spinning');
   }
@@ -221,13 +204,13 @@ function renderMonitoredGrid(trains) {
       </div>
     `;
 
-    // Kliknięcie w cały kafel -> Otwiera Bieg Pociągu
+    // 1. KLIKNIĘCIE W CAŁY KAFELEK -> BIEG POCIĄGU
     card.addEventListener('click', () => {
       state.activeTrainId = train.id;
       loadTrainDetails(train.id);
     });
 
-    // Przycisk usuwania -> Zatrzymanie propagacji zdarzenia!
+    // 2. KLIKNIĘCIE W KOSZ -> TYLKO USUWANIE (e.stopPropagation)
     const btnDelete = card.querySelector('.btn-delete');
     btnDelete.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -271,7 +254,7 @@ function renderDetailsView(data) {
   });
 }
 
-// --- AKCJE I PRZEŁĄCZANIE WIDOKÓW ---
+// --- AKCJE ZARZĄDZANIA STANEM ---
 
 function addTrainToMonitoring(train) {
   if (!state.monitoredTrainIds.includes(train.id)) {
@@ -310,15 +293,13 @@ function showView(viewName) {
   }
 }
 
-// --- OBSŁUGA INTERAKCJI ---
+// --- OBSŁUGA ZDARZEŃ ---
 
-// Powrót do widoku monitorowania (wykorzystuje cache jeśli jest ważny)
 DOM.btnBack.addEventListener('click', () => {
   showView('monitored');
   loadMonitoredTrains(false);
 });
 
-// Pływający Przycisk Odświeżania (FAB) -> Wymusza pobranie świeżych danych
 DOM.fabRefresh.addEventListener('click', () => {
   if (DOM.detailsView.classList.contains('active') && state.activeTrainId) {
     loadTrainDetails(state.activeTrainId, true);
@@ -327,7 +308,6 @@ DOM.fabRefresh.addEventListener('click', () => {
   }
 });
 
-// Autocomplete dla wyszukiwarki stacji
 DOM.stationInput.addEventListener('input', async (e) => {
   const query = e.target.value.trim();
   if (query.length < 2) {
@@ -398,7 +378,11 @@ DOM.btnCloseDepartures.addEventListener('click', () => {
   DOM.departuresPanel.classList.add('hidden');
 });
 
-// Uruchomienie przy starcie
+// Start
 document.addEventListener('DOMContentLoaded', () => {
+  // Przeczyść stary, pusty cache jeśli istniał
+  if (!localStorage.getItem('monitored_trains')) {
+    saveState();
+  }
   loadMonitoredTrains(false);
 });
