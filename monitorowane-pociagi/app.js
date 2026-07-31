@@ -1,5 +1,5 @@
 /**
- * Logika Aplikacji - Monitorowane Pociągi
+ * Logika Aplikacji - Monitorowane Pociągi (Zaktualizowana i naprawiona)
  */
 
 const CACHE_DURATION_MS = 5 * 60 * 1000; // Pamięć podręczna na 5 minut
@@ -8,9 +8,8 @@ const STORAGE_KEY = 'monitored_trains_list';
 let monitoredTrains = loadMonitoredFromStorage();
 let activeTrainId = null;
 
-// Słownik dla pamięci podręcznej API w pamięci podręcznej przeglądarki
 const dataCache = {
-  trainDetails: {} // [trainId] => { timestamp, data }
+  trainDetails: {}
 };
 
 // Elementy DOM
@@ -34,24 +33,16 @@ const routeTimeline = document.getElementById('routeTimeline');
 
 const fabRefresh = document.getElementById('fabRefresh');
 
-// Inicjalizacja
 document.addEventListener('DOMContentLoaded', () => {
   renderMonitoredList();
   setupEventListeners();
 });
 
 function setupEventListeners() {
-  // Przycisk "Powrót do monitorowanych"
-  backToListBtn.addEventListener('click', () => {
-    showListView();
-  });
+  backToListBtn.addEventListener('click', showListView);
+  fabRefresh.addEventListener('click', handleFabRefresh);
 
-  // Pływający Przycisk Odświeżania (FAB)
-  fabRefresh.addEventListener('click', () => {
-    handleFabRefresh();
-  });
-
-  // Wyszukiwarka Stacji
+  // --- NAPRAWA 1: Obsługa klawisza ENTER w polu wyszukiwania ---
   let debounceTimeout;
   stationInput.addEventListener('input', (e) => {
     clearTimeout(debounceTimeout);
@@ -61,6 +52,24 @@ function setupEventListeners() {
       return;
     }
     debounceTimeout = setTimeout(() => fetchStationSuggestions(query), 250);
+  });
+
+  stationInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const query = stationInput.value.trim();
+      if (!query) return;
+
+      // Jeśli lista podpowiedzi jest widoczna, wybierz pierwszy element
+      const firstSuggestion = autocompleteList.querySelector('li');
+      if (firstSuggestion && !autocompleteList.classList.contains('hidden')) {
+        firstSuggestion.click();
+      } else {
+        // W przeciwnym razie szukaj bezpośrednio dla wpisanej frazy
+        autocompleteList.classList.add('hidden');
+        loadDeparturesForStation(query);
+      }
+    }
   });
 
   closeDeparturesBtn.addEventListener('click', () => {
@@ -80,6 +89,7 @@ function loadMonitoredFromStorage() {
     const saved = localStorage.getItem(STORAGE_KEY);
     return saved ? JSON.parse(saved) : [];
   } catch (err) {
+    console.error('Błąd odczytu z localStorage:', err);
     return [];
   }
 }
@@ -107,7 +117,7 @@ function showListView() {
 function renderMonitoredList() {
   monitoredList.innerHTML = '';
 
-  if (monitoredTrains.length === 0) {
+  if (!monitoredTrains || monitoredTrains.length === 0) {
     emptyState.classList.remove('hidden');
     return;
   }
@@ -118,7 +128,6 @@ function renderMonitoredList() {
     const card = document.createElement('div');
     card.className = 'monitored-card';
 
-    // Opóźnienie i czas bez bezpośrednich obliczeń na froncie - z API
     const delayVal = train.delay ?? 0;
     const delayText = delayVal > 0 ? `+${delayVal} min` : 'O czasie';
     const delayClass = delayVal > 0 ? 'delayed' : 'on-time';
@@ -129,7 +138,7 @@ function renderMonitoredList() {
           <h3>${escapeHtml(train.name || 'Pociąg')}</h3>
           <span class="train-number">${escapeHtml(train.number || train.id || '')}</span>
         </div>
-        <button class="btn-delete" title="Usuń z monitorowanych" aria-label="Usuń z monitorowanych">🗑️</button>
+        <button class="btn-delete" title="Usuń z monitorowanych" aria-label="Usuń">🗑️</button>
       </div>
       <div class="card-route">
         <span>${escapeHtml(train.from || 'Początek')}</span>
@@ -142,15 +151,13 @@ function renderMonitoredList() {
       </div>
     `;
 
-    // 1. Klikalność całej karty otwiera widok szczegółowy trasy
     card.addEventListener('click', () => {
       openTrainDetails(train.id || train.number);
     });
 
-    // 2. Bezpieczny przycisk usuwania (stopPropagation)
     const deleteBtn = card.querySelector('.btn-delete');
     deleteBtn.addEventListener('click', (e) => {
-      e.stopPropagation(); // Powstrzymuje otwarcie widoku szczegółów!
+      e.stopPropagation();
       removeMonitoredTrain(train.id || train.number);
     });
 
@@ -182,28 +189,24 @@ function removeMonitoredTrain(trainId) {
 }
 
 // ==========================================
-// WIDOK 2: SZCZEGÓŁY BIEGU POCIĄGU
+// WIDOK 2: SZCZEGÓŁY BIEGU POCIĄGU & API 404 FIX
 // ==========================================
 async function openTrainDetails(trainId, forceRefresh = false) {
   activeTrainId = trainId;
 
-  // Przełączenie widoku natychmiastowo
   listView.classList.add('hidden');
   listView.classList.remove('active');
   detailsView.classList.remove('hidden');
   detailsView.classList.add('active');
 
-  // Pamięć Podręczna (Cache 5 min)
   const cached = dataCache.trainDetails[trainId];
   const now = Date.now();
 
   if (!forceRefresh && cached && (now - cached.timestamp < CACHE_DURATION_MS)) {
-    // Dane w cache są świeże (< 5 min) – renderowanie bez natychmiastowego zapytania do API
     renderTrainDetails(cached.data);
     return;
   }
 
-  // Brak świeżych danych -> Pobranie z API
   showDetailsLoading();
   try {
     const data = await fetchTrainDetailsFromAPI(trainId);
@@ -214,7 +217,14 @@ async function openTrainDetails(trainId, forceRefresh = false) {
     renderTrainDetails(data);
   } catch (err) {
     console.error('Błąd pobierania trasy:', err);
-    routeTimeline.innerHTML = '<p class="error-msg">Nie udało się pobrać szczegółów trasy pociągu.</p>';
+    routeTimeline.innerHTML = `
+      <div style="padding: 20px; text-align: center; color: var(--delay-red);">
+        <p><strong>Nie udało się pobrać szczegółów biegu pociągu (HTTP 404).</strong></p>
+        <small style="color: var(--text-muted); display: block; margin-top: 8px;">
+          Sprawdź, czy pociąg o identyfikatorze "${escapeHtml(trainId)}" znajduje się w aktualnym rozkładzie.
+        </small>
+      </div>
+    `;
   }
 }
 
@@ -226,21 +236,32 @@ function showDetailsLoading() {
   routeTimeline.innerHTML = '<p class="loading-msg">Pobieranie aktualnej trasy z API...</p>';
 }
 
+// --- NAPRAWA 2: Odporne pobieranie danych (obsługa alternatywnych ścieżek API) ---
 async function fetchTrainDetailsFromAPI(trainId) {
-  const response = await fetch(`/api/train-details?trainId=${encodeURIComponent(trainId)}`);
-  if (!response.ok) {
-    const resFallback = await fetch(`/api/train?id=${encodeURIComponent(trainId)}`);
-    if (!resFallback.ok) throw new Error('Błąd API pobierania szczegółów pociągu');
-    return await resFallback.json();
+  const possibleEndpoints = [
+    `/api/train-details?trainId=${encodeURIComponent(trainId)}`,
+    `/api/trains/${encodeURIComponent(trainId)}`,
+    `/api/train?id=${encodeURIComponent(trainId)}`
+  ];
+
+  for (const url of possibleEndpoints) {
+    try {
+      const response = await fetch(url);
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (e) {
+      // Próbuj kolejnego adresu
+    }
   }
-  return await response.json();
+
+  throw new Error(`Endpoint zwrócił błąd 404 dla ID: ${trainId}`);
 }
 
 function renderTrainDetails(data) {
   detailTrainName.textContent = data.trainName || data.name || `Pociąg ${activeTrainId}`;
   detailTrainNumber.textContent = data.trainNumber || data.number || activeTrainId;
 
-  // Obecne opóźnienie na trasie wprost z API
   const totalDelay = data.totalDelay ?? data.delay ?? 0;
   if (totalDelay > 0) {
     detailTotalDelay.textContent = `Opóźnienie: +${totalDelay} min`;
@@ -250,7 +271,6 @@ function renderTrainDetails(data) {
     detailTotalDelay.className = 'total-delay-badge on-time';
   }
 
-  // Tabela / Lista Stacji (Trasa krok po kroku)
   routeTimeline.innerHTML = '';
   const stations = data.route || data.stations || data.stops || [];
 
@@ -261,22 +281,15 @@ function renderTrainDetails(data) {
 
   stations.forEach((st) => {
     const item = document.createElement('div');
-
-    // Status stacji: 'past' (miniona), 'current' (obecna), 'upcoming' (nadchodząca)
     const status = st.status || 'upcoming';
     item.className = `timeline-item status-${status}`;
 
-    // Peron i Tor wprost z API
     const platform = st.platform ? `Peron ${st.platform}` : null;
     const track = st.track ? `Tor ${st.track}` : null;
     let platformTrackText = 'brak danych';
-    if (platform && track) {
-      platformTrackText = `${platform}, ${track}`;
-    } else if (platform) {
-      platformTrackText = platform;
-    } else if (track) {
-      platformTrackText = track;
-    }
+    if (platform && track) platformTrackText = `${platform}, ${track}`;
+    else if (platform) platformTrackText = platform;
+    else if (track) platformTrackText = track;
 
     let statusLabel = 'Nadchodząca';
     if (status === 'past') statusLabel = 'Miniona';
@@ -309,21 +322,18 @@ function renderTrainDetails(data) {
   });
 }
 
-// ==========================================
-// PŁYWAJĄCY PRZYCISK ODŚWIEŻANIA (FAB)
-// ==========================================
+// Odświeżanie FAB
 async function handleFabRefresh() {
   fabRefresh.classList.add('spinning');
 
   try {
     if (listView.classList.contains('active')) {
-      // Odświeżenie danych na liście monitorowanych pociągów
       for (let train of monitoredTrains) {
         try {
           const freshData = await fetchTrainDetailsFromAPI(train.id || train.number);
           train.delay = freshData.totalDelay ?? freshData.delay ?? 0;
           train.lastUpdate = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-          
+
           dataCache.trainDetails[train.id || train.number] = {
             timestamp: Date.now(),
             data: freshData
@@ -335,7 +345,6 @@ async function handleFabRefresh() {
       saveMonitoredToStorage();
       renderMonitoredList();
     } else if (detailsView.classList.contains('active') && activeTrainId) {
-      // Wymuszenie odświeżenia trasy z API (wymuszony parametr forceRefresh)
       await openTrainDetails(activeTrainId, true);
     }
   } finally {
@@ -345,7 +354,7 @@ async function handleFabRefresh() {
   }
 }
 
-// Autocomplete i pobieranie tablicy odjazdów
+// Autocomplete i wyszukiwanie stacji
 async function fetchStationSuggestions(query) {
   try {
     const res = await fetch(`/api/stations?query=${encodeURIComponent(query)}`);
@@ -419,7 +428,7 @@ async function loadDeparturesForStation(stationName) {
     });
   } catch (err) {
     console.error('Błąd tablicy odjazdów:', err);
-    departuresList.innerHTML = '<p class="error-msg">Nie udało się pobrać tablicy odjazdów.</p>';
+    departuresList.innerHTML = '<p class="error-msg">Nie udało się pobrać tablicy odjazdów (sprawdź połączenie z API).</p>';
   }
 }
 
