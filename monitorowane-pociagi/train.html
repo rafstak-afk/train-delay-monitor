@@ -30,7 +30,7 @@
         .delay-banner { background: rgba(255, 107, 107, 0.2); border: 1px solid var(--accent-red); color: #ff9999; padding: 8px 12px; border-radius: 8px; font-weight: 900; font-size: 14px; }
         .last-report-badge { background: rgba(56, 189, 248, 0.15); border: 1px solid var(--accent-blue); color: #e0f2fe; padding: 8px 12px; border-radius: 8px; font-weight: 700; font-size: 14px; }
 
-        .timeline { position: relative; padding-left: 24px; margin-top: 20px; border-left: 3px solid var(--panel-border); }
+        .timeline { position: relative; padding-left: 24px; margin-top: 20px; border-left: 3px solid var(--panel-border); max-height: 65vh; overflow-y: auto; }
         .station-row { position: relative; padding: 12px 0 12px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
         .station-row::before { content: ''; position: absolute; left: -31px; top: 18px; width: 12px; height: 12px; border-radius: 50%; background: var(--panel-border); }
         
@@ -61,48 +61,205 @@
         const urlParams = new URLSearchParams(window.location.search);
         const trainNo = urlParams.get('train');
 
+        function esc(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function timeOnly(value) {
+            if (!value) return '--:--';
+            const m = String(value).match(/T(\d{2}:\d{2})/);
+            return m ? m[1] : String(value).slice(0, 5);
+        }
+
         async function loadTrainSchedule() {
             if (!trainNo) {
-                document.getElementById('trainNumber').innerText = "Brak numeru pociągu";
+                document.getElementById('trainNumber').innerText = 'Brak numeru pociągu';
                 return;
             }
 
             document.getElementById('trainTitleHeader').innerText = trainNo;
+            document.getElementById('trainNumber').innerText = `Pociąg ${trainNo}`;
+            document.getElementById('lastReport').innerHTML = '📍 Pobieranie aktualnej pozycji...';
 
             try {
-                const res = await fetch(`/api/monitored-trains-v2?train=${encodeURIComponent(trainNo)}`);
+                const today = new Date().toISOString().slice(0, 10);
+
+                const url =
+                    `/api?action=train-route` +
+                    `&train=${encodeURIComponent(trainNo)}` +
+                    `&stationId=73312` +
+                    `&station=Katowice` +
+                    `&operatingDate=${encodeURIComponent(today)}`;
+
+                const res = await fetch(url);
+
+                if (!res.ok) {
+                    throw new Error(`HTTP ${res.status}`);
+                }
+
                 const data = await res.json();
-                
-                const info = data.info || {};
-                const stops = data.stops || [];
 
-                document.getElementById('trainNumber').innerText = `${info.category} ${info.name ? info.name + ' ' : ''}${trainNo}`;
-                document.getElementById('trainRoute').innerText = `Z: ${info.origin} ➔ Do: ${info.destination}`;
-                
-                if (info.delay > 0) {
-                    document.getElementById('delayBannerContainer').innerHTML = `
-                        <div class="delay-banner">⚠️ POCIĄG OPÓŹNIONY O +${info.delay} MINUT</div>
-                    `;
+                if (!data.ok || !data.operation) {
+                    throw new Error('API nie zwróciło operacji pociągu');
                 }
 
-                document.getElementById('lastReport').innerHTML = `📍 Ostatnia potwierdzona stacja: <b>${info.lastStation}</b> (${info.lastTime})`;
+                const op = data.operation;
+                const stations = Array.isArray(op.stations) ? op.stations : [];
 
-                if (stops.length === 0) {
-                    document.getElementById('timelineContainer').innerHTML = '<div style="color:var(--text-muted); padding:10px;">Brak danych trasy dla tego pociągu.</div>';
-                    return;
+                if (!stations.length) {
+                    throw new Error('Brak stacji w operacji pociągu');
                 }
 
-                document.getElementById('timelineContainer').innerHTML = stops.map(s => `
-                    <div class="station-row ${s.passed ? 'passed' : s.isCurrent ? 'current' : ''}">
-                        <div class="station-name">${s.name}</div>
-                        <div class="station-times">
-                            <span>Status: <b>${s.passed ? 'Minęły' : s.isCurrent ? 'Na stacji / Wjazd' : 'Planowany'}</b></span>
+                document.getElementById('trainNumber').innerText =
+                    `${op.commercialCategory || op.category || 'Pociąg'} ${trainNo}`;
+
+                const routeStations =
+                    stations
+                        .map(s => s.stationName || s.name || s.station || '')
+                        .filter(Boolean);
+
+                if (routeStations.length >= 2) {
+                    document.getElementById('trainRoute').innerText =
+                        `Z: ${routeStations[0]} ➔ Do: ${routeStations[routeStations.length - 1]}`;
+                } else {
+                    document.getElementById('trainRoute').innerText =
+                        'Trasa pociągu';
+                }
+
+                const confirmed = stations
+                    .filter(s => s.isConfirmed === true)
+                    .sort((a, b) =>
+                        Number(a.actualSequenceNumber ?? a.plannedSequenceNumber ?? 0) -
+                        Number(b.actualSequenceNumber ?? b.plannedSequenceNumber ?? 0)
+                    );
+
+                const lastConfirmed = confirmed.length
+                    ? confirmed[confirmed.length - 1]
+                    : null;
+
+                if (lastConfirmed) {
+                    const lastName =
+                        lastConfirmed.stationName ||
+                        lastConfirmed.name ||
+                        lastConfirmed.station ||
+                        `Stacja ID ${lastConfirmed.stationId}`;
+
+                    const lastTime =
+                        timeOnly(lastConfirmed.actualDeparture) ||
+                        timeOnly(lastConfirmed.actualArrival);
+
+                    document.getElementById('lastReport').innerHTML =
+                        `📍 Ostatnia potwierdzona stacja: <b>${esc(lastName)}</b> (${esc(lastTime)})`;
+                } else {
+                    document.getElementById('lastReport').innerHTML =
+                        '📍 Brak potwierdzonej pozycji pociągu';
+                }
+
+                /*
+                 * Ostatnia potwierdzona stacja jest aktualną pozycją
+                 * operacyjną pociągu. Wszystkie wcześniejsze są zaliczone,
+                 * kolejna jest następną, reszta przyszłymi.
+                 */
+                const lastSeq = lastConfirmed
+                    ? Number(lastConfirmed.actualSequenceNumber ?? lastConfirmed.plannedSequenceNumber ?? -1)
+                    : -1;
+
+                const html = stations.map((s, i) => {
+                    const seq = Number(
+                        s.actualSequenceNumber ??
+                        s.plannedSequenceNumber ??
+                        i
+                    );
+
+                    const isConfirmed = s.isConfirmed === true;
+                    const isCurrent = isConfirmed && seq === lastSeq;
+                    const isPassed = isConfirmed && seq < lastSeq;
+
+                    let cls = '';
+                    let status = 'Planowany';
+
+                    if (isCurrent) {
+                        cls = 'current';
+                        status = '📍 Ostatnia potwierdzona';
+                    } else if (isPassed) {
+                        cls = 'passed';
+                        status = '✓ Zaliczona';
+                    }
+
+                    const name =
+                        s.stationName ||
+                        s.name ||
+                        s.station ||
+                        `Stacja ID ${s.stationId}`;
+
+                    const arrival = timeOnly(s.actualArrival);
+                    const departure = timeOnly(s.actualDeparture);
+
+                    let times = '';
+
+                    if (isConfirmed) {
+                        if (arrival !== '--:--' && departure !== '--:--') {
+                            times = `Przyjazd: ${arrival} · Odjazd: ${departure}`;
+                        } else if (departure !== '--:--') {
+                            times = `Odjazd: ${departure}`;
+                        } else if (arrival !== '--:--') {
+                            times = `Przyjazd: ${arrival}`;
+                        }
+                    } else {
+                        times = 'Brak potwierdzenia przejazdu';
+                    }
+
+                    return `
+                        <div class="station-row ${cls}">
+                            <div class="station-name">${esc(name)}</div>
+                            <div class="station-times">
+                                <span>Status: <b>${esc(status)}</b></span>
+                                <span>${esc(times)}</span>
+                            </div>
                         </div>
-                    </div>
-                `).join('');
+                    `;
+                }).join('');
+
+                document.getElementById('timelineContainer').innerHTML = html;
+
+                /*
+                 * Automatycznie przewiń do aktualnej stacji.
+                 */
+                const current = document.querySelector('.station-row.current');
+                const timeline = document.getElementById('timelineContainer');
+
+                if (current && timeline) {
+                    setTimeout(() => {
+                        const targetScroll =
+                            current.offsetTop -
+                            (timeline.clientHeight / 2) +
+                            (current.offsetHeight / 2);
+
+                        timeline.scrollTo({
+                            top: Math.max(0, targetScroll),
+                            behavior: 'smooth'
+                        });
+                    }, 150);
+                }
 
             } catch (err) {
-                document.getElementById('timelineContainer').innerHTML = '<div style="color:var(--accent-red); padding:10px;">Błąd pobierania trasy z serwera.</div>';
+                console.error('Błąd pobierania biegu pociągu:', err);
+
+                document.getElementById('timelineContainer').innerHTML = `
+                    <div style="color:var(--accent-red);padding:15px;">
+                        <strong>Nie udało się pobrać biegu pociągu.</strong>
+                        <br>
+                        <small>${esc(err.message)}</small>
+                    </div>
+                `;
+
+                document.getElementById('lastReport').innerHTML =
+                    '📍 Brak aktualnej pozycji';
             }
         }
 
