@@ -1,0 +1,13 @@
+#app{
+
+max-width:700px;
+
+margin:auto;
+
+display:flex;
+
+flex-direction:column;
+
+gap:20px;
+
+}
