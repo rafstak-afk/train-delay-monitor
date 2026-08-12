@@ -78,7 +78,39 @@ async function plkGet(
   return res.json();
 }
 
-async function resolveTrainIdsFromOperations(
+function normalizeTrainNumber(value: any): string {
+  const s = String(value ?? '').trim();
+  if (!s) return '';
+  return s.replace(/^0+(?=\d)/, '');
+}
+
+function scheduleTrainNumberMatches(
+  route: any,
+  trainNo: string
+): boolean {
+  const wanted = normalizeTrainNumber(trainNo);
+  if (!wanted) return false;
+
+  const candidates = [
+    route.nationalNumber,
+    route.trainNumber,
+    route.commercialTrainNumber,
+    route.tn,
+    route.number,
+    ...(Array.isArray(route.stations)
+      ? route.stations.flatMap((s: any) => [
+          s.arrivalTrainNumber,
+          s.departureTrainNumber
+        ])
+      : [])
+  ];
+
+  return candidates.some(
+    v => normalizeTrainNumber(v) === wanted
+  );
+}
+
+async function resolveTrainIdsFromSchedules(
   {
     trainNo,
     stationId,
@@ -99,31 +131,53 @@ async function resolveTrainIdsFromOperations(
   }
 
   const qs = new URLSearchParams({
-    stations: String(stationId),
-    withPlanned: 'true',
-    fullRoutes: 'false',
-    pageSize: '500'
+    dateFrom: operatingDate,
+    dateTo: operatingDate,
+    stations: String(stationId)
   });
 
   const data = await plkGet(
-    '/operations?' + qs.toString(),
+    '/schedules?' + qs.toString(),
     apiKey
   );
 
-  const trains = arrifyPayload(data);
+  const routes = Array.isArray(data?.routes)
+    ? data.routes
+    : arrifyPayload(data);
 
-  const found = trains.find(
-    t => trainNumberMatches(t, trainNo)
+  const matches = routes.filter(
+    (route: any) =>
+      Array.isArray(route.stations) &&
+      route.stations.some(
+        (s: any) =>
+          Number(s.stationId) === Number(stationId)
+      ) &&
+      scheduleTrainNumberMatches(route, trainNo)
   );
 
-  if (!found) {
+  if (!matches.length) {
     throw new Error(
       'Nie znaleziono pociągu ' +
       trainNo +
       ' dla stacji ' +
-      stationId
+      stationId +
+      ' w rozkładzie na ' +
+      operatingDate
     );
   }
+
+  if (matches.length > 1) {
+    throw new Error(
+      'Znaleziono więcej niż jeden kurs pociągu ' +
+      trainNo +
+      ' dla stacji ' +
+      stationId +
+      ' na ' +
+      operatingDate
+    );
+  }
+
+  const found = matches[0];
 
   const ids = pickTrainIds(found);
 
@@ -137,7 +191,7 @@ async function resolveTrainIdsFromOperations(
     ...ids,
     operatingDate:
       ids.operatingDate || operatingDate,
-    resolverSource: 'operations',
+    resolverSource: 'schedules',
     resolverStationId: stationId,
     resolverMatchedTrain: found
   };
@@ -200,7 +254,7 @@ async function handleTrainRoute(
   if (!scheduleId || !orderId) {
     try {
       const resolved =
-        await resolveTrainIdsFromOperations(
+        await resolveTrainIdsFromSchedules(
           {
             trainNo: train,
             stationId,
