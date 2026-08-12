@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0b1220">
+<title>Moje Pociągi V2</title>
+
+<style>
+:root{
+  --bg:#0b1220;
+  --panel:#111a2b;
+  --panel2:#162238;
+  --border:#263653;
+  --text:#f4f7fb;
+  --muted:#91a0b7;
+  --cyan:#22d3ee;
+  --green:#34d399;
+  --yellow:#fbbf24;
+  --red:#fb7185;
+  --blue:#60a5fa;
+}
+
+*{box-sizing:border-box}
+
+html,body{
+  margin:0;
+  padding:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+
+body{
+  min-height:100vh;
+}
+
+button,input{
+  font:inherit;
+}
+
+button{
+  cursor:pointer;
+}
+
+.app{
+  width:min(100%,900px);
+  margin:0 auto;
+  padding:12px;
+}
+
+header{
+  position:sticky;
+  top:0;
+  z-index:20;
+  background:rgba(11,18,32,.96);
+  backdrop-filter:blur(10px);
+  padding:8px 0 12px;
+}
+
+.header-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+
+h1{
+  margin:0;
+  font-size:21px;
+  line-height:1.1;
+}
+
+.header-sub{
+  color:var(--muted);
+  font-size:12px;
+  margin-top:4px;
+}
+
+.refresh{
+  width:42px;
+  height:42px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:var(--panel);
+  color:var(--cyan);
+  font-size:20px;
+}
+
+.refresh:disabled{
+  opacity:.5;
+}
+
+.add-panel{
+  margin:8px 0 12px;
+  padding:12px;
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:14px;
+}
+
+.add-title{
+  color:var(--cyan);
+  font-size:12px;
+  font-weight:800;
+  margin-bottom:9px;
+}
+
+.add-row{
+  display:grid;
+  grid-template-columns:1fr 1fr auto;
+  gap:8px;
+}
+
+input{
+  width:100%;
+  min-width:0;
+  padding:10px 11px;
+  border-radius:10px;
+  border:1px solid var(--border);
+  background:#0b1220;
+  color:var(--text);
+  outline:none;
+}
+
+input:focus{
+  border-color:var(--cyan);
+}
+
+.add-btn{
+  border:0;
+  border-radius:10px;
+  padding:0 14px;
+  background:var(--cyan);
+  color:#06212a;
+  font-weight:800;
+}
+
+.summary{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin:10px 2px 7px;
+}
+
+.summary-title{
+  font-size:13px;
+  font-weight:800;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+}
+
+.summary-info{
+  color:var(--muted);
+  font-size:12px;
+}
+
+.list{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+
+.card{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:14px;
+  overflow:hidden;
+}
+
+.card-main{
+  display:grid;
+  grid-template-columns:62px 1fr 32px;
+  gap:10px;
+  align-items:center;
+  padding:11px;
+}
+
+.status{
+  width:62px;
+  min-height:52px;
+  border-radius:11px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  text-align:center;
+  font-weight:800;
+}
+
+.status .big{
+  font-size:12px;
+  line-height:1.1;
+}
+
+.status .small{
+  margin-top:3px;
+  font-size:11px;
+  font-weight:700;
+}
+
+.status.live{
+  background:rgba(52,211,153,.13);
+  border:1px solid rgba(52,211,153,.35);
+  color:var(--green);
+}
+
+.status.wait{
+  background:rgba(251,191,36,.10);
+  border:1px solid rgba(251,191,36,.3);
+  color:var(--yellow);
+}
+
+.status.none{
+  background:rgba(145,160,183,.10);
+  border:1px solid rgba(145,160,183,.25);
+  color:var(--muted);
+}
+
+.status.delay{
+  background:rgba(251,113,133,.12);
+  border:1px solid rgba(251,113,133,.35);
+  color:var(--red);
+}
+
+.train{
+  min-width:0;
+}
+
+.train-top{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  min-width:0;
+}
+
+.train-number{
+  font-size:16px;
+  font-weight:900;
+  white-space:nowrap;
+}
+
+.train-name{
+  color:var(--cyan);
+  font-size:13px;
+  font-weight:700;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.station{
+  margin-top:2px;
+  font-size:13px;
+  font-weight:700;
+}
+
+.route{
+  margin-top:2px;
+  color:var(--muted);
+  font-size:11px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.position{
+  margin-top:4px;
+  color:#d9e2ef;
+  font-size:11px;
+}
+
+.delete{
+  width:32px;
+  height:32px;
+  border:0;
+  background:transparent;
+  color:#64748b;
+  border-radius:8px;
+  font-size:17px;
+}
+
+.delete:hover{
+  color:var(--red);
+  background:rgba(251,113,133,.08);
+}
+
+.details{
+  border-top:1px solid var(--border);
+  padding:8px 11px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  color:var(--muted);
+  font-size:11px;
+  background:rgba(255,255,255,.015);
+}
+
+.open{
+  border:0;
+  border-radius:8px;
+  padding:7px 10px;
+  background:rgba(34,211,238,.12);
+  color:var(--cyan);
+  font-weight:800;
+  font-size:11px;
+}
+
+.loading{
+  padding:24px 12px;
+  text-align:center;
+  color:var(--muted);
+}
+
+.error{
+  padding:14px;
+  color:var(--red);
+  background:rgba(251,113,133,.08);
+  border:1px solid rgba(251,113,133,.2);
+  border-radius:12px;
+}
+
+.empty{
+  padding:30px 15px;
+  text-align:center;
+  color:var(--muted);
+  border:1px dashed var(--border);
+  border-radius:14px;
+}
+
+@media(max-width:600px){
+  .app{
+    padding:8px;
+  }
+
+  .add-row{
+    grid-template-columns:1fr 1fr;
+  }
+
+  .add-btn{
+    grid-column:1 / -1;
+    min-height:40px;
+  }
+
+  .card-main{
+    grid-template-columns:58px 1fr 30px;
+    gap:8px;
+    padding:9px;
+  }
+
+  .status{
+    width:58px;
+  }
+
+  .train-number{
+    font-size:15px;
+  }
+
+  .train-name{
+    font-size:12px;
+  }
+
+  .station{
+    font-size:12px;
+  }
+}
+</style>
+</head>
+
+<body>
+<div class="app">
+
+<header>
+  <div class="header-row">
+    <div>
+      <h1>🚆 Moje Pociągi</h1>
+      <div class="header-sub">Aktualny status z danych PLK</div>
+    </div>
+    <button class="refresh" id="refreshBtn" title="Odśwież">↻</button>
+  </div>
+</header>
+
+<section class="add-panel">
+  <div class="add-title">＋ DODAJ POCIĄG DO MONITOROWANIA</div>
+  <div class="add-row">
+    <input id="stationInput" placeholder="Stacja, np. Katowice">
+    <input id="trainInput" placeholder="Numer, np. 3815">
+    <button class="add-btn" id="addBtn">Dodaj</button>
+  </div>
+</section>
+
+<div class="summary">
+  <div class="summary-title">Monitorowane</div>
+  <div class="summary-info" id="summaryInfo">Ładowanie…</div>
+</div>
+
+<main id="list" class="list">
+  <div class="loading">Pobieranie danych z PLK…</div>
+</main>
+
+</div>
+
+<script>
+const DEFAULT_TRAINS = [
+  {station:'KATOWICE', number:'3815'},
+  {station:'BYTOM KARB', number:'40360'},
+  {station:'KATOWICE', number:'38107'},
+  {station:'KATOWICE', number:'40621'},
+  {station:'KATOWICE', number:'63102'},
+  {station:'TARNOWSKIE GÓRY', number:'40450'},
+  {station:'MIASTECZKO ŚLĄSKIE', number:'44226'},
+  {station:'TARNOWSKIE GÓRY', number:'40250'},
+  {station:'CHORZÓW BATORY', number:'40858'},
+  {station:'CHORZÓW BATORY', number:'40423'},
+  {station:'CHORZÓW BATORY', number:'40211'},
+  {station:'CHORZÓW BATORY', number:'40468'}
+];
+
+const STORAGE_KEY = 'rafstakMojePociagiV2';
+
+const STATION_IDS = {
+  'KATOWICE': '73312',
+  'TARNOWSKIE GÓRY': '73390',
+  'CHORZÓW BATORY': '73308',
+  'GLIWICE': '73318',
+  'BYTOM KARB': '73405',
+  'MIASTECZKO ŚLĄSKIE': '73428'
+};
+
+function getList(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      const parsed = JSON.parse(raw);
+      if(Array.isArray(parsed)) return parsed;
+    }
+  }catch(e){}
+  return DEFAULT_TRAINS.map(x => ({...x}));
+}
+
+function saveList(list){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+}
+
+function stationId(name){
+  return STATION_IDS[String(name || '').trim().toUpperCase()] || '';
+}
+
+function escapeHtml(value){
+  return String(value ?? '')
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#039;');
+}
+
+function getTrainNumber(row){
+  return String(
+    row.trainNumber ??
+    row.trainNo ??
+    row.number ??
+    row.train?.trainNumber ??
+    row.train?.number ??
+    ''
+  );
+}
+
+function getDelay(row){
+  const values = [
+    row.delayMinutes,
+    row.delay,
+    row.delayInMinutes,
+    row.train?.delayMinutes,
+    row.operation?.delayMinutes
+  ];
+
+  for(const value of values){
+    if(value !== undefined && value !== null && value !== ''){
+      const n = Number(value);
+      if(Number.isFinite(n)) return n;
+    }
+  }
+
+  return null;
+}
+
+function getTime(row){
+  return row.actualTime ||
+         row.realTime ||
+         row.departureTimeActual ||
+         row.arrivalTimeActual ||
+         row.time ||
+         row.scheduledTime ||
+         row.departureTime ||
+         row.arrivalTime ||
+         '';
+}
+
+function getStation(row){
+  return row.stationName ||
+         row.station ||
+         row.name ||
+         row.stopName ||
+         '';
+}
+
+function getDestination(row){
+  return row.destination ||
+         row.direction ||
+         row.to ||
+         row.train?.destination ||
+         '';
+}
+
+function getOrigin(row){
+  return row.origin ||
+         row.from ||
+         row.train?.origin ||
+         '';
+}
+
+function getScheduleId(row){
+  return row.scheduleId ||
+         row.scheduledId ||
+         row.schedule?.id ||
+         '';
+}
+
+function getOrderId(row){
+  return row.orderId ||
+         row.trainOrderId ||
+         row.operationId ||
+         '';
+}
+
+function getCategory(row){
+  return row.category ||
+         row.commercialCategory ||
+         row.train?.category ||
+         '';
+}
+
+function makeDetailsUrl(item,row){
+  const params = new URLSearchParams();
+
+  params.set('train', item.number);
+
+  const category = getCategory(row);
+  const name =
+    row.name ||
+    row.trainName ||
+    row.commercialName ||
+    row.train?.name ||
+    '';
+
+  if(category) params.set('category',category);
+  if(name) params.set('name',name);
+
+  const destination = getDestination(row);
+  if(destination) params.set('destination',destination);
+
+  params.set(
+    'date',
+    new Date().toISOString().slice(0,10)
+  );
+
+  const scheduleId = getScheduleId(row);
+  const orderId = getOrderId(row);
+
+  if(scheduleId) params.set('scheduleId',scheduleId);
+  if(scheduleId) params.set('scheduledId',scheduleId);
+  if(orderId) params.set('orderId',orderId);
+
+  if(row.trainOrderId){
+    params.set('trainOrderId',row.trainOrderId);
+  }
+
+  const id = stationId(item.station);
+  if(id) params.set('stationId',id);
+  params.set('station',item.station);
+
+  return '/train?' + params.toString();
+}
+
+async function fetchStation(station){
+  const id = stationId(station);
+
+  const params = new URLSearchParams();
+
+  if(id){
+    params.set('station',station);
+  }else{
+    params.set('station',station);
+  }
+
+  params.set('limit','300');
+
+  const response = await fetch(
+    '/api/departures?' + params.toString(),
+    {
+      headers:{Accept:'application/json'},
+      cache:'no-store'
+    }
+  );
+
+  if(!response.ok){
+    throw new Error('HTTP ' + response.status);
+  }
+
+  const data = await response.json();
+
+  return Array.isArray(data.departures)
+    ? data.departures
+    : [];
+}
+
+function findTrain(rows,number){
+  const wanted = String(number);
+
+  return rows.find(row =>
+    getTrainNumber(row) === wanted
+  ) || null;
+}
+
+function buildView(item,result){
+  const row = result.row;
+
+  let state = 'none';
+  let label = 'BRAK DANYCH';
+  let delayText = '';
+
+  if(result.loading){
+    state = 'wait';
+    label = 'ŁADOWANIE';
+  }else if(row){
+    const delay = getDelay(row);
+
+    state = 'live';
+    label = 'AKTYWNY';
+
+    if(delay !== null){
+      delayText =
+        delay > 0 ? '+' + delay + ' min' :
+        delay < 0 ? delay + ' min' :
+        '0 min';
+
+      if(delay > 0) state = 'delay';
+    }else{
+      delayText = 'potwierdzony';
+    }
+  }else{
+    label = 'BRAK OPERACJI';
+  }
+
+  const origin = row ? getOrigin(row) : '';
+  const destination = row ? getDestination(row) : '';
+  const time = row ? getTime(row) : '';
+
+  const route =
+    origin || destination
+      ? `${origin || item.station} → ${destination || '—'}`
+      : 'Brak informacji o relacji';
+
+  const station =
+    row && getStation(row)
+      ? getStation(row)
+      : item.station;
+
+  const position =
+    time
+      ? `Dane: ${timeOnly(time)}`
+      : row
+        ? 'Dane potwierdzone przez API'
+        : 'API nie zwróciło aktywnej operacji';
+
+  const detailsButton =
+    row
+      ? `<button class="open" data-index="${result.index}">SZCZEGÓŁY →</button>`
+      : '';
+
+  return `
+    <article class="card">
+      <div class="card-main">
+
+        <div class="status ${state}">
+          <div class="big">${escapeHtml(label)}</div>
+          <div class="small">${escapeHtml(delayText)}</div>
+        </div>
+
+        <div class="train">
+          <div class="train-top">
+            <span class="train-number">#${escapeHtml(item.number)}</span>
+            ${
+              row && (
+                row.name ||
+                row.trainName ||
+                row.commercialName
+              )
+                ? `<span class="train-name">${
+                    escapeHtml(
+                      row.name ||
+                      row.trainName ||
+                      row.commercialName
+                    )
+                  }</span>`
+                : ''
+            }
+          </div>
+
+          <div class="station">${escapeHtml(station)}</div>
+          <div class="route">${escapeHtml(route)}</div>
+          <div class="position">${escapeHtml(position)}</div>
+        </div>
+
+        <button
+          class="delete"
+          data-delete="${result.index}"
+          title="Usuń z listy"
+        >×</button>
+
+      </div>
+
+      <div class="details">
+        <span>${escapeHtml(item.station)}</span>
+        ${detailsButton}
+      </div>
+    </article>
+  `;
+}
+
+function timeOnly(value){
+  const match = String(value || '').match(/T(\d{2}:\d{2})/);
+  if(match) return match[1];
+
+  const match2 = String(value || '').match(/(\d{2}:\d{2})/);
+  return match2 ? match2[1] : String(value || '');
+}
+
+async function loadTrains(){
+  const list = getList();
+  const container = document.getElementById('list');
+  const refresh = document.getElementById('refreshBtn');
+
+  refresh.disabled = true;
+  refresh.textContent = '…';
+
+  document.getElementById('summaryInfo').textContent =
+    `0 / ${list.length} załadowanych`;
+
+  container.innerHTML = list.length
+    ? list.map((item,index) =>
+        buildView(item,{
+          row:null,
+          index,
+          loading:true
+        })
+      ).join('')
+    : `<div class="empty">Brak monitorowanych pociągów.</div>`;
+
+  const stationCache = new Map();
+
+  let loaded = 0;
+
+  for(let index=0; index<list.length; index++){
+    const item = list[index];
+
+    try{
+      if(!stationCache.has(item.station)){
+        stationCache.set(
+          item.station,
+          fetchStation(item.station)
+        );
+      }
+
+      const rows =
+        await stationCache.get(item.station);
+
+      const row =
+        findTrain(rows,item.number);
+
+      const oldCard = container.children[index];
+
+      if(oldCard){
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML =
+          buildView(item,{
+            row,
+            index,
+            loading:false
+          });
+
+        oldCard.replaceWith(wrapper.firstElementChild);
+      }
+
+      loaded++;
+
+      document.getElementById('summaryInfo').textContent =
+        `${loaded} / ${list.length}`;
+    }catch(error){
+      const oldCard = container.children[index];
+
+      if(oldCard){
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML =
+          buildView(item,{
+            row:null,
+            index,
+            loading:false
+          });
+
+        oldCard.replaceWith(wrapper.firstElementChild);
+      }
+
+      console.error(
+        'Błąd pobierania',
+        item.station,
+        item.number,
+        error
+      );
+    }
+  }
+
+  bindActions();
+
+  refresh.disabled = false;
+  refresh.textContent = '↻';
+
+  document.getElementById('summaryInfo').textContent =
+    `${list.length} pociągów`;
+}
+
+function bindActions(){
+  document.querySelectorAll('[data-delete]')
+    .forEach(button => {
+      button.addEventListener('click',event => {
+        event.stopPropagation();
+
+        const index =
+          Number(button.dataset.delete);
+
+        const list = getList();
+
+        list.splice(index,1);
+        saveList(list);
+        loadTrains();
+      });
+    });
+
+  document.querySelectorAll('.open')
+    .forEach(button => {
+      button.addEventListener('click',event => {
+        event.stopPropagation();
+
+        const index =
+          Number(button.dataset.index);
+
+        openDetails(index);
+      });
+    });
+}
+
+async function openDetails(index){
+  const list = getList();
+  const item = list[index];
+
+  if(!item) return;
+
+  try{
+    const rows = await fetchStation(item.station);
+    const row = findTrain(rows,item.number);
+
+    if(!row){
+      alert(
+        `Nie znaleziono aktualnej operacji pociągu ${item.number} ` +
+        `dla stacji ${item.station}.`
+      );
+      return;
+    }
+
+    window.location.href =
+      makeDetailsUrl(item,row);
+
+  }catch(error){
+    console.error(error);
+
+    alert(
+      'Nie udało się pobrać aktualnych danych pociągu.'
+    );
+  }
+}
+
+document.getElementById('refreshBtn')
+  .addEventListener('click',loadTrains);
+
+document.getElementById('addBtn')
+  .addEventListener('click',() => {
+    const station =
+      document.getElementById('stationInput')
+        .value
+        .trim()
+        .toUpperCase();
+
+    const number =
+      document.getElementById('trainInput')
+        .value
+        .trim();
+
+    if(!station || !number){
+      alert('Podaj stację i numer pociągu.');
+      return;
+    }
+
+    const list = getList();
+
+    if(list.some(x =>
+      x.number === number &&
+      x.station === station
+    )){
+      alert('Ten pociąg jest już na liście.');
+      return;
+    }
+
+    list.push({
+      station,
+      number
+    });
+
+    saveList(list);
+
+    document.getElementById('stationInput').value = '';
+    document.getElementById('trainInput').value = '';
+
+    loadTrains();
+  });
+
+document.getElementById('trainInput')
+  .addEventListener('keydown',event => {
+    if(event.key === 'Enter'){
+      document.getElementById('addBtn').click();
+    }
+  });
+
+loadTrains();
+</script>
+</body>
+</html>
