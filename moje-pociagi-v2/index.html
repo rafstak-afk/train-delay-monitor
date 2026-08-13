@@ -638,36 +638,25 @@ function buildView(item,result){
   }else if(row){
     const delay = getDelay(row);
 
-    state = 'live';
-    label = 'AKTYWNY';
-
-    if(delay !== null){
-      delayText =
-        delay > 0 ? '+' + delay + ' min' :
-        delay < 0 ? delay + ' min' :
-        '0 min';
-
-      if(delay > 0) state = 'delay';
+    if(delay !== null && delay > 0){
+      state = 'delay';
+      label = 'OPÓŹNIONY';
+      delayText = '+' + delay + ' min';
     }else{
-      delayText = 'potwierdzony';
+      state = 'live';
+      label = '0 min';
+      delayText = '';
     }
   }else{
     label = 'BRAK OPERACJI';
   }
 
-  const origin = row ? getOrigin(row) : '';
-  const destination = row ? getDestination(row) : '';
   const time = row ? getTime(row) : '';
 
   const route =
-    origin || destination
-      ? `${origin || item.station} → ${destination || '—'}`
+    result.routeOrigin && result.routeDestination
+      ? `${result.routeOrigin} → ${result.routeDestination}`
       : 'Brak informacji o relacji';
-
-  const station =
-    row && getStation(row)
-      ? getStation(row)
-      : item.station;
 
   const position =
     time
@@ -675,6 +664,19 @@ function buildView(item,result){
       : row
         ? 'Dane potwierdzone przez API'
         : 'API nie zwróciło aktywnej operacji';
+
+  const trainName =
+    row && (
+      row.name ||
+      row.trainName ||
+      row.commercialName
+    )
+      ? (
+          row.name ||
+          row.trainName ||
+          row.commercialName
+        )
+      : '';
 
   const detailsButton =
     row
@@ -694,23 +696,12 @@ function buildView(item,result){
           <div class="train-top">
             <span class="train-number">#${escapeHtml(item.number)}</span>
             ${
-              row && (
-                row.name ||
-                row.trainName ||
-                row.commercialName
-              )
-                ? `<span class="train-name">${
-                    escapeHtml(
-                      row.name ||
-                      row.trainName ||
-                      row.commercialName
-                    )
-                  }</span>`
+              trainName
+                ? `<span class="train-name">${escapeHtml(trainName)}</span>`
                 : ''
             }
           </div>
 
-          <div class="station">${escapeHtml(station)}</div>
           <div class="route">${escapeHtml(route)}</div>
           <div class="position">${escapeHtml(position)}</div>
         </div>
@@ -761,6 +752,120 @@ async function loadTrains(){
     : `<div class="empty">Brak monitorowanych pociągów.</div>`;
 
   const stationCache = new Map();
+  const routeCache = new Map();
+  const nameCache = new Map();
+
+  async function getStationNames(ids){
+    const wanted = [...new Set(
+      ids.map(x => String(x || '').trim()).filter(Boolean)
+    )];
+
+    const missing = wanted.filter(id => !nameCache.has(id));
+
+    if(missing.length){
+      try{
+        const response = await fetch(
+          '/api/stations?ids=' +
+          encodeURIComponent(missing.join(',')),
+          {
+            headers:{Accept:'application/json'},
+            cache:'no-store'
+          }
+        );
+
+        if(response.ok){
+          const data = await response.json();
+
+          for(const [id,name] of Object.entries(data.names || {})){
+            nameCache.set(String(id),name);
+          }
+        }
+      }catch(error){
+        console.warn('Nie udało się pobrać nazw stacji:',error);
+      }
+    }
+
+    return wanted.map(id => nameCache.get(id) || '');
+  }
+
+  async function getRouteInfo(row){
+    const scheduleId = getScheduleId(row);
+
+    if(!scheduleId){
+      return {
+        origin:'',
+        destination:''
+      };
+    }
+
+    const key = String(scheduleId);
+
+    if(routeCache.has(key)){
+      return routeCache.get(key);
+    }
+
+    const promise = (async()=>{
+      try{
+        const response = await fetch(
+          '/api/schedules/route/' +
+          encodeURIComponent(key),
+          {
+            headers:{Accept:'application/json'},
+            cache:'no-store'
+          }
+        );
+
+        if(!response.ok){
+          return {
+            origin:'',
+            destination:''
+          };
+        }
+
+        const data = await response.json();
+        const route = data.route || data;
+
+        if(
+          !route ||
+          !Array.isArray(route.stations) ||
+          !route.stations.length
+        ){
+          return {
+            origin:'',
+            destination:''
+          };
+        }
+
+        const first = route.stations[0];
+        const last =
+          route.stations[route.stations.length - 1];
+
+        const names = await getStationNames([
+          first?.stationId,
+          last?.stationId
+        ]);
+
+        return {
+          origin:names[0] || '',
+          destination:names[1] || ''
+        };
+      }catch(error){
+        console.warn(
+          'Nie udało się pobrać pełnej trasy:',
+          error
+        );
+
+        return {
+          origin:'',
+          destination:''
+        };
+      }
+    })();
+
+    routeCache.set(key,promise);
+
+    return promise;
+  }
 
   let loaded = 0;
 
@@ -781,13 +886,51 @@ async function loadTrains(){
       const row =
         findTrain(rows,item.number);
 
+      let routeInfo = {
+        origin:'',
+        destination:''
+      };
+
+      if(row){
+        routeInfo = await getRouteInfo(row);
+      }
+
       const oldCard = container.children[index];
 
       if(oldCard){
         const wrapper = document.createElement('div');
+
         wrapper.innerHTML =
           buildView(item,{
             row,
+            index,
+            loading:false,
+            routeOrigin:routeInfo.origin,
+            routeDestination:routeInfo.destination
+          });
+
+        oldCard.replaceWith(wrapper.firstElementChild);
+      }
+
+      loaded++;
+
+      document.getElementById('summaryInfo').textContent =
+        `${loaded} / ${list.length}`;
+    }catch(error){
+      console.error(
+        'Błąd ładowania pociągu',
+        item.number,
+        error
+      );
+
+      const oldCard = container.children[index];
+
+      if(oldCard){
+        const wrapper = document.createElement('div');
+
+        wrapper.innerHTML =
+          buildView(item,{
+            row:null,
             index,
             loading:false
           });
@@ -799,37 +942,14 @@ async function loadTrains(){
 
       document.getElementById('summaryInfo').textContent =
         `${loaded} / ${list.length}`;
-    }catch(error){
-      const oldCard = container.children[index];
-
-      if(oldCard){
-        const wrapper = document.createElement('div');
-        wrapper.innerHTML =
-          buildView(item,{
-            row:null,
-            index,
-            loading:false
-          });
-
-        oldCard.replaceWith(wrapper.firstElementChild);
-      }
-
-      console.error(
-        'Błąd pobierania',
-        item.station,
-        item.number,
-        error
-      );
     }
   }
 
-  bindActions();
-
   refresh.disabled = false;
-  refresh.textContent = '↻';
+  refresh.textContent = 'ODŚWIEŻ';
 
   document.getElementById('summaryInfo').textContent =
-    `${list.length} pociągów`;
+    `${list.length} / ${list.length}`;
 }
 
 function bindActions(){
