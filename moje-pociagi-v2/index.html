@@ -661,27 +661,36 @@ function buildView(item,result){
   const route =
     origin || destination
       ? `${origin || item.station} → ${destination || '—'}`
-      : 'Brak informacji o relacji';
+      : 'Relacja niedostępna';
 
   const station =
     row && getStation(row)
       ? getStation(row)
       : item.station;
 
-  const position =
-    time
-      ? `Dane: ${timeOnly(time)}`
-      : row
-        ? 'Dane potwierdzone przez API'
-        : 'API nie zwróciło aktywnej operacji';
-
-  const detailsButton =
-    row
-      ? `<button class="open" data-index="${result.index}">SZCZEGÓŁY →</button>`
+  const lastConfirmedStation =
+    row && row.lastConfirmedStation
+      ? row.lastConfirmedStation
       : '';
 
+  const lastConfirmedTime =
+    row && row.lastConfirmedTime
+      ? row.lastConfirmedTime
+      : '';
+
+  const position =
+    lastConfirmedStation
+      ? `Ostatnia potwierdzona: ${lastConfirmedStation}${lastConfirmedTime ? ' · ' + lastConfirmedTime : ''}`
+      : 'Brak potwierdzonej stacji';
+
   return `
-    <article class="card">
+    <article
+      class="card"
+      data-open="${result.index}"
+      role="button"
+      tabindex="${row ? '0' : '-1'}"
+      aria-label="${row ? 'Otwórz szczegóły pociągu ' + escapeHtml(item.number) : ''}"
+    >
       <div class="card-main">
 
         <div class="status ${state}">
@@ -724,7 +733,6 @@ function buildView(item,result){
 
       <div class="details">
         <span>${escapeHtml(item.station)}</span>
-        ${detailsButton}
       </div>
     </article>
   `;
@@ -848,15 +856,25 @@ function bindActions(){
       });
     });
 
-  document.querySelectorAll('.open')
-    .forEach(button => {
-      button.addEventListener('click',event => {
-        event.stopPropagation();
+  document.querySelectorAll('.card[data-open]')
+    .forEach(card => {
+      const open = () => {
+        const index = Number(card.dataset.open);
+        if(Number.isFinite(index)){
+          openDetails(index);
+        }
+      };
 
-        const index =
-          Number(button.dataset.index);
+      card.addEventListener('click',event => {
+        if(event.target.closest('.delete')) return;
+        open();
+      });
 
-        openDetails(index);
+      card.addEventListener('keydown',event => {
+        if(event.key === 'Enter' || event.key === ' '){
+          event.preventDefault();
+          open();
+        }
       });
     });
 }

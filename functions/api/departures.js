@@ -189,6 +189,36 @@ async function getJsonWithMeta(url, headers) {
   };
 }
 
+function getLastConfirmedStation(train, stationNames) {
+  const stations = Array.isArray(train?.stations)
+    ? train.stations
+    : [];
+
+  let last = null;
+
+  for (const station of stations) {
+    const actual =
+      station.actualArrival ||
+      station.actualDeparture ||
+      station.actualArrivalTime ||
+      station.actualDepartureTime ||
+      "";
+
+    if (!actual) continue;
+
+    const name = stationName(station, stationNames);
+
+    if (!name) continue;
+
+    last = {
+      station: name,
+      time: shortTime(actual)
+    };
+  }
+
+  return last;
+}
+
 function buildDepartures({
   stationSchedulesRaw,
   fullRoutesMap,
@@ -261,6 +291,10 @@ function buildDepartures({
 
     const operation = operationsMap.get(key);
     const opStation = operation?.station;
+    const lastConfirmed = getLastConfirmedStation(
+      operation?.train,
+      stationNames
+    );
 
     const plannedTime =
       stationPlan.departureTime ||
@@ -287,6 +321,8 @@ function buildDepartures({
       carrier: fullRoute.carrierCode || stationRoute.carrierCode || "",
       destination,
       via,
+      lastConfirmedStation: lastConfirmed?.station || "",
+      lastConfirmedTime: lastConfirmed?.time || "",
       platform: stationPlan.departurePlatform || "",
       track: stationPlan.departureTrack || "",
       delay,
