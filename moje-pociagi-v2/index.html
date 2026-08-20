@@ -1148,5 +1148,37 @@ document.addEventListener('click', function(e) {
 });
 </script>
 <!-- TRAIN NAV END -->
+<!-- TRAIN URL BUILDER START -->
+<script>
+window.getTrainDetailsUrl = function(data, stationName, trainNum) {
+  if (!data) return '#';
+  const today = new Date().toISOString().split('T')[0];
+  const params = new URLSearchParams({
+    train: data.train || data.trainNo || trainNum || '',
+    category: data.category || data.trainCategory || 'IC',
+    name: data.name || data.trainName || '',
+    destination: data.destination || data.to || '',
+    date: data.date || today,
+    scheduleId: data.scheduleId || data.scheduledId || '2026',
+    scheduledId: data.scheduledId || data.scheduleId || '2026',
+    orderId: data.orderId || '',
+    trainOrderId: data.trainOrderId || '',
+    stationId: data.stationId || (typeof stationId === 'function' ? stationId(stationName) : '') || '',
+    station: data.station || stationName || ''
+  });
+  return '/train?' + params.toString();
+};
+
+document.addEventListener('click', function(e) {
+  const card = e.target.closest('.card, .train-card, .train-item, .train-row, [data-train]');
+  if (!card || e.target.closest('a, button')) return;
+  
+  const rawData = card._apiData || (card.dataset.raw ? JSON.parse(card.dataset.raw) : null);
+  if (rawData && rawData.orderId) {
+    window.location.href = window.getTrainDetailsUrl(rawData, card.dataset.station, card.dataset.number);
+  }
+});
+</script>
+<!-- TRAIN URL BUILDER END -->
 </body>
 </html>
