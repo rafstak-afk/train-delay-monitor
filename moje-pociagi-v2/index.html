@@ -658,12 +658,26 @@ function buildView(item,result){
       ? `${result.routeOrigin} → ${result.routeDestination}`
       : 'Brak informacji o relacji';
 
+  const lastConfirmed =
+    row &&
+    row.lastConfirmedStation
+      ? `📍 Ostatnio potwierdzony: ${row.lastConfirmedStation}` +
+        (
+          row.lastConfirmedTime
+            ? ` · ${timeOnly(row.lastConfirmedTime)}`
+            : ''
+        )
+      : '';
+
   const position =
-    time
-      ? `Dane: ${timeOnly(time)}`
-      : row
-        ? 'Dane potwierdzone przez API'
-        : 'API nie zwróciło aktywnej operacji';
+    lastConfirmed ||
+    (
+      time
+        ? `Dane: ${timeOnly(time)}`
+        : row
+          ? 'Dane potwierdzone przez API'
+          : 'API nie zwróciło aktywnej operacji'
+    );
 
   const trainName =
     row && (
