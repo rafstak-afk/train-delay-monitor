@@ -709,7 +709,7 @@ function buildView(item,result){
 
   return `
     <article class="card" data-open="${result.index}">
-      <div class="card-main">
+      <div class="card-main" data-raw="${JSON.stringify(item).replace(/"/g, "&quot;")}">
 
         <div class="status ${state}">
           <div class="big">${escapeHtml(label)}</div>
@@ -1111,19 +1111,40 @@ document.getElementById('trainInput')
 loadTrains();
 </script>
 
+
 <!-- TRAIN NAV START -->
 <script>
 document.addEventListener('click', function(e) {
-  const card = e.target.closest('.card, .train-card, .train-item, .train-row, [data-train]');
-  if (card && !e.target.closest('a, button')) {
-    const text = card.innerText || '';
-    const match = text.match(/\b(\d{4,5})\b/);
-    if (match) {
-      const trainNum = match[1];
-      const today = new Date().toISOString().split('T')[0];
-      window.location.href = `/train?train=${trainNum}&date=${today}`;
-    }
+  const card = e.target.closest('[data-raw], .card, .train-card, .train-item, .train-row');
+  if (!card || e.target.closest('a, button')) return;
+
+  let raw = {};
+  if (card.dataset && card.dataset.raw) {
+    try { raw = JSON.parse(card.dataset.raw); } catch(err) {}
   }
+
+  // Odczyt numeru pociągu ze zgromadzonych danych lub tekstu karty
+  const trainNum = raw.train || raw.trainNumber || raw.number || raw.numer || (card.innerText.match(/\b(\d{4,5})\b/) || [])[1];
+  if (!trainNum) return;
+
+  const today = new Date().toISOString().split('T')[0];
+
+  // Budowanie pełnego zestawu parametrów wymaganego przez podstronę /train
+  const params = new URLSearchParams({
+    train: trainNum,
+    category: raw.category || raw.trainCategory || 'IC',
+    name: raw.name || raw.trainName || '',
+    destination: raw.destination || raw.to || '',
+    date: raw.date || today,
+    scheduleId: raw.scheduleId || raw.scheduledId || '2026',
+    scheduledId: raw.scheduledId || raw.scheduleId || '2026',
+    orderId: raw.orderId || '',
+    trainOrderId: raw.trainOrderId || '',
+    stationId: raw.stationId || '',
+    station: raw.station || raw.stationName || ''
+  });
+
+  window.location.href = '/train?' + params.toString();
 });
 </script>
 <!-- TRAIN NAV END -->
