@@ -91,30 +91,43 @@
     const container = document.getElementById('train-list');
     container.innerHTML = '';
 
-    for (const item of list) {
-      let delayText = '0 min';
-      let statusClass = 'status-ok';
-      let infoText = item.desc;
+    let apiTrains = [];
 
-      try {
-        const res = await fetch(`/api/trains/${item.number}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data.delayMinutes > 0) {
-            delayText = `+${data.delayMinutes} min`;
-            statusClass = 'status-delay';
-          }
-          infoText = `${data.origin || item.station} ➔ ${data.destination || 'Trasa'}`;
-        }
-      } catch (e) {
-        // Fallback w przypadku braku połączenia / braku aktywnego kursu w API
+    try {
+      const res = await fetch('/api/monitored-trains');
+      if (res.ok) {
+        const data = await res.json();
+        apiTrains = Array.isArray(data.trains) ? data.trains : [];
       }
+    } catch (e) {
+      // Pozostawiamy listę z danymi podstawowymi.
+    }
+
+    for (const item of list) {
+      const hit = apiTrains.find(
+        t => String(t.train) === String(item.number) &&
+             String(t.station).toUpperCase() === String(item.station).toUpperCase()
+      );
+
+      let delayText = 'brak danych';
+      let statusClass = 'status-ok';
+
+      if (hit && hit.delay !== null && hit.delay !== undefined) {
+        const delay = Number(hit.delay) || 0;
+        delayText = delay > 0 ? `+${delay} min` : '0 min';
+        statusClass = delay > 0 ? 'status-delay' : 'status-ok';
+      }
+
+      const relation =
+        hit && (hit.destination || hit.name)
+          ? `${hit.name ? hit.name + ' · ' : ''}➔ ${hit.destination || 'Trasa'}`
+          : item.desc;
 
       const card = document.createElement('div');
       card.className = 'train-card';
       card.innerHTML = `
         <div class="badge-status ${statusClass}">
-          <span>${delayText === '0 min' ? 'OK' : 'OPÓŹN.'}</span>
+          <span>${delayText.startsWith('+') ? 'OPÓŹN.' : 'OK'}</span>
           <span style="font-size:0.7rem">${delayText}</span>
         </div>
         <div class="train-info">
@@ -122,7 +135,7 @@
             <span class="station-title">${item.station}</span>
             <span class="train-tag">Pociąg #${item.number}</span>
           </div>
-          <div class="train-sub">${infoText}</div>
+          <div class="train-sub">${relation}</div>
         </div>
         <div class="actions">
           <button class="btn-search">Szukaj biegu</button>

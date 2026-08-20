@@ -166,6 +166,16 @@ input:focus{
   border:1px solid var(--border);
   border-radius:14px;
   overflow:hidden;
+  cursor:pointer;
+  transition:transform .12s ease,border-color .12s ease;
+}
+
+.card:hover{
+  border-color:var(--cyan);
+}
+
+.card:active{
+  transform:scale(.985);
 }
 
 .card-main{
@@ -692,13 +702,9 @@ function buildView(item,result){
         )
       : '';
 
-  const detailsButton =
-    row
-      ? `<button class="open" data-index="${result.index}">SZCZEGÓŁY →</button>`
-      : '';
 
   return `
-    <article class="card">
+    <article class="card" data-open="${result.index}">
       <div class="card-main">
 
         <div class="status ${state}">
@@ -730,7 +736,6 @@ function buildView(item,result){
 
       <div class="details">
         <span>${escapeHtml(item.station)}</span>
-        ${detailsButton}
       </div>
     </article>
   `;
@@ -983,13 +988,13 @@ function bindActions(){
       });
     });
 
-  document.querySelectorAll('.open')
-    .forEach(button => {
-      button.addEventListener('click',event => {
-        event.stopPropagation();
+  document.querySelectorAll('[data-open]')
+    .forEach(card => {
+      card.addEventListener('click',event => {
+        if(event.target.closest('[data-delete]')) return;
 
         const index =
-          Number(button.dataset.index);
+          Number(card.dataset.open);
 
         openDetails(index);
       });
