@@ -460,6 +460,7 @@ function getTrainNumber(row){
   return String(
     row.trainNumber ??
     row.trainNo ??
+    row.train ??
     row.number ??
     row.train?.trainNumber ??
     row.train?.number ??
