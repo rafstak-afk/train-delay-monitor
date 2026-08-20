@@ -736,6 +736,11 @@ function buildView(item,result){
 
       <div class="details">
         <span>${escapeHtml(item.station)}</span>
+        <button
+          class="open"
+          type="button"
+          data-open="${result.index}"
+        >SZCZEGÓŁY</button>
       </div>
     </article>
   `;
@@ -992,13 +997,26 @@ function bindActions(){
       });
     });
 
-  document.querySelectorAll('[data-open]')
+  document.querySelectorAll('.card[data-open]')
     .forEach(card => {
       card.addEventListener('click',event => {
         if(event.target.closest('[data-delete]')) return;
+        if(event.target.closest('.open')) return;
 
         const index =
           Number(card.dataset.open);
+
+        openDetails(index);
+      });
+    });
+
+  document.querySelectorAll('.open[data-open]')
+    .forEach(button => {
+      button.addEventListener('click',event => {
+        event.stopPropagation();
+
+        const index =
+          Number(button.dataset.open);
 
         openDetails(index);
       });
