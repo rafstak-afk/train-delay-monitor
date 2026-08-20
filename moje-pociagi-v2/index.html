@@ -457,6 +457,26 @@ function saveList(list){
   localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
 }
 
+
+function buildTrainUrl(row, station, number) {
+  if (!row || !row.orderId) return null;
+  const today = new Date().toISOString().split('T')[0];
+  const params = new URLSearchParams({
+    train: row.train || row.trainNo || row.number || number || '',
+    category: row.category || row.trainCategory || 'IC',
+    name: row.name || row.trainName || '',
+    destination: row.destination || row.to || '',
+    date: row.date || today,
+    scheduleId: row.scheduleId || row.scheduledId || '2026',
+    scheduledId: row.scheduledId || row.scheduleId || '2026',
+    orderId: row.orderId || '',
+    trainOrderId: row.trainOrderId || '',
+    stationId: row.stationId || (typeof stationId === 'function' ? stationId(station) : '') || '',
+    station: row.station || station || ''
+  });
+  return '/train?' + params.toString();
+}
+
 function stationId(name){
   return STATION_IDS[String(name || '').trim().toUpperCase()] || '';
 }
@@ -926,6 +946,17 @@ async function loadTrains(){
       if(row){
         routeInfo = await getRouteInfo(row);
       }
+        if (row && row.orderId) {
+          const _tUrl = buildTrainUrl(row, item.station, item.number);
+          setTimeout(() => {
+            const _card = container.children[index];
+            if (_card && _tUrl) {
+              _card.dataset.trainUrl = _tUrl;
+              _card.style.cursor = 'pointer';
+              _card.title = 'Kliknij, aby zobaczyć pełną trasę';
+            }
+          }, 50);
+        }
 
       const oldCard = container.children[index];
 
@@ -1180,5 +1211,15 @@ document.addEventListener('click', function(e) {
 });
 </script>
 <!-- TRAIN URL BUILDER END -->
+
+<script>
+document.addEventListener('click', function(e) {
+  const card = e.target.closest('[data-train-url]');
+  if (card && card.dataset.trainUrl && card.dataset.trainUrl !== 'null' && !e.target.closest('a, button')) {
+    window.location.href = card.dataset.trainUrl;
+  }
+});
+</script>
+
 </body>
 </html>
