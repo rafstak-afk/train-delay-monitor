@@ -44,7 +44,7 @@ export async function onRequestGet(context) {
       `${PLK_BASE}/schedules?dateFrom=${date}&dateTo=${date}`;
 
     const operationsUrl =
-      `${PLK_BASE}/operations?stations=${station.id}&withPlanned=true&pageSize=10000`;
+      `${PLK_BASE}/operations?withPlanned=true&pageSize=10000`;
 
     const stationsDictionaryUrl =
       `${PLK_BASE}/dictionaries/stations?pageSize=100000`;
