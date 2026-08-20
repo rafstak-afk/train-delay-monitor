@@ -197,6 +197,8 @@ function getLastConfirmedStation(train, stationNames) {
   let last = null;
 
   for (const station of stations) {
+    if (station.confirmed !== true) continue;
+
     const actual =
       station.actualArrival ||
       station.actualDeparture ||
