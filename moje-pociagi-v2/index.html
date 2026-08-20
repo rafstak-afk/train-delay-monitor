@@ -412,6 +412,8 @@ input:focus{
 </div>
 
 <script>
+window.onerror = function(m, u, l) { console.error("Błąd wykonania JS:", m, "linia:", l); };
+
 const DEFAULT_TRAINS = [
   {station:'KATOWICE', number:'3815'},
   {station:'BYTOM KARB', number:'40360'},
@@ -857,8 +859,8 @@ async function loadTrains(){
 
         if(
           !route ||
-          !Array.isArray(route.stations) ||
-          !route.stations.length
+          !Array.isArray((route && Array.isArray(route.stations) ? route.stations : [])) ||
+          !(route && Array.isArray(route.stations) ? route.stations : []).length
         ){
           return {
             origin:'',
@@ -866,9 +868,9 @@ async function loadTrains(){
           };
         }
 
-        const first = route.stations[0];
+        const first = (route && Array.isArray(route.stations) ? route.stations : [])[0];
         const last =
-          route.stations[route.stations.length - 1];
+          (route && Array.isArray(route.stations) ? route.stations : [])[(route && Array.isArray(route.stations) ? route.stations : []).length - 1];
 
         const names = await getStationNames([
           first?.stationId,
