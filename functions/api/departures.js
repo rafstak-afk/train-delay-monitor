@@ -194,32 +194,29 @@ function getLastConfirmedStation(train, stationNames) {
     ? train.stations
     : [];
 
-  const confirmed = stations.filter(
-    station => station?.isConfirmed === true
-  );
+  let last = null;
 
-  const last =
-    confirmed.length
-      ? confirmed[confirmed.length - 1]
-      : null;
+  for (const station of stations) {
+    const actual =
+      station.actualArrival ||
+      station.actualDeparture ||
+      station.actualArrivalTime ||
+      station.actualDepartureTime ||
+      "";
 
-  if (!last) return null;
+    if (!actual) continue;
 
-  const name = stationName(last, stationNames);
+    const name = stationName(station, stationNames);
 
-  if (!name) return null;
+    if (!name) continue;
 
-  const actual =
-    last.actualDeparture ||
-    last.actualArrival ||
-    last.actualDepartureTime ||
-    last.actualArrivalTime ||
-    "";
+    last = {
+      station: name,
+      time: shortTime(actual)
+    };
+  }
 
-  return {
-    station: name,
-    time: actual ? shortTime(actual) : ""
-  };
+  return last;
 }
 
 function buildDepartures({
