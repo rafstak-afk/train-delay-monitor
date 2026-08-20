@@ -809,8 +809,9 @@ async function loadTrains(){
 
   async function getRouteInfo(row){
     const scheduleId = getScheduleId(row);
+    const orderId = getOrderId(row);
 
-    if(!scheduleId){
+    if(!scheduleId || !orderId){
       return {
         origin:'',
         destination:''
@@ -818,16 +819,19 @@ async function loadTrains(){
     }
 
     const key = String(scheduleId);
+    const orderKey = String(orderId);
+    const routeKey = key + ':' + orderKey;
 
-    if(routeCache.has(key)){
-      return routeCache.get(key);
+    if(routeCache.has(routeKey)){
+      return routeCache.get(routeKey);
     }
 
     const promise = (async()=>{
       try{
         const response = await fetch(
           '/api/schedules/route/' +
-          encodeURIComponent(key),
+          encodeURIComponent(key) + '/' +
+          encodeURIComponent(orderKey),
           {
             headers:{Accept:'application/json'},
             cache:'no-store'
@@ -881,7 +885,7 @@ async function loadTrains(){
       }
     })();
 
-    routeCache.set(key,promise);
+    routeCache.set(routeKey,promise);
 
     return promise;
   }
