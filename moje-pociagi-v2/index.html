@@ -376,6 +376,105 @@ input:focus{
   }
 }
 </style>
+<style id="sunlight-rwd-styles">
+  /* Wysoki kontrast pod pełne słońce */
+  html, body {
+    background-color: #000000 !important;
+    color: #ffffff !important;
+    margin: 0 !important;
+    padding: 8px !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Kontener główny - czytelny pion na 100% szerokości */
+  #app, main, .container, #container {
+    width: 100% !important;
+    max-width: 600px !important;
+    margin: 0 auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Pasek nagłówka MONITOROWANE */
+  .monitored-header-bar {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 10px 14px !important;
+    background: #0f172a !important;
+    border: 1px solid #334155 !important;
+    border-radius: 10px !important;
+    margin-bottom: 12px !important;
+    font-weight: 700 !important;
+    color: #f8fafc !important;
+  }
+
+  /* Formularz dodawania pociągu - zwijany */
+  .toggle-add-btn {
+    width: 100% !important;
+    padding: 10px !important;
+    background: #1e293b !important;
+    border: 1px dashed #475569 !important;
+    color: #38bdf8 !important;
+    font-weight: 700 !important;
+    border-radius: 8px !important;
+    cursor: pointer !important;
+    text-align: center !important;
+    margin-bottom: 12px !important;
+    font-size: 0.95rem !important;
+  }
+
+  .add-form-collapsible {
+    display: none;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    background: #0f172a !important;
+    border: 1px solid #334155 !important;
+    padding: 12px !important;
+    border-radius: 8px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .add-form-collapsible.active {
+    display: block !important;
+  }
+
+  /* Kafelki pociągów - bardzo wysoki kontrast */
+  .card, .train-card, [data-train-url] {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    background: #111827 !important;
+    border: 1.5px solid #374151 !important;
+    border-radius: 10px !important;
+    padding: 12px !important;
+    margin-bottom: 8px !important;
+  }
+
+  /* Relacja i wklejona stacja */
+  .train-route-title {
+    font-size: 1.05rem !important;
+    font-weight: 800 !important;
+    color: #38bdf8 !important;
+    line-height: 1.25 !important;
+  }
+
+  .station-subtext-inline {
+    font-size: 0.85rem !important;
+    font-weight: 600 !important;
+    color: #cbd5e1 !important;
+    margin-top: 4px !important;
+    display: block !important;
+  }
+
+  /* Ukrywanie elementów "SZCZEGÓŁY" oraz powielonych etykiet */
+  .hide-details-btn, [class*="details"], button:contains("SZCZEGÓŁY") {
+    display: none !important;
+  }
+</style>
 </head>
 
 <body>
@@ -1221,5 +1320,65 @@ document.addEventListener('click', function(e) {
 });
 </script>
 
+<!-- SUNLIGHT & COLLAPSIBLE JS START -->
+<script>
+(function() {
+  function initAppAdjustments() {
+    // A. Zwijanie formularza dodawania pociągów
+    const addSection = document.querySelector('form, .add-train-section, #addTrainForm, [class*="add-train"]');
+    if (addSection && !document.querySelector('.toggle-add-btn')) {
+      addSection.classList.add('add-form-collapsible');
+      
+      const toggleBtn = document.createElement('button');
+      toggleBtn.type = 'button';
+      toggleBtn.className = 'toggle-add-btn';
+      toggleBtn.innerHTML = '➕ Dodaj pociąg';
+      
+      toggleBtn.addEventListener('click', function() {
+        const isActive = addSection.classList.toggle('active');
+        toggleBtn.innerHTML = isActive ? '➖ Ukryj formularz' : '➕ Dodaj pociąg';
+      });
+      
+      if (addSection.parentNode) {
+        addSection.parentNode.insertBefore(toggleBtn, addSection);
+      }
+    }
+
+    // B. Przeniesienie stacji ze Szczegółów pod relację & usunięcie "SZCZEGÓŁY"
+    document.querySelectorAll('.card, .train-card, [data-train-url]').forEach(card => {
+      // Ukrywanie przycisku / sekcji szczegółów
+      card.querySelectorAll('button, a, div, span').forEach(el => {
+        const txt = (el.textContent || '').trim().toUpperCase();
+        if (txt === 'SZCZEGÓŁY' || txt.includes('SZCZEGÓŁY')) {
+          el.style.setProperty('display', 'none', 'important');
+        }
+      });
+
+      // Wyciągnięcie nazwy stacji i wstawienie pod relację
+      const detailsEl = card.querySelector('.details, [class*="detail"], .station-name');
+      if (detailsEl) {
+        let stationText = (detailsEl.innerText || '').replace(/SZCZEGÓŁY|Trasa:/gi, '').trim();
+        if (stationText && !card.querySelector('.station-subtext-inline')) {
+          const stationDiv = document.createElement('div');
+          stationDiv.className = 'station-subtext-inline';
+          stationDiv.textContent = '📍 ' + stationText;
+          
+          const routeHeader = card.querySelector('.route-bold, .relation-bold, [class*="route"], h3, h4, strong') || card.firstChild;
+          if (routeHeader && routeHeader.parentNode) {
+            routeHeader.parentNode.insertBefore(stationDiv, routeHeader.nextSibling);
+          }
+        }
+      }
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    initAppAdjustments();
+    setTimeout(initAppAdjustments, 300);
+    setTimeout(initAppAdjustments, 800);
+  });
+})();
+</script>
+<!-- SUNLIGHT & COLLAPSIBLE JS END -->
 </body>
 </html>
