@@ -412,6 +412,8 @@ input:focus{
 </div>
 
 <script>
+window.onerror = function(m, u, l) { console.error("Błąd wykonania JS:", m, "linia:", l); };
+
 const DEFAULT_TRAINS = [
   {station:'KATOWICE', number:'3815'},
   {station:'BYTOM KARB', number:'40360'},
@@ -424,13 +426,15 @@ const DEFAULT_TRAINS = [
   {station:'CHORZÓW BATORY', number:'40858'},
   {station:'CHORZÓW BATORY', number:'40423'},
   {station:'CHORZÓW BATORY', number:'40211'},
-  {station:'CHORZÓW BATORY', number:'40468'}
+  {station:'CHORZÓW BATORY', number:'40468'},
+   {station:'KRAKÓW GŁÓWNY', number:'38172'}
 ];
 
-const STORAGE_KEY = 'rafstakMojePociagiV2';
+const STORAGE_KEY = 'rafstakMojePociagiV3';
 
 const STATION_IDS = {
   'KATOWICE': '73312',
+   'KRAKÓW GŁÓWNY': '73302',
   'TARNOWSKIE GÓRY': '73390',
   'CHORZÓW BATORY': '73308',
   'GLIWICE': '73318',
@@ -451,6 +455,26 @@ function getList(){
 
 function saveList(list){
   localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+}
+
+
+function buildTrainUrl(row, station, number) {
+  if (!row || !row.orderId) return null;
+  const today = new Date().toISOString().split('T')[0];
+  const params = new URLSearchParams({
+    train: row.train || row.trainNo || row.number || number || '',
+    category: row.category || row.trainCategory || 'IC',
+    name: row.name || row.trainName || '',
+    destination: row.destination || row.to || '',
+    date: row.date || today,
+    scheduleId: row.scheduleId || row.scheduledId || '2026',
+    scheduledId: row.scheduledId || row.scheduleId || '2026',
+    orderId: row.orderId || '',
+    trainOrderId: row.trainOrderId || '',
+    stationId: row.stationId || (typeof stationId === 'function' ? stationId(station) : '') || '',
+    station: row.station || station || ''
+  });
+  return '/train?' + params.toString();
 }
 
 function stationId(name){
@@ -705,7 +729,7 @@ function buildView(item,result){
 
   return `
     <article class="card" data-open="${result.index}">
-      <div class="card-main">
+      <div class="card-main" data-raw="${JSON.stringify(item).replace(/"/g, "&quot;")}">
 
         <div class="status ${state}">
           <div class="big">${escapeHtml(label)}</div>
@@ -855,8 +879,8 @@ async function loadTrains(){
 
         if(
           !route ||
-          !Array.isArray(route.stations) ||
-          !route.stations.length
+          !Array.isArray((route && Array.isArray(route.stations) ? route.stations : [])) ||
+          !(route && Array.isArray(route.stations) ? route.stations : []).length
         ){
           return {
             origin:'',
@@ -864,9 +888,9 @@ async function loadTrains(){
           };
         }
 
-        const first = route.stations[0];
+        const first = (route && Array.isArray(route.stations) ? route.stations : [])[0];
         const last =
-          route.stations[route.stations.length - 1];
+          (route && Array.isArray(route.stations) ? route.stations : [])[(route && Array.isArray(route.stations) ? route.stations : []).length - 1];
 
         const names = await getStationNames([
           first?.stationId,
@@ -922,6 +946,17 @@ async function loadTrains(){
       if(row){
         routeInfo = await getRouteInfo(row);
       }
+        if (row && row.orderId) {
+          const _tUrl = buildTrainUrl(row, item.station, item.number);
+          setTimeout(() => {
+            const _card = container.children[index];
+            if (_card && _tUrl) {
+              _card.dataset.trainUrl = _tUrl;
+              _card.style.cursor = 'pointer';
+              _card.title = 'Kliknij, aby zobaczyć pełną trasę';
+            }
+          }, 50);
+        }
 
       const oldCard = container.children[index];
 
@@ -1106,5 +1141,85 @@ document.getElementById('trainInput')
 
 loadTrains();
 </script>
+
+
+<!-- TRAIN NAV START -->
+<script>
+document.addEventListener('click', function(e) {
+  const card = e.target.closest('[data-raw], .card, .train-card, .train-item, .train-row');
+  if (!card || e.target.closest('a, button')) return;
+
+  let raw = {};
+  if (card.dataset && card.dataset.raw) {
+    try { raw = JSON.parse(card.dataset.raw); } catch(err) {}
+  }
+
+  // Odczyt numeru pociągu ze zgromadzonych danych lub tekstu karty
+  const trainNum = raw.train || raw.trainNumber || raw.number || raw.numer || (card.innerText.match(/\b(\d{4,5})\b/) || [])[1];
+  if (!trainNum) return;
+
+  const today = new Date().toISOString().split('T')[0];
+
+  // Budowanie pełnego zestawu parametrów wymaganego przez podstronę /train
+  const params = new URLSearchParams({
+    train: trainNum,
+    category: raw.category || raw.trainCategory || 'IC',
+    name: raw.name || raw.trainName || '',
+    destination: raw.destination || raw.to || '',
+    date: raw.date || today,
+    scheduleId: raw.scheduleId || raw.scheduledId || '2026',
+    scheduledId: raw.scheduledId || raw.scheduleId || '2026',
+    orderId: raw.orderId || '',
+    trainOrderId: raw.trainOrderId || '',
+    stationId: raw.stationId || '',
+    station: raw.station || raw.stationName || ''
+  });
+
+  window.location.href = '/train?' + params.toString();
+});
+</script>
+<!-- TRAIN NAV END -->
+<!-- TRAIN URL BUILDER START -->
+<script>
+window.getTrainDetailsUrl = function(data, stationName, trainNum) {
+  if (!data) return '#';
+  const today = new Date().toISOString().split('T')[0];
+  const params = new URLSearchParams({
+    train: data.train || data.trainNo || trainNum || '',
+    category: data.category || data.trainCategory || 'IC',
+    name: data.name || data.trainName || '',
+    destination: data.destination || data.to || '',
+    date: data.date || today,
+    scheduleId: data.scheduleId || data.scheduledId || '2026',
+    scheduledId: data.scheduledId || data.scheduleId || '2026',
+    orderId: data.orderId || '',
+    trainOrderId: data.trainOrderId || '',
+    stationId: data.stationId || (typeof stationId === 'function' ? stationId(stationName) : '') || '',
+    station: data.station || stationName || ''
+  });
+  return '/train?' + params.toString();
+};
+
+document.addEventListener('click', function(e) {
+  const card = e.target.closest('.card, .train-card, .train-item, .train-row, [data-train]');
+  if (!card || e.target.closest('a, button')) return;
+  
+  const rawData = card._apiData || (card.dataset.raw ? JSON.parse(card.dataset.raw) : null);
+  if (rawData && rawData.orderId) {
+    window.location.href = window.getTrainDetailsUrl(rawData, card.dataset.station, card.dataset.number);
+  }
+});
+</script>
+<!-- TRAIN URL BUILDER END -->
+
+<script>
+document.addEventListener('click', function(e) {
+  const card = e.target.closest('[data-train-url]');
+  if (card && card.dataset.trainUrl && card.dataset.trainUrl !== 'null' && !e.target.closest('a, button')) {
+    window.location.href = card.dataset.trainUrl;
+  }
+});
+</script>
+
 </body>
 </html>
