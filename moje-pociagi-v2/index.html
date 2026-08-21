@@ -378,102 +378,121 @@ input:focus{
 </style>
 
 
-<style id="sunlight-rwd-styles">
-  /* Wysoki kontrast pod pełne słońce */
+
+<style id="exact-card-structure-styles">
   html, body {
     background-color: #000000 !important;
     color: #ffffff !important;
     margin: 0 !important;
-    padding: 8px !important;
+    padding: 6px !important;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-    box-sizing: border-box !important;
   }
 
-  /* Kontener główny - czytelny pion na 100% szerokości */
-  #app, main, .container, #container {
-    width: 100% !important;
-    max-width: 600px !important;
-    margin: 0 auto !important;
+  #app, main, .container, #container, body > div {
     display: flex !important;
     flex-direction: column !important;
+    width: 100% !important;
+    max-width: 650px !important;
+    margin: 0 auto !important;
     box-sizing: border-box !important;
   }
 
-  /* Pasek nagłówka MONITOROWANE */
-  .monitored-header-bar {
+  /* KAFELEK POCIĄGU */
+  .card, .train-card, .train-item, [data-train-url] {
     width: 100% !important;
-    box-sizing: border-box !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    padding: 10px 14px !important;
-    background: #0f172a !important;
-    border: 1px solid #334155 !important;
-    border-radius: 10px !important;
-    margin-bottom: 12px !important;
-    font-weight: 700 !important;
-    color: #f8fafc !important;
-  }
-
-  /* Formularz dodawania pociągu - zwijany */
-  .toggle-add-btn {
-    width: 100% !important;
-    padding: 10px !important;
-    background: #1e293b !important;
-    border: 1px dashed #475569 !important;
-    color: #38bdf8 !important;
-    font-weight: 700 !important;
-    border-radius: 8px !important;
-    cursor: pointer !important;
-    text-align: center !important;
-    margin-bottom: 12px !important;
-    font-size: 0.95rem !important;
-  }
-
-  .add-form-collapsible {
-    display: none;
-    width: 100% !important;
-    box-sizing: border-box !important;
-    background: #0f172a !important;
-    border: 1px solid #334155 !important;
-    padding: 12px !important;
-    border-radius: 8px !important;
-    margin-bottom: 12px !important;
-  }
-
-  .add-form-collapsible.active {
-    display: block !important;
-  }
-
-  /* Kafelki pociągów - bardzo wysoki kontrast */
-  .card, .train-card, [data-train-url] {
-    width: 100% !important;
-    box-sizing: border-box !important;
     background: #111827 !important;
     border: 1.5px solid #374151 !important;
-    border-radius: 10px !important;
-    padding: 12px !important;
+    border-radius: 12px !important;
+    padding: 14px !important;
+    margin-bottom: 10px !important;
+    box-sizing: border-box !important;
+    position: relative !important;
+  }
+
+  /* 1. BARDZO DUŻE OPÓŹNIENIE NA GÓRZE */
+  .card-delay-super-huge {
+    font-size: 2.2rem !important;
+    font-weight: 900 !important;
+    line-height: 1.1 !important;
+    letter-spacing: -1px !important;
+    display: inline-block !important;
+    padding: 4px 12px !important;
+    border-radius: 8px !important;
     margin-bottom: 8px !important;
   }
 
-  /* Relacja i wklejona stacja */
-  .train-route-title {
-    font-size: 1.05rem !important;
+  .delay-red {
+    color: #ff4d4d !important;
+    background: #2a0808 !important;
+    border: 2px solid #ef4444 !important;
+    box-shadow: 0 0 14px rgba(239, 68, 68, 0.4) !important;
+  }
+
+  .delay-green {
+    color: #4ade80 !important;
+    background: #052e16 !important;
+    border: 2px solid #16a34a !important;
+  }
+
+  /* 2. NUMER, NAZWA, RELACJA */
+  .card-train-info {
+    font-size: 1.1rem !important;
     font-weight: 800 !important;
     color: #38bdf8 !important;
-    line-height: 1.25 !important;
+    margin-bottom: 6px !important;
+    line-height: 1.3 !important;
   }
 
-  .station-subtext-inline {
-    font-size: 0.85rem !important;
+  /* 3. OSTATNIO POTWIERDZONY */
+  .card-last-confirmed {
+    font-size: 1.05rem !important;
+    font-weight: 700 !important;
+    color: #f8fafc !important;
+    margin-top: 6px !important;
+    margin-bottom: 4px !important;
+  }
+
+  /* 4. BADANA STACJA - POMNIEJSZONA NA SAMYM DOLE */
+  .card-monitored-station-small {
+    font-size: 0.8rem !important;
     font-weight: 600 !important;
-    color: #cbd5e1 !important;
-    margin-top: 4px !important;
+    color: #94a3b8 !important;
+    text-transform: uppercase !important;
+    margin-top: 6px !important;
     display: block !important;
+    opacity: 0.85 !important;
   }
 
-  /* Ukrywanie elementów "SZCZEGÓŁY" oraz powielonych etykiet */
-  .hide-details-btn, [class*="details"], button:contains("SZCZEGÓŁY") {
+  /* PRZYCISK DODAWANIA POCIĄGU */
+  .toggle-add-form-btn {
+    width: 100% !important;
+    padding: 12px !important;
+    background: #1e293b !important;
+    border: 1.5px dashed #475569 !important;
+    color: #38bdf8 !important;
+    font-weight: 800 !important;
+    font-size: 1rem !important;
+    border-radius: 10px !important;
+    cursor: pointer !important;
+    margin: 6px 0 12px 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .add-train-form-hidden { display: none !important; }
+  .add-train-form-visible {
+    display: block !important;
+    width: 100% !important;
+    background: #0f172a !important;
+    border: 1px solid #334155 !important;
+    padding: 12px !important;
+    border-radius: 10px !important;
+    margin-bottom: 12px !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Ukrywanie starych elementów "SZCZEGÓŁY" */
+  button[onclick*="detail"], .btn-details, [class*="details-btn"],
+  .details-container button, .details-toggle {
     display: none !important;
   }
 </style>
@@ -1323,22 +1342,20 @@ document.addEventListener('click', function(e) {
 </script>
 
 
-<!-- PERMANENT OBSERVER JS START -->
+
+
+<!-- PERMANENT EXACT STRUCTURE OBSERVER START -->
 <script>
 (function() {
-  const iconSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.9.83 6.72 2.24"/><path d="M21 3v9h-9"/></svg>';
-
-  function enforceLayoutRules() {
-    // A. Zwijanie formularza dodawania
+  function applyExactCardLayout() {
+    // A. Formularz dodawania pociągu
     const formEl = document.querySelector('form, #addTrainForm, .add-train-form, [class*="add-form"]');
     if (formEl && !document.querySelector('.toggle-add-form-btn')) {
       formEl.classList.add('add-train-form-hidden');
-
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'toggle-add-form-btn';
       btn.innerHTML = '➕ Dodaj pociąg do monitorowania';
-
       btn.onclick = function() {
         if (formEl.classList.contains('add-train-form-hidden')) {
           formEl.classList.remove('add-train-form-hidden');
@@ -1350,111 +1367,75 @@ document.addEventListener('click', function(e) {
           btn.innerHTML = '➕ Dodaj pociąg do monitorowania';
         }
       };
-
       if (formEl.parentNode) {
         formEl.parentNode.insertBefore(btn, formEl);
       }
     }
 
-    // B. Przenoszenie stacji ze SZCZEGÓŁÓW pod relację i ukrywanie "SZCZEGÓŁY"
+    // B. Reorganizacja kafelków pociągu
     document.querySelectorAll('.card, .train-card, .train-item, [data-train-url]').forEach(card => {
-      // Ukrywanie przycisków szczegółów
+      // Ukrycie elementów "SZCZEGÓŁY"
       card.querySelectorAll('button, a, span, div').forEach(el => {
-        const txt = (el.textContent || '').trim().toUpperCase();
-        if (txt === 'SZCZEGÓŁY' || txt === 'PLANOWO' || txt === 'OPÓŹNIONY') {
+        if ((el.textContent || '').trim().toUpperCase() === 'SZCZEGÓŁY') {
           el.style.setProperty('display', 'none', 'important');
         }
       });
 
-      // Stacja pod relacją
-      const detailsEl = card.querySelector('.details, [class*="detail"], .station-info, .station-name');
-      if (detailsEl) {
-        let stText = (detailsEl.innerText || '').replace(/SZCZEGÓŁY|Trasa:|Stacja:/gi, '').trim();
-        if (stText && !card.querySelector('.injected-station-subtext')) {
-          const stDiv = document.createElement('div');
-          stDiv.className = 'injected-station-subtext';
-          stDiv.textContent = '📍 ' + stText;
-
-          const routeHeader = card.querySelector('.route-bold, .relation-bold, [class*="route"], h3, h4, strong') || card.firstChild;
-          if (routeHeader && routeHeader.parentNode) {
-            routeHeader.parentNode.insertBefore(stDiv, routeHeader.nextSibling);
+      // 1. Wykrywanie i powiększanie opóźnienia
+      card.querySelectorAll('*').forEach(el => {
+        const txt = (el.innerText || '').trim();
+        if ((txt.includes('min') || txt.includes('+') || txt.includes('opóźn')) && txt.length < 20) {
+          el.classList.add('card-delay-super-huge');
+          if (txt.includes('0 min') || txt.includes('Planowo') || txt === '+0') {
+            el.classList.add('delay-green');
+            el.classList.remove('delay-red');
+          } else {
+            el.classList.add('delay-red');
+            el.classList.remove('delay-green');
           }
         }
+      });
+
+      // 2. Prformatowanie wpisu "Ostatnio potwierdzony"
+      card.querySelectorAll('div, span, p').forEach(el => {
+        const txt = (el.innerText || '').trim();
+        if (txt.toLowerCase().includes('ostatnio potwierdzon') || txt.toLowerCase().includes('ostatni wpis')) {
+          el.classList.add('card-last-confirmed');
+        }
+      });
+
+      // 3. Wyciągnięcie i pomniejszenie stacji badanej na dole
+      const detailsEl = card.querySelector('.details, [class*="detail"], .station-info, .station-name');
+      let stationName = '';
+      if (detailsEl) {
+        stationName = (detailsEl.innerText || '').replace(/SZCZEGÓŁY|Trasa:|Stacja:/gi, '').trim();
+      }
+
+      card.querySelectorAll('div, span, p').forEach(el => {
+        const txt = (el.innerText || '').trim();
+        if (txt.toLowerCase().startsWith('stacja:') || txt.toLowerCase().startsWith('badana stacja:')) {
+          stationName = txt.replace(/stacja:|badana stacja:/gi, '').trim();
+          el.style.setProperty('display', 'none', 'important');
+        }
+      });
+
+      if (stationName && !card.querySelector('.card-monitored-station-small')) {
+        const stDiv = document.createElement('div');
+        stDiv.className = 'card-monitored-station-small';
+        stDiv.textContent = '📍 ' + stationName.replace(/^📍\s*/, '').toUpperCase();
+        card.appendChild(stDiv);
       }
     });
   }
 
-  // Obserwator zmian w strukturze DOM (wykrywa moment, gdy skrypt dociągnie pociągi)
-  const observer = new MutationObserver(function(mutations) {
-    enforceLayoutRules();
-  });
+  const observer = new MutationObserver(applyExactCardLayout);
 
   document.addEventListener('DOMContentLoaded', function() {
-    enforceLayoutRules();
+    applyExactCardLayout();
     observer.observe(document.body, { childList: true, subtree: true });
   });
 })();
 </script>
-<!-- PERMANENT OBSERVER JS END -->
-<!-- SUNLIGHT & COLLAPSIBLE JS START -->
-<script>
-(function() {
-  function initAppAdjustments() {
-    // A. Zwijanie formularza dodawania pociągów
-    const addSection = document.querySelector('form, .add-train-section, #addTrainForm, [class*="add-train"]');
-    if (addSection && !document.querySelector('.toggle-add-btn')) {
-      addSection.classList.add('add-form-collapsible');
-      
-      const toggleBtn = document.createElement('button');
-      toggleBtn.type = 'button';
-      toggleBtn.className = 'toggle-add-btn';
-      toggleBtn.innerHTML = '➕ Dodaj pociąg';
-      
-      toggleBtn.addEventListener('click', function() {
-        const isActive = addSection.classList.toggle('active');
-        toggleBtn.innerHTML = isActive ? '➖ Ukryj formularz' : '➕ Dodaj pociąg';
-      });
-      
-      if (addSection.parentNode) {
-        addSection.parentNode.insertBefore(toggleBtn, addSection);
-      }
-    }
-
-    // B. Przeniesienie stacji ze Szczegółów pod relację & usunięcie "SZCZEGÓŁY"
-    document.querySelectorAll('.card, .train-card, [data-train-url]').forEach(card => {
-      // Ukrywanie przycisku / sekcji szczegółów
-      card.querySelectorAll('button, a, div, span').forEach(el => {
-        const txt = (el.textContent || '').trim().toUpperCase();
-        if (txt === 'SZCZEGÓŁY' || txt.includes('SZCZEGÓŁY')) {
-          el.style.setProperty('display', 'none', 'important');
-        }
-      });
-
-      // Wyciągnięcie nazwy stacji i wstawienie pod relację
-      const detailsEl = card.querySelector('.details, [class*="detail"], .station-name');
-      if (detailsEl) {
-        let stationText = (detailsEl.innerText || '').replace(/SZCZEGÓŁY|Trasa:/gi, '').trim();
-        if (stationText && !card.querySelector('.station-subtext-inline')) {
-          const stationDiv = document.createElement('div');
-          stationDiv.className = 'station-subtext-inline';
-          stationDiv.textContent = '📍 ' + stationText;
-          
-          const routeHeader = card.querySelector('.route-bold, .relation-bold, [class*="route"], h3, h4, strong') || card.firstChild;
-          if (routeHeader && routeHeader.parentNode) {
-            routeHeader.parentNode.insertBefore(stationDiv, routeHeader.nextSibling);
-          }
-        }
-      }
-    });
-  }
-
-  document.addEventListener('DOMContentLoaded', function() {
-    initAppAdjustments();
-    setTimeout(initAppAdjustments, 300);
-    setTimeout(initAppAdjustments, 800);
-  });
-})();
-</script>
-<!-- SUNLIGHT & COLLAPSIBLE JS END -->
+<!-- PERMANENT EXACT STRUCTURE OBSERVER END -->
 </body>
 </html>
