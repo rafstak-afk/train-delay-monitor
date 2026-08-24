@@ -381,13 +381,15 @@ input:focus{
 
 
 
-<style id="ultimate-fix-styles">
+
+<style id="perfect-amoled-ui">
   html, body {
     background-color: #000000 !important;
     color: #ffffff !important;
     margin: 0 !important;
-    padding: 6px !important;
+    padding: 8px !important;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    -webkit-tap-highlight-color: transparent !important;
   }
 
   #app, main, .container, #container, body > div {
@@ -405,34 +407,62 @@ input:focus{
     background: #111827 !important;
     border: 2px solid #374151 !important;
     border-radius: 12px !important;
-    padding: 14px !important;
+    padding: 12px 14px !important;
     margin-bottom: 12px !important;
     box-sizing: border-box !important;
     display: flex !important;
     flex-direction: column !important;
-    align-items: flex-start !important;
     gap: 6px !important;
+    position: relative !important;
+    touch-action: pan-y !important;
+    user-select: none !important;
     overflow: visible !important;
   }
 
-  /* BRAK OBCINANIA TEKSTU I TRUNCATE */
+  /* BRAK OBCINANIA TEKSTU W RELACJACH I NAZWACH */
   .card *, .train-card *, .train-item * {
     white-space: normal !important;
     text-overflow: unset !important;
-    overflow: visible !important;
     word-break: break-word !important;
+    overflow: visible !important;
   }
 
-  /* 1. WARTOŚĆ OPÓŹNIENIA - PO LEWEJ STRONIE NA SAMEJ GÓRZE */
-  .clean-delay-left {
-    align-self: flex-start !important;
+  /* KAFELEK W TRAKCIE PRZECIĄGANIA */
+  .card.is-dragging {
+    opacity: 0.6 !important;
+    border-color: #38bdf8 !important;
+    box-shadow: 0 8px 20px rgba(56, 189, 248, 0.3) !important;
+    transform: scale(0.98) !important;
+  }
+
+  /* GÓRNY PASEK KAFELKA: UCHWYT (⋮⋮) + OPÓŹNIENIE PO LEWEJ STRONIE */
+  .card-top-row {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 10px !important;
+    width: 100% !important;
+    margin-bottom: 4px !important;
+  }
+
+  .drag-handle {
+    color: #94a3b8 !important;
     font-size: 1.5rem !important;
+    font-weight: 900 !important;
+    cursor: grab !important;
+    padding: 0 4px !important;
+    line-height: 1 !important;
+    touch-action: none !important;
+  }
+
+  .delay-badge {
+    font-size: 1.35rem !important;
     font-weight: 900 !important;
     padding: 4px 12px !important;
     border-radius: 8px !important;
     line-height: 1.1 !important;
-    margin-bottom: 6px !important;
     display: inline-block !important;
+    width: fit-content !important;
   }
 
   .delay-red {
@@ -447,37 +477,30 @@ input:focus{
     border: 2px solid #16a34a !important;
   }
 
-  /* 2. NUMER POCIĄGU, NAZWA I RELACJA */
-  .clean-train-title {
-    font-size: 1.15rem !important;
+  /* ŚRODEK KAFELKA - OSTATNIO POTWIERDZONY */
+  .last-confirmed-text {
+    font-size: 1.02rem !important;
     font-weight: 800 !important;
-    color: #38bdf8 !important;
+    color: #ffffff !important;
+    margin-top: 2px !important;
     line-height: 1.3 !important;
   }
 
-  /* 3. OSTATNIO POTWIERDZONY */
-  .clean-last-confirmed {
-    font-size: 1.05rem !important;
-    font-weight: 800 !important;
-    color: #ffffff !important;
-    margin-top: 4px !important;
-  }
-
-  /* 4. BADANA STACJA NA SAMYM DOLE (POMNIEJSZONA) */
-  .clean-monitored-footer {
-    font-size: 0.8rem !important;
+  /* DÓŁ KAFELKA - STOPKA BADANEJ STACJI (JEDNORAZOWA) */
+  .monitored-station-footer {
+    font-size: 0.78rem !important;
     font-weight: 700 !important;
     color: #64748b !important;
     text-transform: uppercase !important;
     letter-spacing: 0.5px !important;
-    margin-top: 8px !important;
+    margin-top: 6px !important;
     padding-top: 6px !important;
     border-top: 1px solid #1e293b !important;
     width: 100% !important;
     display: block !important;
   }
 
-  /* ZWIJANY FORMULARZ */
+  /* ZWIJANY FORMULARZ DODAWANIA */
   .toggle-add-btn {
     width: 100% !important;
     padding: 12px !important;
@@ -504,7 +527,7 @@ input:focus{
     box-sizing: border-box !important;
   }
 
-  .force-hide { display: none !important; }
+  .clean-hide-item { display: none !important; }
 </style>
 </head>
 
@@ -1356,10 +1379,11 @@ document.addEventListener('click', function(e) {
 
 
 
-<!-- ULTIMATE FIX OBSERVER START -->
+
+<!-- PERFECT AMOLED & DRAG OBSERVER START -->
 <script>
 (function() {
-  function setupForm() {
+  function setupFormToggle() {
     const form = document.querySelector('form, #addTrainForm, .add-train-form, [class*="add-form"]');
     if (form && !document.querySelector('.toggle-add-btn')) {
       form.classList.add('add-form-hidden');
@@ -1384,61 +1408,141 @@ document.addEventListener('click', function(e) {
     }
   }
 
-  function styleCards() {
-    setupForm();
+  let activeCard = null;
 
-    document.querySelectorAll('.card, .train-card, .train-item, [data-train-url]').forEach(card => {
-      // Usunięcie zbędnych przycisków i słowa SZCZEGÓŁY
-      card.querySelectorAll('button, a, .btn').forEach(b => {
-        const txt = (b.textContent || '').trim().toUpperCase();
-        if (txt === 'SZCZEGÓŁY' || txt === '×' || txt === 'OPÓŹNIONY' || txt === 'PLANOWO') {
-          b.classList.add('force-hide');
+  function enableDragAndDrop(card) {
+    if (card.dataset.dragEnabled === "true") return;
+    card.dataset.dragEnabled = "true";
+
+    const handle = card.querySelector('.drag-handle') || card;
+
+    // Obsługa dotykowa na telefonie (Touch events)
+    handle.addEventListener('touchstart', function(e) {
+      activeCard = card;
+      card.classList.add('is-dragging');
+    }, { passive: true });
+
+    handle.addEventListener('touchmove', function(e) {
+      if (!activeCard) return;
+      const touchY = e.touches[0].clientY;
+      const touchX = e.touches[0].clientX;
+      const targetEl = document.elementFromPoint(touchX, touchY);
+      if (targetEl) {
+        const targetCard = targetEl.closest('.card, .train-card, .train-item, [data-train-url]');
+        if (targetCard && targetCard !== activeCard && targetCard.parentNode === activeCard.parentNode) {
+          const rect = targetCard.getBoundingClientRect();
+          const next = (touchY - rect.top) > (rect.height / 2);
+          activeCard.parentNode.insertBefore(activeCard, next ? targetCard.nextSibling : targetCard);
         }
-      });
-
-      // Czyszczenie tekstu stacji z doczepionego słowa "SZCZEGÓŁY"
-      let stationName = '';
-      card.querySelectorAll('*').forEach(el => {
-        if (el.children.length === 0) {
-          let t = el.textContent || '';
-          if (t.includes('SZCZEGÓŁY')) {
-            el.textContent = t.replace(/SZCZEGÓŁY/g, '').trim();
-          }
-        }
-      });
-
-      // Formatowanie opóźnienia PO LEWEJ STRONIE NA GÓRZE
-      card.querySelectorAll('span, div, p, strong').forEach(el => {
-        const txt = (el.innerText || '').trim();
-        if ((txt.includes('min') || txt.includes('+')) && txt.length < 15 && !txt.includes('Ostatnio') && !el.classList.contains('clean-delay-left')) {
-          el.className = 'clean-delay-left ' + (txt.includes('0 min') || txt === '+0' ? 'delay-green' : 'delay-red');
-          card.insertBefore(el, card.firstChild);
-        }
-      });
-
-      // Wyrycie i wyciągnięcie stacji na sam dół
-      const detailsEl = card.querySelector('.details, [class*="detail"], .station-info');
-      if (detailsEl && !stationName) {
-        stationName = (detailsEl.innerText || '').replace(/SZCZEGÓŁY|Trasa:|Stacja:/gi, '').trim();
       }
+    }, { passive: true });
 
-      if (stationName && !card.querySelector('.clean-monitored-footer')) {
-        const ft = document.createElement('div');
-        ft.className = 'clean-monitored-footer';
-        ft.textContent = '📍 ' + stationName.replace(/^📍\s*/, '').toUpperCase();
-        card.appendChild(ft);
+    handle.addEventListener('touchend', function() {
+      if (activeCard) {
+        activeCard.classList.remove('is-dragging');
+        activeCard = null;
       }
     });
   }
 
-  const observer = new MutationObserver(styleCards);
+  function processCards() {
+    setupFormToggle();
+
+    const cards = document.querySelectorAll('.card, .train-card, .train-item, [data-train-url]');
+    cards.forEach(card => {
+      // 1. Twarde usuwanie śmieciowych przycisków i słów (OPÓŹNIONY, PLANOWO, SZCZEGÓŁY, ×)
+      card.querySelectorAll('button, a, span, div, p, strong').forEach(el => {
+        const txt = (el.innerText || el.textContent || '').trim();
+        const upper = txt.toUpperCase();
+
+        if (upper === 'OPÓŹNIONY' || upper === 'PLANOWO' || upper === '×' || upper === 'SZCZEGÓŁY') {
+          el.classList.add('clean-hide-item');
+        }
+        if (txt.includes('SZCZEGÓŁY') && txt.length > 8) {
+          el.textContent = txt.replace(/SZCZEGÓŁY/gi, '').trim();
+        }
+      });
+
+      // 2. Wyszukiwanie kluczowych elementów w kafelku
+      let delayBadgeEl = null;
+      let lastConfirmedEl = null;
+      let stationName = '';
+
+      card.querySelectorAll('span, div, p, strong, b').forEach(el => {
+        if (el.classList.contains('clean-hide-item')) return;
+        const txt = (el.innerText || el.textContent || '').trim();
+        const upper = txt.toUpperCase();
+
+        // Wyciąganie opóźnienia
+        if (!delayBadgeEl && (txt.includes('min') || txt.includes('+')) && txt.length < 15 && !txt.includes('Ostatnio')) {
+          delayBadgeEl = el;
+        }
+
+        // Wyciąganie "Ostatnio potwierdzony"
+        if (!lastConfirmedEl && txt.toLowerCase().includes('ostatnio potwierdzon')) {
+          lastConfirmedEl = el;
+        }
+
+        // Wyciąganie badanej stacji
+        if (!stationName && (upper.includes('STACJA:') || upper.includes('TARNOWSKIE GÓRY') || upper.includes('KATOWICE') || upper.includes('BYTOM'))) {
+          if (!txt.includes('→') && !txt.includes('Ostatnio')) {
+            stationName = txt.replace(/📍|stacja:|badana stacja:/gi, '').replace(/SZCZEGÓŁY/gi, '').trim();
+            el.classList.add('clean-hide-item');
+          }
+        }
+      });
+
+      // 3. Budowanie paska górnego: Uchwyt ⋮⋮ + Badge po LEWEJ stronie
+      let topRow = card.querySelector('.card-top-row');
+      if (!topRow) {
+        topRow = document.createElement('div');
+        topRow.className = 'card-top-row';
+
+        const handle = document.createElement('span');
+        handle.className = 'drag-handle';
+        handle.textContent = '⋮⋮';
+        handle.title = 'Przesuń, aby zmienić kolejność';
+        topRow.appendChild(handle);
+
+        if (delayBadgeEl) {
+          const isRed = !(delayBadgeEl.textContent.includes('0 min') || delayBadgeEl.textContent.trim() === '+0');
+          delayBadgeEl.className = 'delay-badge ' + (isRed ? 'delay-red' : 'delay-green');
+          topRow.appendChild(delayBadgeEl);
+        }
+        card.insertBefore(topRow, card.firstChild);
+      }
+
+      // 4. Pozycjonowanie "Ostatnio potwierdzony" poniżej relacji
+      if (lastConfirmedEl && !card.querySelector('.last-confirmed-text')) {
+        lastConfirmedEl.className = 'last-confirmed-text';
+        card.appendChild(lastConfirmedEl);
+      }
+
+      // 5. Jednorazowa stopka stacji na samym dole
+      if (stationName && !card.querySelector('.monitored-station-footer')) {
+        const footer = document.createElement('div');
+        footer.className = 'monitored-station-footer';
+        footer.textContent = '📍 ' + stationName.toUpperCase();
+        card.appendChild(footer);
+      }
+
+      card.dataset.processed = "true";
+      enableDragAndDrop(card);
+    });
+  }
+
+  let timer = null;
+  const observer = new MutationObserver(function() {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(processCards, 50);
+  });
 
   document.addEventListener('DOMContentLoaded', function() {
-    styleCards();
+    processCards();
     observer.observe(document.body, { childList: true, subtree: true });
   });
 })();
 </script>
-<!-- ULTIMATE FIX OBSERVER END -->
+<!-- PERFECT AMOLED & DRAG OBSERVER END -->
 </body>
 </html>
