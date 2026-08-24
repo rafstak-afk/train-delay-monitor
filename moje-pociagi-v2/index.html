@@ -382,6 +382,7 @@ input:focus{
 
 
 
+
 <style id="perfect-amoled-ui">
   html, body {
     background-color: #000000 !important;
@@ -1380,6 +1381,170 @@ document.addEventListener('click', function(e) {
 
 
 
+<!-- PERFECT AMOLED & DRAG OBSERVER START -->
+<script>
+(function() {
+  function setupFormToggle() {
+    const form = document.querySelector('form, #addTrainForm, .add-train-form, [class*="add-form"]');
+    if (form && !document.querySelector('.toggle-add-btn')) {
+      form.classList.add('add-form-hidden');
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'toggle-add-btn';
+      btn.innerHTML = '➕ Dodaj pociąg do monitorowania';
+      btn.onclick = function() {
+        if (form.classList.contains('add-form-hidden')) {
+          form.classList.remove('add-form-hidden');
+          form.classList.add('add-form-visible');
+          btn.innerHTML = '➖ Ukryj formularz';
+        } else {
+          form.classList.remove('add-form-visible');
+          form.classList.add('add-form-hidden');
+          btn.innerHTML = '➕ Dodaj pociąg do monitorowania';
+        }
+      };
+      if (form.parentNode) {
+        form.parentNode.insertBefore(btn, form);
+      }
+    }
+  }
+
+  let activeCard = null;
+
+  function enableDragAndDrop(card) {
+    if (card.dataset.dragEnabled === "true") return;
+    card.dataset.dragEnabled = "true";
+
+    const handle = card.querySelector('.drag-handle') || card;
+
+    // Obsługa dotykowa na telefonie (Touch events)
+    handle.addEventListener('touchstart', function(e) {
+      activeCard = card;
+      card.classList.add('is-dragging');
+    }, { passive: true });
+
+    handle.addEventListener('touchmove', function(e) {
+      if (!activeCard) return;
+      const touchY = e.touches[0].clientY;
+      const touchX = e.touches[0].clientX;
+      const targetEl = document.elementFromPoint(touchX, touchY);
+      if (targetEl) {
+        const targetCard = targetEl.closest('.card, .train-card, .train-item, [data-train-url]');
+        if (targetCard && targetCard !== activeCard && targetCard.parentNode === activeCard.parentNode) {
+          const rect = targetCard.getBoundingClientRect();
+          const next = (touchY - rect.top) > (rect.height / 2);
+          activeCard.parentNode.insertBefore(activeCard, next ? targetCard.nextSibling : targetCard);
+        }
+      }
+    }, { passive: true });
+
+    handle.addEventListener('touchend', function() {
+      if (activeCard) {
+        activeCard.classList.remove('is-dragging');
+        activeCard = null;
+      }
+    });
+  }
+
+  function processCards() {
+    setupFormToggle();
+
+    const cards = document.querySelectorAll('.card, .train-card, .train-item, [data-train-url]');
+    cards.forEach(card => {
+      // 1. Twarde usuwanie śmieciowych przycisków i słów (OPÓŹNIONY, PLANOWO, SZCZEGÓŁY, ×)
+      card.querySelectorAll('button, a, span, div, p, strong').forEach(el => {
+        const txt = (el.innerText || el.textContent || '').trim();
+        const upper = txt.toUpperCase();
+
+        if (upper === 'OPÓŹNIONY' || upper === 'PLANOWO' || upper === '×' || upper === 'SZCZEGÓŁY') {
+          el.classList.add('clean-hide-item');
+        }
+        if (txt.includes('SZCZEGÓŁY') && txt.length > 8) {
+          el.textContent = txt.replace(/SZCZEGÓŁY/gi, '').trim();
+        }
+      });
+
+      // 2. Wyszukiwanie kluczowych elementów w kafelku
+      let delayBadgeEl = null;
+      let lastConfirmedEl = null;
+      let stationName = '';
+
+      card.querySelectorAll('span, div, p, strong, b').forEach(el => {
+        if (el.classList.contains('clean-hide-item')) return;
+        const txt = (el.innerText || el.textContent || '').trim();
+        const upper = txt.toUpperCase();
+
+        // Wyciąganie opóźnienia
+        if (!delayBadgeEl && (txt.includes('min') || txt.includes('+')) && txt.length < 15 && !txt.includes('Ostatnio')) {
+          delayBadgeEl = el;
+        }
+
+        // Wyciąganie "Ostatnio potwierdzony"
+        if (!lastConfirmedEl && txt.toLowerCase().includes('ostatnio potwierdzon')) {
+          lastConfirmedEl = el;
+        }
+
+        // Wyciąganie badanej stacji
+        if (!stationName && (upper.includes('STACJA:') || upper.includes('TARNOWSKIE GÓRY') || upper.includes('KATOWICE') || upper.includes('BYTOM'))) {
+          if (!txt.includes('→') && !txt.includes('Ostatnio')) {
+            stationName = txt.replace(/📍|stacja:|badana stacja:/gi, '').replace(/SZCZEGÓŁY/gi, '').trim();
+            el.classList.add('clean-hide-item');
+          }
+        }
+      });
+
+      // 3. Budowanie paska górnego: Uchwyt ⋮⋮ + Badge po LEWEJ stronie
+      let topRow = card.querySelector('.card-top-row');
+      if (!topRow) {
+        topRow = document.createElement('div');
+        topRow.className = 'card-top-row';
+
+        const handle = document.createElement('span');
+        handle.className = 'drag-handle';
+        handle.textContent = '⋮⋮';
+        handle.title = 'Przesuń, aby zmienić kolejność';
+        topRow.appendChild(handle);
+
+        if (delayBadgeEl) {
+          const isRed = !(delayBadgeEl.textContent.includes('0 min') || delayBadgeEl.textContent.trim() === '+0');
+          delayBadgeEl.className = 'delay-badge ' + (isRed ? 'delay-red' : 'delay-green');
+          topRow.appendChild(delayBadgeEl);
+        }
+        card.insertBefore(topRow, card.firstChild);
+      }
+
+      // 4. Pozycjonowanie "Ostatnio potwierdzony" poniżej relacji
+      if (lastConfirmedEl && !card.querySelector('.last-confirmed-text')) {
+        lastConfirmedEl.className = 'last-confirmed-text';
+        card.appendChild(lastConfirmedEl);
+      }
+
+      // 5. Jednorazowa stopka stacji na samym dole
+      if (stationName && !card.querySelector('.monitored-station-footer')) {
+        const footer = document.createElement('div');
+        footer.className = 'monitored-station-footer';
+        footer.textContent = '📍 ' + stationName.toUpperCase();
+        card.appendChild(footer);
+      }
+
+      card.dataset.processed = "true";
+      enableDragAndDrop(card);
+    });
+  }
+
+  let timer = null;
+  const observer = new MutationObserver(function() {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(processCards, 50);
+  });
+
+  document.addEventListener('DOMContentLoaded', function() {
+    processCards();
+    observer.observe(document.body, { childList: true, subtree: true });
+  });
+})();
+</script>
+<!-- PERFECT AMOLED & DRAG OBSERVER END -->
 <!-- PERFECT AMOLED & DRAG OBSERVER START -->
 <script>
 (function() {
