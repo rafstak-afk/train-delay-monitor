@@ -389,7 +389,8 @@ input:focus{
 
 
 
-<style id="amoled-compact-v3">
+
+<style id="amoled-compact-v4">
   html, body {
     background-color: #000000 !important;
     color: #ffffff !important;
@@ -408,7 +409,7 @@ input:focus{
     box-sizing: border-box !important;
   }
 
-  /* PRZYWRÓCENIE CZYTELNOŚCI DLA PRZYCISKÓW OGÓLNYCH I NIEBIESKICH */
+  /* PRZYCISKI Z PRZYWRÓCONYM TEKSTEM */
   button, input[type="submit"], .btn, .btn-primary {
     font-size: 0.95rem !important;
     font-weight: 700 !important;
@@ -434,6 +435,16 @@ input:focus{
     touch-action: pan-y !important;
     user-select: none !important;
     gap: 3px !important;
+    transition: transform 0.1s ease, border-color 0.1s ease !important;
+  }
+
+  /* STYL PODCZAS PRZECIĄGANIA - WŁĄCZONE PRZEPUSZCZANIE WSKAŹNIKA */
+  .card.is-dragging {
+    opacity: 0.45 !important;
+    border-color: #38bdf8 !important;
+    box-shadow: 0 4px 16px rgba(56, 189, 248, 0.4) !important;
+    pointer-events: none !important; /* Umożliwia błyskawiczne pobieranie elementu pod palcem */
+    transform: scale(0.98) !important;
   }
 
   .card *, .train-card *, .train-item * {
@@ -445,7 +456,7 @@ input:focus{
     min-width: 0 !important;
   }
 
-  /* WIERSZ 1: UCHWYT + OPÓŹNIENIA (LEWA) + BADANA STACJA (MINI PRAWA) */
+  /* NAGŁÓWEK: UCHWYT + OPÓŹNIENIE (LEWA) + STACJA (MINI PRAWA) */
   .card-top-row {
     display: flex !important;
     flex-direction: row !important;
@@ -456,16 +467,23 @@ input:focus{
   }
 
   .drag-handle {
-    color: #475569 !important;
-    font-size: 1.4rem !important;
+    color: #64748b !important;
+    font-size: 1.5rem !important;
     font-weight: 900 !important;
     cursor: grab !important;
     line-height: 1 !important;
     touch-action: none !important;
-    padding: 0 2px !important;
+    padding: 2px 6px !important;
+    border-radius: 4px !important;
+    background: rgba(255, 255, 255, 0.05) !important;
   }
 
-  /* BADGE OPÓŹNIENIA NA LEWO */
+  .drag-handle:active {
+    cursor: grabbing !important;
+    color: #38bdf8 !important;
+  }
+
+  /* BADGE OPÓŹNIENIA */
   .delay-badge {
     font-size: 1.15rem !important;
     font-weight: 900 !important;
@@ -489,7 +507,7 @@ input:focus{
     border: 1.5px solid #16a34a !important;
   }
 
-  /* MINIATURKA STACJI W PRAWO */
+  /* MINI TAG BADANEJ STACJI */
   .station-mini-tag {
     margin-left: auto !important;
     font-size: 0.7rem !important;
@@ -504,14 +522,12 @@ input:focus{
     flex-shrink: 0 !important;
   }
 
-  /* NUMER I NAZWA POCIĄGU - POWIĘKSZONE */
   .train-main-title {
     font-size: 1.25rem !important;
     font-weight: 900 !important;
     color: #ffffff !important;
   }
 
-  /* RELACJA POCIĄGU */
   .train-route-line {
     font-size: 1.05rem !important;
     font-weight: 700 !important;
@@ -527,7 +543,6 @@ input:focus{
     color: #94a3b8 !important;
   }
 
-  /* ZWIJANY FORMULARZ */
   .toggle-add-btn {
     width: 100% !important;
     padding: 9px !important;
@@ -1412,9 +1427,13 @@ document.addEventListener('click', function(e) {
 
 
 
-<!-- AMOLED COMPACT V3 WITH LOCALSTORAGE PERSISTENCE START -->
+
+<!-- AMOLED HIGH-PERFORMANCE DRAG & PERSISTENCE START -->
 <script>
 (function() {
+  let isDraggingActive = false;
+  let activeCard = null;
+
   function getCardKey(card) {
     return card.dataset.trainUrl || 
            card.getAttribute('data-id') || 
@@ -1435,6 +1454,7 @@ document.addEventListener('click', function(e) {
   }
 
   function restoreTrainOrder() {
+    if (isDraggingActive) return;
     const saved = localStorage.getItem('trains_custom_order');
     if (!saved) return;
     try {
@@ -1457,7 +1477,6 @@ document.addEventListener('click', function(e) {
         }
       });
 
-      // Zostaw ewentualne nowe pociągi na dole
       cardMap.forEach(card => parent.appendChild(card));
     } catch(e) {}
   }
@@ -1487,44 +1506,71 @@ document.addEventListener('click', function(e) {
     }
   }
 
-  let activeCard = null;
-
   function enableDragAndDrop(card) {
     if (card.dataset.dragEnabled === "true") return;
     card.dataset.dragEnabled = "true";
 
     const handle = card.querySelector('.drag-handle') || card;
 
-    handle.addEventListener('touchstart', function(e) {
+    function startDrag(e) {
+      isDraggingActive = true;
       activeCard = card;
       card.classList.add('is-dragging');
-    }, { passive: true });
+    }
 
-    handle.addEventListener('touchmove', function(e) {
+    function moveDrag(clientX, clientY) {
       if (!activeCard) return;
-      const touchY = e.touches[0].clientY;
-      const touchX = e.touches[0].clientX;
-      const targetEl = document.elementFromPoint(touchX, touchY);
+      const targetEl = document.elementFromPoint(clientX, clientY);
       if (targetEl) {
         const targetCard = targetEl.closest('.card, .train-card, .train-item, [data-train-url]');
         if (targetCard && targetCard !== activeCard && targetCard.parentNode === activeCard.parentNode) {
           const rect = targetCard.getBoundingClientRect();
-          const next = (touchY - rect.top) > (rect.height / 2);
+          const next = (clientY - rect.top) > (rect.height / 2);
           activeCard.parentNode.insertBefore(activeCard, next ? targetCard.nextSibling : targetCard);
         }
       }
-    }, { passive: true });
+    }
 
-    const endDrag = function() {
+    function endDrag() {
       if (activeCard) {
         activeCard.classList.remove('is-dragging');
         activeCard = null;
+        isDraggingActive = false;
         saveTrainOrder();
       }
-    };
+    }
+
+    // Obsługa dotyku (Touch)
+    handle.addEventListener('touchstart', function(e) {
+      startDrag(e);
+    }, { passive: true });
+
+    handle.addEventListener('touchmove', function(e) {
+      if (e.touches && e.touches[0]) {
+        moveDrag(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    }, { passive: true });
 
     handle.addEventListener('touchend', endDrag);
-    handle.addEventListener('mouseup', endDrag);
+    handle.addEventListener('touchcancel', endDrag);
+
+    // Obsługa myszy (Desktop)
+    handle.addEventListener('mousedown', function(e) {
+      startDrag(e);
+
+      function onMouseMove(me) {
+        moveDrag(me.clientX, me.clientY);
+      }
+
+      function onMouseUp() {
+        window.removeEventListener('mousemove', onMouseMove);
+        window.removeEventListener('mouseup', onMouseUp);
+        endDrag();
+      }
+
+      window.addEventListener('mousemove', onMouseMove);
+      window.addEventListener('mouseup', onMouseUp);
+    });
   }
 
   function processCards() {
@@ -1532,7 +1578,7 @@ document.addEventListener('click', function(e) {
 
     const cards = document.querySelectorAll('.card, .train-card, .train-item, [data-train-url]');
     cards.forEach(card => {
-      // 1. Precyzyjne usuwanie tylko przycisków / napisów "SZCZEGÓŁY"
+      // Ukrywanie przycisków / etykiet
       card.querySelectorAll('button, a, span, div, p').forEach(el => {
         const txt = (el.textContent || '').trim().toUpperCase();
         if (txt === 'SZCZEGÓŁY' || txt === 'OPÓŹNIONY' || txt === 'PLANOWO' || txt === '×') {
@@ -1540,7 +1586,7 @@ document.addEventListener('click', function(e) {
         }
       });
 
-      // 2. Szukanie badanej stacji
+      // Wyciąganie nazwy stacji
       let stationName = '';
       card.querySelectorAll('*').forEach(el => {
         if (el.closest('.card-top-row')) return;
@@ -1554,7 +1600,7 @@ document.addEventListener('click', function(e) {
         }
       });
 
-      // 3. Wartość opóźnienia
+      // Wartość opóźnienia
       let delayText = '0 min';
       card.querySelectorAll('span, div, p, strong, b').forEach(el => {
         if (el.closest('.card-top-row')) return;
@@ -1565,7 +1611,7 @@ document.addEventListener('click', function(e) {
         }
       });
 
-      // 4. Klasy dla relacji i statusu
+      // Klasy relacji i statusu
       card.querySelectorAll('p, div, span').forEach(el => {
         if (el.closest('.card-top-row')) return;
         const txt = (el.textContent || '').trim();
@@ -1576,7 +1622,7 @@ document.addEventListener('click', function(e) {
         }
       });
 
-      // 5. Budowa paska górnego
+      // Budowanie góry kafelka
       let topRow = card.querySelector('.card-top-row');
       if (!topRow) {
         topRow = document.createElement('div');
@@ -1606,7 +1652,9 @@ document.addEventListener('click', function(e) {
       enableDragAndDrop(card);
     });
 
-    restoreTrainOrder();
+    if (!isDraggingActive) {
+      restoreTrainOrder();
+    }
   }
 
   let timer = null;
@@ -1621,6 +1669,6 @@ document.addEventListener('click', function(e) {
   });
 })();
 </script>
-<!-- AMOLED COMPACT V3 WITH LOCALSTORAGE PERSISTENCE END -->
+<!-- AMOLED HIGH-PERFORMANCE DRAG & PERSISTENCE END -->
 </body>
 </html>
