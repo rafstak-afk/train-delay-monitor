@@ -380,12 +380,13 @@ input:focus{
 
 
 
-<style id="clean-ui-fix">
+
+<style id="ultimate-fix-styles">
   html, body {
     background-color: #000000 !important;
     color: #ffffff !important;
     margin: 0 !important;
-    padding: 8px !important;
+    padding: 6px !important;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
   }
 
@@ -402,97 +403,108 @@ input:focus{
   .card, .train-card, .train-item, [data-train-url] {
     width: 100% !important;
     background: #111827 !important;
-    border: 1.5px solid #374151 !important;
+    border: 2px solid #374151 !important;
     border-radius: 12px !important;
     padding: 14px !important;
     margin-bottom: 12px !important;
     box-sizing: border-box !important;
     display: flex !important;
     flex-direction: column !important;
-    gap: 4px !important;
-    overflow: hidden !important;
+    align-items: flex-start !important;
+    gap: 6px !important;
+    overflow: visible !important;
   }
 
-  /* ESTETYCZNY BADGE OPÓŹNIENIA (NIE ROZPYCHA RAMKI) */
-  .clean-delay-badge {
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    width: fit-content !important;
-    max-width: 100% !important;
-    font-size: 1.4rem !important;
-    font-weight: 800 !important;
+  /* BRAK OBCINANIA TEKSTU I TRUNCATE */
+  .card *, .train-card *, .train-item * {
+    white-space: normal !important;
+    text-overflow: unset !important;
+    overflow: visible !important;
+    word-break: break-word !important;
+  }
+
+  /* 1. WARTOŚĆ OPÓŹNIENIA - PO LEWEJ STRONIE NA SAMEJ GÓRZE */
+  .clean-delay-left {
+    align-self: flex-start !important;
+    font-size: 1.5rem !important;
+    font-weight: 900 !important;
     padding: 4px 12px !important;
     border-radius: 8px !important;
-    line-height: 1.2 !important;
-    box-sizing: border-box !important;
-    margin-bottom: 4px !important;
+    line-height: 1.1 !important;
+    margin-bottom: 6px !important;
+    display: inline-block !important;
   }
 
   .delay-red {
     color: #ff4d4d !important;
-    background: #2a0808 !important;
-    border: 1.5px solid #ef4444 !important;
+    background: #3b0707 !important;
+    border: 2px solid #ef4444 !important;
   }
 
   .delay-green {
     color: #4ade80 !important;
     background: #052e16 !important;
-    border: 1.5px solid #16a34a !important;
+    border: 2px solid #16a34a !important;
   }
 
-  /* OSTATNIO POTWIERDZONY */
+  /* 2. NUMER POCIĄGU, NAZWA I RELACJA */
+  .clean-train-title {
+    font-size: 1.15rem !important;
+    font-weight: 800 !important;
+    color: #38bdf8 !important;
+    line-height: 1.3 !important;
+  }
+
+  /* 3. OSTATNIO POTWIERDZONY */
   .clean-last-confirmed {
-    font-size: 0.98rem !important;
-    font-weight: 700 !important;
-    color: #f1f5f9 !important;
+    font-size: 1.05rem !important;
+    font-weight: 800 !important;
+    color: #ffffff !important;
     margin-top: 4px !important;
   }
 
-  /* DYSKRETNA STACJA NA SAMYM DOLE (JEDNORAZOWA) */
-  .clean-station-footer {
-    font-size: 0.78rem !important;
-    font-weight: 600 !important;
+  /* 4. BADANA STACJA NA SAMYM DOLE (POMNIEJSZONA) */
+  .clean-monitored-footer {
+    font-size: 0.8rem !important;
+    font-weight: 700 !important;
     color: #64748b !important;
     text-transform: uppercase !important;
     letter-spacing: 0.5px !important;
-    margin-top: 6px !important;
+    margin-top: 8px !important;
     padding-top: 6px !important;
     border-top: 1px solid #1e293b !important;
+    width: 100% !important;
     display: block !important;
   }
 
-  /* ZWIJANY FORMULARZ DODAWANIA */
-  .toggle-add-form-btn {
+  /* ZWIJANY FORMULARZ */
+  .toggle-add-btn {
     width: 100% !important;
     padding: 12px !important;
-    background: #1e293b !important;
-    border: 1.5px dashed #475569 !important;
+    background: #0f172a !important;
+    border: 1.5px dashed #334155 !important;
     color: #38bdf8 !important;
     font-weight: 800 !important;
-    font-size: 0.95rem !important;
+    font-size: 1rem !important;
     border-radius: 10px !important;
     cursor: pointer !important;
     margin-bottom: 12px !important;
     box-sizing: border-box !important;
   }
 
-  .add-train-form-hidden { display: none !important; }
-  .add-train-form-visible {
+  .add-form-hidden { display: none !important; }
+  .add-form-visible {
     display: block !important;
     width: 100% !important;
     background: #0f172a !important;
-    border: 1px solid #334155 !important;
+    border: 1.5px solid #334155 !important;
     padding: 12px !important;
     border-radius: 10px !important;
     margin-bottom: 12px !important;
     box-sizing: border-box !important;
   }
 
-  /* TWARDE UKRYWANIE ELEMENTÓW DUBLUJĄCYCH I NIEPOTRZEBNYCH */
-  .hide-garbage {
-    display: none !important;
-  }
+  .force-hide { display: none !important; }
 </style>
 </head>
 
@@ -1343,86 +1355,90 @@ document.addEventListener('click', function(e) {
 
 
 
-<!-- CLEAN UI OBSERVER START -->
+
+<!-- ULTIMATE FIX OBSERVER START -->
 <script>
 (function() {
-  function cleanupAndStyleCards() {
-    // A. Formularz dodawania
-    const formEl = document.querySelector('form, #addTrainForm, .add-train-form, [class*="add-form"]');
-    if (formEl && !document.querySelector('.toggle-add-form-btn')) {
-      formEl.classList.add('add-train-form-hidden');
+  function setupForm() {
+    const form = document.querySelector('form, #addTrainForm, .add-train-form, [class*="add-form"]');
+    if (form && !document.querySelector('.toggle-add-btn')) {
+      form.classList.add('add-form-hidden');
       const btn = document.createElement('button');
       btn.type = 'button';
-      btn.className = 'toggle-add-form-btn';
+      btn.className = 'toggle-add-btn';
       btn.innerHTML = '➕ Dodaj pociąg do monitorowania';
       btn.onclick = function() {
-        if (formEl.classList.contains('add-train-form-hidden')) {
-          formEl.classList.remove('add-train-form-hidden');
-          formEl.classList.add('add-train-form-visible');
+        if (form.classList.contains('add-form-hidden')) {
+          form.classList.remove('add-form-hidden');
+          form.classList.add('add-form-visible');
           btn.innerHTML = '➖ Ukryj formularz';
         } else {
-          formEl.classList.remove('add-train-form-visible');
-          formEl.classList.add('add-train-form-hidden');
+          form.classList.remove('add-form-visible');
+          form.classList.add('add-form-hidden');
           btn.innerHTML = '➕ Dodaj pociąg do monitorowania';
         }
       };
-      if (formEl.parentNode) {
-        formEl.parentNode.insertBefore(btn, formEl);
+      if (form.parentNode) {
+        form.parentNode.insertBefore(btn, form);
       }
     }
+  }
 
-    // B. Porządkowanie kafelków
+  function styleCards() {
+    setupForm();
+
     document.querySelectorAll('.card, .train-card, .train-item, [data-train-url]').forEach(card => {
-      let detectedStation = '';
-
-      card.querySelectorAll('div, span, button, p, a, strong').forEach(el => {
-        const txt = (el.innerText || '').trim();
-        const upper = txt.toUpperCase();
-
-        // 1. Ukrywamy zbędne słowa statusów i przyciski
-        if (upper === 'OPÓŹNIONY' || upper === 'PLANOWO' || upper === 'SZCZEGÓŁY' || upper === '×') {
-          el.classList.add('hide-garbage');
-          return;
-        }
-
-        // 2. Przechwytujemy nazwę stacji i ukrywamy stare wystąpienia (eliminacja dubli)
-        if ((upper.includes('STACJA:') || upper.includes('TARNOWSKIE GÓRY') || upper.includes('KATOWICE')) && !txt.includes('→') && !txt.includes('Ostatnio')) {
-          if (!detectedStation) {
-            detectedStation = txt.replace(/📍|stacja:|badana stacja:/gi, '').trim();
-          }
-          el.classList.add('hide-garbage');
-          return;
-        }
-
-        // 3. Stylizacja czystej ramki z opóźnieniem
-        if ((txt.includes('min') || txt.includes('+')) && txt.length < 15 && !txt.includes('Ostatnio')) {
-          el.className = 'clean-delay-badge ' + (txt.includes('0 min') || txt === '+0' ? 'delay-green' : 'delay-red');
-        }
-
-        // 4. Wyrożnienie "Ostatnio potwierdzony"
-        if (txt.toLowerCase().includes('ostatnio potwierdzon')) {
-          el.classList.add('clean-last-confirmed');
+      // Usunięcie zbędnych przycisków i słowa SZCZEGÓŁY
+      card.querySelectorAll('button, a, .btn').forEach(b => {
+        const txt = (b.textContent || '').trim().toUpperCase();
+        if (txt === 'SZCZEGÓŁY' || txt === '×' || txt === 'OPÓŹNIONY' || txt === 'PLANOWO') {
+          b.classList.add('force-hide');
         }
       });
 
-      // 5. Wstawiamy dokładnie JEDNĄ stację na samym dole
-      if (detectedStation && !card.querySelector('.clean-station-footer')) {
-        const footer = document.createElement('div');
-        footer.className = 'clean-station-footer';
-        footer.textContent = '📍 ' + detectedStation.toUpperCase();
-        card.appendChild(footer);
+      // Czyszczenie tekstu stacji z doczepionego słowa "SZCZEGÓŁY"
+      let stationName = '';
+      card.querySelectorAll('*').forEach(el => {
+        if (el.children.length === 0) {
+          let t = el.textContent || '';
+          if (t.includes('SZCZEGÓŁY')) {
+            el.textContent = t.replace(/SZCZEGÓŁY/g, '').trim();
+          }
+        }
+      });
+
+      // Formatowanie opóźnienia PO LEWEJ STRONIE NA GÓRZE
+      card.querySelectorAll('span, div, p, strong').forEach(el => {
+        const txt = (el.innerText || '').trim();
+        if ((txt.includes('min') || txt.includes('+')) && txt.length < 15 && !txt.includes('Ostatnio') && !el.classList.contains('clean-delay-left')) {
+          el.className = 'clean-delay-left ' + (txt.includes('0 min') || txt === '+0' ? 'delay-green' : 'delay-red');
+          card.insertBefore(el, card.firstChild);
+        }
+      });
+
+      // Wyrycie i wyciągnięcie stacji na sam dół
+      const detailsEl = card.querySelector('.details, [class*="detail"], .station-info');
+      if (detailsEl && !stationName) {
+        stationName = (detailsEl.innerText || '').replace(/SZCZEGÓŁY|Trasa:|Stacja:/gi, '').trim();
+      }
+
+      if (stationName && !card.querySelector('.clean-monitored-footer')) {
+        const ft = document.createElement('div');
+        ft.className = 'clean-monitored-footer';
+        ft.textContent = '📍 ' + stationName.replace(/^📍\s*/, '').toUpperCase();
+        card.appendChild(ft);
       }
     });
   }
 
-  const observer = new MutationObserver(cleanupAndStyleCards);
+  const observer = new MutationObserver(styleCards);
 
   document.addEventListener('DOMContentLoaded', function() {
-    cleanupAndStyleCards();
+    styleCards();
     observer.observe(document.body, { childList: true, subtree: true });
   });
 })();
 </script>
-<!-- CLEAN UI OBSERVER END -->
+<!-- ULTIMATE FIX OBSERVER END -->
 </body>
 </html>
