@@ -384,7 +384,8 @@ input:focus{
 
 
 
-<style id="amoled-responsive-fix">
+
+<style id="amoled-fullwidth-fix">
   html, body {
     background-color: #000000 !important;
     color: #ffffff !important;
@@ -403,9 +404,10 @@ input:focus{
     box-sizing: border-box !important;
   }
 
-  /* KAFELEK POCIĄGU - ZACHOWANIE PEŁNEJ SZEROKAŚCI I BLOKOWEGO UKŁADU */
+  /* KAFELEK POCIĄGU - PEŁNA SZEROKOŚĆ */
   .card, .train-card, .train-item, [data-train-url] {
     width: 100% !important;
+    max-width: 100% !important;
     background: #111827 !important;
     border: 2px solid #374151 !important;
     border-radius: 12px !important;
@@ -416,6 +418,23 @@ input:focus{
     position: relative !important;
     touch-action: pan-y !important;
     user-select: none !important;
+  }
+
+  /* REMEDIUM NA OBCINANIE I ZWĘŻANIE KONTENERÓW */
+  .card *, .train-card *, .train-item * {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    word-break: normal !important;
+    overflow-wrap: break-word !important;
+    white-space: normal !important;
+    text-overflow: unset !important;
+  }
+
+  /* KASOWANIE SZTYWNYCH OGRANICZEŃ SZEROKOŚCI W WEWNĘTRZNYCH KONTENERACH */
+  .card > div, .card > section, .card > header, .card > div > div {
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: 1 1 100% !important;
   }
 
   .card.is-dragging {
@@ -452,6 +471,7 @@ input:focus{
     line-height: 1.1 !important;
     white-space: nowrap !important;
     display: inline-block !important;
+    width: fit-content !important;
   }
 
   .delay-red {
@@ -464,39 +484,6 @@ input:focus{
     color: #4ade80 !important;
     background: #052e16 !important;
     border: 2px solid #16a34a !important;
-  }
-
-  /* ZAPEWNIENIE PEŁNEJ SZEROKOŚCI WIERSZY */
-  .card p, .card div:not(.card-top-bar):not(.card-footer-station), .card h2, .card h3, .card h4 {
-    width: 100% !important;
-    box-sizing: border-box !important;
-  }
-
-  /* POZIOMY UKŁAD TYTUŁÓW I NUMERÓW POCIĄGÓW */
-  .card h2, .card h3, .card h4, .card [class*="title"], .card [class*="header"], .card [class*="number"] {
-    display: flex !important;
-    flex-direction: row !important;
-    flex-wrap: wrap !important;
-    align-items: center !important;
-    gap: 8px !important;
-    font-size: 1.25rem !important;
-    font-weight: 800 !important;
-    color: #ffffff !important;
-    margin: 4px 0 !important;
-    white-space: normal !important;
-  }
-
-  /* POZIOMY UKŁAD RELACJI POCIĄGU */
-  .card [class*="route"], .card [class*="relation"], .card [class*="path"] {
-    display: flex !important;
-    flex-direction: row !important;
-    flex-wrap: wrap !important;
-    align-items: center !important;
-    gap: 6px !important;
-    font-size: 1.05rem !important;
-    font-weight: 700 !important;
-    color: #e2e8f0 !important;
-    margin: 4px 0 !important;
   }
 
   /* STOPKA BADANEJ STACJI NA SAMYM DOLE */
@@ -1393,7 +1380,8 @@ document.addEventListener('click', function(e) {
 
 
 
-<!-- AMOLED RESPONSIVE OBSERVER START -->
+
+<!-- AMOLED FULLWIDTH OBSERVER START -->
 <script>
 (function() {
   function setupFormToggle() {
@@ -1462,18 +1450,19 @@ document.addEventListener('click', function(e) {
 
     const cards = document.querySelectorAll('.card, .train-card, .train-item, [data-train-url]');
     cards.forEach(card => {
-      // 1. Ukrywamy niepotrzebne przyciski i etykiety
-      card.querySelectorAll('button, a, span, div, p').forEach(el => {
+      // 1. Ukrywanie zbędnych napisów (OPÓŹNIONY, PLANOWO, SZCZEGÓŁY, ×)
+      card.querySelectorAll('button, a, span, div, p, strong').forEach(el => {
+        if (el.classList.contains('drag-handle') || el.classList.contains('delay-badge')) return;
         const txt = (el.innerText || el.textContent || '').trim().toUpperCase();
         if (txt === 'OPÓŹNIONY' || txt === 'PLANOWO' || txt === '×' || txt === 'SZCZEGÓŁY') {
           el.style.display = 'none';
         }
       });
 
-      // 2. Szukamy opóźnienia
+      // 2. Wyciąganie opóźnienia
       let delayText = '';
-      card.querySelectorAll('*').forEach(el => {
-        if (el.style.display === 'none') return;
+      card.querySelectorAll('span, div, p, strong, b').forEach(el => {
+        if (el.style.display === 'none' || el.closest('.card-top-bar')) return;
         const txt = (el.innerText || el.textContent || '').trim();
         if ((txt.includes('min') || txt.startsWith('+')) && txt.length < 15 && !txt.includes('Ostatnio') && !txt.includes('Dane:')) {
           if (!delayText) delayText = txt;
@@ -1496,10 +1485,10 @@ document.addEventListener('click', function(e) {
         card.insertBefore(topBar, card.firstChild);
       }
 
-      // 4. Szukamy nazwy stacji i przenosimy na sam dół
+      // 4. Wyciąganie nazwy stacji i umieszczanie na samym dole
       let stationName = '';
       card.querySelectorAll('*').forEach(el => {
-        if (el.style.display === 'none') return;
+        if (el.style.display === 'none' || el.closest('.card-top-bar') || el.closest('.card-footer-station')) return;
         const txt = (el.innerText || el.textContent || '').trim();
         const upper = txt.toUpperCase();
         if ((upper.includes('STACJA:') || upper.includes('CHORZÓW BATORY') || upper.includes('TARNOWSKIE GÓRY') || upper.includes('KATOWICE') || upper.includes('BYTOM')) && !txt.includes('→') && !txt.includes('Ostatnio') && !txt.includes('Dane:')) {
@@ -1533,6 +1522,6 @@ document.addEventListener('click', function(e) {
   });
 })();
 </script>
-<!-- AMOLED RESPONSIVE OBSERVER END -->
+<!-- AMOLED FULLWIDTH OBSERVER END -->
 </body>
 </html>
