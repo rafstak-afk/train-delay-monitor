@@ -390,7 +390,8 @@ input:focus{
 
 
 
-<style id="amoled-compact-v4">
+
+<style id="amoled-compact-v5">
   html, body {
     background-color: #000000 !important;
     color: #ffffff !important;
@@ -438,12 +439,19 @@ input:focus{
     transition: transform 0.1s ease, border-color 0.1s ease !important;
   }
 
-  /* STYL PODCZAS PRZECIĄGANIA - WŁĄCZONE PRZEPUSZCZANIE WSKAŹNIKA */
+  /* UKRYCIE STARYCH KONTENERÓW STATUSÓW I KWADRATÓW */
+  .status-box, .status-container, .operation-status, [class*="status-badge"], 
+  .card-icon, .train-icon, .status-icon, [class*="icon-box"],
+  [class*="status-square"], [class*="operation-box"] {
+    display: none !important;
+  }
+
+  /* STYL PODCZAS PRZECIĄGANIA */
   .card.is-dragging {
     opacity: 0.45 !important;
     border-color: #38bdf8 !important;
     box-shadow: 0 4px 16px rgba(56, 189, 248, 0.4) !important;
-    pointer-events: none !important; /* Umożliwia błyskawiczne pobieranie elementu pod palcem */
+    pointer-events: none !important;
     transform: scale(0.98) !important;
   }
 
@@ -526,6 +534,7 @@ input:focus{
     font-size: 1.25rem !important;
     font-weight: 900 !important;
     color: #ffffff !important;
+    margin-top: 2px !important;
   }
 
   .train-route-line {
@@ -1428,7 +1437,8 @@ document.addEventListener('click', function(e) {
 
 
 
-<!-- AMOLED HIGH-PERFORMANCE DRAG & PERSISTENCE START -->
+
+<!-- AMOLED HIGH-PERFORMANCE V5 CLEAN START -->
 <script>
 (function() {
   let isDraggingActive = false;
@@ -1540,7 +1550,6 @@ document.addEventListener('click', function(e) {
       }
     }
 
-    // Obsługa dotyku (Touch)
     handle.addEventListener('touchstart', function(e) {
       startDrag(e);
     }, { passive: true });
@@ -1554,7 +1563,6 @@ document.addEventListener('click', function(e) {
     handle.addEventListener('touchend', endDrag);
     handle.addEventListener('touchcancel', endDrag);
 
-    // Obsługa myszy (Desktop)
     handle.addEventListener('mousedown', function(e) {
       startDrag(e);
 
@@ -1578,51 +1586,70 @@ document.addEventListener('click', function(e) {
 
     const cards = document.querySelectorAll('.card, .train-card, .train-item, [data-train-url]');
     cards.forEach(card => {
-      // Ukrywanie przycisków / etykiet
-      card.querySelectorAll('button, a, span, div, p').forEach(el => {
-        const txt = (el.textContent || '').trim().toUpperCase();
-        if (txt === 'SZCZEGÓŁY' || txt === 'OPÓŹNIONY' || txt === 'PLANOWO' || txt === '×') {
-          el.style.display = 'none';
-        }
-      });
-
-      // Wyciąganie nazwy stacji
+      // 1. BEZPIECZNE WYCIĄGANIE NAZWY STACJI (BEZ UKRYWANIA KONTENERÓW KAFELKA)
       let stationName = '';
-      card.querySelectorAll('*').forEach(el => {
+      card.querySelectorAll('span, div, p, small, strong').forEach(el => {
         if (el.closest('.card-top-row')) return;
+        if (el.children.length > 0) return; // Tylko liście DOM
+
         const txt = (el.textContent || '').trim();
         const upper = txt.toUpperCase();
-        if ((upper.startsWith('STACJA:') || upper.startsWith('BADANA STACJA:') || upper.includes('CHORZÓW BATORY') || upper.includes('TARNOWSKIE GÓRY') || upper.includes('KATOWICE') || upper.includes('BYTOM')) && !txt.includes('→') && !txt.includes('Ostatnio') && !txt.includes('Dane:')) {
-          if (!stationName) {
-            stationName = txt.replace(/📍|stacja:|badana stacja:/gi, '').trim();
-          }
+
+        if (upper.startsWith('STACJA:') || upper.startsWith('BADANA STACJA:') || upper.startsWith('STACJA ')) {
+          stationName = txt.replace(/📍|stacja:|badana stacja:/gi, '').replace(/SZCZEGÓŁY/gi, '').trim();
           el.style.display = 'none';
+          if (el.parentElement && el.parentElement !== card && el.parentElement.children.length === 1) {
+            el.parentElement.style.display = 'none';
+          }
         }
       });
 
-      // Wartość opóźnienia
+      // 2. UKRYWANIE ELEMENTÓW I KONTENERÓW STATUSOWYCH (KWADRATÓW, BRAK OPERACJI, SZCZEGÓŁY itp.)
+      card.querySelectorAll('*').forEach(el => {
+        if (el.closest('.card-top-row')) return;
+
+        const txt = (el.textContent || '').trim().toUpperCase();
+
+        if (txt === 'SZCZEGÓŁY' || txt === 'OPÓŹNIONY' || txt === 'PLANOWO' || txt === '×' || txt === 'BRAK OPERACJI' || txt === 'BRAK DANYCH') {
+          el.style.display = 'none';
+          const parent = el.parentElement;
+          if (parent && parent !== card && !parent.querySelector('.train-main-title, .train-route-line')) {
+            parent.style.display = 'none';
+          }
+        }
+      });
+
+      // 3. WARTOŚĆ OPÓŹNIENIA
       let delayText = '0 min';
       card.querySelectorAll('span, div, p, strong, b').forEach(el => {
         if (el.closest('.card-top-row')) return;
+        if (el.children.length > 0) return;
+
         const txt = (el.textContent || '').trim();
         if ((txt.includes('min') || txt.startsWith('+')) && txt.length < 15 && !txt.includes('Ostatnio') && !txt.includes('Dane:')) {
           delayText = txt;
           el.style.display = 'none';
+          if (el.parentElement && el.parentElement !== card && el.parentElement.children.length === 1) {
+            el.parentElement.style.display = 'none';
+          }
         }
       });
 
-      // Klasy relacji i statusu
-      card.querySelectorAll('p, div, span').forEach(el => {
+      // 4. KWALIFIKACJA KLAS DLA NUMERU, RELACJI I STATUSU
+      card.querySelectorAll('p, div, span, h1, h2, h3').forEach(el => {
         if (el.closest('.card-top-row')) return;
         const txt = (el.textContent || '').trim();
-        if (txt.includes('→') || txt.includes('->')) {
+
+        if (txt.startsWith('#') || (txt.length < 15 && /\d{4,5}/.test(txt) && !txt.includes('→') && !txt.includes(':'))) {
+          el.className = 'train-main-title';
+        } else if (txt.includes('→') || txt.includes('->')) {
           el.className = 'train-route-line';
         } else if (txt.includes('Ostatnio') || txt.includes('Dane:')) {
           el.className = 'train-status-line';
         }
       });
 
-      // Budowanie góry kafelka
+      // 5. BUDOWA PASKA GÓRNEGO
       let topRow = card.querySelector('.card-top-row');
       if (!topRow) {
         topRow = document.createElement('div');
@@ -1669,6 +1696,6 @@ document.addEventListener('click', function(e) {
   });
 })();
 </script>
-<!-- AMOLED HIGH-PERFORMANCE DRAG & PERSISTENCE END -->
+<!-- AMOLED HIGH-PERFORMANCE V5 CLEAN END -->
 </body>
 </html>
