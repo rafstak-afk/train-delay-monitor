@@ -394,144 +394,61 @@ input:focus{
 
 
 
-<style id="amoled-clean-v8">
+
+<style id="amoled-native-clean">
+  /* Tło i baza AMOLED */
   html, body {
     background-color: #000000 !important;
     color: #ffffff !important;
     margin: 0 !important;
-    padding: 4px !important;
+    padding: 8px !important;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-    -webkit-tap-highlight-color: transparent !important;
   }
 
+  /* Główny kontener i nagłówek */
   #app, main, .container, #container, body > div {
-    display: flex !important;
-    flex-direction: column !important;
-    width: 100% !important;
     max-width: 600px !important;
     margin: 0 auto !important;
-    box-sizing: border-box !important;
+    background-color: #000000 !important;
   }
 
+  header, .header, nav, div[class*="header"], div[class*="nav"] {
+    background-color: #000000 !important;
+    border-bottom: 1px solid #1e293b !important;
+    padding: 8px 0 !important;
+  }
+
+  /* Natywne karty pociągów - kompaktowy układy i głęboka czerń */
   .card, .train-card, .train-item, [data-train-url] {
-    width: 100% !important;
-    max-width: 100% !important;
-    background: #000000 !important;
-    border: 1px solid #222222 !important;
+    background-color: #050505 !important;
+    border: 1px solid #1f2937 !important;
+    border-radius: 8px !important;
+    padding: 10px 12px !important;
+    margin-bottom: 8px !important;
+    box-shadow: none !important;
+  }
+
+  /* Naprawa łamania wierszy w komunikatach błędu / stanu */
+  .card *, .train-card * {
+    word-break: normal !important;
+    word-wrap: normal !important;
+    white-space: normal !important;
+    overflow-wrap: break-word !important;
+  }
+
+  /* Stylizowanie natywnych zielonych/czerwonych bloków opóźnień */
+  [class*="delay"], [class*="badge"], [class*="status"] {
     border-radius: 6px !important;
-    padding: 6px 8px !important;
-    margin-bottom: 4px !important;
-    box-sizing: border-box !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: stretch !important;
-    position: relative !important;
-    touch-action: pan-y !important;
-    user-select: none !important;
-    gap: 2px !important;
   }
 
-  .card.is-dragging {
-    opacity: 0.5 !important;
-    border-color: #38bdf8 !important;
-  }
-
-  .card-top-row {
-    display: flex !important;
-    flex-direction: row !important;
-    align-items: center !important;
-    width: 100% !important;
-    gap: 6px !important;
-    margin-bottom: 2px !important;
-  }
-
-  .drag-handle {
-    color: #666666 !important;
-    font-size: 1.2rem !important;
-    font-weight: 900 !important;
-    cursor: grab !important;
-    line-height: 1 !important;
-    touch-action: none !important;
-    padding: 0 4px !important;
-  }
-
-  .delay-badge {
-    font-size: 0.95rem !important;
-    font-weight: 900 !important;
-    padding: 1px 6px !important;
-    border-radius: 4px !important;
-    line-height: 1.1 !important;
-    white-space: nowrap !important;
-  }
-
-  .delay-red {
-    color: #ff4d4d !important;
-    background: #2a0000 !important;
-    border: 1px solid #ff4d4d !important;
-  }
-
-  .delay-green {
-    color: #4ade80 !important;
-    background: #002200 !important;
-    border: 1px solid #16a34a !important;
-  }
-
-  .station-mini-tag {
-    margin-left: auto !important;
-    font-size: 0.7rem !important;
-    font-weight: 800 !important;
-    color: #aaaaaa !important;
-    background: #111111 !important;
-    padding: 1px 5px !important;
-    border-radius: 3px !important;
-    white-space: nowrap !important;
-    border: 1px solid #222222 !important;
-  }
-
-  .train-main-title {
-    font-size: 1.05rem !important;
-    font-weight: 900 !important;
-    color: #ffffff !important;
-    line-height: 1.2 !important;
-    display: block !important;
-  }
-
-  .train-route-line {
-    font-size: 0.9rem !important;
-    font-weight: 700 !important;
-    color: #cccccc !important;
-    line-height: 1.2 !important;
-    display: block !important;
-  }
-
-  .train-status-line {
-    font-size: 0.75rem !important;
-    color: #888888 !important;
-    line-height: 1.2 !important;
-    display: block !important;
-  }
-
-  .toggle-add-btn {
-    width: 100% !important;
-    padding: 6px !important;
-    background: #000000 !important;
-    border: 1px dashed #333333 !important;
+  /* Przycisk ODŚWIEŻ i przyciski aktywne */
+  button, .btn, input[type="submit"] {
+    background-color: #0f172a !important;
+    border: 1px solid #38bdf8 !important;
     color: #38bdf8 !important;
     font-weight: 700 !important;
-    font-size: 0.85rem !important;
     border-radius: 6px !important;
-    margin-bottom: 4px !important;
-  }
-
-  .add-form-hidden { display: none !important; }
-  .add-form-visible {
-    display: block !important;
-    width: 100% !important;
-    background: #000000 !important;
-    border: 1px solid #333333 !important;
-    padding: 8px !important;
-    border-radius: 6px !important;
-    margin-bottom: 4px !important;
+    padding: 6px 12px !important;
   }
 </style>
 </head>
@@ -1397,254 +1314,6 @@ document.addEventListener('click', function(e) {
 
 
 
-<!-- AMOLED WRAPPER FIX V8 START -->
-<script>
-(function() {
-  let isDraggingActive = false;
-  let activeCard = null;
 
-  function getCardKey(card) {
-    return card.dataset.trainUrl || 
-           card.getAttribute('data-id') || 
-           card.querySelector('.train-main-title, h1, h2, h3, #train-number, [class*="number"]')?.textContent.trim() || 
-           card.innerText.replace(/\s+/g, ' ').trim().slice(0, 40);
-  }
-
-  function saveTrainOrder() {
-    const cards = document.querySelectorAll('.card, .train-card, .train-item, [data-train-url]');
-    const order = [];
-    cards.forEach(card => {
-      const key = getCardKey(card);
-      if (key && !order.includes(key)) order.push(key);
-    });
-    if (order.length > 0) {
-      localStorage.setItem('trains_custom_order', JSON.stringify(order));
-    }
-  }
-
-  function restoreTrainOrder() {
-    if (isDraggingActive) return;
-    const saved = localStorage.getItem('trains_custom_order');
-    if (!saved) return;
-    try {
-      const order = JSON.parse(saved);
-      const cards = Array.from(document.querySelectorAll('.card, .train-card, .train-item, [data-train-url]'));
-      if (cards.length === 0) return;
-
-      const parent = cards[0].parentNode;
-      const cardMap = new Map();
-
-      cards.forEach(card => {
-        const key = getCardKey(card);
-        if (key) cardMap.set(key, card);
-      });
-
-      order.forEach(key => {
-        if (cardMap.has(key)) {
-          parent.appendChild(cardMap.get(key));
-          cardMap.delete(key);
-        }
-      });
-
-      cardMap.forEach(card => parent.appendChild(card));
-    } catch(e) {}
-  }
-
-  function setupFormToggle() {
-    const form = document.querySelector('form, #addTrainForm, .add-train-form, [class*="add-form"]');
-    if (form && !document.querySelector('.toggle-add-btn')) {
-      form.classList.add('add-form-hidden');
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'toggle-add-btn';
-      btn.innerHTML = '➕ Dodaj pociąg do monitorowania';
-      btn.onclick = function() {
-        if (form.classList.contains('add-form-hidden')) {
-          form.classList.remove('add-form-hidden');
-          form.classList.add('add-form-visible');
-          btn.innerHTML = '➖ Ukryj formularz';
-        } else {
-          form.classList.remove('add-form-visible');
-          form.classList.add('add-form-hidden');
-          btn.innerHTML = '➕ Dodaj pociąg do monitorowania';
-        }
-      };
-      if (form.parentNode) {
-        form.parentNode.insertBefore(btn, form);
-      }
-    }
-  }
-
-  function enableDragAndDrop(card) {
-    if (card.dataset.dragEnabled === "true") return;
-    card.dataset.dragEnabled = "true";
-
-    const handle = card.querySelector('.drag-handle') || card;
-
-    function startDrag(e) {
-      isDraggingActive = true;
-      activeCard = card;
-      card.classList.add('is-dragging');
-    }
-
-    function moveDrag(clientX, clientY) {
-      if (!activeCard) return;
-      const targetEl = document.elementFromPoint(clientX, clientY);
-      if (targetEl) {
-        const targetCard = targetEl.closest('.card, .train-card, .train-item, [data-train-url]');
-        if (targetCard && targetCard !== activeCard && targetCard.parentNode === activeCard.parentNode) {
-          const rect = targetCard.getBoundingClientRect();
-          const next = (clientY - rect.top) > (rect.height / 2);
-          activeCard.parentNode.insertBefore(activeCard, next ? targetCard.nextSibling : targetCard);
-        }
-      }
-    }
-
-    function endDrag() {
-      if (activeCard) {
-        activeCard.classList.remove('is-dragging');
-        activeCard = null;
-        isDraggingActive = false;
-        saveTrainOrder();
-      }
-    }
-
-    handle.addEventListener('touchstart', function(e) { startDrag(e); }, { passive: true });
-    handle.addEventListener('touchmove', function(e) {
-      if (e.touches && e.touches[0]) moveDrag(e.touches[0].clientX, e.touches[0].clientY);
-    }, { passive: true });
-    handle.addEventListener('touchend', endDrag);
-    handle.addEventListener('touchcancel', endDrag);
-
-    handle.addEventListener('mousedown', function(e) {
-      startDrag(e);
-      function onMouseMove(me) { moveDrag(me.clientX, me.clientY); }
-      function onMouseUp() {
-        window.removeEventListener('mousemove', onMouseMove);
-        window.removeEventListener('mouseup', onMouseUp);
-        endDrag();
-      }
-      window.addEventListener('mousemove', onMouseMove);
-      window.addEventListener('mouseup', onMouseUp);
-    });
-  }
-
-  function processCards() {
-    setupFormToggle();
-
-    const cards = document.querySelectorAll('.card, .train-card, .train-item, [data-train-url]');
-    cards.forEach(card => {
-      card.style.display = 'flex';
-      let delayText = '';
-      let stationName = '';
-
-      const descendants = Array.from(card.querySelectorAll('*'));
-
-      // 1. Wyciągnięcie danych ze starego drzewa DOM
-      descendants.forEach(el => {
-        if (el.closest('.card-top-row')) return;
-        const txt = (el.textContent || '').trim();
-        const upper = txt.toUpperCase();
-
-        if (!stationName && (upper.includes('STACJA:') || upper.includes('KATOWICE') || upper.includes('TARNOWSKIE GÓRY') || upper.includes('CHORZÓW') || upper.includes('BYTOM') || upper.includes('KIELCE') || upper.includes('MIASTECZKO'))) {
-          if (!txt.includes('→') && !txt.includes('->') && !txt.includes('Ostatnio') && !txt.includes('Dane:')) {
-            let cleaned = txt.replace(/📍|stacja:|badana stacja:/gi, '').replace(/SZCZEGÓŁY/gi, '').trim();
-            if (cleaned) stationName = cleaned;
-          }
-        }
-
-        if (!delayText && (txt.includes('min') || txt.startsWith('+')) && txt.length < 15) {
-          if (!txt.includes('Ostatnio') && !txt.includes('Dane:')) {
-            delayText = txt;
-          }
-        }
-
-        if (txt.includes('→') || txt.includes('->')) {
-          el.classList.add('train-route-line');
-        } else if (txt.includes('Ostatnio') || txt.includes('Dane:')) {
-          el.classList.add('train-status-line');
-        } else if (txt.startsWith('#') || (txt.length < 20 && /\d{4,5}/.test(txt) && !txt.includes(':') && !txt.includes('min'))) {
-          el.classList.add('train-main-title');
-        }
-      });
-
-      // 2. Bezpośrednie usuwanie kontenerów nadrzędnych dla starych badge'y/kwadratów
-      descendants.forEach(el => {
-        if (el.closest('.card-top-row')) return;
-        const txt = (el.textContent || '').trim();
-        const upper = txt.toUpperCase();
-
-        if (el.tagName === 'IMG' || el.tagName === 'SVG' || ['SZCZEGÓŁY', 'BRAK OPERACJI', 'OPÓŹNIONY', 'PLANOWO', '×'].includes(upper)) {
-          el.style.display = 'none';
-        }
-
-        if ((txt.includes('min') || txt.startsWith('+')) && txt.length < 15 && !txt.includes('Ostatnio')) {
-          let rootWrapper = el;
-          while (rootWrapper && rootWrapper.parentNode !== card) {
-            rootWrapper = rootWrapper.parentNode;
-          }
-          if (rootWrapper && rootWrapper !== card && !rootWrapper.classList.contains('card-top-row')) {
-            rootWrapper.style.display = 'none';
-          }
-        }
-      });
-
-      if (!delayText) delayText = '0 min';
-
-      // 3. Budowanie/aktualizowanie górnego paska
-      let topRow = card.querySelector('.card-top-row');
-      if (!topRow) {
-        topRow = document.createElement('div');
-        topRow.className = 'card-top-row';
-
-        const handle = document.createElement('span');
-        handle.className = 'drag-handle';
-        handle.textContent = '⋮⋮';
-        topRow.appendChild(handle);
-
-        const isRed = !(delayText.includes('0 min') || delayText === '+0');
-        const badge = document.createElement('span');
-        badge.className = 'delay-badge ' + (isRed ? 'delay-red' : 'delay-green');
-        badge.textContent = delayText;
-        topRow.appendChild(badge);
-
-        card.insertBefore(topRow, card.firstChild);
-      } else {
-        const badge = topRow.querySelector('.delay-badge');
-        if (badge) {
-          const isRed = !(delayText.includes('0 min') || delayText === '+0');
-          badge.className = 'delay-badge ' + (isRed ? 'delay-red' : 'delay-green');
-          badge.textContent = delayText;
-        }
-      }
-
-      if (stationName && !topRow.querySelector('.station-mini-tag')) {
-        const tag = document.createElement('span');
-        tag.className = 'station-mini-tag';
-        tag.textContent = stationName.toUpperCase();
-        topRow.appendChild(tag);
-      }
-
-      enableDragAndDrop(card);
-    });
-
-    if (!isDraggingActive) {
-      restoreTrainOrder();
-    }
-  }
-
-  let timer = null;
-  const observer = new MutationObserver(function() {
-    if (timer) clearTimeout(timer);
-    timer = setTimeout(processCards, 50);
-  });
-
-  document.addEventListener('DOMContentLoaded', function() {
-    processCards();
-    observer.observe(document.body, { childList: true, subtree: true });
-  });
-})();
-</script>
-<!-- AMOLED WRAPPER FIX V8 END -->
 </body>
 </html>
