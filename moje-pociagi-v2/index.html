@@ -163,7 +163,7 @@
 <body>
 
 <div class="container">
-  <h1>🖥️ Tablica Monitorowania <span class="version-badge">v. 0.99.3</span></h1>
+  <h1>🖥️ Tablica Monitorowania <span class="version-badge">v. 0.99.4</span></h1>
 
   <div class="nav-row">
     <a class="btn" href="/">⬅ Strona Główna Tablicy</a>
@@ -288,31 +288,50 @@ async function refreshAll() {
 
   const fetchPromises = list.map(async (item, i) => {
     try {
-      // Zwiększamy limit do 200, aby pociągi z dalszych pozycji (np. #49) nie były obcinane przez API
+      const ts = Date.now();
       const params = new URLSearchParams({ 
         station: item.station || '', 
-        limit: '200'
+        limit: '200',
+        _t: ts
       });
-      const r = await fetch('/api/departures?' + params.toString(), { headers: { Accept: 'application/json' } });
-      const data = await r.json();
-      const dep = Array.isArray(data.departures) ? data.departures : [];
+      
+      // Pobieramy równolegle tablicę odjazdów i przyjazdów z pominięciem pamięci podręcznej
+      const [rDep, rArr] = await Promise.all([
+        fetch('/api/departures?' + params.toString(), { cache: 'no-store', headers: { Accept: 'application/json' } }),
+        fetch('/api/arrivals?' + params.toString(), { cache: 'no-store', headers: { Accept: 'application/json' } }).catch(() => null)
+      ]);
+
+      const dataDep = await rDep.json();
+      const dataArr = rArr ? await rArr.json() : { arrivals: [] };
+
+      const depList = Array.isArray(dataDep.departures) ? dataDep.departures : [];
+      const arrList = Array.isArray(dataArr.arrivals) ? dataArr.arrivals : [];
+      const combined = [...depList, ...arrList];
 
       let filtered = [];
       if (item.trainNum) {
         const queryNum = String(item.trainNum).trim().toLowerCase();
-        filtered = dep.filter(d => {
+        filtered = combined.filter(d => {
           const t1 = String(d.train || '').toLowerCase();
           const t2 = String(d.number || d.trainNumber || '').toLowerCase();
           const t3 = String(d.id || d.orderId || '').toLowerCase();
-          // Dopasuj jeśli numer pasuje do train, trainNumber lub wewnętrznego ID
-          return t1.includes(queryNum) || t2.includes(queryNum) || t3.includes(queryNum);
+          const t4 = String(d.name || '').toLowerCase();
+          return t1.includes(queryNum) || t2.includes(queryNum) || t3.includes(queryNum) || t4.includes(queryNum);
         });
       } else {
-        filtered = dep.slice(0, 5);
+        filtered = combined.slice(0, 5);
       }
 
-      if (filtered.length > 0) {
-        return filtered.map(d => ({ ...d, _itemIndex: i, _stationSource: item.station }));
+      // Usuwamy ewentualne duble
+      const uniqueMap = new Map();
+      filtered.forEach(d => {
+        const key = `${d.train || ''}_${d.time || ''}_${d.destination || ''}`;
+        if (!uniqueMap.has(key)) uniqueMap.set(key, d);
+      });
+      const uniqueFiltered = Array.from(uniqueMap.values());
+
+      if (uniqueFiltered.length > 0) {
+        return uniqueFiltered.map(d => ({ ...d, _itemIndex: i, _stationSource: item.station }));
       } else {
         return [{
           _itemIndex: i,
@@ -321,7 +340,7 @@ async function refreshAll() {
           train: item.trainNum,
           time: '--:--',
           plannedTime: '--:--',
-          destination: 'Poza zakresem listy odjazdów (kliknij, by sprawdzić bieg)',
+          destination: 'Brak aktywnego biegu w oknie czasowym stacji',
           platform: '-',
           track: '-'
         }];
@@ -352,7 +371,7 @@ async function refreshAll() {
 function renderTrackedTable(deps) {
   const tbody = document.getElementById('trackedDeparturesBody');
   if (!deps.length) {
-    tbody.innerHTML = '<tr><td colspan="6" class="muted" style="text-align:center;">Brak pasujących odjazdów na stacjach w tym momencie.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="muted" style="text-align:center;">Brak pasujących pociągów na stacjach w tym momencie.</td></tr>';
     return;
   }
 
