@@ -9,7 +9,6 @@
   <meta name="application-name" content="Moje Pociągi V2">
   <title>Moje Pociągi V2 - Tablica PLK</title>
   <style>
-    /* AMOLED Black (#000000) - wysoki kontrast w słońcu */
     body {
       margin: 0;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -33,8 +32,6 @@
       color: #94a3b8;
       font-weight: 600;
     }
-
-    /* Nawigacja / Przyciski */
     .nav-row {
       display: flex;
       justify-content: center;
@@ -66,8 +63,6 @@
       font-size: 14px;
       background: #0284c7;
     }
-
-    /* Formularz dodawania */
     .add-panel {
       background: #09090b;
       border: 1px solid #27272a;
@@ -94,8 +89,6 @@
       color: #ffffff;
       font-size: 13px;
     }
-
-    /* Panel API / Tablica */
     .api-panel {
       margin-top: 16px;
       background: #09090b;
@@ -106,8 +99,6 @@
     }
     .api-panel h2 { text-align: center; margin: 0 0 6px 0; font-size: 1.4rem; color: #ffffff; }
     .api-meta { text-align: center; color: #94a3b8; font-size: 13px; margin-bottom: 12px; }
-
-    /* Tabela PLK */
     .table-wrap { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; table-layout: fixed; }
     th {
@@ -126,8 +117,6 @@
       vertical-align: top;
       background: #000000;
     }
-
-    /* Klikalne wiersze ze stylem karty */
     tr.clickable-row {
       cursor: pointer;
       transition: background-color 0.15s ease;
@@ -136,8 +125,6 @@
       background: #18181b !important;
     }
     tr:nth-child(even) td { background: #09090b; }
-
-    /* Kolory statusów i czasu */
     .time-real { font-weight: 800; font-size: 15px; color: #4ade80; }
     .ontime { color: #4ade80; font-weight: 700; }
     .delay, .time-delay-low { color: #facc15; font-weight: 700; }
@@ -146,8 +133,6 @@
     .train-main, .direction-main { font-weight: 700; color: #ffffff; text-decoration: none; }
     .train-name, .direction-via { color: #94a3b8; font-size: 12px; margin-top: 2px; line-height: 1.25; }
     .muted { color: #64748b; font-size: 12px; }
-
-    /* Widok mobilny */
     .mobile-only { display: none; }
     @media(max-width:700px) {
       .desktop-cell { display: none !important; }
@@ -162,7 +147,6 @@
       .mobile-platform { font-size: 16px; font-weight: 700; color: #ffffff; }
       .mobile-track { font-size: 11px; color: #94a3b8; }
     }
-
     .btn-del {
       background: #7f1d1d;
       color: #fecaca;
@@ -179,7 +163,7 @@
 <body>
 
 <div class="container">
-  <h1>🖥️ Tablica Monitorowania <span class="version-badge">v. 0.99.0</span></h1>
+  <h1>🖥️ Tablica Monitorowania <span class="version-badge">v. 0.99.2</span></h1>
 
   <div class="nav-row">
     <a class="btn" href="/">⬅ Strona Główna Tablicy</a>
@@ -190,8 +174,8 @@
   <div class="add-panel">
     <h3>⊕ DODAJ POCIĄG I STACJĘ DO ŚLEDZENIA</h3>
     <div class="form-grid">
-      <input id="addStation" type="text" placeholder="Stacja (np. Tarnowskie Góry)" />
-      <input id="addTrainNum" type="text" placeholder="Numer pociągu (np. 3815)" />
+      <input id="addStation" type="text" placeholder="Stacja (np. Kielce Główne)" />
+      <input id="addTrainNum" type="text" placeholder="Numer pociągu (np. 6206)" />
       <button class="btn-action" onclick="addTrackedTrain()">+ Dodaj do listy</button>
     </div>
   </div>
@@ -263,7 +247,7 @@ function resetList() {
 function addTrackedTrain() {
   const station = document.getElementById('addStation').value.trim();
   const trainNum = document.getElementById('addTrainNum').value.trim();
-  if (!station) { alert('Podaj nazwę stacji!'); return; }
+  if (!station && !trainNum) { alert('Podaj stację lub numer pociągu!'); return; }
 
   const list = getTrackedList();
   list.push({ station, trainNum });
@@ -283,7 +267,7 @@ function removeTrackedTrain(event, index) {
 }
 
 function goToDetail(station, trainNo, orderId) {
-  const params = new URLSearchParams({ station, train: trainNo || '' });
+  const params = new URLSearchParams({ station: station || '', train: trainNo || '' });
   if (orderId) params.append('orderId', orderId);
   window.location.href = `/train?${params.toString()}`;
 }
@@ -304,7 +288,13 @@ async function refreshAll() {
 
   const fetchPromises = list.map(async (item, i) => {
     try {
-      const params = new URLSearchParams({ station: item.station, limit: '50' });
+      // Okno czasowe: pobiera pociągi historyczne (-120 min) oraz nadchodzące (+240 min)
+      const params = new URLSearchParams({ 
+        station: item.station || '', 
+        limit: '100',
+        includePastMinutes: '120',
+        includeFutureMinutes: '240'
+      });
       const r = await fetch('/api/departures?' + params.toString(), { headers: { Accept: 'application/json' } });
       const data = await r.json();
       const dep = Array.isArray(data.departures) ? data.departures : [];
@@ -318,7 +308,7 @@ async function refreshAll() {
           return t1.includes(queryNum) || t2.includes(queryNum);
         });
       } else {
-        filtered = dep.slice(0, 3);
+        filtered = dep.slice(0, 5);
       }
 
       if (filtered.length > 0) {
@@ -331,7 +321,7 @@ async function refreshAll() {
           train: item.trainNum,
           time: '--:--',
           plannedTime: '--:--',
-          destination: 'Poza bieżącym okienkiem odjazdów',
+          destination: 'Poza zakresem -2h/+4h (kliknij, by sprawdzić bezpośrednią trasę)',
           platform: '-',
           track: '-'
         }];
@@ -371,7 +361,7 @@ function renderTrackedTable(deps) {
       return `<tr class="clickable-row" onclick="goToDetail('${escapeHtml(d._stationSource)}', '${escapeHtml(d.train || '')}', '')">
         <td class="desktop-cell"><div class="muted">--:--</div></td>
         <td class="desktop-cell"><div class="train-main">#${escapeHtml(d.train)}</div></td>
-        <td class="desktop-cell"><div class="direction-main">${escapeHtml(d.destination)}</div><div class="direction-via">Stacja: ${escapeHtml(d._stationSource)} (kliknij, by sprawdzić bieg)</div></td>
+        <td class="desktop-cell"><div class="direction-main">${escapeHtml(d.destination)}</div><div class="direction-via">Stacja: ${escapeHtml(d._stationSource || 'Brak')}</div></td>
         <td class="desktop-cell" style="text-align:center;">-</td>
         <td class="desktop-cell" style="text-align:center;">-</td>
         <td class="desktop-cell" style="text-align:center;">
@@ -381,7 +371,7 @@ function renderTrackedTable(deps) {
           <div class="mobile-layout">
             <div class="mobile-time"><div class="muted">--:--</div></div>
             <div class="mobile-train"><div class="train-main">#${escapeHtml(d.train)}</div></div>
-            <div class="mobile-direction"><div class="direction-main">${escapeHtml(d.destination)}</div><div class="direction-via">Stacja: ${escapeHtml(d._stationSource)}</div></div>
+            <div class="mobile-direction"><div class="direction-main">${escapeHtml(d.destination)}</div><div class="direction-via">Stacja: ${escapeHtml(d._stationSource || 'Brak')}</div></div>
             <div class="mobile-side"><div class="mobile-platform">-</div><div class="mobile-track">-</div></div>
           </div>
         </td>
