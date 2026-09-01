@@ -391,7 +391,8 @@ input:focus{
 
 
 
-<style id="amoled-compact-v5">
+
+<style id="amoled-clean-v6">
   html, body {
     background-color: #000000 !important;
     color: #ffffff !important;
@@ -410,7 +411,6 @@ input:focus{
     box-sizing: border-box !important;
   }
 
-  /* PRZYCISKI Z PRZYWRÓCONYM TEKSTEM */
   button, input[type="submit"], .btn, .btn-primary {
     font-size: 0.95rem !important;
     font-weight: 700 !important;
@@ -419,7 +419,6 @@ input:focus{
     visibility: visible !important;
   }
 
-  /* KAFELEK POCIĄGU */
   .card, .train-card, .train-item, [data-train-url] {
     width: 100% !important;
     max-width: 100% !important;
@@ -439,14 +438,6 @@ input:focus{
     transition: transform 0.1s ease, border-color 0.1s ease !important;
   }
 
-  /* UKRYCIE STARYCH KONTENERÓW STATUSÓW I KWADRATÓW */
-  .status-box, .status-container, .operation-status, [class*="status-badge"], 
-  .card-icon, .train-icon, .status-icon, [class*="icon-box"],
-  [class*="status-square"], [class*="operation-box"] {
-    display: none !important;
-  }
-
-  /* STYL PODCZAS PRZECIĄGANIA */
   .card.is-dragging {
     opacity: 0.45 !important;
     border-color: #38bdf8 !important;
@@ -464,7 +455,6 @@ input:focus{
     min-width: 0 !important;
   }
 
-  /* NAGŁÓWEK: UCHWYT + OPÓŹNIENIE (LEWA) + STACJA (MINI PRAWA) */
   .card-top-row {
     display: flex !important;
     flex-direction: row !important;
@@ -472,6 +462,7 @@ input:focus{
     justify-content: flex-start !important;
     width: 100% !important;
     gap: 8px !important;
+    margin-bottom: 2px !important;
   }
 
   .drag-handle {
@@ -491,7 +482,6 @@ input:focus{
     color: #38bdf8 !important;
   }
 
-  /* BADGE OPÓŹNIENIA */
   .delay-badge {
     font-size: 1.15rem !important;
     font-weight: 900 !important;
@@ -515,26 +505,29 @@ input:focus{
     border: 1.5px solid #16a34a !important;
   }
 
-  /* MINI TAG BADANEJ STACJI */
   .station-mini-tag {
     margin-left: auto !important;
-    font-size: 0.7rem !important;
-    font-weight: 700 !important;
-    color: #64748b !important;
+    font-size: 0.75rem !important;
+    font-weight: 800 !important;
+    color: #94a3b8 !important;
     background: #1e293b !important;
-    padding: 2px 6px !important;
+    padding: 2px 8px !important;
     border-radius: 4px !important;
     letter-spacing: 0.4px !important;
     text-transform: uppercase !important;
     white-space: nowrap !important;
     flex-shrink: 0 !important;
+    border: 1px solid #334155 !important;
   }
 
   .train-main-title {
     font-size: 1.25rem !important;
     font-weight: 900 !important;
     color: #ffffff !important;
-    margin-top: 2px !important;
+    margin-top: 1px !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
   }
 
   .train-route-line {
@@ -545,11 +538,17 @@ input:focus{
     overflow: hidden !important;
     text-overflow: ellipsis !important;
     width: 100% !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
   }
 
   .train-status-line {
     font-size: 0.8rem !important;
     color: #94a3b8 !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
   }
 
   .toggle-add-btn {
@@ -1438,7 +1437,8 @@ document.addEventListener('click', function(e) {
 
 
 
-<!-- AMOLED HIGH-PERFORMANCE V5 CLEAN START -->
+
+<!-- AMOLED FINAL STABLE V6 START -->
 <script>
 (function() {
   let isDraggingActive = false;
@@ -1550,32 +1550,21 @@ document.addEventListener('click', function(e) {
       }
     }
 
-    handle.addEventListener('touchstart', function(e) {
-      startDrag(e);
-    }, { passive: true });
-
+    handle.addEventListener('touchstart', function(e) { startDrag(e); }, { passive: true });
     handle.addEventListener('touchmove', function(e) {
-      if (e.touches && e.touches[0]) {
-        moveDrag(e.touches[0].clientX, e.touches[0].clientY);
-      }
+      if (e.touches && e.touches[0]) moveDrag(e.touches[0].clientX, e.touches[0].clientY);
     }, { passive: true });
-
     handle.addEventListener('touchend', endDrag);
     handle.addEventListener('touchcancel', endDrag);
 
     handle.addEventListener('mousedown', function(e) {
       startDrag(e);
-
-      function onMouseMove(me) {
-        moveDrag(me.clientX, me.clientY);
-      }
-
+      function onMouseMove(me) { moveDrag(me.clientX, me.clientY); }
       function onMouseUp() {
         window.removeEventListener('mousemove', onMouseMove);
         window.removeEventListener('mouseup', onMouseUp);
         endDrag();
       }
-
       window.addEventListener('mousemove', onMouseMove);
       window.addEventListener('mouseup', onMouseUp);
     });
@@ -1586,70 +1575,60 @@ document.addEventListener('click', function(e) {
 
     const cards = document.querySelectorAll('.card, .train-card, .train-item, [data-train-url]');
     cards.forEach(card => {
-      // 1. BEZPIECZNE WYCIĄGANIE NAZWY STACJI (BEZ UKRYWANIA KONTENERÓW KAFELKA)
+      card.style.display = 'flex';
+      let delayText = '';
       let stationName = '';
-      card.querySelectorAll('span, div, p, small, strong').forEach(el => {
-        if (el.closest('.card-top-row')) return;
-        if (el.children.length > 0) return; // Tylko liście DOM
 
+      const descendants = Array.from(card.querySelectorAll('*'));
+
+      descendants.forEach(el => {
+        if (el.closest('.card-top-row')) return;
         const txt = (el.textContent || '').trim();
         const upper = txt.toUpperCase();
 
-        if (upper.startsWith('STACJA:') || upper.startsWith('BADANA STACJA:') || upper.startsWith('STACJA ')) {
-          stationName = txt.replace(/📍|stacja:|badana stacja:/gi, '').replace(/SZCZEGÓŁY/gi, '').trim();
+        if (el.tagName === 'IMG' || el.tagName === 'SVG') {
           el.style.display = 'none';
-          if (el.parentElement && el.parentElement !== card && el.parentElement.children.length === 1) {
-            el.parentElement.style.display = 'none';
+          return;
+        }
+
+        if (['SZCZEGÓŁY', 'BRAK OPERACJI', 'OPÓŹNIONY', 'PLANOWO', '×', 'BRAK DANYCH'].includes(upper)) {
+          if (el.children.length === 0 || el.tagName === 'BUTTON' || el.tagName === 'A') {
+            el.style.display = 'none';
           }
         }
-      });
 
-      // 2. UKRYWANIE ELEMENTÓW I KONTENERÓW STATUSOWYCH (KWADRATÓW, BRAK OPERACJI, SZCZEGÓŁY itp.)
-      card.querySelectorAll('*').forEach(el => {
-        if (el.closest('.card-top-row')) return;
-
-        const txt = (el.textContent || '').trim().toUpperCase();
-
-        if (txt === 'SZCZEGÓŁY' || txt === 'OPÓŹNIONY' || txt === 'PLANOWO' || txt === '×' || txt === 'BRAK OPERACJI' || txt === 'BRAK DANYCH') {
-          el.style.display = 'none';
-          const parent = el.parentElement;
-          if (parent && parent !== card && !parent.querySelector('.train-main-title, .train-route-line')) {
-            parent.style.display = 'none';
+        if (!stationName && (upper.includes('STACJA:') || upper.includes('KATOWICE') || upper.includes('TARNOWSKIE GÓRY') || upper.includes('CHORZÓW') || upper.includes('BYTOM') || upper.includes('MIASTECZKO'))) {
+          if (!txt.includes('→') && !txt.includes('->') && !txt.includes('Ostatnio') && !txt.includes('Dane:')) {
+            let cleaned = txt.replace(/📍|stacja:|badana stacja:/gi, '').replace(/SZCZEGÓŁY/gi, '').trim();
+            if (cleaned) {
+              stationName = cleaned;
+              if (el.children.length === 0 && (upper.startsWith('STACJA:') || upper.includes('SZCZEGÓŁY'))) {
+                el.style.display = 'none';
+              }
+            }
           }
         }
-      });
 
-      // 3. WARTOŚĆ OPÓŹNIENIA
-      let delayText = '0 min';
-      card.querySelectorAll('span, div, p, strong, b').forEach(el => {
-        if (el.closest('.card-top-row')) return;
-        if (el.children.length > 0) return;
-
-        const txt = (el.textContent || '').trim();
-        if ((txt.includes('min') || txt.startsWith('+')) && txt.length < 15 && !txt.includes('Ostatnio') && !txt.includes('Dane:')) {
-          delayText = txt;
-          el.style.display = 'none';
-          if (el.parentElement && el.parentElement !== card && el.parentElement.children.length === 1) {
-            el.parentElement.style.display = 'none';
+        if (!delayText && (txt.includes('min') || txt.startsWith('+')) && txt.length < 15) {
+          if (!txt.includes('Ostatnio') && !txt.includes('Dane:')) {
+            delayText = txt;
+            if (el.children.length === 0) {
+              el.style.display = 'none';
+            }
           }
         }
-      });
 
-      // 4. KWALIFIKACJA KLAS DLA NUMERU, RELACJI I STATUSU
-      card.querySelectorAll('p, div, span, h1, h2, h3').forEach(el => {
-        if (el.closest('.card-top-row')) return;
-        const txt = (el.textContent || '').trim();
-
-        if (txt.startsWith('#') || (txt.length < 15 && /\d{4,5}/.test(txt) && !txt.includes('→') && !txt.includes(':'))) {
-          el.className = 'train-main-title';
-        } else if (txt.includes('→') || txt.includes('->')) {
-          el.className = 'train-route-line';
+        if (txt.includes('→') || txt.includes('->')) {
+          el.classList.add('train-route-line');
         } else if (txt.includes('Ostatnio') || txt.includes('Dane:')) {
-          el.className = 'train-status-line';
+          el.classList.add('train-status-line');
+        } else if (txt.startsWith('#') || (txt.length < 20 && /\d{4,5}/.test(txt) && !txt.includes(':') && !txt.includes('min'))) {
+          el.classList.add('train-main-title');
         }
       });
 
-      // 5. BUDOWA PASKA GÓRNEGO
+      if (!delayText) delayText = '0 min';
+
       let topRow = card.querySelector('.card-top-row');
       if (!topRow) {
         topRow = document.createElement('div');
@@ -1667,6 +1646,13 @@ document.addEventListener('click', function(e) {
         topRow.appendChild(badge);
 
         card.insertBefore(topRow, card.firstChild);
+      } else {
+        const badge = topRow.querySelector('.delay-badge');
+        if (badge) {
+          const isRed = !(delayText.includes('0 min') || delayText === '+0');
+          badge.className = 'delay-badge ' + (isRed ? 'delay-red' : 'delay-green');
+          badge.textContent = delayText;
+        }
       }
 
       if (stationName && !topRow.querySelector('.station-mini-tag')) {
@@ -1696,6 +1682,6 @@ document.addEventListener('click', function(e) {
   });
 })();
 </script>
-<!-- AMOLED HIGH-PERFORMANCE V5 CLEAN END -->
+<!-- AMOLED FINAL STABLE V6 END -->
 </body>
 </html>
