@@ -9,7 +9,7 @@
   <meta name="application-name" content="Moje Pociągi V2">
   <title>Moje Pociągi V2 - Tablica PLK</title>
   <style>
-    /* AMOLED Black (#000000) */
+    /* AMOLED Black (#000000) - wysoki kontrast w słońcu */
     body {
       margin: 0;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -34,7 +34,7 @@
       font-weight: 600;
     }
 
-    /* Nawigacja */
+    /* Nawigacja / Przyciski */
     .nav-row {
       display: flex;
       justify-content: center;
@@ -95,7 +95,7 @@
       font-size: 13px;
     }
 
-    /* Tablica PLK */
+    /* Panel API / Tablica */
     .api-panel {
       margin-top: 16px;
       background: #09090b;
@@ -107,6 +107,7 @@
     .api-panel h2 { text-align: center; margin: 0 0 6px 0; font-size: 1.4rem; color: #ffffff; }
     .api-meta { text-align: center; color: #94a3b8; font-size: 13px; margin-bottom: 12px; }
 
+    /* Tabela PLK */
     .table-wrap { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; table-layout: fixed; }
     th {
@@ -126,7 +127,7 @@
       background: #000000;
     }
 
-    /* Klikalne wiersze */
+    /* Klikalne wiersze ze stylem karty */
     tr.clickable-row {
       cursor: pointer;
       transition: background-color 0.15s ease;
@@ -136,7 +137,7 @@
     }
     tr:nth-child(even) td { background: #09090b; }
 
-    /* Opóźnienia */
+    /* Kolory statusów i czasu */
     .time-real { font-weight: 800; font-size: 15px; color: #4ade80; }
     .ontime { color: #4ade80; font-weight: 700; }
     .delay, .time-delay-low { color: #facc15; font-weight: 700; }
@@ -178,7 +179,7 @@
 <body>
 
 <div class="container">
-  <h1>🖥️ Tablica Monitorowania <span class="version-badge">v. 0.96.0</span></h1>
+  <h1>🖥️ Tablica Monitorowania <span class="version-badge">v. 0.99.0</span></h1>
 
   <div class="nav-row">
     <a class="btn" href="/">⬅ Strona Główna Tablicy</a>
@@ -189,7 +190,7 @@
   <div class="add-panel">
     <h3>⊕ DODAJ POCIĄG I STACJĘ DO ŚLEDZENIA</h3>
     <div class="form-grid">
-      <input id="addStation" type="text" placeholder="Stacja (np. Katowice)" />
+      <input id="addStation" type="text" placeholder="Stacja (np. Tarnowskie Góry)" />
       <input id="addTrainNum" type="text" placeholder="Numer pociągu (np. 3815)" />
       <button class="btn-action" onclick="addTrackedTrain()">+ Dodaj do listy</button>
     </div>
@@ -203,11 +204,11 @@
       <table>
         <thead>
           <tr>
-            <th style="width: 15%;">Godz.</th>
-            <th style="width: 25%;">Pociąg</th>
-            <th style="width: 44%;">Kierunek / przez</th>
-            <th style="width: 8%; text-align:center;">Per.</th>
-            <th style="width: 8%; text-align:center;">Tor</th>
+            <th style="width: 14%;">Godz.</th>
+            <th style="width: 18%;">Pociąg</th>
+            <th style="width: 55%;">Kierunek / przez</th>
+            <th style="width: 4%; text-align:center;">Per.</th>
+            <th style="width: 4%; text-align:center;">Tor</th>
             <th style="width: 5%;"></th>
           </tr>
         </thead>
@@ -222,7 +223,6 @@
 <script>
 const TRACKED_KEY = 'myTrackedTrainsV2_musthave_v1';
 
-/* Lista pociągów MUST HAVE */
 const DEFAULT_TRACKED = [
   { station: 'Katowice', trainNum: '3815' },
   { station: 'Bytom Karb', trainNum: '40360' },
@@ -302,10 +302,7 @@ async function refreshAll() {
   tbody.innerHTML = '<tr><td colspan="6" class="muted" style="text-align:center;">Pobieranie danych z API PLK...</td></tr>';
   apiMeta.textContent = `Aktualizacja danych dla ${list.length} pozycji...`;
 
-  let allResults = [];
-
-  for (let i = 0; i < list.length; i++) {
-    const item = list[i];
+  const fetchPromises = list.map(async (item, i) => {
     try {
       const params = new URLSearchParams({ station: item.station, limit: '50' });
       const r = await fetch('/api/departures?' + params.toString(), { headers: { Accept: 'application/json' } });
@@ -314,33 +311,49 @@ async function refreshAll() {
 
       let filtered = [];
       if (item.trainNum) {
-        const queryNum = String(item.trainNum).toLowerCase();
-        filtered = dep.filter(d => String(d.train || '').toLowerCase().includes(queryNum));
+        const queryNum = String(item.trainNum).trim().toLowerCase();
+        filtered = dep.filter(d => {
+          const t1 = String(d.train || '').toLowerCase();
+          const t2 = String(d.number || d.trainNumber || '').toLowerCase();
+          return t1.includes(queryNum) || t2.includes(queryNum);
+        });
       } else {
         filtered = dep.slice(0, 3);
       }
 
       if (filtered.length > 0) {
-        filtered.forEach(d => {
-          allResults.push({ ...d, _itemIndex: i, _stationSource: item.station });
-        });
+        return filtered.map(d => ({ ...d, _itemIndex: i, _stationSource: item.station }));
       } else {
-        allResults.push({
+        return [{
           _itemIndex: i,
           _stationSource: item.station,
           _noData: true,
           train: item.trainNum,
           time: '--:--',
           plannedTime: '--:--',
-          destination: 'Brak danych w rozkładzie',
+          destination: 'Poza bieżącym okienkiem odjazdów',
           platform: '-',
           track: '-'
-        });
+        }];
       }
     } catch (err) {
       console.error('Błąd API dla stacji:', item.station, err);
+      return [{
+        _itemIndex: i,
+        _stationSource: item.station,
+        _noData: true,
+        train: item.trainNum,
+        time: '--:--',
+        plannedTime: '--:--',
+        destination: 'Błąd połączenia z API',
+        platform: '-',
+        track: '-'
+      }];
     }
-  }
+  });
+
+  const resultsNested = await Promise.all(fetchPromises);
+  const allResults = resultsNested.flat();
 
   apiMeta.textContent = `Ostatnia synchronizacja: ${new Date().toLocaleTimeString('pl-PL')}`;
   renderTrackedTable(allResults);
@@ -358,7 +371,7 @@ function renderTrackedTable(deps) {
       return `<tr class="clickable-row" onclick="goToDetail('${escapeHtml(d._stationSource)}', '${escapeHtml(d.train || '')}', '')">
         <td class="desktop-cell"><div class="muted">--:--</div></td>
         <td class="desktop-cell"><div class="train-main">#${escapeHtml(d.train)}</div></td>
-        <td class="desktop-cell"><div class="direction-main">Brak danych / poza rozkładem</div><div class="direction-via">Stacja: ${escapeHtml(d._stationSource)}</div></td>
+        <td class="desktop-cell"><div class="direction-main">${escapeHtml(d.destination)}</div><div class="direction-via">Stacja: ${escapeHtml(d._stationSource)} (kliknij, by sprawdzić bieg)</div></td>
         <td class="desktop-cell" style="text-align:center;">-</td>
         <td class="desktop-cell" style="text-align:center;">-</td>
         <td class="desktop-cell" style="text-align:center;">
@@ -368,7 +381,7 @@ function renderTrackedTable(deps) {
           <div class="mobile-layout">
             <div class="mobile-time"><div class="muted">--:--</div></div>
             <div class="mobile-train"><div class="train-main">#${escapeHtml(d.train)}</div></div>
-            <div class="mobile-direction"><div class="direction-main">Brak danych</div><div class="direction-via">Stacja: ${escapeHtml(d._stationSource)}</div></div>
+            <div class="mobile-direction"><div class="direction-main">${escapeHtml(d.destination)}</div><div class="direction-via">Stacja: ${escapeHtml(d._stationSource)}</div></div>
             <div class="mobile-side"><div class="mobile-platform">-</div><div class="mobile-track">-</div></div>
           </div>
         </td>
