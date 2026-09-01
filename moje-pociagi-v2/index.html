@@ -163,7 +163,7 @@
 <body>
 
 <div class="container">
-  <h1>🖥️ Tablica Monitorowania <span class="version-badge">v. 0.99.2</span></h1>
+  <h1>🖥️ Tablica Monitorowania <span class="version-badge">v. 0.99.3</span></h1>
 
   <div class="nav-row">
     <a class="btn" href="/">⬅ Strona Główna Tablicy</a>
@@ -175,7 +175,7 @@
     <h3>⊕ DODAJ POCIĄG I STACJĘ DO ŚLEDZENIA</h3>
     <div class="form-grid">
       <input id="addStation" type="text" placeholder="Stacja (np. Kielce Główne)" />
-      <input id="addTrainNum" type="text" placeholder="Numer pociągu (np. 6206)" />
+      <input id="addTrainNum" type="text" placeholder="Numer pociągu (np. 6206 lub 63552)" />
       <button class="btn-action" onclick="addTrackedTrain()">+ Dodaj do listy</button>
     </div>
   </div>
@@ -288,12 +288,10 @@ async function refreshAll() {
 
   const fetchPromises = list.map(async (item, i) => {
     try {
-      // Okno czasowe: pobiera pociągi historyczne (-120 min) oraz nadchodzące (+240 min)
+      // Zwiększamy limit do 200, aby pociągi z dalszych pozycji (np. #49) nie były obcinane przez API
       const params = new URLSearchParams({ 
         station: item.station || '', 
-        limit: '100',
-        includePastMinutes: '120',
-        includeFutureMinutes: '240'
+        limit: '200'
       });
       const r = await fetch('/api/departures?' + params.toString(), { headers: { Accept: 'application/json' } });
       const data = await r.json();
@@ -305,7 +303,9 @@ async function refreshAll() {
         filtered = dep.filter(d => {
           const t1 = String(d.train || '').toLowerCase();
           const t2 = String(d.number || d.trainNumber || '').toLowerCase();
-          return t1.includes(queryNum) || t2.includes(queryNum);
+          const t3 = String(d.id || d.orderId || '').toLowerCase();
+          // Dopasuj jeśli numer pasuje do train, trainNumber lub wewnętrznego ID
+          return t1.includes(queryNum) || t2.includes(queryNum) || t3.includes(queryNum);
         });
       } else {
         filtered = dep.slice(0, 5);
@@ -321,7 +321,7 @@ async function refreshAll() {
           train: item.trainNum,
           time: '--:--',
           plannedTime: '--:--',
-          destination: 'Poza zakresem -2h/+4h (kliknij, by sprawdzić bezpośrednią trasę)',
+          destination: 'Poza zakresem listy odjazdów (kliknij, by sprawdzić bieg)',
           platform: '-',
           track: '-'
         }];
@@ -385,7 +385,7 @@ function renderTrackedTable(deps) {
     const via = d.via ? `przez: ${d.via}` : `Stacja: ${d._stationSource}`;
     const cancelled = d.statusCode === 'X';
     const delayText = cancelled ? 'ODWOŁANY' : (delay > 0 ? '+' + delay + ' min' : '0');
-    const orderId = d.orderId || d.trainOrderId || '';
+    const orderId = d.orderId || d.trainOrderId || d.id || '';
 
     return `<tr class="clickable-row" onclick="goToDetail('${escapeHtml(d._stationSource)}', '${escapeHtml(d.train || '')}', '${escapeHtml(orderId)}')">
       <td class="desktop-cell">
