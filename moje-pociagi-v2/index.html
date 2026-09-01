@@ -125,9 +125,18 @@
       vertical-align: top;
       background: #000000;
     }
+
+    /* Klikalne wiersze tabeli */
+    tr.clickable-row {
+      cursor: pointer;
+      transition: background-color 0.15s ease;
+    }
+    tr.clickable-row:hover td {
+      background: #18181b !important;
+    }
     tr:nth-child(even) td { background: #09090b; }
 
-    /* Identyczne kolory statusów opóźnień */
+    /* Kolory statusów opóźnień */
     .time-real { font-weight: 800; font-size: 15px; color: #4ade80; }
     .ontime { color: #4ade80; font-weight: 700; }
     .delay, .time-delay-low { color: #facc15; font-weight: 700; }
@@ -161,13 +170,15 @@
       padding: 4px 8px;
       cursor: pointer;
       font-size: 11px;
+      position: relative;
+      z-index: 2;
     }
   </style>
 </head>
 <body>
 
 <div class="container">
-  <h1>⭐ Moje Pociągi V2 <span class="version-badge">v. 0.95.7</span></h1>
+  <h1>⭐ Moje Pociągi V2 <span class="version-badge">v. 0.95.8</span></h1>
 
   <div class="nav-row">
     <a class="btn" href="/">⬅ Strona Główna Tablicy</a>
@@ -179,14 +190,14 @@
     <h3>Dodaj relację / pociąg do śledzenia</h3>
     <div class="form-grid">
       <input id="addStation" type="text" placeholder="Stacja (np. Katowice)" />
-      <input id="addTrainNum" type="text" placeholder="Numer / Nazwa (opcjonalnie)" />
+      <input id="addTrainNum" type="text" placeholder="Numer / Nazwa (np. 8312 lub Szkuner)" />
       <button class="btn-action" onclick="addTrackedTrain()">+ Dodaj</button>
     </div>
   </div>
 
   <div id="apiPanel" class="api-panel">
     <h2>Tablica Śledzonych Pociągów</h2>
-    <div id="apiMeta" class="api-meta">Ładowanie odjazdów z API...</div>
+    <div id="apiMeta" class="api-meta">Ładowanie odjazdów z API PLK...</div>
 
     <div class="table-wrap">
       <table>
@@ -209,13 +220,15 @@
 </div>
 
 <script>
-const TRACKED_KEY = 'myTrackedTrainsV2_v7';
+const TRACKED_KEY = 'myTrackedTrainsV2_v8';
 
+/* Zapisana pełna lista pociągów */
 const DEFAULT_TRACKED = [
-  { station: 'Katowice', trainNum: '8312' },
-  { station: 'Katowice', trainNum: '14004' },
-  { station: 'Katowice', trainNum: '' },
-  { station: 'Tarnowskie Góry', trainNum: '' }
+  { station: 'Katowice', trainNum: '8312', name: 'Szkuner' },
+  { station: 'Katowice', trainNum: '14004', name: 'Batory' },
+  { station: 'Katowice', trainNum: '38172', name: 'Podhalanin' },
+  { station: 'Katowice', trainNum: '61171', name: 'Karkonosze' },
+  { station: 'Tarnowskie Góry', trainNum: '', name: '' }
 ];
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -254,11 +267,18 @@ function addTrackedTrain() {
   refreshAll();
 }
 
-function removeTrackedTrain(index) {
+function removeTrackedTrain(event, index) {
+  event.stopPropagation();
   const list = getTrackedList();
   list.splice(index, 1);
   saveTrackedList(list);
   refreshAll();
+}
+
+function goToDetail(station, trainNo, orderId) {
+  const params = new URLSearchParams({ station, train: trainNo || '' });
+  if (orderId) params.append('orderId', orderId);
+  window.location.href = `/train?${params.toString()}`;
 }
 
 async function refreshAll() {
@@ -286,15 +306,17 @@ async function refreshAll() {
       const dep = Array.isArray(data.departures) ? data.departures : [];
 
       let filtered = [];
-      if (item.trainNum) {
-        const query = item.trainNum.toLowerCase();
-        filtered = dep.filter(d => 
-          String(d.train || '').toLowerCase().includes(query) || 
-          String(d.name || '').toLowerCase().includes(query) ||
-          String(d.category || '').toLowerCase().includes(query)
-        );
+      if (item.trainNum || item.name) {
+        const queryNum = (item.trainNum || '').toLowerCase();
+        const queryName = (item.name || '').toLowerCase();
+        
+        filtered = dep.filter(d => {
+          const t = String(d.train || '').toLowerCase();
+          const n = String(d.name || '').toLowerCase();
+          return (queryNum && t.includes(queryNum)) || (queryName && n.includes(queryName));
+        });
       } else {
-        filtered = dep.slice(0, 5);
+        filtered = dep.slice(0, 3);
       }
 
       filtered.forEach(d => {
@@ -324,8 +346,9 @@ function renderTrackedTable(deps) {
     const via = d.via ? `przez: ${d.via}` : `Stacja: ${d._stationSource}`;
     const cancelled = d.statusCode === 'X';
     const delayText = cancelled ? 'ODWOŁANY' : (delay > 0 ? '+' + delay + ' min' : '0');
+    const orderId = d.orderId || d.trainOrderId || '';
 
-    return `<tr>
+    return `<tr class="clickable-row" onclick="goToDetail('${escapeHtml(d._stationSource)}', '${escapeHtml(d.train || '')}', '${escapeHtml(orderId)}')">
       <td class="desktop-cell">
         <div class="time-real ${tc}">${escapeHtml(shortTime(d.time))}</div>
         <div class="muted">${escapeHtml(shortTime(d.plannedTime))}</div>
@@ -342,7 +365,7 @@ function renderTrackedTable(deps) {
       <td class="desktop-cell" style="text-align:center;">${escapeHtml(d.platform || '')}</td>
       <td class="desktop-cell" style="text-align:center;">${escapeHtml(d.track || '')}</td>
       <td class="desktop-cell" style="text-align:center;">
-        <button class="btn-del" onclick="removeTrackedTrain(${d._itemIndex})" title="Usuń z listy">✕</button>
+        <button class="btn-del" onclick="removeTrackedTrain(event, ${d._itemIndex})" title="Usuń z listy">✕</button>
       </td>
       <td class="mobile-only">
         <div class="mobile-layout">
