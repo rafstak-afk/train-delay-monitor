@@ -9,7 +9,7 @@
   <meta name="application-name" content="Moje Pociągi V2">
   <title>Moje Pociągi V2 - Tablica PLK</title>
   <style>
-    /* Spójny motyw AMOLED Black (#000000) z pełnym czytelnym kontrastem */
+    /* AMOLED Black (#000000) - wysoki kontrast */
     body {
       margin: 0;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -95,7 +95,7 @@
       font-size: 13px;
     }
 
-    /* Tablica PLK - idealne dopasowanie stylu */
+    /* Tablica PLK */
     .api-panel {
       margin-top: 16px;
       background: #09090b;
@@ -167,18 +167,19 @@
 <body>
 
 <div class="container">
-  <h1>⭐ Moje Pociągi V2 <span class="version-badge">v. 0.95.6j</span></h1>
+  <h1>⭐ Moje Pociągi V2 <span class="version-badge">v. 0.95.7</span></h1>
 
   <div class="nav-row">
     <a class="btn" href="/">⬅ Strona Główna Tablicy</a>
     <button class="btn-action" onclick="refreshAll()">🔄 Odśwież</button>
+    <button class="btn" style="color: #f87171;" onclick="resetList()">⚠️ Przywróć Domyślne</button>
   </div>
 
   <div class="add-panel">
-    <h3>Dodaj relację / pociąg</h3>
+    <h3>Dodaj relację / pociąg do śledzenia</h3>
     <div class="form-grid">
-      <input id="addStation" type="text" placeholder="Stacja (np. Tarnowskie Góry)" />
-      <input id="addTrainNum" type="text" placeholder="Filtr pociągu (opcjonalny, np. 8312)" />
+      <input id="addStation" type="text" placeholder="Stacja (np. Katowice)" />
+      <input id="addTrainNum" type="text" placeholder="Numer / Nazwa (opcjonalnie)" />
       <button class="btn-action" onclick="addTrackedTrain()">+ Dodaj</button>
     </div>
   </div>
@@ -200,7 +201,7 @@
           </tr>
         </thead>
         <tbody id="trackedDeparturesBody">
-          <tr><td colspan="6" class="muted" style="text-align:center;">Brak śledzonych pociągów lub pobieranie danych...</td></tr>
+          <tr><td colspan="6" class="muted" style="text-align:center;">Pobieranie danych z API PLK...</td></tr>
         </tbody>
       </table>
     </div>
@@ -208,11 +209,13 @@
 </div>
 
 <script>
-const TRACKED_KEY = 'myTrackedTrainsV2';
+const TRACKED_KEY = 'myTrackedTrainsV2_v7';
 
 const DEFAULT_TRACKED = [
-  { station: 'Tarnowskie Góry', trainNum: '' },
-  { station: 'Katowice', trainNum: '' }
+  { station: 'Katowice', trainNum: '8312' },
+  { station: 'Katowice', trainNum: '14004' },
+  { station: 'Katowice', trainNum: '' },
+  { station: 'Tarnowskie Góry', trainNum: '' }
 ];
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -230,6 +233,11 @@ function getTrackedList() {
 
 function saveTrackedList(list) {
   localStorage.setItem(TRACKED_KEY, JSON.stringify(list));
+}
+
+function resetList() {
+  localStorage.removeItem(TRACKED_KEY);
+  refreshAll();
 }
 
 function addTrackedTrain() {
@@ -259,7 +267,7 @@ async function refreshAll() {
   const apiMeta = document.getElementById('apiMeta');
 
   if (!list.length) {
-    tbody.innerHTML = '<tr><td colspan="6" class="muted" style="text-align:center;">Brak zdefiniowanych pociągów. Dodaj nową pozycję powyżej.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="muted" style="text-align:center;">Brak zdefiniowanych pozycji. Dodaj nową powyżej!</td></tr>';
     apiMeta.textContent = 'Brak śledzonych pozycji.';
     return;
   }
@@ -272,20 +280,28 @@ async function refreshAll() {
   for (let i = 0; i < list.length; i++) {
     const item = list[i];
     try {
-      const params = new URLSearchParams({ station: item.station, limit: '15' });
+      const params = new URLSearchParams({ station: item.station, limit: '50' });
       const r = await fetch('/api/departures?' + params.toString(), { headers: { Accept: 'application/json' } });
       const data = await r.json();
       const dep = Array.isArray(data.departures) ? data.departures : [];
 
-      const filtered = item.trainNum 
-        ? dep.filter(d => String(d.train || '').includes(item.trainNum) || String(d.name || '').toLowerCase().includes(item.trainNum.toLowerCase()))
-        : dep.slice(0, 5);
+      let filtered = [];
+      if (item.trainNum) {
+        const query = item.trainNum.toLowerCase();
+        filtered = dep.filter(d => 
+          String(d.train || '').toLowerCase().includes(query) || 
+          String(d.name || '').toLowerCase().includes(query) ||
+          String(d.category || '').toLowerCase().includes(query)
+        );
+      } else {
+        filtered = dep.slice(0, 5);
+      }
 
       filtered.forEach(d => {
         allResults.push({ ...d, _itemIndex: i, _stationSource: item.station });
       });
     } catch (err) {
-      console.error('Błąd pobierania danych:', item.station, err);
+      console.error('Błąd API dla stacji:', item.station, err);
     }
   }
 
@@ -296,7 +312,7 @@ async function refreshAll() {
 function renderTrackedTable(deps) {
   const tbody = document.getElementById('trackedDeparturesBody');
   if (!deps.length) {
-    tbody.innerHTML = '<tr><td colspan="6" class="muted" style="text-align:center;">Brak pasujących pociągów w rozkładzie.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="muted" style="text-align:center;">Brak pasujących odjazdów na stacjach w tym momencie.</td></tr>';
     return;
   }
 
