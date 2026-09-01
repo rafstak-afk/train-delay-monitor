@@ -393,12 +393,13 @@ input:focus{
 
 
 
-<style id="amoled-ultra-compact-v7">
+
+<style id="amoled-clean-v8">
   html, body {
     background-color: #000000 !important;
     color: #ffffff !important;
     margin: 0 !important;
-    padding: 2px !important;
+    padding: 4px !important;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
     -webkit-tap-highlight-color: transparent !important;
   }
@@ -418,8 +419,8 @@ input:focus{
     background: #000000 !important;
     border: 1px solid #222222 !important;
     border-radius: 6px !important;
-    padding: 4px 8px !important;
-    margin-bottom: 3px !important;
+    padding: 6px 8px !important;
+    margin-bottom: 4px !important;
     box-sizing: border-box !important;
     display: flex !important;
     flex-direction: column !important;
@@ -427,7 +428,7 @@ input:focus{
     position: relative !important;
     touch-action: pan-y !important;
     user-select: none !important;
-    gap: 1px !important;
+    gap: 2px !important;
   }
 
   .card.is-dragging {
@@ -441,11 +442,11 @@ input:focus{
     align-items: center !important;
     width: 100% !important;
     gap: 6px !important;
-    margin-bottom: 1px !important;
+    margin-bottom: 2px !important;
   }
 
   .drag-handle {
-    color: #555555 !important;
+    color: #666666 !important;
     font-size: 1.2rem !important;
     font-weight: 900 !important;
     cursor: grab !important;
@@ -459,7 +460,7 @@ input:focus{
     font-weight: 900 !important;
     padding: 1px 6px !important;
     border-radius: 4px !important;
-    line-height: 1 !important;
+    line-height: 1.1 !important;
     white-space: nowrap !important;
   }
 
@@ -479,7 +480,7 @@ input:focus{
     margin-left: auto !important;
     font-size: 0.7rem !important;
     font-weight: 800 !important;
-    color: #888888 !important;
+    color: #aaaaaa !important;
     background: #111111 !important;
     padding: 1px 5px !important;
     border-radius: 3px !important;
@@ -491,20 +492,23 @@ input:focus{
     font-size: 1.05rem !important;
     font-weight: 900 !important;
     color: #ffffff !important;
-    line-height: 1.1 !important;
+    line-height: 1.2 !important;
+    display: block !important;
   }
 
   .train-route-line {
     font-size: 0.9rem !important;
     font-weight: 700 !important;
-    color: #dddddd !important;
-    line-height: 1.1 !important;
+    color: #cccccc !important;
+    line-height: 1.2 !important;
+    display: block !important;
   }
 
   .train-status-line {
     font-size: 0.75rem !important;
     color: #888888 !important;
-    line-height: 1.1 !important;
+    line-height: 1.2 !important;
+    display: block !important;
   }
 
   .toggle-add-btn {
@@ -1392,7 +1396,8 @@ document.addEventListener('click', function(e) {
 
 
 
-<!-- AMOLED ULTRA COMPACT V7 START -->
+
+<!-- AMOLED WRAPPER FIX V8 START -->
 <script>
 (function() {
   let isDraggingActive = false;
@@ -1535,50 +1540,25 @@ document.addEventListener('click', function(e) {
 
       const descendants = Array.from(card.querySelectorAll('*'));
 
+      // 1. Wyciągnięcie danych ze starego drzewa DOM
       descendants.forEach(el => {
         if (el.closest('.card-top-row')) return;
         const txt = (el.textContent || '').trim();
         const upper = txt.toUpperCase();
 
-        // Ukrycie obrazków, SVG oraz pustych bloków/kwadratów ikonek
-        if (el.tagName === 'IMG' || el.tagName === 'SVG' || (!txt && el.children.length === 0)) {
-          el.style.display = 'none';
-          return;
-        }
-
-        // Ukrywanie niepotrzebnych kontenerów przycisków/tekstów statycznych
-        if (['SZCZEGÓŁY', 'BRAK OPERACJI', 'OPÓŹNIONY', 'PLANOWO', '×', 'BRAK DANYCH'].includes(upper)) {
-          if (el.children.length === 0 || el.tagName === 'BUTTON' || el.tagName === 'A') {
-            el.style.display = 'none';
-            return;
-          }
-        }
-
-        // Wykrywanie badanej stacji
         if (!stationName && (upper.includes('STACJA:') || upper.includes('KATOWICE') || upper.includes('TARNOWSKIE GÓRY') || upper.includes('CHORZÓW') || upper.includes('BYTOM') || upper.includes('KIELCE') || upper.includes('MIASTECZKO'))) {
           if (!txt.includes('→') && !txt.includes('->') && !txt.includes('Ostatnio') && !txt.includes('Dane:')) {
             let cleaned = txt.replace(/📍|stacja:|badana stacja:/gi, '').replace(/SZCZEGÓŁY/gi, '').trim();
-            if (cleaned) {
-              stationName = cleaned;
-              // Ukryj dół/duży kontener stacji na dole
-              if (el.children.length === 0 || el.tagName === 'DIV' || el.tagName === 'SPAN') {
-                el.style.display = 'none';
-              }
-            }
+            if (cleaned) stationName = cleaned;
           }
         }
 
-        // Odczyt opóźnienia
         if (!delayText && (txt.includes('min') || txt.startsWith('+')) && txt.length < 15) {
           if (!txt.includes('Ostatnio') && !txt.includes('Dane:')) {
             delayText = txt;
-            if (el.children.length === 0) {
-              el.style.display = 'none';
-            }
           }
         }
 
-        // Klasy stylujące dla kompaktowości
         if (txt.includes('→') || txt.includes('->')) {
           el.classList.add('train-route-line');
         } else if (txt.includes('Ostatnio') || txt.includes('Dane:')) {
@@ -1588,8 +1568,30 @@ document.addEventListener('click', function(e) {
         }
       });
 
+      // 2. Bezpośrednie usuwanie kontenerów nadrzędnych dla starych badge'y/kwadratów
+      descendants.forEach(el => {
+        if (el.closest('.card-top-row')) return;
+        const txt = (el.textContent || '').trim();
+        const upper = txt.toUpperCase();
+
+        if (el.tagName === 'IMG' || el.tagName === 'SVG' || ['SZCZEGÓŁY', 'BRAK OPERACJI', 'OPÓŹNIONY', 'PLANOWO', '×'].includes(upper)) {
+          el.style.display = 'none';
+        }
+
+        if ((txt.includes('min') || txt.startsWith('+')) && txt.length < 15 && !txt.includes('Ostatnio')) {
+          let rootWrapper = el;
+          while (rootWrapper && rootWrapper.parentNode !== card) {
+            rootWrapper = rootWrapper.parentNode;
+          }
+          if (rootWrapper && rootWrapper !== card && !rootWrapper.classList.contains('card-top-row')) {
+            rootWrapper.style.display = 'none';
+          }
+        }
+      });
+
       if (!delayText) delayText = '0 min';
 
+      // 3. Budowanie/aktualizowanie górnego paska
       let topRow = card.querySelector('.card-top-row');
       if (!topRow) {
         topRow = document.createElement('div');
@@ -1643,6 +1645,6 @@ document.addEventListener('click', function(e) {
   });
 })();
 </script>
-<!-- AMOLED ULTRA COMPACT V7 END -->
+<!-- AMOLED WRAPPER FIX V8 END -->
 </body>
 </html>
