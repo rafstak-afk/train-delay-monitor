@@ -9,7 +9,7 @@
   <meta name="application-name" content="Moje Pociągi V2">
   <title>Moje Pociągi V2 - Tablica PLK</title>
   <style>
-    /* AMOLED Black (#000000) - wysoki kontrast */
+    /* AMOLED Black (#000000) */
     body {
       margin: 0;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -126,7 +126,7 @@
       background: #000000;
     }
 
-    /* Klikalne wiersze tabeli */
+    /* Klikalne wiersze */
     tr.clickable-row {
       cursor: pointer;
       transition: background-color 0.15s ease;
@@ -136,7 +136,7 @@
     }
     tr:nth-child(even) td { background: #09090b; }
 
-    /* Kolory statusów opóźnień */
+    /* Opóźnienia */
     .time-real { font-weight: 800; font-size: 15px; color: #4ade80; }
     .ontime { color: #4ade80; font-weight: 700; }
     .delay, .time-delay-low { color: #facc15; font-weight: 700; }
@@ -178,20 +178,20 @@
 <body>
 
 <div class="container">
-  <h1>⭐ Moje Pociągi V2 <span class="version-badge">v. 0.95.8</span></h1>
+  <h1>🖥️ Tablica Monitorowania <span class="version-badge">v. 0.96.0</span></h1>
 
   <div class="nav-row">
     <a class="btn" href="/">⬅ Strona Główna Tablicy</a>
-    <button class="btn-action" onclick="refreshAll()">🔄 Odśwież</button>
+    <button class="btn-action" onclick="refreshAll()">🔄 Odśwież dane z API</button>
     <button class="btn" style="color: #f87171;" onclick="resetList()">⚠️ Przywróć Domyślne</button>
   </div>
 
   <div class="add-panel">
-    <h3>Dodaj relację / pociąg do śledzenia</h3>
+    <h3>⊕ DODAJ POCIĄG I STACJĘ DO ŚLEDZENIA</h3>
     <div class="form-grid">
       <input id="addStation" type="text" placeholder="Stacja (np. Katowice)" />
-      <input id="addTrainNum" type="text" placeholder="Numer / Nazwa (np. 8312 lub Szkuner)" />
-      <button class="btn-action" onclick="addTrackedTrain()">+ Dodaj</button>
+      <input id="addTrainNum" type="text" placeholder="Numer pociągu (np. 3815)" />
+      <button class="btn-action" onclick="addTrackedTrain()">+ Dodaj do listy</button>
     </div>
   </div>
 
@@ -220,15 +220,22 @@
 </div>
 
 <script>
-const TRACKED_KEY = 'myTrackedTrainsV2_v8';
+const TRACKED_KEY = 'myTrackedTrainsV2_musthave_v1';
 
-/* Zapisana pełna lista pociągów */
+/* Lista pociągów MUST HAVE */
 const DEFAULT_TRACKED = [
-  { station: 'Katowice', trainNum: '8312', name: 'Szkuner' },
-  { station: 'Katowice', trainNum: '14004', name: 'Batory' },
-  { station: 'Katowice', trainNum: '38172', name: 'Podhalanin' },
-  { station: 'Katowice', trainNum: '61171', name: 'Karkonosze' },
-  { station: 'Tarnowskie Góry', trainNum: '', name: '' }
+  { station: 'Katowice', trainNum: '3815' },
+  { station: 'Bytom Karb', trainNum: '40360' },
+  { station: 'Katowice', trainNum: '38107' },
+  { station: 'Katowice', trainNum: '40621' },
+  { station: 'Katowice', trainNum: '63102' },
+  { station: 'Tarnowskie Góry', trainNum: '40450' },
+  { station: 'Miasteczko Śląskie', trainNum: '44226' },
+  { station: 'Tarnowskie Góry', trainNum: '40250' },
+  { station: 'Chorzów Batory', trainNum: '40858' },
+  { station: 'Chorzów Batory', trainNum: '40423' },
+  { station: 'Chorzów Batory', trainNum: '40211' },
+  { station: 'Chorzów Batory', trainNum: '40468' }
 ];
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -306,22 +313,30 @@ async function refreshAll() {
       const dep = Array.isArray(data.departures) ? data.departures : [];
 
       let filtered = [];
-      if (item.trainNum || item.name) {
-        const queryNum = (item.trainNum || '').toLowerCase();
-        const queryName = (item.name || '').toLowerCase();
-        
-        filtered = dep.filter(d => {
-          const t = String(d.train || '').toLowerCase();
-          const n = String(d.name || '').toLowerCase();
-          return (queryNum && t.includes(queryNum)) || (queryName && n.includes(queryName));
-        });
+      if (item.trainNum) {
+        const queryNum = String(item.trainNum).toLowerCase();
+        filtered = dep.filter(d => String(d.train || '').toLowerCase().includes(queryNum));
       } else {
         filtered = dep.slice(0, 3);
       }
 
-      filtered.forEach(d => {
-        allResults.push({ ...d, _itemIndex: i, _stationSource: item.station });
-      });
+      if (filtered.length > 0) {
+        filtered.forEach(d => {
+          allResults.push({ ...d, _itemIndex: i, _stationSource: item.station });
+        });
+      } else {
+        allResults.push({
+          _itemIndex: i,
+          _stationSource: item.station,
+          _noData: true,
+          train: item.trainNum,
+          time: '--:--',
+          plannedTime: '--:--',
+          destination: 'Brak danych w rozkładzie',
+          platform: '-',
+          track: '-'
+        });
+      }
     } catch (err) {
       console.error('Błąd API dla stacji:', item.station, err);
     }
@@ -339,6 +354,27 @@ function renderTrackedTable(deps) {
   }
 
   tbody.innerHTML = deps.map(d => {
+    if (d._noData) {
+      return `<tr class="clickable-row" onclick="goToDetail('${escapeHtml(d._stationSource)}', '${escapeHtml(d.train || '')}', '')">
+        <td class="desktop-cell"><div class="muted">--:--</div></td>
+        <td class="desktop-cell"><div class="train-main">#${escapeHtml(d.train)}</div></td>
+        <td class="desktop-cell"><div class="direction-main">Brak danych / poza rozkładem</div><div class="direction-via">Stacja: ${escapeHtml(d._stationSource)}</div></td>
+        <td class="desktop-cell" style="text-align:center;">-</td>
+        <td class="desktop-cell" style="text-align:center;">-</td>
+        <td class="desktop-cell" style="text-align:center;">
+          <button class="btn-del" onclick="removeTrackedTrain(event, ${d._itemIndex})" title="Usuń z listy">🗑️</button>
+        </td>
+        <td class="mobile-only">
+          <div class="mobile-layout">
+            <div class="mobile-time"><div class="muted">--:--</div></div>
+            <div class="mobile-train"><div class="train-main">#${escapeHtml(d.train)}</div></div>
+            <div class="mobile-direction"><div class="direction-main">Brak danych</div><div class="direction-via">Stacja: ${escapeHtml(d._stationSource)}</div></div>
+            <div class="mobile-side"><div class="mobile-platform">-</div><div class="mobile-track">-</div></div>
+          </div>
+        </td>
+      </tr>`;
+    }
+
     const delay = Number(d.delay || 0);
     const tc = getTimeDelayClass(delay);
     const tr = [d.category, d.train].filter(Boolean).join(' ');
@@ -365,7 +401,7 @@ function renderTrackedTable(deps) {
       <td class="desktop-cell" style="text-align:center;">${escapeHtml(d.platform || '')}</td>
       <td class="desktop-cell" style="text-align:center;">${escapeHtml(d.track || '')}</td>
       <td class="desktop-cell" style="text-align:center;">
-        <button class="btn-del" onclick="removeTrackedTrain(event, ${d._itemIndex})" title="Usuń z listy">✕</button>
+        <button class="btn-del" onclick="removeTrackedTrain(event, ${d._itemIndex})" title="Usuń z listy">🗑️</button>
       </td>
       <td class="mobile-only">
         <div class="mobile-layout">
