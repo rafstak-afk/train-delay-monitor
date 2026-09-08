@@ -10,7 +10,6 @@
 :root{
   --bg:#0b1220;
   --panel:#111a2b;
-  --panel2:#162238;
   --border:#263653;
   --text:#f4f7fb;
   --muted:#91a0b7;
@@ -18,7 +17,6 @@
   --green:#34d399;
   --yellow:#fbbf24;
   --red:#fb7185;
-  --blue:#60a5fa;
 }
 
 *{box-sizing:border-box}
@@ -28,131 +26,35 @@ html,body{
   padding:0;
   background:var(--bg);
   color:var(--text);
-  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-}
-
-body{
-  min-height:100vh;
-}
-
-button,input{
-  font:inherit;
-}
-
-button{
-  cursor:pointer;
+  font-family:system-ui,-apple-system,sans-serif;
 }
 
 .app{
-  width:min(100%,900px);
+  width:min(100%,700px);
   margin:0 auto;
   padding:12px;
 }
 
 header{
-  position:sticky;
-  top:0;
-  z-index:20;
-  background:rgba(11,18,32,.96);
-  backdrop-filter:blur(10px);
-  padding:8px 0 12px;
-}
-
-.header-row{
   display:flex;
   align-items:center;
   justify-content:space-between;
-  gap:10px;
+  padding:8px 0 16px;
 }
 
 h1{
   margin:0;
-  font-size:21px;
-  line-height:1.1;
-}
-
-.header-sub{
-  color:var(--muted);
-  font-size:12px;
-  margin-top:4px;
-}
-
-.refresh{
-  width:42px;
-  height:42px;
-  border:1px solid var(--border);
-  border-radius:12px;
-  background:var(--panel);
-  color:var(--cyan);
   font-size:20px;
 }
 
-.refresh:disabled{
-  opacity:.5;
-}
-
-.add-panel{
-  margin:8px 0 12px;
-  padding:12px;
+.refresh{
+  padding:8px 16px;
+  border:1px solid var(--border);
+  border-radius:10px;
   background:var(--panel);
-  border:1px solid var(--border);
-  border-radius:14px;
-}
-
-.add-title{
   color:var(--cyan);
-  font-size:12px;
-  font-weight:800;
-  margin-bottom:9px;
-}
-
-.add-row{
-  display:grid;
-  grid-template-columns:1fr 1fr auto;
-  gap:8px;
-}
-
-input{
-  width:100%;
-  min-width:0;
-  padding:10px 11px;
-  border-radius:10px;
-  border:1px solid var(--border);
-  background:#0b1220;
-  color:var(--text);
-  outline:none;
-}
-
-input:focus{
-  border-color:var(--cyan);
-}
-
-.add-btn{
-  border:0;
-  border-radius:10px;
-  padding:0 14px;
-  background:var(--cyan);
-  color:#06212a;
-  font-weight:800;
-}
-
-.summary{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  margin:10px 2px 7px;
-}
-
-.summary-title{
-  font-size:13px;
-  font-weight:800;
-  letter-spacing:.04em;
-  text-transform:uppercase;
-}
-
-.summary-info{
-  color:var(--muted);
-  font-size:12px;
+  font-weight:700;
+  cursor:pointer;
 }
 
 .list{
@@ -164,395 +66,68 @@ input:focus{
 .card{
   background:var(--panel);
   border:1px solid var(--border);
-  border-radius:14px;
-  overflow:hidden;
-  cursor:pointer;
-  transition:transform .12s ease,border-color .12s ease;
-}
-
-.card:hover{
-  border-color:var(--cyan);
-}
-
-.card:active{
-  transform:scale(.985);
-}
-
-.card-main{
+  border-radius:12px;
+  padding:12px;
   display:grid;
-  grid-template-columns:62px 1fr 32px;
-  gap:10px;
+  grid-template-columns:80px 1fr auto;
+  gap:12px;
   align-items:center;
-  padding:11px;
 }
 
-.status{
-  width:62px;
-  min-height:52px;
-  border-radius:11px;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
+.time-box{
   text-align:center;
+  background:#0b1220;
+  padding:6px;
+  border-radius:8px;
+  border:1px solid var(--border);
+}
+
+.plan-time{
+  font-size:14px;
   font-weight:800;
+  color:var(--text);
 }
 
-.status .big{
-  font-size:12px;
-  line-height:1.1;
-}
-
-.status .small{
-  margin-top:3px;
+.delay-tag{
   font-size:11px;
   font-weight:700;
+  margin-top:2px;
 }
 
-.status.live{
-  background:rgba(52,211,153,.13);
-  border:1px solid rgba(52,211,153,.35);
-  color:var(--green);
-}
+.delay-tag.ok{ color:var(--green); }
+.delay-tag.bad{ color:var(--red); }
 
-.status.wait{
-  background:rgba(251,191,36,.10);
-  border:1px solid rgba(251,191,36,.3);
-  color:var(--yellow);
-}
-
-.status.none{
-  background:rgba(145,160,183,.10);
-  border:1px solid rgba(145,160,183,.25);
-  color:var(--muted);
-}
-
-.status.delay{
-  background:rgba(251,113,133,.12);
-  border:1px solid rgba(251,113,133,.35);
-  color:var(--red);
-}
-
-.train{
+.info-box{
   min-width:0;
 }
 
-.train-top{
-  display:flex;
-  align-items:center;
-  gap:7px;
-  min-width:0;
-}
-
-.train-number{
+.train-num{
   font-size:16px;
   font-weight:900;
-  white-space:nowrap;
-}
-
-.train-name{
   color:var(--cyan);
-  font-size:13px;
-  font-weight:700;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
 }
 
-.station{
-  margin-top:2px;
+.station-name{
   font-size:13px;
-  font-weight:700;
-}
-
-.route{
-  margin-top:2px;
   color:var(--muted);
-  font-size:11px;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
+  margin-top:2px;
 }
 
-.position{
+.status-text{
+  font-size:11px;
+  color:var(--text);
   margin-top:4px;
-  color:#d9e2ef;
-  font-size:11px;
 }
 
-.delete{
-  width:32px;
-  height:32px;
+.btn-open{
   border:0;
-  background:transparent;
-  color:#64748b;
-  border-radius:8px;
-  font-size:17px;
-}
-
-.delete:hover{
-  color:var(--red);
-  background:rgba(251,113,133,.08);
-}
-
-.details{
-  border-top:1px solid var(--border);
-  padding:8px 11px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:10px;
-  color:var(--muted);
-  font-size:11px;
-  background:rgba(255,255,255,.015);
-}
-
-.open{
-  border:0;
-  border-radius:8px;
-  padding:7px 10px;
   background:rgba(34,211,238,.12);
   color:var(--cyan);
   font-weight:800;
-  font-size:11px;
+  padding:8px 12px;
+  border-radius:8px;
+  cursor:pointer;
 }
-
-.loading{
-  padding:24px 12px;
-  text-align:center;
-  color:var(--muted);
-}
-
-.error{
-  padding:14px;
-  color:var(--red);
-  background:rgba(251,113,133,.08);
-  border:1px solid rgba(251,113,133,.2);
-  border-radius:12px;
-}
-
-.empty{
-  padding:30px 15px;
-  text-align:center;
-  color:var(--muted);
-  border:1px dashed var(--border);
-  border-radius:14px;
-}
-
-@media(max-width:600px){
-  .app{
-    padding:8px;
-  }
-
-  .add-row{
-    grid-template-columns:1fr 1fr;
-  }
-
-  .add-btn{
-    grid-column:1 / -1;
-    min-height:40px;
-  }
-
-  .card-main{
-    grid-template-columns:58px 1fr 30px;
-    gap:8px;
-    padding:9px;
-  }
-
-  .status{
-    width:58px;
-  }
-
-  .train-number{
-    font-size:15px;
-  }
-
-  .train-name{
-    font-size:12px;
-  }
-
-  .station{
-    font-size:12px;
-  }
-}
-</style>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<style id="amoled-compact-v3">
-  html, body {
-    background-color: #000000 !important;
-    color: #ffffff !important;
-    margin: 0 !important;
-    padding: 6px !important;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-    -webkit-tap-highlight-color: transparent !important;
-  }
-
-  #app, main, .container, #container, body > div {
-    display: flex !important;
-    flex-direction: column !important;
-    width: 100% !important;
-    max-width: 600px !important;
-    margin: 0 auto !important;
-    box-sizing: border-box !important;
-  }
-
-  /* PRZYWRÓCENIE CZYTELNOŚCI DLA PRZYCISKÓW OGÓLNYCH I NIEBIESKICH */
-  button, input[type="submit"], .btn, .btn-primary {
-    font-size: 0.95rem !important;
-    font-weight: 700 !important;
-    color: #ffffff !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-  }
-
-  /* KAFELEK POCIĄGU */
-  .card, .train-card, .train-item, [data-train-url] {
-    width: 100% !important;
-    max-width: 100% !important;
-    background: #0f172a !important;
-    border: 1.5px solid #334155 !important;
-    border-radius: 10px !important;
-    padding: 8px 12px !important;
-    margin-bottom: 6px !important;
-    box-sizing: border-box !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: stretch !important;
-    position: relative !important;
-    touch-action: pan-y !important;
-    user-select: none !important;
-    gap: 3px !important;
-  }
-
-  .card *, .train-card *, .train-item * {
-    word-break: normal !important;
-    word-wrap: normal !important;
-    overflow-wrap: normal !important;
-    white-space: normal !important;
-    hyphens: none !important;
-    min-width: 0 !important;
-  }
-
-  /* WIERSZ 1: UCHWYT + OPÓŹNIENIA (LEWA) + BADANA STACJA (MINI PRAWA) */
-  .card-top-row {
-    display: flex !important;
-    flex-direction: row !important;
-    align-items: center !important;
-    justify-content: flex-start !important;
-    width: 100% !important;
-    gap: 8px !important;
-  }
-
-  .drag-handle {
-    color: #475569 !important;
-    font-size: 1.4rem !important;
-    font-weight: 900 !important;
-    cursor: grab !important;
-    line-height: 1 !important;
-    touch-action: none !important;
-    padding: 0 2px !important;
-  }
-
-  /* BADGE OPÓŹNIENIA NA LEWO */
-  .delay-badge {
-    font-size: 1.15rem !important;
-    font-weight: 900 !important;
-    padding: 2px 8px !important;
-    border-radius: 6px !important;
-    line-height: 1.1 !important;
-    white-space: nowrap !important;
-    display: inline-block !important;
-    flex-shrink: 0 !important;
-  }
-
-  .delay-red {
-    color: #ff4d4d !important;
-    background: #3b0707 !important;
-    border: 1.5px solid #ef4444 !important;
-  }
-
-  .delay-green {
-    color: #4ade80 !important;
-    background: #052e16 !important;
-    border: 1.5px solid #16a34a !important;
-  }
-
-  /* MINIATURKA STACJI W PRAWO */
-  .station-mini-tag {
-    margin-left: auto !important;
-    font-size: 0.7rem !important;
-    font-weight: 700 !important;
-    color: #64748b !important;
-    background: #1e293b !important;
-    padding: 2px 6px !important;
-    border-radius: 4px !important;
-    letter-spacing: 0.4px !important;
-    text-transform: uppercase !important;
-    white-space: nowrap !important;
-    flex-shrink: 0 !important;
-  }
-
-  /* NUMER I NAZWA POCIĄGU - POWIĘKSZONE */
-  .train-main-title {
-    font-size: 1.25rem !important;
-    font-weight: 900 !important;
-    color: #ffffff !important;
-  }
-
-  /* RELACJA POCIĄGU */
-  .train-route-line {
-    font-size: 1.05rem !important;
-    font-weight: 700 !important;
-    color: #e2e8f0 !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    width: 100% !important;
-  }
-
-  .train-status-line {
-    font-size: 0.8rem !important;
-    color: #94a3b8 !important;
-  }
-
-  /* ZWIJANY FORMULARZ */
-  .toggle-add-btn {
-    width: 100% !important;
-    padding: 9px !important;
-    background: #0f172a !important;
-    border: 1.5px dashed #334155 !important;
-    color: #38bdf8 !important;
-    font-weight: 800 !important;
-    font-size: 0.9rem !important;
-    border-radius: 8px !important;
-    cursor: pointer !important;
-    margin-bottom: 6px !important;
-    box-sizing: border-box !important;
-  }
-
-  .add-form-hidden { display: none !important; }
-  .add-form-visible {
-    display: block !important;
-    width: 100% !important;
-    background: #0f172a !important;
-    border: 1.5px solid #334155 !important;
-    padding: 10px !important;
-    border-radius: 8px !important;
-    margin-bottom: 6px !important;
-    box-sizing: border-box !important;
-  }
 </style>
 </head>
 
@@ -560,1065 +135,100 @@ input:focus{
 <div class="app">
 
 <header>
-  <div class="header-row">
-    <div>
-      <h1>🚆 Moje Pociągi</h1>
-      <div class="header-sub">Aktualny status z danych PLK</div>
-    </div>
-    <button class="refresh" id="refreshBtn" title="Odśwież">↻</button>
+  <div>
+    <h1>🚆 Moje Pociągi</h1>
   </div>
+  <button class="refresh" id="refreshBtn">↻ ODŚWIEŻ</button>
 </header>
 
-<section class="add-panel">
-  <div class="add-title">＋ DODAJ POCIĄG DO MONITOROWANIA</div>
-  <div class="add-row">
-    <input id="stationInput" placeholder="Stacja, np. Katowice">
-    <input id="trainInput" placeholder="Numer, np. 3815">
-    <button class="add-btn" id="addBtn">Dodaj</button>
-  </div>
-</section>
-
-<div class="summary">
-  <div class="summary-title">Monitorowane</div>
-  <div class="summary-info" id="summaryInfo">Ładowanie…</div>
-</div>
-
-<main id="list" class="list">
-  <div class="loading">Pobieranie danych z PLK…</div>
-</main>
+<main id="list" class="list"></main>
 
 </div>
 
 <script>
-window.onerror = function(m, u, l) { console.error("Błąd wykonania JS:", m, "linia:", l); };
-
-const DEFAULT_TRAINS = [
-  { station: 'Miasteczko Śląskie', number: '44226', planTime: '04:59' },
-  { station: 'Tarnowskie Góry', number: '40450', planTime: '05:21' },
-  { station: 'Chorzów Batory', number: '40658', planTime: '06:07' },
-  { station: 'Tarnowskie Góry', number: '40250', planTime: '05:46' },
-  { station: 'Chorzów Batory', number: '40660', planTime: '06:32' },
-  { station: 'Katowice', number: '40921', planTime: '14:59' },
-  { station: 'Katowice', number: '40621', planTime: '15:35' },
-  { station: 'Chorzów Batory', number: '40423', planTime: '15:12' },
-  { station: 'Chorzów Batory', number: '40425', planTime: '16:06' },
-  { station: 'Katowice', number: '8330', planTime: '10:20' },
-  { station: 'Katowice', number: '3815', planTime: '14:40' }
+const TARGET_TRAINS = [
+  { station: 'Miasteczko Śląskie', trainNum: '44226', planTime: '04:59' },
+  { station: 'Tarnowskie Góry', trainNum: '40450', planTime: '05:21' },
+  { station: 'Chorzów Batory', trainNum: '40658', planTime: '06:07' },
+  { station: 'Tarnowskie Góry', trainNum: '40250', planTime: '05:46' },
+  { station: 'Chorzów Batory', trainNum: '40660', planTime: '06:32' },
+  { station: 'Katowice', trainNum: '40921', planTime: '14:59' },
+  { station: 'Katowice', trainNum: '40621', planTime: '15:35' },
+  { station: 'Chorzów Batory', trainNum: '40423', planTime: '15:12' },
+  { station: 'Chorzów Batory', trainNum: '40425', planTime: '16:06' },
+  { station: 'Katowice', trainNum: '8330', planTime: '10:20' },
+  { station: 'Katowice', trainNum: '3815', planTime: '14:40' }
 ];
 
-const STORAGE_KEY = 'rafstakMojePociagiV3';
-
-const STATION_IDS = {
-  'KATOWICE': '73312',
-   'KRAKÓW GŁÓWNY': '73302',
-  'TARNOWSKIE GÓRY': '73390',
-  'CHORZÓW BATORY': '73308',
-  'GLIWICE': '73318',
-  'BYTOM KARB': '73405',
-  'MIASTECZKO ŚLĄSKIE': '73428'
-};
-
-function getList(){
-  try{
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if(raw){
-      const parsed = JSON.parse(raw);
-      if(Array.isArray(parsed)) return parsed;
-    }
-  }catch(e){}
-  return DEFAULT_TRAINS.map(x => ({...x}));
-}
-
-function saveList(list){
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-}
-
-
-function buildTrainUrl(row, station, number) {
-  if (!row || !row.orderId) return null;
-  const today = new Date().toISOString().split('T')[0];
-  const params = new URLSearchParams({
-    train: row.train || row.trainNo || row.number || number || '',
-    category: row.category || row.trainCategory || 'IC',
-    name: row.name || row.trainName || '',
-    destination: row.destination || row.to || '',
-    date: row.date || today,
-    scheduleId: row.scheduleId || row.scheduledId || '2026',
-    scheduledId: row.scheduledId || row.scheduleId || '2026',
-    orderId: row.orderId || '',
-    trainOrderId: row.trainOrderId || '',
-    stationId: row.stationId || (typeof stationId === 'function' ? stationId(station) : '') || '',
-    station: row.station || station || ''
-  });
-  return '/train?' + params.toString();
-}
-
-function stationId(name){
-  return STATION_IDS[String(name || '').trim().toUpperCase()] || '';
-}
-
-function escapeHtml(value){
-  return String(value ?? '')
-    .replace(/&/g,'&amp;')
-    .replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;')
-    .replace(/'/g,'&#039;');
-}
-
-function getTrainNumber(row){
-  return String(
-    row.trainNumber ??
-    row.trainNo ??
-    row.number ??
-    row.train ??
-    row.train?.trainNumber ??
-    row.train?.number ??
-    ''
-  );
-}
-
-function getDelay(row){
-  const values = [
-    row.delayMinutes,
-    row.delay,
-    row.delayInMinutes,
-    row.train?.delayMinutes,
-    row.operation?.delayMinutes
-  ];
-
-  for(const value of values){
-    if(value !== undefined && value !== null && value !== ''){
-      const n = Number(value);
-      if(Number.isFinite(n)) return n;
-    }
+async function fetchStationDepartures(station) {
+  try {
+    const res = await fetch('/api/departures?station=' + encodeURIComponent(station) + '&limit=300', { cache: 'no-store' });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data.departures) ? data.departures : [];
+  } catch (e) {
+    return [];
   }
-
-  return null;
 }
 
-function getTime(row){
-  return row.actualTime ||
-         row.realTime ||
-         row.departureTimeActual ||
-         row.arrivalTimeActual ||
-         row.time ||
-         row.scheduledTime ||
-         row.departureTime ||
-         row.arrivalTime ||
-         '';
+function getDelay(row) {
+  if (!row) return null;
+  const val = row.delayMinutes ?? row.delay ?? row.delayInMinutes;
+  return val !== undefined && val !== null ? Number(val) : 0;
 }
 
-function getStation(row){
-  return row.stationName ||
-         row.station ||
-         row.name ||
-         row.stopName ||
-         '';
-}
-
-function getDestination(row){
-  return row.destination ||
-         row.direction ||
-         row.to ||
-         row.train?.destination ||
-         '';
-}
-
-function getOrigin(row){
-  return row.origin ||
-         row.from ||
-         row.train?.origin ||
-         '';
-}
-
-function getScheduleId(row){
-  return row.scheduleId ||
-         row.scheduledId ||
-         row.schedule?.id ||
-         '';
-}
-
-function getOrderId(row){
-  return row.orderId ||
-         row.trainOrderId ||
-         row.operationId ||
-         '';
-}
-
-function getCategory(row){
-  return row.category ||
-         row.commercialCategory ||
-         row.train?.category ||
-         '';
-}
-
-function makeDetailsUrl(item,row){
-  const params = new URLSearchParams();
-
-  params.set('train', item.number);
-
-  const category = getCategory(row);
-  const name =
-    row.name ||
-    row.trainName ||
-    row.commercialName ||
-    row.train?.name ||
-    '';
-
-  if(category) params.set('category',category);
-  if(name) params.set('name',name);
-
-  const destination = getDestination(row);
-  if(destination) params.set('destination',destination);
-
-  params.set(
-    'date',
-    new Date().toISOString().slice(0,10)
-  );
-
-  const scheduleId = getScheduleId(row);
-  const orderId = getOrderId(row);
-
-  if(scheduleId) params.set('scheduleId',scheduleId);
-  if(scheduleId) params.set('scheduledId',scheduleId);
-  if(orderId) params.set('orderId',orderId);
-
-  if(row.trainOrderId){
-    params.set('trainOrderId',row.trainOrderId);
-  }
-
-  const id = stationId(item.station);
-  if(id) params.set('stationId',id);
-  params.set('station',item.station);
-
-  return '/train?' + params.toString();
-}
-
-async function fetchStation(station){
-  const id = stationId(station);
-
-  const params = new URLSearchParams();
-
-  if(id){
-    params.set('station',station);
-  }else{
-    params.set('station',station);
-  }
-
-  params.set('limit','300');
-
-  const response = await fetch(
-    '/api/departures?' + params.toString(),
-    {
-      headers:{Accept:'application/json'},
-      cache:'no-store'
-    }
-  );
-
-  if(!response.ok){
-    throw new Error('HTTP ' + response.status);
-  }
-
-  const data = await response.json();
-
-  return Array.isArray(data.departures)
-    ? data.departures
-    : [];
-}
-
-function findTrain(rows,number){
-  const wanted = String(number);
-
-  return rows.find(row =>
-    getTrainNumber(row) === wanted
-  ) || null;
-}
-
-function buildView(item,result){
-  const row = result.row;
-
-  let state = 'none';
-  let label = 'BRAK DANYCH';
-  let delayText = '';
-
-  if(result.loading){
-    state = 'wait';
-    label = 'ŁADOWANIE';
-  }else if(row){
-    const delay = getDelay(row);
-
-    if(delay !== null && delay > 0){
-      state = 'delay';
-      label = 'OPÓŹNIONY';
-      delayText = '+' + delay + ' min';
-    }else{
-      state = 'live';
-      label = '0 min';
-      delayText = '';
-    }
-  }else{
-    label = 'BRAK OPERACJI';
-  }
-
-  const time = row ? getTime(row) : '';
-
-  const route =
-    result.routeOrigin && result.routeDestination
-      ? `${result.routeOrigin} → ${result.routeDestination}`
-      : 'Brak informacji o relacji';
-
-  const lastConfirmed =
-    row &&
-    row.lastConfirmedStation
-      ? `📍 Ostatnio potwierdzony: ${row.lastConfirmedStation}` +
-        (
-          row.lastConfirmedTime
-            ? ` · ${timeOnly(row.lastConfirmedTime)}`
-            : ''
-        )
-      : '';
-
-  const position =
-    lastConfirmed ||
-    (
-      time
-        ? `Dane: ${timeOnly(time)}`
-        : row
-          ? 'Dane potwierdzone przez API'
-          : 'API nie zwróciło aktywnej operacji'
-    );
-
-  const trainName =
-    row && (
-      row.name ||
-      row.trainName ||
-      row.commercialName
-    )
-      ? (
-          row.name ||
-          row.trainName ||
-          row.commercialName
-        )
-      : '';
-
+function renderCard(item, row) {
+  const delay = getDelay(row);
+  const isDelayed = delay !== null && delay > 0;
 
   return `
-    <article class="card" data-open="${result.index}">
-      <div class="card-main" data-raw="${JSON.stringify(item).replace(/"/g, "&quot;")}">
-
-        <div class="status ${state}">
-          <div class="big">${escapeHtml(label)}</div>
-          <div class="small">${escapeHtml(delayText)}</div>
+    <div class="card">
+      <div class="time-box">
+        <div class="plan-time">${item.planTime}</div>
+        <div class="delay-tag ${isDelayed ? 'bad' : 'ok'}">
+          ${delay === null ? 'BRAK' : (isDelayed ? '+' + delay + ' min' : '0 min')}
         </div>
-
-        <div class="train">
-          <div class="train-top">
-            <span class="train-number">#${escapeHtml(item.number)}</span>
-            ${
-              trainName
-                ? `<span class="train-name">${escapeHtml(trainName)}</span>`
-                : ''
-            }
-          </div>
-
-          <div class="route">${escapeHtml(route)}</div>
-          <div class="position">${escapeHtml(position)}</div>
-        </div>
-
-        <button
-          class="delete"
-          data-delete="${result.index}"
-          title="Usuń z listy"
-        >×</button>
-
       </div>
-
-      <div class="details">
-        <span>${escapeHtml(item.station)}</span>
-        <button
-          class="open"
-          type="button"
-          data-open="${result.index}"
-        >SZCZEGÓŁY</button>
+      <div class="info-box">
+        <div class="train-num">#${item.trainNum}</div>
+        <div class="station-name">📍 ${item.station}</div>
+        <div class="status-text">${row ? (row.destination ? 'Kierunek: ' + row.destination : 'Dane pobrane z PLK') : 'Brak aktywnego kursu'}</div>
       </div>
-    </article>
+      <button class="btn-open" onclick="goDetails('${item.station}', '${item.trainNum}')">TRASA</button>
+    </div>
   `;
 }
 
-function timeOnly(value){
-  const match = String(value || '').match(/T(\d{2}:\d{2})/);
-  if(match) return match[1];
-
-  const match2 = String(value || '').match(/(\d{2}:\d{2})/);
-  return match2 ? match2[1] : String(value || '');
+function goDetails(station, number) {
+  window.location.href = `/train?train=${number}&station=${encodeURIComponent(station)}`;
 }
 
-async function loadTrains(){
-  const list = getList();
+async function init() {
   const container = document.getElementById('list');
-  const refresh = document.getElementById('refreshBtn');
+  const refreshBtn = document.getElementById('refreshBtn');
+  refreshBtn.disabled = true;
 
-  refresh.disabled = true;
-  refresh.textContent = '…';
+  container.innerHTML = TARGET_TRAINS.map(item => renderCard(item, null)).join('');
 
-  document.getElementById('summaryInfo').textContent =
-    `0 / ${list.length} załadowanych`;
+  const stationMap = new Map();
+  const stations = [...new Set(TARGET_TRAINS.map(t => t.station))];
 
-  container.innerHTML = list.length
-    ? list.map((item,index) =>
-        buildView(item,{
-          row:null,
-          index,
-          loading:true
-        })
-      ).join('')
-    : `<div class="empty">Brak monitorowanych pociągów.</div>`;
-
-  const stationCache = new Map();
-  const routeCache = new Map();
-  const nameCache = new Map();
-
-  async function getStationNames(ids){
-    const wanted = [...new Set(
-      ids.map(x => String(x || '').trim()).filter(Boolean)
-    )];
-
-    const missing = wanted.filter(id => !nameCache.has(id));
-
-    if(missing.length){
-      try{
-        const response = await fetch(
-          '/api/stations?ids=' +
-          encodeURIComponent(missing.join(',')),
-          {
-            headers:{Accept:'application/json'},
-            cache:'no-store'
-          }
-        );
-
-        if(response.ok){
-          const data = await response.json();
-
-          for(const [id,name] of Object.entries(data.names || {})){
-            nameCache.set(String(id),name);
-          }
-        }
-      }catch(error){
-        console.warn('Nie udało się pobrać nazw stacji:',error);
-      }
-    }
-
-    return wanted.map(id => nameCache.get(id) || '');
+  for (const st of stations) {
+    stationMap.set(st, await fetchStationDepartures(st));
   }
 
-  async function getRouteInfo(row){
-    const scheduleId = getScheduleId(row);
-    const orderId = getOrderId(row);
+  const html = TARGET_TRAINS.map(item => {
+    const departures = stationMap.get(item.station) || [];
+    const matchedRow = departures.find(d => String(d.trainNumber || d.trainNo || d.number || d.train) === String(item.trainNum));
+    return renderCard(item, matchedRow);
+  }).join('');
 
-    if(!scheduleId || !orderId){
-      return {
-        origin:'',
-        destination:''
-      };
-    }
-
-    const key = String(scheduleId);
-    const orderKey = String(orderId);
-    const routeKey = key + ':' + orderKey;
-
-    if(routeCache.has(routeKey)){
-      return routeCache.get(routeKey);
-    }
-
-    const promise = (async()=>{
-      try{
-        const response = await fetch(
-          '/api/schedules/route/' +
-          encodeURIComponent(key) + '/' +
-          encodeURIComponent(orderKey),
-          {
-            headers:{Accept:'application/json'},
-            cache:'no-store'
-          }
-        );
-
-        if(!response.ok){
-          return {
-            origin:'',
-            destination:''
-          };
-        }
-
-        const data = await response.json();
-        const route = data.route || data;
-
-        if(
-          !route ||
-          !Array.isArray((route && Array.isArray(route.stations) ? route.stations : [])) ||
-          !(route && Array.isArray(route.stations) ? route.stations : []).length
-        ){
-          return {
-            origin:'',
-            destination:''
-          };
-        }
-
-        const first = (route && Array.isArray(route.stations) ? route.stations : [])[0];
-        const last =
-          (route && Array.isArray(route.stations) ? route.stations : [])[(route && Array.isArray(route.stations) ? route.stations : []).length - 1];
-
-        const names = await getStationNames([
-          first?.stationId,
-          last?.stationId
-        ]);
-
-        return {
-          origin:names[0] || '',
-          destination:names[1] || ''
-        };
-      }catch(error){
-        console.warn(
-          'Nie udało się pobrać pełnej trasy:',
-          error
-        );
-
-        return {
-          origin:'',
-          destination:''
-        };
-      }
-    })();
-
-    routeCache.set(routeKey,promise);
-
-    return promise;
-  }
-
-  let loaded = 0;
-
-  for(let index=0; index<list.length; index++){
-    const item = list[index];
-
-    try{
-      if(!stationCache.has(item.station)){
-        stationCache.set(
-          item.station,
-          fetchStation(item.station)
-        );
-      }
-
-      const rows =
-        await stationCache.get(item.station);
-
-      const row =
-        findTrain(rows,item.number);
-
-      let routeInfo = {
-        origin:'',
-        destination:''
-      };
-
-      if(row){
-        routeInfo = await getRouteInfo(row);
-      }
-        if (row && row.orderId) {
-          const _tUrl = buildTrainUrl(row, item.station, item.number);
-          setTimeout(() => {
-            const _card = container.children[index];
-            if (_card && _tUrl) {
-              _card.dataset.trainUrl = _tUrl;
-              _card.style.cursor = 'pointer';
-              _card.title = 'Kliknij, aby zobaczyć pełną trasę';
-            }
-          }, 50);
-        }
-
-      const oldCard = container.children[index];
-
-      if(oldCard){
-        const wrapper = document.createElement('div');
-
-        wrapper.innerHTML =
-          buildView(item,{
-            row,
-            index,
-            loading:false,
-            routeOrigin:routeInfo.origin,
-            routeDestination:routeInfo.destination
-          });
-
-        oldCard.replaceWith(wrapper.firstElementChild);
-      }
-
-      loaded++;
-
-      document.getElementById('summaryInfo').textContent =
-        `${loaded} / ${list.length}`;
-    }catch(error){
-      console.error(
-        'Błąd ładowania pociągu',
-        item.number,
-        error
-      );
-
-      const oldCard = container.children[index];
-
-      if(oldCard){
-        const wrapper = document.createElement('div');
-
-        wrapper.innerHTML =
-          buildView(item,{
-            row:null,
-            index,
-            loading:false
-          });
-
-        oldCard.replaceWith(wrapper.firstElementChild);
-      }
-
-      loaded++;
-
-      document.getElementById('summaryInfo').textContent =
-        `${loaded} / ${list.length}`;
-    }
-  }
-
-  refresh.disabled = false;
-  refresh.textContent = 'ODŚWIEŻ';
-
-  document.getElementById('summaryInfo').textContent =
-    `${list.length} / ${list.length}`;
+  container.innerHTML = html;
+  refreshBtn.disabled = false;
 }
 
-function bindActions(){
-  document.querySelectorAll('[data-delete]')
-    .forEach(button => {
-      button.addEventListener('click',event => {
-        event.stopPropagation();
-
-        const index =
-          Number(button.dataset.delete);
-
-        const list = getList();
-
-        list.splice(index,1);
-        saveList(list);
-        loadTrains();
-      });
-    });
-
-  document.querySelectorAll('.card[data-open]')
-    .forEach(card => {
-      card.addEventListener('click',event => {
-        if(event.target.closest('[data-delete]')) return;
-        if(event.target.closest('.open')) return;
-
-        const index =
-          Number(card.dataset.open);
-
-        openDetails(index);
-      });
-    });
-
-  document.querySelectorAll('.open[data-open]')
-    .forEach(button => {
-      button.addEventListener('click',event => {
-        event.stopPropagation();
-
-        const index =
-          Number(button.dataset.open);
-
-        openDetails(index);
-      });
-    });
-}
-
-async function openDetails(index){
-  const list = getList();
-  const item = list[index];
-
-  if(!item) return;
-
-  try{
-    const rows = await fetchStation(item.station);
-    const row = findTrain(rows,item.number);
-
-    if(!row){
-      alert(
-        `Nie znaleziono aktualnej operacji pociągu ${item.number} ` +
-        `dla stacji ${item.station}.`
-      );
-      return;
-    }
-
-    window.location.href =
-      makeDetailsUrl(item,row);
-
-  }catch(error){
-    console.error(error);
-
-    alert(
-      'Nie udało się pobrać aktualnych danych pociągu.'
-    );
-  }
-}
-
-document.getElementById('refreshBtn')
-  .addEventListener('click',loadTrains);
-
-document.getElementById('addBtn')
-  .addEventListener('click',() => {
-    const station =
-      document.getElementById('stationInput')
-        .value
-        .trim()
-        .toUpperCase();
-
-    const number =
-      document.getElementById('trainInput')
-        .value
-        .trim();
-
-    if(!station || !number){
-      alert('Podaj stację i numer pociągu.');
-      return;
-    }
-
-    const list = getList();
-
-    if(list.some(x =>
-      x.number === number &&
-      x.station === station
-    )){
-      alert('Ten pociąg jest już na liście.');
-      return;
-    }
-
-    list.push({
-      station,
-      number
-    });
-
-    saveList(list);
-
-    document.getElementById('stationInput').value = '';
-    document.getElementById('trainInput').value = '';
-
-    loadTrains();
-  });
-
-document.getElementById('trainInput')
-  .addEventListener('keydown',event => {
-    if(event.key === 'Enter'){
-      document.getElementById('addBtn').click();
-    }
-  });
-
-loadTrains();
+document.getElementById('refreshBtn').addEventListener('click', init);
+init();
 </script>
-
-
-<!-- TRAIN NAV START -->
-<script>
-document.addEventListener('click', function(e) {
-  const card = e.target.closest('[data-raw], .card, .train-card, .train-item, .train-row');
-  if (!card || e.target.closest('a, button')) return;
-
-  let raw = {};
-  if (card.dataset && card.dataset.raw) {
-    try { raw = JSON.parse(card.dataset.raw); } catch(err) {}
-  }
-
-  // Odczyt numeru pociągu ze zgromadzonych danych lub tekstu karty
-  const trainNum = raw.train || raw.trainNumber || raw.number || raw.numer || (card.innerText.match(/\b(\d{4,5})\b/) || [])[1];
-  if (!trainNum) return;
-
-  const today = new Date().toISOString().split('T')[0];
-
-  // Budowanie pełnego zestawu parametrów wymaganego przez podstronę /train
-  const params = new URLSearchParams({
-    train: trainNum,
-    category: raw.category || raw.trainCategory || 'IC',
-    name: raw.name || raw.trainName || '',
-    destination: raw.destination || raw.to || '',
-    date: raw.date || today,
-    scheduleId: raw.scheduleId || raw.scheduledId || '2026',
-    scheduledId: raw.scheduledId || raw.scheduleId || '2026',
-    orderId: raw.orderId || '',
-    trainOrderId: raw.trainOrderId || '',
-    stationId: raw.stationId || '',
-    station: raw.station || raw.stationName || ''
-  });
-
-  window.location.href = '/train?' + params.toString();
-});
-</script>
-<!-- TRAIN NAV END -->
-<!-- TRAIN URL BUILDER START -->
-<script>
-window.getTrainDetailsUrl = function(data, stationName, trainNum) {
-  if (!data) return '#';
-  const today = new Date().toISOString().split('T')[0];
-  const params = new URLSearchParams({
-    train: data.train || data.trainNo || trainNum || '',
-    category: data.category || data.trainCategory || 'IC',
-    name: data.name || data.trainName || '',
-    destination: data.destination || data.to || '',
-    date: data.date || today,
-    scheduleId: data.scheduleId || data.scheduledId || '2026',
-    scheduledId: data.scheduledId || data.scheduleId || '2026',
-    orderId: data.orderId || '',
-    trainOrderId: data.trainOrderId || '',
-    stationId: data.stationId || (typeof stationId === 'function' ? stationId(stationName) : '') || '',
-    station: data.station || stationName || ''
-  });
-  return '/train?' + params.toString();
-};
-
-document.addEventListener('click', function(e) {
-  const card = e.target.closest('.card, .train-card, .train-item, .train-row, [data-train]');
-  if (!card || e.target.closest('a, button')) return;
-  
-  const rawData = card._apiData || (card.dataset.raw ? JSON.parse(card.dataset.raw) : null);
-  if (rawData && rawData.orderId) {
-    window.location.href = window.getTrainDetailsUrl(rawData, card.dataset.station, card.dataset.number);
-  }
-});
-</script>
-<!-- TRAIN URL BUILDER END -->
-
-<script>
-document.addEventListener('click', function(e) {
-  const card = e.target.closest('[data-train-url]');
-  if (card && card.dataset.trainUrl && card.dataset.trainUrl !== 'null' && !e.target.closest('a, button')) {
-    window.location.href = card.dataset.trainUrl;
-  }
-});
-</script>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<!-- AMOLED COMPACT V3 WITH LOCALSTORAGE PERSISTENCE START -->
-<script>
-(function() {
-  function getCardKey(card) {
-    return card.dataset.trainUrl || 
-           card.getAttribute('data-id') || 
-           card.querySelector('.train-main-title, h1, h2, h3, #train-number, [class*="number"]')?.textContent.trim() || 
-           card.innerText.replace(/\s+/g, ' ').trim().slice(0, 40);
-  }
-
-  function saveTrainOrder() {
-    const cards = document.querySelectorAll('.card, .train-card, .train-item, [data-train-url]');
-    const order = [];
-    cards.forEach(card => {
-      const key = getCardKey(card);
-      if (key && !order.includes(key)) order.push(key);
-    });
-    if (order.length > 0) {
-      localStorage.setItem('trains_custom_order', JSON.stringify(order));
-    }
-  }
-
-  function restoreTrainOrder() {
-    const saved = localStorage.getItem('trains_custom_order');
-    if (!saved) return;
-    try {
-      const order = JSON.parse(saved);
-      const cards = Array.from(document.querySelectorAll('.card, .train-card, .train-item, [data-train-url]'));
-      if (cards.length === 0) return;
-
-      const parent = cards[0].parentNode;
-      const cardMap = new Map();
-
-      cards.forEach(card => {
-        const key = getCardKey(card);
-        if (key) cardMap.set(key, card);
-      });
-
-      order.forEach(key => {
-        if (cardMap.has(key)) {
-          parent.appendChild(cardMap.get(key));
-          cardMap.delete(key);
-        }
-      });
-
-      // Zostaw ewentualne nowe pociągi na dole
-      cardMap.forEach(card => parent.appendChild(card));
-    } catch(e) {}
-  }
-
-  function setupFormToggle() {
-    const form = document.querySelector('form, #addTrainForm, .add-train-form, [class*="add-form"]');
-    if (form && !document.querySelector('.toggle-add-btn')) {
-      form.classList.add('add-form-hidden');
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'toggle-add-btn';
-      btn.innerHTML = '➕ Dodaj pociąg do monitorowania';
-      btn.onclick = function() {
-        if (form.classList.contains('add-form-hidden')) {
-          form.classList.remove('add-form-hidden');
-          form.classList.add('add-form-visible');
-          btn.innerHTML = '➖ Ukryj formularz';
-        } else {
-          form.classList.remove('add-form-visible');
-          form.classList.add('add-form-hidden');
-          btn.innerHTML = '➕ Dodaj pociąg do monitorowania';
-        }
-      };
-      if (form.parentNode) {
-        form.parentNode.insertBefore(btn, form);
-      }
-    }
-  }
-
-  let activeCard = null;
-
-  function enableDragAndDrop(card) {
-    if (card.dataset.dragEnabled === "true") return;
-    card.dataset.dragEnabled = "true";
-
-    const handle = card.querySelector('.drag-handle') || card;
-
-    handle.addEventListener('touchstart', function(e) {
-      activeCard = card;
-      card.classList.add('is-dragging');
-    }, { passive: true });
-
-    handle.addEventListener('touchmove', function(e) {
-      if (!activeCard) return;
-      const touchY = e.touches[0].clientY;
-      const touchX = e.touches[0].clientX;
-      const targetEl = document.elementFromPoint(touchX, touchY);
-      if (targetEl) {
-        const targetCard = targetEl.closest('.card, .train-card, .train-item, [data-train-url]');
-        if (targetCard && targetCard !== activeCard && targetCard.parentNode === activeCard.parentNode) {
-          const rect = targetCard.getBoundingClientRect();
-          const next = (touchY - rect.top) > (rect.height / 2);
-          activeCard.parentNode.insertBefore(activeCard, next ? targetCard.nextSibling : targetCard);
-        }
-      }
-    }, { passive: true });
-
-    const endDrag = function() {
-      if (activeCard) {
-        activeCard.classList.remove('is-dragging');
-        activeCard = null;
-        saveTrainOrder();
-      }
-    };
-
-    handle.addEventListener('touchend', endDrag);
-    handle.addEventListener('mouseup', endDrag);
-  }
-
-  function processCards() {
-    setupFormToggle();
-
-    const cards = document.querySelectorAll('.card, .train-card, .train-item, [data-train-url]');
-    cards.forEach(card => {
-      // 1. Precyzyjne usuwanie tylko przycisków / napisów "SZCZEGÓŁY"
-      card.querySelectorAll('button, a, span, div, p').forEach(el => {
-        const txt = (el.textContent || '').trim().toUpperCase();
-        if (txt === 'SZCZEGÓŁY' || txt === 'OPÓŹNIONY' || txt === 'PLANOWO' || txt === '×') {
-          el.style.display = 'none';
-        }
-      });
-
-      // 2. Szukanie badanej stacji
-      let stationName = '';
-      card.querySelectorAll('*').forEach(el => {
-        if (el.closest('.card-top-row')) return;
-        const txt = (el.textContent || '').trim();
-        const upper = txt.toUpperCase();
-        if ((upper.startsWith('STACJA:') || upper.startsWith('BADANA STACJA:') || upper.includes('CHORZÓW BATORY') || upper.includes('TARNOWSKIE GÓRY') || upper.includes('KATOWICE') || upper.includes('BYTOM')) && !txt.includes('→') && !txt.includes('Ostatnio') && !txt.includes('Dane:')) {
-          if (!stationName) {
-            stationName = txt.replace(/📍|stacja:|badana stacja:/gi, '').trim();
-          }
-          el.style.display = 'none';
-        }
-      });
-
-      // 3. Wartość opóźnienia
-      let delayText = '0 min';
-      card.querySelectorAll('span, div, p, strong, b').forEach(el => {
-        if (el.closest('.card-top-row')) return;
-        const txt = (el.textContent || '').trim();
-        if ((txt.includes('min') || txt.startsWith('+')) && txt.length < 15 && !txt.includes('Ostatnio') && !txt.includes('Dane:')) {
-          delayText = txt;
-          el.style.display = 'none';
-        }
-      });
-
-      // 4. Klasy dla relacji i statusu
-      card.querySelectorAll('p, div, span').forEach(el => {
-        if (el.closest('.card-top-row')) return;
-        const txt = (el.textContent || '').trim();
-        if (txt.includes('→') || txt.includes('->')) {
-          el.className = 'train-route-line';
-        } else if (txt.includes('Ostatnio') || txt.includes('Dane:')) {
-          el.className = 'train-status-line';
-        }
-      });
-
-      // 5. Budowa paska górnego
-      let topRow = card.querySelector('.card-top-row');
-      if (!topRow) {
-        topRow = document.createElement('div');
-        topRow.className = 'card-top-row';
-
-        const handle = document.createElement('span');
-        handle.className = 'drag-handle';
-        handle.textContent = '⋮⋮';
-        topRow.appendChild(handle);
-
-        const isRed = !(delayText.includes('0 min') || delayText === '+0');
-        const badge = document.createElement('span');
-        badge.className = 'delay-badge ' + (isRed ? 'delay-red' : 'delay-green');
-        badge.textContent = delayText;
-        topRow.appendChild(badge);
-
-        card.insertBefore(topRow, card.firstChild);
-      }
-
-      if (stationName && !topRow.querySelector('.station-mini-tag')) {
-        const tag = document.createElement('span');
-        tag.className = 'station-mini-tag';
-        tag.textContent = stationName.toUpperCase();
-        topRow.appendChild(tag);
-      }
-
-      enableDragAndDrop(card);
-    });
-
-    restoreTrainOrder();
-  }
-
-  let timer = null;
-  const observer = new MutationObserver(function() {
-    if (timer) clearTimeout(timer);
-    timer = setTimeout(processCards, 50);
-  });
-
-  document.addEventListener('DOMContentLoaded', function() {
-    processCards();
-    observer.observe(document.body, { childList: true, subtree: true });
-  });
-})();
-</script>
-<!-- AMOLED COMPACT V3 WITH LOCALSTORAGE PERSISTENCE END -->
 </body>
 </html>
