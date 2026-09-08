@@ -3,18 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#0b1220">
+<meta name="theme-color" content="#000000">
 <title>Moje Pociągi V2</title>
 
 <style>
 :root{
-  --bg:#0b1220;
-  --panel:#111a2b;
-  --border:#263653;
-  --text:#f4f7fb;
-  --muted:#91a0b7;
+  --bg:#000000;
+  --panel:#0f172a;
+  --border:#334155;
+  --text:#ffffff;
+  --muted:#94a3b8;
   --cyan:#22d3ee;
-  --green:#34d399;
   --red:#fb7185;
 }
 
@@ -23,15 +22,12 @@
 html,body{
   margin:0;
   padding:0;
-  background:#000;
-  color:#fff;
+  background:var(--bg);
+  color:var(--text);
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
   min-height:100vh;
   padding:6px;
 }
-
-button,input{font:inherit}
-button{cursor:pointer}
 
 .app{
   width:min(100%,900px);
@@ -53,24 +49,25 @@ header{
   justify-content:space-between;
 }
 
-h1{margin:0;font-size:21px;line-height:1.1}
-.header-sub{color:var(--muted);font-size:12px;margin-top:4px}
+h1{margin:0;font-size:20px;line-height:1.1}
+.header-sub{color:var(--muted);font-size:12px;margin-top:2px}
 
 .refresh{
-  width:42px;
-  height:42px;
+  width:40px;
+  height:40px;
   border:1px solid var(--border);
-  border-radius:12px;
+  border-radius:10px;
   background:var(--panel);
   color:var(--cyan);
-  font-size:20px;
+  font-size:18px;
+  cursor:pointer;
 }
 
 .summary{
   display:flex;
   align-items:center;
   justify-content:space-between;
-  margin:10px 2px 7px;
+  margin:10px 2px 8px;
   font-size:12px;
   color:var(--muted);
   font-weight:700;
@@ -83,23 +80,13 @@ h1{margin:0;font-size:21px;line-height:1.1}
 }
 
 .card{
-  background:#0f172a;
-  border:1.5px solid #334155;
+  background:var(--panel);
+  border:1.5px solid var(--border);
   border-radius:10px;
   padding:10px;
   display:flex;
   align-items:center;
   gap:10px;
-}
-
-.drag-handle{
-  color:#475569;
-  font-size:1.4rem;
-  font-weight:900;
-  cursor:grab;
-  padding-right:6px;
-  user-select:none;
-  touch-action:none;
 }
 
 .train-content{
@@ -149,18 +136,17 @@ h1{margin:0;font-size:21px;line-height:1.1}
 
 .position{
   margin-top:4px;
-  color:#d9e2ef;
+  color:#e2e8f0;
   font-size:11px;
 }
 
-.delete{
-  border:0;
-  background:transparent;
-  color:#64748b;
-  font-size:18px;
-  padding:0 6px;
+.status-badge{
+  font-size:12px;
+  font-weight:800;
+  padding:2px 6px;
+  border-radius:4px;
+  background:#1e293b;
 }
-.delete:hover{color:var(--red)}
 </style>
 </head>
 
@@ -171,15 +157,15 @@ h1{margin:0;font-size:21px;line-height:1.1}
   <div class="header-row">
     <div>
       <h1>🚆 Moje Pociągi</h1>
-      <div class="header-sub">Aktualny status z danych PLK</div>
+      <div class="header-sub">Wykaz bezpośredni</div>
     </div>
     <button class="refresh" id="refreshBtn" title="Odśwież">↻</button>
   </div>
 </header>
 
 <div class="summary">
-  <span>MONITOROWANE</span>
-  <span id="summaryInfo">Ładowanie…</span>
+  <span>MONITOROWANE (11)</span>
+  <span id="summaryInfo">Inicjalizacja…</span>
 </div>
 
 <main id="list" class="list"></main>
@@ -187,8 +173,10 @@ h1{margin:0;font-size:21px;line-height:1.1}
 </div>
 
 <script>
-// Dokładny wykaz podany przez Ciebie
-const EXACT_TRAINS = [
+// Czyszczenie pamięci podręcznej w przeglądarce
+localStorage.clear();
+
+const TARGET_TRAINS = [
   { station: 'Miasteczko Śląskie', trainNum: '44226', planTime: '04:59' },
   { station: 'Tarnowskie Góry', trainNum: '40450', planTime: '05:21' },
   { station: 'Chorzów Batory', trainNum: '40658', planTime: '06:07' },
@@ -202,28 +190,6 @@ const EXACT_TRAINS = [
   { station: 'Katowice', trainNum: '3815', planTime: '14:40' }
 ];
 
-const STORAGE_KEY = 'rafstakMojePociagiV5_EXACT';
-const ORDER_KEY = 'trains_custom_order_v5';
-
-// Wymuszenie czyszczenia starych kluczy z pamięci podręcznej przeglądarki
-localStorage.removeItem('rafstakMojePociagiV3');
-localStorage.removeItem('rafstakMojePociagiV4_STABLE');
-
-function getList(){
-  try{
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if(raw){
-      const parsed = JSON.parse(raw);
-      if(Array.isArray(parsed) && parsed.length) return parsed;
-    }
-  }catch(e){}
-  return EXACT_TRAINS.map(x => ({...x}));
-}
-
-function saveList(list){
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-}
-
 function getTrainNumber(row){
   return String(row.trainNumber || row.trainNo || row.number || row.train || row.trainNum || '');
 }
@@ -234,156 +200,78 @@ function timeOnly(value){
 }
 
 async function fetchStation(station){
-  const params = new URLSearchParams({ station, limit: '300' });
-  const res = await fetch('/api/departures?' + params.toString(), { cache:'no-store' });
-  if(!res.ok) return [];
-  const data = await res.json();
-  return Array.isArray(data.departures) ? data.departures : [];
+  try {
+    const params = new URLSearchParams({ station, limit: '300' });
+    const res = await fetch('/api/departures?' + params.toString(), { cache:'no-store' });
+    if(!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data.departures) ? data.departures : [];
+  } catch(e) {
+    return [];
+  }
 }
 
-function buildCard(item, row, routeInfo, index){
-  const num = item.trainNum || item.number;
-  const trainName = row ? (row.name || row.trainName || row.commercialName || '') : '';
-  const route = routeInfo.origin && routeInfo.destination 
-    ? `${routeInfo.origin} → ${routeInfo.destination}`
-    : (item.planTime ? `Godz. odjazdu: ${item.planTime}` : 'Brak danych o trasie');
-
-  const lastPos = row && row.lastConfirmedStation 
-    ? `📍 Ostatnio: ${row.lastConfirmedStation}` + (row.lastConfirmedTime ? ` · ${timeOnly(row.lastConfirmedTime)}` : '')
-    : '';
-
-  return `
-    <article class="card" data-key="${item.station}-${num}" data-index="${index}">
-      <span class="drag-handle">⋮⋮</span>
+function renderSkeleton(){
+  const container = document.getElementById('list');
+  container.innerHTML = TARGET_TRAINS.map(item => `
+    <article class="card">
       <div class="train-content">
         <div class="train-top">
-          <span class="train-number">#${num}</span>
-          ${trainName ? `<span class="train-name">${trainName}</span>` : ''}
+          <span class="train-number">#${item.trainNum}</span>
           <span class="station-mini-tag">${item.station}</span>
         </div>
-        <div class="route">${route}</div>
-        ${lastPos ? `<div class="position">${lastPos}</div>` : ''}
+        <div class="route">Planowy odjazd: ${item.planTime}</div>
+        <div class="position">Ładowanie danych PLK…</div>
       </div>
-      <button class="delete" data-index="${index}">×</button>
     </article>
-  `;
+  `).join('');
 }
 
 async function loadTrains(){
-  const list = getList();
-  const container = document.getElementById('list');
+  renderSkeleton();
   const refresh = document.getElementById('refreshBtn');
-
   refresh.disabled = true;
-  document.getElementById('summaryInfo').textContent = `0 / ${list.length}`;
 
-  const stationCache = new Map();
-  const htmls = [];
+  const stationNames = [...new Set(TARGET_TRAINS.map(t => t.station))];
+  const stationData = new Map();
 
-  for(let i = 0; i < list.length; i++){
-    const item = list[i];
-    const num = item.trainNum || item.number;
-    try {
-      if(!stationCache.has(item.station)){
-        stationCache.set(item.station, fetchStation(item.station));
-      }
-      const rows = await stationCache.get(item.station);
-      const row = rows.find(r => getTrainNumber(r) === String(num)) || null;
-      
-      let routeInfo = { origin:'', destination:'' };
-      if(row && row.scheduleId && row.orderId){
-        try{
-          const rRes = await fetch(`/api/schedules/route/${row.scheduleId}/${row.orderId}`);
-          if(rRes.ok){
-            const rData = await rRes.json();
-            const st = rData.route?.stations || rData.stations || [];
-            if(st.length >= 2){
-              const namesRes = await fetch(`/api/stations?ids=${st[0].stationId},${st[st.length-1].stationId}`);
-              if(namesRes.ok){
-                const nData = await namesRes.json();
-                routeInfo.origin = nData.names?.[st[0].stationId] || '';
-                routeInfo.destination = nData.names?.[st[st.length-1].stationId] || '';
-              }
-            }
-          }
-        }catch(e){}
-      }
-
-      htmls.push(buildCard(item, row, routeInfo, i));
-    } catch(e) {
-      htmls.push(buildCard(item, null, {origin:'',destination:''}, i));
-    }
-    document.getElementById('summaryInfo').textContent = `${i+1} / ${list.length}`;
+  for(const st of stationNames){
+    stationData.set(st, await fetchStation(st));
   }
 
-  container.innerHTML = htmls.join('');
-  restoreOrder();
-  bindEvents();
+  const container = document.getElementById('list');
+  const cards = [];
+
+  for(const item of TARGET_TRAINS){
+    const rows = stationData.get(item.station) || [];
+    const row = rows.find(r => getTrainNumber(r) === item.trainNum);
+
+    const trainName = row ? (row.name || row.trainName || row.commercialName || '') : '';
+    const lastPos = row && row.lastConfirmedStation 
+      ? `📍 Ostatnio: ${row.lastConfirmedStation}` + (row.lastConfirmedTime ? ` · ${timeOnly(row.lastConfirmedTime)}` : '')
+      : 'Brak aktualnych danych o położeniu';
+
+    cards.push(`
+      <article class="card">
+        <div class="train-content">
+          <div class="train-top">
+            <span class="train-number">#${item.trainNum}</span>
+            ${trainName ? `<span class="train-name">${trainName}</span>` : ''}
+            <span class="station-mini-tag">${item.station}</span>
+          </div>
+          <div class="route">Godzina z rozkładu: ${item.planTime}</div>
+          <div class="position">${lastPos}</div>
+        </div>
+      </article>
+    `);
+  }
+
+  container.innerHTML = cards.join('');
+  document.getElementById('summaryInfo').textContent = `Załadowano ${TARGET_TRAINS.length} z ${TARGET_TRAINS.length}`;
   refresh.disabled = false;
 }
 
-function saveOrder(){
-  const keys = Array.from(document.querySelectorAll('.card')).map(c => c.dataset.key);
-  localStorage.setItem(ORDER_KEY, JSON.stringify(keys));
-}
-
-function restoreOrder(){
-  const saved = localStorage.getItem(ORDER_KEY);
-  if(!saved) return;
-  try{
-    const keys = JSON.parse(saved);
-    const container = document.getElementById('list');
-    keys.forEach(key => {
-      const el = container.querySelector(`[data-key="${key}"]`);
-      if(el) container.appendChild(el);
-    });
-  }catch(e){}
-}
-
-function bindEvents(){
-  document.querySelectorAll('.delete').forEach(btn => {
-    btn.onclick = (e) => {
-      e.stopPropagation();
-      const idx = Number(btn.dataset.index);
-      const list = getList();
-      list.splice(idx, 1);
-      saveList(list);
-      loadTrains();
-    };
-  });
-
-  let activeCard = null;
-  document.querySelectorAll('.drag-handle').forEach(handle => {
-    const card = handle.closest('.card');
-    handle.addEventListener('touchstart', () => { activeCard = card; }, { passive: true });
-    handle.addEventListener('touchmove', (e) => {
-      if (!activeCard) return;
-      const touchY = e.touches[0].clientY;
-      const touchX = e.touches[0].clientX;
-      const targetEl = document.elementFromPoint(touchX, touchY);
-      if (targetEl) {
-        const targetCard = targetEl.closest('.card');
-        if (targetCard && targetCard !== activeCard && targetCard.parentNode === activeCard.parentNode) {
-          const rect = targetCard.getBoundingClientRect();
-          const next = (touchY - rect.top) > (rect.height / 2);
-          activeCard.parentNode.insertBefore(activeCard, next ? targetCard.nextSibling : targetCard);
-        }
-      }
-    }, { passive: true });
-
-    const endDrag = () => {
-      if (activeCard) {
-        activeCard = null;
-        saveOrder();
-      }
-    };
-    handle.addEventListener('touchend', endDrag);
-    handle.addEventListener('mouseup', endDrag);
-  });
-}
-
 document.getElementById('refreshBtn').onclick = loadTrains;
-
 loadTrains();
 </script>
 </body>
