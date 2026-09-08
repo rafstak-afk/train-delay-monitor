@@ -1,147 +1,1022 @@
 <!DOCTYPE html>
 <html lang="pl">
-<!-- app-version: v0.95.6j bottom-nav-alarmy -->
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="manifest" href="/manifest.webmanifest">
-<meta name="theme-color" content="#111827">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="application-name" content="Alarmy PKP">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Alarmy PKP">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Tablica odjazdów ChatGPT i RafStaKa</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0b1220">
+<title>Moje Pociągi V2</title>
+
 <style>
-body{margin:0;font-family:Arial,sans-serif;background:#101820;color:white;padding:24px}.container{max-width:1200px;margin:0 auto;text-align:center}h1{margin-bottom:24px}.burger-wrap{position:fixed;left:8px;right:8px;bottom:66px;z-index:9999;pointer-events:none}.burger-btn{display:none;width:46px;height:46px;border:0;border-radius:10px;background:#0b57d0;color:#fff;font-size:24px;cursor:pointer;font-weight:bold;box-shadow:0 8px 20px rgba(0,0,0,.35)}.burger-menu{display:none;margin-top:0;pointer-events:auto;background:#1c2833;border:1px solid #34495e;border-radius:12px;min-width:240px;max-width:420px;margin-left:auto;margin-right:auto;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.35);text-align:left}.burger-menu.open{display:block}.burger-menu a{display:block;padding:14px 16px;color:#fff;text-decoration:none;border-bottom:1px solid #2e4155;font-size:15px}.burger-menu a:hover{background:#253445}.station-buttons{display:flex;justify-content:center;flex-wrap:wrap;gap:12px;margin-bottom:14px}.btn{border:0;border-radius:10px;padding:12px 18px;background:#0b57d0;color:#fff;font-weight:700;text-decoration:none;cursor:pointer;font-size:15px}.btn:hover{background:#084298}.secondary-row{margin-bottom:28px}.btn-small{display:inline-block;padding:6px 10px;font-size:12px;border-radius:7px;background:#4b5563;color:#fff;text-decoration:none;opacity:.85}.search-box{margin:26px auto 10px;display:flex;gap:10px;max-width:900px;flex-wrap:wrap;justify-content:center}.search-box input{padding:14px;border-radius:10px;border:0;font-size:16px}#stationInput{min-width:260px;flex:1}.search-box button{padding:14px 18px;border-radius:10px;border:0;color:white;font-weight:700;cursor:pointer}.btn-official{background:#198754}.btn-api{background:#0dcaf0;color:#102027!important}.btn-alert{background:#dc3545}.suggestions{max-width:900px;margin:0 auto 18px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center}.suggestion-chip{border:1px solid #34495e;background:#1c2833;color:#fff;border-radius:999px;padding:7px 11px;cursor:pointer;font-size:13px;opacity:.9}.status{margin-top:18px;min-height:24px;opacity:.9}.api-panel{margin-top:34px;background:#1c2833;border-radius:14px;padding:14px;text-align:left}.api-panel h2{text-align:center;margin-top:0;margin-bottom:8px;font-size:20px}.api-meta{text-align:center;opacity:.75;margin-bottom:8px;font-size:14px}.api-limits{text-align:center;opacity:.65;margin-bottom:16px;font-size:12px}.alert-box{display:none;margin:0 auto 14px;padding:10px 12px;border-radius:10px;background:#3b1d1d;border:1px solid #dc3545;color:#ffd6d6;font-weight:700;text-align:center}.table-wrap{overflow-x:auto}table{width:100%;border-collapse:collapse;table-layout:fixed}th,td{padding:8px 9px;border-bottom:1px solid #34495e;font-size:13px;white-space:normal;vertical-align:top}th{background:#243447;text-align:left}tr:hover{background:#253445}.time-real{font-weight:800;font-size:15px}.time-delay-low{color:#ffcc00}.time-delay-mid{color:#ff4d4d}.time-delay-high{color:#c084fc}.train-main,.direction-main{font-weight:700}.train-name,.direction-via{opacity:.78;font-size:12px;margin-top:3px;line-height:1.25}.delay{color:#ffcc00;font-weight:700}.delay-mid{color:#ff4d4d;font-weight:700}.delay-high{color:#c084fc;font-weight:700}.ontime{color:#5dd39e;font-weight:700}.muted{opacity:.65;font-size:12px}.mobile-only{display:none}@media(max-width:700px){.desktop-cell{display:none!important}body{padding:8px}.container{max-width:100%}h1{font-size:24px;margin-bottom:16px;padding-left:0}.burger-btn{width:42px;height:42px;font-size:22px}.burger-menu{min-width:230px}.station-buttons{gap:8px}.btn{padding:10px 12px;font-size:13px}.secondary-row{margin-bottom:18px}.search-box{flex-direction:column;margin-top:18px}.search-box input,.search-box button{width:100%;box-sizing:border-box}#stationInput{min-width:auto}.api-panel{padding:8px;margin-top:20px}.api-panel h2{font-size:18px}.api-meta{font-size:12px}.api-limits{font-size:11px}.table-wrap{overflow-x:visible}table,tbody,tr,td{display:block;width:100%}thead{display:none}tr{background:#223244;border-radius:12px;margin-bottom:10px;padding:10px;border:1px solid #34495e}td{border-bottom:none;padding:0}.mobile-only{display:block}.mobile-layout{display:grid;grid-template-columns:72px 92px 1fr 52px;gap:8px;align-items:start}.mobile-time .time-real{font-size:24px;line-height:1}.mobile-time .muted{font-size:13px;margin-top:2px}.mobile-train .train-main{font-size:17px;line-height:1.05}.mobile-train .train-name{font-size:12px;line-height:1.1}.mobile-direction .direction-main{font-size:17px;line-height:1.05}.mobile-direction .direction-via{font-size:12px;line-height:1.2}.mobile-side{text-align:center}.mobile-platform{font-size:22px;font-weight:700;line-height:1}.mobile-track{font-size:11px;opacity:.8;margin-top:3px}.mobile-delay{margin-top:5px;font-size:13px;font-weight:800}}
-
-.version-badge{font-size:13px;color:rgba(255,255,255,.65);font-weight:700;margin-left:8px}.ks-logo{display:inline-flex;width:30px;height:20px;border-radius:6px;background:#f6c900;color:#111;font-weight:900;font-size:12px;align-items:center;justify-content:center;margin-right:8px}.station-buttons{flex-wrap:nowrap;overflow-x:auto;justify-content:center;scrollbar-width:none}.station-buttons::-webkit-scrollbar{display:none}.station-buttons .btn{white-space:nowrap;padding:8px 11px;font-size:13px}.station-field{position:relative;min-width:260px;flex:1}.station-field input{width:100%;box-sizing:border-box}.station-dropdown{display:none;position:absolute;z-index:10000;top:calc(100% + 6px);left:0;right:0;background:#172433;border:1px solid #48627c;border-radius:12px;box-shadow:0 14px 35px rgba(0,0,0,.45);max-height:360px;overflow:auto;text-align:left}.station-dropdown.open{display:block}.station-dd-head{padding:10px 12px;color:rgba(255,255,255,.65);font-size:12px;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #2f4358}.station-dd-item{display:grid;grid-template-columns:22px 1fr auto;gap:10px;align-items:center;width:100%;border:0;border-bottom:1px solid rgba(255,255,255,.07);background:transparent;color:#fff;padding:10px 12px;text-align:left;cursor:pointer}.station-dd-item:hover{background:#223244}.station-dd-name{font-weight:800}.station-dd-id{opacity:.65;font-size:12px}.search-actions{display:flex;gap:8px;align-items:center;justify-content:center}.search-actions button{min-width:108px}
-.train-link{color:#fff;text-decoration:none;font-weight:800}.train-link:hover{text-decoration:underline}.train-delay-under{font-size:12px;margin-top:3px}.station-field input{padding-right:42px}.station-toggle{position:absolute;right:6px;top:50%;transform:translateY(-50%);border:0;border-radius:8px;background:#263b52;color:#fff;width:32px;height:32px;font-size:15px;font-weight:900;cursor:pointer}.health-box{display:none;margin:12px auto;padding:12px;border-radius:12px;border:1px solid #34495e;background:#162433;max-width:860px;text-align:left}.health-title{font-weight:900;font-size:16px}.health-ok{color:#5dd39e}.health-partial{color:#ffcc00}.health-down,.health-auth,.health-limit{color:#ff6b6b}.health-details{display:none;margin-top:10px;white-space:pre-wrap;background:#0b1117;border:1px solid #23364a;border-radius:8px;padding:10px;max-height:280px;overflow:auto;font-size:12px}
-.bottom-nav{position:fixed;left:50%;transform:translateX(-50%);bottom:10px;z-index:9998;display:grid;grid-template-columns:repeat(5,1fr);gap:6px;background:rgba(22,36,51,.96);border:1px solid #34495e;border-radius:14px;padding:7px;box-shadow:0 10px 30px rgba(0,0,0,.45);width:min(680px,calc(100% - 16px))}
-@media(max-width:700px){body{padding:8px 8px 76px}h1{font-size:20px;line-height:1.15;margin:14px 0 10px;padding-left:0}.version-badge{font-size:11px}.station-buttons{justify-content:flex-start;gap:5px;padding-bottom:5px}.station-buttons .btn{font-size:11px;padding:7px 8px;border-radius:8px}.secondary-row{margin-bottom:10px}.btn-small{font-size:11px;padding:6px 8px}.search-box{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:12px;max-width:100%}.station-field{grid-column:1/-1;min-width:0}.search-box input{width:100%;padding:9px 10px;font-size:14px;border-radius:9px}.search-actions{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}.search-actions button{width:100%;min-width:0;padding:8px 6px;font-size:12px;border-radius:8px;white-space:nowrap}.suggestions{justify-content:flex-start;overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none}.suggestions::-webkit-scrollbar{display:none}.suggestion-chip{white-space:nowrap;font-size:12px;padding:8px 10px}.station-dropdown{max-height:58vh}.api-meta,.api-limits{display:none}.bottom-nav{position:fixed;left:8px;right:8px;bottom:8px;z-index:9998;display:grid;grid-template-columns:repeat(5,1fr);gap:5px;background:rgba(22,36,51,.96);border:1px solid #34495e;border-radius:14px;padding:7px;box-shadow:0 10px 30px rgba(0,0,0,.45)}.bottom-nav button,.bottom-nav a{border:0;background:transparent;color:#dbeafe;text-decoration:none;font-size:11px;font-weight:800;padding:6px 2px;border-radius:9px}.bottom-nav button:active,.bottom-nav a:active{background:#223244}}
-
-/* v0.95.6g responsive bottom nav + menu fix */
-.burger-wrap{position:fixed!important;left:8px!important;right:8px!important;bottom:62px!important;top:auto!important;z-index:9999!important;pointer-events:none!important}
-.burger-btn{display:none!important}
-.burger-menu{display:none;pointer-events:auto!important;margin:0 auto!important;max-width:420px!important;min-width:0!important;width:min(420px,calc(100vw - 16px))!important;background:#1c2833!important;border:1px solid #34495e!important;border-radius:14px!important;box-shadow:0 12px 32px rgba(0,0,0,.5)!important;overflow:hidden!important}
-.burger-menu.open{display:block!important}
-.bottom-nav{position:fixed!important;left:50%!important;right:auto!important;bottom:8px!important;transform:translateX(-50%)!important;z-index:9998!important;display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:6px!important;width:min(680px,calc(100vw - 16px))!important;background:rgba(22,36,51,.97)!important;border:1px solid #34495e!important;border-radius:14px!important;padding:7px!important;box-shadow:0 10px 30px rgba(0,0,0,.45)!important}
-.bottom-nav a,.bottom-nav button{display:flex!important;align-items:center!important;justify-content:center!important;min-width:0!important;width:100%!important;height:36px!important;border:0!important;border-radius:9px!important;background:#f2f4f8!important;color:#111827!important;text-decoration:none!important;font-size:12px!important;font-weight:900!important;line-height:1!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;padding:0 6px!important;box-sizing:border-box!important}
-.bottom-nav a:hover,.bottom-nav button:hover{background:#dbeafe!important}
-@media(max-width:700px){
-  body{padding-bottom:72px!important}
-  .bottom-nav{grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:3px!important;width:calc(100vw - 10px)!important;bottom:5px!important;padding:5px!important;border-radius:12px!important}
-  .bottom-nav a,.bottom-nav button{height:34px!important;font-size:10px!important;padding:0 2px!important}
-  .burger-wrap{left:5px!important;right:5px!important;bottom:53px!important}
-  .burger-menu{width:calc(100vw - 10px)!important;max-width:none!important}
+:root{
+  --bg:#0b1220;
+  --panel:#111a2b;
+  --panel2:#162238;
+  --border:#263653;
+  --text:#f4f7fb;
+  --muted:#91a0b7;
+  --cyan:#22d3ee;
+  --green:#34d399;
+  --yellow:#fbbf24;
+  --red:#fb7185;
+  --blue:#60a5fa;
 }
 
+*{box-sizing:border-box}
 
-/* v0.95.6h cancellation visibility */
-tr.train-cancelled{opacity:.72;background:rgba(120,120,120,.15)!important}
-tr.train-cancelled .time-real,
-tr.train-cancelled .train-main,
-tr.train-cancelled .train-name,
-tr.train-cancelled .direction-main,
-tr.train-cancelled .direction-via{text-decoration:line-through}
-.cancel-badge{display:inline-block;margin-top:4px;padding:2px 7px;border-radius:999px;background:#7f1d1d;color:#fff;font-size:11px;font-weight:900;letter-spacing:.03em;text-decoration:none!important}
-.status-note{display:block;margin-top:4px;color:#ffb4b4;font-size:11px;font-weight:800;text-decoration:none!important}
-
-
-/* v0.95.6i station dropdown/input fix */
-.station-field{position:relative;min-width:260px;flex:1;max-width:100%}
-.station-field input{padding-right:44px!important;min-width:0!important}
-.station-toggle{position:absolute!important;right:6px!important;top:50%!important;transform:translateY(-50%)!important;width:32px!important;height:32px!important;z-index:3!important}
-.station-dropdown{left:0!important;right:auto!important;width:100%!important;max-width:100%!important;box-sizing:border-box!important;overflow-x:hidden!important}
-.station-dd-item{grid-template-columns:22px minmax(0,1fr) auto!important}
-.station-dd-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-@media(max-width:700px){
-  .station-field{width:100%!important;max-width:100%!important}
-  .station-dropdown{width:100%!important;max-width:100%!important;max-height:54vh!important}
+html,body{
+  margin:0;
+  padding:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
 }
 
+body{
+  min-height:100vh;
+}
+
+button,input{
+  font:inherit;
+}
+
+button{
+  cursor:pointer;
+}
+
+.app{
+  width:min(100%,900px);
+  margin:0 auto;
+  padding:12px;
+}
+
+header{
+  position:sticky;
+  top:0;
+  z-index:20;
+  background:rgba(11,18,32,.96);
+  backdrop-filter:blur(10px);
+  padding:8px 0 12px;
+}
+
+.header-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+
+h1{
+  margin:0;
+  font-size:21px;
+  line-height:1.1;
+}
+
+.header-sub{
+  color:var(--muted);
+  font-size:12px;
+  margin-top:4px;
+}
+
+.refresh{
+  width:42px;
+  height:42px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:var(--panel);
+  color:var(--cyan);
+  font-size:20px;
+}
+
+.refresh:disabled{
+  opacity:.5;
+}
+
+.add-panel{
+  margin:8px 0 12px;
+  padding:12px;
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:14px;
+}
+
+.add-title{
+  color:var(--cyan);
+  font-size:12px;
+  font-weight:800;
+  margin-bottom:9px;
+}
+
+.add-row{
+  display:grid;
+  grid-template-columns:1fr 1fr auto;
+  gap:8px;
+}
+
+input{
+  width:100%;
+  min-width:0;
+  padding:10px 11px;
+  border-radius:10px;
+  border:1px solid var(--border);
+  background:#0b1220;
+  color:var(--text);
+  outline:none;
+}
+
+input:focus{
+  border-color:var(--cyan);
+}
+
+.add-btn{
+  border:0;
+  border-radius:10px;
+  padding:0 14px;
+  background:var(--cyan);
+  color:#06212a;
+  font-weight:800;
+}
+
+.summary{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin:10px 2px 7px;
+}
+
+.summary-title{
+  font-size:13px;
+  font-weight:800;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+}
+
+.summary-info{
+  color:var(--muted);
+  font-size:12px;
+}
+
+.list{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+
+.card{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:14px;
+  overflow:hidden;
+  cursor:pointer;
+  transition:transform .12s ease,border-color .12s ease;
+}
+
+.card:hover{
+  border-color:var(--cyan);
+}
+
+.card:active{
+  transform:scale(.985);
+}
+
+.card-main{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:11px;
+}
+
+.train{
+  min-width:0;
+  flex-grow:1;
+}
+
+.train-top{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  min-width:0;
+}
+
+.train-number{
+  font-size:16px;
+  font-weight:900;
+  white-space:nowrap;
+}
+
+.train-name{
+  color:var(--cyan);
+  font-size:13px;
+  font-weight:700;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.route{
+  margin-top:2px;
+  color:var(--muted);
+  font-size:11px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.position{
+  margin-top:4px;
+  color:#d9e2ef;
+  font-size:11px;
+}
+
+.delete{
+  width:32px;
+  height:32px;
+  border:0;
+  background:transparent;
+  color:#64748b;
+  border-radius:8px;
+  font-size:17px;
+}
+
+.delete:hover{
+  color:var(--red);
+  background:rgba(251,113,133,.08);
+}
+
+.loading{
+  padding:24px 12px;
+  text-align:center;
+  color:var(--muted);
+}
+
+.empty{
+  padding:30px 15px;
+  text-align:center;
+  color:var(--muted);
+  border:1px dashed var(--border);
+  border-radius:14px;
+}
+</style>
+
+<style id="amoled-compact-v4">
+  html, body {
+    background-color: #000000 !important;
+    color: #ffffff !important;
+    margin: 0 !important;
+    padding: 6px !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+
+  /* Całkowite wycięcie domyślnych kwadratów statusu, szczegółów i zbędnych pól */
+  .status, .details, .open, [class*="status"] {
+    display: none !important;
+  }
+
+  #app, main, .container, #container, body > div {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    max-width: 600px !important;
+    margin: 0 auto !important;
+    box-sizing: border-box !important;
+  }
+
+  .card, .train-card, .train-item, [data-train-url] {
+    width: 100% !important;
+    max-width: 100% !important;
+    background: #0f172a !important;
+    border: 1.5px solid #334155 !important;
+    border-radius: 10px !important;
+    padding: 8px 12px !important;
+    margin-bottom: 6px !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    position: relative !important;
+    touch-action: pan-y !important;
+    user-select: none !important;
+    gap: 3px !important;
+  }
+
+  .card-top-row {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    width: 100% !important;
+    gap: 8px !important;
+  }
+
+  .drag-handle {
+    color: #475569 !important;
+    font-size: 1.4rem !important;
+    font-weight: 900 !important;
+    cursor: grab !important;
+    line-height: 1 !important;
+    touch-action: none !important;
+    padding: 0 2px !important;
+  }
+
+  .delay-badge {
+    font-size: 1.15rem !important;
+    font-weight: 900 !important;
+    padding: 2px 8px !important;
+    border-radius: 6px !important;
+    line-height: 1.1 !important;
+    white-space: nowrap !important;
+    display: inline-block !important;
+    flex-shrink: 0 !important;
+  }
+
+  .delay-red {
+    color: #ff4d4d !important;
+    background: #3b0707 !important;
+    border: 1.5px solid #ef4444 !important;
+  }
+
+  .delay-green {
+    color: #4ade80 !important;
+    background: #052e16 !important;
+    border: 1.5px solid #16a34a !important;
+  }
+
+  .station-mini-tag {
+    margin-left: auto !important;
+    font-size: 0.7rem !important;
+    font-weight: 700 !important;
+    color: #64748b !important;
+    background: #1e293b !important;
+    padding: 2px 6px !important;
+    border-radius: 4px !important;
+    letter-spacing: 0.4px !important;
+    text-transform: uppercase !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+  }
+
+  .train-route-line {
+    font-size: 1.05rem !important;
+    font-weight: 700 !important;
+    color: #e2e8f0 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    width: 100% !important;
+  }
+
+  .train-status-line {
+    font-size: 0.8rem !important;
+    color: #94a3b8 !important;
+  }
+
+  .toggle-add-btn {
+    width: 100% !important;
+    padding: 9px !important;
+    background: #0f172a !important;
+    border: 1.5px dashed #334155 !important;
+    color: #38bdf8 !important;
+    font-weight: 800 !important;
+    font-size: 0.9rem !important;
+    border-radius: 8px !important;
+    cursor: pointer !important;
+    margin-bottom: 6px !important;
+    box-sizing: border-box !important;
+  }
+
+  .add-form-hidden { display: none !important; }
+  .add-form-visible {
+    display: block !important;
+    width: 100% !important;
+    background: #0f172a !important;
+    border: 1.5px solid #334155 !important;
+    padding: 10px !important;
+    border-radius: 8px !important;
+    margin-bottom: 6px !important;
+    box-sizing: border-box !important;
+  }
 </style>
 </head>
+
 <body>
-<div class="burger-wrap"><button class="burger-btn" onclick="toggleBurgerMenu()">☰</button><div id="burgerMenu" class="burger-menu">
-<a href="https://opoznienia.rafstak.workers.dev/" target="_blank" rel="noopener" onclick="closeBurgerMenu()">🚦 Opóźnienia</a>
-<a href="/opoznienia/tgzm.html" onclick="closeBurgerMenu()">🚋 TGZM</a>
-<a href="https://l.plk-sa.pl/#qr-generator" target="_blank" rel="noopener" onclick="closeBurgerMenu()">▣ Generator QR PLK</a>
-<a href="#" onclick="event.preventDefault();closeBurgerMenu();copyTable()">📋 Kopiuj tablicę</a>
-<a href="/bilety/" onclick="closeBurgerMenu()">🎫 Dobierz bilet</a>
-<a href="#" onclick="event.preventDefault();closeBurgerMenu();checkPlkHealth()">🔧 Diagnostyka API</a>
-<a href="#" onclick="event.preventDefault();closeBurgerMenu();checkApiLimit()">📊 Limit API</a>
-</div></div>
-<div class="container"><h1>🚆 Tablica odjazdów ChatGPT i RafStaKa <span class="version-badge">v. 0.95.6j</span></h1><div class="station-buttons"><button class="btn" onclick="openStation('Tarnowskie Góry')">Tarnowskie Góry</button><button class="btn" onclick="openStation('Chorzów Batory')">Chorzów Batory</button><button class="btn" onclick="openStation('Katowice')">Katowice</button><button class="btn" onclick="openStation('Bytom')">Bytom</button><button class="btn" onclick="openStation('Gliwice')">Gliwice</button><button class="btn" onclick="openStation('Kraków Główny')">Kraków Główny</button></div><div class="secondary-row"><a class="btn-small" href="https://l.plk-sa.pl/#qr-generator" target="_blank" rel="noopener">Generator QR PLK</a><a class="btn-small my-trains-v2-link" href="/moje-pociagi-v2/">⭐ Moje pociągi V2</a></div><div class="search-box"><div class="station-field"><input id="stationInput" type="text" placeholder="Wpisz nazwę stacji..." autocomplete="off" onfocus="hideStationDropdown()" oninput="renderStationDropdown();showStationDropdown()" onkeydown="handleStationKey(event)"><button type="button" class="station-toggle" aria-label="Rozwiń listę stacji" onmousedown="event.preventDefault()" onclick="toggleStationDropdownOnly()">▼</button><div id="stationDropdown" class="station-dropdown"></div></div><input id="dateInput" type="date"><input id="timeInput" type="time"><div class="search-actions"><button class="btn-official" onclick="searchStation()">Otwórz PLK</button><button class="btn-api" onclick="loadApiDeparturesFromInput()">Pokaż z API</button><button id="alertButton" class="btn-alert" onclick="toggleDelayAlerts()">Alarm: OFF</button></div></div><div id="suggestions" class="suggestions"></div><div id="status" class="status">Wybierz stację albo wpisz nazwę.</div><div id="apiPanel" class="api-panel"><h2>Własna tablica z API PLK</h2><div id="apiMeta" class="api-meta">Kliknij „Pokaż z API”, żeby załadować 20 odjazdów od wybranej lub bieżącej godziny.</div><div id="apiLimits" class="api-limits">Limit API: brak danych.</div><div id="delayAlertBox" class="alert-box"></div><div id="healthBox" class="health-box"><div id="healthTitle" class="health-title"></div><div id="healthTime" class="muted"></div><button class="btn-small" onclick="toggleHealthDetails()">Szczegóły techniczne</button> <button class="btn-small" onclick="copyHealth()">Kopiuj diagnostykę</button><pre id="healthDetails" class="health-details"></pre></div><div class="table-wrap"><table><thead><tr><th>Godz.</th><th>Pociąg</th><th>Kierunek / przez</th><th>Per.</th><th>Tor</th></tr></thead><tbody id="apiDeparturesBody"><tr><td colspan="5" class="muted">Brak danych.</td></tr></tbody></table></div></div></div>
-<script>
-const HISTORY_KEY='plkStationHistory';let delayAlertsEnabled=false,lastDelayedSignature='',lastDepartures=[],lastHealth=null;const STATION_IDS={'Tarnowskie Góry':'71001','Katowice':'73312','Chorzów Batory':'73106','Bytom':'72306','Gliwice':'73502','Kraków Główny':'80416','Lubliniec':'71407','Zawiercie':'71711','Rybnik':'72424','Krzeszowice':'77701'};document.addEventListener('DOMContentLoaded',()=>{setDefaultDateTime();renderStationHistory()});function toggleBurgerMenu(){document.getElementById('burgerMenu')?.classList.toggle('open')}function closeBurgerMenu(){document.getElementById('burgerMenu')?.classList.remove('open')}window.addEventListener('click',e=>{const m=document.getElementById('burgerMenu'),nav=document.querySelector('.bottom-nav');if(m&&!m.contains(e.target)&&!(nav&&nav.contains(e.target)))m.classList.remove('open')});function setDefaultDateTime(){const n=new Date(),y=n.getFullYear(),m=String(n.getMonth()+1).padStart(2,'0'),d=String(n.getDate()).padStart(2,'0'),h=String(n.getHours()).padStart(2,'0'),i=String(n.getMinutes()).padStart(2,'0');dateInput.value=`${y}-${m}-${d}`;timeInput.value=`${h}:${i}`}function setStatus(t){status.textContent=t}function toggleDelayAlerts(){delayAlertsEnabled=!delayAlertsEnabled;alertButton.textContent=delayAlertsEnabled?'Alarm: ON':'Alarm: OFF';if(delayAlertsEnabled&&'Notification'in window&&Notification.permission==='default')Notification.requestPermission();setStatus(delayAlertsEnabled?'Alarm opóźnień włączony.':'Alarm opóźnień wyłączony.')}function getStationHistory(){try{return JSON.parse(localStorage.getItem(HISTORY_KEY)||'[]')||[]}catch{return[]}}function saveStationToHistory(s){s=s.trim();if(!s)return;let h=getStationHistory().filter(x=>x.toLowerCase()!==s.toLowerCase());h.unshift(s);localStorage.setItem(HISTORY_KEY,JSON.stringify(h.slice(0,8)))}function defaultStations(){return ['Tarnowskie Góry','Katowice','Rybnik','Gliwice','Bytom','Kraków Główny','Chorzów Batory','Lubliniec','Zawiercie','Krzeszowice']}function getStationList(){const h=getStationHistory();return [...h,...defaultStations()].filter((v,i,a)=>v&&a.indexOf(v)===i)}function renderStationHistory(){const h=getStationHistory();suggestions.innerHTML=(h.length?h:defaultStations()).map(s=>`<button class="suggestion-chip" onclick="chooseStation('${escapeJs(s)}')">${escapeHtml(s)}</button>`).join('');renderStationDropdown()}function renderStationDropdown(forceAll=false){if(!window.stationDropdown)return;const q=forceAll?'':(stationInput.value||'').trim().toLowerCase();let list=getStationList();if(!forceAll&&q)list=list.filter(s=>s.toLowerCase().includes(q));list=list.slice(0,12);stationDropdown.innerHTML='<div class="station-dd-head">Ostatnio wyszukiwane</div>'+list.map(s=>`<button type="button" class="station-dd-item" onclick="chooseStation('${escapeJs(s)}')"><span>◷</span><span class="station-dd-name">${escapeHtml(s)}</span><span class="station-dd-id">${escapeHtml(STATION_IDS[s]||'')}</span></button>`).join('')}function showStationDropdown(){renderStationDropdown();stationDropdown.classList.add('open')}function hideStationDropdown(){stationDropdown?.classList.remove('open')}function toggleStationDropdownOnly(){hideMobileKeyboard();renderStationDropdown(true);stationDropdown.classList.toggle('open')}function hideMobileKeyboard(){try{document.activeElement&&document.activeElement.blur&&document.activeElement.blur();stationInput.blur();dateInput.blur();timeInput.blur()}catch(e){}}function handleStationKey(e){if(e.key==='Enter'){e.preventDefault();hideStationDropdown();hideMobileKeyboard();loadApiDeparturesFromInput()}else if(e.key==='Escape'){hideStationDropdown();hideMobileKeyboard()}}document.addEventListener('click',e=>{if(!e.target.closest('.station-field'))hideStationDropdown()});function chooseStation(s){stationInput.value=s;hideStationDropdown();hideMobileKeyboard();loadApiDepartures(s)}function searchStation(){const s=stationInput.value.trim();if(!s)return setStatus('Wpisz nazwę stacji.');saveStationToHistory(s);openStation(s)}function loadApiDeparturesFromInput(){const s=stationInput.value.trim();if(!s)return setStatus('Wpisz nazwę stacji.');hideStationDropdown();hideMobileKeyboard();loadApiDepartures(s)}async function openStation(s){setStatus('Szukam tablicy PLK dla stacji: '+s+'...');const l=await resolveStationLink(s);if(!l)return setStatus('Nie udało się znaleźć tablicy PLK dla stacji: '+s);window.location.href=l}async function resolveStationLink(s){const e=encodeURIComponent(s),arr=[`/resolve-link?station=${e}`,`/resolve-link?name=${e}`,`/resolve-link?q=${e}`,`/resolve-link.js?station=${e}`,`/resolve-link.js?name=${e}`,`/resolve-link.js?q=${e}`,`/api/resolve-link?station=${e}`,`/api/resolve-link?name=${e}`,`/api/resolve-link?q=${e}`,`/api/resolve?station=${e}`,`/api/station-link?station=${e}`,`/station-link?station=${e}`];for(const u of arr){try{const r=await fetch(u,{headers:{Accept:'application/json, text/plain, */*'}});if(!r.ok)continue;const l=extractLink(await r.text());if(l)return l}catch(_){}}return null}function extractLink(t){t=t.trim();if(!t)return null;if(t.startsWith('http://')||t.startsWith('https://'))return t;try{const j=JSON.parse(t),c=j.url||j.link||j.href||j.redirectUrl||j.target||j.result||j.data?.url||j.data?.link||j.data?.href;if(c&&typeof c==='string')return c}catch(_){}const m=t.match(/https?:\/\/[^\s"'<>]+/);return m?m[0]:null}async function loadApiDepartures(s){hideMobileKeyboard();const date=dateInput.value,time=timeInput.value,params=new URLSearchParams({station:s,limit:'20'});if(date)params.set('date',date);if(time)params.set('time',time);saveStationToHistory(s);renderStationHistory();setStatus('Pobieram dane dla stacji: '+s+'...');apiMeta.textContent='Ładowanie danych z API PLK dla stacji: '+s+'...';apiLimits.textContent='Limit API: sprawdzam...';apiDeparturesBody.innerHTML='<tr><td colspan="5" class="muted">Ładowanie danych...</td></tr>';try{const r=await fetch('/api/departures?'+params.toString(),{headers:{Accept:'application/json'}}),data=await r.json();if(!r.ok)throw new Error(data.error||data.details||'Błąd API');const dep=Array.isArray(data.departures)?data.departures:[];lastDepartures=dep;apiMeta.textContent=`Stacja: ${data.station?.name||s} | Data: ${data.date||date} | Od godziny: ${data.timeFrom||time} | Pokazuję do 20 odjazdów.`;apiLimits.textContent=formatApiLimits(data.apiLimits,data.cache);renderDepartures(dep,data);handleDelayAlerts(dep);setStatus('Załadowano odjazdy z API PLK dla stacji: '+(data.station?.name||s));apiPanel.scrollIntoView({behavior:'smooth',block:'start'})}catch(err){console.error(err);apiMeta.textContent='Nie udało się pobrać danych z API PLK.';apiLimits.textContent='Limit API: brak danych.';apiDeparturesBody.innerHTML='<tr><td colspan="5" class="muted">Błąd pobierania danych: '+escapeHtml(err.message)+'</td></tr>';setStatus('Nie udało się pobrać odjazdów z API dla stacji: '+s)}}function isSameStation(a,b){return String(a||'').trim().toLowerCase()===String(b||'').trim().toLowerCase()}
-function finalDestination(d,ctx={}){return String(d.destination||d.finalDestination||d.finalStation||d.to||'').trim()}
-function displayDestination(d,ctx={}){const dest=finalDestination(d,ctx);const current=ctx?.station?.name||stationInput.value||'';return dest||'brak kierunku'}
-function buildTrainUrl(d,ctx={}){const p=new URLSearchParams();p.set('train',d.train||d.trainNumber||'');if(d.category)p.set('category',d.category);if(d.name)p.set('name',d.name);const dest=finalDestination(d,ctx);if(dest)p.set('destination',dest);if(ctx?.date)p.set('date',ctx.date);const sid=d.scheduleId||d.scheduledId||ctx?.scheduleId;if(sid){p.set('scheduleId',sid);p.set('scheduledId',sid)}if(d.orderId)p.set('orderId',d.orderId);if(d.trainOrderId)p.set('trainOrderId',d.trainOrderId);if(ctx?.station?.id)p.set('stationId',ctx.station.id);if(ctx?.station?.name)p.set('station',ctx.station.name);return '/train?'+p.toString()}
-function renderDelayUnder(delay){delay=Number(delay||0);return '<div class="train-delay-under '+getDelayClass(delay)+'">'+(delay>0?'+'+delay+' min':'0')+'</div>'}
+<div class="app">
 
-function trainStatusCode(d){
-  const vals=[
-    d.statusCode,d.status,d.trainStatus,d.operationStatus,d.operationalStatus,d.plkStatus,d.plkCode,
-    d.realizationStatus,d.runStatus,d.cancellationStatus,d.state,d.code
-  ];
-  for(const v of vals){
-    const s=String(v??'').trim().toUpperCase();
-    if(!s) continue;
-    if(s==='X' || s.includes('ODWO') || s.includes('CANCEL')) return 'X';
-  }
-  return '';
-}
-function isCancelledTrain(d){return trainStatusCode(d)==='X'}
-function cancellationLabel(d){return isCancelledTrain(d)?'<span class="cancel-badge">ODWOŁANY</span>':''}
-function renderDepartures(deps,ctx={}){if(!deps.length){apiDeparturesBody.innerHTML='<tr><td colspan="5" class="muted">Brak odjazdów dla wybranej daty i godziny.</td></tr>';return}apiDeparturesBody.innerHTML=deps.map(d=>{const delay=Number(d.delay||0),dc=getDelayClass(delay),tc=getTimeDelayClass(delay),tr=[d.category,d.train].filter(Boolean).join(' '),dest=displayDestination(d,ctx),via=d.via||'',url=buildTrainUrl(d,ctx),cancelled=isCancelledTrain(d),cancelBadge=cancellationLabel(d),rowClass=cancelled?' class="train-cancelled"':'',delayText=cancelled?'ODWOŁANY':(delay>0?'+'+delay+' min':'0'),trainHtml='<a class="train-link train-main" target="_blank" rel="noopener" href="'+escapeHtml(url)+'">'+escapeHtml(tr)+'</a>';return `<tr${rowClass}><td class="desktop-cell"><div class="time-real ${tc}">${escapeHtml(shortTime(d.time))}</div><div class="muted">${escapeHtml(shortTime(d.plannedTime))}</div><div class="train-delay-under ${cancelled?'delay-mid':getDelayClass(delay)}">${escapeHtml(delayText)}</div></td><td class="desktop-cell"><div>${trainHtml}</div><div class="train-name">${escapeHtml(d.name||d.carrier||'')}</div>${cancelBadge}</td><td class="desktop-cell"><div class="direction-main">${escapeHtml(dest)}</div><div class="direction-via">${via?escapeHtml(via):''}</div>${cancelled?'<span class="status-note">Pociąg odwołany według API PLK</span>':''}</td><td class="desktop-cell">${escapeHtml(d.platform||'')}</td><td class="desktop-cell">${escapeHtml(d.track||'')}</td><td class="mobile-only"><div class="mobile-layout"><div class="mobile-time"><div class="time-real ${tc}">${escapeHtml(shortTime(d.time))}</div><div class="muted">${escapeHtml(shortTime(d.plannedTime))}</div><div class="train-delay-under ${cancelled?'delay-mid':getDelayClass(delay)}">${escapeHtml(delayText)}</div></div><div class="mobile-train">${trainHtml}<div class="train-name">${escapeHtml(d.name||d.carrier||'')}</div>${cancelBadge}</div><div class="mobile-direction"><div class="direction-main">${escapeHtml(dest)}</div><div class="direction-via">${via?escapeHtml(via):''}</div>${cancelled?'<span class="status-note">Odwołany według API PLK</span>':''}</div><div class="mobile-side"><div class="mobile-platform">${escapeHtml(d.platform||'')}</div><div class="mobile-track">tor ${escapeHtml(d.track||'')}</div></div></div></td></tr>`}).join('')}function getTimeDelayClass(d){return d>=20?'time-delay-high':d>10?'time-delay-mid':d>=5?'time-delay-low':'ontime'}function getDelayClass(d){return d>=20?'delay-high':d>10?'delay-mid':d>=5?'delay':'ontime'}function handleDelayAlerts(deps){const box=delayAlertBox,items=deps.filter(x=>isCancelledTrain(x)||Number(x.delay||0)>=5).slice(0,5);if(!items.length){box.style.display='none';box.textContent='';return}const msg=items.map(x=>isCancelledTrain(x)?`${shortTime(x.time)} ${[x.category,x.train].filter(Boolean).join(' ')} ODWOŁANY`:`${shortTime(x.time)} ${[x.category,x.train].filter(Boolean).join(' ')} +${x.delay} min`).join(' | ');box.style.display='block';box.textContent='Alarm: '+msg;const sig=items.map(x=>`${x.train}-${x.time}-${x.delay}-${trainStatusCode(x)}`).join('|');if(!delayAlertsEnabled||sig===lastDelayedSignature)return;lastDelayedSignature=sig;if('Notification'in window&&Notification.permission==='granted')new Notification('Alarm pociągów',{body:msg})}function showDelayedPanel(){const items=lastDepartures.filter(x=>isCancelledTrain(x)||Number(x.delay||0)>=5);delayAlertBox.style.display='block';delayAlertBox.textContent=items.length?'Alarmy: '+items.map(x=>isCancelledTrain(x)?`${shortTime(x.time)} ${[x.category,x.train].filter(Boolean).join(' ')} ODWOŁANY`:`${shortTime(x.time)} ${[x.category,x.train].filter(Boolean).join(' ')} +${x.delay} min`).join(' | '):'Brak odwołanych pociągów i opóźnień powyżej 5 min.';apiPanel.scrollIntoView({behavior:'smooth',block:'start'});}function formatApiLimits(l,c){const ct=c?' | cache: '+Object.entries(c).map(([k,v])=>`${k}=${v}`).join(', '):'';if(!l||!l.available)return 'Limit API: brak informacji w nagłówkach odpowiedzi PLK.'+ct;const p=[];if(l.remaining!=null)p.push('pozostało: '+l.remaining);if(l.limit!=null)p.push('pula: '+l.limit);if(l.reset!=null)p.push('reset: '+l.reset);return 'Limit API: '+(p.length?p.join(' | '):'brak szczegółów.')+ct}function shortTime(v){if(!v)return'';const m=String(v).match(/(\d{2}:\d{2})/);return m?m[1]:v}function escapeHtml(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}function escapeJs(v){return String(v??'').replaceAll('\\','\\\\').replaceAll("'","\\'").replaceAll('\n','\\n').replaceAll('\r','\\r')}
+<header>
+  <div class="header-row">
+    <div>
+      <h1>🚆 Moje Pociągi</h1>
+      <div class="header-sub">Aktualny status z danych PLK</div>
+    </div>
+    <button class="refresh" id="refreshBtn" title="Odśwież">↻</button>
+  </div>
+</header>
 
-function copyTable(){if(!lastDepartures.length)return setStatus('Brak tablicy do skopiowania.');const text=lastDepartures.map(d=>[[d.category,d.train,d.name].filter(Boolean).join(' '),(shortTime(d.time)||'')+' → '+(d.destination||''),d.via?'przez: '+d.via:'','peron '+(d.platform||'—')+', tor '+(d.track||'—'),'opóźnienie: '+(Number(d.delay||0)>0?'+'+d.delay+' min':'0')].filter(Boolean).join('\n')).join('\n\n');navigator.clipboard?.writeText(text).then(()=>setStatus('Skopiowano tablicę do schowka.')).catch(()=>setStatus('Nie udało się skopiować tablicy.'))}
-async function checkPlkHealth(show=true){try{const r=await fetch('/api/health',{headers:{Accept:'application/json'}}),data=await r.json();lastHealth=data;renderHealth(data);if(show)apiPanel.scrollIntoView({behavior:'smooth',block:'start'});return data}catch(e){const data={ok:false,status:'DOWN',human:'Serwer PLK niedostępny',error:e.message,testedAt:new Date().toISOString()};lastHealth=data;renderHealth(data);if(show)apiPanel.scrollIntoView({behavior:'smooth',block:'start'});return data}}
-async function checkApiLimit(show=true){try{const r=await fetch('/api/limit',{headers:{Accept:'application/json'}}),data=await r.json();lastHealth=data;renderHealth(data);if(show)apiPanel.scrollIntoView({behavior:'smooth',block:'start'});return data}catch(e){const data={ok:false,status:'DOWN',human:'Nie udało się sprawdzić limitu API',error:e.message,testedAt:new Date().toISOString()};lastHealth=data;renderHealth(data);if(show)apiPanel.scrollIntoView({behavior:'smooth',block:'start'});return data}}
+<section class="add-panel">
+  <div class="add-title">＋ DODAJ POCIĄG DO MONITOROWANIA</div>
+  <div class="add-row">
+    <input id="stationInput" placeholder="Stacja, np. Katowice">
+    <input id="trainInput" placeholder="Numer, np. 3815">
+    <button class="add-btn" id="addBtn">Dodaj</button>
+  </div>
+</section>
 
-function getLimitSummary(data){
-  try{
-    const info=(data.checks||[]).find(x=>x.source==='apikey/info')?.body?.data || data.data || data.body?.data || null;
-    const usage=(data.checks||[]).find(x=>x.source==='apikey/usage')?.body?.data || data.usage || null;
-    if(!info) return '';
-    const hourlyLimit=Number(info.hourlyRateLimit||0), dailyLimit=Number(info.dailyRateLimit||0);
-    let hourlyUsed=Number(usage?.hourlyRequests ?? usage?.currentHourRequests ?? usage?.hourly ?? NaN);
-    let dailyUsed=Number(usage?.dailyRequests ?? usage?.currentDayRequests ?? usage?.daily ?? NaN);
-    const parts=[];
-    parts.push('Plan: '+(info.accessLevel||'brak'));
-    if(hourlyLimit){
-      if(Number.isFinite(hourlyUsed)) parts.push('Godzina: '+hourlyUsed+'/'+hourlyLimit+' · zostało '+Math.max(0,hourlyLimit-hourlyUsed));
-      else parts.push('Godzina: limit '+hourlyLimit+' · brak danych zużycia');
-    }
-    if(dailyLimit){
-      if(Number.isFinite(dailyUsed)) parts.push('Dzień: '+dailyUsed+'/'+dailyLimit+' · zostało '+Math.max(0,dailyLimit-dailyUsed));
-      else parts.push('Dzień: limit '+dailyLimit+' · brak danych zużycia');
-    }
-    if(info.totalRequests!=null) parts.push('Łącznie: '+info.totalRequests);
-    if(info.lastUsedAt) parts.push('Ostatnie użycie: '+new Date(info.lastUsedAt).toLocaleString('pl-PL'));
-    return parts.join(' | ');
-  }catch(e){return ''}
-}
-function renderHealth(data){if(!window.healthBox)return;healthBox.style.display='block';const cls=data.status==='OK'?'health-ok':data.status==='PARTIAL'?'health-partial':data.status==='LIMIT'?'health-limit':data.status==='AUTH'?'health-auth':'health-down';healthTitle.className='health-title '+cls;healthTitle.textContent=(data.status==='OK'?'🟢 ':data.status==='PARTIAL'?'🟡 ':data.status==='LIMIT'?'🟠 ':data.status==='AUTH'?'🔒 ':'🔴 ')+(data.human||'Nie sprawdzono API');const lim=getLimitSummary(data);healthTime.textContent='Ostatni test: '+new Date(data.testedAt||Date.now()).toLocaleTimeString('pl-PL')+(lim?' · '+lim:'');healthDetails.textContent=JSON.stringify(data,null,2)}
-function toggleHealthDetails(){healthDetails.style.display=healthDetails.style.display==='block'?'none':'block'}
-function copyHealth(){if(lastHealth)navigator.clipboard?.writeText(JSON.stringify(lastHealth,null,2)).then(()=>setStatus('Skopiowano diagnostykę.'))}
-
-</script>
-<div class="bottom-nav">
-<a href="https://www.kolejeslaskie.pl/utrudnienia/status/wszystkie/" target="_blank" rel="noopener">🚧 KŚ</a>
-<a href="/moje-pociagi/">⭐ Moje</a>
-<a href="/monitorowane-pociagi/">📡 Monitor</a>
-<a href="/alarmy/">🔔 Alarmy</a>
-<button type="button" onclick="toggleBurgerMenu()">☰ Menu</button>
+<div class="summary">
+  <div class="summary-title">Monitorowane</div>
+  <div class="summary-info" id="summaryInfo">Ładowanie…</div>
 </div>
+
+<main id="list" class="list">
+  <div class="loading">Pobieranie danych z PLK…</div>
+</main>
+
+</div>
+
 <script>
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("/service-worker.js").catch(err => {
-        console.warn("Service worker registration failed:", err);
-      });
-    });
+window.onerror = function(m, u, l) { console.error("Błąd wykonania JS:", m, "linia:", l); };
+
+const DEFAULT_TRAINS = [
+  { station: 'MIASTECZKO ŚLĄSKIE', number: '44226', planTime: '04:59' },
+  { station: 'TARNOWSKIE GÓRY', number: '40450', planTime: '05:21' },
+  { station: 'CHORZÓW BATORY', number: '40658', planTime: '06:07' },
+  { station: 'TARNOWSKIE GÓRY', number: '40250', planTime: '05:46' },
+  { station: 'CHORZÓW BATORY', number: '40660', planTime: '06:32' },
+  { station: 'KATOWICE', number: '40921', planTime: '14:59' },
+  { station: 'KATOWICE', number: '40621', planTime: '15:35' },
+  { station: 'CHORZÓW BATORY', number: '40423', planTime: '15:12' },
+  { station: 'CHORZÓW BATORY', number: '40425', planTime: '16:06' },
+  { station: 'KATOWICE', number: '8330', planTime: '10:20' },
+  { station: 'KATOWICE', number: '3815', planTime: '14:40' }
+];
+
+const STORAGE_KEY = 'rafstakMojePociagiV3';
+
+const STATION_IDS = {
+  'KATOWICE': '73312',
+  'KRAKÓW GŁÓWNY': '73302',
+  'TARNOWSKIE GÓRY': '73390',
+  'CHORZÓW BATORY': '73308',
+  'GLIWICE': '73318',
+  'BYTOM KARB': '73405',
+  'MIASTECZKO ŚLĄSKIE': '73428'
+};
+
+function getList(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      const parsed = JSON.parse(raw);
+      if(Array.isArray(parsed) && parsed.length) return parsed;
+    }
+  }catch(e){}
+  return DEFAULT_TRAINS.map(x => ({...x}));
+}
+
+function saveList(list){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+}
+
+function buildTrainUrl(row, station, number) {
+  if (!row || !row.orderId) return null;
+  const today = new Date().toISOString().split('T')[0];
+  const params = new URLSearchParams({
+    train: row.train || row.trainNo || row.number || number || '',
+    category: row.category || row.trainCategory || 'IC',
+    name: row.name || row.trainName || '',
+    destination: row.destination || row.to || '',
+    date: row.date || today,
+    scheduleId: row.scheduleId || row.scheduledId || '2026',
+    scheduledId: row.scheduledId || row.scheduleId || '2026',
+    orderId: row.orderId || '',
+    trainOrderId: row.trainOrderId || '',
+    stationId: row.stationId || (typeof stationId === 'function' ? stationId(station) : '') || '',
+    station: row.station || station || ''
+  });
+  return '/train?' + params.toString();
+}
+
+function stationId(name){
+  return STATION_IDS[String(name || '').trim().toUpperCase()] || '';
+}
+
+function escapeHtml(value){
+  return String(value ?? '')
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#039;');
+}
+
+function getTrainNumber(row){
+  return String(
+    row.trainNumber ??
+    row.trainNo ??
+    row.number ??
+    row.train ??
+    row.train?.trainNumber ??
+    row.train?.number ??
+    ''
+  );
+}
+
+function getDelay(row){
+  const values = [
+    row.delayMinutes,
+    row.delay,
+    row.delayInMinutes,
+    row.train?.delayMinutes,
+    row.operation?.delayMinutes
+  ];
+
+  for(const value of values){
+    if(value !== undefined && value !== null && value !== ''){
+      const n = Number(value);
+      if(Number.isFinite(n)) return n;
+    }
   }
+
+  return null;
+}
+
+function getTime(row){
+  return row.actualTime ||
+         row.realTime ||
+         row.departureTimeActual ||
+         row.arrivalTimeActual ||
+         row.time ||
+         row.scheduledTime ||
+         row.departureTime ||
+         row.arrivalTime ||
+         '';
+}
+
+function getScheduleId(row){
+  return row.scheduleId ||
+         row.scheduledId ||
+         row.schedule?.id ||
+         '';
+}
+
+function getOrderId(row){
+  return row.orderId ||
+         row.trainOrderId ||
+         row.operationId ||
+         '';
+}
+
+async function fetchStation(station){
+  const id = stationId(station);
+  const params = new URLSearchParams();
+  params.set('station', station);
+  params.set('limit', '300');
+
+  const response = await fetch(
+    '/api/departures?' + params.toString(),
+    {
+      headers:{Accept:'application/json'},
+      cache:'no-store'
+    }
+  );
+
+  if(!response.ok){
+    throw new Error('HTTP ' + response.status);
+  }
+
+  const data = await response.json();
+
+  return Array.isArray(data.departures)
+    ? data.departures
+    : [];
+}
+
+function findTrain(rows,number){
+  const wanted = String(number);
+  return rows.find(row => getTrainNumber(row) === wanted) || null;
+}
+
+function timeOnly(value){
+  const match = String(value || '').match(/T(\d{2}:\d{2})/);
+  if(match) return match[1];
+
+  const match2 = String(value || '').match(/(\d{2}:\d{2})/);
+  return match2 ? match2[1] : String(value || '');
+}
+
+function buildView(item, result){
+  const row = result.row;
+  const time = row ? getTime(row) : '';
+
+  const route =
+    result.routeOrigin && result.routeDestination
+      ? `${result.routeOrigin} → ${result.routeDestination}`
+      : (item.planTime ? `Godz. odjazdu: ${item.planTime}` : 'Brak informacji o relacji');
+
+  const lastConfirmed =
+    row && row.lastConfirmedStation
+      ? `📍 Ostatnio: ${row.lastConfirmedStation}` + (row.lastConfirmedTime ? ` · ${timeOnly(row.lastConfirmedTime)}` : '')
+      : '';
+
+  const position = lastConfirmed || (time ? `Dane: ${timeOnly(time)}` : '');
+
+  const trainName = row && (row.name || row.trainName || row.commercialName)
+      ? (row.name || row.trainName || row.commercialName)
+      : '';
+
+  return `
+    <article class="card" data-open="${result.index}" data-station="${escapeHtml(item.station)}" data-number="${escapeHtml(item.number)}">
+      <div class="card-main" data-raw="${JSON.stringify(item).replace(/"/g, "&quot;")}">
+        <div class="train">
+          <div class="train-top">
+            <span class="train-number">#${escapeHtml(item.number)}</span>
+            ${trainName ? `<span class="train-name">${escapeHtml(trainName)}</span>` : ''}
+          </div>
+          <div class="route">${escapeHtml(route)}</div>
+          ${position ? `<div class="position">${escapeHtml(position)}</div>` : ''}
+        </div>
+
+        <button class="delete" data-delete="${result.index}" title="Usuń z listy">×</button>
+      </div>
+    </article>
+  `;
+}
+
+async function loadTrains(){
+  const list = getList();
+  const container = document.getElementById('list');
+  const refresh = document.getElementById('refreshBtn');
+
+  refresh.disabled = true;
+  refresh.textContent = '…';
+
+  document.getElementById('summaryInfo').textContent = `0 / ${list.length} załadowanych`;
+
+  container.innerHTML = list.length
+    ? list.map((item,index) =>
+        buildView(item,{ row:null, index, loading:true })
+      ).join('')
+    : `<div class="empty">Brak monitorowanych pociągów.</div>`;
+
+  const stationCache = new Map();
+  const routeCache = new Map();
+  const nameCache = new Map();
+
+  async function getStationNames(ids){
+    const wanted = [...new Set(ids.map(x => String(x || '').trim()).filter(Boolean))];
+    const missing = wanted.filter(id => !nameCache.has(id));
+
+    if(missing.length){
+      try{
+        const response = await fetch('/api/stations?ids=' + encodeURIComponent(missing.join(',')), {
+          headers:{Accept:'application/json'}, cache:'no-store'
+        });
+        if(response.ok){
+          const data = await response.json();
+          for(const [id,name] of Object.entries(data.names || {})){
+            nameCache.set(String(id),name);
+          }
+        }
+      }catch(error){}
+    }
+    return wanted.map(id => nameCache.get(id) || '');
+  }
+
+  async function getRouteInfo(row){
+    const scheduleId = getScheduleId(row);
+    const orderId = getOrderId(row);
+
+    if(!scheduleId || !orderId) return { origin:'', destination:'' };
+
+    const routeKey = String(scheduleId) + ':' + String(orderId);
+    if(routeCache.has(routeKey)) return routeCache.get(routeKey);
+
+    const promise = (async()=>{
+      try{
+        const response = await fetch('/api/schedules/route/' + encodeURIComponent(scheduleId) + '/' + encodeURIComponent(orderId), {
+          headers:{Accept:'application/json'}, cache:'no-store'
+        });
+        if(!response.ok) return { origin:'', destination:'' };
+
+        const data = await response.json();
+        const route = data.route || data;
+        const stations = route && Array.isArray(route.stations) ? route.stations : [];
+        if(!stations.length) return { origin:'', destination:'' };
+
+        const names = await getStationNames([stations[0]?.stationId, stations[stations.length - 1]?.stationId]);
+        return { origin:names[0] || '', destination:names[1] || '' };
+      }catch(error){
+        return { origin:'', destination:'' };
+      }
+    })();
+
+    routeCache.set(routeKey,promise);
+    return promise;
+  }
+
+  let loaded = 0;
+
+  for(let index=0; index<list.length; index++){
+    const item = list[index];
+
+    try{
+      if(!stationCache.has(item.station)){
+        stationCache.set(item.station, fetchStation(item.station));
+      }
+
+      const rows = await stationCache.get(item.station);
+      const row = findTrain(rows,item.number);
+      let routeInfo = { origin:'', destination:'' };
+
+      if(row) routeInfo = await getRouteInfo(row);
+
+      if (row && row.orderId) {
+        const _tUrl = buildTrainUrl(row, item.station, item.number);
+        setTimeout(() => {
+          const _card = container.children[index];
+          if (_card && _tUrl) {
+            _card.dataset.trainUrl = _tUrl;
+            _card.style.cursor = 'pointer';
+          }
+        }, 50);
+      }
+
+      const oldCard = container.children[index];
+
+      if(oldCard){
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = buildView(item,{
+          row,
+          index,
+          loading:false,
+          routeOrigin:routeInfo.origin,
+          routeDestination:routeInfo.destination
+        });
+
+        oldCard.replaceWith(wrapper.firstElementChild);
+      }
+
+      loaded++;
+      document.getElementById('summaryInfo').textContent = `${loaded} / ${list.length}`;
+    }catch(error){
+      const oldCard = container.children[index];
+      if(oldCard){
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = buildView(item,{ row:null, index, loading:false });
+        oldCard.replaceWith(wrapper.firstElementChild);
+      }
+      loaded++;
+      document.getElementById('summaryInfo').textContent = `${loaded} / ${list.length}`;
+    }
+  }
+
+  refresh.disabled = false;
+  refresh.textContent = '↻';
+  document.getElementById('summaryInfo').textContent = `${list.length} / ${list.length}`;
+}
+
+function bindActions(){
+  document.querySelectorAll('[data-delete]').forEach(button => {
+    button.addEventListener('click',event => {
+      event.stopPropagation();
+      const index = Number(button.dataset.delete);
+      const list = getList();
+      list.splice(index,1);
+      saveList(list);
+      loadTrains();
+    });
+  });
+}
+
+document.getElementById('refreshBtn').addEventListener('click',loadTrains);
+
+document.getElementById('addBtn').addEventListener('click',() => {
+  const station = document.getElementById('stationInput').value.trim().toUpperCase();
+  const number = document.getElementById('trainInput').value.trim();
+
+  if(!station || !number){
+    alert('Podaj stację i numer pociągu.');
+    return;
+  }
+
+  const list = getList();
+  if(list.some(x => x.number === number && x.station === station)){
+    alert('Ten pociąg jest już na liście.');
+    return;
+  }
+
+  list.push({ station, number });
+  saveList(list);
+
+  document.getElementById('stationInput').value = '';
+  document.getElementById('trainInput').value = '';
+
+  loadTrains();
+});
+
+document.getElementById('trainInput').addEventListener('keydown',event => {
+  if(event.key === 'Enter'){
+    document.getElementById('addBtn').click();
+  }
+});
+
+loadTrains();
 </script>
-</body></html>
+
+<script>
+(function() {
+  function getCardKey(card) {
+    return card.dataset.trainUrl || 
+           card.getAttribute('data-id') || 
+           card.querySelector('.train-number')?.textContent.trim() || 
+           card.innerText.replace(/\s+/g, ' ').trim().slice(0, 40);
+  }
+
+  function saveTrainOrder() {
+    const cards = document.querySelectorAll('.card, .train-card, .train-item, [data-train-url]');
+    const order = [];
+    cards.forEach(card => {
+      const key = getCardKey(card);
+      if (key && !order.includes(key)) order.push(key);
+    });
+    if (order.length > 0) {
+      localStorage.setItem('trains_custom_order', JSON.stringify(order));
+    }
+  }
+
+  function restoreTrainOrder() {
+    const saved = localStorage.getItem('trains_custom_order');
+    if (!saved) return;
+    try {
+      const order = JSON.parse(saved);
+      const cards = Array.from(document.querySelectorAll('.card, .train-card, .train-item, [data-train-url]'));
+      if (cards.length === 0) return;
+
+      const parent = cards[0].parentNode;
+      const cardMap = new Map();
+
+      cards.forEach(card => {
+        const key = getCardKey(card);
+        if (key) cardMap.set(key, card);
+      });
+
+      order.forEach(key => {
+        if (cardMap.has(key)) {
+          parent.appendChild(cardMap.get(key));
+          cardMap.delete(key);
+        }
+      });
+
+      cardMap.forEach(card => parent.appendChild(card));
+    } catch(e) {}
+  }
+
+  function setupFormToggle() {
+    const form = document.querySelector('.add-panel, #addTrainForm, .add-train-form');
+    if (form && !document.querySelector('.toggle-add-btn')) {
+      form.classList.add('add-form-hidden');
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'toggle-add-btn';
+      btn.innerHTML = '➕ Dodaj pociąg do monitorowania';
+      btn.onclick = function() {
+        if (form.classList.contains('add-form-hidden')) {
+          form.classList.remove('add-form-hidden');
+          form.classList.add('add-form-visible');
+          btn.innerHTML = '➖ Ukryj formularz';
+        } else {
+          form.classList.remove('add-form-visible');
+          form.classList.add('add-form-hidden');
+          btn.innerHTML = '➕ Dodaj pociąg do monitorowania';
+        }
+      };
+      if (form.parentNode) {
+        form.parentNode.insertBefore(btn, form);
+      }
+    }
+  }
+
+  let activeCard = null;
+
+  function enableDragAndDrop(card) {
+    if (card.dataset.dragEnabled === "true") return;
+    card.dataset.dragEnabled = "true";
+
+    const handle = card.querySelector('.drag-handle') || card;
+
+    handle.addEventListener('touchstart', function(e) {
+      activeCard = card;
+      card.classList.add('is-dragging');
+    }, { passive: true });
+
+    handle.addEventListener('touchmove', function(e) {
+      if (!activeCard) return;
+      const touchY = e.touches[0].clientY;
+      const touchX = e.touches[0].clientX;
+      const targetEl = document.elementFromPoint(touchX, touchY);
+      if (targetEl) {
+        const targetCard = targetEl.closest('.card, .train-card, .train-item, [data-train-url]');
+        if (targetCard && targetCard !== activeCard && targetCard.parentNode === activeCard.parentNode) {
+          const rect = targetCard.getBoundingClientRect();
+          const next = (touchY - rect.top) > (rect.height / 2);
+          activeCard.parentNode.insertBefore(activeCard, next ? targetCard.nextSibling : targetCard);
+        }
+      }
+    }, { passive: true });
+
+    const endDrag = function() {
+      if (activeCard) {
+        activeCard.classList.remove('is-dragging');
+        activeCard = null;
+        saveTrainOrder();
+      }
+    };
+
+    handle.addEventListener('touchend', endDrag);
+    handle.addEventListener('mouseup', endDrag);
+  }
+
+  function processCards() {
+    setupFormToggle();
+
+    const cards = document.querySelectorAll('.card, .train-card, .train-item, [data-train-url]');
+    cards.forEach(card => {
+      // Usuwanie zbędnych etykiet tekstowych
+      card.querySelectorAll('button, a, span, div, p').forEach(el => {
+        const txt = (el.textContent || '').trim().toUpperCase();
+        if (txt === 'SZCZEGÓŁY' || txt === 'OPÓŹNIONY' || txt === 'PLANOWO' || txt === 'BRAK DANYCH' || txt === 'BRAK OPERACJI' || txt === 'ŁADOWANIE') {
+          el.style.display = 'none';
+        }
+      });
+
+      let stationName = card.dataset.station || '';
+
+      // Wyciąganie opóźnienia
+      let delayText = '';
+      card.querySelectorAll('p, div, span').forEach(el => {
+        if (el.closest('.card-top-row')) return;
+        const txt = (el.textContent || '').trim();
+        if ((txt.includes('min') || txt.startsWith('+')) && txt.length < 15 && !txt.includes('Ostatnio') && !txt.includes('Dane:')) {
+          delayText = txt;
+          el.style.display = 'none';
+        }
+      });
+
+      // Formatowanie relacji i stacji
+      card.querySelectorAll('p, div, span').forEach(el => {
+        if (el.closest('.card-top-row')) return;
+        const txt = (el.textContent || '').trim();
+        if (txt.includes('→') || txt.includes('->') || txt.includes('Godz.')) {
+          el.className = 'train-route-line';
+        } else if (txt.includes('Ostatnio') || txt.includes('Dane:')) {
+          el.className = 'train-status-line';
+        }
+      });
+
+      // Generowanie paska nagłówka (uchwyt + plakietka opóźnienia + tag stacji)
+      let topRow = card.querySelector('.card-top-row');
+      if (!topRow) {
+        topRow = document.createElement('div');
+        topRow.className = 'card-top-row';
+
+        const handle = document.createElement('span');
+        handle.className = 'drag-handle';
+        handle.textContent = '⋮⋮';
+        topRow.appendChild(handle);
+
+        if (delayText && delayText !== '0 min' && delayText !== '+0') {
+          const isRed = !(delayText.includes('0 min') || delayText === '+0');
+          const badge = document.createElement('span');
+          badge.className = 'delay-badge ' + (isRed ? 'delay-red' : 'delay-green');
+          badge.textContent = delayText;
+          topRow.appendChild(badge);
+        }
+
+        card.insertBefore(topRow, card.firstChild);
+      }
+
+      if (stationName && !topRow.querySelector('.station-mini-tag')) {
+        const tag = document.createElement('span');
+        tag.className = 'station-mini-tag';
+        tag.textContent = stationName.toUpperCase();
+        topRow.appendChild(tag);
+      }
+
+      enableDragAndDrop(card);
+    });
+
+    restoreTrainOrder();
+  }
+
+  let timer = null;
+  const observer = new MutationObserver(function() {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(processCards, 50);
+  });
+
+  document.addEventListener('DOMContentLoaded', function() {
+    processCards();
+    observer.observe(document.body, { childList: true, subtree: true });
+  });
+})();
+</script>
+</body>
+</html>
