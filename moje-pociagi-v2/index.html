@@ -593,17 +593,18 @@ input:focus{
 window.onerror = function(m, u, l) { console.error("Błąd wykonania JS:", m, "linia:", l); };
 
 const DEFAULT_TRAINS = [
-{ station: 'Miasteczko Śląskie', trainNum: '44226', planTime: '04:59' },
-{ station: 'Tarnowskie Góry', trainNum: '40450', planTime: '05:21' },
-{ station: 'Chorzów Batory', trainNum: '40658', planTime: '06:07' },
-{ station: 'Tarnowskie Góry', trainNum: '40250', planTime: '05:46' },
-{ station: 'Chorzów Batory', trainNum: '40660', planTime: '06:32' },
-{ station: 'Katowice', trainNum: '40921', planTime: '14:59' },
-{ station: 'Katowice', trainNum: '40621', planTime: '15:35' },
-{ station: 'Chorzów Batory', trainNum: '40423', planTime: '15:12' },
-{ station: 'Chorzów Batory', trainNum: '40425', planTime: '16:06' },
-{ station: 'Katowice', trainNum: '8330', planTime: '10:20' },
-{ station: 'Katowice', trainNum: '3815', planTime: '14:40' }
+const DEFAULT_TRAINS = [
+  { station: 'Miasteczko Śląskie', number: '44226', planTime: '04:59' },
+  { station: 'Tarnowskie Góry', number: '40450', planTime: '05:21' },
+  { station: 'Chorzów Batory', number: '40658', planTime: '06:07' },
+  { station: 'Tarnowskie Góry', number: '40250', planTime: '05:46' },
+  { station: 'Chorzów Batory', number: '40660', planTime: '06:32' },
+  { station: 'Katowice', number: '40921', planTime: '14:59' },
+  { station: 'Katowice', number: '40621', planTime: '15:35' },
+  { station: 'Chorzów Batory', number: '40423', planTime: '15:12' },
+  { station: 'Chorzów Batory', number: '40425', planTime: '16:06' },
+  { station: 'Katowice', number: '8330', planTime: '10:20' },
+  { station: 'Katowice', number: '3815', planTime: '14:40' }
 ];
 
 const STORAGE_KEY = 'rafstakMojePociagiV3';
