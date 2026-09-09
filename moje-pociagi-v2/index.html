@@ -15,7 +15,6 @@
   --muted:#91a0b7;
   --cyan:#22d3ee;
   --green:#34d399;
-  --yellow:#fbbf24;
   --red:#fb7185;
 }
 
@@ -70,8 +69,14 @@ h1{
   padding:12px;
   display:grid;
   grid-template-columns:80px 1fr auto;
-  gap:12px;
+  gap:10px;
   align-items:center;
+  cursor:pointer;
+  transition:border-color 0.15s ease;
+}
+
+.card:hover{
+  border-color:var(--cyan);
 }
 
 .time-box{
@@ -119,14 +124,85 @@ h1{
   margin-top:4px;
 }
 
-.btn-open{
-  border:0;
-  background:rgba(34,211,238,.12);
-  color:var(--cyan);
-  font-weight:800;
-  padding:8px 12px;
-  border-radius:8px;
+.actions{
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+
+.btn-action{
+  background:rgba(255,255,255,0.06);
+  border:1px solid var(--border);
+  color:var(--text);
+  border-radius:6px;
+  width:32px;
+  height:32px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
   cursor:pointer;
+  font-size:13px;
+  font-weight:bold;
+}
+
+.btn-action:hover{
+  background:rgba(255,255,255,0.15);
+}
+
+.btn-del{
+  background:rgba(251,113,133,0.15);
+  border:1px solid rgba(251,113,133,0.4);
+  color:var(--red);
+}
+
+.btn-del:hover{
+  background:rgba(251,113,133,0.3);
+}
+
+.add-form{
+  margin-top:20px;
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:14px;
+}
+
+.add-form h3{
+  margin:0 0 10px 0;
+  font-size:15px;
+  color:var(--cyan);
+}
+
+.form-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr auto;
+  gap:8px;
+}
+
+.form-grid input{
+  background:#0b1220;
+  border:1px solid var(--border);
+  color:var(--text);
+  padding:8px 10px;
+  border-radius:8px;
+  font-size:13px;
+  width:100%;
+}
+
+.btn-add{
+  background:var(--cyan);
+  color:#0b1220;
+  border:0;
+  border-radius:8px;
+  padding:8px 14px;
+  font-weight:800;
+  cursor:pointer;
+}
+
+@media(max-width:600px){
+  .form-grid{
+    grid-template-columns:1fr;
+  }
 }
 </style>
 </head>
@@ -136,17 +212,29 @@ h1{
 
 <header>
   <div>
-    <h1>🚆 Moje Pociągi</h1>
+    <h1>🚆 Moje Pociągi V2</h1>
   </div>
   <button class="refresh" id="refreshBtn">↻ ODŚWIEŻ</button>
 </header>
 
 <main id="list" class="list"></main>
 
+<section class="add-form">
+  <h3>➕ Dodaj pociąg do listy</h3>
+  <form id="addTrainForm" class="form-grid">
+    <input type="text" id="addStation" placeholder="Stacja (np. Katowice)" required>
+    <input type="text" id="addTrainNum" placeholder="Nr pociągu (np. 3815)" required>
+    <input type="text" id="addPlanTime" placeholder="Godzina (np. 14:40)" required>
+    <button type="submit" class="btn-add">Dodaj</button>
+  </form>
+</section>
+
 </div>
 
 <script>
-const TARGET_TRAINS = [
+const STORAGE_KEY = 'rafstakMojePociagiV4';
+
+const DEFAULT_TRAINS = [
   { station: 'Miasteczko Śląskie', trainNum: '44226', planTime: '04:59' },
   { station: 'Tarnowskie Góry', trainNum: '40450', planTime: '05:21' },
   { station: 'Chorzów Batory', trainNum: '40658', planTime: '06:07' },
@@ -159,6 +247,20 @@ const TARGET_TRAINS = [
   { station: 'Katowice', trainNum: '8330', planTime: '10:20' },
   { station: 'Katowice', trainNum: '3815', planTime: '14:40' }
 ];
+
+function loadTrains() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) return JSON.parse(saved);
+  } catch(e) {}
+  return [...DEFAULT_TRAINS];
+}
+
+function saveTrains(list) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+}
+
+let currentTrains = loadTrains();
 
 async function fetchStationDepartures(station) {
   try {
@@ -177,14 +279,37 @@ function getDelay(row) {
   return val !== undefined && val !== null ? Number(val) : 0;
 }
 
-function renderCard(item, row) {
+function moveTrain(e, index, direction) {
+  e.stopPropagation();
+  const newIndex = index + direction;
+  if (newIndex < 0 || newIndex >= currentTrains.length) return;
+  const item = currentTrains.splice(index, 1)[0];
+  currentTrains.splice(newIndex, 0, item);
+  saveTrains(currentTrains);
+  init();
+}
+
+function deleteTrain(e, index) {
+  e.stopPropagation();
+  if (confirm('Czy na pewno usunąć ten pociąg z listy?')) {
+    currentTrains.splice(index, 1);
+    saveTrains(currentTrains);
+    init();
+  }
+}
+
+function goDetails(station, number) {
+  window.location.href = `/train?train=${number}&station=${encodeURIComponent(station)}`;
+}
+
+function renderCard(item, index, row) {
   const delay = getDelay(row);
   const isDelayed = delay !== null && delay > 0;
 
   return `
-    <div class="card">
+    <div class="card" onclick="goDetails('${item.station}', '${item.trainNum}')">
       <div class="time-box">
-        <div class="plan-time">${item.planTime}</div>
+        <div class="plan-time">${item.planTime || '--:--'}</div>
         <div class="delay-tag ${isDelayed ? 'bad' : 'ok'}">
           ${delay === null ? 'BRAK' : (isDelayed ? '+' + delay + ' min' : '0 min')}
         </div>
@@ -192,15 +317,15 @@ function renderCard(item, row) {
       <div class="info-box">
         <div class="train-num">#${item.trainNum}</div>
         <div class="station-name">📍 ${item.station}</div>
-        <div class="status-text">${row ? (row.destination ? 'Kierunek: ' + row.destination : 'Dane pobrane z PLK') : 'Brak aktywnego kursu'}</div>
+        <div class="status-text">${row ? (row.destination ? 'Kierunek: ' + row.destination : 'Dane z PLK') : 'Brak aktywnego kursu'}</div>
       </div>
-      <button class="btn-open" onclick="goDetails('${item.station}', '${item.trainNum}')">TRASA</button>
+      <div class="actions">
+        <button class="btn-action" onclick="moveTrain(event, ${index}, -1)">▲</button>
+        <button class="btn-action" onclick="moveTrain(event, ${index}, 1)">▼</button>
+        <button class="btn-action btn-del" onclick="deleteTrain(event, ${index})">✕</button>
+      </div>
     </div>
   `;
-}
-
-function goDetails(station, number) {
-  window.location.href = `/train?train=${number}&station=${encodeURIComponent(station)}`;
 }
 
 async function init() {
@@ -208,24 +333,38 @@ async function init() {
   const refreshBtn = document.getElementById('refreshBtn');
   refreshBtn.disabled = true;
 
-  container.innerHTML = TARGET_TRAINS.map(item => renderCard(item, null)).join('');
+  container.innerHTML = currentTrains.map((item, idx) => renderCard(item, idx, null)).join('');
 
   const stationMap = new Map();
-  const stations = [...new Set(TARGET_TRAINS.map(t => t.station))];
+  const stations = [...new Set(currentTrains.map(t => t.station))];
 
   for (const st of stations) {
     stationMap.set(st, await fetchStationDepartures(st));
   }
 
-  const html = TARGET_TRAINS.map(item => {
+  const html = currentTrains.map((item, idx) => {
     const departures = stationMap.get(item.station) || [];
     const matchedRow = departures.find(d => String(d.trainNumber || d.trainNo || d.number || d.train) === String(item.trainNum));
-    return renderCard(item, matchedRow);
+    return renderCard(item, idx, matchedRow);
   }).join('');
 
   container.innerHTML = html;
   refreshBtn.disabled = false;
 }
+
+document.getElementById('addTrainForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const st = document.getElementById('addStation').value.trim();
+  const num = document.getElementById('addTrainNum').value.trim();
+  const tm = document.getElementById('addPlanTime').value.trim();
+
+  if (st && num) {
+    currentTrains.push({ station: st, trainNum: num, planTime: tm || '--:--' });
+    saveTrains(currentTrains);
+    document.getElementById('addTrainForm').reset();
+    init();
+  }
+});
 
 document.getElementById('refreshBtn').addEventListener('click', init);
 init();
