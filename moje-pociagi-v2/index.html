@@ -281,50 +281,35 @@ async function fetchStationDepartures(station) {
   }
 }
 
-function extractCourseId(row) {
+function extractCourseParams(row) {
   if (!row) return '';
-  return row.id || row.courseId || row.trainId || row.course_id || row.link || row.url || '';
+  const sid = row.scheduleId || '';
+  const oid = row.orderId || '';
+  const toid = row.trainOrderId || '';
+  
+  let params = [];
+  if (sid) params.push(`scheduleId=${encodeURIComponent(sid)}`);
+  if (oid) params.push(`orderId=${encodeURIComponent(oid)}`);
+  if (toid) params.push(`trainOrderId=${encodeURIComponent(toid)}`);
+  if (sid || oid) params.push(`id=${encodeURIComponent(sid || oid)}`);
+  
+  return params.join('&');
 }
 
-async function fetchTrainDetails(trainNum, station, courseId) {
-  try {
-    let url = `/api/train?train=${encodeURIComponent(trainNum)}&station=${encodeURIComponent(station)}`;
-    if (courseId) url += `&id=${encodeURIComponent(courseId)}&courseId=${encodeURIComponent(courseId)}`;
-    const res = await fetch(url, { cache: 'no-store' });
-    if (!res.ok) return null;
-    return await res.json();
-  } catch(e) {
-    return null;
-  }
-}
-
-function getDelay(row, details) {
-  if (details && details.delayMinutes !== undefined) return Number(details.delayMinutes);
+function extractLastStation(row) {
   if (!row) return null;
-  const val = row.delayMinutes ?? row.delay ?? row.delayInMinutes;
-  return val !== undefined && val !== null ? Number(val) : 0;
-}
-
-function extractLastStation(row, details) {
-  if (details) {
-    if (details.lastStation) return details.lastStation;
-    if (details.lastLocation) return details.lastLocation;
-    const stops = details.stops || details.route || details.stations;
-    if (Array.isArray(stops) && stops.length > 0) {
-      const passed = stops.filter(s => s.passed || s.isPassed || s.actualDeparture || s.actualArrival || s.status === 'passed');
-      if (passed.length > 0) {
-        const last = passed[passed.length - 1];
-        const name = last.stationName || last.station || last.name;
-        const time = last.actualDeparture || last.actualArrival || last.plannedDeparture || last.time;
-        return time ? `${name} (${time})` : name;
-      }
-    }
-  }
-  if (row) {
-    const rLoc = row.lastStationName || row.lastStation || row.lastLocation || row.checkpoint;
-    if (rLoc) return rLoc;
+  const st = row.lastConfirmedStation || row.lastStation || row.lastLocation;
+  const tm = row.lastConfirmedTime || row.lastTime;
+  if (st) {
+    return tm ? `${st} (${tm})` : st;
   }
   return null;
+}
+
+function getDelay(row) {
+  if (!row) return null;
+  const val = row.delay ?? row.delayMinutes ?? row.delayInMinutes;
+  return val !== undefined && val !== null ? Number(val) : 0;
 }
 
 function moveTrain(e, index, direction) {
@@ -346,22 +331,22 @@ function deleteTrain(e, index) {
   }
 }
 
-function goDetails(station, number, courseId) {
+function goDetails(station, number, courseQuery) {
   let url = `/train?train=${encodeURIComponent(number)}&station=${encodeURIComponent(station)}`;
-  if (courseId) {
-    url += `&id=${encodeURIComponent(courseId)}&courseId=${encodeURIComponent(courseId)}`;
+  if (courseQuery) {
+    url += `&${courseQuery}`;
   }
   window.location.href = url;
 }
 
-function renderCard(item, index, row, details) {
-  const delay = getDelay(row, details);
+function renderCard(item, index, row) {
+  const delay = getDelay(row);
   const isDelayed = delay !== null && delay > 0;
-  const courseId = extractCourseId(row);
-  const lastLoc = extractLastStation(row, details);
+  const courseQuery = extractCourseParams(row);
+  const lastLoc = extractLastStation(row);
 
   return `
-    <div class="card" onclick="goDetails('${item.station}', '${item.trainNum}', '${courseId}')">
+    <div class="card" onclick="goDetails('${item.station}', '${item.trainNum}', '${courseQuery}')">
       <div class="time-box">
         <div class="plan-time">${item.planTime || '--:--'}</div>
         <div class="delay-tag ${isDelayed ? 'bad' : 'ok'}">
@@ -388,7 +373,7 @@ async function init() {
   const refreshBtn = document.getElementById('refreshBtn');
   refreshBtn.disabled = true;
 
-  container.innerHTML = currentTrains.map((item, idx) => renderCard(item, idx, null, null)).join('');
+  container.innerHTML = currentTrains.map((item, idx) => renderCard(item, idx, null)).join('');
 
   const stationMap = new Map();
   const stations = [...new Set(currentTrains.map(t => t.station))];
@@ -397,24 +382,16 @@ async function init() {
     stationMap.set(st, await fetchStationDepartures(st));
   }
 
-  const cardsHtml = await Promise.all(currentTrains.map(async (item, idx) => {
+  const cardsHtml = currentTrains.map((item, idx) => {
     const departures = stationMap.get(item.station) || [];
     const matchedRow = departures.find(d => {
-      const dNum = String(d.trainNumber || d.trainNo || d.number || d.train || '').replace(/\D/g, '');
+      const dNum = String(d.train || d.trainNumber || d.number || '').replace(/\D/g, '');
       const targetNum = String(item.trainNum).replace(/\D/g, '');
       return dNum && targetNum && dNum === targetNum;
     });
 
-    let details = null;
-    if (matchedRow) {
-      const cId = extractCourseId(matchedRow);
-      if (cId) {
-        details = await fetchTrainDetails(item.trainNum, item.station, cId);
-      }
-    }
-
-    return renderCard(item, idx, matchedRow, details);
-  }));
+    return renderCard(item, idx, matchedRow);
+  });
 
   container.innerHTML = cardsHtml.join('');
   refreshBtn.disabled = false;
