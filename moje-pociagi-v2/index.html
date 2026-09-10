@@ -275,16 +275,21 @@ async function fetchStationDepartures(station) {
     const res = await fetch('/api/departures?station=' + encodeURIComponent(station) + '&limit=300', { cache: 'no-store' });
     if (!res.ok) return [];
     const data = await res.json();
-    return Array.isArray(data.departures) ? data.departures : [];
+    return Array.isArray(data.departures) ? data.departures : (Array.isArray(data) ? data : []);
   } catch (e) {
     return [];
   }
 }
 
+function extractCourseId(row) {
+  if (!row) return '';
+  return row.id || row.courseId || row.trainId || row.course_id || row.link || row.url || '';
+}
+
 async function fetchTrainDetails(trainNum, station, courseId) {
   try {
     let url = `/api/train?train=${encodeURIComponent(trainNum)}&station=${encodeURIComponent(station)}`;
-    if (courseId) url += `&id=${encodeURIComponent(courseId)}`;
+    if (courseId) url += `&id=${encodeURIComponent(courseId)}&courseId=${encodeURIComponent(courseId)}`;
     const res = await fetch(url, { cache: 'no-store' });
     if (!res.ok) return null;
     return await res.json();
@@ -300,16 +305,24 @@ function getDelay(row, details) {
   return val !== undefined && val !== null ? Number(val) : 0;
 }
 
-function extractLastStation(details) {
-  if (!details) return null;
-  if (details.lastStation) return details.lastStation;
-  if (Array.isArray(details.stops) && details.stops.length > 0) {
-    const passed = details.stops.filter(s => s.passed || s.actualDeparture || s.actualArrival);
-    if (passed.length > 0) {
-      const last = passed[passed.length - 1];
-      const time = last.actualDeparture || last.actualArrival || last.plannedDeparture;
-      return time ? `${last.stationName || last.station} (${time})` : (last.stationName || last.station);
+function extractLastStation(row, details) {
+  if (details) {
+    if (details.lastStation) return details.lastStation;
+    if (details.lastLocation) return details.lastLocation;
+    const stops = details.stops || details.route || details.stations;
+    if (Array.isArray(stops) && stops.length > 0) {
+      const passed = stops.filter(s => s.passed || s.isPassed || s.actualDeparture || s.actualArrival || s.status === 'passed');
+      if (passed.length > 0) {
+        const last = passed[passed.length - 1];
+        const name = last.stationName || last.station || last.name;
+        const time = last.actualDeparture || last.actualArrival || last.plannedDeparture || last.time;
+        return time ? `${name} (${time})` : name;
+      }
     }
+  }
+  if (row) {
+    const rLoc = row.lastStationName || row.lastStation || row.lastLocation || row.checkpoint;
+    if (rLoc) return rLoc;
   }
   return null;
 }
@@ -344,11 +357,11 @@ function goDetails(station, number, courseId) {
 function renderCard(item, index, row, details) {
   const delay = getDelay(row, details);
   const isDelayed = delay !== null && delay > 0;
-  const courseId = row ? (row.id || row.courseId || row.trainId || row.url) : null;
-  const lastLoc = extractLastStation(details);
+  const courseId = extractCourseId(row);
+  const lastLoc = extractLastStation(row, details);
 
   return `
-    <div class="card" onclick="goDetails('${item.station}', '${item.trainNum}', '${courseId || ''}')">
+    <div class="card" onclick="goDetails('${item.station}', '${item.trainNum}', '${courseId}')">
       <div class="time-box">
         <div class="plan-time">${item.planTime || '--:--'}</div>
         <div class="delay-tag ${isDelayed ? 'bad' : 'ok'}">
@@ -394,8 +407,10 @@ async function init() {
 
     let details = null;
     if (matchedRow) {
-      const cId = matchedRow.id || matchedRow.courseId || matchedRow.trainId;
-      details = await fetchTrainDetails(item.trainNum, item.station, cId);
+      const cId = extractCourseId(matchedRow);
+      if (cId) {
+        details = await fetchTrainDetails(item.trainNum, item.station, cId);
+      }
     }
 
     return renderCard(item, idx, matchedRow, details);
