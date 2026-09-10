@@ -125,9 +125,9 @@ h1{
 }
 
 .last-loc{
-  font-size:11px;
+  font-size:12px;
   color:var(--cyan);
-  margin-top:3px;
+  margin-top:4px;
   font-weight:600;
 }
 
@@ -250,6 +250,7 @@ const DEFAULT_TRAINS = [
   { station: 'Katowice', trainNum: '40921', planTime: '14:59' },
   { station: 'Katowice', trainNum: '40621', planTime: '15:35' },
   { station: 'Chorzów Batory', trainNum: '40423', planTime: '15:12' },
+  { station: 'Chorzów Batory', trainNum: '40468', planTime: '14:42' },
   { station: 'Chorzów Batory', trainNum: '40425', planTime: '16:06' },
   { station: 'Katowice', trainNum: '8330', planTime: '10:20' },
   { station: 'Katowice', trainNum: '3815', planTime: '14:40' }
@@ -280,18 +281,35 @@ async function fetchStationDepartures(station) {
   }
 }
 
-function getDelay(row) {
+async function fetchTrainDetails(trainNum, station, courseId) {
+  try {
+    let url = `/api/train?train=${encodeURIComponent(trainNum)}&station=${encodeURIComponent(station)}`;
+    if (courseId) url += `&id=${encodeURIComponent(courseId)}`;
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch(e) {
+    return null;
+  }
+}
+
+function getDelay(row, details) {
+  if (details && details.delayMinutes !== undefined) return Number(details.delayMinutes);
   if (!row) return null;
   const val = row.delayMinutes ?? row.delay ?? row.delayInMinutes;
   return val !== undefined && val !== null ? Number(val) : 0;
 }
 
-function getLastLocation(row) {
-  if (!row) return null;
-  const loc = row.lastStationName || row.lastStation || row.location || row.checkpoint || row.currentStation;
-  const time = row.lastStationTime || row.locationTime || row.updatedAt;
-  if (loc) {
-    return time ? `${loc} - ${time}` : loc;
+function extractLastStation(details) {
+  if (!details) return null;
+  if (details.lastStation) return details.lastStation;
+  if (Array.isArray(details.stops) && details.stops.length > 0) {
+    const passed = details.stops.filter(s => s.passed || s.actualDeparture || s.actualArrival);
+    if (passed.length > 0) {
+      const last = passed[passed.length - 1];
+      const time = last.actualDeparture || last.actualArrival || last.plannedDeparture;
+      return time ? `${last.stationName || last.station} (${time})` : (last.stationName || last.station);
+    }
   }
   return null;
 }
@@ -315,17 +333,22 @@ function deleteTrain(e, index) {
   }
 }
 
-function goDetails(station, number) {
-  window.location.href = `/train?train=${number}&station=${encodeURIComponent(station)}`;
+function goDetails(station, number, courseId) {
+  let url = `/train?train=${encodeURIComponent(number)}&station=${encodeURIComponent(station)}`;
+  if (courseId) {
+    url += `&id=${encodeURIComponent(courseId)}&courseId=${encodeURIComponent(courseId)}`;
+  }
+  window.location.href = url;
 }
 
-function renderCard(item, index, row) {
-  const delay = getDelay(row);
+function renderCard(item, index, row, details) {
+  const delay = getDelay(row, details);
   const isDelayed = delay !== null && delay > 0;
-  const lastLoc = getLastLocation(row);
+  const courseId = row ? (row.id || row.courseId || row.trainId || row.url) : null;
+  const lastLoc = extractLastStation(details);
 
   return `
-    <div class="card" onclick="goDetails('${item.station}', '${item.trainNum}')">
+    <div class="card" onclick="goDetails('${item.station}', '${item.trainNum}', '${courseId || ''}')">
       <div class="time-box">
         <div class="plan-time">${item.planTime || '--:--'}</div>
         <div class="delay-tag ${isDelayed ? 'bad' : 'ok'}">
@@ -352,7 +375,7 @@ async function init() {
   const refreshBtn = document.getElementById('refreshBtn');
   refreshBtn.disabled = true;
 
-  container.innerHTML = currentTrains.map((item, idx) => renderCard(item, idx, null)).join('');
+  container.innerHTML = currentTrains.map((item, idx) => renderCard(item, idx, null, null)).join('');
 
   const stationMap = new Map();
   const stations = [...new Set(currentTrains.map(t => t.station))];
@@ -361,17 +384,24 @@ async function init() {
     stationMap.set(st, await fetchStationDepartures(st));
   }
 
-  const html = currentTrains.map((item, idx) => {
+  const cardsHtml = await Promise.all(currentTrains.map(async (item, idx) => {
     const departures = stationMap.get(item.station) || [];
     const matchedRow = departures.find(d => {
       const dNum = String(d.trainNumber || d.trainNo || d.number || d.train || '').replace(/\D/g, '');
       const targetNum = String(item.trainNum).replace(/\D/g, '');
       return dNum && targetNum && dNum === targetNum;
     });
-    return renderCard(item, idx, matchedRow);
-  }).join('');
 
-  container.innerHTML = html;
+    let details = null;
+    if (matchedRow) {
+      const cId = matchedRow.id || matchedRow.courseId || matchedRow.trainId;
+      details = await fetchTrainDetails(item.trainNum, item.station, cId);
+    }
+
+    return renderCard(item, idx, matchedRow, details);
+  }));
+
+  container.innerHTML = cardsHtml.join('');
   refreshBtn.disabled = false;
 }
 
