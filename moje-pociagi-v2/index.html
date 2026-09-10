@@ -355,7 +355,7 @@ function renderCard(item, index, row) {
       </div>
       <div class="info-box">
         <div class="train-num">#${item.trainNum}</div>
-        <div class="station-name">📍 ${item.station}</div>
+        <div class="station-name">${item.station}</div>
         <div class="status-text">${row ? (row.destination ? 'Kierunek: ' + row.destination : 'Dane z PLK') : 'Brak aktywnego kursu'}</div>
         ${lastLoc ? `<div class="last-loc">📍 Ostatnio: ${lastLoc}</div>` : ''}
       </div>
