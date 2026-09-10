@@ -41,10 +41,7 @@ header{
   padding:8px 0 16px;
 }
 
-h1{
-  margin:0;
-  font-size:20px;
-}
+h1{ margin:0; font-size:20px; }
 
 .refresh{
   padding:8px 16px;
@@ -75,9 +72,7 @@ h1{
   transition:border-color 0.15s ease;
 }
 
-.card:hover{
-  border-color:var(--cyan);
-}
+.card:hover{ border-color:var(--cyan); }
 
 .time-box{
   text-align:center;
@@ -87,56 +82,19 @@ h1{
   border:1px solid var(--border);
 }
 
-.plan-time{
-  font-size:14px;
-  font-weight:800;
-  color:var(--text);
-}
-
-.delay-tag{
-  font-size:11px;
-  font-weight:700;
-  margin-top:2px;
-}
-
+.plan-time{ font-size:14px; font-weight:800; color:var(--text); }
+.delay-tag{ font-size:11px; font-weight:700; margin-top:2px; }
 .delay-tag.ok{ color:var(--green); }
 .delay-tag.bad{ color:var(--red); }
+.delay-tag.off{ color:var(--muted); }
 
-.info-box{
-  min-width:0;
-}
+.info-box{ min-width:0; }
+.train-num{ font-size:16px; font-weight:900; color:var(--cyan); }
+.station-name{ font-size:13px; color:var(--muted); margin-top:2px; }
+.status-text{ font-size:12px; color:var(--text); margin-top:4px; }
+.last-loc{ font-size:12px; color:var(--cyan); margin-top:4px; font-weight:600; }
 
-.train-num{
-  font-size:16px;
-  font-weight:900;
-  color:var(--cyan);
-}
-
-.station-name{
-  font-size:13px;
-  color:var(--muted);
-  margin-top:2px;
-}
-
-.status-text{
-  font-size:12px;
-  color:var(--text);
-  margin-top:4px;
-}
-
-.last-loc{
-  font-size:12px;
-  color:var(--cyan);
-  margin-top:4px;
-  font-weight:600;
-}
-
-.actions{
-  display:flex;
-  align-items:center;
-  gap:6px;
-}
-
+.actions{ display:flex; align-items:center; gap:6px; }
 .btn-action{
   background:rgba(255,255,255,0.06);
   border:1px solid var(--border);
@@ -151,20 +109,13 @@ h1{
   font-size:13px;
   font-weight:bold;
 }
-
-.btn-action:hover{
-  background:rgba(255,255,255,0.15);
-}
-
+.btn-action:hover{ background:rgba(255,255,255,0.15); }
 .btn-del{
   background:rgba(251,113,133,0.15);
   border:1px solid rgba(251,113,133,0.4);
   color:var(--red);
 }
-
-.btn-del:hover{
-  background:rgba(251,113,133,0.3);
-}
+.btn-del:hover{ background:rgba(251,113,133,0.3); }
 
 .add-form{
   margin-top:20px;
@@ -173,19 +124,8 @@ h1{
   border-radius:12px;
   padding:14px;
 }
-
-.add-form h3{
-  margin:0 0 10px 0;
-  font-size:15px;
-  color:var(--cyan);
-}
-
-.form-grid{
-  display:grid;
-  grid-template-columns:1fr 1fr 1fr auto;
-  gap:8px;
-}
-
+.add-form h3{ margin:0 0 10px 0; font-size:15px; color:var(--cyan); }
+.form-grid{ display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:8px; }
 .form-grid input{
   background:#0b1220;
   border:1px solid var(--border);
@@ -195,7 +135,6 @@ h1{
   font-size:13px;
   width:100%;
 }
-
 .btn-add{
   background:var(--cyan);
   color:#0b1220;
@@ -207,9 +146,7 @@ h1{
 }
 
 @media(max-width:600px){
-  .form-grid{
-    grid-template-columns:1fr;
-  }
+  .form-grid{ grid-template-columns:1fr; }
 }
 </style>
 </head>
@@ -281,6 +218,16 @@ async function fetchStationDepartures(station) {
   }
 }
 
+async function fetchFinishedTrainInfo(trainNum) {
+  try {
+    const res = await fetch('/api/train?train=' + encodeURIComponent(trainNum), { cache: 'no-store' });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (e) {
+    return null;
+  }
+}
+
 function extractCourseParams(row) {
   if (!row) return '';
   const sid = row.scheduleId || '';
@@ -298,8 +245,8 @@ function extractCourseParams(row) {
 
 function extractLastStation(row) {
   if (!row) return null;
-  const st = row.lastConfirmedStation || row.lastStation || row.lastLocation;
-  const tm = row.lastConfirmedTime || row.lastTime;
+  const st = row.lastConfirmedStation || row.lastStation || row.lastLocation || row.finalStation;
+  const tm = row.lastConfirmedTime || row.lastTime || row.arrivalTime;
   if (st) {
     return tm ? `${st} (${tm})` : st;
   }
@@ -344,20 +291,32 @@ function renderCard(item, index, row) {
   const isDelayed = delay !== null && delay > 0;
   const courseQuery = extractCourseParams(row);
   const lastLoc = extractLastStation(row);
+  const isFinished = row && row.isFinished;
+
+  let statusText = 'Brak aktywnego kursu';
+  if (row) {
+    if (isFinished) {
+      statusText = 'Kurs zakończony';
+    } else if (row.destination) {
+      statusText = 'Kierunek: ' + row.destination;
+    } else {
+      statusText = 'Dane z PLK';
+    }
+  }
 
   return `
     <div class="card" onclick="goDetails('${item.station}', '${item.trainNum}', '${courseQuery}')">
       <div class="time-box">
         <div class="plan-time">${item.planTime || '--:--'}</div>
-        <div class="delay-tag ${isDelayed ? 'bad' : 'ok'}">
-          ${delay === null ? 'BRAK' : (isDelayed ? '+' + delay + ' min' : '0 min')}
+        <div class="delay-tag ${delay === null ? 'off' : (isDelayed ? 'bad' : 'ok')}">
+          ${delay === null ? (isFinished ? 'KONIEC' : 'BRAK') : (isDelayed ? '+' + delay + ' min' : '0 min')}
         </div>
       </div>
       <div class="info-box">
         <div class="train-num">#${item.trainNum}</div>
         <div class="station-name">${item.station}</div>
-        <div class="status-text">${row ? (row.destination ? 'Kierunek: ' + row.destination : 'Dane z PLK') : 'Brak aktywnego kursu'}</div>
-        ${lastLoc ? `<div class="last-loc">📍 Ostatnio: ${lastLoc}</div>` : ''}
+        <div class="status-text">${statusText}</div>
+        ${lastLoc ? `<div class="last-loc">Ostatnio: ${lastLoc}</div>` : ''}
       </div>
       <div class="actions">
         <button class="btn-action" onclick="moveTrain(event, ${index}, -1)">▲</button>
@@ -382,17 +341,29 @@ async function init() {
     stationMap.set(st, await fetchStationDepartures(st));
   }
 
-  const cardsHtml = currentTrains.map((item, idx) => {
+  const cardsPromises = currentTrains.map(async (item, idx) => {
     const departures = stationMap.get(item.station) || [];
-    const matchedRow = departures.find(d => {
+    let matchedRow = departures.find(d => {
       const dNum = String(d.train || d.trainNumber || d.number || '').replace(/\D/g, '');
       const targetNum = String(item.trainNum).replace(/\D/g, '');
       return dNum && targetNum && dNum === targetNum;
     });
 
+    // Fallback dla pociągów zakończonych / braku na aktywnej tablicy
+    if (!matchedRow) {
+      const finishedData = await fetchFinishedTrainInfo(item.trainNum);
+      if (finishedData && (finishedData.lastStation || finishedData.lastConfirmedStation)) {
+        matchedRow = {
+          ...finishedData,
+          isFinished: true
+        };
+      }
+    }
+
     return renderCard(item, idx, matchedRow);
   });
 
+  const cardsHtml = await Promise.all(cardsPromises);
   container.innerHTML = cardsHtml.join('');
   refreshBtn.disabled = false;
 }
