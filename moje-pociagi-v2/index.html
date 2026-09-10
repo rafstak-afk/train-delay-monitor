@@ -16,6 +16,7 @@
   --cyan:#22d3ee;
   --green:#34d399;
   --red:#fb7185;
+  --gray:#64748b;
 }
 
 *{box-sizing:border-box}
@@ -53,6 +54,11 @@ h1{ margin:0; font-size:20px; }
   cursor:pointer;
 }
 
+.refresh:disabled{
+  opacity:0.5;
+  cursor:not-allowed;
+}
+
 .list{
   display:flex;
   flex-direction:column;
@@ -86,7 +92,7 @@ h1{ margin:0; font-size:20px; }
 .delay-tag{ font-size:11px; font-weight:700; margin-top:2px; }
 .delay-tag.ok{ color:var(--green); }
 .delay-tag.bad{ color:var(--red); }
-.delay-tag.off{ color:var(--muted); }
+.delay-tag.off{ color:var(--gray); }
 
 .info-box{ min-width:0; }
 .train-num{ font-size:16px; font-weight:900; color:var(--cyan); }
@@ -218,14 +224,14 @@ async function fetchStationDepartures(station) {
   }
 }
 
-async function fetchFinishedTrainDetails(trainNum, station) {
+// Fallback: Pobieranie identyfikatorów i stanu biegu po samym numerze pociągu z PLK
+async function fetchTrainByNumber(trainNum, station) {
   try {
-    const res = await fetch('/api/train?train=' + encodeURIComponent(trainNum) + '&station=' + encodeURIComponent(station), { cache: 'no-store' });
+    const res = await fetch(`/api/train?train=${encodeURIComponent(trainNum)}&station=${encodeURIComponent(station)}`, { cache: 'no-store' });
     if (!res.ok) return null;
     const data = await res.json();
     if (!data) return null;
 
-    // Próba odczytania ostatniej potwierdzonej stacji z trasy lub podsumowania
     let lastSt = data.lastConfirmedStation || data.lastStation || data.lastLocation;
     let lastTm = data.lastConfirmedTime || data.lastTime || data.arrivalTime;
 
@@ -238,16 +244,16 @@ async function fetchFinishedTrainDetails(trainNum, station) {
       }
     }
 
-    if (lastSt || data.destination) {
-      return {
-        destination: data.destination || data.direction || 'Zakończony',
-        lastConfirmedStation: lastSt,
-        lastConfirmedTime: lastTm,
-        delay: data.delay ?? 0,
-        isFinished: true
-      };
-    }
-    return null;
+    return {
+      scheduleId: data.scheduleId || data.id,
+      orderId: data.orderId,
+      trainOrderId: data.trainOrderId,
+      destination: data.destination || data.direction,
+      lastConfirmedStation: lastSt,
+      lastConfirmedTime: lastTm,
+      delay: data.delay ?? 0,
+      isFinished: data.isFinished ?? true
+    };
   } catch (e) {
     return null;
   }
@@ -255,7 +261,7 @@ async function fetchFinishedTrainDetails(trainNum, station) {
 
 function extractCourseParams(row) {
   if (!row) return '';
-  const sid = row.scheduleId || '';
+  const sid = row.scheduleId || row.id || '';
   const oid = row.orderId || '';
   const toid = row.trainOrderId || '';
   
@@ -263,7 +269,6 @@ function extractCourseParams(row) {
   if (sid) params.push(`scheduleId=${encodeURIComponent(sid)}`);
   if (oid) params.push(`orderId=${encodeURIComponent(oid)}`);
   if (toid) params.push(`trainOrderId=${encodeURIComponent(toid)}`);
-  if (sid || oid) params.push(`id=${encodeURIComponent(sid || oid)}`);
   
   return params.join('&');
 }
@@ -318,15 +323,17 @@ function renderCard(item, index, row) {
   const lastLoc = extractLastStation(row);
   const isFinished = row && row.isFinished;
 
-  let statusText = 'Brak aktywnego kursu';
+  let statusText = 'Sprawdzanie stanu...';
   if (row) {
     if (isFinished) {
-      statusText = row.destination ? 'Kierunek: ' + row.destination : 'Kurs zakończony';
+      statusText = row.destination ? 'Kierunek: ' + row.destination + ' (Zakończony)' : 'Kurs zakończony';
     } else if (row.destination) {
       statusText = 'Kierunek: ' + row.destination;
     } else {
-      statusText = 'Dane z PLK';
+      statusText = 'W trasie';
     }
+  } else {
+    statusText = 'Oczekuje na start';
   }
 
   return `
@@ -334,7 +341,7 @@ function renderCard(item, index, row) {
       <div class="time-box">
         <div class="plan-time">${item.planTime || '--:--'}</div>
         <div class="delay-tag ${delay === null ? 'off' : (isDelayed ? 'bad' : 'ok')}">
-          ${delay === null ? 'BRAK' : (isDelayed ? '+' + delay + ' min' : '0 min')}
+          ${delay === null ? (isFinished ? 'ZAKOŃCZONY' : 'PLAN') : (isDelayed ? '+' + delay + ' min' : '0 min')}
         </div>
       </div>
       <div class="info-box">
@@ -374,11 +381,9 @@ async function init() {
       return dNum && targetNum && dNum === targetNum;
     });
 
+    // Pełne zapytanie po numerze pociągu dla pociągów poza aktywnego okna tablicy stacyjnej
     if (!matchedRow) {
-      const finishedData = await fetchFinishedTrainDetails(item.trainNum, item.station);
-      if (finishedData) {
-        matchedRow = finishedData;
-      }
+      matchedRow = await fetchTrainByNumber(item.trainNum, item.station);
     }
 
     return renderCard(item, idx, matchedRow);
