@@ -394,17 +394,13 @@ function renderCard(item, index, row) {
   const adjustedTime = isDelayed ? getAdjustedTime(item.planTime, delay) : null;
   const delayBadge = isDelayed ? `+${delay} min` : "0 min";
 
-  // Wyciąganie unikalnych parametrów biegu z odpowiedzi API
+  // Wyciąganie parametrów pod kątem wymagań train.html
   const scheduleId = row && (row.scheduleId || row.scheduledId || row.id) ? (row.scheduleId || row.scheduledId || row.id) : "";
-  const courseId = row && (row.courseId || row.course || row.schedule) ? (row.courseId || row.course || row.schedule) : "";
+  const trainOrderId = row && (row.trainOrderId || row.orderId || row.trainOrder) ? (row.trainOrderId || row.orderId || row.trainOrder) : "";
 
   let detailsUrl = `/train.html?train=${encodeURIComponent(item.trainNum)}&station=${encodeURIComponent(item.station)}`;
-  if (scheduleId) {
-    detailsUrl += `&scheduleId=${encodeURIComponent(scheduleId)}`;
-  }
-  if (courseId) {
-    detailsUrl += `&course=${encodeURIComponent(courseId)}`;
-  }
+  if (scheduleId) detailsUrl += `&scheduleId=${encodeURIComponent(scheduleId)}`;
+  if (trainOrderId) detailsUrl += `&trainOrderId=${encodeURIComponent(trainOrderId)}`;
 
   return `
     <div class="card" onclick="window.location.href='${detailsUrl}'" style="display:flex; align-items:center; justify-content:space-between; padding:14px; border-bottom:1px solid #333; cursor:pointer; background:rgba(255,255,255,0.05); margin-bottom:8px; border-radius:8px;">
