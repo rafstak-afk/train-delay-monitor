@@ -394,13 +394,20 @@ function renderCard(item, index, row) {
   const adjustedTime = isDelayed ? getAdjustedTime(item.planTime, delay) : null;
   const delayBadge = isDelayed ? `+${delay} min` : "0 min";
 
-  // Wyciąganie parametrów pod kątem wymagań train.html
+  // Precyzyjna ekstrakcja identyfikatorów z odpowiedzi API pod wymogi train.html
+  const cleanTrainNo = String(item.trainNum || '').replace(/\D+/g, '');
   const scheduleId = row && (row.scheduleId || row.scheduledId || row.id) ? (row.scheduleId || row.scheduledId || row.id) : "";
-  const trainOrderId = row && (row.trainOrderId || row.orderId || row.trainOrder) ? (row.trainOrderId || row.orderId || row.trainOrder) : "";
+  const orderId = row && (row.orderId || row.trainOrderId || row.trainOrder) ? (row.orderId || row.trainOrderId || row.trainOrder) : "";
+  const trainName = row && (row.name || row.trainName) ? (row.name || row.trainName) : "";
+  const destination = row && (row.destination || row.to) ? (row.destination || row.to) : "";
 
-  let detailsUrl = `/train.html?train=${encodeURIComponent(item.trainNum)}&station=${encodeURIComponent(item.station)}`;
+  let detailsUrl = `/train.html?train=${encodeURIComponent(cleanTrainNo || item.trainNum)}&station=${encodeURIComponent(item.station)}`;
   if (scheduleId) detailsUrl += `&scheduleId=${encodeURIComponent(scheduleId)}`;
-  if (trainOrderId) detailsUrl += `&trainOrderId=${encodeURIComponent(trainOrderId)}`;
+  if (orderId) {
+    detailsUrl += `&orderId=${encodeURIComponent(orderId)}&trainOrderId=${encodeURIComponent(orderId)}`;
+  }
+  if (trainName) detailsUrl += `&name=${encodeURIComponent(trainName)}`;
+  if (destination) detailsUrl += `&destination=${encodeURIComponent(destination)}`;
 
   return `
     <div class="card" onclick="window.location.href='${detailsUrl}'" style="display:flex; align-items:center; justify-content:space-between; padding:14px; border-bottom:1px solid #333; cursor:pointer; background:rgba(255,255,255,0.05); margin-bottom:8px; border-radius:8px;">
