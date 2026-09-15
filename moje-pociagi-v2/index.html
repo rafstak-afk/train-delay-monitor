@@ -394,10 +394,16 @@ function renderCard(item, index, row) {
   const adjustedTime = isDelayed ? getAdjustedTime(item.planTime, delay) : null;
   const delayBadge = isDelayed ? `+${delay} min` : "0 min";
 
+  // Wyciąganie unikalnych parametrów biegu z odpowiedzi API
   const scheduleId = row && (row.scheduleId || row.scheduledId || row.id) ? (row.scheduleId || row.scheduledId || row.id) : "";
-  let detailsUrl = `../train.html?train=${encodeURIComponent(item.trainNum)}&station=${encodeURIComponent(item.station)}`;
+  const courseId = row && (row.courseId || row.course || row.schedule) ? (row.courseId || row.course || row.schedule) : "";
+
+  let detailsUrl = `/train.html?train=${encodeURIComponent(item.trainNum)}&station=${encodeURIComponent(item.station)}`;
   if (scheduleId) {
     detailsUrl += `&scheduleId=${encodeURIComponent(scheduleId)}`;
+  }
+  if (courseId) {
+    detailsUrl += `&course=${encodeURIComponent(courseId)}`;
   }
 
   return `
