@@ -394,26 +394,29 @@ function renderCard(item, index, row) {
   const adjustedTime = isDelayed ? getAdjustedTime(item.planTime, delay) : null;
   const delayBadge = isDelayed ? `+${delay} min` : "0 min";
 
+  const scheduleId = row && (row.scheduleId || row.scheduledId) ? (row.scheduleId || row.scheduledId) : "";
+  const detailsUrl = `pociag.html?train=${encodeURIComponent(item.trainNum)}&station=${encodeURIComponent(item.station)}${scheduleId ? "&scheduleId=" + encodeURIComponent(scheduleId) : ""}`;
+
   return `
-    <div class="card" style="display:flex; align-items:center; justify-content:space-between; padding:12px; border-bottom:1px solid #ccc;">
-      <div style="text-align:center; min-width:85px;">
-        <div style="font-size:1.25rem; font-weight:bold;">${item.planTime || "--:--"}</div>
-        <div style="font-size:1.15rem; font-weight:800; color:${isDelayed ? "#d9534f" : "#5cb85c"}; margin:2px 0;">
+    <div class="card" onclick="window.location.href='${detailsUrl}'" style="display:flex; align-items:center; justify-content:space-between; padding:14px; border-bottom:1px solid #333; cursor:pointer; background:rgba(255,255,255,0.05); margin-bottom:8px; border-radius:8px;">
+      <div style="text-align:center; min-width:85px; padding-right:10px;">
+        <div style="font-size:1.3rem; font-weight:bold; color:#ffffff;">${item.planTime || "--:--"}</div>
+        <div style="font-size:1.15rem; font-weight:800; color:${isDelayed ? "#ff6b6b" : "#51cf66"}; margin:2px 0;">
           ${delayBadge}
         </div>
-        ${adjustedTime ? `<div style="font-size:0.95rem; font-weight:bold; color:#d9534f;">(${adjustedTime})</div>` : ""}
+        ${adjustedTime ? `<div style="font-size:0.95rem; font-weight:bold; color:#ff6b6b;">(${adjustedTime})</div>` : ""}
       </div>
 
-      <div style="flex:1; margin-left:15px;">
-        <div style="font-weight:bold; font-size:1.15rem; color:#111;">#${item.trainNum}</div>
-        <div style="color:#222; font-size:1.05rem; font-weight:600;">${item.station}</div>
-        <div style="font-size:0.95rem; color:#333; font-weight:500; margin-top:4px;">${statusText}</div>
+      <div style="flex:1; padding-left:5px;">
+        <div style="font-weight:bold; font-size:1.2rem; color:#ffffff;">#${item.trainNum}</div>
+        <div style="color:#f0f0f0; font-size:1.05rem; font-weight:600; margin-top:2px;">${item.station}</div>
+        <div style="font-size:0.95rem; color:#cccccc; font-weight:500; margin-top:4px;">${statusText}</div>
       </div>
 
-      <div style="display:flex; flex-direction:column; gap:4px;">
-        <button onclick="moveTrain(${index}, -1)" style="padding:2px 6px;">▲</button>
-        <button onclick="moveTrain(${index}, 1)" style="padding:2px 6px;">▼</button>
-        <button onclick="removeTrain(${index})" style="padding:2px 6px; color:red;">✕</button>
+      <div style="display:flex; flex-direction:column; gap:6px;" onclick="event.stopPropagation();">
+        <button onclick="moveTrain(${index}, -1)" style="padding:4px 8px; background:#2b2b2b; color:#fff; border:1px solid #444; border-radius:4px; cursor:pointer;">▲</button>
+        <button onclick="moveTrain(${index}, 1)" style="padding:4px 8px; background:#2b2b2b; color:#fff; border:1px solid #444; border-radius:4px; cursor:pointer;">▼</button>
+        <button onclick="removeTrain(${index})" style="padding:4px 8px; background:#2b2b2b; color:#ff6b6b; border:1px solid #444; border-radius:4px; cursor:pointer;">✕</button>
       </div>
     </div>
   `;
