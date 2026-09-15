@@ -395,7 +395,15 @@ function renderCard(item, index, row) {
   const delayBadge = isDelayed ? `+${delay} min` : "0 min";
 
   const scheduleId = row && (row.scheduleId || row.scheduledId) ? (row.scheduleId || row.scheduledId) : "";
-  const detailsUrl = `../pociag.html?train=${encodeURIComponent(item.trainNum)}&station=${encodeURIComponent(item.station)}${scheduleId ? "&scheduleId=" + encodeURIComponent(scheduleId) : ""}`;
+  const scheduleId = row && (row.scheduleId || row.scheduledId || row.id) ? (row.scheduleId || row.scheduledId || row.id) : '';
+  const courseParam = extractCourseParams ? extractCourseParams(row) : '';
+  let detailsUrl = `../train.html?train=${encodeURIComponent(item.trainNum)}&station=${encodeURIComponent(item.station)}`;
+  if (scheduleId) {
+    detailsUrl += `&scheduleId=${encodeURIComponent(scheduleId)}`;
+  }
+  if (courseParam) {
+    detailsUrl += `&${courseParam}`;
+  }
 
   return `
     <div class="card" onclick="window.location.href='${detailsUrl}'" style="display:flex; align-items:center; justify-content:space-between; padding:14px; border-bottom:1px solid #333; cursor:pointer; background:rgba(255,255,255,0.05); margin-bottom:8px; border-radius:8px;">
