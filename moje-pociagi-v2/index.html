@@ -360,24 +360,36 @@ function goDetails(station, number, courseQuery) {
   window.location.href = url;
 }
 
+
+    function isTrainInFuture(timeStr) {
+      if (!timeStr) return false;
+      const parts = timeStr.split(":");
+      if (parts.length < 2) return false;
+      const now = new Date();
+      const trainTime = new Date();
+      trainTime.setHours(parseInt(parts[0], 10), parseInt(parts[1], 10), 0, 0);
+      return trainTime > now;
+    }
+    
 function renderCard(item, index, row) {
   const delay = getDelay(row);
   const isDelayed = delay !== null && delay > 0;
   const courseQuery = extractCourseParams(row);
   const lastLoc = extractLastStation(row);
-  const isFinished = row && row.isFinished;
 
-  let statusText = 'Sprawdzanie stanu...';
+  let statusText = "";
   if (row) {
-    if (isFinished) {
-      statusText = row.destination ? 'Kierunek: ' + row.destination + ' (Zakończony)' : 'Kurs zakończony';
+    const delayInfo = (delay !== null && delay > 0) ? ` (+${delay} min)` : " (+0 min)";
+    
+    if (lastLoc) {
+      statusText = `📍 Ostatnio: ${lastLoc}${delayInfo}`;
     } else if (row.destination) {
-      statusText = 'Kierunek: ' + row.destination;
+      statusText = `Kierunek: ${row.destination}${delayInfo}`;
     } else {
-      statusText = 'W trasie';
+      statusText = `W trasie${delayInfo}`;
     }
   } else {
-    statusText = 'Oczekuje na start';
+    statusText = "Oczekuje na dane";
   }
 
   return `
