@@ -227,7 +227,31 @@ async function fetchStationDepartures(station) {
 // Fallback: Pobieranie identyfikatorów i stanu biegu po samym numerze pociągu z PLK
 async function fetchTrainByNumber(trainNum, station) {
   try {
-    const res = await fetch(`/api/train-details?train=${encodeURIComponent(trainNum)}&station=${encodeURIComponent(station)}`, { cache: 'no-store' });
+    let scheduleId = "";
+    let orderId = "";
+    let trainOrderId = "";
+
+    try {
+      const lookupRes = await fetch(`/api/v2/smart-lookup?train=${encodeURIComponent(trainNum)}&station=${encodeURIComponent(station)}`, { cache: "no-store" });
+      if (lookupRes.ok) {
+        const lData = await lookupRes.json();
+        if (lData && lData.ok) {
+          scheduleId = lData.scheduleId || "";
+          orderId = lData.orderId || "";
+          trainOrderId = lData.trainOrderId || "";
+        }
+      }
+    } catch (_) {}
+
+    const query = new URLSearchParams({
+      train: trainNum,
+      station: station
+    });
+    if (scheduleId) query.set("scheduleId", scheduleId);
+    if (orderId) query.set("orderId", orderId);
+    if (trainOrderId) query.set("trainOrderId", trainOrderId);
+
+    const res = await fetch(`/api/train-details?${query.toString()}`, { cache: "no-store" });
     if (!res.ok) return null;
     const data = await res.json();
     if (!data) return null;
