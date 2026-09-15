@@ -376,10 +376,13 @@ function renderCard(item, index, row) {
   const delay = getDelay(row);
   const isDelayed = delay !== null && delay > 0;
   const lastLoc = extractLastStation(row);
+  const isFinished = row && (row.isFinished || row.status === "FINISHED" || row.status === "COMPLETED");
 
   let statusText = "⏳ Pobieranie informacji...";
   if (row) {
-    if (lastLoc) {
+    if (isFinished) {
+      statusText = "🏁 Bieg zakończony";
+    } else if (lastLoc) {
       statusText = `📍 Ostatnio: ${lastLoc}`;
     } else if (row.destination) {
       statusText = `Kierunek: ${row.destination}`;
@@ -393,18 +396,18 @@ function renderCard(item, index, row) {
 
   return `
     <div class="card" style="display:flex; align-items:center; justify-content:space-between; padding:12px; border-bottom:1px solid #ccc;">
-      <div style="text-align:center; min-width:80px;">
-        <div style="font-size:1.2rem; font-weight:bold;">${item.planTime || "--:--"}</div>
-        <div style="font-size:1.1rem; font-weight:800; color:${isDelayed ? "#d9534f" : "#5cb85c"}; margin:2px 0;">
+      <div style="text-align:center; min-width:85px;">
+        <div style="font-size:1.25rem; font-weight:bold;">${item.planTime || "--:--"}</div>
+        <div style="font-size:1.15rem; font-weight:800; color:${isDelayed ? "#d9534f" : "#5cb85c"}; margin:2px 0;">
           ${delayBadge}
         </div>
-        ${adjustedTime ? `<div style="font-size:0.9rem; font-weight:bold; color:#d9534f;">(${adjustedTime})</div>` : ""}
+        ${adjustedTime ? `<div style="font-size:0.95rem; font-weight:bold; color:#d9534f;">(${adjustedTime})</div>` : ""}
       </div>
 
       <div style="flex:1; margin-left:15px;">
-        <div style="font-weight:bold; font-size:1.1rem;">#${item.trainNum}</div>
-        <div style="color:#555; font-size:0.95rem;">${item.station}</div>
-        <div style="font-size:0.85rem; color:#666; margin-top:4px;">${statusText}</div>
+        <div style="font-weight:bold; font-size:1.15rem; color:#111;">#${item.trainNum}</div>
+        <div style="color:#222; font-size:1.05rem; font-weight:600;">${item.station}</div>
+        <div style="font-size:0.95rem; color:#333; font-weight:500; margin-top:4px;">${statusText}</div>
       </div>
 
       <div style="display:flex; flex-direction:column; gap:4px;">
