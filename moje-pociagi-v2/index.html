@@ -360,44 +360,57 @@ function goDetails(station, number, courseQuery) {
   window.location.href = url;
 }
 
+
+    function getAdjustedTime(timeStr, delayMinutes) {
+      if (!timeStr || !delayMinutes || isNaN(delayMinutes)) return null;
+      const parts = timeStr.split(":");
+      if (parts.length < 2) return null;
+      const d = new Date();
+      d.setHours(parseInt(parts[0], 10), parseInt(parts[1], 10) + parseInt(delayMinutes, 10), 0, 0);
+      const h = String(d.getHours()).padStart(2, "0");
+      const m = String(d.getMinutes()).padStart(2, "0");
+      return `${h}:${m}`;
+    }
+  
 function renderCard(item, index, row) {
   const delay = getDelay(row);
   const isDelayed = delay !== null && delay > 0;
-  const courseQuery = extractCourseParams(row);
   const lastLoc = extractLastStation(row);
-  const isFinished = row && row.isFinished;
 
-  let statusText = 'Sprawdzanie stanu...';
+  let statusText = "⏳ Pobieranie informacji...";
   if (row) {
-    if (isFinished) {
-      statusText = row.destination ? 'Kierunek: ' + row.destination + ' (Zakończony)' : 'Kurs zakończony';
+    if (lastLoc) {
+      statusText = `📍 Ostatnio: ${lastLoc}`;
     } else if (row.destination) {
-      statusText = 'Kierunek: ' + row.destination;
+      statusText = `Kierunek: ${row.destination}`;
     } else {
-      statusText = 'W trasie';
+      statusText = "W trasie";
     }
-  } else {
-    statusText = 'Oczekuje na start';
   }
 
+  const adjustedTime = isDelayed ? getAdjustedTime(item.planTime, delay) : null;
+  const delayBadge = isDelayed ? `+${delay} min` : "0 min";
+
   return `
-    <div class="card" onclick="goDetails('${item.station}', '${item.trainNum}', '${courseQuery}')">
-      <div class="time-box">
-        <div class="plan-time">${item.planTime || '--:--'}</div>
-        <div class="delay-tag ${delay === null ? 'off' : (isDelayed ? 'bad' : 'ok')}">
-          ${delay === null ? (isFinished ? 'ZAKOŃCZONY' : 'PLAN') : (isDelayed ? '+' + delay + ' min' : '0 min')}
+    <div class="card" style="display:flex; align-items:center; justify-content:space-between; padding:12px; border-bottom:1px solid #ccc;">
+      <div style="text-align:center; min-width:80px;">
+        <div style="font-size:1.2rem; font-weight:bold;">${item.planTime || "--:--"}</div>
+        <div style="font-size:1.1rem; font-weight:800; color:${isDelayed ? "#d9534f" : "#5cb85c"}; margin:2px 0;">
+          ${delayBadge}
         </div>
+        ${adjustedTime ? `<div style="font-size:0.9rem; font-weight:bold; color:#d9534f;">(${adjustedTime})</div>` : ""}
       </div>
-      <div class="info-box">
-        <div class="train-num">#${item.trainNum}</div>
-        <div class="station-name">${item.station}</div>
-        <div class="status-text">${statusText}</div>
-        ${lastLoc ? `<div class="last-loc">📍 Ostatnio: ${lastLoc}</div>` : ''}
+
+      <div style="flex:1; margin-left:15px;">
+        <div style="font-weight:bold; font-size:1.1rem;">#${item.trainNum}</div>
+        <div style="color:#555; font-size:0.95rem;">${item.station}</div>
+        <div style="font-size:0.85rem; color:#666; margin-top:4px;">${statusText}</div>
       </div>
-      <div class="actions">
-        <button class="btn-action" onclick="moveTrain(event, ${index}, -1)">▲</button>
-        <button class="btn-action" onclick="moveTrain(event, ${index}, 1)">▼</button>
-        <button class="btn-action btn-del" onclick="deleteTrain(event, ${index})">✕</button>
+
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        <button onclick="moveTrain(${index}, -1)" style="padding:2px 6px;">▲</button>
+        <button onclick="moveTrain(${index}, 1)" style="padding:2px 6px;">▼</button>
+        <button onclick="removeTrain(${index})" style="padding:2px 6px; color:red;">✕</button>
       </div>
     </div>
   `;
