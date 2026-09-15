@@ -227,7 +227,7 @@ async function fetchStationDepartures(station) {
 // Fallback: Pobieranie identyfikatorów i stanu biegu po samym numerze pociągu z PLK
 async function fetchTrainByNumber(trainNum, station) {
   try {
-    const res = await fetch(`/api/train?train=${encodeURIComponent(trainNum)}&station=${encodeURIComponent(station)}`, { cache: 'no-store' });
+    const res = await fetch(`/api/train-details?train=${encodeURIComponent(trainNum)}&station=${encodeURIComponent(station)}`, { cache: 'no-store' });
     if (!res.ok) return null;
     const data = await res.json();
     if (!data) return null;

@@ -23,9 +23,7 @@ async function plkFetch(path, key) {
     const res = await fetch(BASE + path, {
       headers: { "X-API-Key": key, "Accept": "application/json, text/plain, */*" }
     });
-    if (!res.ok) {
-      return { _error: true, status: res.status, statusText: res.statusText };
-    }
+    if (!res.ok) return { _error: true, status: res.status };
     return await res.json();
   } catch (err) {
     return { _error: true, message: err.message };
@@ -45,21 +43,19 @@ export async function onRequest(context) {
   const key = getApiKey(context);
 
   if (!key) {
-    return json({ ok: false, error: "Brak klucza PLK_API_KEY w środowisku Cloudflare (env)" }, 401);
+    return json({ ok: false, error: "Brak klucza PLK_API_KEY" }, 401);
   }
 
   if (!trainNum) {
-    return json({ ok: false, error: "Brak numeru pociągu (parametr train)" }, 400);
+    return json({ ok: false, error: "Brak numeru pociągu" }, 400);
   }
 
-  const debugInfo = {};
-
   try {
+    // Level 1: Stacyjna tablica odjazdów
     if (stationName) {
       const searchTime = planTime && planTime.includes(":") ? planTime : "00:00";
       const depPath = "/departures?station=" + encodeURIComponent(stationName) + "&date=" + date + "&time=" + searchTime + "&limit=300";
       const depData = await plkFetch(depPath, key);
-      debugInfo.level1_response = depData;
 
       if (depData && !depData._error) {
         const departures = Array.isArray(depData.departures) ? depData.departures : (Array.isArray(depData) ? depData : []);
@@ -84,16 +80,15 @@ export async function onRequest(context) {
       }
     }
 
+    // Level 2: Ogólny rozkład (fallback, gdy pociągu nie ma jeszcze na żywej tablicy odjazdów)
     const schedulesPath = "/schedules?trainNumber=" + encodeURIComponent(trainNum) + "&dateFrom=" + date + "&dateTo=" + date + "&pageSize=50";
     const schedData = await plkFetch(schedulesPath, key);
-    debugInfo.level2_response = schedData;
 
     if (schedData && !schedData._error) {
-      const items = Array.isArray(schedData.items) ? schedData.items : (Array.isArray(schedData) ? schedData : []);
+      const items = Array.isArray(schedData.items) ? schedData.items : (Array.isArray(schedData.routes) ? schedData.routes : (Array.isArray(schedData) ? schedData : []));
       
       if (items.length > 0) {
         let bestCourse = items[0];
-        
         if (planTime && items.length > 1) {
           const matchByTime = items.find(item => JSON.stringify(item).includes(planTime));
           if (matchByTime) bestCourse = matchByTime;
@@ -103,7 +98,7 @@ export async function onRequest(context) {
           ok: true,
           source: "level2-global-schedule",
           train: trainNum,
-          scheduleId: bestCourse.scheduleId || bestCourse.id || bestCourse.scheduledId,
+          scheduleId: bestCourse.scheduleId || bestCourse.id || bestCourse.scheduledId || "",
           orderId: bestCourse.orderId || "",
           trainOrderId: bestCourse.trainOrderId || "",
           station: stationName,
@@ -114,9 +109,8 @@ export async function onRequest(context) {
 
     return json({
       ok: false,
-      error: "Nie znaleziono kursu dla pociągu " + trainNum + " w podanym dniu.",
-      debug: debugInfo
-    }, 444);
+      error: "Nie znaleziono kursu dla pociągu " + trainNum + " w podanym dniu."
+    }, 200);
 
   } catch (err) {
     return json({ ok: false, error: err.message }, 500);
