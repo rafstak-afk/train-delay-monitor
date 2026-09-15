@@ -394,15 +394,10 @@ function renderCard(item, index, row) {
   const adjustedTime = isDelayed ? getAdjustedTime(item.planTime, delay) : null;
   const delayBadge = isDelayed ? `+${delay} min` : "0 min";
 
-  const scheduleId = row && (row.scheduleId || row.scheduledId) ? (row.scheduleId || row.scheduledId) : "";
-  const scheduleId = row && (row.scheduleId || row.scheduledId || row.id) ? (row.scheduleId || row.scheduledId || row.id) : '';
-  const courseParam = extractCourseParams ? extractCourseParams(row) : '';
+  const scheduleId = row && (row.scheduleId || row.scheduledId || row.id) ? (row.scheduleId || row.scheduledId || row.id) : "";
   let detailsUrl = `../train.html?train=${encodeURIComponent(item.trainNum)}&station=${encodeURIComponent(item.station)}`;
   if (scheduleId) {
     detailsUrl += `&scheduleId=${encodeURIComponent(scheduleId)}`;
-  }
-  if (courseParam) {
-    detailsUrl += `&${courseParam}`;
   }
 
   return `
