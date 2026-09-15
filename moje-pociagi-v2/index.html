@@ -257,6 +257,26 @@ async function fetchTrainByNumber(trainNum, station) {
     if (!data) return null;
 
     let lastSt = data.lastConfirmedStation || data.lastStation || data.lastLocation;
+    
+    // Walidacja statusu - czy pociąg faktycznie zakończył bieg, czy dopiero czeka na odjazd
+    const now = new Date();
+    const parseTime = (timeStr) => {
+      if (!timeStr) return null;
+      const parts = timeStr.split(":");
+      if (parts.length < 2) return null;
+      const d = new Date();
+      d.setHours(parseInt(parts[0], 10), parseInt(parts[1], 10), 0, 0);
+      return d;
+    };
+
+    const depTime = parseTime(data.departureTime || data.scheduledDeparture);
+    const arrTime = parseTime(data.arrivalTime || data.scheduledArrival);
+
+    // Jeśli nie było jeszcze odjazdu i obecny czas jest przed/w okolicach planowego odjazdu, pociąg czeka na start
+    if (depTime && now < depTime && (!data.delay || data.delay === 0) && !data.isFinished) {
+      data.statusText = "Oczekuje na odjazd";
+      data.isPending = true;
+    }
     let lastTm = data.lastConfirmedTime || data.lastTime || data.arrivalTime;
 
     if (!lastSt && Array.isArray(data.timeline) && data.timeline.length > 0) {
