@@ -374,29 +374,27 @@ function goDetails(station, number, courseQuery) {
   
 function renderCard(item, index, row) {
   const isLoaded = Boolean(row);
-  
-  // Bezpieczne pobieranie przystanków
+
+  // Pobieranie tablicy przystanków z dowolego zagnieżdżenia
   const rawStops = row ? (row.stops || row.route || (row.data && (row.data.stops || row.data.route)) || []) : [];
   const lastStop = Array.isArray(rawStops) && rawStops.length > 0 ? rawStops[rawStops.length - 1] : null;
 
-  // Weryfikacja stacji docelowej
+  // Stacja docelowa
   let destStation = row ? (row.destination || row.to || row.destinationName || row.endStation || "") : "";
   if (!destStation && lastStop) {
     destStation = typeof lastStop === 'string' ? lastStop : (lastStop.stationName || lastStop.station || lastStop.name || lastStop.stopName || "");
   }
 
-  // Weryfikacja godziny przybycia na ostatnią stację
+  // Czas przybycia na ostatnią stację
   let endFormattedTime = "";
   if (lastStop && typeof lastStop === 'object') {
     endFormattedTime = lastStop.arrReal || lastStop.actualTime || lastStop.arrTime || lastStop.arrivalTime || lastStop.arrPlan || lastStop.plannedTime || lastStop.time || lastStop.scheduleArrivalTime || "";
   }
 
-  // Wyliczanie opóźnienia (uwzględnia też przypadek gdy pociąg skończył bieg z opóźnieniem)
+  // Weryfikacja opóźnienia z uwzględnieniem ostatniego przystanku
   let delay = getDelay(row);
-  
-  // Jeśli główny wskaźnik opóźnienia zwrócił 0/null, sprawdzamy opóźnienie z ostatniego przystanku
   if ((delay === null || delay === 0) && lastStop && typeof lastStop === 'object') {
-    if (lastStop.delay !== undefined && lastStop.delay !== null) {
+    if (lastStop.delay !== undefined && lastStop.delay !== null && parseInt(lastStop.delay, 10) > 0) {
       delay = parseInt(lastStop.delay, 10);
     } else if (lastStop.arrReal && lastStop.arrPlan) {
       const [rH, rM] = lastStop.arrReal.split(':').map(Number);
@@ -426,7 +424,7 @@ function renderCard(item, index, row) {
     }
   }
 
-  // Wyliczanie godzin i formatowanie lewej sekcji
+  // Wyliczanie godzin
   const adjustedTime = isDelayed ? getAdjustedTime(item.planTime, delay) : null;
   const delayBadge = isDelayed ? `+${delay} min` : "0 min";
 
@@ -444,10 +442,9 @@ function renderCard(item, index, row) {
     `;
   }
 
-  // Budowanie pełnego linku /train z parametrami
+  // Budowanie linku /train
   const cleanTrainNo = String(item.trainNum || '').replace(/\D+/g, '');
   const params = new URLSearchParams();
-
   params.set('train', cleanTrainNo || item.trainNum);
 
   if (row) {
@@ -498,7 +495,6 @@ function renderCard(item, index, row) {
     </div>
   `;
 }
-
 async function init() {
   const container = document.getElementById('list');
   const refreshBtn = document.getElementById('refreshBtn');
