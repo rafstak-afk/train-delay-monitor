@@ -428,14 +428,36 @@ function renderCard(item, index, row) {
     `;
   }
 
-  // Generowanie linku do trasy
+  // Budowanie pełnego linku /train z wszystkimi dostępnymi parametrami
   const cleanTrainNo = String(item.trainNum || '').replace(/\D+/g, '');
-  const scheduleId = row && (row.scheduleId || row.scheduledId || row.id) ? (row.scheduleId || row.scheduledId || row.id) : "";
-  const orderId = row && (row.orderId || row.trainOrderId || row.trainOrder) ? (row.orderId || row.trainOrderId || row.trainOrder) : "";
+  const params = new URLSearchParams();
 
-  let detailsUrl = `/train.html?train=${encodeURIComponent(cleanTrainNo || item.trainNum)}&station=${encodeURIComponent(item.station)}`;
-  if (scheduleId) detailsUrl += `&scheduleId=${encodeURIComponent(scheduleId)}`;
-  if (orderId) detailsUrl += `&orderId=${encodeURIComponent(orderId)}&trainOrderId=${encodeURIComponent(orderId)}`;
+  params.set('train', cleanTrainNo || item.trainNum);
+
+  if (row) {
+    if (row.category) params.set('category', row.category);
+    if (row.name) params.set('name', row.name);
+    if (destStation || row.destination) params.set('destination', destStation || row.destination);
+    if (row.date) params.set('date', row.date);
+    
+    const schedId = row.scheduleId || row.scheduledId || row.id;
+    if (schedId) {
+      params.set('scheduleId', schedId);
+      params.set('scheduledId', schedId);
+    }
+    
+    const ordId = row.orderId || row.trainOrderId || row.trainOrder;
+    if (ordId) {
+      params.set('orderId', ordId);
+      params.set('trainOrderId', ordId);
+    }
+    
+    if (row.stationId) params.set('stationId', row.stationId);
+  }
+
+  params.set('station', item.station);
+
+  const detailsUrl = `/train?${params.toString()}`;
 
   const cardOpacity = isLoaded ? "1" : "0.65";
   const cardBg = isLoaded ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.02)";
