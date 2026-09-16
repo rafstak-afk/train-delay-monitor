@@ -380,29 +380,30 @@ function renderCard(item, index, row) {
   // Analiza statusu biegu
   const isFinished = row && (row.isFinished || row.status === "FINISHED" || row.status === "COMPLETED");
   const lastLoc = extractLastStation(row);
-  const dest = row && (row.destination || row.to) ? (row.destination || row.to) : "";
-  
-  // Wyciąganie godziny przybycia do stacji docelowej
+
+  // Precyzyjne wyciąganie ostatniego przystanku (stacji docelowej i godziny przybycia)
+  let destStation = row && (row.destination || row.to) ? (row.destination || row.to) : "";
   let endFormattedTime = "";
+
   if (row) {
-    if (row.arrivalTime) {
-      endFormattedTime = row.arrivalTime;
-    } else if (row.stops && Array.isArray(row.stops) && row.stops.length > 0) {
-      const lastStop = row.stops[row.stops.length - 1];
-      endFormattedTime = lastStop.arrReal || lastStop.arrPlan || lastStop.time || "";
-    } else if (row.destinationTime) {
-      endFormattedTime = row.destinationTime;
+    const routeArray = row.route || row.stops || (row.data && (row.data.route || row.data.stops));
+    if (Array.isArray(routeArray) && routeArray.length > 0) {
+      const lastStop = routeArray[routeArray.length - 1];
+      if (!destStation) {
+        destStation = lastStop.stationName || lastStop.station || lastStop.name || "";
+      }
+      endFormattedTime = lastStop.arrReal || lastStop.actualTime || lastStop.arrPlan || lastStop.plannedTime || lastStop.time || "";
     }
   }
 
   let statusText = "⏳ Pobieranie danych...";
   if (isLoaded) {
     if (isFinished) {
-      const timeInfo = endFormattedTime ? ` o ${endFormattedTime}` : "";
-      const destInfo = dest ? ` w ${dest}` : "";
-      statusText = `🏁 Pociąg skończył bieg${destInfo}${timeInfo}`;
+      const destText = destStation ? ` w ${destStation}` : "";
+      const timeText = endFormattedTime ? ` o ${endFormattedTime}` : "";
+      statusText = `🏁 Pociąg skończył bieg${destText}${timeText}`;
     } else if (lastLoc) {
-      const destText = dest ? ` ➔ ${dest}` : "";
+      const destText = destStation ? ` ➔ ${destStation}` : "";
       statusText = `📍 Ostatnio: ${lastLoc}${destText}`;
     } else {
       statusText = `Planowany odjazd: ${item.planTime || "--:--"}`;
@@ -413,7 +414,6 @@ function renderCard(item, index, row) {
   const adjustedTime = isDelayed ? getAdjustedTime(item.planTime, delay) : null;
   const delayBadge = isDelayed ? `+${delay} min` : "0 min";
 
-  // Budowa lewej kolumny czasowej
   let timeHtml = "";
   if (isDelayed && adjustedTime) {
     timeHtml = `
