@@ -373,56 +373,83 @@ function goDetails(station, number, courseQuery) {
     }
   
 function renderCard(item, index, row) {
+  const isLoaded = Boolean(row);
   const delay = getDelay(row);
   const isDelayed = delay !== null && delay > 0;
-  const lastLoc = extractLastStation(row);
+  
+  // Analiza statusu biegu
   const isFinished = row && (row.isFinished || row.status === "FINISHED" || row.status === "COMPLETED");
-
-  let statusText = "⏳ Pobieranie informacji...";
+  const lastLoc = extractLastStation(row);
+  const dest = row && (row.destination || row.to) ? (row.destination || row.to) : "";
+  
+  // Wyciąganie godziny przybycia do stacji docelowej
+  let endFormattedTime = "";
   if (row) {
-    if (isFinished) {
-      statusText = "🏁 Bieg zakończony";
-    } else if (lastLoc) {
-      statusText = `📍 Ostatnio: ${lastLoc}`;
-    } else if (row.destination) {
-      statusText = `Kierunek: ${row.destination}`;
-    } else {
-      statusText = "W trasie";
+    if (row.arrivalTime) {
+      endFormattedTime = row.arrivalTime;
+    } else if (row.stops && Array.isArray(row.stops) && row.stops.length > 0) {
+      const lastStop = row.stops[row.stops.length - 1];
+      endFormattedTime = lastStop.arrReal || lastStop.arrPlan || lastStop.time || "";
+    } else if (row.destinationTime) {
+      endFormattedTime = row.destinationTime;
     }
   }
 
+  let statusText = "⏳ Pobieranie danych...";
+  if (isLoaded) {
+    if (isFinished) {
+      const timeInfo = endFormattedTime ? ` o ${endFormattedTime}` : "";
+      const destInfo = dest ? ` w ${dest}` : "";
+      statusText = `🏁 Pociąg skończył bieg${destInfo}${timeInfo}`;
+    } else if (lastLoc) {
+      const destText = dest ? ` ➔ ${dest}` : "";
+      statusText = `📍 Ostatnio: ${lastLoc}${destText}`;
+    } else {
+      statusText = `Planowany odjazd: ${item.planTime || "--:--"}`;
+    }
+  }
+
+  // Wyliczanie godzin i formatowanie lewej sekcji
   const adjustedTime = isDelayed ? getAdjustedTime(item.planTime, delay) : null;
   const delayBadge = isDelayed ? `+${delay} min` : "0 min";
 
-  // Precyzyjna ekstrakcja identyfikatorów z odpowiedzi API pod wymogi train.html
+  // Budowa lewej kolumny czasowej
+  let timeHtml = "";
+  if (isDelayed && adjustedTime) {
+    timeHtml = `
+      <div style="font-size:1.4rem; font-weight:800; color:#ff6b6b; line-height:1.2;">${adjustedTime}</div>
+      <div style="font-size:1.4rem; font-weight:800; color:#ff6b6b; margin-top:2px; line-height:1.2;">${delayBadge}</div>
+      <div style="font-size:0.85rem; color:#888888; margin-top:4px; text-decoration:line-through;">plan. ${item.planTime || "--:--"}</div>
+    `;
+  } else {
+    timeHtml = `
+      <div style="font-size:1.4rem; font-weight:800; color:#51cf66; line-height:1.2;">${item.planTime || "--:--"}</div>
+      <div style="font-size:1.1rem; font-weight:700; color:#51cf66; margin-top:2px;">${delayBadge}</div>
+    `;
+  }
+
+  // Generowanie linku do trasy
   const cleanTrainNo = String(item.trainNum || '').replace(/\D+/g, '');
   const scheduleId = row && (row.scheduleId || row.scheduledId || row.id) ? (row.scheduleId || row.scheduledId || row.id) : "";
   const orderId = row && (row.orderId || row.trainOrderId || row.trainOrder) ? (row.orderId || row.trainOrderId || row.trainOrder) : "";
-  const trainName = row && (row.name || row.trainName) ? (row.name || row.trainName) : "";
-  const destination = row && (row.destination || row.to) ? (row.destination || row.to) : "";
 
   let detailsUrl = `/train.html?train=${encodeURIComponent(cleanTrainNo || item.trainNum)}&station=${encodeURIComponent(item.station)}`;
   if (scheduleId) detailsUrl += `&scheduleId=${encodeURIComponent(scheduleId)}`;
-  if (orderId) {
-    detailsUrl += `&orderId=${encodeURIComponent(orderId)}&trainOrderId=${encodeURIComponent(orderId)}`;
-  }
-  if (trainName) detailsUrl += `&name=${encodeURIComponent(trainName)}`;
-  if (destination) detailsUrl += `&destination=${encodeURIComponent(destination)}`;
+  if (orderId) detailsUrl += `&orderId=${encodeURIComponent(orderId)}&trainOrderId=${encodeURIComponent(orderId)}`;
+
+  const cardOpacity = isLoaded ? "1" : "0.65";
+  const cardBg = isLoaded ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.02)";
 
   return `
-    <div class="card" onclick="window.location.href='${detailsUrl}'" style="display:flex; align-items:center; justify-content:space-between; padding:14px; border-bottom:1px solid #333; cursor:pointer; background:rgba(255,255,255,0.05); margin-bottom:8px; border-radius:8px;">
-      <div style="text-align:center; min-width:85px; padding-right:10px;">
-        <div style="font-size:1.3rem; font-weight:bold; color:#ffffff;">${item.planTime || "--:--"}</div>
-        <div style="font-size:1.15rem; font-weight:800; color:${isDelayed ? "#ff6b6b" : "#51cf66"}; margin:2px 0;">
-          ${delayBadge}
-        </div>
-        ${adjustedTime ? `<div style="font-size:0.95rem; font-weight:bold; color:#ff6b6b;">(${adjustedTime})</div>` : ""}
+    <div class="card" onclick="window.location.href='${detailsUrl}'" style="display:flex; align-items:center; justify-content:space-between; padding:14px; border-bottom:1px solid #333; cursor:pointer; background:${cardBg}; opacity:${cardOpacity}; margin-bottom:8px; border-radius:8px; transition: all 0.3s ease;">
+      <div style="text-align:center; min-width:95px; padding-right:12px; border-right:1px solid rgba(255,255,255,0.1);">
+        ${timeHtml}
       </div>
 
-      <div style="flex:1; padding-left:5px;">
-        <div style="font-weight:bold; font-size:1.2rem; color:#ffffff;">#${item.trainNum}</div>
+      <div style="flex:1; padding-left:15px;">
+        <div style="font-weight:bold; font-size:1.25rem; color:#ffffff;">#${item.trainNum}</div>
         <div style="color:#f0f0f0; font-size:1.05rem; font-weight:600; margin-top:2px;">${item.station}</div>
-        <div style="font-size:0.95rem; color:#cccccc; font-weight:500; margin-top:4px;">${statusText}</div>
+        <div style="font-size:0.95rem; color:${isLoaded ? '#cccccc' : '#e0a82e'}; font-weight:500; margin-top:4px;">${statusText}</div>
       </div>
 
       <div style="display:flex; flex-direction:column; gap:6px;" onclick="event.stopPropagation();">
