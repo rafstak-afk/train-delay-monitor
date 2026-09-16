@@ -374,27 +374,43 @@ function goDetails(station, number, courseQuery) {
   
 function renderCard(item, index, row) {
   const isLoaded = Boolean(row);
-  const delay = getDelay(row);
-  const isDelayed = delay !== null && delay > 0;
   
-  const isFinished = row && (row.isFinished || row.status === "FINISHED" || row.status === "COMPLETED");
-  const lastLoc = extractLastStation(row);
+  // Bezpieczne pobieranie przystanków
+  const rawStops = row ? (row.stops || row.route || (row.data && (row.data.stops || row.data.route)) || []) : [];
+  const lastStop = Array.isArray(rawStops) && rawStops.length > 0 ? rawStops[rawStops.length - 1] : null;
 
+  // Weryfikacja stacji docelowej
   let destStation = row ? (row.destination || row.to || row.destinationName || row.endStation || "") : "";
-  let endFormattedTime = "";
+  if (!destStation && lastStop) {
+    destStation = typeof lastStop === 'string' ? lastStop : (lastStop.stationName || lastStop.station || lastStop.name || lastStop.stopName || "");
+  }
 
-  if (row) {
-    const rawStops = row.stops || row.route || (row.data && (row.data.stops || row.data.route)) || [];
-    if (Array.isArray(rawStops) && rawStops.length > 0) {
-      const lastStop = rawStops[rawStops.length - 1];
-      if (!destStation && lastStop) {
-        destStation = typeof lastStop === 'string' ? lastStop : (lastStop.stationName || lastStop.station || lastStop.name || lastStop.stopName || "");
-      }
-      if (lastStop && typeof lastStop === 'object') {
-        endFormattedTime = lastStop.arrReal || lastStop.actualTime || lastStop.arrTime || lastStop.arrivalTime || lastStop.arrPlan || lastStop.plannedTime || lastStop.time || lastStop.scheduleArrivalTime || "";
+  // Weryfikacja godziny przybycia na ostatnią stację
+  let endFormattedTime = "";
+  if (lastStop && typeof lastStop === 'object') {
+    endFormattedTime = lastStop.arrReal || lastStop.actualTime || lastStop.arrTime || lastStop.arrivalTime || lastStop.arrPlan || lastStop.plannedTime || lastStop.time || lastStop.scheduleArrivalTime || "";
+  }
+
+  // Wyliczanie opóźnienia (uwzględnia też przypadek gdy pociąg skończył bieg z opóźnieniem)
+  let delay = getDelay(row);
+  
+  // Jeśli główny wskaźnik opóźnienia zwrócił 0/null, sprawdzamy opóźnienie z ostatniego przystanku
+  if ((delay === null || delay === 0) && lastStop && typeof lastStop === 'object') {
+    if (lastStop.delay !== undefined && lastStop.delay !== null) {
+      delay = parseInt(lastStop.delay, 10);
+    } else if (lastStop.arrReal && lastStop.arrPlan) {
+      const [rH, rM] = lastStop.arrReal.split(':').map(Number);
+      const [pH, pM] = lastStop.arrPlan.split(':').map(Number);
+      if (!isNaN(rH) && !isNaN(pH)) {
+        const diff = (rH * 60 + rM) - (pH * 60 + pM);
+        if (diff > 0) delay = diff;
       }
     }
   }
+
+  const isDelayed = delay !== null && delay > 0;
+  const isFinished = row && (row.isFinished || row.status === "FINISHED" || row.status === "COMPLETED");
+  const lastLoc = extractLastStation(row);
 
   let statusText = "⏳ Pobieranie danych...";
   if (isLoaded) {
@@ -410,6 +426,7 @@ function renderCard(item, index, row) {
     }
   }
 
+  // Wyliczanie godzin i formatowanie lewej sekcji
   const adjustedTime = isDelayed ? getAdjustedTime(item.planTime, delay) : null;
   const delayBadge = isDelayed ? `+${delay} min` : "0 min";
 
@@ -427,6 +444,7 @@ function renderCard(item, index, row) {
     `;
   }
 
+  // Budowanie pełnego linku /train z parametrami
   const cleanTrainNo = String(item.trainNum || '').replace(/\D+/g, '');
   const params = new URLSearchParams();
 
@@ -480,6 +498,7 @@ function renderCard(item, index, row) {
     </div>
   `;
 }
+
 async function init() {
   const container = document.getElementById('list');
   const refreshBtn = document.getElementById('refreshBtn');
