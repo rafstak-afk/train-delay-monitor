@@ -382,21 +382,19 @@ function renderCard(item, index, row) {
   const lastLoc = extractLastStation(row);
 
   // Pobieranie stacji docelowej i dokładnej godziny z ostatniego przystanku
-  let destStation = row && (row.destination || row.to) ? (row.destination || row.to) : "";
+  let destStation = row && (row.destination || row.to || row.destinationName) ? (row.destination || row.to || row.destinationName) : "";
   let endFormattedTime = "";
 
   if (row) {
-    const routeArray = row.route || row.stops || (row.data && (row.data.route || row.data.stops));
-    if (Array.isArray(routeArray) && routeArray.length > 0) {
-      const lastStop = routeArray[routeArray.length - 1];
+    const rawStops = row.route || row.stops || (row.data && (row.data.route || row.data.stops));
+    if (Array.isArray(rawStops) && rawStops.length > 0) {
+      const lastStop = rawStops[rawStops.length - 1];
       
-      // Wyciągnięcie nazwy ostatniej stacji z trasy, jeśli brak w głównym obiekcie
       if (!destStation) {
-        destStation = lastStop.stationName || lastStop.station || lastStop.name || "";
+        destStation = lastStop.stationName || lastStop.station || lastStop.name || lastStop.stopName || "";
       }
       
-      // Priorytet dla godziny rzeczywistej (z uwzględnieniem opóźnienia), potem planowanej
-      endFormattedTime = lastStop.arrReal || lastStop.actualTime || lastStop.arrTime || lastStop.arrivalTime || lastStop.arrPlan || lastStop.plannedTime || lastStop.time || "";
+      endFormattedTime = lastStop.arrReal || lastStop.actualTime || lastStop.arrTime || lastStop.arrivalTime || lastStop.arrPlan || lastStop.plannedTime || lastStop.time || lastStop.scheduleArrivalTime || "";
     }
   }
 
