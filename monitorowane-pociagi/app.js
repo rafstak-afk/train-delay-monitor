@@ -33,7 +33,16 @@ const routeTimeline = document.getElementById('routeTimeline');
 
 const fabRefresh = document.getElementById('fabRefresh');
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  // Jeśli na tym urządzeniu jest aktywny token profilu, dociągamy listę
+  // monitorowanych pociągów z chmury przed pierwszym renderem.
+  if (window.ProfileSync && ProfileSync.getToken()) {
+    const profile = await ProfileSync.pull();
+    if (profile && Array.isArray(profile.monitoredTrains)) {
+      monitoredTrains = profile.monitoredTrains;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(monitoredTrains));
+    }
+  }
   renderMonitoredList();
   setupEventListeners();
 });
@@ -100,6 +109,7 @@ function saveMonitoredToStorage() {
   } catch (err) {
     console.error('Błąd zapisu w localStorage:', err);
   }
+  if (window.ProfileSync) ProfileSync.push({ monitoredTrains });
 }
 
 // ==========================================

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mój profil</title>
+<style>
+:root{--bg:#101820;--panel:#1c2833;--card:#223244;--line:#34495e;--text:#fff;--muted:#b8c3cf;--blue:#0b57d0;--green:#5dd39e;--red:#ff4d4d}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text);padding:18px}
+.wrap{max-width:560px;margin:0 auto}
+h1{text-align:center;font-size:28px;margin:10px 0 20px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin:14px 0}
+.panel h2{margin:0 0 10px;font-size:17px}
+.hint{font-size:13px;color:var(--muted);line-height:1.4;margin-top:8px}
+.token-box{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;font-family:monospace;font-size:20px;font-weight:700;letter-spacing:1px;text-align:center;word-break:break-all}
+.btn{border:0;border-radius:10px;padding:12px 16px;background:var(--blue);color:#fff;font-weight:700;cursor:pointer;font-size:15px;width:100%;margin-top:10px}
+.btn.secondary{background:#4b5563}
+.btn.danger{background:var(--red)}
+input[type=text]{width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:#fff;font-family:monospace;font-size:16px;letter-spacing:1px}
+.status{text-align:center;color:var(--muted);min-height:24px;margin:10px 0;font-size:14px}
+.status.ok{color:var(--green)}
+.status.err{color:var(--red)}
+a.back{display:inline-block;margin-bottom:10px;color:var(--muted);text-decoration:none;font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="/">← Tablica</a>
+  <h1>👤 Mój profil</h1>
+
+  <div class="panel" id="activePanel" style="display:none">
+    <h2>Aktywny profil na tym urządzeniu</h2>
+    <div class="token-box" id="activeToken"></div>
+    <button class="btn" id="copyBtn">📋 Kopiuj token</button>
+    <button class="btn danger" id="unlinkBtn">Odepnij to urządzenie</button>
+    <div class="hint">Dane (ulubione stacje, listy pociągów, alarm) synchronizują się automatycznie na tym urządzeniu, dopóki token jest aktywny. Odpięcie NIE kasuje danych w chmurze — tylko przestaje je stąd synchronizować.</div>
+  </div>
+
+  <div class="panel" id="createPanel">
+    <h2>Nowy profil</h2>
+    <div class="hint">Utwórz token i zapisz swoje ulubione stacje/pociągi w chmurze, żeby mieć je na każdym urządzeniu.</div>
+    <button class="btn" id="createBtn">Utwórz nowy profil</button>
+  </div>
+
+  <div class="panel">
+    <h2>Wczytaj profil z innego urządzenia</h2>
+    <input type="text" id="tokenInput" placeholder="XXXX-XXXX-XXXX-XXXX" autocomplete="off" autocapitalize="characters">
+    <button class="btn secondary" id="loadBtn">Wczytaj profil</button>
+    <div class="hint">Wpisz token zapisany na innym urządzeniu — podmieni dane na TYM urządzeniu na te z profilu.</div>
+  </div>
+
+  <div class="status" id="status"></div>
+
+  <div class="panel">
+    <h2>Jak to działa</h2>
+    <div class="hint">
+      Token to jedyny "klucz" do Twojego profilu — kto go zna, ten ma dostęp do zapisanych danych (bez hasła/e-maila). Nie udostępniaj go nikomu.<br><br>
+      Synchronizowane: lista pociągów z Moje Pociągi V2, lista z Monitorowanych Pociągów, historia wyszukiwanych stacji na tablicy głównej, stan przełącznika Alarm.
+    </div>
+  </div>
+</div>
+
+<script src="/profile-sync.js"></script>
+<script>
+function setStatus(text, cls) {
+  const el = document.getElementById('status');
+  el.textContent = text;
+  el.className = 'status' + (cls ? ' ' + cls : '');
+}
+
+function renderActive() {
+  const token = ProfileSync.getToken();
+  const activePanel = document.getElementById('activePanel');
+  const createPanel = document.getElementById('createPanel');
+
+  if (token) {
+    activePanel.style.display = 'block';
+    createPanel.style.display = 'none';
+    document.getElementById('activeToken').textContent = ProfileSync.format(token);
+  } else {
+    activePanel.style.display = 'none';
+    createPanel.style.display = 'block';
+  }
+}
+
+document.getElementById('createBtn').addEventListener('click', async () => {
+  const token = ProfileSync.generateToken();
+  ProfileSync.setToken(token);
+  setStatus('Tworzę profil...', '');
+  await ProfileSync.push({});
+  setStatus('Nowy profil utworzony. Zapisz token, żeby wczytać go na innym urządzeniu.', 'ok');
+  renderActive();
+});
+
+document.getElementById('copyBtn').addEventListener('click', () => {
+  const token = ProfileSync.getToken();
+  if (!token) return;
+  navigator.clipboard && navigator.clipboard.writeText(ProfileSync.format(token))
+    .then(() => setStatus('Skopiowano token do schowka.', 'ok'))
+    .catch(() => setStatus('Nie udało się skopiować — zaznacz i skopiuj ręcznie.', 'err'));
+});
+
+document.getElementById('unlinkBtn').addEventListener('click', () => {
+  if (!confirm('Odpiąć to urządzenie od profilu? Dane w chmurze zostają, przestaną się tylko tutaj synchronizować.')) return;
+  ProfileSync.clearToken();
+  setStatus('Odpięto to urządzenie.', 'ok');
+  renderActive();
+});
+
+document.getElementById('loadBtn').addEventListener('click', async () => {
+  const input = document.getElementById('tokenInput').value;
+
+  if (!ProfileSync.isValid(input)) {
+    setStatus('Nieprawidłowy token — sprawdź, czy wpisałeś go poprawnie.', 'err');
+    return;
+  }
+
+  setStatus('Wczytuję profil...', '');
+  ProfileSync.setToken(input);
+  const data = await ProfileSync.pull();
+
+  if (!data) {
+    setStatus('Nie znaleziono profilu o tym tokenie (albo jest jeszcze pusty). Token został ustawiony na tym urządzeniu.', 'err');
+    renderActive();
+    return;
+  }
+
+  setStatus('Profil wczytany. Otwórz Tablicę / Moje Pociągi V2 / Monitorowane Pociągi, żeby zobaczyć zsynchronizowane dane.', 'ok');
+  document.getElementById('tokenInput').value = '';
+  renderActive();
+});
+
+renderActive();
+</script>
+</body>
+</html>

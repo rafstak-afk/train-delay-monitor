@@ -164,7 +164,10 @@ h1{ margin:0; font-size:20px; }
   <div>
     <h1>🚆 Moje Pociągi V2</h1>
   </div>
-  <button class="refresh" id="refreshBtn">↻ ODŚWIEŻ</button>
+  <div style="display:flex; gap:8px;">
+    <a class="refresh" href="/profil/" style="text-decoration:none; display:inline-flex; align-items:center;">👤</a>
+    <button class="refresh" id="refreshBtn">↻ ODŚWIEŻ</button>
+  </div>
 </header>
 
 <main id="list" class="list"></main>
@@ -181,6 +184,7 @@ h1{ margin:0; font-size:20px; }
 
 </div>
 
+<script src="/profile-sync.js"></script>
 <script>
 const STORAGE_KEY = 'rafstakMojePociagiV4';
 
@@ -209,6 +213,7 @@ function loadTrains() {
 
 function saveTrains(list) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+  if (window.ProfileSync) ProfileSync.push({ trains: list });
 }
 
 let currentTrains = loadTrains();
@@ -737,7 +742,19 @@ window.addEventListener('pageshow', (event) => {
   }
 });
 
-init();
+// Jeśli na tym urządzeniu jest aktywny token profilu, dociągamy listę
+// pociągów z chmury przed pierwszym init() — nadpisuje domyślną/lokalną
+// listę tym, co zapisano na innym urządzeniu pod tym samym tokenem.
+(async function start() {
+  if (window.ProfileSync && ProfileSync.getToken()) {
+    const profile = await ProfileSync.pull();
+    if (profile && Array.isArray(profile.trains)) {
+      currentTrains = profile.trains;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(currentTrains));
+    }
+  }
+  init();
+})();
 </script>
 </body>
 </html>
