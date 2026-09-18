@@ -402,8 +402,12 @@ function getDelay(row) {
   return val !== undefined && val !== null ? Number(val) : 0;
 }
 
-function moveTrain(e, index, direction) {
-  e.stopPropagation();
+// Wywoływane z przycisków wewnątrz karty; rodzic ma już
+// onclick="event.stopPropagation()", więc same nie dostają (ani nie
+// potrzebują) obiektu zdarzenia — wcześniej sygnatura zakładała `e` jako
+// pierwszy argument, mimo że HTML przekazywał tylko (index, direction) /
+// (index), co przy kliknięciu rzucało błędem i przycisk nic nie robił.
+function moveTrain(index, direction) {
   const newIndex = index + direction;
   if (newIndex < 0 || newIndex >= currentTrains.length) return;
   const item = currentTrains.splice(index, 1)[0];
@@ -412,8 +416,7 @@ function moveTrain(e, index, direction) {
   init();
 }
 
-function deleteTrain(e, index) {
-  e.stopPropagation();
+function deleteTrain(index) {
   if (confirm('Czy na pewno usunąć ten pociąg z listy?')) {
     currentTrains.splice(index, 1);
     saveTrains(currentTrains);
@@ -559,7 +562,7 @@ function renderCard(item, index, row) {
       <div style="display:flex; flex-direction:column; gap:6px;" onclick="event.stopPropagation();">
         <button onclick="moveTrain(${index}, -1)" style="padding:4px 8px; background:#2b2b2b; color:#fff; border:1px solid #444; border-radius:4px; cursor:pointer;">▲</button>
         <button onclick="moveTrain(${index}, 1)" style="padding:4px 8px; background:#2b2b2b; color:#fff; border:1px solid #444; border-radius:4px; cursor:pointer;">▼</button>
-        <button onclick="removeTrain(${index})" style="padding:4px 8px; background:#2b2b2b; color:#ff6b6b; border:1px solid #444; border-radius:4px; cursor:pointer;">✕</button>
+        <button onclick="deleteTrain(${index})" style="padding:4px 8px; background:#2b2b2b; color:#ff6b6b; border:1px solid #444; border-radius:4px; cursor:pointer;">✕</button>
       </div>
     </div>
   `;
