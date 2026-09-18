@@ -30,6 +30,41 @@ async function plkFetch(path, key) {
   }
 }
 
+function normalizeTrainNumber(value) {
+  const s = String(value ?? "").trim();
+  if (!s) return "";
+  return s.replace(/^0+(?=\d)/, "");
+}
+
+function routeMatchesTrain(route, wantedNormalized) {
+  const candidates = [
+    route.nationalNumber,
+    route.trainNumber,
+    route.commercialTrainNumber,
+    ...(Array.isArray(route.stations)
+      ? route.stations.flatMap(s => [s.arrivalTrainNumber, s.departureTrainNumber])
+      : [])
+  ];
+
+  return candidates.some(v => normalizeTrainNumber(v) === wantedNormalized);
+}
+
+async function resolveStationId(stationName, key) {
+  const path = "/dictionaries/stations?search=" + encodeURIComponent(stationName) + "&pageSize=20";
+  const data = await plkFetch(path, key);
+  if (!data || data._error) return null;
+
+  const list = Array.isArray(data) ? data : (data.stations || data.items || data.results || data.data || []);
+  const wanted = stationName.trim().toLowerCase();
+
+  const found =
+    list.find(s => String(s.name || s.stationName || "").trim().toLowerCase() === wanted) ||
+    list[0];
+
+  if (!found) return null;
+  return found.id || found.stationId || null;
+}
+
 export async function onRequest(context) {
   if (context.request.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: CORS_JSON });
@@ -51,66 +86,68 @@ export async function onRequest(context) {
   }
 
   try {
-    // Level 1: Stacyjna tablica odjazdów
-    if (stationName) {
-      const searchTime = planTime && planTime.includes(":") ? planTime : "00:00";
-      const depPath = "/departures?station=" + encodeURIComponent(stationName) + "&date=" + date + "&time=" + searchTime + "&limit=300";
-      const depData = await plkFetch(depPath, key);
-
-      if (depData && !depData._error) {
-        const departures = Array.isArray(depData.departures) ? depData.departures : (Array.isArray(depData) ? depData : []);
-        const match = departures.find(d => {
-          const num = String(d.train || d.trainNumber || d.number || "").replace(/\D/g, "");
-          const target = String(trainNum).replace(/\D/g, "");
-          return num && target && (num === target || num.includes(target));
-        });
-
-        if (match && (match.scheduleId || match.scheduledId)) {
-          return json({
-            ok: true,
-            source: "level1-station-departures",
-            train: trainNum,
-            scheduleId: match.scheduleId || match.scheduledId,
-            orderId: match.orderId || match.orderID || "",
-            trainOrderId: match.trainOrderId || match.trainOrderID || "",
-            station: stationName,
-            date: date
-          });
-        }
-      }
+    // UWAGA: PLK API nie ma endpointu /departures (to nasz własny,
+    // złożony z /schedules + /operations w functions/api/departures.js)
+    // i nie filtruje /schedules po trainNumber= — ten parametr jest po
+    // cichu ignorowany, więc poprzednia wersja tego pliku zwracała
+    // pierwszy z brzegu, zupełnie niepowiązany kurs dla każdego pociągu
+    // spoza aktualnego okna tablicy odjazdów. Zamiast tego: znajdź
+    // stację i przefiltruj /schedules po stationId (sprawdzony wzorzec
+    // z departures.js / [[path]].ts), a numer pociągu dopasuj sami.
+    if (!stationName) {
+      return json({
+        ok: false,
+        error: "Brak stacji — nie da się jednoznacznie znaleźć kursu bez filtra po stacji."
+      }, 200);
     }
 
-    // Level 2: Ogólny rozkład (fallback, gdy pociągu nie ma jeszcze na żywej tablicy odjazdów)
-    const schedulesPath = "/schedules?trainNumber=" + encodeURIComponent(trainNum) + "&dateFrom=" + date + "&dateTo=" + date + "&pageSize=50";
+    const stationId = await resolveStationId(stationName, key);
+
+    if (!stationId) {
+      return json({ ok: false, error: "Nie znaleziono stacji " + stationName }, 200);
+    }
+
+    const schedulesPath =
+      "/schedules?stations=" + encodeURIComponent(stationId) +
+      "&dateFrom=" + date + "&dateTo=" + date + "&pageSize=500";
+
     const schedData = await plkFetch(schedulesPath, key);
 
-    if (schedData && !schedData._error) {
-      const items = Array.isArray(schedData.items) ? schedData.items : (Array.isArray(schedData.routes) ? schedData.routes : (Array.isArray(schedData) ? schedData : []));
-      
-      if (items.length > 0) {
-        let bestCourse = items[0];
-        if (planTime && items.length > 1) {
-          const matchByTime = items.find(item => JSON.stringify(item).includes(planTime));
-          if (matchByTime) bestCourse = matchByTime;
-        }
+    if (!schedData || schedData._error) {
+      return json({
+        ok: false,
+        error: "Nie udało się pobrać rozkładu dla stacji " + stationName
+      }, 200);
+    }
 
-        return json({
-          ok: true,
-          source: "level2-global-schedule",
-          train: trainNum,
-          scheduleId: bestCourse.scheduleId || bestCourse.id || bestCourse.scheduledId || "",
-          orderId: bestCourse.orderId || "",
-          trainOrderId: bestCourse.trainOrderId || "",
-          station: stationName,
-          date: date
-        });
-      }
+    const routes = Array.isArray(schedData.routes) ? schedData.routes : [];
+    const wanted = normalizeTrainNumber(trainNum);
+    const matches = routes.filter(r => routeMatchesTrain(r, wanted));
+
+    if (!matches.length) {
+      return json({
+        ok: false,
+        error: "Nie znaleziono pociągu " + trainNum + " dla stacji " + stationName + " w podanym dniu."
+      }, 200);
+    }
+
+    let bestCourse = matches[0];
+    if (planTime && matches.length > 1) {
+      const matchByTime = matches.find(item => JSON.stringify(item).includes(planTime));
+      if (matchByTime) bestCourse = matchByTime;
     }
 
     return json({
-      ok: false,
-      error: "Nie znaleziono kursu dla pociągu " + trainNum + " w podanym dniu."
-    }, 200);
+      ok: true,
+      source: "schedules-by-station",
+      train: trainNum,
+      scheduleId: bestCourse.scheduleId || "",
+      orderId: bestCourse.orderId || "",
+      trainOrderId: bestCourse.trainOrderId || "",
+      station: stationName,
+      stationId,
+      date: date
+    });
 
   } catch (err) {
     return json({ ok: false, error: err.message }, 500);

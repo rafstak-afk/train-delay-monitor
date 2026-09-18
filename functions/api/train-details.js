@@ -29,17 +29,59 @@ async function plkGet(path, apiKey) {
   return res.json();
 }
 
+const STATIONS_DICTIONARY_CACHE_TTL = 86400;
+
+// Trasa z /schedules/route/... niesie tylko stationId dla wielu stacji
+// (bez nazwy) — bez słownika "ostatnio zaliczona stacja" pokazywałaby
+// nieczytelne "Stacja 273" zamiast prawdziwej nazwy.
+async function getStationNameMap(apiKey) {
+  const url = `${PLK_BASE}/dictionaries/stations?pageSize=20000`;
+  const cache = caches.default;
+  const cacheKey = new Request("https://cache.local/" + btoa(url), { method: "GET" });
+
+  try {
+    const cached = await cache.match(cacheKey);
+    const data = cached ? await cached.json() : await plkGet("/dictionaries/stations?pageSize=20000", apiKey);
+
+    if (!cached) {
+      await cache.put(cacheKey, new Response(JSON.stringify(data), {
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+          "Cache-Control": `public, max-age=${STATIONS_DICTIONARY_CACHE_TTL}`
+        }
+      }));
+    }
+
+    const list = Array.isArray(data) ? data : (data?.stations || data?.items || data?.results || data?.data || []);
+    const map = new Map();
+
+    for (const item of list) {
+      const id = item.id || item.stationId || item.stopPointId;
+      const name = item.name || item.stationName || item.stopPointName;
+      if (id && name) map.set(String(id), name);
+    }
+
+    return map;
+  } catch (_) {
+    // Brak nazw stacji nie powinien wywracać całej odpowiedzi.
+    return new Map();
+  }
+}
+
 function stationKey(station) {
   const id = station?.stationId ?? station?.stopId ?? station?.id;
   return id == null ? "" : String(id);
 }
 
-function stationDisplayName(station) {
+function stationDisplayName(station, stationNames) {
+  const key = stationKey(station);
+
   return (
     station?.stationName ||
     station?.name ||
     station?.station ||
-    (stationKey(station) ? `Stacja ${stationKey(station)}` : "")
+    (key && stationNames?.get(key)) ||
+    (key ? `Stacja ${key}` : "")
   );
 }
 
@@ -55,7 +97,7 @@ function minutesFromTime(time) {
   return Number(match[1]) * 60 + Number(match[2]);
 }
 
-function buildStops(routeStations, opStations) {
+function buildStops(routeStations, opStations, stationNames) {
   const opByStation = new Map();
   for (const op of opStations) {
     const key = stationKey(op);
@@ -91,7 +133,7 @@ function buildStops(routeStations, opStations) {
             })();
 
     return {
-      stationName: stationDisplayName(station),
+      stationName: stationDisplayName(station, stationNames),
       plannedTime: shortTime(plannedTime) || "--:--",
       scheduledTime: shortTime(plannedTime) || "--:--",
       actualTime: shortTime(actualTime),
@@ -140,7 +182,7 @@ export async function onRequestGet(context) {
   }
 
   try {
-    const [routeData, operationData] = await Promise.all([
+    const [routeData, operationData, stationNames] = await Promise.all([
       plkGet(
         `/schedules/route/${encodeURIComponent(scheduleId)}/${encodeURIComponent(orderId)}`,
         apiKey
@@ -148,7 +190,8 @@ export async function onRequestGet(context) {
       plkGet(
         `/operations/train/${encodeURIComponent(scheduleId)}/${encodeURIComponent(orderId)}/${encodeURIComponent(operatingDate)}`,
         apiKey
-      ).catch(() => null)
+      ).catch(() => null),
+      getStationNameMap(apiKey)
     ]);
 
     const route = routeData?.route || routeData || {};
@@ -157,9 +200,16 @@ export async function onRequestGet(context) {
     const routeStations = Array.isArray(route.stations) ? route.stations : [];
     const opStations = Array.isArray(operation.stations) ? operation.stations : [];
 
-    const stops = buildStops(routeStations, opStations);
+    const stops = buildStops(routeStations, opStations, stationNames);
     const totalDelay = stops.reduce((max, s) => Math.max(max, s.delay || 0), 0);
     const confirmed = lastConfirmed(stops);
+
+    // Kody statusu PLK: C = zrealizowany/zakończony, Z = zakończony.
+    // Bez tego pola front-end (moje-pociagi-v2) domyślał się "true" dla
+    // KAŻDEGO pociągu, dla którego to pole nie istniało w odpowiedzi —
+    // czyli pokazywał "pociąg skończył bieg" nawet dla kursów, które
+    // jeszcze się nie zaczęły.
+    const isFinished = operation.trainStatus === "C" || operation.trainStatus === "Z";
 
     return json({
       train: trainNum,
@@ -174,6 +224,7 @@ export async function onRequestGet(context) {
       delay: totalDelay,
       totalDelay,
       status: operation.trainStatus || "",
+      isFinished,
       lastConfirmedStation: confirmed?.station || "",
       lastConfirmedTime: confirmed?.time || "",
       route: stops
