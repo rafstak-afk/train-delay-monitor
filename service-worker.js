@@ -3,7 +3,6 @@ const CACHE_NAME = "train-delay-monitor-v1";
 const STATIC_FILES = [
   "/",
   "/index.html",
-  "/alarmy",
   "/manifest.webmanifest"
 ];
 
