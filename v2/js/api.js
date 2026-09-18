@@ -31,11 +31,20 @@ export async function loadTrain(train, params = {}) {
     render(data);
 }
 
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
 function render(data) {
     if (!data || data.error) {
         document.getElementById("currentPosition").innerHTML = `
             <h2>Błąd</h2>
-            <p>${data?.error || "Nie udało się pobrać danych o biegu pociągu."}</p>
+            <p>${escapeHtml(data?.error || "Nie udało się pobrać danych o biegu pociągu.")}</p>
         `;
         return;
     }
@@ -47,17 +56,17 @@ function render(data) {
 
     document.getElementById("currentPosition").innerHTML = `
         <h2>Bieżąca pozycja</h2>
-        <p>${data.lastConfirmedStation ?? "-"}</p>
-        <small>${data.lastConfirmedTime ?? "-"}</small>
+        <p>${escapeHtml(data.lastConfirmedStation ?? "-")}</p>
+        <small>${escapeHtml(data.lastConfirmedTime ?? "-")}</small>
     `;
 
     document.getElementById("timeline").innerHTML = (data.route || [])
         .map(station => `
             <div class="station">
-                <strong>${station.stationName}</strong>
+                <strong>${escapeHtml(station.stationName)}</strong>
                 <div>
-                    ${station.plannedTime ?? ""}
-                    ${station.actualTime ?? ""}
+                    ${escapeHtml(station.plannedTime ?? "")}
+                    ${escapeHtml(station.actualTime ?? "")}
                 </div>
             </div>
         `)

@@ -94,7 +94,7 @@
     let apiTrains = [];
 
     try {
-      const res = await fetch('/api/monitored-trains');
+      const res = await fetch('/api/monitored-trains-v2');
       if (res.ok) {
         const data = await res.json();
         apiTrains = Array.isArray(data.trains) ? data.trains : [];

@@ -1,27 +1,5 @@
 const https = require('https');
 
-const KEY = 'A8rVZK-wu6MvMu8Chpn7y3ZRSGgu9o07DBgXSfolbsqJQIdc-DfUwzqLOOc1RUyBhCLafFuBFf1WSwwA8WMXTg';
-const BASE = 'pdp-api.plk-sa.pl';
-
-function plkGet(path) {
-  return new Promise((resolve, reject) => {
-    const options = {
-      hostname: BASE,
-      path: '/api/v1' + path,
-      method: 'GET',
-      headers: { 'X-API-Key': KEY }
-    };
-    https.get(options, res => {
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => {
-        try { resolve(JSON.parse(data)); }
-        catch(e) { reject(new Error('Błąd: ' + data.slice(0, 100))); }
-      });
-    }).on('error', reject);
-  });
-}
-
 function sdipGet(stopId) {
   return new Promise((resolve, reject) => {
     const options = {

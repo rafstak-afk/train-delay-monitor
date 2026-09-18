@@ -166,15 +166,20 @@ function renderMonitoredList() {
 }
 
 function addMonitoredTrain(train) {
-  const trainId = train.id || train.number;
+  const trainId = train.id || train.number || train.train;
   if (!monitoredTrains.some(t => (t.id || t.number) === trainId)) {
     monitoredTrains.push({
       id: trainId,
       name: train.name || train.trainName || `Pociąg ${trainId}`,
-      number: train.number || train.trainNumber || trainId,
+      number: train.number || train.trainNumber || train.train || trainId,
       from: train.from || train.origin || 'Stacja początkowa',
       to: train.to || train.destination || 'Stacja docelowa',
       delay: train.delay ?? 0,
+      // Identyfikatory kursu z tablicy odjazdów — bez nich nie da się
+      // pobrać pełnego biegu pociągu (patrz fetchTrainDetailsFromAPI).
+      scheduleId: train.scheduleId ?? null,
+      orderId: train.orderId ?? null,
+      trainOrderId: train.trainOrderId ?? null,
       lastUpdate: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     });
     saveMonitoredToStorage();
@@ -207,9 +212,11 @@ async function openTrainDetails(trainId, forceRefresh = false) {
     return;
   }
 
+  const train = monitoredTrains.find(t => (t.id || t.number) === trainId);
+
   showDetailsLoading();
   try {
-    const data = await fetchTrainDetailsFromAPI(trainId);
+    const data = await fetchTrainDetailsFromAPI(train);
     dataCache.trainDetails[trainId] = {
       timestamp: Date.now(),
       data: data
@@ -219,9 +226,9 @@ async function openTrainDetails(trainId, forceRefresh = false) {
     console.error('Błąd pobierania trasy:', err);
     routeTimeline.innerHTML = `
       <div style="padding: 20px; text-align: center; color: var(--delay-red);">
-        <p><strong>Nie udało się pobrać szczegółów biegu pociągu (HTTP 404).</strong></p>
+        <p><strong>Nie udało się pobrać szczegółów biegu pociągu.</strong></p>
         <small style="color: var(--text-muted); display: block; margin-top: 8px;">
-          Sprawdź, czy pociąg o identyfikatorze "${escapeHtml(trainId)}" znajduje się w aktualnym rozkładzie.
+          ${escapeHtml(err?.message || `Sprawdź, czy pociąg o identyfikatorze "${trainId}" znajduje się w aktualnym rozkładzie.`)}
         </small>
       </div>
     `;
@@ -236,26 +243,30 @@ function showDetailsLoading() {
   routeTimeline.innerHTML = '<p class="loading-msg">Pobieranie aktualnej trasy z API...</p>';
 }
 
-// --- NAPRAWA 2: Odporne pobieranie danych (obsługa alternatywnych ścieżek API) ---
-async function fetchTrainDetailsFromAPI(trainId) {
-  const possibleEndpoints = [
-    `/api/train-details?trainId=${encodeURIComponent(trainId)}`,
-    `/api/trains/${encodeURIComponent(trainId)}`,
-    `/api/train?id=${encodeURIComponent(trainId)}`
-  ];
+// --- NAPRAWA 2: pobieranie pełnego biegu pociągu po scheduleId/orderId ---
+async function fetchTrainDetailsFromAPI(train) {
+  const trainId = train?.id || train?.number || '';
 
-  for (const url of possibleEndpoints) {
-    try {
-      const response = await fetch(url);
-      if (response.ok) {
-        return await response.json();
-      }
-    } catch (e) {
-      // Próbuj kolejnego adresu
-    }
+  if (!train || !train.scheduleId || !train.orderId) {
+    throw new Error(
+      `Brak identyfikatorów kursu (scheduleId/orderId) dla pociągu ${trainId}. ` +
+      'Dodaj pociąg bezpośrednio z tablicy odjazdów, żeby pobrać jego pełny bieg.'
+    );
   }
 
-  throw new Error(`Endpoint zwrócił błąd 404 dla ID: ${trainId}`);
+  const params = new URLSearchParams({
+    scheduleId: train.scheduleId,
+    orderId: train.orderId,
+    train: train.number || trainId
+  });
+  if (train.trainOrderId) params.set('trainOrderId', train.trainOrderId);
+
+  const response = await fetch(`/api/train-details?${params.toString()}`);
+  if (!response.ok) {
+    throw new Error(`Endpoint zwrócił błąd ${response.status} dla pociągu ${trainId}`);
+  }
+
+  return response.json();
 }
 
 function renderTrainDetails(data) {
@@ -330,7 +341,7 @@ async function handleFabRefresh() {
     if (listView.classList.contains('active')) {
       for (let train of monitoredTrains) {
         try {
-          const freshData = await fetchTrainDetailsFromAPI(train.id || train.number);
+          const freshData = await fetchTrainDetailsFromAPI(train);
           train.delay = freshData.totalDelay ?? freshData.delay ?? 0;
           train.lastUpdate = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
@@ -392,7 +403,9 @@ async function loadDeparturesForStation(stationName) {
   try {
     const res = await fetch(`/api/departures?station=${encodeURIComponent(stationName)}`);
     if (!res.ok) throw new Error('Błąd odjazdów');
-    const departures = await res.json();
+    const data = await res.json();
+    // /api/departures zwraca { departures: [...] }, nie samą tablicę.
+    const departures = Array.isArray(data) ? data : (Array.isArray(data.departures) ? data.departures : []);
 
     departuresList.innerHTML = '';
     if (!Array.isArray(departures) || departures.length === 0) {
@@ -403,11 +416,12 @@ async function loadDeparturesForStation(stationName) {
     departures.forEach((dep) => {
       const item = document.createElement('div');
       item.className = 'departure-item';
-      const isMonitored = monitoredTrains.some(t => (t.id || t.number) === (dep.id || dep.number));
+      const depId = dep.id || dep.number || dep.train;
+      const isMonitored = monitoredTrains.some(t => (t.id || t.number) === depId);
 
       item.innerHTML = `
         <div>
-          <strong>${escapeHtml(dep.name || dep.trainName)}</strong> (${escapeHtml(dep.number || dep.id)})
+          <strong>${escapeHtml(dep.name || dep.trainName)}</strong> (${escapeHtml(dep.number || dep.id || dep.train)})
           <br/>
           <small>Kierunek: ${escapeHtml(dep.to || dep.destination)} | Odjazd: ${escapeHtml(dep.time || dep.scheduledTime)}</small>
         </div>

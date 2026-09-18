@@ -5,7 +5,8 @@ export async function onRequestGet(context) {
 
   const url = new URL(request.url);
 
-  const date = url.searchParams.get("date");
+  const date = url.searchParams.get("date") ||
+    new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Warsaw" });
   const scheduleId = url.searchParams.get("scheduleId");
   const orderId = url.searchParams.get("orderId");
   const trainOrderId = url.searchParams.get("trainOrderId");

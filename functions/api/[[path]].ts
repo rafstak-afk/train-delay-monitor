@@ -421,7 +421,27 @@ export const onRequest: PagesFunction<Env> = async (
    * /api/schedules
    * /api/schedules/route/...
    * itd.
+   *
+   * Tylko te segmenty PLK API są dozwolone przez proxy — inaczej
+   * dowolny klient mógłby przez to proxy odpytywać cały PDP API
+   * przy użyciu naszego sekretnego klucza.
    */
+  const ALLOWED_PROXY_PREFIXES = [
+    'schedules',
+    'operations',
+    'dictionaries',
+    'apikey'
+  ];
+
+  const firstSegment = pathArray[0] || '';
+
+  if (!ALLOWED_PROXY_PREFIXES.includes(firstSegment)) {
+    return json({
+      error: 'Niedozwolona ścieżka proxy',
+      path: targetPath
+    }, 403);
+  }
+
   const targetUrl =
     PLK_BASE +
     '/' +
