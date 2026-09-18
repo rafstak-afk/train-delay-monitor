@@ -107,20 +107,6 @@ function buildStops(routeStations, opStations, stationNames) {
   return routeStations.map(station => {
     const op = opByStation.get(stationKey(station)) || null;
 
-    const plannedTime =
-      station.plannedDeparture ||
-      station.plannedArrival ||
-      station.departureTime ||
-      station.arrivalTime ||
-      "";
-
-    const actualTime =
-      op?.actualDeparture ||
-      op?.actualArrival ||
-      op?.estimatedDeparture ||
-      op?.estimatedArrival ||
-      "";
-
     // op może istnieć w odpowiedzi PLK nawet dla stacji, przez którą
     // pociąg jeszcze nie przejechał (czysto planowy wpis, czasem nawet
     // z "actual"/"estimated" polami zawierającymi prognozę dla stacji
@@ -128,21 +114,35 @@ function buildStops(routeStations, opStations, stationNames) {
     // faktycznego przejazdu jest isConfirmed===true.
     const isConfirmed = op?.isConfirmed === true;
 
+    // Stacja pośrednia z postojem ma OSOBNO planowy przyjazd i odjazd
+    // (np. kilkuminutowy postój) — liczymy je niezależnie zamiast
+    // zlewać w jedno pole, jak wcześniej.
+    const plannedArrivalRaw = station.plannedArrival || station.arrivalTime || "";
+    const plannedDepartureRaw = station.plannedDeparture || station.departureTime || "";
+    const actualArrivalRaw = op?.actualArrival || op?.estimatedArrival || "";
+    const actualDepartureRaw = op?.actualDeparture || op?.estimatedDeparture || "";
+
     // Opóźnienie liczymy tylko dla potwierdzonych stacji — inaczej
     // prognoza PLK dla nieodwiedzonej jeszcze stacji (np. stacji
     // końcowej całej trasy) potrafi pokazać nieprawdziwe opóźnienie na
     // stacji, której pociąg jeszcze nawet nie dotknął.
-    const delay = isConfirmed
-      ? (typeof op?.departureDelayMinutes === "number"
-          ? op.departureDelayMinutes
-          : typeof op?.arrivalDelayMinutes === "number"
-            ? op.arrivalDelayMinutes
-            : (() => {
-                const p = minutesFromTime(plannedTime);
-                const a = minutesFromTime(actualTime);
-                return p !== null && a !== null ? Math.max(0, a - p) : 0;
-              })())
-      : 0;
+    function stopDelay(plannedRaw, actualRaw, explicitDelay) {
+      if (!isConfirmed || !plannedRaw) return null;
+      if (typeof explicitDelay === "number") return explicitDelay;
+      const p = minutesFromTime(plannedRaw);
+      const a = minutesFromTime(actualRaw);
+      return p !== null && a !== null ? Math.max(0, a - p) : 0;
+    }
+
+    const arrivalDelay = stopDelay(plannedArrivalRaw, actualArrivalRaw, op?.arrivalDelayMinutes);
+    const departureDelay = stopDelay(plannedDepartureRaw, actualDepartureRaw, op?.departureDelayMinutes);
+
+    // Zachowane dla wstecznej zgodności z istniejącymi widokami: jedno
+    // pole "czasu" stacji, priorytet dla odjazdu, z fallbackiem na
+    // przyjazd dla stacji końcowej (brak odjazdu).
+    const plannedTime = plannedDepartureRaw || plannedArrivalRaw;
+    const actualTime = isConfirmed ? (actualDepartureRaw || actualArrivalRaw) : "";
+    const delay = departureDelay ?? arrivalDelay ?? 0;
 
     return {
       stationName: stationDisplayName(station, stationNames),
@@ -151,6 +151,12 @@ function buildStops(routeStations, opStations, stationNames) {
       actualTime: isConfirmed ? shortTime(actualTime) : "",
       status: isConfirmed ? "confirmed" : "upcoming",
       delay,
+      plannedArrival: plannedArrivalRaw ? shortTime(plannedArrivalRaw) : "",
+      actualArrival: (isConfirmed && plannedArrivalRaw) ? shortTime(actualArrivalRaw || plannedArrivalRaw) : "",
+      arrivalDelay,
+      plannedDeparture: plannedDepartureRaw ? shortTime(plannedDepartureRaw) : "",
+      actualDeparture: (isConfirmed && plannedDepartureRaw) ? shortTime(actualDepartureRaw || plannedDepartureRaw) : "",
+      departureDelay,
       platform: station.departurePlatform || station.arrivalPlatform || "-",
       track: station.departureTrack || station.arrivalTrack || "-"
     };

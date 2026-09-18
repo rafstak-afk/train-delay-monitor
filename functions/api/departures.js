@@ -353,9 +353,31 @@ function buildDepartures({
         ? opStation.departureDelayMinutes
         : calculateDelay(plannedTime, actualTime);
 
+    // Stacja może mieć też planowy przyjazd (postój przed odjazdem, np.
+    // dłuższy postój w trasie) — jeśli PLK go podaje, prezentujemy obok
+    // odjazdu. Brak arrivalTime oznacza zwykle stację początkową, gdzie
+    // przyjazd nie istnieje.
+    const plannedArrival = stationPlan.arrivalTime || opStation?.plannedArrivalTime || "";
+
+    const actualArrival = plannedArrival
+      ? (timeOnly(opStation?.actualArrival) ||
+         timeOnly(opStation?.estimatedArrival) ||
+         opStation?.plannedArrivalTime ||
+         plannedArrival)
+      : "";
+
+    const arrivalDelay = plannedArrival
+      ? (typeof opStation?.arrivalDelayMinutes === "number"
+          ? opStation.arrivalDelayMinutes
+          : calculateDelay(plannedArrival, actualArrival))
+      : null;
+
     rows.push({
       time: shortTime(actualTime || plannedTime),
       plannedTime: shortTime(plannedTime),
+      arrivalTime: plannedArrival ? shortTime(actualArrival || plannedArrival) : "",
+      plannedArrivalTime: plannedArrival ? shortTime(plannedArrival) : "",
+      arrivalDelay,
       train: stationPlan.departureTrainNumber || stationRoute.nationalNumber || "",
       category: stationPlan.departureCommercialCategory || stationRoute.commercialCategorySymbol || "",
       name: stationRoute.name || "",
