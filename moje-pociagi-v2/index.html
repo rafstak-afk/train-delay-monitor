@@ -213,6 +213,12 @@ function saveTrains(list) {
 
 let currentTrains = loadTrains();
 
+// Ostatnio wyrenderowany "row" na kartę (równoległa tablica do
+// currentTrains) — dzięki temu zmiana kolejności/usunięcie może
+// przerysować listę z danych, które już mamy, zamiast na nowo odpytywać
+// wszystkie stacje i wszystkie pociągi tylko dlatego, że ktoś kliknął ▲.
+let lastRows = [];
+
 // Bez timeoutu na fetch() zawieszone/bardzo wolne żądanie (słaba sieć,
 // wolna odpowiedź PLK) blokowało init() w nieskończoność — strona
 // zostawała na "Pobieranie danych..." bez żadnego błędu, bo fetch()
@@ -402,6 +408,16 @@ function getDelay(row) {
   return val !== undefined && val !== null ? Number(val) : 0;
 }
 
+// Czysto lokalne przerysowanie listy z danych, które już mamy w
+// pamięci (lastRows) — bez żadnego zapytania sieciowego. Używane po
+// zmianie kolejności/usunięciu, żeby kliknięcie ▲/▼/✕ nie odpytywało
+// od nowa wszystkich stacji i wszystkich pociągów (to robi tylko
+// "Odśwież" / pierwsze załadowanie strony).
+function renderFromCache() {
+  const container = document.getElementById('list');
+  container.innerHTML = currentTrains.map((item, idx) => renderCard(item, idx, lastRows[idx])).join('');
+}
+
 // Wywoływane z przycisków wewnątrz karty; rodzic ma już
 // onclick="event.stopPropagation()", więc same nie dostają (ani nie
 // potrzebują) obiektu zdarzenia — wcześniej sygnatura zakładała `e` jako
@@ -412,15 +428,18 @@ function moveTrain(index, direction) {
   if (newIndex < 0 || newIndex >= currentTrains.length) return;
   const item = currentTrains.splice(index, 1)[0];
   currentTrains.splice(newIndex, 0, item);
+  const row = lastRows.splice(index, 1)[0];
+  lastRows.splice(newIndex, 0, row);
   saveTrains(currentTrains);
-  init();
+  renderFromCache();
 }
 
 function deleteTrain(index) {
   if (confirm('Czy na pewno usunąć ten pociąg z listy?')) {
     currentTrains.splice(index, 1);
+    lastRows.splice(index, 1);
     saveTrains(currentTrains);
-    init();
+    renderFromCache();
   }
 }
 
@@ -575,6 +594,7 @@ async function init() {
   container.innerHTML = currentTrains.map((item, idx) => renderCard(item, idx, null)).join('');
 
   function paintCard(idx, item, row) {
+    lastRows[idx] = row || null;
     const el = document.getElementById('card-' + idx);
     if (el) el.outerHTML = renderCard(item, idx, row);
   }
