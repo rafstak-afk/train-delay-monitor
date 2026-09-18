@@ -40,9 +40,6 @@ export async function onRequestGet(context) {
     const stationSchedulesUrl =
       `${PLK_BASE}/schedules?dateFrom=${date}&dateTo=${date}&stations=${station.id}`;
 
-    const fullSchedulesUrl =
-      `${PLK_BASE}/schedules?dateFrom=${date}&dateTo=${date}`;
-
     // Filtrujemy operations po stacji (tak jak health.js i train.js) —
     // bez tego endpoint ściągał i parsował operacje WSZYSTKICH pociągów
     // w Polsce (pageSize=10000) tylko po to, żeby policzyć odjazdy z
@@ -63,10 +60,10 @@ export async function onRequestGet(context) {
 
     // stationSchedules i operations są niezbędne do zbudowania tablicy
     // odjazdów — ich błąd/timeout ma przerwać cały request (obsłużone
-    // przez zewnętrzny try/catch). fullSchedules i stationsDictionary
-    // służą tylko do uzupełniania nazw stacji/relacji — jeśli PLK
-    // odpowiada na nie wolno, wolimy zwrócić odjazdy z gorszymi nazwami
-    // niż wywrócić cały endpoint (to był powód sporadycznych 503).
+    // przez zewnętrzny try/catch). stationsDictionary służy tylko do
+    // uzupełniania nazw stacji — jeśli PLK odpowiada na nie wolno,
+    // wolimy zwrócić odjazdy z gorszymi nazwami niż wywrócić cały
+    // endpoint.
     const emptyResult = (data) => ({
       data,
       apiLimits: { available: false, limit: null, remaining: null, reset: null },
@@ -75,43 +72,35 @@ export async function onRequestGet(context) {
 
     const [
       stationSchedulesResult,
-      fullSchedulesResult,
       operationsResult,
       stationsDictionaryResult
     ] = await Promise.all([
       getJsonCached(stationSchedulesUrl, headers, CACHE_TTL.STATION_SCHEDULES),
-      getJsonCached(fullSchedulesUrl, headers, CACHE_TTL.FULL_SCHEDULES)
-        .catch(() => emptyResult({ routes: [] })),
       getJsonCached(operationsUrl, headers, CACHE_TTL.OPERATIONS),
       getJsonCached(stationsDictionaryUrl, headers, CACHE_TTL.STATIONS_DICTIONARY)
         .catch(() => emptyResult({ stations: [] }))
     ]);
 
     const stationSchedulesRaw = stationSchedulesResult.data;
-    const fullSchedulesRaw = fullSchedulesResult.data;
     const operationsRaw = operationsResult.data;
     const stationsDictionaryRaw = stationsDictionaryResult.data;
 
     const apiLimits = mergeApiLimits([
       stationSchedulesResult.apiLimits,
-      fullSchedulesResult.apiLimits,
       operationsResult.apiLimits,
       stationsDictionaryResult.apiLimits
     ]);
 
     const cache = {
       stationSchedules: stationSchedulesResult.cache,
-      fullSchedules: fullSchedulesResult.cache,
       operations: operationsResult.cache,
       stationsDictionary: stationsDictionaryResult.cache
     };
 
-    const fullRoutesMap = buildFullRoutesMap(fullSchedulesRaw);
-    const stationNames = buildStationNameMap(fullSchedulesRaw, stationsDictionaryRaw);
+    const stationNames = buildStationNameMap(stationsDictionaryRaw);
 
     const allDepartures = buildDepartures({
       stationSchedulesRaw,
-      fullRoutesMap,
       operationsRaw,
       stationId: station.id,
       stationNames,
@@ -119,6 +108,13 @@ export async function onRequestGet(context) {
     });
 
     const departures = getDeparturesFromTime(allDepartures, time, limit);
+
+    // Kierunek/stacje pośrednie wymagają PEŁNEJ trasy pociągu (nie tylko
+    // naszej stacji). Zamiast ściągać rozkład całej Polski na cały dzień
+    // (potrafiło to ważyć ~35 MB i konsekwentnie wywalało limit czasu CPU
+    // workera Cloudflare — błąd 1102/503), dociągamy pełną trasę osobno,
+    // pojedynczo dla każdego już wybranego do wyświetlenia odjazdu.
+    await enrichWithFullRoutes(departures, headers, stationNames, station.id);
 
     return json({
       station,
@@ -263,7 +259,6 @@ function getLastConfirmedStation(train, stationNames) {
 
 function buildDepartures({
   stationSchedulesRaw,
-  fullRoutesMap,
   operationsRaw,
   stationId,
   stationNames,
@@ -294,42 +289,12 @@ function buildDepartures({
 
   for (const stationRoute of stationRoutes) {
     const key = makeKey(stationRoute);
-    const fullRoute = fullRoutesMap.get(key) || stationRoute;
-
-    const routeStations =
-      Array.isArray(fullRoute.stations) && fullRoute.stations.length
-        ? fullRoute.stations
-        : stationRoute.stations || [];
 
     const stationPlan = (stationRoute.stations || []).find(
       s => Number(s.stationId) === Number(stationId)
     );
 
     if (!stationPlan || !stationPlan.departureTime) continue;
-
-    const currentIndex = routeStations.findIndex(
-      s => Number(s.stationId) === Number(stationId)
-    );
-
-    const destinationStation =
-      routeStations.length
-        ? routeStations[routeStations.length - 1]
-        : null;
-
-    const destination =
-      stationName(destinationStation, stationNames) ||
-      fullRoute.destinationStationName ||
-      fullRoute.destination ||
-      "";
-
-    const via = currentIndex >= 0
-      ? routeStations
-          .slice(currentIndex + 1, currentIndex + 6)
-          .map(s => stationName(s, stationNames))
-          .filter(Boolean)
-          .filter(name => normalize(name) !== normalize(destination))
-          .join(", ")
-      : "";
 
     const operation = operationsMap.get(key);
     const opStation = operation?.station;
@@ -357,12 +322,14 @@ function buildDepartures({
     rows.push({
       time: shortTime(actualTime || plannedTime),
       plannedTime: shortTime(plannedTime),
-      train: stationPlan.departureTrainNumber || fullRoute.nationalNumber || stationRoute.nationalNumber || "",
-      category: stationPlan.departureCommercialCategory || fullRoute.commercialCategorySymbol || stationRoute.commercialCategorySymbol || "",
-      name: fullRoute.name || stationRoute.name || "",
-      carrier: fullRoute.carrierCode || stationRoute.carrierCode || "",
-      destination,
-      via,
+      train: stationPlan.departureTrainNumber || stationRoute.nationalNumber || "",
+      category: stationPlan.departureCommercialCategory || stationRoute.commercialCategorySymbol || "",
+      name: stationRoute.name || "",
+      carrier: stationRoute.carrierCode || "",
+      // Uzupełniane później przez enrichWithFullRoutes() — stationRoute
+      // z /schedules?stations=X niesie tylko NASZĄ stację, nie całą trasę.
+      destination: "",
+      via: "",
       lastConfirmedStation: lastConfirmed?.station || "",
       lastConfirmedTime: lastConfirmed?.time || "",
       platform: stationPlan.departurePlatform || "",
@@ -389,40 +356,63 @@ function buildDepartures({
     });
 }
 
-function buildFullRoutesMap(fullSchedulesRaw) {
-  const map = new Map();
-  const routes = fullSchedulesRaw.routes || [];
+// Dociąga pełną trasę (destination/via) tylko dla odjazdów, które faktycznie
+// trafiają do odpowiedzi — pojedynczo, po scheduleId/orderId, zamiast
+// ściągać rozkład całej Polski na cały dzień (patrz komentarz w
+// onRequestGet). Limitujemy liczbę równoległych zapytań do PLK, żeby nie
+// trafić w limit liczby subrequestów Cloudflare Workera.
+const MAX_ROUTE_ENRICHMENTS = 30;
+const ROUTE_CACHE_TTL = 21600;
 
-  for (const route of routes) {
-    const key = makeKey(route);
-    if (key) map.set(key, route);
-  }
+async function enrichWithFullRoutes(departures, headers, stationNames, stationId) {
+  const targets = departures
+    .filter(row => row.scheduleId && row.orderId)
+    .slice(0, MAX_ROUTE_ENRICHMENTS);
 
-  return map;
+  await Promise.allSettled(
+    targets.map(async row => {
+      const routeUrl =
+        `${PLK_BASE}/schedules/route/${encodeURIComponent(row.scheduleId)}/${encodeURIComponent(row.orderId)}`;
+
+      const result = await getJsonCached(routeUrl, headers, ROUTE_CACHE_TTL);
+      const route = result.data?.route || result.data || {};
+      const routeStations = Array.isArray(route.stations) ? route.stations : [];
+
+      if (!routeStations.length) return;
+
+      const currentIndex = routeStations.findIndex(
+        s => Number(s.stationId) === Number(stationId)
+      );
+
+      const destinationStation = routeStations[routeStations.length - 1];
+
+      const destination =
+        stationName(destinationStation, stationNames) ||
+        route.destinationStationName ||
+        route.destination ||
+        "";
+
+      const via = currentIndex >= 0
+        ? routeStations
+            .slice(currentIndex + 1, currentIndex + 6)
+            .map(s => stationName(s, stationNames))
+            .filter(Boolean)
+            .filter(name => normalize(name) !== normalize(destination))
+            .join(", ")
+        : "";
+
+      row.destination = destination;
+      row.via = via;
+    })
+  );
 }
 
-function buildStationNameMap(fullSchedulesRaw, stationsDictionaryRaw) {
+function buildStationNameMap(stationsDictionaryRaw) {
   const map = new Map();
 
-  addStationNamesFromSchedules(map, fullSchedulesRaw);
   addStationNamesFromDictionary(map, stationsDictionaryRaw);
 
   return map;
-}
-
-function addStationNamesFromSchedules(map, schedulesRaw) {
-  const dictionaries = schedulesRaw?.dictionaries || {};
-
-  const possibleLists = [
-    dictionaries.stations,
-    dictionaries.station,
-    dictionaries.stopPoints,
-    schedulesRaw?.stations
-  ];
-
-  for (const list of possibleLists) {
-    addStationListToMap(map, list);
-  }
 }
 
 function addStationNamesFromDictionary(map, dictionaryRaw) {
