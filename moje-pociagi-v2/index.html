@@ -213,9 +213,23 @@ function saveTrains(list) {
 
 let currentTrains = loadTrains();
 
+// Bez timeoutu na fetch() zawieszone/bardzo wolne żądanie (słaba sieć,
+// wolna odpowiedź PLK) blokowało init() w nieskończoność — strona
+// zostawała na "Pobieranie danych..." bez żadnego błędu, bo fetch()
+// nigdy się nie rozstrzygał ani na sukces, ani na porażkę.
+async function fetchWithTimeout(url, opts = {}, timeoutMs = 15000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...opts, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function fetchStationDepartures(station) {
   try {
-    const res = await fetch('/api/departures?station=' + encodeURIComponent(station) + '&limit=300', { cache: 'no-store' });
+    const res = await fetchWithTimeout('/api/departures?station=' + encodeURIComponent(station) + '&limit=300', { cache: 'no-store' });
     if (!res.ok) return [];
     const data = await res.json();
     return Array.isArray(data.departures) ? data.departures : (Array.isArray(data) ? data : []);
@@ -232,7 +246,7 @@ async function fetchTrainByNumber(trainNum, station) {
     let trainOrderId = "";
 
     try {
-      const lookupRes = await fetch(`/api/v2/smart-lookup?train=${encodeURIComponent(trainNum)}&station=${encodeURIComponent(station)}`, { cache: "no-store" });
+      const lookupRes = await fetchWithTimeout(`/api/v2/smart-lookup?train=${encodeURIComponent(trainNum)}&station=${encodeURIComponent(station)}`, { cache: "no-store" });
       if (lookupRes.ok) {
         const lData = await lookupRes.json();
         if (lData && lData.ok) {
@@ -251,7 +265,7 @@ async function fetchTrainByNumber(trainNum, station) {
     if (orderId) query.set("orderId", orderId);
     if (trainOrderId) query.set("trainOrderId", trainOrderId);
 
-    const res = await fetch(`/api/train-details?${query.toString()}`, { cache: "no-store" });
+    const res = await fetchWithTimeout(`/api/train-details?${query.toString()}`, { cache: "no-store" });
     if (!res.ok) return null;
     const data = await res.json();
     if (!data) return null;
@@ -502,32 +516,46 @@ async function init() {
 
   container.innerHTML = currentTrains.map((item, idx) => renderCard(item, idx, null)).join('');
 
-  const stationMap = new Map();
-  const stations = [...new Set(currentTrains.map(t => t.station))];
+  try {
+    const stationMap = new Map();
+    const stations = [...new Set(currentTrains.map(t => t.station))];
 
-  for (const st of stations) {
-    stationMap.set(st, await fetchStationDepartures(st));
-  }
+    // Zrównoleglone (było: sekwencyjnie, jedna stacja po drugiej — przy
+    // kilku stacjach czas się sumował zamiast być ograniczonym przez
+    // najwolniejsze zapytanie).
+    await Promise.all(stations.map(async st => {
+      stationMap.set(st, await fetchStationDepartures(st));
+    }));
 
-  const cardsPromises = currentTrains.map(async (item, idx) => {
-    const departures = stationMap.get(item.station) || [];
-    let matchedRow = departures.find(d => {
-      const dNum = String(d.train || d.trainNumber || d.number || '').replace(/\D/g, '');
-      const targetNum = String(item.trainNum).replace(/\D/g, '');
-      return dNum && targetNum && dNum === targetNum;
+    const cardsPromises = currentTrains.map(async (item, idx) => {
+      try {
+        const departures = stationMap.get(item.station) || [];
+        let matchedRow = departures.find(d => {
+          const dNum = String(d.train || d.trainNumber || d.number || '').replace(/\D/g, '');
+          const targetNum = String(item.trainNum).replace(/\D/g, '');
+          return dNum && targetNum && dNum === targetNum;
+        });
+
+        // Pełne zapytanie po numerze pociągu dla pociągów poza aktywnego okna tablicy stacyjnej
+        if (!matchedRow) {
+          matchedRow = await fetchTrainByNumber(item.trainNum, item.station);
+        }
+
+        return renderCard(item, idx, matchedRow);
+      } catch (e) {
+        // Pojedyncza karta nie może wywrócić całego Promise.all i zostawić
+        // strony na zawsze na "Pobieranie danych...".
+        return renderCard(item, idx, null);
+      }
     });
 
-    // Pełne zapytanie po numerze pociągu dla pociągów poza aktywnego okna tablicy stacyjnej
-    if (!matchedRow) {
-      matchedRow = await fetchTrainByNumber(item.trainNum, item.station);
-    }
-
-    return renderCard(item, idx, matchedRow);
-  });
-
-  const cardsHtml = await Promise.all(cardsPromises);
-  container.innerHTML = cardsHtml.join('');
-  refreshBtn.disabled = false;
+    const cardsHtml = await Promise.all(cardsPromises);
+    container.innerHTML = cardsHtml.join('');
+  } catch (e) {
+    container.innerHTML = `<div style="padding:16px;color:#fb7185;">Błąd ładowania danych: ${String(e && e.message || e)}. Spróbuj odświeżyć.</div>`;
+  } finally {
+    refreshBtn.disabled = false;
+  }
 }
 
 document.getElementById('addTrainForm').addEventListener('submit', (e) => {
