@@ -8,6 +8,20 @@ const CACHE_TTL = {
   OPERATIONS: 30
 };
 
+// Cache całej złożonej odpowiedzi (nie tylko pojedynczych zapytań do PLK).
+// Krótki TTL — nie dłuższy niż świeżość operations (30s) — żeby nie
+// pogorszyć aktualności danych, ale wystarczający, by bliskie w czasie
+// zapytania o tę samą stację (kilku użytkowników na popularnej stacji,
+// albo auto-odświeżanie kilku otwartych zakładek) dostawały gotową
+// odpowiedź od razu, bez ponownego składania jej z 3 źródeł PLK + do
+// 30 osobnych zapytań o pełne trasy pociągów.
+const COMPOSED_CACHE_TTL = 25;
+
+function composedCacheKey(stationName, date, time, limit) {
+  const raw = `${stationName.trim().toLowerCase()}|${date}|${time}|${limit}`;
+  return new Request("https://cache.local/composed-departures/" + btoa(raw), { method: "GET" });
+}
+
 export async function onRequestGet(context) {
   const { request, env } = context;
   const url = new URL(request.url);
@@ -23,6 +37,15 @@ export async function onRequestGet(context) {
 
   if (!env.PLK_API_KEY) {
     return json({ error: "Brak zmiennej PLK_API_KEY" }, 500);
+  }
+
+  const cacheKey = composedCacheKey(stationName, date, time, limit);
+  const cachedComposed = await caches.default.match(cacheKey);
+
+  if (cachedComposed) {
+    const payload = await cachedComposed.json();
+    payload.cache = { ...payload.cache, composed: "HIT" };
+    return json(payload);
   }
 
   const headers = {
@@ -116,16 +139,27 @@ export async function onRequestGet(context) {
     // pojedynczo dla każdego już wybranego do wyświetlenia odjazdu.
     await enrichWithFullRoutes(departures, headers, stationNames, station.id);
 
-    return json({
+    const responsePayload = {
       station,
       generatedAt: new Date().toISOString(),
       date,
       timeFrom: time,
       limit,
       apiLimits,
-      cache,
+      cache: { ...cache, composed: "MISS" },
       departures
-    });
+    };
+
+    context.waitUntil(
+      caches.default.put(cacheKey, new Response(JSON.stringify(responsePayload), {
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+          "Cache-Control": `public, max-age=${COMPOSED_CACHE_TTL}`
+        }
+      }))
+    );
+
+    return json(responsePayload);
 
   } catch (error) {
     return json({
