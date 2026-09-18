@@ -219,6 +219,11 @@ let currentTrains = loadTrains();
 // wszystkie stacje i wszystkie pociągi tylko dlatego, że ktoś kliknął ▲.
 let lastRows = [];
 
+// Kiedy ostatnio init() faktycznie skończył pobieranie danych — używane
+// do decyzji "czy odświeżać po powrocie z bfcache" (patrz pageshow niżej).
+let lastLoadedAt = 0;
+const STALE_AFTER_MS = 5 * 60 * 1000;
+
 // Bez timeoutu na fetch() zawieszone/bardzo wolne żądanie (słaba sieć,
 // wolna odpowiedź PLK) blokowało init() w nieskończoność — strona
 // zostawała na "Pobieranie danych..." bez żadnego błędu, bo fetch()
@@ -648,6 +653,7 @@ async function init() {
     });
 
     await Promise.allSettled(cardTasks);
+    lastLoadedAt = Date.now();
   } catch (e) {
     container.innerHTML = `<div style="padding:16px;color:#fb7185;">Błąd ładowania danych: ${String(e && e.message || e)}. Spróbuj odświeżyć.</div>`;
   } finally {
@@ -670,6 +676,20 @@ document.getElementById('addTrainForm').addEventListener('submit', (e) => {
 });
 
 document.getElementById('refreshBtn').addEventListener('click', init);
+
+// Powrót przyciskiem Wstecz ze szczegółów pociągu czasem przywraca tę
+// stronę z pamięci przeglądarki (bfcache) — wtedy skrypt się NIE
+// wykonuje od nowa i init() na dole pliku nie odpala, więc bez tego
+// listenera strona pokazywałaby dowolnie stary stan. event.persisted
+// odróżnia taki powrót od zwykłego, pierwszego załadowania. Odświeżamy
+// tylko, gdy dane mają więcej niż 5 minut — w przeciwnym razie to, co
+// już jest na ekranie, i tak jest wystarczająco świeże.
+window.addEventListener('pageshow', (event) => {
+  if (event.persisted && Date.now() - lastLoadedAt > STALE_AFTER_MS) {
+    init();
+  }
+});
+
 init();
 </script>
 </body>
