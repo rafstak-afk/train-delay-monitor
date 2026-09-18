@@ -229,64 +229,28 @@ function statusHuman(code){
 }
 function detailsParams(){const p=new URLSearchParams();['date','scheduleId','scheduledId','orderId','trainOrderId','stationId','station','category','name','destination'].forEach(k=>{const v=qs(k);if(v)p.set(k,v)});return p}
 function portalUrl(train){return 'https://portalpasazera.pl/ZnajdzPociag'}
-function pickName(v){if(!v)return'';if(typeof v==='string')return v;return v.name||v.stationName||v.stopName||v.shortName||''}
-function stationId(s){return String(s.stationId||s.stopId||s.id||'')}
-function seqOf(s,i){return Number(s.orderNumber||s.plannedSequenceNumber||s.actualSequenceNumber||s.sequenceNumber||s.idx||i+1)}
-function stationDirectName(s){return s.stationName||s.name||s.stopName||s.station||''}
-function makeInitialNameMap(data){const map={};const sources=[data.stationNames,data.stations,data.dictionaries&&data.dictionaries.stations,data.route&&data.route.stationNames,data.operation&&data.operation.stationNames];for(const src of sources){if(!src)continue;for(const k in src){const n=pickName(src[k]);if(n)map[String(k)]=n}}return map}
-function stationTitle(s,map){const id=stationId(s);return stationDirectName(s)||map[id]||'stacja ID '+id}
-function stationSource(s,map){if(stationDirectName(s))return'nazwa: API';if(map[stationId(s)])return'nazwa: słownik PLK / cache';return'nazwa: brak nazwy w API'}
-function getRouteStations(data){return data.route&&Array.isArray(data.route.stations)?data.route.stations:[]}
-function getOperationStations(data){return data.operation&&Array.isArray(data.operation.stations)?data.operation.stations:[]}
-function normalizeStations(data){const route=getRouteStations(data);const ops=getOperationStations(data);const opBySeq={};const opById={};ops.forEach((o,i)=>{opBySeq[seqOf(o,i)]=o;opById[stationId(o)]=o});const base=route.length?route:ops;return base.map((r,i)=>{const seq=seqOf(r,i);const id=stationId(r);return Object.assign({},r,opBySeq[seq]||opById[id]||{}, {idx:i+1,_seq:seq})}).sort((a,b)=>a._seq-b._seq)}
-function plannedTime(s){return s.plannedDeparture||s.plannedArrival||s.plannedDepartureTime||s.plannedArrivalTime||s.departureTime||s.arrivalTime||''}
-function actualTime(s){return s.actualDeparture||s.actualArrival||s.actualDepartureTime||s.actualArrivalTime||''}
-function effectiveTime(s){return actualTime(s)||plannedTime(s)}
-function confirmedByApi(s){return s.isConfirmed===true||s.confirmed===true||s.stationStatus==='CONFIRMED'||s.status==='CONFIRMED'||s.realizationStatus==='CONFIRMED'||s.isPassed===true||s.passed===true}
-function stationOperationalState(s,nm){
-  if(confirmedByApi(s)) return 'confirmed';
-  const t=toMin(effectiveTime(s));
-  if(t!=null && t>=nm) return 'future';
-  return 'unknown';
+// Opóźnienie/status stacji liczymy WYŁĄCZNIE na podstawie s.status/s.delay
+// zwróconych przez /api/train-details — ten sam, jeden serwerowy punkt
+// prawdy używany przez moje-pociagi-v2 i v2/train.html. Wcześniej ta
+// strona liczyła to sama, osobno, bezpośrednio z surowych danych PLK
+// (bez sprawdzania isConfirmed, bez uwzględnienia oficjalnego pola
+// departureDelayMinutes/arrivalDelayMinutes z PLK) — stąd rozjazdy typu
+// "PLK pokazuje punktualnie, u nas +1 min" dla tego samego pociągu.
+function renderTime(s,state){
+  const p=s.plannedTime||'';
+  const a=s.status==='confirmed'?(s.actualTime||''):'';
+  const show=a&&a!==p;
+  const d=show?Math.max(0,s.delay||0):0;
+  const main=show?a:(p||a||'');
+  const cls=state==='future'?'future':(show?'delay-'+delayClass(d):'ok');
+  return '<div class="time '+cls+'">'+esc(main)+'</div>'+(show?'<div class="station-meta">plan '+esc(p)+'</div>':'');
 }
-function isActuallyPassed(s,nm){return confirmedByApi(s)}
-function renderTime(s,state){const p=shortTime(plannedTime(s));const a=shortTime(actualTime(s));const show=a&&a!==p;const d=show?Math.max(0,(toMin(a)||0)-(toMin(p)||0)):0;const main=show?a:(p||a||'');const cls=state==='future'?'future':(show?'delay-'+delayClass(d):'ok');return '<div class="time '+cls+'">'+esc(main)+'</div>'+(show?'<div class="station-meta">plan '+esc(p)+'</div>':'')}
-function renderDelay(s){const p=toMin(plannedTime(s));const a=toMin(actualTime(s));const d=(p!=null&&a!=null)?Math.max(0,a-p):0;const cls=delayClass(d);return '<span class="delay '+cls+'">'+d+' min</span>'}
+function renderDelay(s){
+  const d=s.status==='confirmed'?(s.delay||0):0;
+  const cls=delayClass(d);
+  return '<span class="delay '+cls+'">'+d+' min</span>';
+}
 function loading(train){document.getElementById('content').innerHTML='<div class="panel"><div class="loader"><div class="train-loader"><div class="track"></div><div class="train-dot">🚆</div></div><strong>Pobieram bieg pociągu '+esc(train)+'...</strong></div><div class="copy-note">Czekam na dane PLK. Spokojnie, to nie cisza, to informatyka.</div></div>'}
-async function resolveNamesForStations(stations,map){
-  const ids=[
-    ...new Set(
-      stations
-        .map(stationId)
-        .filter(id=>id&&!map[id])
-    )
-  ];
-
-  if(!ids.length)return map;
-
-  try{
-    const r=await fetch(
-      '/api/stations?ids='+encodeURIComponent(ids.join(',')),
-      {
-        headers:{Accept:'application/json'},
-        cache:'no-store'
-      }
-    );
-
-    const data=await r.json();
-
-    if(data&&data.names){
-      for(const k in data.names){
-        map[String(k)]=data.names[k];
-      }
-    }
-  }catch(e){
-    console.warn('Nie udało się pobrać nazw stacji',e);
-  }
-
-  return map;
-}
-function summaryName(route,train){return [route.commercialCategorySymbol||qs('category')||'',route.nationalNumber||train,route.name||qs('name')||''].filter(Boolean).join(' ')}
 
 async function findCourseFromOpenedContext(train,idp){
   const station=idp.get('station')||qs('station')||'';
@@ -308,14 +272,12 @@ async function findCourseFromOpenedContext(train,idp){
 }
 async function fetchAndRenderTrain(train,opts){
   const q=new URLSearchParams();
-  q.set('action','train-route');
   q.set('scheduleId',opts.schedule);
   q.set('orderId',opts.order);
   q.set('train',train);
   q.set('operatingDate',opts.date||todayIso());
 
   if(opts.trainOrderId)q.set('trainOrderId',opts.trainOrderId);
-  if(opts.stationId)q.set('stationId',opts.stationId);
   if(opts.station)q.set('station',opts.station);
 
   const delays=[0,700,1600];
@@ -327,7 +289,7 @@ async function fetchAndRenderTrain(train,opts){
     }
 
     try{
-      const url='/api?'+q.toString()+'&_retry='+attempt;
+      const url='/api/train-details?'+q.toString()+'&_retry='+attempt;
       const r=await fetch(url,{
         headers:{Accept:'application/json'},
         cache:'no-store'
@@ -342,8 +304,8 @@ async function fetchAndRenderTrain(train,opts){
         data=null;
       }
 
-      if(r.ok && data){
-        await renderTrain(train,data);
+      if(r.ok && data && !data.error){
+        renderTrain(train,data);
         return;
       }
 
@@ -361,11 +323,41 @@ async function fetchAndRenderTrain(train,opts){
   }
 }
 
-async function loadTrain(){const train=(document.getElementById('trainInput').value||'').trim();if(!train){setStatus('Wpisz numer pociągu.');return}document.getElementById('trainInput').blur();setStatus('Pobieram bieg pociągu...');loading(train);const idp=detailsParams();const trainFromUrl=qs('train');const manualDifferent=trainFromUrl&&String(trainFromUrl)!==String(train);let schedule=idp.get('scheduleId')||idp.get('scheduledId');let order=idp.get('orderId');try{if(manualDifferent){const found=await findCourseFromOpenedContext(train,idp);if(found){await fetchAndRenderTrain(train,found);return}renderFallback(train,'Wpisałeś ręcznie inny numer pociągu. Szukałem go dla tej samej daty i stacji z otwartej tablicy, ale nie znalazłem jednoznacznego kursu z identyfikatorami PLK. Kliknij numer bezpośrednio z tablicy albo otwórz Portal Pasażera.');return}if(!schedule||!order){const found=await findCourseFromOpenedContext(train,idp);if(found){await fetchAndRenderTrain(train,found);return}renderFallback(train,'Do pełnego biegu potrzebny jest link z tablicy odjazdów z identyfikatorami kursu. Sam numer może oznaczać więcej niż jeden kurs.');return}await fetchAndRenderTrain(train,{schedule,order,trainOrderId:idp.get('trainOrderId'),stationId:idp.get('stationId'),station:idp.get('station'),date:idp.get('date')||todayIso()})}catch(e){document.getElementById('content').innerHTML='<div class="panel err">Nie udało się pobrać biegu pociągu: '+esc(e.message)+'</div>';setStatus('Błąd pobierania biegu pociągu.')}}
-async function renderTrain(train,data){const route=data.route||{};const op=data.operation||{};const stations=normalizeStations(data);let map=makeInitialNameMap(data);map=await resolveNamesForStations(stations,map);const nm=nowMin();let passedIdx=-1;stations.forEach((s,i)=>{if(confirmedByApi(s))passedIdx=i});let focusIdx=passedIdx>=0?passedIdx:stations.findIndex(s=>{const t=toMin(effectiveTime(s));return t!=null&&t>=nm});if(focusIdx<0)focusIdx=0;const last=passedIdx>=0?stations[passedIdx]:null;const title=summaryName(route,train);const st=statusHuman(op.trainStatus);setStatus('Gotowe.');let html='<div class="panel"><div class="summary"><div class="card"><div class="label">Pociąg</div><div class="big">'+esc(title||('Pociąg '+train))+'</div><div class="hint">Status: '+esc(st[0])+(st[1]?' <span class="station-meta">('+esc(st[1])+')</span>':'')+'</div></div><div class="card"><div class="label">Ostatnia potwierdzona stacja</div><div class="big">'+esc(last?stationTitle(last,map):'brak potwierdzonej stacji')+'</div><div class="hint">'+esc(last?shortTime(effectiveTime(last)):'Brak twardego potwierdzenia realizacji z API PLK.')+'</div></div></div><div style="margin-top:10px"><a class="btn green" target="_blank" rel="noopener" href="'+esc(portalUrl(train))+'">Otwórz Portal Pasażera</a> <button class="btn small" onclick="copySummary()">Kopiuj podsumowanie</button></div></div>';
-html+='<div class="panel"><div class="route-title"><h2>Trasa stacja po stacji</h2><div class="hint">„Zaliczona” tylko przy potwierdzeniu API. Gdy czas już minął, a API nie potwierdza stacji, pokazujemy „BRAK INFO Z API”.</div></div><div class="route-table">';
-stations.forEach((s,i)=>{const opState=stationOperationalState(s,nm);let state='future',txt='przed',badge='future';if(opState==='confirmed'){state=(i===passedIdx?'current':'passed');txt=(i===passedIdx?'ostatnia':'zaliczona');badge=(i===passedIdx?'current':'passed')}else if(opState==='unknown'){state='info';txt='BRAK INFO Z API';badge='info'}else if(i===passedIdx+1|| (passedIdx<0&&i===focusIdx)){state='next';txt='następna';badge='next'}const plat=[s.departurePlatform||s.arrivalPlatform||'',s.departureTrack||s.arrivalTrack||''].filter(Boolean).join(' / ')||'—';html+='<div id="station-'+i+'" class="rrow '+state+'"><div class="status-cell"><span class="badge '+badge+'">'+esc(txt)+'</span></div><div class="station-cell"><div class="station-name">'+esc(stationTitle(s,map))+'</div><div class="station-meta">ID '+esc(stationId(s))+' · kolejność: '+esc(s._seq)+'</div><div class="station-meta">'+esc(stationSource(s,map))+'</div></div><div>'+renderTime(s,state==='future'||state==='next'?'future':state)+'</div><div class="delay-cell"><div class="station-meta">opóźnienie</div>'+renderDelay(s)+'</div><div class="platform-cell"><div class="station-meta">peron / tor</div><strong>'+esc(plat)+'</strong></div></div>'});
-html+='</div></div>';document.getElementById('content').innerHTML=html;window._trainSummary=document.body.innerText.replace(/\n{3,}/g,'\n\n');setTimeout(()=>{const el=document.getElementById('station-'+focusIdx);if(el)el.scrollIntoView({behavior:'smooth',block:'center'})},150)}
+async function loadTrain(){const train=(document.getElementById('trainInput').value||'').trim();if(!train){setStatus('Wpisz numer pociągu.');return}document.getElementById('trainInput').blur();setStatus('Pobieram bieg pociągu...');loading(train);const idp=detailsParams();const trainFromUrl=qs('train');const manualDifferent=trainFromUrl&&String(trainFromUrl)!==String(train);let schedule=idp.get('scheduleId')||idp.get('scheduledId');let order=idp.get('orderId');try{if(manualDifferent){const found=await findCourseFromOpenedContext(train,idp);if(found){await fetchAndRenderTrain(train,found);return}renderFallback(train,'Wpisałeś ręcznie inny numer pociągu. Szukałem go dla tej samej daty i stacji z otwartej tablicy, ale nie znalazłem jednoznacznego kursu z identyfikatorami PLK. Kliknij numer bezpośrednio z tablicy albo otwórz Portal Pasażera.');return}if(!schedule||!order){const found=await findCourseFromOpenedContext(train,idp);if(found){await fetchAndRenderTrain(train,found);return}renderFallback(train,'Do pełnego biegu potrzebny jest link z tablicy odjazdów z identyfikatorami kursu. Sam numer może oznaczać więcej niż jeden kurs.');return}await fetchAndRenderTrain(train,{schedule,order,trainOrderId:idp.get('trainOrderId'),station:idp.get('station'),date:idp.get('date')||todayIso()})}catch(e){document.getElementById('content').innerHTML='<div class="panel err">Nie udało się pobrać biegu pociągu: '+esc(e.message)+'</div>';setStatus('Błąd pobierania biegu pociągu.')}}
+function renderTrain(train,data){
+  const stations=Array.isArray(data.route)?data.route:[];
+  const nm=nowMin();
+  let passedIdx=-1;
+  stations.forEach((s,i)=>{if(s.status==='confirmed')passedIdx=i});
+  let focusIdx=passedIdx>=0?passedIdx:stations.findIndex(s=>{const t=toMin(s.actualTime||s.plannedTime);return t!=null&&t>=nm});
+  if(focusIdx<0)focusIdx=0;
+  const title=[data.category||qs('category')||'',data.trainNumber||train,data.name||qs('name')||''].filter(Boolean).join(' ');
+  const st=statusHuman(data.status);
+  setStatus('Gotowe.');
+  const lastStationText=data.lastConfirmedStation||'brak potwierdzonej stacji';
+  const lastTimeText=data.lastConfirmedStation?(data.lastConfirmedTime||''):'Brak twardego potwierdzenia realizacji z API PLK.';
+
+  let html='<div class="panel"><div class="summary"><div class="card"><div class="label">Pociąg</div><div class="big">'+esc(title||('Pociąg '+train))+'</div><div class="hint">Status: '+esc(st[0])+(st[1]?' <span class="station-meta">('+esc(st[1])+')</span>':'')+'</div></div><div class="card"><div class="label">Ostatnia potwierdzona stacja</div><div class="big">'+esc(lastStationText)+'</div><div class="hint">'+esc(lastTimeText)+'</div></div></div><div style="margin-top:10px"><a class="btn green" target="_blank" rel="noopener" href="'+esc(portalUrl(train))+'">Otwórz Portal Pasażera</a> <button class="btn small" onclick="copySummary()">Kopiuj podsumowanie</button></div></div>';
+  html+='<div class="panel"><div class="route-title"><h2>Trasa stacja po stacji</h2><div class="hint">„Zaliczona” tylko przy potwierdzeniu API. Gdy czas już minął, a API nie potwierdza stacji, pokazujemy „BRAK INFO Z API”.</div></div><div class="route-table">';
+
+  stations.forEach((s,i)=>{
+    let state='future',txt='przed',badge='future';
+    if(s.status==='confirmed'){
+      state=(i===passedIdx?'current':'passed');txt=(i===passedIdx?'ostatnia':'zaliczona');badge=state;
+    }else{
+      const t=toMin(s.actualTime||s.plannedTime);
+      if(t!=null&&t>=nm){
+        if(i===passedIdx+1||(passedIdx<0&&i===focusIdx)){state='next';txt='następna';badge='next'}
+      }else{
+        state='info';txt='BRAK INFO Z API';badge='info';
+      }
+    }
+    const plat=[s.platform,s.track].filter(v=>v&&v!=='-').join(' / ')||'—';
+    html+='<div id="station-'+i+'" class="rrow '+state+'"><div class="status-cell"><span class="badge '+badge+'">'+esc(txt)+'</span></div><div class="station-cell"><div class="station-name">'+esc(s.stationName)+'</div></div><div>'+renderTime(s,state==='future'||state==='next'?'future':state)+'</div><div class="delay-cell"><div class="station-meta">opóźnienie</div>'+renderDelay(s)+'</div><div class="platform-cell"><div class="station-meta">peron / tor</div><strong>'+esc(plat)+'</strong></div></div>';
+  });
+
+  html+='</div></div>';document.getElementById('content').innerHTML=html;window._trainSummary=document.body.innerText.replace(/\n{3,}/g,'\n\n');setTimeout(()=>{const el=document.getElementById('station-'+focusIdx);if(el)el.scrollIntoView({behavior:'smooth',block:'center'})},150);
+}
 function renderFallback(train,msg){setStatus('Nie mam identyfikatorów kursu z tablicy.');document.getElementById('content').innerHTML='<div class="panel"><h2>Pociąg '+esc(train)+'</h2><div class="err">'+esc(msg||'Brak pełnych identyfikatorów kursu.')+'</div><p class="hint">Kliknij numer pociągu bezpośrednio z naszej tablicy odjazdów. Sam numer może oznaczać więcej niż jeden kurs.</p><a class="btn green" target="_blank" rel="noopener" href="'+esc(portalUrl(train))+'">Otwórz wyszukiwarkę w Portal Pasażera</a></div>'}
 function copySummary(){navigator.clipboard&&navigator.clipboard.writeText(window._trainSummary||document.body.innerText)}
 document.addEventListener('DOMContentLoaded',function(){const input=document.getElementById('trainInput');const t=qs('train');if(t){input.value=t;loadTrain()}input.addEventListener('keydown',function(e){if(e.key==='Enter')loadTrain()})});
