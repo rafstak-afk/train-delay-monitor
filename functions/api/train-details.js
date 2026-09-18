@@ -121,27 +121,34 @@ function buildStops(routeStations, opStations, stationNames) {
       op?.estimatedArrival ||
       "";
 
-    const delay =
-      typeof op?.departureDelayMinutes === "number"
-        ? op.departureDelayMinutes
-        : typeof op?.arrivalDelayMinutes === "number"
-          ? op.arrivalDelayMinutes
-          : (() => {
-              const p = minutesFromTime(plannedTime);
-              const a = minutesFromTime(actualTime);
-              return p !== null && a !== null ? Math.max(0, a - p) : 0;
-            })();
-
     // op może istnieć w odpowiedzi PLK nawet dla stacji, przez którą
-    // pociąg jeszcze nie przejechał (czysto planowy wpis) — jedynym
-    // wiarygodnym sygnałem faktycznego przejazdu jest isConfirmed===true.
+    // pociąg jeszcze nie przejechał (czysto planowy wpis, czasem nawet
+    // z "actual"/"estimated" polami zawierającymi prognozę dla stacji
+    // odległych o wiele godzin) — jedynym wiarygodnym sygnałem
+    // faktycznego przejazdu jest isConfirmed===true.
     const isConfirmed = op?.isConfirmed === true;
+
+    // Opóźnienie liczymy tylko dla potwierdzonych stacji — inaczej
+    // prognoza PLK dla nieodwiedzonej jeszcze stacji (np. stacji
+    // końcowej całej trasy) potrafi pokazać nieprawdziwe opóźnienie na
+    // stacji, której pociąg jeszcze nawet nie dotknął.
+    const delay = isConfirmed
+      ? (typeof op?.departureDelayMinutes === "number"
+          ? op.departureDelayMinutes
+          : typeof op?.arrivalDelayMinutes === "number"
+            ? op.arrivalDelayMinutes
+            : (() => {
+                const p = minutesFromTime(plannedTime);
+                const a = minutesFromTime(actualTime);
+                return p !== null && a !== null ? Math.max(0, a - p) : 0;
+              })())
+      : 0;
 
     return {
       stationName: stationDisplayName(station, stationNames),
       plannedTime: shortTime(plannedTime) || "--:--",
       scheduledTime: shortTime(plannedTime) || "--:--",
-      actualTime: shortTime(actualTime),
+      actualTime: isConfirmed ? shortTime(actualTime) : "",
       status: isConfirmed ? "confirmed" : "upcoming",
       delay,
       platform: station.departurePlatform || station.arrivalPlatform || "-",
@@ -153,10 +160,14 @@ function buildStops(routeStations, opStations, stationNames) {
 function lastConfirmed(stops) {
   for (let i = stops.length - 1; i >= 0; i--) {
     if (stops[i].status === "confirmed" && stops[i].actualTime) {
-      return { station: stops[i].stationName, time: stops[i].actualTime };
+      return { station: stops[i].stationName, time: stops[i].actualTime, delay: stops[i].delay || 0 };
     }
   }
   return null;
+}
+
+function normalizeStationText(value) {
+  return String(value || "").trim().toLowerCase();
 }
 
 export async function onRequestGet(context) {
@@ -206,15 +217,38 @@ export async function onRequestGet(context) {
     const opStations = Array.isArray(operation.stations) ? operation.stations : [];
 
     const stops = buildStops(routeStations, opStations, stationNames);
-    const totalDelay = stops.reduce((max, s) => Math.max(max, s.delay || 0), 0);
     const confirmed = lastConfirmed(stops);
+
+    // Opóźnienie liczymy WYŁĄCZNIE z potwierdzonych danych, nigdy z
+    // nieodwiedzonych jeszcze stacji. PLK potrafi dla stacji z dalekiej
+    // przyszłości (np. stacji końcowej całej trasy) wstawić "actual"
+    // różniące się od planu mimo status:"upcoming" — to prognoza, nie
+    // fakt. Wcześniej liczyliśmy max(delay) po WSZYSTKICH stacjach, co
+    // pokazywało np. "+8 min w Katowicach" mimo że pociąg był jeszcze
+    // przed Krakowem i Katowic w ogóle nie dotknął — ten "+8" pochodził
+    // z prognozy dla stacji końcowej (Szczecin), 7 godzin później.
+    const stationParam = url.searchParams.get("station") || "";
+
+    const targetStop = stationParam
+      ? stops.find(s => normalizeStationText(s.stationName) === normalizeStationText(stationParam))
+      : null;
+
+    const currentDelay =
+      targetStop && targetStop.status === "confirmed"
+        ? targetStop.delay
+        : (confirmed?.delay || 0);
 
     // Kody statusu PLK: C = zrealizowany/zakończony, Z = zakończony.
     // Bez tego pola front-end (moje-pociagi-v2) domyślał się "true" dla
     // KAŻDEGO pociągu, dla którego to pole nie istniało w odpowiedzi —
     // czyli pokazywał "pociąg skończył bieg" nawet dla kursów, które
-    // jeszcze się nie zaczęły.
-    const isFinished = operation.trainStatus === "C" || operation.trainStatus === "Z";
+    // jeszcze się nie zaczęły. Dodatkowo wymagamy potwierdzenia OSTATNIEJ
+    // stacji trasy — sam trainStatus C/Z bywał niespójny między
+    // endpointami PLK (widziany dla pociągów jeszcze w trasie).
+    const lastStop = stops[stops.length - 1];
+    const isFinished =
+      (operation.trainStatus === "C" || operation.trainStatus === "Z") &&
+      !!lastStop && lastStop.status === "confirmed";
 
     return json({
       train: trainNum,
@@ -226,8 +260,8 @@ export async function onRequestGet(context) {
       name: route.name || "",
       trainName: route.name || "",
       trainNumber: route.nationalNumber || trainNum,
-      delay: totalDelay,
-      totalDelay,
+      delay: currentDelay,
+      totalDelay: currentDelay,
       status: operation.trainStatus || "",
       isFinished,
       lastConfirmedStation: confirmed?.station || "",
