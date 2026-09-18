@@ -47,7 +47,19 @@ export async function onRequestGet(context) {
       `${PLK_BASE}/operations?withPlanned=true&pageSize=10000`;
 
     const stationsDictionaryUrl =
-      `${PLK_BASE}/dictionaries/stations?pageSize=100000`;
+      `${PLK_BASE}/dictionaries/stations?pageSize=20000`;
+
+    // stationSchedules i operations są niezbędne do zbudowania tablicy
+    // odjazdów — ich błąd/timeout ma przerwać cały request (obsłużone
+    // przez zewnętrzny try/catch). fullSchedules i stationsDictionary
+    // służą tylko do uzupełniania nazw stacji/relacji — jeśli PLK
+    // odpowiada na nie wolno, wolimy zwrócić odjazdy z gorszymi nazwami
+    // niż wywrócić cały endpoint (to był powód sporadycznych 503).
+    const emptyResult = (data) => ({
+      data,
+      apiLimits: { available: false, limit: null, remaining: null, reset: null },
+      cache: "SKIPPED"
+    });
 
     const [
       stationSchedulesResult,
@@ -56,9 +68,11 @@ export async function onRequestGet(context) {
       stationsDictionaryResult
     ] = await Promise.all([
       getJsonCached(stationSchedulesUrl, headers, CACHE_TTL.STATION_SCHEDULES),
-      getJsonCached(fullSchedulesUrl, headers, CACHE_TTL.FULL_SCHEDULES),
+      getJsonCached(fullSchedulesUrl, headers, CACHE_TTL.FULL_SCHEDULES)
+        .catch(() => emptyResult({ routes: [] })),
       getJsonCached(operationsUrl, headers, CACHE_TTL.OPERATIONS),
       getJsonCached(stationsDictionaryUrl, headers, CACHE_TTL.STATIONS_DICTIONARY)
+        .catch(() => emptyResult({ stations: [] }))
     ]);
 
     const stationSchedulesRaw = stationSchedulesResult.data;
@@ -175,18 +189,32 @@ async function getJsonCached(url, headers, ttlSeconds) {
   };
 }
 
+const UPSTREAM_TIMEOUT_MS = 9000;
+
 async function getJsonWithMeta(url, headers) {
-  const res = await fetch(url, { headers });
-  const text = await res.text();
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS);
 
-  if (!res.ok) {
-    throw new Error(`HTTP ${res.status}: ${text.slice(0, 500)}`);
+  try {
+    const res = await fetch(url, { headers, signal: controller.signal });
+    const text = await res.text();
+
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}: ${text.slice(0, 500)}`);
+    }
+
+    return {
+      data: JSON.parse(text),
+      apiLimits: readApiLimits(res.headers)
+    };
+  } catch (err) {
+    if (err.name === "AbortError") {
+      throw new Error(`Upstream timeout po ${UPSTREAM_TIMEOUT_MS}ms: ${url}`);
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeout);
   }
-
-  return {
-    data: JSON.parse(text),
-    apiLimits: readApiLimits(res.headers)
-  };
 }
 
 function getLastConfirmedStation(train, stationNames) {

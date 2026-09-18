@@ -66,7 +66,7 @@ function stationName(item) {
 }
 
 async function getDictionary(apiKey) {
-  const url = `${PLK_BASE}/dictionaries/stations?pageSize=100000`;
+  const url = `${PLK_BASE}/dictionaries/stations?pageSize=20000`;
   const cache = caches.default;
 
   const cacheKey = new Request(
@@ -83,12 +83,26 @@ async function getDictionary(apiKey) {
     };
   }
 
-  const response = await fetch(url, {
-    headers: {
-      'X-API-Key': apiKey,
-      'Accept': 'application/json'
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 9000);
+
+  let response;
+  try {
+    response = await fetch(url, {
+      headers: {
+        'X-API-Key': apiKey,
+        'Accept': 'application/json'
+      },
+      signal: controller.signal
+    });
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      throw new Error('PLK dictionaries/stations: upstream timeout po 9000ms');
     }
-  });
+    throw err;
+  } finally {
+    clearTimeout(timeout);
+  }
 
   const text = await response.text();
 

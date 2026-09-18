@@ -26,9 +26,29 @@ function getApiKey(context) {
 
 async function plkFetch(path, key) {
   const started = Date.now();
-  const res = await fetch(BASE + path, {
-    headers: { 'X-API-Key': key, 'Accept': 'application/json, text/plain, */*' }
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 9000);
+
+  let res;
+  try {
+    res = await fetch(BASE + path, {
+      headers: { 'X-API-Key': key, 'Accept': 'application/json, text/plain, */*' },
+      signal: controller.signal
+    });
+  } catch (err) {
+    return {
+      ok: false,
+      status: 0,
+      contentType: '',
+      responseMs: Date.now() - started,
+      body: null,
+      text: '',
+      preview: err.name === 'AbortError' ? 'Upstream timeout po 9000ms' : String(err.message || err)
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
+
   const contentType = res.headers.get('content-type') || '';
   const text = await res.text();
   let body = null;
@@ -128,7 +148,7 @@ async function resolveStationNames(ids, key) {
   const probes = [
     {
       source: 'stations-dictionary',
-      path: '/dictionaries/stations?pageSize=100000'
+      path: '/dictionaries/stations?pageSize=20000'
     },
     { source: 'operations', path: '/operations?stations=' + stationParam + '&withPlanned=true&fullRoutes=true&pageSize=500' },
     { source: 'schedules', path: '/schedules?stations=' + stationParam + '&dateFrom=' + new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Warsaw' }) + '&dateTo=' + new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Warsaw' }) + '&pageSize=500' }
