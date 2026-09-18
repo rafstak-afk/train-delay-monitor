@@ -590,25 +590,37 @@ async function init() {
     // cokolwiek się pokaże (poprzednio jedna wolna karta blokowała
     // wyświetlenie reszty, które już dawno miały dane).
     const cardTasks = currentTrains.map(async (item, idx) => {
+      let matchedRow = null;
       try {
         const departures = await stationPromises.get(item.station);
-        let matchedRow = (departures || []).find(d => {
+        matchedRow = (departures || []).find(d => {
           const dNum = String(d.train || d.trainNumber || d.number || '').replace(/\D/g, '');
           const targetNum = String(item.trainNum).replace(/\D/g, '');
           return dNum && targetNum && dNum === targetNum;
         });
 
-        // Pełne zapytanie po numerze pociągu dla pociągów poza aktywnego okna tablicy stacyjnej
-        if (!matchedRow) {
-          matchedRow = await fetchTrainByNumber(item.trainNum, item.station);
-        }
+        // Szybki, wstępny render z tablicy odjazdów (kategoria, peron,
+        // czas) — /api/departures nie zna "ostatniej potwierdzonej
+        // stacji" w całej trasie (świadomy kompromis wydajnościowy),
+        // tylko status NA TEJ stacji.
+        if (matchedRow) paintCard(idx, item, matchedRow);
 
-        paintCard(idx, item, matchedRow);
+        // Zawsze doczytujemy pełne dane trasy (train-details) i
+        // nadpisujemy nimi to, czego tablica odjazdów wiedzieć nie
+        // mogła — inaczej pociąg widoczny na tablicy, ale jeszcze
+        // niepotwierdzony NA TEJ stacji, nigdy nie pokazywał, gdzie
+        // faktycznie jest ("Planowany odjazd" zamiast "Ostatnio: ...").
+        // Dzięki cache'owi ID kursu w localStorage to zwykle jedno
+        // dodatkowe, szybkie zapytanie.
+        const richRow = await fetchTrainByNumber(item.trainNum, item.station);
+        const finalRow = richRow ? { ...matchedRow, ...richRow } : matchedRow;
+
+        paintCard(idx, item, finalRow);
       } catch (e) {
         // Pojedyncza karta nie może zostawić się na zawsze na
         // "Pobieranie danych..." — w najgorszym razie pokaż ją jako
         // nierozwiązaną zamiast wisieć bez końca.
-        paintCard(idx, item, null);
+        paintCard(idx, item, matchedRow);
       }
     });
 
