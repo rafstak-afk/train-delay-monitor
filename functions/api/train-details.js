@@ -233,10 +233,17 @@ export async function onRequestGet(context) {
       ? stops.find(s => normalizeStationText(s.stationName) === normalizeStationText(stationParam))
       : null;
 
-    const currentDelay =
-      targetStop && targetStop.status === "confirmed"
-        ? targetStop.delay
-        : (confirmed?.delay || 0);
+    const lastStop = stops[stops.length - 1];
+    const journeyDone = !!lastStop && lastStop.status === "confirmed";
+
+    // Gdy pociąg już DOJECHAŁ do stacji końcowej całej trasy, liczy się
+    // wynik końcowy — nie stan sprzed kilkudziesięciu minut na stacji
+    // pośredniej, którą monitorujemy. Bez tego rozróżnienia zakończony
+    // kurs z opóźnieniem 2 min na stacji pośredniej, ale 0 min na mecie,
+    // pokazywał "+2 min" mimo że PLK na stacji końcowej pokazuje 0.
+    const currentDelay = journeyDone
+      ? lastStop.delay
+      : (targetStop && targetStop.status === "confirmed" ? targetStop.delay : (confirmed?.delay || 0));
 
     // Kody statusu PLK: C = zrealizowany/zakończony, Z = zakończony.
     // Bez tego pola front-end (moje-pociagi-v2) domyślał się "true" dla
@@ -245,10 +252,8 @@ export async function onRequestGet(context) {
     // jeszcze się nie zaczęły. Dodatkowo wymagamy potwierdzenia OSTATNIEJ
     // stacji trasy — sam trainStatus C/Z bywał niespójny między
     // endpointami PLK (widziany dla pociągów jeszcze w trasie).
-    const lastStop = stops[stops.length - 1];
     const isFinished =
-      (operation.trainStatus === "C" || operation.trainStatus === "Z") &&
-      !!lastStop && lastStop.status === "confirmed";
+      (operation.trainStatus === "C" || operation.trainStatus === "Z") && journeyDone;
 
     return json({
       train: trainNum,
