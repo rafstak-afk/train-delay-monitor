@@ -270,6 +270,19 @@ async function findCourseFromOpenedContext(train,idp){
   if(!schedule||!order)return null;
   return {dep:hit,schedule,order,trainOrderId:hit.trainOrderId||hit.trainOrderID||'',station:station||data.station?.name||'',stationId:stationId||data.station?.id||'',date};
 }
+const AUTO_REFRESH_MS=5*60*1000;
+let autoRefreshTimer=null;
+
+// Dopóki użytkownik stoi na biegu konkretnego pociągu, dociągamy świeże
+// dane co 5 minut — bez tego opóźnienie/ostatnia potwierdzona stacja
+// zamrażały się na moment otwarcia strony, mimo że pociąg jechał dalej.
+function scheduleAutoRefresh(train,opts){
+  if(autoRefreshTimer)clearInterval(autoRefreshTimer);
+  autoRefreshTimer=setInterval(()=>{
+    fetchAndRenderTrain(train,opts).catch(()=>{});
+  },AUTO_REFRESH_MS);
+}
+
 async function fetchAndRenderTrain(train,opts){
   const q=new URLSearchParams();
   q.set('scheduleId',opts.schedule);
@@ -306,6 +319,7 @@ async function fetchAndRenderTrain(train,opts){
 
       if(r.ok && data && !data.error){
         renderTrain(train,data);
+        scheduleAutoRefresh(train,opts);
         return;
       }
 
