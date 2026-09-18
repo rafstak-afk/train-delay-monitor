@@ -132,12 +132,17 @@ function buildStops(routeStations, opStations, stationNames) {
               return p !== null && a !== null ? Math.max(0, a - p) : 0;
             })();
 
+    // op może istnieć w odpowiedzi PLK nawet dla stacji, przez którą
+    // pociąg jeszcze nie przejechał (czysto planowy wpis) — jedynym
+    // wiarygodnym sygnałem faktycznego przejazdu jest isConfirmed===true.
+    const isConfirmed = op?.isConfirmed === true;
+
     return {
       stationName: stationDisplayName(station, stationNames),
       plannedTime: shortTime(plannedTime) || "--:--",
       scheduledTime: shortTime(plannedTime) || "--:--",
       actualTime: shortTime(actualTime),
-      status: op ? "confirmed" : "upcoming",
+      status: isConfirmed ? "confirmed" : "upcoming",
       delay,
       platform: station.departurePlatform || station.arrivalPlatform || "-",
       track: station.departureTrack || station.arrivalTrack || "-"
