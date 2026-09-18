@@ -557,16 +557,18 @@ function renderCard(item, index, row) {
   }
 
   // Przyjazd na TĘ stację (jeśli pociąg tu przystaje, nie tylko odjeżdża) —
-  // dyskretnie, pod odjazdem, z tym samym schematem: godzina + ew.
-  // przekreślony plan, gdy jest opóźnienie.
+  // pod odjazdem, tej samej wielkości co odjazd, żeby było czytelne w
+  // biegu / na słońcu na telefonie — z tym samym schematem: godzina +
+  // ew. przekreślony plan, gdy jest opóźnienie.
   if (row && row.plannedArrivalTime) {
     const aDelay = Number(row.arrivalDelay || 0);
     const aReal = row.arrivalTime || row.plannedArrivalTime;
     const aColor = aDelay > 0 ? '#ff6b6b' : '#8aa0b8';
     timeHtml += `
-      <div style="font-size:0.7rem; color:#7a8699; text-transform:uppercase; letter-spacing:0.03em; margin-top:6px;">Przyjazd</div>
-      <div style="font-size:1rem; font-weight:700; color:${aColor}; line-height:1.2;">${aReal}</div>
-      ${aDelay > 0 ? `<div style="font-size:0.78rem; color:#888888; text-decoration:line-through;">plan. ${row.plannedArrivalTime}</div>` : ''}
+      <div style="height:1px; background:rgba(255,255,255,0.15); margin:8px 0;"></div>
+      <div style="font-size:0.75rem; font-weight:700; color:#a0aab2; text-transform:uppercase; letter-spacing:0.03em;">Przyjazd</div>
+      <div style="font-size:1.3rem; font-weight:800; color:${aColor}; line-height:1.2; margin-top:2px;">${aReal}</div>
+      ${aDelay > 0 ? `<div style="font-size:0.85rem; color:#888888; text-decoration:line-through; margin-top:2px;">plan. ${row.plannedArrivalTime}</div>` : ''}
     `;
   }
 
