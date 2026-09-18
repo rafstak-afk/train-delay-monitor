@@ -43,8 +43,20 @@ export async function onRequestGet(context) {
     const fullSchedulesUrl =
       `${PLK_BASE}/schedules?dateFrom=${date}&dateTo=${date}`;
 
+    // Filtrujemy operations po stacji (tak jak health.js i train.js) —
+    // bez tego endpoint ściągał i parsował operacje WSZYSTKICH pociągów
+    // w Polsce (pageSize=10000) tylko po to, żeby policzyć odjazdy z
+    // jednej stacji, co regularnie przekraczało limit czasu CPU workera
+    // Cloudflare (błąd 1102) niezależnie od jakichkolwiek timeoutów.
+    //
+    // UWAGA: celowo BEZ fullRoutes=true. Z tym parametrem odpowiedź dla
+    // jednej stacji potrafi ważyć ~8,4 MB (pełna trasa każdego pociągu)
+    // i samo to przekracza limit CPU. Bez niego to ~0,5 MB, kosztem tego,
+    // że getLastConfirmedStation widzi tylko tę jedną stację (nie całą
+    // trasę pociągu) — "ostatnia potwierdzona stacja" pokazuje więc co
+    // najwyżej status na TEJ stacji, a nie postęp pociągu w drodze.
     const operationsUrl =
-      `${PLK_BASE}/operations?withPlanned=true&pageSize=10000`;
+      `${PLK_BASE}/operations?withPlanned=true&pageSize=1500&stations=${station.id}`;
 
     const stationsDictionaryUrl =
       `${PLK_BASE}/dictionaries/stations?pageSize=20000`;
