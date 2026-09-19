@@ -137,7 +137,7 @@ export async function onRequestGet(context) {
     // (potrafiło to ważyć ~35 MB i konsekwentnie wywalało limit czasu CPU
     // workera Cloudflare — błąd 1102/503), dociągamy pełną trasę osobno,
     // pojedynczo dla każdego już wybranego do wyświetlenia odjazdu.
-    await enrichWithFullRoutes(departures, headers, stationNames, station.id);
+    const enrichment = await enrichWithFullRoutes(departures, headers, stationNames, station.id);
 
     const responsePayload = {
       station,
@@ -147,17 +147,23 @@ export async function onRequestGet(context) {
       limit,
       apiLimits,
       cache: { ...cache, composed: "MISS" },
+      enrichment,
       departures
     };
 
-    context.waitUntil(
-      caches.default.put(cacheKey, new Response(JSON.stringify(responsePayload), {
-        headers: {
-          "Content-Type": "application/json; charset=utf-8",
-          "Cache-Control": `public, max-age=${COMPOSED_CACHE_TTL}`
-        }
-      }))
-    );
+    // Niepełnej odpowiedzi (część tras się nie pobrała) nie cache'ujemy —
+    // następne zapytanie dociągnie brakujące trasy zamiast przez 25s
+    // serwować odjazdy bez kierunku.
+    if (enrichment.failed === 0) {
+      context.waitUntil(
+        caches.default.put(cacheKey, new Response(JSON.stringify(responsePayload), {
+          headers: {
+            "Content-Type": "application/json; charset=utf-8",
+            "Cache-Control": `public, max-age=${COMPOSED_CACHE_TTL}`
+          }
+        }))
+      );
+    }
 
     return json(responsePayload);
 
@@ -420,13 +426,44 @@ function buildDepartures({
 const MAX_ROUTE_ENRICHMENTS = 30;
 const ROUTE_CACHE_TTL = 21600;
 
+const ENRICH_CONCURRENCY = 5;
+
+// Uruchamia zadania z ograniczoną równoległością i jednym ponowieniem —
+// pełna salwa ~20 równoległych zapytań do PLK potrafiła po cichu zawodzić
+// dla części pociągów (błędy były połykane), co objawiało się tym, że
+// część odjazdów nie miała kierunku ani stacji pośrednich.
+async function runLimited(items, worker, limit) {
+  const failures = [];
+  let next = 0;
+
+  async function lane() {
+    while (next < items.length) {
+      const item = items[next++];
+      try {
+        await worker(item);
+      } catch (firstErr) {
+        try {
+          await new Promise(r => setTimeout(r, 250));
+          await worker(item);
+        } catch (err) {
+          failures.push(String(err && err.message || err));
+        }
+      }
+    }
+  }
+
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, lane));
+  return failures;
+}
+
 async function enrichWithFullRoutes(departures, headers, stationNames, stationId) {
   const targets = departures
     .filter(row => row.scheduleId && row.orderId)
     .slice(0, MAX_ROUTE_ENRICHMENTS);
 
-  await Promise.allSettled(
-    targets.map(async row => {
+  const failures = await runLimited(
+    targets,
+    async row => {
       const routeUrl =
         `${PLK_BASE}/schedules/route/${encodeURIComponent(row.scheduleId)}/${encodeURIComponent(row.orderId)}`;
 
@@ -459,8 +496,11 @@ async function enrichWithFullRoutes(departures, headers, stationNames, stationId
 
       row.destination = destination;
       row.via = via;
-    })
+    },
+    ENRICH_CONCURRENCY
   );
+
+  return { requested: targets.length, failed: failures.length, errors: failures.slice(0, 3) };
 }
 
 function buildStationNameMap(stationsDictionaryRaw) {
