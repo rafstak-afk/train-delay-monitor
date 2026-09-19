@@ -428,6 +428,32 @@ const ROUTE_CACHE_TTL = 21600;
 
 const ENRICH_CONCURRENCY = 5;
 
+// Limit Cloudflare: 50 podzapytań na jedno wywołanie Workera. getJsonCached
+// kosztuje 3 z nich na trasę (cache.match + fetch + cache.put), więc 20
+// tras samo przekraczało limit ("Too many subrequests") i część odjazdów
+// zostawała bez kierunku. Tu trasa = dokładnie 1 podzapytanie: zwykły
+// fetch, a cache trzyma za nas brzeg Cloudflare (cf.cacheTtl).
+async function getRouteJson(url, headers) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS);
+
+  try {
+    const res = await fetch(url, {
+      headers,
+      signal: controller.signal,
+      cf: { cacheTtl: ROUTE_CACHE_TTL, cacheEverything: true }
+    });
+
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status} dla trasy`);
+    }
+
+    return { data: await res.json() };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 // Uruchamia zadania z ograniczoną równoległością i jednym ponowieniem —
 // pełna salwa ~20 równoległych zapytań do PLK potrafiła po cichu zawodzić
 // dla części pociągów (błędy były połykane), co objawiało się tym, że
@@ -467,7 +493,7 @@ async function enrichWithFullRoutes(departures, headers, stationNames, stationId
       const routeUrl =
         `${PLK_BASE}/schedules/route/${encodeURIComponent(row.scheduleId)}/${encodeURIComponent(row.orderId)}`;
 
-      const result = await getJsonCached(routeUrl, headers, ROUTE_CACHE_TTL);
+      const result = await getRouteJson(routeUrl, headers);
       const route = result.data?.route || result.data || {};
       const routeStations = Array.isArray(route.stations) ? route.stations : [];
 
