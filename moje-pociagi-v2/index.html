@@ -577,6 +577,29 @@ function renderCard(item, index, row) {
     </div>
   `;
 
+  // Kolumna z opóźnieniem w minutach, między godziną a pociągiem. Wiersze
+  // mają dokładnie te same wysokości co w kolumnie godzin (niewidoczne
+  // przekładki), żeby wartość stała w linii z godziną, której dotyczy.
+  const delayRowV2 = (planned, real, d) => {
+    if (!planned) return '';
+    const dm = Number(d) || 0;
+    if (!(real && real !== planned && dm > 0)) {
+      return `<div style="font-size:1.3rem; line-height:1.2; visibility:hidden;">0</div>`;
+    }
+    return `
+      <div style="font-size:0.8rem; line-height:1.1; visibility:hidden;">0</div>
+      <div style="font-size:1.3rem; font-weight:800; line-height:1.2; color:${delayColor(dm)}; white-space:nowrap;">+${dm}<span style="font-size:0.75rem; font-weight:700;"> min</span></div>
+    `;
+  };
+  const arrDelayRow = hasArrival ? delayRowV2(row.plannedArrivalTime, row.arrivalTime, row.arrivalDelay) : '';
+  const depDelayRow = delayRowV2(item.planTime || "--:--", adjustedTime, isDelayed ? delay : 0);
+  const delayColHtml = `
+    <div style="display:flex; flex-direction:column; gap:6px; align-items:center;">
+      ${arrDelayRow ? `<div>${arrDelayRow}</div>` : ''}
+      <div>${depDelayRow}</div>
+    </div>
+  `;
+
   // Budowanie linku /train
   const cleanTrainNo = String(item.trainNum || '').replace(/\D+/g, '');
   const params = new URLSearchParams();
@@ -616,7 +639,11 @@ function renderCard(item, index, row) {
         ${timeHtml}
       </div>
 
-      <div style="flex:1; padding-left:15px;">
+      <div style="text-align:center; min-width:62px; padding:0 6px;">
+        ${delayColHtml}
+      </div>
+
+      <div style="flex:1; padding-left:6px;">
         <div style="font-weight:bold; font-size:1.25rem; color:#ffffff;">#${item.trainNum}</div>
         <div style="color:#f0f0f0; font-size:1.05rem; font-weight:600; margin-top:2px;">${item.station}</div>
         <div style="font-size:0.95rem; color:${isLoaded ? '#cccccc' : '#e0a82e'}; font-weight:500; margin-top:4px;">${statusText}</div>

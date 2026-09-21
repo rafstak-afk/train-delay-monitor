@@ -388,7 +388,7 @@ function renderTrain(train,data){
       }
     }
     const plat=[s.platform,s.track].filter(v=>v&&v!=='-').join(' / ')||'—';
-    html+='<div id="station-'+i+'" class="rrow '+state+'"><div class="status-cell"><span class="badge '+badge+'">'+esc(txt)+'</span></div><div class="station-cell"><div class="station-name">'+esc(s.stationName)+'</div></div><div class="time-cell">'+renderTime(s,state==='future'||state==='next'?'future':state)+'</div><div class="delay-cell"><div class="station-meta">opóźnienie</div>'+renderDelay(s)+'</div><div class="platform-cell"><div class="station-meta">peron / tor</div><strong>'+esc(plat)+'</strong></div></div>';
+    html+='<div id="station-'+i+'" class="rrow '+state+'"><div class="status-cell"><span class="badge '+badge+'">'+esc(txt)+'</span></div><div class="station-cell"><div class="station-name">'+esc(s.stationName)+'</div></div><div class="time-cell">'+renderTime(s,state==='future'||state==='next'?'future':state)+'</div><div class="delay-cell">'+renderDelay(s)+'</div><div class="platform-cell"><div class="station-meta">peron / tor</div><strong>'+esc(plat)+'</strong></div></div>';
   });
 
   html+='</div></div>';document.getElementById('content').innerHTML=html;window._trainSummary=document.body.innerText.replace(/\n{3,}/g,'\n\n');setTimeout(()=>{const el=document.getElementById('station-'+focusIdx);if(el)el.scrollIntoView({behavior:'smooth',block:'center'})},150);
