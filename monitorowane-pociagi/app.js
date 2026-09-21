@@ -139,7 +139,7 @@ function renderMonitoredList() {
     card.className = 'monitored-card';
 
     const delayVal = train.delay ?? 0;
-    const delayText = delayVal > 0 ? `+${delayVal} min` : 'O czasie';
+    const delayText = delayVal > 0 ? `+${delayVal}` : 'O czasie';
     const delayClass = delayVal > 0 ? 'delayed' : 'on-time';
 
     card.innerHTML = `
@@ -319,7 +319,7 @@ function renderTrainDetails(data) {
     const scheduledTime = st.scheduledTime || st.scheduled || '--:--';
     const actualTime = st.actualTime || st.actual || scheduledTime;
     const delay = st.delay ?? 0;
-    const delayTag = delay > 0 ? `<span class="delay-tag delayed">+${delay} min</span>` : '';
+    const delayTag = delay > 0 ? `<span class="delay-tag delayed">+${delay}</span>` : '';
 
     item.innerHTML = `
       <div class="timeline-marker"></div>

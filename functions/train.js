@@ -269,7 +269,7 @@ function renderDelay(s){
   const dd=conf?s.departureDelay:s.forecastDepartureDelay, ad=conf?s.arrivalDelay:s.forecastArrivalDelay;
   const d=typeof dd==='number'?dd:(typeof ad==='number'?ad:(conf?(s.delay||0):0));
   const cls=delayClass(d);
-  return '<span class="delay '+cls+'">'+d+' min</span>';
+  return d>0?'<span class="delay '+cls+'">+'+d+'</span>':'';
 }
 function loading(train){document.getElementById('content').innerHTML='<div class="panel"><div class="loader"><div class="train-loader"><div class="track"></div><div class="train-dot">🚆</div></div><strong>Pobieram bieg pociągu '+esc(train)+'...</strong></div><div class="copy-note">Czekam na dane PLK. Spokojnie, to nie cisza, to informatyka.</div></div>'}
 
