@@ -765,6 +765,9 @@ window.addEventListener('pageshow', (event) => {
     if (profile && Array.isArray(profile.trains)) {
       currentTrains = profile.trains;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(currentTrains));
+    } else if (profile !== null && localStorage.getItem(STORAGE_KEY)) {
+      // Profil w chmurze nie ma jeszcze listy — wysyłamy lokalną.
+      ProfileSync.push({ trains: currentTrains });
     }
   }
   init();

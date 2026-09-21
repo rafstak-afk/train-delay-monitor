@@ -41,6 +41,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (profile && Array.isArray(profile.monitoredTrains)) {
       monitoredTrains = profile.monitoredTrains;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(monitoredTrains));
+    } else if (profile && monitoredTrains.length) {
+      // Profil w chmurze nie ma jeszcze listy — wysyłamy lokalną.
+      ProfileSync.push({ monitoredTrains });
     }
   }
   renderMonitoredList();
