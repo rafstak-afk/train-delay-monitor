@@ -189,7 +189,7 @@ const HTML = String.raw`<!DOCTYPE html>
 <!-- app-version: 2026-06-01.1 status-human-confirmed-only -->
 <style>
 :root{--bg:#101820;--panel:#1c2833;--card:#223244;--line:#34495e;--text:#fff;--muted:#b8c3cf;--blue:#0b57d0;--green:#5dd39e;--yellow:#ffcc00;--red:#ff4d4d;--violet:#c084fc;--grey:#4b5563;--cyan:#22d3ee}
-*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text);padding:18px}.wrap{max-width:1180px;margin:0 auto}h1{text-align:center;font-size:32px;margin:10px 0 14px}.top{display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap}.top input{padding:12px 16px;border:0;border-radius:10px;font-size:18px;min-width:260px}.btn{border:0;border-radius:10px;padding:12px 16px;background:var(--blue);color:#fff;font-weight:900;cursor:pointer;text-decoration:none;display:inline-block}.btn.secondary{background:var(--grey)}.btn.green{background:#198754}.btn.small{padding:8px 10px;font-size:12px;background:#374151}.status{text-align:center;color:var(--muted);min-height:28px;margin:12px 0}.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;margin:12px 0}.summary{display:grid;grid-template-columns:1fr 1fr;gap:10px}.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px}.label{color:var(--muted);font-size:13px}.big{font-size:24px;font-weight:900}.hint{font-size:13px;color:#d8e2ee;line-height:1.35}.route-title{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}h2{margin:0 0 8px;font-size:22px}.route-table{display:block}.rrow{display:grid;grid-template-columns:86px 1fr 170px 88px 88px;gap:10px;align-items:center;padding:7px 8px;border-bottom:1px solid rgba(255,255,255,.10);border-radius:8px}.rrow:last-child{border-bottom:0}.rrow.current{background:rgba(255,204,0,.13);outline:1px solid rgba(255,204,0,.35)}.rrow.next{background:rgba(34,211,238,.10)}.rrow.future{opacity:.82}.time{font-size:18px;font-weight:900}.time-cols{display:grid;grid-template-columns:1fr 1fr;gap:12px}.time-col-r{border-left:1px solid rgba(255,255,255,.15);padding-left:12px}.time-sub-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--muted)}.plan-strike{text-decoration:line-through}.time.future{color:#cbd5e1}.time.ok{color:var(--green)}.time.delay-low{color:var(--yellow)}.time.delay-mid{color:var(--red)}.time.delay-high{color:var(--violet)}.station-name{font-size:17px;font-weight:900}.station-meta{font-size:12px;color:var(--muted);margin-top:2px}.badge{display:inline-block;border-radius:999px;padding:4px 8px;font-size:12px;font-weight:900;text-align:center;white-space:nowrap}.badge.passed{background:#14532d;color:#bbf7d0}.badge.current{background:var(--yellow);color:#102027}.badge.next{background:#0ea5e9;color:#fff}.badge.future{background:#334155;color:#e5e7eb}.badge.info{background:#5b4b1f;color:#ffe8a3}.rrow.info{background:rgba(255,204,0,.055)}.delay{font-weight:900}.delay.zero{color:var(--green)}.delay.low{color:var(--yellow)}.delay.mid{color:var(--red)}.delay.high{color:var(--violet)}.err{background:#3b1d1d;border:1px solid #dc3545;color:#ffd6d6;border-radius:10px;padding:12px}.loader{display:flex;align-items:center;justify-content:center;gap:10px;margin:14px auto;color:#d8e2ee}.train-loader{position:relative;width:120px;height:22px;overflow:hidden}.train-dot{position:absolute;left:-35px;top:1px;font-size:20px;animation:ride 1.35s linear infinite}.track{position:absolute;left:0;right:0;bottom:0;border-bottom:2px dashed #5c6b7a}@keyframes ride{0%{left:-35px}100%{left:125px}}.copy-note{font-size:12px;color:var(--muted);text-align:center;margin-top:6px}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text);padding:18px}.wrap{max-width:1180px;margin:0 auto}h1{text-align:center;font-size:32px;margin:10px 0 14px}.top{display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap}.top input{padding:12px 16px;border:0;border-radius:10px;font-size:18px;min-width:260px}.btn{border:0;border-radius:10px;padding:12px 16px;background:var(--blue);color:#fff;font-weight:900;cursor:pointer;text-decoration:none;display:inline-block}.btn.secondary{background:var(--grey)}.btn.green{background:#198754}.btn.small{padding:8px 10px;font-size:12px;background:#374151}.status{text-align:center;color:var(--muted);min-height:28px;margin:12px 0}.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;margin:12px 0}.summary{display:grid;grid-template-columns:1fr 1fr;gap:10px}.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px}.label{color:var(--muted);font-size:13px}.big{font-size:24px;font-weight:900}.hint{font-size:13px;color:#d8e2ee;line-height:1.35}.route-title{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}h2{margin:0 0 8px;font-size:22px}.route-table{display:block}.rrow{display:grid;grid-template-columns:86px 1fr 110px 88px 88px;gap:10px;align-items:center;padding:7px 8px;border-bottom:1px solid rgba(255,255,255,.10);border-radius:8px}.rrow:last-child{border-bottom:0}.rrow.current{background:rgba(255,204,0,.13);outline:1px solid rgba(255,204,0,.35)}.rrow.next{background:rgba(34,211,238,.10)}.rrow.future{opacity:.82}.time{font-size:18px;font-weight:900}.time-rows{display:flex;flex-direction:column;gap:6px}.plan-small{font-size:12px;color:#8b95a1;line-height:1.1}.plan-strike{text-decoration:line-through}.time.future{color:#cbd5e1}.time.ok{color:var(--green)}.time.delay-low{color:var(--yellow)}.time.delay-mid{color:var(--red)}.time.delay-high{color:var(--violet)}.station-name{font-size:17px;font-weight:900}.station-meta{font-size:12px;color:var(--muted);margin-top:2px}.badge{display:inline-block;border-radius:999px;padding:4px 8px;font-size:12px;font-weight:900;text-align:center;white-space:nowrap}.badge.passed{background:#14532d;color:#bbf7d0}.badge.current{background:var(--yellow);color:#102027}.badge.next{background:#0ea5e9;color:#fff}.badge.future{background:#334155;color:#e5e7eb}.badge.info{background:#5b4b1f;color:#ffe8a3}.rrow.info{background:rgba(255,204,0,.055)}.delay{font-weight:900}.delay.zero{color:var(--green)}.delay.low{color:var(--yellow)}.delay.mid{color:var(--red)}.delay.high{color:var(--violet)}.err{background:#3b1d1d;border:1px solid #dc3545;color:#ffd6d6;border-radius:10px;padding:12px}.loader{display:flex;align-items:center;justify-content:center;gap:10px;margin:14px auto;color:#d8e2ee}.train-loader{position:relative;width:120px;height:22px;overflow:hidden}.train-dot{position:absolute;left:-35px;top:1px;font-size:20px;animation:ride 1.35s linear infinite}.track{position:absolute;left:0;right:0;bottom:0;border-bottom:2px dashed #5c6b7a}@keyframes ride{0%{left:-35px}100%{left:125px}}.copy-note{font-size:12px;color:var(--muted);text-align:center;margin-top:6px}
 @media(max-width:720px){body{padding:8px}h1{font-size:25px}.top{display:grid;grid-template-columns:1fr auto;align-items:center}.top input{min-width:0;width:100%;font-size:16px}.top .secondary{grid-column:1 / span 2;text-align:center}.summary{grid-template-columns:1fr}.panel{padding:9px}.rrow{grid-template-columns:62px 1fr 70px;gap:6px;padding:8px 6px}.rrow .status-cell{grid-column:1;grid-row:1}.rrow .station-cell{grid-column:2;grid-row:1}.rrow .delay-cell{grid-column:3;grid-row:1;text-align:right}.rrow .time-cell{grid-column:1 / -1;grid-row:2}.rrow .platform-cell{grid-column:1 / -1;grid-row:3;font-size:12px;color:var(--muted)}.station-name{font-size:15px}.time{font-size:17px}.badge{font-size:11px;padding:3px 7px}.big{font-size:20px}}
 </style>
 </head>
@@ -241,32 +241,27 @@ function portalUrl(train){return 'https://portalpasazera.pl/ZnajdzPociag'}
 // niezależnie przeliczonym opóźnieniem i przekreślonym planem, gdy
 // różni się od faktycznego czasu. Stacja początkowa/końcowa ma tylko
 // jedno z nich (druga wartość jest wtedy pusta).
-function timeSubBlock(real,planned,delay,label,state){
+// Układ jak w Portalu Pasażera, bez etykiet: dla każdej stacji dwa wiersze —
+// przybycie wyżej, odjazd niżej. Bez opóźnienia tylko godzina planowa; z
+// opóźnieniem: mała, szara, przekreślona godzina planowa, a pod nią
+// godzina aktualna/prognozowana w nawiasie, w kolorze wg gradientu opóźnień.
+// Stacja początkowa/końcowa ma tylko jeden wiersz.
+function timeRow(real,planned,delay,state){
   if(!planned)return '';
-  const show=real&&real!==planned;
-  const d=show?Math.max(0,delay||0):0;
-  const main=show?real:(planned||real||'');
-  const cls=state==='future'?'future':(show?'delay-'+delayClass(d):'ok');
-  const labelHtml=label?'<div class="time-sub-label">'+esc(label)+'</div>':'';
-  return labelHtml+'<div class="time '+cls+'">'+esc(main)+'</div>'+(show?'<div class="station-meta plan-strike">plan '+esc(planned)+'</div>':'');
+  const d=Math.max(0,Number(delay)||0);
+  if(!(real&&real!==planned&&d>0)){
+    return '<div class="time '+(state==='future'?'future':'ok')+'">'+esc(planned)+'</div>';
+  }
+  return '<div class="plan-small plan-strike">'+esc(planned)+'</div><div class="time delay-'+delayClass(d)+'">('+esc(real)+')</div>';
 }
 function renderTime(s,state){
-  const hasBoth=!!(s.plannedArrival&&s.plannedDeparture);
-  if(hasBoth){
-    const arrivalReal=s.status==='confirmed'?(s.actualArrival||''):'';
-    const departureReal=s.status==='confirmed'?(s.actualDeparture||''):'';
-    return '<div class="time-cols">'
-      +'<div class="time-col">'+timeSubBlock(arrivalReal,s.plannedArrival,s.arrivalDelay,'Przyj.',state)+'</div>'
-      +'<div class="time-col time-col-r">'+timeSubBlock(departureReal,s.plannedDeparture,s.departureDelay,'Odj.',state)+'</div>'
-      +'</div>';
+  const conf=s.status==='confirmed';
+  const arr=timeRow(conf?(s.actualArrival||''):'',s.plannedArrival,s.arrivalDelay,state);
+  const dep=timeRow(conf?(s.actualDeparture||''):'',s.plannedDeparture,s.departureDelay,state);
+  if(arr||dep){
+    return '<div class="time-rows">'+(arr?'<div class="trow">'+arr+'</div>':'')+(dep?'<div class="trow">'+dep+'</div>':'')+'</div>';
   }
-  const p=s.plannedTime||'';
-  const a=s.status==='confirmed'?(s.actualTime||''):'';
-  const show=a&&a!==p;
-  const d=show?Math.max(0,s.delay||0):0;
-  const main=show?a:(p||a||'');
-  const cls=state==='future'?'future':(show?'delay-'+delayClass(d):'ok');
-  return '<div class="time '+cls+'">'+esc(main)+'</div>'+(show?'<div class="station-meta plan-strike">plan '+esc(p)+'</div>':'');
+  return '<div class="time-rows"><div class="trow">'+timeRow(conf?(s.actualTime||''):'',s.plannedTime,s.delay,state)+'</div></div>';
 }
 function renderDelay(s){
   const d=s.status==='confirmed'?(typeof s.departureDelay==='number'?s.departureDelay:(typeof s.arrivalDelay==='number'?s.arrivalDelay:(s.delay||0))):0;

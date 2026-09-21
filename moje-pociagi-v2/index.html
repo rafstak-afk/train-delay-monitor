@@ -547,48 +547,35 @@ function renderCard(item, index, row) {
   const adjustedTime = isDelayed ? getAdjustedTime(item.planTime, delay) : null;
   const delayBadge = isDelayed ? `+${delay} min` : "0 min";
 
-  // Przyjazd na TĘ stację (jeśli pociąg tu przystaje, nie tylko odjeżdża) —
-  // OSOBNA kolumna obok odjazdu (nie wiersz pod spodem), tej samej
-  // wielkości, żeby było czytelne w biegu / na słońcu na telefonie.
+  // Układ jak w Portalu Pasażera, bez etykiet: dwa wiersze — przybycie
+  // wyżej (jeśli pociąg tu przystaje), odjazd niżej. Bez opóźnienia tylko
+  // godzina planowa; z opóźnieniem: mała, szara, przekreślona godzina
+  // planowa nad godziną prognozy w nawiasie, kolor wg gradientu opóźnień.
   const hasArrival = !!(row && row.plannedArrivalTime);
 
-  const depLabel = hasArrival ? `<div style="font-size:0.72rem; font-weight:700; color:#7a8699; text-transform:uppercase; letter-spacing:0.03em;">Odjazd</div>` : '';
-  let depHtml;
-  if (isDelayed && adjustedTime) {
-    depHtml = `
-      ${depLabel}
-      <div style="font-size:1.3rem; font-weight:800; color:#ff6b6b; line-height:1.2; margin-top:2px;">${adjustedTime}</div>
-      <div style="font-size:1rem; font-weight:800; color:#ff6b6b; margin-top:2px;">${delayBadge}</div>
-      <div style="font-size:0.8rem; color:#888888; margin-top:2px; text-decoration:line-through;">plan. ${item.planTime || "--:--"}</div>
-    `;
-  } else {
-    depHtml = `
-      ${depLabel}
-      <div style="font-size:1.3rem; font-weight:800; color:#51cf66; line-height:1.2; margin-top:2px;">${item.planTime || "--:--"}</div>
-      <div style="font-size:0.95rem; font-weight:700; color:#51cf66; margin-top:2px;">${delayBadge}</div>
-    `;
-  }
+  const delayColor = (d) => d >= 20 ? '#c084fc' : d > 10 ? '#ff4d4d' : '#ffcc00';
 
-  let timeHtml;
-  if (hasArrival) {
-    const aDelay = Number(row.arrivalDelay || 0);
-    const aReal = row.arrivalTime || row.plannedArrivalTime;
-    const aColor = aDelay > 0 ? '#ff6b6b' : '#8aa0b8';
-    const arrHtml = `
-      <div style="font-size:0.72rem; font-weight:700; color:#7a8699; text-transform:uppercase; letter-spacing:0.03em;">Przyjazd</div>
-      <div style="font-size:1.3rem; font-weight:800; color:${aColor}; line-height:1.2; margin-top:2px;">${aReal}</div>
-      ${aDelay > 0 ? `<div style="font-size:0.8rem; color:#888888; text-decoration:line-through; margin-top:2px;">plan. ${row.plannedArrivalTime}</div>` : ''}
+  const timeRowV2 = (planned, real, d) => {
+    if (!planned) return '';
+    const dm = Number(d) || 0;
+    if (!(real && real !== planned && dm > 0)) {
+      return `<div style="font-size:1.3rem; font-weight:800; color:#51cf66; line-height:1.2;">${planned}</div>`;
+    }
+    return `
+      <div style="font-size:0.8rem; color:#8b95a1; text-decoration:line-through; line-height:1.1;">${planned}</div>
+      <div style="font-size:1.3rem; font-weight:800; color:${delayColor(dm)}; line-height:1.2;">(${real})</div>
     `;
-    timeHtml = `
-      <div style="display:flex; gap:10px; justify-content:center;">
-        <div style="text-align:center;">${arrHtml}</div>
-        <div style="width:1px; background:rgba(255,255,255,0.15);"></div>
-        <div style="text-align:center;">${depHtml}</div>
-      </div>
-    `;
-  } else {
-    timeHtml = depHtml;
-  }
+  };
+
+  const depRow = timeRowV2(item.planTime || "--:--", adjustedTime, isDelayed ? delay : 0);
+  const arrRow = hasArrival ? timeRowV2(row.plannedArrivalTime, row.arrivalTime, row.arrivalDelay) : '';
+
+  const timeHtml = `
+    <div style="display:flex; flex-direction:column; gap:6px; align-items:center;">
+      ${arrRow ? `<div>${arrRow}</div>` : ''}
+      <div>${depRow}</div>
+    </div>
+  `;
 
   // Budowanie linku /train
   const cleanTrainNo = String(item.trainNum || '').replace(/\D+/g, '');
@@ -625,7 +612,7 @@ function renderCard(item, index, row) {
 
   return `
     <div id="card-${index}" class="card" onclick="window.location.href='${detailsUrl}'" style="display:flex; align-items:center; justify-content:space-between; padding:14px; border-bottom:1px solid #333; cursor:pointer; background:${cardBg}; opacity:${cardOpacity}; margin-bottom:8px; border-radius:8px; transition: all 0.3s ease;">
-      <div style="text-align:center; min-width:${hasArrival ? 165 : 95}px; padding-right:12px; border-right:1px solid rgba(255,255,255,0.1);">
+      <div style="text-align:center; min-width:95px; padding-right:12px; border-right:1px solid rgba(255,255,255,0.1);">
         ${timeHtml}
       </div>
 
