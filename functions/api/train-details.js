@@ -137,6 +137,35 @@ function buildStops(routeStations, opStations, stationNames) {
     const arrivalDelay = stopDelay(plannedArrivalRaw, actualArrivalRaw, op?.arrivalDelayMinutes);
     const departureDelay = stopDelay(plannedDepartureRaw, actualDepartureRaw, op?.departureDelayMinutes);
 
+    // Prognoza PLK dla stacji, przez którą pociąg jeszcze nie przejechał.
+    // Osobne pola (forecast*), żeby nigdy nie mieszały się z danymi
+    // potwierdzonymi — to one liczą opóźnienie całego pociągu. Prognoza
+    // istnieje tylko, gdy PLK faktycznie podał czas lub opóźnienie.
+    function forecast(plannedRaw, actualRaw, explicitDelay) {
+      if (isConfirmed || !op || !plannedRaw) return { time: "", delay: null };
+      const hasExplicit = typeof explicitDelay === "number";
+      if (!hasExplicit && !actualRaw) return { time: "", delay: null };
+      let delay;
+      if (hasExplicit) {
+        delay = explicitDelay;
+      } else {
+        const p = minutesFromTime(plannedRaw);
+        const a = minutesFromTime(actualRaw);
+        delay = p !== null && a !== null ? Math.max(0, a - p) : 0;
+      }
+      let time = shortTime(actualRaw);
+      if (!time) {
+        const p = minutesFromTime(plannedRaw);
+        if (p !== null) {
+          const t = (p + delay) % 1440;
+          time = String(Math.floor(t / 60)).padStart(2, "0") + ":" + String(t % 60).padStart(2, "0");
+        }
+      }
+      return { time, delay };
+    }
+    const fArr = forecast(plannedArrivalRaw, actualArrivalRaw, op?.arrivalDelayMinutes);
+    const fDep = forecast(plannedDepartureRaw, actualDepartureRaw, op?.departureDelayMinutes);
+
     // Zachowane dla wstecznej zgodności z istniejącymi widokami: jedno
     // pole "czasu" stacji, priorytet dla odjazdu, z fallbackiem na
     // przyjazd dla stacji końcowej (brak odjazdu).
@@ -157,6 +186,10 @@ function buildStops(routeStations, opStations, stationNames) {
       plannedDeparture: plannedDepartureRaw ? shortTime(plannedDepartureRaw) : "",
       actualDeparture: (isConfirmed && plannedDepartureRaw) ? shortTime(actualDepartureRaw || plannedDepartureRaw) : "",
       departureDelay,
+      forecastArrival: fArr.time,
+      forecastArrivalDelay: fArr.delay,
+      forecastDeparture: fDep.time,
+      forecastDepartureDelay: fDep.delay,
       platform: station.departurePlatform || station.arrivalPlatform || "-",
       track: station.departureTrack || station.arrivalTrack || "-"
     };

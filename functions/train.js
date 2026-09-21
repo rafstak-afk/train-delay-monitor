@@ -256,15 +256,18 @@ function timeRow(real,planned,delay,state){
 }
 function renderTime(s,state){
   const conf=s.status==='confirmed';
-  const arr=timeRow(conf?(s.actualArrival||''):'',s.plannedArrival,s.arrivalDelay,state);
-  const dep=timeRow(conf?(s.actualDeparture||''):'',s.plannedDeparture,s.departureDelay,state);
+  // Stacja zaliczona: fakt. Niezaliczona: prognoza PLK (jeśli jest).
+  const arr=conf?timeRow(s.actualArrival||'',s.plannedArrival,s.arrivalDelay,state):timeRow(s.forecastArrival||'',s.plannedArrival,s.forecastArrivalDelay,state);
+  const dep=conf?timeRow(s.actualDeparture||'',s.plannedDeparture,s.departureDelay,state):timeRow(s.forecastDeparture||'',s.plannedDeparture,s.forecastDepartureDelay,state);
   if(arr||dep){
     return '<div class="time-rows">'+(arr?'<div class="trow">'+arr+'</div>':'')+(dep?'<div class="trow">'+dep+'</div>':'')+'</div>';
   }
   return '<div class="time-rows"><div class="trow">'+timeRow(conf?(s.actualTime||''):'',s.plannedTime,s.delay,state)+'</div></div>';
 }
 function renderDelay(s){
-  const d=s.status==='confirmed'?(typeof s.departureDelay==='number'?s.departureDelay:(typeof s.arrivalDelay==='number'?s.arrivalDelay:(s.delay||0))):0;
+  const conf=s.status==='confirmed';
+  const dd=conf?s.departureDelay:s.forecastDepartureDelay, ad=conf?s.arrivalDelay:s.forecastArrivalDelay;
+  const d=typeof dd==='number'?dd:(typeof ad==='number'?ad:(conf?(s.delay||0):0));
   const cls=delayClass(d);
   return '<span class="delay '+cls+'">'+d+' min</span>';
 }
