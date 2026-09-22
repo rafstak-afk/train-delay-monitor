@@ -18,7 +18,12 @@ const CACHE_TTL = {
 const COMPOSED_CACHE_TTL = 25;
 
 function composedCacheKey(stationName, date, time, limit) {
-  const raw = `${stationName.trim().toLowerCase()}|${date}|${time}|${limit}`;
+  // encodeURIComponent PRZED btoa — nazwy stacji z polskimi znakami spoza
+  // Latin-1 (ą, ć, ę, ł, ń, ś, ź, ż, np. "Oświęcim") powodowały, że surowe
+  // btoa() rzucało wyjątkiem SYNCHRONICZNIE, poza blokiem try/catch niżej
+  // — cały request kończył się nieobsłużonym wyjątkiem Workera (Cloudflare
+  // "error code: 1101") zamiast zwykłej odpowiedzi JSON z błędem.
+  const raw = `${encodeURIComponent(stationName.trim().toLowerCase())}|${date}|${time}|${limit}`;
   return new Request("https://cache.local/composed-departures/" + btoa(raw), { method: "GET" });
 }
 
