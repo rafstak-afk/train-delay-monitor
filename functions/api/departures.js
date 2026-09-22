@@ -511,6 +511,13 @@ async function enrichWithFullRoutes(departures, headers, stationNames, stationId
         route.destination ||
         "";
 
+      // Planowa godzina przyjazdu na stację docelową — potrzebna np. do
+      // wyznaczenia zakresu wydarzenia w kalendarzu (cały przejazd, nie
+      // tylko odjazd). Stacja końcowa ma zwykle tylko arrivalTime.
+      const destinationArrivalRaw =
+        destinationStation?.arrivalTime || destinationStation?.departureTime || "";
+      row.destinationArrivalTime = destinationArrivalRaw ? shortTime(destinationArrivalRaw) : "";
+
       const via = currentIndex >= 0
         ? routeStations
             .slice(currentIndex + 1, currentIndex + 6)
