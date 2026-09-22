@@ -59,14 +59,14 @@ export async function onRequestGet(context) {
   };
 
   try {
-    const station = await findStation(stationName, headers);
+    const candidates = await findStationCandidates(stationName, headers);
 
-    if (!station) {
+    if (!candidates.length) {
       return json({ error: "Nie znaleziono stacji", stationName }, 404);
     }
 
-    const stationSchedulesUrl =
-      `${PLK_BASE}/schedules?dateFrom=${date}&dateTo=${date}&stations=${station.id}`;
+    let station = candidates[0];
+    let stationSchedulesResult;
 
     // Filtrujemy operations po stacji (tak jak health.js i train.js) —
     // bez tego endpoint ściągał i parsował operacje WSZYSTKICH pociągów
@@ -80,9 +80,6 @@ export async function onRequestGet(context) {
     // że getLastConfirmedStation widzi tylko tę jedną stację (nie całą
     // trasę pociągu) — "ostatnia potwierdzona stacja" pokazuje więc co
     // najwyżej status na TEJ stacji, a nie postęp pociągu w drodze.
-    const operationsUrl =
-      `${PLK_BASE}/operations?withPlanned=true&pageSize=1500&stations=${station.id}`;
-
     const stationsDictionaryUrl =
       `${PLK_BASE}/dictionaries/stations?pageSize=20000`;
 
@@ -98,16 +95,47 @@ export async function onRequestGet(context) {
       cache: "SKIPPED"
     });
 
-    const [
-      stationSchedulesResult,
-      operationsResult,
-      stationsDictionaryResult
-    ] = await Promise.all([
-      getJsonCached(stationSchedulesUrl, headers, CACHE_TTL.STATION_SCHEDULES),
-      getJsonCached(operationsUrl, headers, CACHE_TTL.OPERATIONS),
-      getJsonCached(stationsDictionaryUrl, headers, CACHE_TTL.STATIONS_DICTIONARY)
-        .catch(() => emptyResult({ stations: [] }))
-    ]);
+    let operationsResult, stationsDictionaryResult;
+
+    if (candidates.length === 1) {
+      // Jedyny kandydat — jak dotąd, wszystkie 3 zapytania równolegle.
+      const stationSchedulesUrl =
+        `${PLK_BASE}/schedules?dateFrom=${date}&dateTo=${date}&stations=${station.id}`;
+      const operationsUrl =
+        `${PLK_BASE}/operations?withPlanned=true&pageSize=1500&stations=${station.id}`;
+
+      [stationSchedulesResult, operationsResult, stationsDictionaryResult] = await Promise.all([
+        getJsonCached(stationSchedulesUrl, headers, CACHE_TTL.STATION_SCHEDULES),
+        getJsonCached(operationsUrl, headers, CACHE_TTL.OPERATIONS),
+        getJsonCached(stationsDictionaryUrl, headers, CACHE_TTL.STATIONS_DICTIONARY)
+          .catch(() => emptyResult({ stations: [] }))
+      ]);
+    } else {
+      // Kilka ID w słowniku dla tej samej nazwy — sprawdzamy po kolei
+      // (max. 3 kandydatów), który faktycznie ma dziś jakiekolwiek
+      // rozkłady, zanim odpalimy dla niego resztę zapytań. Rzadka ścieżka
+      // (większość nazw ma jednego kandydata), więc dodatkowe opóźnienie
+      // nie dotyczy typowego zapytania.
+      for (const candidate of candidates.slice(0, 3)) {
+        const result = await getJsonCached(
+          `${PLK_BASE}/schedules?dateFrom=${date}&dateTo=${date}&stations=${candidate.id}`,
+          headers,
+          CACHE_TTL.STATION_SCHEDULES
+        );
+        station = candidate;
+        stationSchedulesResult = result;
+        if ((result.data?.routes || []).length) break;
+      }
+
+      const operationsUrl =
+        `${PLK_BASE}/operations?withPlanned=true&pageSize=1500&stations=${station.id}`;
+
+      [operationsResult, stationsDictionaryResult] = await Promise.all([
+        getJsonCached(operationsUrl, headers, CACHE_TTL.OPERATIONS),
+        getJsonCached(stationsDictionaryUrl, headers, CACHE_TTL.STATIONS_DICTIONARY)
+          .catch(() => emptyResult({ stations: [] }))
+      ]);
+    }
 
     const stationSchedulesRaw = stationSchedulesResult.data;
     const operationsRaw = operationsResult.data;
@@ -180,7 +208,12 @@ export async function onRequestGet(context) {
   }
 }
 
-async function findStation(name, headers) {
+// Zwraca WSZYSTKICH kandydatów o dokładnie tej nazwie, nie tylko
+// pierwszego. PLK potrafi mieć dla jednej nazwy stacji dwa różne ID w
+// słowniku (np. "Poraj" — jeden wpis bez żadnych rozkładów, drugi z
+// realnymi pociągami) — wybór na chybił trafił dawał czasem stację, dla
+// której PLK nigdy nie zwraca odjazdów, mimo że pociągi tam realnie jeżdżą.
+async function findStationCandidates(name, headers) {
   const url =
     `${PLK_BASE}/dictionaries/stations?search=${encodeURIComponent(name)}&pageSize=20`;
 
@@ -190,16 +223,13 @@ async function findStation(name, headers) {
   const stations = extractArray(data);
   const wanted = normalize(name);
 
-  const found =
-    stations.find(s => normalize(s.name || s.stationName) === wanted) ||
-    stations[0];
+  const exact = stations.filter(s => normalize(s.name || s.stationName) === wanted);
+  const list = exact.length ? exact : (stations[0] ? [stations[0]] : []);
 
-  if (!found) return null;
-
-  return {
+  return list.map(found => ({
     id: found.id || found.stationId,
     name: found.name || found.stationName
-  };
+  }));
 }
 
 async function getJsonCached(url, headers, ttlSeconds) {
