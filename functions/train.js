@@ -341,6 +341,7 @@ async function fetchAndRenderTrain(train,opts){
       if(r.ok && data && !data.error){
         renderTrain(train,data);
         scheduleAutoRefresh(train,opts);
+        saveLastTrainContext(train,data);
         return;
       }
 
@@ -392,6 +393,16 @@ function renderTrain(train,data){
   });
 
   html+='</div></div>';document.getElementById('content').innerHTML=html;window._trainSummary=document.body.innerText.replace(/\n{3,}/g,'\n\n');setTimeout(()=>{const el=document.getElementById('station-'+focusIdx);if(el)el.scrollIntoView({behavior:'smooth',block:'center'})},150);
+}
+function saveLastTrainContext(train,data){
+  try{
+    const label=[data.category||qs('category')||'',data.trainNumber||train,data.name||qs('name')||''].filter(Boolean).join(' ');
+    localStorage.setItem('plkLastTrain',JSON.stringify({
+      url:location.pathname+location.search,
+      label:label||('Pociąg '+train),
+      savedAt:Date.now()
+    }));
+  }catch(e){}
 }
 function renderFallback(train,msg){setStatus('Nie mam identyfikatorów kursu z tablicy.');document.getElementById('content').innerHTML='<div class="panel"><h2>Pociąg '+esc(train)+'</h2><div class="err">'+esc(msg||'Brak pełnych identyfikatorów kursu.')+'</div><p class="hint">Kliknij numer pociągu bezpośrednio z naszej tablicy odjazdów. Sam numer może oznaczać więcej niż jeden kurs.</p><a class="btn green" target="_blank" rel="noopener" href="'+esc(portalUrl(train))+'">Otwórz wyszukiwarkę w Portal Pasażera</a></div>'}
 function copySummary(){navigator.clipboard&&navigator.clipboard.writeText(window._trainSummary||document.body.innerText)}
