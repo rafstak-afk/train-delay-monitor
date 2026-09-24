@@ -7,6 +7,7 @@ const STORAGE_KEY = 'monitored_trains_list';
 
 let monitoredTrains = loadMonitoredFromStorage();
 let activeTrainId = null;
+let lastLoadedAt = Date.now();
 
 const dataCache = {
   trainDetails: {}
@@ -48,6 +49,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
   renderMonitoredList();
   setupEventListeners();
+  lastLoadedAt = Date.now();
+});
+
+// Jak w moje-pociagi-v2: gdy strona wraca z bfcache (np. po powrocie z
+// przeglądarki/innej karty) i minęło więcej niż CACHE_DURATION_MS od
+// ostatniego odświeżenia, dociągamy świeże dane zamiast pokazywać to, co
+// było widoczne w momencie wyjścia.
+window.addEventListener('pageshow', (event) => {
+  if (event.persisted && Date.now() - lastLoadedAt > CACHE_DURATION_MS) {
+    handleFabRefresh();
+  }
 });
 
 function setupEventListeners() {
@@ -349,6 +361,7 @@ function renderTrainDetails(data) {
 // Odświeżanie FAB
 async function handleFabRefresh() {
   fabRefresh.classList.add('spinning');
+  lastLoadedAt = Date.now();
 
   try {
     if (listView.classList.contains('active')) {

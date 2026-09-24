@@ -293,6 +293,8 @@ async function findCourseFromOpenedContext(train,idp){
 }
 const AUTO_REFRESH_MS=5*60*1000;
 let autoRefreshTimer=null;
+let lastTrainFetchAt=0;
+let lastTrainArgs=null;
 
 // Dopóki użytkownik stoi na biegu konkretnego pociągu, dociągamy świeże
 // dane co 5 minut — bez tego opóźnienie/ostatnia potwierdzona stacja
@@ -342,6 +344,8 @@ async function fetchAndRenderTrain(train,opts){
         renderTrain(train,data);
         scheduleAutoRefresh(train,opts);
         saveLastTrainContext(train,data);
+        lastTrainFetchAt=Date.now();
+        lastTrainArgs=[train,opts];
         return;
       }
 
@@ -407,6 +411,10 @@ function saveLastTrainContext(train,data){
 function renderFallback(train,msg){setStatus('Nie mam identyfikatorów kursu z tablicy.');document.getElementById('content').innerHTML='<div class="panel"><h2>Pociąg '+esc(train)+'</h2><div class="err">'+esc(msg||'Brak pełnych identyfikatorów kursu.')+'</div><p class="hint">Kliknij numer pociągu bezpośrednio z naszej tablicy odjazdów. Sam numer może oznaczać więcej niż jeden kurs.</p><a class="btn green" target="_blank" rel="noopener" href="'+esc(portalUrl(train))+'">Otwórz wyszukiwarkę w Portal Pasażera</a></div>'}
 function copySummary(){navigator.clipboard&&navigator.clipboard.writeText(window._trainSummary||document.body.innerText)}
 document.addEventListener('DOMContentLoaded',function(){const input=document.getElementById('trainInput');const t=qs('train');if(t){input.value=t;loadTrain()}input.addEventListener('keydown',function(e){if(e.key==='Enter')loadTrain()})});
+// Timery (scheduleAutoRefresh) bywają wstrzymywane, gdy strona trafia do
+// bfcache — po powrocie wznawiają się, ale mogły przespać kawałek 5-minutowego
+// okna. Gdy dane są starsze niż AUTO_REFRESH_MS, dociągamy je od razu.
+window.addEventListener('pageshow',function(e){if(e.persisted&&lastTrainArgs&&Date.now()-lastTrainFetchAt>AUTO_REFRESH_MS){fetchAndRenderTrain(...lastTrainArgs).catch(()=>{})}});
 </script>
 </body>
 </html>`;
