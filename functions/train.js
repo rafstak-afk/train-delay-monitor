@@ -204,6 +204,7 @@ const HTML = String.raw`<!DOCTYPE html>
   <div id="status" class="status">Kliknij numer pociągu na tablicy albo wpisz numer ręcznie.</div>
   <div id="content"></div>
 </div>
+<script src="/profile-sync.js"></script>
 <script>
 function qs(name){return new URLSearchParams(location.search).get(name)||''}
 function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}
@@ -401,11 +402,13 @@ function renderTrain(train,data){
 function saveLastTrainContext(train,data){
   try{
     const label=[data.category||qs('category')||'',data.trainNumber||train,data.name||qs('name')||''].filter(Boolean).join(' ');
-    localStorage.setItem('plkLastTrain',JSON.stringify({
+    const ctx={
       url:location.pathname+location.search,
       label:label||('Pociąg '+train),
       savedAt:Date.now()
-    }));
+    };
+    localStorage.setItem('plkLastTrain',JSON.stringify(ctx));
+    if(window.ProfileSync&&ProfileSync.getToken())ProfileSync.push({lastTrain:ctx});
   }catch(e){}
 }
 function renderFallback(train,msg){setStatus('Nie mam identyfikatorów kursu z tablicy.');document.getElementById('content').innerHTML='<div class="panel"><h2>Pociąg '+esc(train)+'</h2><div class="err">'+esc(msg||'Brak pełnych identyfikatorów kursu.')+'</div><p class="hint">Kliknij numer pociągu bezpośrednio z naszej tablicy odjazdów. Sam numer może oznaczać więcej niż jeden kurs.</p><a class="btn green" target="_blank" rel="noopener" href="'+esc(portalUrl(train))+'">Otwórz wyszukiwarkę w Portal Pasażera</a></div>'}

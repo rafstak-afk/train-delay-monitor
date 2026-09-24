@@ -92,11 +92,12 @@ document.getElementById('createBtn').addEventListener('click', async () => {
   // inaczej dane trafiałyby do chmury dopiero przy pierwszej zmianie.
   const snap = {};
   const rd = (k) => { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } };
-  const st = rd('plkStationHistory'), tr = rd('rafstakMojePociagiV4'), mo = rd('monitored_trains_list'), fav = rd('plkFavoriteStations');
+  const st = rd('plkStationHistory'), tr = rd('rafstakMojePociagiV4'), mo = rd('monitored_trains_list'), fav = rd('plkFavoriteStations'), lt = rd('plkLastTrain');
   if (Array.isArray(st) && st.length) snap.stationHistory = st;
   if (Array.isArray(tr) && tr.length) snap.trains = tr;
   if (Array.isArray(mo) && mo.length) snap.monitoredTrains = mo;
   if (Array.isArray(fav)) snap.favoriteStations = fav;
+  if (lt && lt.url) snap.lastTrain = lt;
   await ProfileSync.push(snap);
   setStatus('Nowy profil utworzony. Zapisz token, żeby wczytać go na innym urządzeniu.', 'ok');
   renderActive();
