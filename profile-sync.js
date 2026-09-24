@@ -1,5 +1,5 @@
 // Współdzielony mechanizm synchronizacji profilu (token -> Cloudflare KV)
-// między index.html, moje-pociagi-v2 i monitorowane-pociagi. Token jest
+// między index.html, moje-pociagi-v2, /train i profil/. Token jest
 // jedynym "kluczem" do danych (bez hasła) — świadoma decyzja, dane są
 // niskiej wrażliwości (ulubione stacje/pociągi, nie dane osobowe).
 (function () {

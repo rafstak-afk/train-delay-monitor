@@ -232,7 +232,7 @@ function detailsParams(){const p=new URLSearchParams();['date','scheduleId','sch
 function portalUrl(train){return 'https://portalpasazera.pl/ZnajdzPociag'}
 // Opóźnienie/status stacji liczymy WYŁĄCZNIE na podstawie s.status/s.delay
 // zwróconych przez /api/train-details — ten sam, jeden serwerowy punkt
-// prawdy używany przez moje-pociagi-v2 i v2/train.html. Wcześniej ta
+// prawdy używany przez moje-pociagi-v2 i tę stronę. Wcześniej ta
 // strona liczyła to sama, osobno, bezpośrednio z surowych danych PLK
 // (bez sprawdzania isConfirmed, bez uwzględnienia oficjalnego pola
 // departureDelayMinutes/arrivalDelayMinutes z PLK) — stąd rozjazdy typu
