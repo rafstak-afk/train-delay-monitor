@@ -230,6 +230,14 @@ const HTML = String.raw`<!DOCTYPE html>
 .float-save-btn{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:9997;border:0;border-radius:999px;padding:13px 22px;background:var(--blue);color:#fff;font-weight:900;font-size:14.5px;cursor:pointer;box-shadow:0 10px 28px rgba(0,0,0,.45)}
 .float-save-btn:hover{background:#084298}
 .float-save-btn.done{background:var(--green);color:#0a2016}
+.manual-save-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100000;display:none;align-items:center;justify-content:center;padding:16px}
+.manual-save-overlay.open{display:flex}
+.manual-save-box{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;max-width:340px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,.5);text-align:left}
+.manual-save-box h3{margin:0 0 12px;font-size:16px;text-align:center}
+.manual-save-box label{display:block;font-size:12px;color:var(--muted);margin:0 0 4px}
+.manual-save-box input{width:100%;padding:10px 12px;border-radius:9px;border:1px solid var(--line);background:#1c2833;color:#fff;font-size:14px;margin-bottom:12px}
+.manual-save-actions{display:flex;gap:10px}
+.manual-save-actions button{flex:1}
 .plat-num{font-size:20px;font-weight:800;line-height:1}
 .plat-track{font-size:11px;color:var(--muted);margin-top:2px}
 .err{background:#3b1d1d;border:1px solid #dc3545;color:#ffd6d6;border-radius:10px;padding:12px}.loader{display:flex;align-items:center;justify-content:center;gap:10px;margin:14px auto;color:#d8e2ee}.train-loader{position:relative;width:120px;height:22px;overflow:hidden}.train-dot{position:absolute;left:-35px;top:1px;font-size:20px;animation:ride 1.35s linear infinite}.track{position:absolute;left:0;right:0;bottom:0;border-bottom:2px dashed #5c6b7a}@keyframes ride{0%{left:-35px}100%{left:125px}}.copy-note{font-size:12px;color:var(--muted);text-align:center;margin-top:6px}
@@ -254,6 +262,19 @@ const HTML = String.raw`<!DOCTYPE html>
   <div id="content"></div>
 </div>
 <button type="button" id="floatSaveBtn" class="float-save-btn" style="display:none"></button>
+<div class="manual-save-overlay" id="manualSaveOverlay">
+  <div class="manual-save-box">
+    <h3>Zapisz przejazd</h3>
+    <label for="manualTripName">Nazwa trasy (opcjonalnie)</label>
+    <input type="text" id="manualTripName" placeholder="np. Wycieczka do Krakowa">
+    <label for="manualTripKm">Kilometraż (opcjonalnie)</label>
+    <input type="number" id="manualTripKm" min="0" placeholder="np. 45">
+    <div class="manual-save-actions">
+      <button type="button" class="btn small secondary" onclick="closeManualSaveForm()">Anuluj</button>
+      <button type="button" class="btn small" onclick="confirmManualSave()">Zapisz</button>
+    </div>
+  </div>
+</div>
 <script src="/profile-sync.js"></script>
 <script src="/tutorial.js"></script>
 <script>
@@ -511,15 +532,18 @@ function updateFloatSaveBtn(tripMatch){
   const btn=document.getElementById('floatSaveBtn');
   if(!btn||!currentTrainData)return;
   const stations=currentStations,data=currentTrainData;
-  let show=false,label='',handler=null;
+  let show=false,label='',handler=null,immediate=true;
   if(tripMatch){
     const bS=stations[tripMatch.boardIdx].stationName,aS=stations[tripMatch.alightIdx].stationName;
     const existing=findExistingEntry(data.operatingDate,data.scheduleId,data.orderId,bS,aS);
-    if(!existing&&canSaveJourney(stations,tripMatch.alightIdx)){show=true;label='📓 Dodaj do dzienniczka';handler=saveTypicalJourney}
+    if(!existing&&canSaveJourney(stations,tripMatch.alightIdx)){show=true;label='📓 Dodaj do dzienniczka';handler=saveTypicalJourney;immediate=true}
   }else if(markBoardIdx!=null&&markAlightIdx!=null&&markAlightIdx>markBoardIdx){
     const bS=stations[markBoardIdx].stationName,aS=stations[markAlightIdx].stationName;
     const existing=findExistingEntry(data.operatingDate,data.scheduleId,data.orderId,bS,aS);
-    if(!existing&&canSaveJourney(stations,markAlightIdx)){show=true;label='💾 Zapisz do dzienniczka';handler=saveManualJourney}
+    // Trasa nietypowa otwiera formularz (nazwa trasy + km) zamiast zapisywać
+    // od razu, więc przycisk pływający po kliknięciu tylko się chowa —
+    // stan "✓ Zapisano" pokazujemy dopiero po realnym zapisie w formularzu.
+    if(!existing&&canSaveJourney(stations,markAlightIdx)){show=true;label='💾 Zapisz do dzienniczka';handler=saveManualJourney;immediate=false}
   }
   if(!show){btn.style.display='none';return}
   btn.style.display='block';
@@ -527,9 +551,13 @@ function updateFloatSaveBtn(tripMatch){
   btn.classList.remove('done');
   btn.onclick=function(){
     handler();
-    btn.textContent='✓ Zapisano';
-    btn.classList.add('done');
-    setTimeout(function(){btn.style.display='none'},1400);
+    if(immediate){
+      btn.textContent='✓ Zapisano';
+      btn.classList.add('done');
+      setTimeout(function(){btn.style.display='none'},1400);
+    }else{
+      btn.style.display='none';
+    }
   };
 }
 function saveTypicalJourney(){
@@ -544,11 +572,30 @@ function saveTypicalJourney(){
 }
 function saveManualJourney(){
   if(!currentTrainData||markBoardIdx==null||markAlightIdx==null||markAlightIdx<=markBoardIdx)return;
-  const kmRaw=prompt('Kilometraż tej trasy (opcjonalnie, w km):','');
-  const kmNum=kmRaw?Number(String(kmRaw).replace(',','.')):NaN;
-  const km=kmRaw&&!isNaN(kmNum)?kmNum:null;
+  openManualSaveForm();
+}
+function openManualSaveForm(){
+  const overlay=document.getElementById('manualSaveOverlay');
+  if(!overlay)return;
+  document.getElementById('manualTripName').value='';
+  document.getElementById('manualTripKm').value='';
+  overlay.classList.add('open');
+  setTimeout(function(){document.getElementById('manualTripName').focus()},50);
+}
+function closeManualSaveForm(){
+  const overlay=document.getElementById('manualSaveOverlay');
+  if(overlay)overlay.classList.remove('open');
+  renderJournalBar();
+}
+function confirmManualSave(){
+  if(!currentTrainData||markBoardIdx==null||markAlightIdx==null){closeManualSaveForm();return}
+  const name=(document.getElementById('manualTripName').value||'').trim();
+  const kmRaw=document.getElementById('manualTripKm').value;
+  const km=kmRaw?Number(kmRaw):null;
+  closeManualSaveForm();
   const entry=buildJournalEntry(currentTrainData,currentStations,markBoardIdx,markAlightIdx,null);
   entry.distanceKm=km;
+  if(name)entry.tripLabel=name;
   const list=getJournalEntries();
   list.push(entry);
   saveJournalEntries(list);
@@ -706,7 +753,15 @@ function saveLastTrainContext(train,data){
 }
 function renderFallback(train,msg){setStatus('Nie mam identyfikatorów kursu z tablicy.');document.getElementById('content').innerHTML='<div class="panel"><h2>Pociąg '+esc(train)+'</h2><div class="err">'+esc(msg||'Brak pełnych identyfikatorów kursu.')+'</div><p class="hint">Kliknij numer pociągu bezpośrednio z naszej tablicy odjazdów. Sam numer może oznaczać więcej niż jeden kurs.</p><a class="btn green" target="_blank" rel="noopener" href="'+esc(portalUrl(train))+'">Otwórz wyszukiwarkę w Portal Pasażera</a></div>'}
 function copySummary(){navigator.clipboard&&navigator.clipboard.writeText(window._trainSummary||document.body.innerText)}
-document.addEventListener('DOMContentLoaded',function(){syncTypicalTripsFromProfile();if(qs('train'))loadTrain()});
+document.addEventListener('DOMContentLoaded',function(){
+  syncTypicalTripsFromProfile();
+  if(qs('train'))loadTrain();
+  const overlay=document.getElementById('manualSaveOverlay');
+  if(overlay){
+    overlay.addEventListener('click',function(e){if(e.target===overlay)closeManualSaveForm()});
+    document.addEventListener('keydown',function(e){if(e.key==='Escape'&&overlay.classList.contains('open'))closeManualSaveForm()});
+  }
+});
 // Timery (scheduleAutoRefresh) bywają wstrzymywane, gdy strona trafia do
 // bfcache — po powrocie wznawiają się, ale mogły przespać kawałek 5-minutowego
 // okna. Gdy dane są starsze niż AUTO_REFRESH_MS, dociągamy je od razu.
