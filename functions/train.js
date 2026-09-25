@@ -189,8 +189,45 @@ const HTML = String.raw`<!DOCTYPE html>
 <!-- app-version: 2026-06-01.1 status-human-confirmed-only -->
 <style>
 :root{--bg:#101820;--panel:#1c2833;--card:#223244;--line:#34495e;--text:#fff;--muted:#b8c3cf;--blue:#0b57d0;--green:#5dd39e;--yellow:#ffcc00;--red:#ff4d4d;--violet:#c084fc;--grey:#4b5563;--cyan:#22d3ee}
-*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text);padding:18px}.wrap{max-width:1180px;margin:0 auto}h1{text-align:center;font-size:32px;margin:10px 0 14px}.top{display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap}.top input{padding:12px 16px;border:0;border-radius:10px;font-size:18px;min-width:260px}.btn{border:0;border-radius:10px;padding:12px 16px;background:var(--blue);color:#fff;font-weight:900;cursor:pointer;text-decoration:none;display:inline-block}.btn.secondary{background:var(--grey)}.btn.green{background:#198754}.btn.small{padding:8px 10px;font-size:12px;background:#374151}.status{text-align:center;color:var(--muted);min-height:28px;margin:12px 0}.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;margin:12px 0}.summary{display:grid;grid-template-columns:1fr 1fr;gap:10px}.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px}.label{color:var(--muted);font-size:13px}.big{font-size:24px;font-weight:900}.hint{font-size:13px;color:#d8e2ee;line-height:1.35}.hint-cancelled{font-size:19px;font-weight:900;color:var(--red)}.hint-cancelled .station-meta{color:var(--red);opacity:.85;font-weight:700}.route-title{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}h2{margin:0 0 8px;font-size:22px}.route-table{display:block}.rrow{display:grid;grid-template-columns:86px 1fr 110px 88px 88px;gap:10px;align-items:center;padding:7px 8px;border-bottom:1px solid rgba(255,255,255,.10);border-radius:8px}.rrow:last-child{border-bottom:0}.rrow.current{background:rgba(255,204,0,.13);outline:1px solid rgba(255,204,0,.35)}.rrow.next{background:rgba(34,211,238,.10)}.rrow.future{opacity:.82}.time{font-size:18px;font-weight:900}.time-rows{display:flex;flex-direction:column;gap:6px}.plan-small{font-size:12px;color:#8b95a1;line-height:1.1}.plan-strike{text-decoration:line-through}.time.future{color:#cbd5e1}.time.ok{color:var(--green)}.time.delay-low{color:var(--yellow)}.time.delay-mid{color:var(--red)}.time.delay-high{color:var(--violet)}.station-name{font-size:17px;font-weight:900}.station-meta{font-size:12px;color:var(--muted);margin-top:2px}.badge{display:inline-block;border-radius:999px;padding:4px 8px;font-size:12px;font-weight:900;text-align:center;white-space:nowrap}.badge.passed{background:#14532d;color:#bbf7d0}.badge.current{background:var(--yellow);color:#102027}.badge.next{background:#0ea5e9;color:#fff}.badge.future{background:#334155;color:#e5e7eb}.badge.info{background:#5b4b1f;color:#ffe8a3}.rrow.info{background:rgba(255,204,0,.055)}.delay{font-weight:900}.delay.zero{color:var(--green)}.delay.low{color:var(--yellow)}.delay.mid{color:var(--red)}.delay.high{color:var(--violet)}.err{background:#3b1d1d;border:1px solid #dc3545;color:#ffd6d6;border-radius:10px;padding:12px}.loader{display:flex;align-items:center;justify-content:center;gap:10px;margin:14px auto;color:#d8e2ee}.train-loader{position:relative;width:120px;height:22px;overflow:hidden}.train-dot{position:absolute;left:-35px;top:1px;font-size:20px;animation:ride 1.35s linear infinite}.track{position:absolute;left:0;right:0;bottom:0;border-bottom:2px dashed #5c6b7a}@keyframes ride{0%{left:-35px}100%{left:125px}}.copy-note{font-size:12px;color:var(--muted);text-align:center;margin-top:6px}
-@media(max-width:720px){body{padding:8px}h1{font-size:25px}.top{display:grid;grid-template-columns:1fr auto;align-items:center}.top input{min-width:0;width:100%;font-size:16px}.top .secondary{grid-column:1 / span 2;text-align:center}.summary{grid-template-columns:1fr}.panel{padding:9px}.rrow{grid-template-columns:62px 1fr 70px;gap:6px;padding:8px 6px}.rrow .status-cell{grid-column:1;grid-row:1}.rrow .station-cell{grid-column:2;grid-row:1}.rrow .delay-cell{grid-column:3;grid-row:1;text-align:right}.rrow .time-cell{grid-column:1 / -1;grid-row:2}.rrow .platform-cell{grid-column:1 / -1;grid-row:3;font-size:12px;color:var(--muted)}.station-name{font-size:15px}.time{font-size:17px}.badge{font-size:11px;padding:3px 7px}.big{font-size:20px}}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text);padding:18px}.wrap{max-width:1180px;margin:0 auto}h1{text-align:center;font-size:32px;margin:10px 0 14px}.top{display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap}.top input{padding:12px 16px;border:0;border-radius:10px;font-size:18px;min-width:260px}.btn{border:0;border-radius:10px;padding:12px 16px;background:var(--blue);color:#fff;font-weight:900;cursor:pointer;text-decoration:none;display:inline-block}.btn.secondary{background:var(--grey)}.btn.green{background:#198754}.btn.small{padding:8px 10px;font-size:12px;background:#374151}.status{text-align:center;color:var(--muted);min-height:28px;margin:12px 0}.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;margin:12px 0}.summary{display:grid;grid-template-columns:1fr 1fr;gap:10px}.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px}.label{color:var(--muted);font-size:13px}.big{font-size:24px;font-weight:900}.hint{font-size:13px;color:#d8e2ee;line-height:1.35}.hint-cancelled{font-size:19px;font-weight:900;color:var(--red)}.hint-cancelled .station-meta{color:var(--red);opacity:.85;font-weight:700}.route-title{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}h2{margin:0 0 8px;font-size:22px}.route-table{display:block}
+.rrow{display:grid;grid-template-columns:92px 60px 1fr 76px;gap:10px;align-items:center;padding:8px 8px;border-bottom:1px solid rgba(255,255,255,.10)}
+.rrow:last-child{border-bottom:0}
+.rrow.current{background:rgba(255,204,0,.13);outline:1px solid rgba(255,204,0,.35);border-radius:8px}
+.rrow.next{background:rgba(34,211,238,.10);border-radius:8px}
+.rrow.info{background:rgba(255,204,0,.055);border-radius:8px}
+.rrow.future{opacity:.82}
+.time{font-size:18px;font-weight:900}
+.time-rows{display:flex;flex-direction:column;gap:6px}
+.plan-small{font-size:12px;color:#8b95a1;line-height:1.1}
+.plan-strike{text-decoration:line-through}
+.time.future{color:#cbd5e1}
+.time.ok{color:var(--green)}
+.time.delay-low{color:var(--yellow)}
+.time.delay-mid{color:var(--red)}
+.time.delay-high{color:var(--violet)}
+.station-cell{display:flex;flex-direction:column;gap:3px;min-width:0}
+.station-name{font-size:16px;font-weight:900;line-height:1.2}
+.station-meta{font-size:12px;color:var(--muted);margin-top:2px}
+.badge{display:inline-block;width:fit-content;border-radius:999px;padding:2px 8px;font-size:11px;font-weight:800;text-align:center;white-space:nowrap}
+.badge.passed{background:#14532d;color:#bbf7d0}
+.badge.current{background:var(--yellow);color:#102027}
+.badge.next{background:#0ea5e9;color:#fff}
+.badge.future{background:#334155;color:#e5e7eb}
+.badge.info{background:#5b4b1f;color:#ffe8a3}
+.delay-cell{text-align:center}
+.platform-cell{text-align:center}
+.plat-num{font-size:20px;font-weight:800;line-height:1}
+.plat-track{font-size:11px;color:var(--muted);margin-top:2px}
+.err{background:#3b1d1d;border:1px solid #dc3545;color:#ffd6d6;border-radius:10px;padding:12px}.loader{display:flex;align-items:center;justify-content:center;gap:10px;margin:14px auto;color:#d8e2ee}.train-loader{position:relative;width:120px;height:22px;overflow:hidden}.train-dot{position:absolute;left:-35px;top:1px;font-size:20px;animation:ride 1.35s linear infinite}.track{position:absolute;left:0;right:0;bottom:0;border-bottom:2px dashed #5c6b7a}@keyframes ride{0%{left:-35px}100%{left:125px}}.copy-note{font-size:12px;color:var(--muted);text-align:center;margin-top:6px}
+@media(max-width:720px){body{padding:8px}h1{font-size:25px}.top{display:grid;grid-template-columns:1fr auto;align-items:center}.top input{min-width:0;width:100%;font-size:16px}.top .secondary{grid-column:1 / span 2;text-align:center}.summary{grid-template-columns:1fr}.panel{padding:9px}
+.rrow{grid-template-columns:70px 40px 1fr 56px;gap:6px;padding:9px 6px}
+.time{font-size:20px}
+.delay-cell .time{font-size:16px}
+.station-name{font-size:15px}
+.badge{font-size:10px;padding:2px 6px}
+.plat-num{font-size:17px}
+.plat-track{font-size:10px}
+.big{font-size:20px}}
 </style>
 </head>
 <body>
@@ -265,12 +302,23 @@ function renderTime(s,state){
   }
   return '<div class="time-rows"><div class="trow">'+timeRow(conf?(s.actualTime||''):'',s.plannedTime,s.delay,state)+'</div></div>';
 }
-function renderDelay(s){
+// Kolumna opóźnień w tym samym układzie dwóch wierszy co kolumna godzin
+// (przyjazd nad odjazdem) — dokładnie jak na tablicy głównej, żeby wartość
+// stała w linii z godziną, której dotyczy. Puste miejsce zamiast "0" jest
+// niewidoczne (nie zajmuje 0px), tylko po to, by wiersze się nie rozjechały.
+function delayCell(d){
+  const n=Math.max(0,Number(d)||0);
+  if(!(n>0))return '<div class="trow"><div class="time" style="visibility:hidden">0</div></div>';
+  return '<div class="trow"><div class="plan-small plan-strike" style="visibility:hidden">00:00</div><div class="time delay-'+delayClass(n)+'">+'+n+'</div></div>';
+}
+function renderDelayCol(s){
   const conf=s.status==='confirmed';
-  const dd=conf?s.departureDelay:s.forecastDepartureDelay, ad=conf?s.arrivalDelay:s.forecastArrivalDelay;
-  const d=typeof dd==='number'?dd:(typeof ad==='number'?ad:(conf?(s.delay||0):0));
-  const cls=delayClass(d);
-  return d>0?'<span class="delay '+cls+'">+'+d+'</span>':'';
+  const ad=conf?s.arrivalDelay:s.forecastArrivalDelay;
+  const dd=conf?s.departureDelay:s.forecastDepartureDelay;
+  if(s.plannedArrival||s.plannedDeparture){
+    return '<div class="time-rows">'+(s.plannedArrival?delayCell(ad):'')+(s.plannedDeparture?delayCell(dd):'')+'</div>';
+  }
+  return '<div class="time-rows">'+delayCell(conf?s.delay:0)+'</div>';
 }
 function loading(train){document.getElementById('content').innerHTML='<div class="panel"><div class="loader"><div class="train-loader"><div class="track"></div><div class="train-dot">🚆</div></div><strong>Pobieram bieg pociągu '+esc(train)+'...</strong></div><div class="copy-note">Czekam na dane PLK. Spokojnie, to nie cisza, to informatyka.</div></div>'}
 
@@ -394,8 +442,14 @@ function renderTrain(train,data){
         state='info';txt='BRAK INFO Z API';badge='info';
       }
     }
-    const plat=[s.platform,s.track].filter(v=>v&&v!=='-').join(' / ')||'—';
-    html+='<div id="station-'+i+'" class="rrow '+state+'"><div class="status-cell"><span class="badge '+badge+'">'+esc(txt)+'</span></div><div class="station-cell"><div class="station-name">'+esc(s.stationName)+'</div></div><div class="time-cell">'+renderTime(s,state==='future'||state==='next'?'future':state)+'</div><div class="delay-cell">'+renderDelay(s)+'</div><div class="platform-cell"><div class="station-meta">peron / tor</div><strong>'+esc(plat)+'</strong></div></div>';
+    const hasPlatform=s.platform&&s.platform!=='-';
+    const hasTrack=s.track&&s.track!=='-';
+    html+='<div id="station-'+i+'" class="rrow '+state+'">'
+      +'<div class="time-cell">'+renderTime(s,state==='future'||state==='next'?'future':state)+'</div>'
+      +'<div class="delay-cell">'+renderDelayCol(s)+'</div>'
+      +'<div class="station-cell"><span class="badge '+badge+'">'+esc(txt)+'</span><div class="station-name">'+esc(s.stationName)+'</div></div>'
+      +'<div class="platform-cell"><div class="plat-num">'+(hasPlatform?esc(s.platform):'—')+'</div>'+(hasTrack?'<div class="plat-track">tor '+esc(s.track)+'</div>':'')+'</div>'
+    +'</div>';
   });
 
   html+='</div></div>';document.getElementById('content').innerHTML=html;window._trainSummary=document.body.innerText.replace(/\n{3,}/g,'\n\n');setTimeout(()=>{const el=document.getElementById('station-'+focusIdx);if(el)el.scrollIntoView({behavior:'smooth',block:'center'})},150);
