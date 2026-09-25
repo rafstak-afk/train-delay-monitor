@@ -59,6 +59,10 @@ h1{ margin:0; font-size:20px; }
   cursor:not-allowed;
 }
 
+.refresh.danger{
+  color:#fb7185;
+}
+
 .list{
   display:flex;
   flex-direction:column;
@@ -166,6 +170,7 @@ h1{ margin:0; font-size:20px; }
   </div>
   <div style="display:flex; gap:8px;">
     <a class="refresh" href="/profil/" style="text-decoration:none; display:inline-flex; align-items:center;">👤</a>
+    <button class="refresh danger" id="clearBtn" title="Usuń wszystkie pociągi z listy">🗑️ Wyczyść</button>
     <button class="refresh" id="refreshBtn">↻ ODŚWIEŻ</button>
   </div>
 </header>
@@ -189,32 +194,34 @@ h1{ margin:0; font-size:20px; }
 <script>
 const STORAGE_KEY = 'rafstakMojePociagiV4';
 
-const DEFAULT_TRAINS = [
-  { station: 'Miasteczko Śląskie', trainNum: '44226', planTime: '04:59' },
-  { station: 'Tarnowskie Góry', trainNum: '40450', planTime: '05:21' },
-  { station: 'Chorzów Batory', trainNum: '40658', planTime: '06:07' },
-  { station: 'Tarnowskie Góry', trainNum: '40250', planTime: '05:46' },
-  { station: 'Chorzów Batory', trainNum: '40660', planTime: '06:32' },
-  { station: 'Katowice', trainNum: '40921', planTime: '14:59' },
-  { station: 'Katowice', trainNum: '40621', planTime: '15:35' },
-  { station: 'Chorzów Batory', trainNum: '40423', planTime: '15:12' },
-  { station: 'Chorzów Batory', trainNum: '40468', planTime: '14:42' },
-  { station: 'Chorzów Batory', trainNum: '40425', planTime: '16:06' },
-  { station: 'Katowice', trainNum: '8330', planTime: '10:20' },
-  { station: 'Katowice', trainNum: '3815', planTime: '14:40' }
-];
-
+// UWAGA: dawniej brak zapisanej listy (pierwsza wizyta, pusty localStorage)
+// oznaczał pokazanie listy prywatnych pociągów autora jako "domyślnej" —
+// każdy nowy odwiedzający dostawał cudze dane jako swoje. Pusta lista +
+// czytelny stan "brak pociągów" jest poprawnym punktem startowym.
 function loadTrains() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) return JSON.parse(saved);
   } catch(e) {}
-  return [...DEFAULT_TRAINS];
+  return [];
 }
 
 function saveTrains(list) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
   if (window.ProfileSync) ProfileSync.push({ trains: list });
+}
+
+function emptyListHtml() {
+  return '<div style="text-align:center;padding:28px 16px;color:#8b95a1;font-size:14px;">Nie masz jeszcze żadnych pociągów na liście.<br>Dodaj pierwszy w formularzu poniżej 👇</div>';
+}
+
+function clearAllTrains() {
+  if (!currentTrains.length) return;
+  if (!confirm('Usunąć wszystkie pociągi z listy? Tej operacji nie da się cofnąć.')) return;
+  currentTrains = [];
+  lastRows = [];
+  saveTrains(currentTrains);
+  renderFromCache();
 }
 
 let currentTrains = loadTrains();
@@ -444,7 +451,7 @@ function getDelay(row) {
 // "Odśwież" / pierwsze załadowanie strony).
 function renderFromCache() {
   const container = document.getElementById('list');
-  container.innerHTML = currentTrains.map((item, idx) => renderCard(item, idx, lastRows[idx])).join('');
+  container.innerHTML = currentTrains.length ? currentTrains.map((item, idx) => renderCard(item, idx, lastRows[idx])).join('') : emptyListHtml();
 }
 
 // Wywoływane z przycisków wewnątrz karty; rodzic ma już
@@ -663,7 +670,7 @@ async function init() {
   const refreshBtn = document.getElementById('refreshBtn');
   refreshBtn.disabled = true;
 
-  container.innerHTML = currentTrains.map((item, idx) => renderCard(item, idx, null)).join('');
+  container.innerHTML = currentTrains.length ? currentTrains.map((item, idx) => renderCard(item, idx, null)).join('') : emptyListHtml();
 
   function paintCard(idx, item, row) {
     lastRows[idx] = row || null;
@@ -743,6 +750,7 @@ document.getElementById('addTrainForm').addEventListener('submit', (e) => {
 });
 
 document.getElementById('refreshBtn').addEventListener('click', init);
+document.getElementById('clearBtn').addEventListener('click', clearAllTrains);
 
 // Powrót przyciskiem Wstecz ze szczegółów pociągu czasem przywraca tę
 // stronę z pamięci przeglądarki (bfcache) — wtedy skrypt się NIE
