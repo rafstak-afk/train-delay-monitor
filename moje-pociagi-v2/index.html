@@ -229,6 +229,13 @@ let lastRows = [];
 let lastLoadedAt = 0;
 const STALE_AFTER_MS = 5 * 60 * 1000;
 
+// TYMCZASOWA DIAGNOSTYKA bfcache — do usunięcia po znalezieniu przyczyny.
+// Ten log pojawia się TYLKO gdy skrypt wykonuje się od nowa (czyli była to
+// prawdziwa nawigacja/przeładowanie, NIE powrót z bfcache — przy powrocie
+// z bfcache skrypt się nie wykonuje ponownie, tylko odpala się event
+// "pageshow" niżej).
+console.log('[DIAG bfcache] Skrypt wykonał się od nowa o ' + new Date().toLocaleTimeString('pl-PL') + ' — to była PRAWDZIWA nawigacja, nie powrót z bfcache.');
+
 // Bez timeoutu na fetch() zawieszone/bardzo wolne żądanie (słaba sieć,
 // wolna odpowiedź PLK) blokowało init() w nieskończoność — strona
 // zostawała na "Pobieranie danych..." bez żadnego błędu, bo fetch()
@@ -751,8 +758,17 @@ document.getElementById('refreshBtn').addEventListener('click', init);
 // tylko, gdy dane mają więcej niż 5 minut — w przeciwnym razie to, co
 // już jest na ekranie, i tak jest wystarczająco świeże.
 window.addEventListener('pageshow', (event) => {
+  // TYMCZASOWA DIAGNOSTYKA bfcache — do usunięcia po znalezieniu przyczyny.
+  const navType = performance.getEntriesByType('navigation')[0]?.type;
+  const minutesSince = ((Date.now() - lastLoadedAt) / 60000).toFixed(1);
+  console.log('[DIAG bfcache] pageshow — event.persisted=' + event.persisted + ' | typ nawigacji (performance API)=' + navType + ' | minut od ostatniego załadowania=' + minutesSince);
   if (event.persisted && Date.now() - lastLoadedAt > STALE_AFTER_MS) {
+    console.log('[DIAG bfcache] -> Strona przywrócona z bfcache, ale minęło >5 min — odświeżam dane (init()).');
     init();
+  } else if (event.persisted) {
+    console.log('[DIAG bfcache] -> Strona przywrócona z bfcache, poniżej 5 min — NIE odświeżam.');
+  } else {
+    console.log('[DIAG bfcache] -> To NIE był powrót z bfcache (persisted=false) — stąd pełne przeładowanie.');
   }
 });
 
