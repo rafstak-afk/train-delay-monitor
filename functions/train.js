@@ -189,7 +189,7 @@ const HTML = String.raw`<!DOCTYPE html>
 <!-- app-version: 2026-06-01.1 status-human-confirmed-only -->
 <style>
 :root{--bg:#101820;--panel:#1c2833;--card:#223244;--line:#34495e;--text:#fff;--muted:#b8c3cf;--blue:#0b57d0;--green:#5dd39e;--yellow:#ffcc00;--red:#ff4d4d;--violet:#c084fc;--grey:#4b5563;--cyan:#22d3ee}
-*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text);padding:18px}.wrap{max-width:1180px;margin:0 auto}h1{text-align:center;font-size:32px;margin:10px 0 14px}.top{display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap}.top input{padding:12px 16px;border:0;border-radius:10px;font-size:18px;min-width:260px}.btn{border:0;border-radius:10px;padding:12px 16px;background:var(--blue);color:#fff;font-weight:900;cursor:pointer;text-decoration:none;display:inline-block}.btn.secondary{background:var(--grey)}.btn.green{background:#198754}.btn.small{padding:8px 10px;font-size:12px;background:#374151}.status{text-align:center;color:var(--muted);min-height:28px;margin:12px 0}.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;margin:12px 0}.summary{display:grid;grid-template-columns:1fr 1fr;gap:10px}.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px}.label{color:var(--muted);font-size:13px}.big{font-size:24px;font-weight:900}.hint{font-size:13px;color:#d8e2ee;line-height:1.35}.hint-cancelled{font-size:19px;font-weight:900;color:var(--red)}.hint-cancelled .station-meta{color:var(--red);opacity:.85;font-weight:700}.route-title{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}h2{margin:0 0 8px;font-size:22px}.route-table{display:block}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text);padding:18px}.wrap{max-width:1180px;margin:0 auto}h1{text-align:center;font-size:32px;margin:10px 0 14px}.top{display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap}.btn{border:0;border-radius:10px;padding:12px 16px;background:var(--blue);color:#fff;font-weight:900;cursor:pointer;text-decoration:none;display:inline-block}.btn.secondary{background:var(--grey)}.btn.green{background:#198754}.btn.small{padding:8px 10px;font-size:12px;background:#374151}.status{text-align:center;color:var(--muted);min-height:28px;margin:12px 0}.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;margin:12px 0}.summary{display:grid;grid-template-columns:1fr 1fr;gap:10px}.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px}.label{color:var(--muted);font-size:13px}.big{font-size:24px;font-weight:900}.hint{font-size:13px;color:#d8e2ee;line-height:1.35}.hint-cancelled{font-size:19px;font-weight:900;color:var(--red)}.hint-cancelled .station-meta{color:var(--red);opacity:.85;font-weight:700}.route-title{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}h2{margin:0 0 8px;font-size:22px}.route-table{display:block}
 .rrow{display:grid;grid-template-columns:92px 60px 1fr 76px;gap:10px;align-items:center;padding:8px 8px;border-bottom:1px solid rgba(255,255,255,.10)}
 .rrow:last-child{border-bottom:0}
 .rrow.current{background:rgba(255,204,0,.13);outline:1px solid rgba(255,204,0,.35);border-radius:8px}
@@ -219,7 +219,7 @@ const HTML = String.raw`<!DOCTYPE html>
 .plat-num{font-size:20px;font-weight:800;line-height:1}
 .plat-track{font-size:11px;color:var(--muted);margin-top:2px}
 .err{background:#3b1d1d;border:1px solid #dc3545;color:#ffd6d6;border-radius:10px;padding:12px}.loader{display:flex;align-items:center;justify-content:center;gap:10px;margin:14px auto;color:#d8e2ee}.train-loader{position:relative;width:120px;height:22px;overflow:hidden}.train-dot{position:absolute;left:-35px;top:1px;font-size:20px;animation:ride 1.35s linear infinite}.track{position:absolute;left:0;right:0;bottom:0;border-bottom:2px dashed #5c6b7a}@keyframes ride{0%{left:-35px}100%{left:125px}}.copy-note{font-size:12px;color:var(--muted);text-align:center;margin-top:6px}
-@media(max-width:720px){body{padding:8px}h1{font-size:25px}.top{display:grid;grid-template-columns:1fr auto;align-items:center}.top input{min-width:0;width:100%;font-size:16px}.top .secondary{grid-column:1 / span 2;text-align:center}.summary{grid-template-columns:1fr}.panel{padding:9px}
+@media(max-width:720px){body{padding:8px}h1{font-size:25px}.summary{grid-template-columns:1fr}.panel{padding:9px}
 .rrow{grid-template-columns:70px 40px 1fr 56px;gap:6px;padding:9px 6px}
 .time{font-size:20px}
 .delay-cell .time{font-size:16px}
@@ -234,11 +234,9 @@ const HTML = String.raw`<!DOCTYPE html>
 <div class="wrap">
   <h1>🚆 Bieg pociągu</h1>
   <div class="top">
-    <input id="trainInput" inputmode="numeric" placeholder="Wpisz numer pociągu" />
-    <button class="btn" id="showBtn" onclick="loadTrain()">Pokaż</button>
     <a class="btn secondary" href="/">← Tablica</a>
   </div>
-  <div id="status" class="status">Kliknij numer pociągu na tablicy albo wpisz numer ręcznie.</div>
+  <div id="status" class="status">Kliknij numer pociągu na tablicy albo na liście Moje Pociągi V2.</div>
   <div id="content"></div>
 </div>
 <script src="/profile-sync.js"></script>
@@ -413,7 +411,7 @@ async function fetchAndRenderTrain(train,opts){
   }
 }
 
-async function loadTrain(){const train=(document.getElementById('trainInput').value||'').trim();if(!train){setStatus('Wpisz numer pociągu.');return}document.getElementById('trainInput').blur();setStatus('Pobieram bieg pociągu...');loading(train);const idp=detailsParams();const trainFromUrl=qs('train');const manualDifferent=trainFromUrl&&String(trainFromUrl)!==String(train);let schedule=idp.get('scheduleId')||idp.get('scheduledId');let order=idp.get('orderId');try{if(manualDifferent){const found=await findCourseFromOpenedContext(train,idp);if(found){await fetchAndRenderTrain(train,found);return}renderFallback(train,'Wpisałeś ręcznie inny numer pociągu. Szukałem go dla tej samej daty i stacji z otwartej tablicy, ale nie znalazłem jednoznacznego kursu z identyfikatorami PLK. Kliknij numer bezpośrednio z tablicy albo otwórz Portal Pasażera.');return}if(!schedule||!order){const found=await findCourseFromOpenedContext(train,idp);if(found){await fetchAndRenderTrain(train,found);return}renderFallback(train,'Do pełnego biegu potrzebny jest link z tablicy odjazdów z identyfikatorami kursu. Sam numer może oznaczać więcej niż jeden kurs.');return}await fetchAndRenderTrain(train,{schedule,order,trainOrderId:idp.get('trainOrderId'),station:idp.get('station'),date:idp.get('date')||todayIso()})}catch(e){document.getElementById('content').innerHTML='<div class="panel err">Nie udało się pobrać biegu pociągu: '+esc(e.message)+'</div>';setStatus('Błąd pobierania biegu pociągu.')}}
+async function loadTrain(){const train=qs('train');if(!train){setStatus('Otwórz bieg pociągu, klikając jego numer na tablicy albo na liście Moje Pociągi V2.');return}setStatus('Pobieram bieg pociągu...');loading(train);const idp=detailsParams();let schedule=idp.get('scheduleId')||idp.get('scheduledId');let order=idp.get('orderId');try{if(!schedule||!order){const found=await findCourseFromOpenedContext(train,idp);if(found){await fetchAndRenderTrain(train,found);return}renderFallback(train,'Do pełnego biegu potrzebny jest link z tablicy odjazdów z identyfikatorami kursu. Kliknij numer pociągu bezpośrednio z tablicy albo z listy Moje Pociągi V2.');return}await fetchAndRenderTrain(train,{schedule,order,trainOrderId:idp.get('trainOrderId'),station:idp.get('station'),date:idp.get('date')||todayIso()})}catch(e){document.getElementById('content').innerHTML='<div class="panel err">Nie udało się pobrać biegu pociągu: '+esc(e.message)+'</div>';setStatus('Błąd pobierania biegu pociągu.')}}
 function renderTrain(train,data){
   const stations=Array.isArray(data.route)?data.route:[];
   const nm=nowMin();
@@ -469,7 +467,7 @@ function saveLastTrainContext(train,data){
 }
 function renderFallback(train,msg){setStatus('Nie mam identyfikatorów kursu z tablicy.');document.getElementById('content').innerHTML='<div class="panel"><h2>Pociąg '+esc(train)+'</h2><div class="err">'+esc(msg||'Brak pełnych identyfikatorów kursu.')+'</div><p class="hint">Kliknij numer pociągu bezpośrednio z naszej tablicy odjazdów. Sam numer może oznaczać więcej niż jeden kurs.</p><a class="btn green" target="_blank" rel="noopener" href="'+esc(portalUrl(train))+'">Otwórz wyszukiwarkę w Portal Pasażera</a></div>'}
 function copySummary(){navigator.clipboard&&navigator.clipboard.writeText(window._trainSummary||document.body.innerText)}
-document.addEventListener('DOMContentLoaded',function(){const input=document.getElementById('trainInput');const t=qs('train');if(t){input.value=t;loadTrain()}input.addEventListener('keydown',function(e){if(e.key==='Enter')loadTrain()})});
+document.addEventListener('DOMContentLoaded',function(){if(qs('train'))loadTrain()});
 // Timery (scheduleAutoRefresh) bywają wstrzymywane, gdy strona trafia do
 // bfcache — po powrocie wznawiają się, ale mogły przespać kawałek 5-minutowego
 // okna. Gdy dane są starsze niż AUTO_REFRESH_MS, dociągamy je od razu.

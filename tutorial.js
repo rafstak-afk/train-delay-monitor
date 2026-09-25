@@ -45,8 +45,7 @@
     {
       match: function (p) { return p.indexOf("/train") === 0; },
       steps: [
-        { sel: "#trainInput", title: "Znajdź pociąg", text: "Wpisz numer pociągu, żeby zobaczyć jego pełny bieg — działa najlepiej po kliknięciu numeru z tablicy albo listy." },
-        { sel: "#content", title: "Cały bieg pociągu", text: "Tu, po wczytaniu, zobaczysz trasę stacja po stacji: godziny planowe i rzeczywiste, opóźnienie osobno dla przyjazdu i odjazdu, peron i tor." }
+        { sel: "#status", title: "Cały bieg pociągu", text: "Trafiasz tu, klikając numer pociągu na tablicy albo na liście Moje Pociągi V2. Poniżej zobaczysz trasę stacja po stacji: godziny planowe i rzeczywiste, opóźnienie osobno dla przyjazdu i odjazdu, peron i tor." }
       ]
     },
     {
