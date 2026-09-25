@@ -473,9 +473,18 @@ function saveMarksToStorage(){
       localStorage.removeItem(courseMarkKey(currentTrainData));
       return;
     }
+    const alight=currentStations[markAlightIdx];
     localStorage.setItem(courseMarkKey(currentTrainData),JSON.stringify({
       board:currentStations[markBoardIdx].stationName,
-      alight:currentStations[markAlightIdx].stationName
+      alight:alight.stationName,
+      plannedArrival:alight.plannedArrival||alight.plannedTime||'',
+      date:currentTrainData.operatingDate,
+      scheduleId:currentTrainData.scheduleId,
+      orderId:currentTrainData.orderId,
+      trainLabel:[currentTrainData.category,currentTrainData.trainNumber||currentTrainData.train].filter(Boolean).join(' '),
+      // Zapisujemy dokładny adres do tego kursu — przypomnienie na tablicy
+      // głównej (patrz index.html) prowadzi jednym klikiem z powrotem tutaj.
+      url:location.pathname+location.search
     }));
   }catch(e){}
 }
