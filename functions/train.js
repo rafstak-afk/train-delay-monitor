@@ -242,6 +242,7 @@ const HTML = String.raw`<!DOCTYPE html>
   <div id="content"></div>
 </div>
 <script src="/profile-sync.js"></script>
+<script src="/tutorial.js"></script>
 <script>
 function qs(name){return new URLSearchParams(location.search).get(name)||''}
 function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}
