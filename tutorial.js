@@ -38,17 +38,30 @@
 
   function injectStyles() {
     const css = `
+@keyframes tutorialFadeIn{from{opacity:0}to{opacity:1}}
+@keyframes tutorialPopIn{from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes tutorialRide{0%{left:-28px}100%{left:100%}}
+@keyframes tutorialSectionIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes tutorialPulse{0%,100%{box-shadow:0 6px 18px rgba(0,0,0,.35)}50%{box-shadow:0 6px 18px rgba(0,0,0,.35),0 0 0 9px rgba(11,87,208,.35)}}
 .tutorial-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100000;display:none;align-items:center;justify-content:center;padding:16px}
-.tutorial-overlay.open{display:flex}
-.tutorial-modal{background:#1c2833;border:1px solid #34495e;border-radius:16px;max-width:560px;width:100%;max-height:88vh;overflow-y:auto;padding:22px;color:#fff;font-family:Arial,sans-serif;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.5);text-align:left}
+.tutorial-overlay.open{display:flex;animation:tutorialFadeIn .2s ease}
+.tutorial-modal{background:#1c2833;border:1px solid #34495e;border-radius:16px;max-width:560px;width:100%;max-height:88vh;overflow-y:auto;padding:22px;color:#fff;font-family:Arial,sans-serif;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.5);text-align:left;animation:tutorialPopIn .3s cubic-bezier(.2,.9,.3,1.2)}
 .tutorial-close{position:absolute;top:10px;right:10px;background:transparent;border:0;color:#b8c3cf;font-size:24px;line-height:1;cursor:pointer;padding:4px 10px;border-radius:8px}
 .tutorial-close:hover{background:#253445;color:#fff}
-.tutorial-modal h2{margin:0 20px 12px 0;font-size:21px}
+.tutorial-modal h2{margin:0 20px 6px 0;font-size:21px}
 .tutorial-modal h3{margin:16px 0 6px;font-size:15px;display:flex;align-items:center;gap:8px}
 .tutorial-modal p{margin:0 0 8px;font-size:13.5px;line-height:1.5;color:#d8e2ee}
+.tutorial-track{position:relative;height:16px;margin:0 0 14px;overflow:hidden}
+.tutorial-track .rail{position:absolute;left:0;right:0;bottom:3px;border-bottom:2px dashed #34495e}
+.tutorial-track .cart{position:absolute;left:-28px;top:-4px;font-size:18px;animation:tutorialRide 3.4s linear infinite}
 .tutorial-why{background:rgba(11,87,208,.14);border:1px solid rgba(11,87,208,.35);border-radius:12px;padding:12px 14px;margin-bottom:14px}
 .tutorial-why p{color:#eaf1fb;margin:0}
-.tutorial-section{border-top:1px solid rgba(255,255,255,.08);padding-top:10px}
+.tutorial-section{border-top:1px solid rgba(255,255,255,.08);padding-top:10px;opacity:0;animation:tutorialSectionIn .35s ease forwards}
+.tutorial-section:nth-of-type(1){animation-delay:.08s}
+.tutorial-section:nth-of-type(2){animation-delay:.15s}
+.tutorial-section:nth-of-type(3){animation-delay:.22s}
+.tutorial-section:nth-of-type(4){animation-delay:.29s}
+.tutorial-section:nth-of-type(5){animation-delay:.36s}
 .tutorial-search{display:flex;align-items:center;gap:8px;background:#0f1720;border:1px solid #34495e;border-radius:10px;padding:8px 12px;margin:8px 0}
 .tutorial-search input{flex:1;background:transparent;border:0;outline:0;color:#fff;font-size:13.5px;min-width:0}
 .tutorial-tips{list-style:none;margin:6px 0 0;padding:0;font-size:13px;color:#d8e2ee}
@@ -57,9 +70,11 @@
 .tutorial-footer{margin-top:16px;text-align:center}
 .tutorial-btn{border:0;border-radius:10px;padding:12px 22px;background:#0b57d0;color:#fff;font-weight:800;cursor:pointer;font-size:14.5px}
 .tutorial-btn:hover{background:#084298}
-.tutorial-demo-btn{position:fixed;top:10px;right:10px;z-index:9997;width:38px;height:38px;border-radius:50%;border:1px solid #34495e;background:#1c2833;color:#fff;font-size:17px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.35)}
-.tutorial-demo-btn:hover{background:#253445}
+.tutorial-demo-btn{position:fixed;top:10px;right:10px;z-index:9997;width:38px;height:38px;border-radius:50%;border:1px solid #34495e;background:#1c2833;color:#fff;font-size:17px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.35);transition:transform .15s ease}
+.tutorial-demo-btn:hover{background:#253445;transform:scale(1.08)}
+.tutorial-demo-btn.pulse{animation:tutorialPulse 1.5s ease-in-out 3}
 @media(max-width:480px){.tutorial-modal{padding:16px;max-height:92vh}.tutorial-modal h2{font-size:18px}}
+@media(prefers-reduced-motion:reduce){.tutorial-overlay.open,.tutorial-modal,.tutorial-section,.tutorial-demo-btn.pulse{animation:none!important}.tutorial-track .cart{animation:none!important;left:8px}.tutorial-section{opacity:1}}
 `;
     const style = document.createElement("style");
     style.textContent = css;
@@ -86,6 +101,7 @@
       '<div class="tutorial-modal" role="dialog" aria-modal="true" aria-label="Samouczek">' +
       '<button type="button" class="tutorial-close" aria-label="Zamknij">×</button>' +
       "<h2>🚆 Witaj w Tablicy Odjazdów!</h2>" +
+      '<div class="tutorial-track"><div class="rail"></div><div class="cart">🚆</div></div>' +
       '<div class="tutorial-why"><p>Ten serwis powstał z jednej, prostej potrzeby: <strong>szybkiego dostępu do rozkładów pociągów, którymi jeździsz najczęściej, i sprawdzenia, czy jadą punktualnie</strong> — bez przekopywania się przez oficjalną aplikację za każdym razem, gdy pytanie jest tak proste jak „czy zdążę i o ile jest opóźniony mój pociąg”.</p></div>' +
       '<div class="tutorial-section"><h3>🚉 Tablica odjazdów</h3><p>Wpisz dowolną stację, a zobaczysz żywą tablicę odjazdów z danych PLK — z kolorami opóźnień, kalendarzem i alarmem. Najczęściej sprawdzane stacje przypnij gwiazdką ☆, żeby mieć je zawsze pod ręką jako przyciski nad wyszukiwarką.</p></div>' +
       '<div class="tutorial-section"><h3>🚆 Moje Pociągi V2</h3><p>Zamiast wyszukiwać ten sam pociąg codziennie, dodaj go raz do własnej listy. Zobaczysz na niej status, opóźnienie i ostatnią zaliczoną stację każdego śledzonego kursu.</p></div>' +
@@ -152,10 +168,10 @@
     }
   }
 
-  function injectDemoButton() {
+  function injectDemoButton(pulse) {
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.className = "tutorial-demo-btn";
+    btn.className = "tutorial-demo-btn" + (pulse ? " pulse" : "");
     btn.title = "Pokaż samouczek";
     btn.setAttribute("aria-label", "Pokaż samouczek");
     btn.textContent = "🎓";
@@ -169,18 +185,23 @@
     // "pokazuj go tylko na stronie bez profilu" — sama obecność aktywnego
     // tokenu wyłącza automatyczne pokazywanie, niezależnie od tego, czy
     // pole tutorialSeen jest ustawione.
-    if (hasToken()) return;
+    if (hasToken()) return false;
     try {
-      if (localStorage.getItem(SEEN_KEY)) return;
+      if (localStorage.getItem(SEEN_KEY)) return false;
     } catch (e) {}
     showTutorial();
+    return true;
   }
 
   window.showTutorial = showTutorial;
 
   document.addEventListener("DOMContentLoaded", function () {
     injectStyles();
-    injectDemoButton();
-    maybeAutoShow();
+    const autoShown = maybeAutoShow();
+    // Gdy samouczek się nie otworzył sam (bo już go widziano albo jest
+    // profil), przycisk 🎓 delikatnie pulsuje przez kilka sekund, żeby
+    // ktoś wiedział, że w ogóle tam jest — modal sam w sobie tego robić
+    // nie musi, bo już przyciąga uwagę.
+    injectDemoButton(!autoShown);
   });
 })();
