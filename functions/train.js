@@ -657,12 +657,7 @@ function renderTrain(train,data){
     +'</div>';
   });
 
-  html+='</div></div>';document.getElementById('content').innerHTML=html;window._trainSummary=document.body.innerText.replace(/\n{3,}/g,'\n\n');updateMarkButtons();renderJournalBar();
-  // Przewijamy do "aktualnej" stacji tylko przy pierwszym wczytaniu tego
-  // kursu — auto-odświeżenie co 5 min (ten sam kurs) renderuje stronę od
-  // nowa i bez tego zabierałoby z powrotem na górę w trakcie zaznaczania
-  // wsiadania/wysiadania, nawet gdy użytkownik przewinął niżej.
-  if(!isSameCourse){setTimeout(()=>{const el=document.getElementById('station-'+focusIdx);if(el)el.scrollIntoView({behavior:'smooth',block:'center'})},150)}
+  html+='</div></div>';document.getElementById('content').innerHTML=html;window._trainSummary=document.body.innerText.replace(/\n{3,}/g,'\n\n');updateMarkButtons();renderJournalBar();setTimeout(()=>{const el=document.getElementById('station-'+focusIdx);if(el)el.scrollIntoView({behavior:'smooth',block:'center'})},150);
 }
 function saveLastTrainContext(train,data){
   try{
