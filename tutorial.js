@@ -1,31 +1,61 @@
-// Współdzielony samouczek — ładowany na tablicy głównej, moje-pociagi-v2,
-// /train i /profil/ (tak jak profile-sync.js). Pokazuje się automatycznie
-// TYLKO gdy na tym urządzeniu nie ma jeszcze aktywnego profilu (tokenu) —
-// obecność profilu sama w sobie wyłącza automatyczne pokazywanie. Po
-// zamknięciu zapamiętujemy to lokalnie (żeby nie wracał co wizytę) oraz,
-// jeśli profil jest aktywny, dopisujemy to też do niego (dla porządku —
-// przyda się, gdyby w przyszłości reguła pokazywania zależała też od tego
-// pola, nie tylko od samej obecności tokenu).
+// Współdzielony interaktywny samouczek typu "spotlight" — ładowany na
+// tablicy głównej, moje-pociagi-v2, /train i /profil/ (tak jak
+// profile-sync.js). Prowadzi użytkownika krok po kroku po REALNYCH
+// elementach interfejsu danej strony: reszta ekranu jest przyciemniona,
+// wskazany element podświetlony, obok niego dymek z opisem.
+//
+// Pokazuje się automatycznie TYLKO gdy na tym urządzeniu nie ma jeszcze
+// aktywnego profilu (tokenu) — obecność profilu sama w sobie wyłącza
+// automatyczne pokazywanie. Po zakończeniu LUB pominięciu zapamiętujemy
+// to lokalnie (żeby nie wracał co wizytę) oraz, jeśli profil jest
+// aktywny, dopisujemy to też do niego.
 //
 // Przycisk 🎓 w prawym górnym rogu pozwala wywołać samouczek ręcznie w
-// dowolnym momencie, niezależnie od tego, czy już go widziano — to DEMO,
-// do testowania/prezentacji, oraz zwykła "Pomoc" dla każdego, kto zechce
-// go zobaczyć ponownie.
+// dowolnym momencie (DEMO) — niezależnie od tego, czy już go widziano.
 (function () {
   "use strict";
 
   const SEEN_KEY = "tutorialSeenV1";
 
-  const TIPS = [
-    "Wpisz nazwę stacji i kliknij „Pokaż z API”, żeby zobaczyć żywą tablicę odjazdów z realnymi opóźnieniami.",
-    "Kliknij numer pociągu w tablicy albo na liście, żeby zobaczyć cały jego bieg stacja po stacji.",
-    "Gwiazdka ☆ obok tytułu tablicy przypina stację do ulubionych nad wyszukiwarką — puste miejsca same wypełniają się Twoimi ostatnio przeglądanymi stacjami.",
-    "Przycisk 📅 przy odjeździe dodaje przejazd do kalendarza w telefonie jednym kliknięciem.",
-    "„Moje Pociągi V2” to Twoja stała lista śledzonych kursów — dodajesz je z tablicy odjazdów i widzisz ich status bez ponownego wyszukiwania.",
-    "Przycisk „Alarm: OFF/ON” powiadomi Cię o opóźnieniach i odwołaniach na wybranej stacji.",
-    "W „Mój profil” tworzysz token — 16-znakowy klucz bez hasła i loginu — który synchronizuje ulubione stacje, pociągi i alarmy między telefonem a komputerem.",
-    "Przekreślona, szara godzina nad kolorową w nawiasie oznacza opóźnienie — kolor pokazuje jego skalę: żółty, czerwony, fioletowy.",
-    "„Ostatnio oglądany” pod wyszukiwarką to szybki powrót do biegu pociągu, który ostatnio sprawdzałeś — działa nawet po ponownym otwarciu aplikacji."
+  // Kroki dobrane per strona — spotlight wskazuje tylko elementy, które
+  // faktycznie na niej istnieją. `sel` to selektor CSS, `title`/`text`
+  // treść dymka. Krok jest pomijany w locie, jeśli w danym momencie
+  // element nie istnieje albo jest niewidoczny (np. panel ukryty, bo
+  // profil jest już aktywny).
+  const STEPS_BY_PAGE = [
+    {
+      match: function (p) { return p === "/" || p === "/index.html"; },
+      steps: [
+        { sel: ".search-box", title: "Zacznij tutaj", text: "Wpisz nazwę dowolnej stacji, żeby sprawdzić jej odjazdy." },
+        { sel: ".btn-api", title: "Żywa tablica", text: "Kliknij „Pokaż z API”, żeby zobaczyć odjazdy z realnymi opóźnieniami, nie tylko planem." },
+        { sel: "#stationButtons", title: "Ulubione stacje", text: "Twoje przypięte stacje. Puste miejsca same wypełniają się ostatnio przeglądanymi — gwiazdką ☆ przy tablicy przypinasz własne." },
+        { sel: "#alertButton", title: "Alarm opóźnień", text: "Włącz, żeby dostać powiadomienie o opóźnieniu lub odwołaniu na wybranej stacji." },
+        { sel: '.bottom-nav a[href="/profil/"]', title: "Profil i synchronizacja", text: "Załóż tu token — 16 znaków, bez hasła i loginu — żeby zsynchronizować ulubione stacje, pociągi i alarmy między urządzeniami." }
+      ]
+    },
+    {
+      match: function (p) { return p.indexOf("/moje-pociagi-v2") === 0; },
+      steps: [
+        { sel: "#list", title: "Twoje pociągi", text: "Tu widzisz status każdego śledzonego kursu: opóźnienie i ostatnią zaliczoną stację. Kliknij kartę, żeby zobaczyć cały bieg." },
+        { sel: "#addTrainForm", title: "Dodaj pociąg", text: "Dodaj stację, numer i planową godzinę raz — od teraz zawsze zobaczysz go tu z aktualnym statusem." },
+        { sel: "#refreshBtn", title: "Odśwież ręcznie", text: "Lista i tak sama się aktualizuje po powrocie po dłuższej przerwie, ale możesz też odświeżyć w każdej chwili." },
+        { sel: 'a[href="/profil/"]', title: "Profil i synchronizacja", text: "Token z profilu zabierze tę listę na każde Twoje urządzenie." }
+      ]
+    },
+    {
+      match: function (p) { return p.indexOf("/train") === 0; },
+      steps: [
+        { sel: "#trainInput", title: "Znajdź pociąg", text: "Wpisz numer pociągu, żeby zobaczyć jego pełny bieg — działa najlepiej po kliknięciu numeru z tablicy albo listy." },
+        { sel: "#content", title: "Cały bieg pociągu", text: "Tu, po wczytaniu, zobaczysz trasę stacja po stacji: godziny planowe i rzeczywiste, opóźnienie osobno dla przyjazdu i odjazdu, peron i tor." }
+      ]
+    },
+    {
+      match: function (p) { return p.indexOf("/profil") === 0; },
+      steps: [
+        { sel: "#createPanel", title: "Nowy profil", text: "Jeśli nie masz jeszcze profilu, tu jednym kliknięciem tworzysz nowy token." },
+        { sel: "#tokenInput", title: "Masz już token?", text: "Wklej tu token z innego urządzenia, żeby wczytać swoje ulubione stacje, pociągi i alarmy." }
+      ]
+    }
   ];
 
   function hasToken() {
@@ -36,135 +66,158 @@
     }
   }
 
+  function isVisible(el) {
+    if (!el) return false;
+    const r = el.getBoundingClientRect();
+    if (r.width <= 0 || r.height <= 0) return false;
+    const cs = window.getComputedStyle(el);
+    return cs.visibility !== "hidden" && cs.display !== "none";
+  }
+
+  function getSteps() {
+    const page = STEPS_BY_PAGE.find(function (p) { return p.match(location.pathname); });
+    if (!page) return [];
+    return page.steps
+      .map(function (s) { return { def: s, el: document.querySelector(s.sel) }; })
+      .filter(function (s) { return isVisible(s.el); });
+  }
+
   function injectStyles() {
     const css = `
-@keyframes tutorialFadeIn{from{opacity:0}to{opacity:1}}
-@keyframes tutorialPopIn{from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
-@keyframes tutorialRide{0%{left:-28px}100%{left:100%}}
-@keyframes tutorialSectionIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 @keyframes tutorialPulse{0%,100%{box-shadow:0 6px 18px rgba(0,0,0,.35)}50%{box-shadow:0 6px 18px rgba(0,0,0,.35),0 0 0 9px rgba(11,87,208,.35)}}
-.tutorial-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100000;display:none;align-items:center;justify-content:center;padding:16px}
-.tutorial-overlay.open{display:flex;animation:tutorialFadeIn .2s ease}
-.tutorial-modal{background:#1c2833;border:1px solid #34495e;border-radius:16px;max-width:560px;width:100%;max-height:88vh;overflow-y:auto;padding:22px;color:#fff;font-family:Arial,sans-serif;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.5);text-align:left;animation:tutorialPopIn .3s cubic-bezier(.2,.9,.3,1.2)}
-.tutorial-close{position:absolute;top:10px;right:10px;background:transparent;border:0;color:#b8c3cf;font-size:24px;line-height:1;cursor:pointer;padding:4px 10px;border-radius:8px}
-.tutorial-close:hover{background:#253445;color:#fff}
-.tutorial-modal h2{margin:0 20px 6px 0;font-size:21px}
-.tutorial-modal h3{margin:16px 0 6px;font-size:15px;display:flex;align-items:center;gap:8px}
-.tutorial-modal p{margin:0 0 8px;font-size:13.5px;line-height:1.5;color:#d8e2ee}
-.tutorial-track{position:relative;height:16px;margin:0 0 14px;overflow:hidden}
-.tutorial-track .rail{position:absolute;left:0;right:0;bottom:3px;border-bottom:2px dashed #34495e}
-.tutorial-track .cart{position:absolute;left:-28px;top:-4px;font-size:18px;animation:tutorialRide 3.4s linear infinite}
-.tutorial-why{background:rgba(11,87,208,.14);border:1px solid rgba(11,87,208,.35);border-radius:12px;padding:12px 14px;margin-bottom:14px}
-.tutorial-why p{color:#eaf1fb;margin:0}
-.tutorial-section{border-top:1px solid rgba(255,255,255,.08);padding-top:10px;opacity:0;animation:tutorialSectionIn .35s ease forwards}
-.tutorial-section:nth-of-type(1){animation-delay:.08s}
-.tutorial-section:nth-of-type(2){animation-delay:.15s}
-.tutorial-section:nth-of-type(3){animation-delay:.22s}
-.tutorial-section:nth-of-type(4){animation-delay:.29s}
-.tutorial-section:nth-of-type(5){animation-delay:.36s}
-.tutorial-search{display:flex;align-items:center;gap:8px;background:#0f1720;border:1px solid #34495e;border-radius:10px;padding:8px 12px;margin:8px 0}
-.tutorial-search input{flex:1;background:transparent;border:0;outline:0;color:#fff;font-size:13.5px;min-width:0}
-.tutorial-tips{list-style:none;margin:6px 0 0;padding:0;font-size:13px;color:#d8e2ee}
-.tutorial-tips li{padding:8px 10px;border-radius:8px;margin-bottom:5px;background:#223244;line-height:1.4}
-.tutorial-empty{opacity:.6;font-size:13px;padding:8px 2px}
-.tutorial-footer{margin-top:16px;text-align:center}
-.tutorial-btn{border:0;border-radius:10px;padding:12px 22px;background:#0b57d0;color:#fff;font-weight:800;cursor:pointer;font-size:14.5px}
-.tutorial-btn:hover{background:#084298}
+@keyframes tutorialTooltipIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.spot-highlight{position:fixed;z-index:100002;pointer-events:none;border-radius:10px;box-shadow:0 0 0 9999px rgba(0,0,0,.78),0 0 0 3px #0b57d0,0 0 22px 4px rgba(11,87,208,.55);transition:top .25s ease,left .25s ease,width .25s ease,height .25s ease}
+.spot-tooltip{position:fixed;z-index:100003;background:#1c2833;border:1px solid #34495e;border-radius:14px;padding:16px;width:300px;max-width:calc(100vw - 24px);color:#fff;font-family:Arial,sans-serif;text-align:left;box-shadow:0 16px 40px rgba(0,0,0,.5);animation:tutorialTooltipIn .2s ease}
+.spot-tooltip .spot-progress{font-size:11px;color:#8b95a1;font-weight:800;letter-spacing:.03em;text-transform:uppercase;margin-bottom:6px}
+.spot-tooltip h4{margin:0 0 6px;font-size:16px}
+.spot-tooltip p{margin:0 0 14px;font-size:13.5px;line-height:1.5;color:#d8e2ee}
+.spot-actions{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.spot-skip{background:transparent;border:0;color:#8b95a1;font-size:12.5px;cursor:pointer;padding:6px 4px}
+.spot-skip:hover{color:#fff}
+.spot-nav{display:flex;gap:6px}
+.spot-btn{border:0;border-radius:8px;padding:9px 14px;font-size:13px;font-weight:800;cursor:pointer}
+.spot-btn-back{background:#374151;color:#fff}
+.spot-btn-back:hover{background:#4b5563}
+.spot-btn-back:disabled{opacity:.35;cursor:default}
+.spot-btn-next{background:#0b57d0;color:#fff}
+.spot-btn-next:hover{background:#084298}
 .tutorial-demo-btn{position:fixed;top:10px;right:10px;z-index:9997;width:38px;height:38px;border-radius:50%;border:1px solid #34495e;background:#1c2833;color:#fff;font-size:17px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.35);transition:transform .15s ease}
 .tutorial-demo-btn:hover{background:#253445;transform:scale(1.08)}
 .tutorial-demo-btn.pulse{animation:tutorialPulse 1.5s ease-in-out 3}
-@media(max-width:480px){.tutorial-modal{padding:16px;max-height:92vh}.tutorial-modal h2{font-size:18px}}
-@media(prefers-reduced-motion:reduce){.tutorial-overlay.open,.tutorial-modal,.tutorial-section,.tutorial-demo-btn.pulse{animation:none!important}.tutorial-track .cart{animation:none!important;left:8px}.tutorial-section{opacity:1}}
+@media(prefers-reduced-motion:reduce){.spot-highlight{transition:none}.spot-tooltip{animation:none}.tutorial-demo-btn.pulse{animation:none}}
 `;
     const style = document.createElement("style");
     style.textContent = css;
     document.head.appendChild(style);
   }
 
-  function tipsHtml(list) {
-    if (!list.length) {
-      return '<div class="tutorial-empty">Brak podpowiedzi pasujących do wyszukiwania.</div>';
-    }
-    return (
-      '<ul class="tutorial-tips">' +
-      list.map(function (t) { return "<li>" + t + "</li>"; }).join("") +
-      "</ul>"
-    );
-  }
+  let highlightEl = null;
+  let tooltipEl = null;
+  let currentSteps = [];
+  let currentIndex = 0;
+  let active = false;
 
-  let overlayEl = null;
+  function ensureTourUI() {
+    if (highlightEl) return;
+    highlightEl = document.createElement("div");
+    highlightEl.className = "spot-highlight";
+    document.body.appendChild(highlightEl);
 
-  function buildModal() {
-    const overlay = document.createElement("div");
-    overlay.className = "tutorial-overlay";
-    overlay.innerHTML =
-      '<div class="tutorial-modal" role="dialog" aria-modal="true" aria-label="Samouczek">' +
-      '<button type="button" class="tutorial-close" aria-label="Zamknij">×</button>' +
-      "<h2>🚆 Witaj w Tablicy Odjazdów!</h2>" +
-      '<div class="tutorial-track"><div class="rail"></div><div class="cart">🚆</div></div>' +
-      '<div class="tutorial-why"><p>Ten serwis powstał z jednej, prostej potrzeby: <strong>szybkiego dostępu do rozkładów pociągów, którymi jeździsz najczęściej, i sprawdzenia, czy jadą punktualnie</strong> — bez przekopywania się przez oficjalną aplikację za każdym razem, gdy pytanie jest tak proste jak „czy zdążę i o ile jest opóźniony mój pociąg”.</p></div>' +
-      '<div class="tutorial-section"><h3>🚉 Tablica odjazdów</h3><p>Wpisz dowolną stację, a zobaczysz żywą tablicę odjazdów z danych PLK — z kolorami opóźnień, kalendarzem i alarmem. Najczęściej sprawdzane stacje przypnij gwiazdką ☆, żeby mieć je zawsze pod ręką jako przyciski nad wyszukiwarką.</p></div>' +
-      '<div class="tutorial-section"><h3>🚆 Moje Pociągi V2</h3><p>Zamiast wyszukiwać ten sam pociąg codziennie, dodaj go raz do własnej listy. Zobaczysz na niej status, opóźnienie i ostatnią zaliczoną stację każdego śledzonego kursu.</p></div>' +
-      '<div class="tutorial-section"><h3>🛤️ Bieg pociągu</h3><p>Kliknij numer dowolnego pociągu, żeby zobaczyć całą jego trasę: stacja po stacji, z godzinami planowymi i rzeczywistymi, opóźnieniem na każdym przystanku oraz peronem i torem.</p></div>' +
-      '<div class="tutorial-section"><h3>👤 Profil i synchronizacja</h3><p>Załóż token w „Mój profil”, żeby te same ulubione stacje, pociągi i alarmy widzieć zarówno na telefonie, jak i na komputerze — bez zakładania konta, samym 16-znakowym kluczem.</p></div>' +
-      '<div class="tutorial-section"><h3>🔍 Podpowiedzi</h3>' +
-      '<div class="tutorial-search"><span>🔍</span><input type="text" id="tutorialSearch" placeholder="Czego szukasz? np. kalendarz, alarm, token..." autocomplete="off"></div>' +
-      '<div id="tutorialTipsList"></div>' +
-      "</div>" +
-      '<div class="tutorial-footer"><button type="button" class="tutorial-btn" id="tutorialDoneBtn">Rozumiem, zaczynajmy</button></div>' +
-      "</div>";
-    document.body.appendChild(overlay);
+    tooltipEl = document.createElement("div");
+    tooltipEl.className = "spot-tooltip";
+    tooltipEl.innerHTML =
+      '<div class="spot-progress" id="spotProgress"></div>' +
+      "<h4 id=\"spotTitle\"></h4>" +
+      "<p id=\"spotText\"></p>" +
+      '<div class="spot-actions">' +
+      '<button type="button" class="spot-skip" id="spotSkip">Pomiń</button>' +
+      '<div class="spot-nav">' +
+      '<button type="button" class="spot-btn spot-btn-back" id="spotBack">Wstecz</button>' +
+      '<button type="button" class="spot-btn spot-btn-next" id="spotNext">Dalej</button>' +
+      "</div></div>";
+    document.body.appendChild(tooltipEl);
 
-    const tipsList = overlay.querySelector("#tutorialTipsList");
-    const searchInput = overlay.querySelector("#tutorialSearch");
-
-    function refreshTips() {
-      const q = (searchInput.value || "").trim().toLowerCase();
-      const filtered = q
-        ? TIPS.filter(function (t) { return t.toLowerCase().indexOf(q) !== -1; })
-        : TIPS;
-      tipsList.innerHTML = tipsHtml(filtered);
-    }
-    searchInput.addEventListener("input", refreshTips);
-    refreshTips();
-
-    overlay.querySelector(".tutorial-close").addEventListener("click", function () {
-      hideTutorial(true);
-    });
-    overlay.querySelector("#tutorialDoneBtn").addEventListener("click", function () {
-      hideTutorial(true);
-    });
-    overlay.addEventListener("click", function (e) {
-      if (e.target === overlay) hideTutorial(true);
+    tooltipEl.querySelector("#spotSkip").addEventListener("click", function () { endTour(); });
+    tooltipEl.querySelector("#spotBack").addEventListener("click", function () { goToStep(currentIndex - 1); });
+    tooltipEl.querySelector("#spotNext").addEventListener("click", function () {
+      if (currentIndex >= currentSteps.length - 1) endTour();
+      else goToStep(currentIndex + 1);
     });
     document.addEventListener("keydown", function (e) {
-      if (e.key === "Escape" && overlay.classList.contains("open")) hideTutorial(true);
+      if (!active) return;
+      if (e.key === "Escape") endTour();
+      else if (e.key === "ArrowRight") tooltipEl.querySelector("#spotNext").click();
+      else if (e.key === "ArrowLeft" && currentIndex > 0) goToStep(currentIndex - 1);
     });
-
-    return overlay;
+    window.addEventListener("resize", function () { if (active) positionAll(); });
+    window.addEventListener("scroll", function () { if (active) positionAll(); }, true);
   }
 
-  function ensureModal() {
-    if (!overlayEl) overlayEl = buildModal();
-    return overlayEl;
+  function positionAll() {
+    const step = currentSteps[currentIndex];
+    if (!step || !step.el) return;
+    const rect = step.el.getBoundingClientRect();
+    const pad = 8;
+    highlightEl.style.top = (rect.top - pad) + "px";
+    highlightEl.style.left = (rect.left - pad) + "px";
+    highlightEl.style.width = (rect.width + pad * 2) + "px";
+    highlightEl.style.height = (rect.height + pad * 2) + "px";
+
+    const tw = tooltipEl.offsetWidth || 300;
+    const th = tooltipEl.offsetHeight || 140;
+    const margin = 14;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    let top = spaceBelow >= th + margin || spaceBelow >= spaceAbove
+      ? rect.bottom + margin
+      : rect.top - th - margin;
+    let left = rect.left + rect.width / 2 - tw / 2;
+    left = Math.max(10, Math.min(left, window.innerWidth - tw - 10));
+    top = Math.max(10, Math.min(top, window.innerHeight - th - 10));
+    tooltipEl.style.top = top + "px";
+    tooltipEl.style.left = left + "px";
   }
 
-  function showTutorial() {
-    ensureModal().classList.add("open");
+  function goToStep(index) {
+    if (index < 0 || index >= currentSteps.length) return;
+    currentIndex = index;
+    const step = currentSteps[index];
+    step.el.scrollIntoView({ behavior: "smooth", block: "center" });
+
+    tooltipEl.querySelector("#spotProgress").textContent = "Krok " + (index + 1) + " z " + currentSteps.length;
+    tooltipEl.querySelector("#spotTitle").textContent = step.def.title;
+    tooltipEl.querySelector("#spotText").textContent = step.def.text;
+    tooltipEl.querySelector("#spotBack").disabled = index === 0;
+    tooltipEl.querySelector("#spotNext").textContent = index === currentSteps.length - 1 ? "Zakończ" : "Dalej";
+
+    // Przybliżona pozycja od razu, dokładna po dojechaniu przewijania na miejsce.
+    positionAll();
+    setTimeout(positionAll, 260);
   }
 
-  function hideTutorial(markSeen) {
-    if (overlayEl) overlayEl.classList.remove("open");
-    if (markSeen) {
-      try {
-        localStorage.setItem(SEEN_KEY, "1");
-      } catch (e) {}
-      if (hasToken()) {
-        ProfileSync.push({
-          tutorialSeen: true,
-          tutorialSeenAt: new Date().toISOString()
-        });
-      }
+  function startTour() {
+    const steps = getSteps();
+    if (!steps.length) return;
+    ensureTourUI();
+    currentSteps = steps;
+    active = true;
+    highlightEl.style.display = "block";
+    tooltipEl.style.display = "block";
+    goToStep(0);
+  }
+
+  function endTour() {
+    active = false;
+    if (highlightEl) highlightEl.style.display = "none";
+    if (tooltipEl) tooltipEl.style.display = "none";
+    try {
+      localStorage.setItem(SEEN_KEY, "1");
+    } catch (e) {}
+    if (hasToken()) {
+      ProfileSync.push({
+        tutorialSeen: true,
+        tutorialSeenAt: new Date().toISOString()
+      });
     }
   }
 
@@ -175,9 +228,7 @@
     btn.title = "Pokaż samouczek";
     btn.setAttribute("aria-label", "Pokaż samouczek");
     btn.textContent = "🎓";
-    btn.addEventListener("click", function () {
-      showTutorial();
-    });
+    btn.addEventListener("click", function () { startTour(); });
     document.body.appendChild(btn);
   }
 
@@ -189,19 +240,15 @@
     try {
       if (localStorage.getItem(SEEN_KEY)) return false;
     } catch (e) {}
-    showTutorial();
+    startTour();
     return true;
   }
 
-  window.showTutorial = showTutorial;
+  window.showTutorial = startTour;
 
   document.addEventListener("DOMContentLoaded", function () {
     injectStyles();
     const autoShown = maybeAutoShow();
-    // Gdy samouczek się nie otworzył sam (bo już go widziano albo jest
-    // profil), przycisk 🎓 delikatnie pulsuje przez kilka sekund, żeby
-    // ktoś wiedział, że w ogóle tam jest — modal sam w sobie tego robić
-    // nie musi, bo już przyciąga uwagę.
     injectDemoButton(!autoShown);
   });
 })();
