@@ -375,14 +375,26 @@ function findExistingEntry(date,scheduleId,orderId,boardStation,alightStation){
   const key=journeyKey(date,scheduleId,orderId,boardStation,alightStation);
   return getJournalEntries().find(e=>e._key===key)||null;
 }
+// Wcześniejsze wersje zapisywały płaskie board/alight (jeden odcinek) —
+// czytamy taki stary zapis jako sam odcinek 1, żeby nic nie zniknęło.
+function normalizeTrip(trip){
+  if(!trip)return null;
+  if(trip.leg1)return trip;
+  if(trip.board&&trip.alight)return Object.assign({},trip,{leg1:{board:trip.board,alight:trip.alight},leg2:null});
+  return trip;
+}
 function matchTypicalTrip(stations){
   const trips=getTypicalTrips();
   for(const id of['domPraca','pracaDom']){
-    const trip=trips[id];
-    if(!trip||!trip.board||!trip.alight)continue;
-    const bi=stations.findIndex(s=>normStation(s.stationName)===normStation(trip.board));
-    const ai=stations.findIndex(s=>normStation(s.stationName)===normStation(trip.alight));
-    if(bi>=0&&ai>bi)return{id,trip,boardIdx:bi,alightIdx:ai};
+    const trip=normalizeTrip(trips[id]);
+    if(!trip)continue;
+    for(const legNumber of[1,2]){
+      const leg=legNumber===1?trip.leg1:trip.leg2;
+      if(!leg||!leg.board||!leg.alight)continue;
+      const bi=stations.findIndex(s=>normStation(s.stationName)===normStation(leg.board));
+      const ai=stations.findIndex(s=>normStation(s.stationName)===normStation(leg.alight));
+      if(bi>=0&&ai>bi)return{id,trip,leg,legNumber,boardIdx:bi,alightIdx:ai};
+    }
   }
   return null;
 }
@@ -409,6 +421,7 @@ function buildJournalEntry(data,stations,boardIdx,alightIdx,tripMeta){
     actualDurationMin:durationMinJ(actualDep,actualArr),
     tripType:tripMeta?tripMeta.id:'inna',
     tripLabel:tripMeta?tripMeta.trip.label:'',
+    legNumber:tripMeta?tripMeta.legNumber:null,
     distanceKm:tripMeta&&tripMeta.trip.distanceKm?Number(tripMeta.trip.distanceKm):null,
     scheduleId:data.scheduleId,
     orderId:data.orderId,
@@ -431,11 +444,12 @@ function renderJournalBar(){
   if(tripMatch){
     const bS=stations[tripMatch.boardIdx].stationName,aS=stations[tripMatch.alightIdx].stationName;
     const existing=findExistingEntry(data.operatingDate,data.scheduleId,data.orderId,bS,aS);
+    const legTxt=tripMatch.trip.leg2?(' · odcinek '+tripMatch.legNumber+'/2'):'';
     if(existing){
-      html='<div class="journal-note ok">✓ Zapisano w dzienniczku jako „'+esc(tripMatch.trip.label||tripMatch.id)+'”. <button type="button" class="link-btn" onclick="removeJournalEntry(\''+existing._key+'\')">Usuń wpis</button></div>';
+      html='<div class="journal-note ok">✓ Zapisano w dzienniczku jako „'+esc(tripMatch.trip.label||tripMatch.id)+legTxt+'”. <button type="button" class="link-btn" onclick="removeJournalEntry(\''+existing._key+'\')">Usuń wpis</button></div>';
     }else{
       const canSave=canSaveJourney(stations,tripMatch.alightIdx);
-      html='<div class="journal-note">Ten kurs pasuje do trasy „'+esc(tripMatch.trip.label||tripMatch.id)+'” ('+esc(bS)+' → '+esc(aS)+'). '+(canSave?'<button type="button" class="btn small" onclick="saveTypicalJourney()">📓 Dodaj do dzienniczka</button>':'<span class="hint">Dostępne po dotarciu do stacji wysiadania.</span>')+'</div>';
+      html='<div class="journal-note">Ten kurs pasuje do trasy „'+esc(tripMatch.trip.label||tripMatch.id)+legTxt+'” ('+esc(bS)+' → '+esc(aS)+'). '+(canSave?'<button type="button" class="btn small" onclick="saveTypicalJourney()">📓 Dodaj do dzienniczka</button>':'<span class="hint">Dostępne po dotarciu do stacji wysiadania.</span>')+'</div>';
     }
   }else if(markBoardIdx!=null&&markAlightIdx!=null&&markAlightIdx>markBoardIdx){
     const bS=stations[markBoardIdx].stationName,aS=stations[markAlightIdx].stationName;

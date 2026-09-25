@@ -21,6 +21,9 @@ h2{margin:0 0 10px;font-size:17px}
 .trip-card .row2{display:flex;gap:7px}
 .trip-card .row2 input{flex:1}
 .trip-card label{font-size:11px;color:var(--muted);display:block;margin:0 0 2px}
+.leg-label{font-size:12px;font-weight:800;color:var(--cyan);margin:10px 0 6px;padding-top:8px;border-top:1px solid var(--line)}
+.leg-label:first-of-type{margin-top:0;padding-top:0;border-top:0}
+.leg-optional{font-weight:400;color:var(--muted)}
 .btn{border:0;border-radius:9px;padding:9px 14px;background:var(--blue);color:#fff;font-weight:700;cursor:pointer;font-size:13.5px;width:100%}
 .btn:hover{background:#084298}
 .status{text-align:center;color:var(--muted);min-height:20px;margin:8px 0;font-size:13px}
@@ -57,29 +60,41 @@ h2{margin:0 0 10px;font-size:17px}
     <div class="trip-panel">
       <div class="trip-card">
         <h3>🏠→💼 Dom → Praca</h3>
+        <div class="leg-label">Odcinek 1<span class="leg-optional"> (przed przesiadką, jeśli jest)</span></div>
         <label>Stacja wsiadania</label>
-        <input type="text" id="trip_domPraca_board" placeholder="np. Tarnowskie Góry">
+        <input type="text" id="trip_domPraca_leg1board" placeholder="np. Tarnowskie Góry">
         <label>Stacja wysiadania</label>
-        <input type="text" id="trip_domPraca_alight" placeholder="np. Katowice">
+        <input type="text" id="trip_domPraca_leg1alight" placeholder="np. Katowice">
+        <div class="leg-label">Odcinek 2<span class="leg-optional"> (po przesiadce — zostaw puste, jeśli jedziesz bez przesiadki)</span></div>
+        <label>Stacja wsiadania</label>
+        <input type="text" id="trip_domPraca_leg2board" placeholder="np. Katowice">
+        <label>Stacja wysiadania</label>
+        <input type="text" id="trip_domPraca_leg2alight" placeholder="np. Gliwice">
         <div class="row2">
           <div><label>Odjazd od</label><input type="time" id="trip_domPraca_from"></div>
           <div><label>Odjazd do</label><input type="time" id="trip_domPraca_to"></div>
         </div>
-        <label>Kilometraż (opcjonalnie)</label>
+        <label>Kilometraż całej trasy (opcjonalnie)</label>
         <input type="number" id="trip_domPraca_km" placeholder="np. 32" min="0">
         <button type="button" class="btn" onclick="saveTrip('domPraca')">Zapisz trasę</button>
       </div>
       <div class="trip-card">
         <h3>💼→🏠 Praca → Dom</h3>
+        <div class="leg-label">Odcinek 1<span class="leg-optional"> (przed przesiadką, jeśli jest)</span></div>
         <label>Stacja wsiadania</label>
-        <input type="text" id="trip_pracaDom_board" placeholder="np. Katowice">
+        <input type="text" id="trip_pracaDom_leg1board" placeholder="np. Katowice">
         <label>Stacja wysiadania</label>
-        <input type="text" id="trip_pracaDom_alight" placeholder="np. Tarnowskie Góry">
+        <input type="text" id="trip_pracaDom_leg1alight" placeholder="np. Tarnowskie Góry">
+        <div class="leg-label">Odcinek 2<span class="leg-optional"> (po przesiadce — zostaw puste, jeśli jedziesz bez przesiadki)</span></div>
+        <label>Stacja wsiadania</label>
+        <input type="text" id="trip_pracaDom_leg2board" placeholder="np. Gliwice">
+        <label>Stacja wysiadania</label>
+        <input type="text" id="trip_pracaDom_leg2alight" placeholder="np. Katowice">
         <div class="row2">
           <div><label>Odjazd od</label><input type="time" id="trip_pracaDom_from"></div>
           <div><label>Odjazd do</label><input type="time" id="trip_pracaDom_to"></div>
         </div>
-        <label>Kilometraż (opcjonalnie)</label>
+        <label>Kilometraż całej trasy (opcjonalnie)</label>
         <input type="number" id="trip_pracaDom_km" placeholder="np. 32" min="0">
         <button type="button" class="btn" onclick="saveTrip('pracaDom')">Zapisz trasę</button>
       </div>
@@ -109,22 +124,37 @@ function delayClass(d){d=Number(d||0);return d>=20?'delay-high':d>10?'delay-mid'
 function fmtDelay(d){d=Number(d||0);return d>0?('+'+d):'0'}
 function fmtDur(min){if(min==null)return '—';const h=Math.floor(min/60),m=min%60;return h>0?(h+'h '+m+'min'):(m+' min')}
 
+// Trasa typowa ma dwa (opcjonalne) odcinki — dla dojazdu z przesiadką.
+// Wcześniejsze wersje zapisywały płaskie board/alight (jeden odcinek) —
+// normalizeTrip czyta taki stary zapis jako sam odcinek 1, żeby nic nie
+// zniknęło po tej zmianie.
+function normalizeTrip(trip){
+  if(!trip)return null;
+  if(trip.leg1)return trip;
+  if(trip.board&&trip.alight)return Object.assign({},trip,{leg1:{board:trip.board,alight:trip.alight},leg2:null});
+  return trip;
+}
 function tripFields(id,label){
   const g=k=>document.getElementById('trip_'+id+'_'+k);
+  const leg1={board:g('leg1board').value.trim(),alight:g('leg1alight').value.trim()};
+  const leg2b=g('leg2board').value.trim(),leg2a=g('leg2alight').value.trim();
   return{
     label,
-    board:g('board').value.trim(),
-    alight:g('alight').value.trim(),
+    leg1:(leg1.board&&leg1.alight)?leg1:null,
+    leg2:(leg2b&&leg2a)?{board:leg2b,alight:leg2a}:null,
     timeFrom:g('from').value||'',
     timeTo:g('to').value||'',
     distanceKm:g('km').value?Number(g('km').value):null
   };
 }
-function fillTripForm(id,trip){
+function fillTripForm(id,tripRaw){
+  const trip=normalizeTrip(tripRaw);
   const g=k=>document.getElementById('trip_'+id+'_'+k);
   if(!trip)return;
-  g('board').value=trip.board||'';
-  g('alight').value=trip.alight||'';
+  g('leg1board').value=trip.leg1?trip.leg1.board||'':'';
+  g('leg1alight').value=trip.leg1?trip.leg1.alight||'':'';
+  g('leg2board').value=trip.leg2?trip.leg2.board||'':'';
+  g('leg2alight').value=trip.leg2?trip.leg2.alight||'':'';
   g('from').value=trip.timeFrom||'';
   g('to').value=trip.timeTo||'';
   g('km').value=trip.distanceKm!=null?trip.distanceKm:'';
@@ -138,11 +168,11 @@ function saveTrip(id){
   const label=id==='domPraca'?'Dom → Praca':'Praca → Dom';
   const f=tripFields(id,label);
   const st=document.getElementById('tripStatus');
-  if(!f.board||!f.alight){st.textContent='Podaj obie stacje.';st.className='status';return}
+  if(!f.leg1){st.textContent='Podaj przynajmniej stacje odcinka 1 (wsiadanie i wysiadanie).';st.className='status';return}
   const trips=getTypicalTrips();
   trips[id]=f;
   saveTypicalTrips(trips);
-  st.textContent='Zapisano trasę „'+label+'”.';
+  st.textContent='Zapisano trasę „'+label+'”'+(f.leg2?' (z przesiadką).':'.');
   st.className='status ok';
 }
 
@@ -160,7 +190,7 @@ function entryCardHtml(e){
   const arrReal=e.actualArrival&&e.actualArrival!==e.plannedArrival;
   const depHtml=depReal?('<span class="entry-strike">'+escapeHtml(e.plannedDeparture)+'</span>('+escapeHtml(e.actualDeparture)+')'):escapeHtml(e.plannedDeparture||'—');
   const arrHtml=arrReal?('<span class="entry-strike">'+escapeHtml(e.plannedArrival)+'</span>('+escapeHtml(e.actualArrival)+')'):escapeHtml(e.plannedArrival||'—');
-  const tripBadge=e.tripLabel?('<span class="entry-badge">'+escapeHtml(e.tripLabel)+'</span>'):'';
+  const tripBadge=e.tripLabel?('<span class="entry-badge">'+escapeHtml(e.tripLabel)+(e.legNumber?(' · odc. '+e.legNumber+'/2'):'')+'</span>'):'';
   const km=e.distanceKm!=null?(e.distanceKm+' km'):'';
   return `<div class="entry">
     <button type="button" class="entry-del" title="Usuń wpis" onclick="deleteEntry('${e._key}')">✕</button>
