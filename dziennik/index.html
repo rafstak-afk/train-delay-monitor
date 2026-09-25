@@ -46,6 +46,25 @@ h2{margin:0 0 10px;font-size:17px}
 .entry-badge{background:rgba(11,87,208,.18);color:#8fb4f0;border-radius:999px;padding:2px 9px;font-size:11px;font-weight:700}
 .entry-del{position:absolute;top:10px;right:10px;background:transparent;border:0;color:#8b95a1;cursor:pointer;font-size:15px;padding:2px 6px}
 .entry-del:hover{color:var(--red)}
+.entries-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:4px}
+.entries-head h2{margin:0}
+.entries-actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn-sm{border:0;border-radius:8px;padding:8px 12px;background:var(--blue);color:#fff;font-weight:700;cursor:pointer;font-size:12.5px;width:auto}
+.btn-sm:hover{background:#084298}
+.btn-sm.secondary{background:#4b5563}
+.btn-sm.secondary:hover{background:#5b6472}
+.btn-sm.danger{background:var(--red)}
+.entry.editing{padding-top:14px}
+.edit-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;flex-wrap:wrap}
+.edit-row label{font-size:11px;color:var(--muted);min-width:64px}
+.edit-row input{flex:1;min-width:90px;padding:6px 8px;border-radius:7px;border:1px solid var(--line);background:#1c2833;color:#fff;font-size:13px}
+.edit-row input.narrow{flex:0 0 70px;min-width:70px}
+.confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100000;display:none;align-items:center;justify-content:center;padding:16px}
+.confirm-overlay.open{display:flex}
+.confirm-box{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;max-width:360px;width:100%;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.5)}
+.confirm-msg{font-size:14px;line-height:1.5;margin-bottom:16px}
+.confirm-actions{display:flex;gap:10px}
+.confirm-actions button{flex:1}
 </style>
 </head>
 <body>
@@ -102,13 +121,30 @@ h2{margin:0 0 10px;font-size:17px}
   </div>
 
   <div class="panel">
-    <h2>Wpisy (<span id="entryCount">0</span>)</h2>
+    <div class="entries-head">
+      <h2>Wpisy (<span id="entryCount">0</span>)</h2>
+      <div class="entries-actions" id="entriesActions">
+        <button type="button" class="btn-sm" id="exportBtn" onclick="exportToXlsx()">⬇️ XLSX</button>
+        <button type="button" class="btn-sm" id="unlockBtn" onclick="unlockEdit()">🔓 Odblokuj</button>
+      </div>
+    </div>
     <div id="entryList"></div>
+  </div>
+</div>
+
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box">
+    <div class="confirm-msg" id="confirmMsg"></div>
+    <div class="confirm-actions">
+      <button type="button" class="btn-sm secondary" id="confirmCancelBtn">Rezygnuj</button>
+      <button type="button" class="btn-sm" id="confirmOkBtn">Potwierdź</button>
+    </div>
   </div>
 </div>
 
 <script src="/profile-sync.js"></script>
 <script src="/tutorial.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 const JOURNAL_KEY='dziennikPodrozy';
 const TYPICAL_TRIPS_KEY='dziennikTrasyTypowe';
@@ -176,13 +212,6 @@ function saveTrip(id){
   st.className='status ok';
 }
 
-function withCumulative(entries){
-  const sorted=[...entries].sort((a,b)=>(a.date+String(a.plannedDeparture||'')).localeCompare(b.date+String(b.plannedDeparture||'')));
-  let sum=0;const byKey={};
-  sorted.forEach(e=>{sum+=Number(e.delayMinutes||0);byKey[e._key]=sum});
-  return entries.map(e=>Object.assign({},e,{cumulativeDelay:byKey[e._key]}));
-}
-
 function entryCardHtml(e){
   const dateFmt=(()=>{const p=String(e.date||'').split('-');return p.length===3?p[2]+'.'+p[1]+'.'+p[0]:e.date})();
   const trainLabel=[e.category,e.trainNumber].filter(Boolean).join(' ')||'—';
@@ -203,25 +232,142 @@ function entryCardHtml(e){
     <div class="entry-bottom">
       <span class="entry-delay ${delayClass(e.delayMinutes)}">Opóźnienie: ${fmtDelay(e.delayMinutes)} min</span>
       <span>Czas: ${fmtDur(e.plannedDurationMin)} → ${fmtDur(e.actualDurationMin)}</span>
-      <span>Suma narastająco: ${fmtDelay(e.cumulativeDelay)} min</span>
       ${tripBadge}
       ${km?('<span>'+escapeHtml(km)+'</span>'):''}
     </div>
   </div>`;
 }
 
+function entryEditHtml(e){
+  const g=(cls,val,type)=>`<input type="${type||'text'}" class="${cls}" value="${escapeHtml(val==null?'':val)}">`;
+  return `<div class="entry editing" data-key="${escapeHtml(e._key)}">
+    <button type="button" class="entry-del" title="Usuń wpis" onclick="deleteEntry('${e._key}')">✕</button>
+    <div class="edit-row"><label>Data</label>${g('ef-date',e.date,'date')}</div>
+    <div class="edit-row"><label>Pociąg</label>${g('ef-train',e.trainNumber)}<input type="text" class="ef-category narrow" value="${escapeHtml(e.category||'')}" placeholder="kat."></div>
+    <div class="edit-row"><label>Skąd</label>${g('ef-board',e.boardStation)}</div>
+    <div class="edit-row"><label>Dokąd</label>${g('ef-alight',e.alightStation)}</div>
+    <div class="edit-row"><label>Odjazd pl.</label>${g('ef-depP',e.plannedDeparture,'time')}<label>rz.</label>${g('ef-depA',e.actualDeparture,'time')}</div>
+    <div class="edit-row"><label>Przyj. pl.</label>${g('ef-arrP',e.plannedArrival,'time')}<label>rz.</label>${g('ef-arrA',e.actualArrival,'time')}</div>
+    <div class="edit-row"><label>Opóźn. (min)</label><input type="number" class="ef-delay narrow" value="${e.delayMinutes||0}"></div>
+    <div class="edit-row"><label>Km</label><input type="number" class="ef-km narrow" value="${e.distanceKm!=null?e.distanceKm:''}"></div>
+  </div>`;
+}
+
+let editMode=false;
+let editBuffer=null;
+
 function renderEntries(){
   const raw=getJournalEntries();
   document.getElementById('entryCount').textContent=raw.length;
   const list=document.getElementById('entryList');
-  if(!raw.length){list.innerHTML='<div class="empty">Brak wpisów. Otwórz bieg pociągu (z tablicy albo Moich Pociągów V2), zaznacz stację wsiadania 🚏 i wysiadania 🏁, i zapisz przejazd.</div>';return}
-  const withSums=withCumulative(raw);
-  const byKey={};withSums.forEach(e=>byKey[e._key]=e);
-  const displayOrder=[...raw].sort((a,b)=>(b.date+String(b.plannedDeparture||'')).localeCompare(a.date+String(a.plannedDeparture||'')));
-  list.innerHTML=displayOrder.map(e=>entryCardHtml(byKey[e._key]||e)).join('');
+  const source=editMode?editBuffer:raw;
+  if(!source.length){list.innerHTML='<div class="empty">Brak wpisów. Otwórz bieg pociągu (z tablicy albo Moich Pociągów V2), zaznacz stację wsiadania 🚏 i wysiadania 🏁, i zapisz przejazd.</div>';return}
+  const displayOrder=[...source].sort((a,b)=>(b.date+String(b.plannedDeparture||'')).localeCompare(a.date+String(a.plannedDeparture||'')));
+  list.innerHTML=displayOrder.map(e=>editMode?entryEditHtml(e):entryCardHtml(e)).join('');
+}
+
+// === Tryb edycji ===
+function unlockEdit(){
+  editMode=true;
+  editBuffer=JSON.parse(JSON.stringify(getJournalEntries()));
+  document.getElementById('entriesActions').innerHTML=
+    '<button type="button" class="btn-sm" id="exportBtn" onclick="exportToXlsx()">⬇️ XLSX</button>'+
+    '<button type="button" class="btn-sm secondary" onclick="askCancelEdit()">✕ Rezygnuj z zapisu</button>'+
+    '<button type="button" class="btn-sm" onclick="askSaveEdit()">💾 Zapisz</button>';
+  renderEntries();
+}
+function readEditedEntries(){
+  const cards=document.querySelectorAll('.entry.editing');
+  const byKey={};editBuffer.forEach(e=>byKey[e._key]=e);
+  cards.forEach(card=>{
+    const key=card.dataset.key;
+    const e=byKey[key];
+    if(!e)return;
+    const v=cls=>card.querySelector('.'+cls).value;
+    e.date=v('ef-date')||e.date;
+    e.trainNumber=v('ef-train');
+    e.category=v('ef-category');
+    e.boardStation=v('ef-board');
+    e.alightStation=v('ef-alight');
+    e.plannedDeparture=v('ef-depP');
+    e.actualDeparture=v('ef-depA')||v('ef-depP');
+    e.plannedArrival=v('ef-arrP');
+    e.actualArrival=v('ef-arrA')||v('ef-arrP');
+    e.delayMinutes=Number(v('ef-delay'))||0;
+    e.distanceKm=v('ef-km')?Number(v('ef-km')):null;
+    e.plannedDurationMin=durationMinJ(e.plannedDeparture,e.plannedArrival);
+    e.actualDurationMin=durationMinJ(e.actualDeparture,e.actualArrival);
+  });
+  return editBuffer;
+}
+function toMinutesJ(t){const m=String(t||'').match(/(\d{1,2}):(\d{2})/);return m?Number(m[1])*60+Number(m[2]):null}
+function durationMinJ(fromT,toT){const a=toMinutesJ(fromT),b=toMinutesJ(toT);if(a==null||b==null)return null;let d=b-a;if(d<0)d+=1440;return d}
+
+function exitEditMode(){
+  editMode=false;editBuffer=null;
+  document.getElementById('entriesActions').innerHTML=
+    '<button type="button" class="btn-sm" id="exportBtn" onclick="exportToXlsx()">⬇️ XLSX</button>'+
+    '<button type="button" class="btn-sm" id="unlockBtn" onclick="unlockEdit()">🔓 Odblokuj</button>';
+  renderEntries();
+}
+function askSaveEdit(){
+  readEditedEntries();
+  showConfirm('Zapisać zmiany we wpisach dzienniczka?',()=>{
+    saveJournalEntries(editBuffer);
+    exitEditMode();
+  });
+}
+function askCancelEdit(){
+  showConfirm('Zrezygnować z niezapisanych zmian?',()=>{
+    exitEditMode();
+  });
+}
+
+// === Modal potwierdzenia (wspólny dla Zapisz i Rezygnuj) ===
+function showConfirm(message,onConfirm){
+  const overlay=document.getElementById('confirmOverlay');
+  document.getElementById('confirmMsg').textContent=message;
+  overlay.classList.add('open');
+  const okBtn=document.getElementById('confirmOkBtn');
+  const cancelBtn=document.getElementById('confirmCancelBtn');
+  function cleanup(){overlay.classList.remove('open');okBtn.onclick=null;cancelBtn.onclick=null}
+  okBtn.onclick=()=>{cleanup();onConfirm()};
+  cancelBtn.onclick=()=>{cleanup()};
+}
+
+// === Eksport do XLSX ===
+function exportToXlsx(){
+  const raw=[...getJournalEntries()].sort((a,b)=>(a.date+String(a.plannedDeparture||'')).localeCompare(b.date+String(b.plannedDeparture||'')));
+  if(!raw.length){showConfirm('Dzienniczek jest pusty — nie ma czego eksportować.',()=>{});return}
+  const rows=raw.map(e=>({
+    'Data':e.date||'',
+    'Pociąg':e.trainNumber||'',
+    'Kategoria':e.category||'',
+    'Stacja wsiadania':e.boardStation||'',
+    'Stacja wysiadania':e.alightStation||'',
+    'Odjazd planowy':e.plannedDeparture||'',
+    'Odjazd rzeczywisty':e.actualDeparture||'',
+    'Przyjazd planowy':e.plannedArrival||'',
+    'Przyjazd rzeczywisty':e.actualArrival||'',
+    'Opóźnienie (min)':e.delayMinutes||0,
+    'Czas planowy (min)':e.plannedDurationMin!=null?e.plannedDurationMin:'',
+    'Czas rzeczywisty (min)':e.actualDurationMin!=null?e.actualDurationMin:'',
+    'Trasa':e.tripLabel||'inna',
+    'Odcinek':e.legNumber||'',
+    'Km':e.distanceKm!=null?e.distanceKm:''
+  }));
+  const ws=XLSX.utils.json_to_sheet(rows);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Dzienniczek');
+  XLSX.writeFile(wb,'dzienniczek-podrozy.xlsx');
 }
 
 function deleteEntry(key){
+  if(editMode){
+    editBuffer=editBuffer.filter(e=>e._key!==key);
+    renderEntries();
+    return;
+  }
   if(!confirm('Usunąć ten wpis z dzienniczka?'))return;
   saveJournalEntries(getJournalEntries().filter(e=>e._key!==key));
   renderEntries();

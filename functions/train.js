@@ -227,6 +227,9 @@ const HTML = String.raw`<!DOCTYPE html>
 .journal-note.warn{border-color:rgba(255,77,77,.4);color:var(--red)}
 .journal-note .hint{color:var(--muted);font-size:12px}
 .link-btn{background:transparent;border:0;color:var(--cyan);text-decoration:underline;cursor:pointer;font-size:12px;padding:0}
+.float-save-btn{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:9997;border:0;border-radius:999px;padding:13px 22px;background:var(--blue);color:#fff;font-weight:900;font-size:14.5px;cursor:pointer;box-shadow:0 10px 28px rgba(0,0,0,.45)}
+.float-save-btn:hover{background:#084298}
+.float-save-btn.done{background:var(--green);color:#0a2016}
 .plat-num{font-size:20px;font-weight:800;line-height:1}
 .plat-track{font-size:11px;color:var(--muted);margin-top:2px}
 .err{background:#3b1d1d;border:1px solid #dc3545;color:#ffd6d6;border-radius:10px;padding:12px}.loader{display:flex;align-items:center;justify-content:center;gap:10px;margin:14px auto;color:#d8e2ee}.train-loader{position:relative;width:120px;height:22px;overflow:hidden}.train-dot{position:absolute;left:-35px;top:1px;font-size:20px;animation:ride 1.35s linear infinite}.track{position:absolute;left:0;right:0;bottom:0;border-bottom:2px dashed #5c6b7a}@keyframes ride{0%{left:-35px}100%{left:125px}}.copy-note{font-size:12px;color:var(--muted);text-align:center;margin-top:6px}
@@ -250,6 +253,7 @@ const HTML = String.raw`<!DOCTYPE html>
   <div id="status" class="status">Kliknij numer pociągu na tablicy albo na liście Moje Pociągi V2.</div>
   <div id="content"></div>
 </div>
+<button type="button" id="floatSaveBtn" class="float-save-btn" style="display:none"></button>
 <script src="/profile-sync.js"></script>
 <script src="/tutorial.js"></script>
 <script>
@@ -466,6 +470,35 @@ function renderJournalBar(){
     html='<div class="journal-note hint">🚏 Zaznacz stację wsiadania i 🏁 wysiadania przy stacjach poniżej, żeby zapisać ten przejazd do <a href="/dziennik/">dzienniczka podróży</a>.</div>';
   }
   bar.innerHTML=html;
+  updateFloatSaveBtn(tripMatch);
+}
+// Pływający przycisk zapisu — widoczny, gdy jest coś gotowego do zapisania
+// (oba przystanki zaznaczone albo pasuje trasa typowa), niezależnie od
+// tego, gdzie akurat przewinięta jest strona.
+function updateFloatSaveBtn(tripMatch){
+  const btn=document.getElementById('floatSaveBtn');
+  if(!btn||!currentTrainData)return;
+  const stations=currentStations,data=currentTrainData;
+  let show=false,label='',handler=null;
+  if(tripMatch){
+    const bS=stations[tripMatch.boardIdx].stationName,aS=stations[tripMatch.alightIdx].stationName;
+    const existing=findExistingEntry(data.operatingDate,data.scheduleId,data.orderId,bS,aS);
+    if(!existing&&canSaveJourney(stations,tripMatch.alightIdx)){show=true;label='📓 Dodaj do dzienniczka';handler=saveTypicalJourney}
+  }else if(markBoardIdx!=null&&markAlightIdx!=null&&markAlightIdx>markBoardIdx){
+    const bS=stations[markBoardIdx].stationName,aS=stations[markAlightIdx].stationName;
+    const existing=findExistingEntry(data.operatingDate,data.scheduleId,data.orderId,bS,aS);
+    if(!existing&&canSaveJourney(stations,markAlightIdx)){show=true;label='💾 Zapisz do dzienniczka';handler=saveManualJourney}
+  }
+  if(!show){btn.style.display='none';return}
+  btn.style.display='block';
+  btn.textContent=label;
+  btn.classList.remove('done');
+  btn.onclick=function(){
+    handler();
+    btn.textContent='✓ Zapisano';
+    btn.classList.add('done');
+    setTimeout(function(){btn.style.display='none'},1400);
+  };
 }
 function saveTypicalJourney(){
   if(!currentTrainData)return;
@@ -624,7 +657,12 @@ function renderTrain(train,data){
     +'</div>';
   });
 
-  html+='</div></div>';document.getElementById('content').innerHTML=html;window._trainSummary=document.body.innerText.replace(/\n{3,}/g,'\n\n');updateMarkButtons();renderJournalBar();setTimeout(()=>{const el=document.getElementById('station-'+focusIdx);if(el)el.scrollIntoView({behavior:'smooth',block:'center'})},150);
+  html+='</div></div>';document.getElementById('content').innerHTML=html;window._trainSummary=document.body.innerText.replace(/\n{3,}/g,'\n\n');updateMarkButtons();renderJournalBar();
+  // Przewijamy do "aktualnej" stacji tylko przy pierwszym wczytaniu tego
+  // kursu — auto-odświeżenie co 5 min (ten sam kurs) renderuje stronę od
+  // nowa i bez tego zabierałoby z powrotem na górę w trakcie zaznaczania
+  // wsiadania/wysiadania, nawet gdy użytkownik przewinął niżej.
+  if(!isSameCourse){setTimeout(()=>{const el=document.getElementById('station-'+focusIdx);if(el)el.scrollIntoView({behavior:'smooth',block:'center'})},150)}
 }
 function saveLastTrainContext(train,data){
   try{
