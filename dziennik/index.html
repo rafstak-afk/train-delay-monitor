@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dzienniczek podróży</title>
+<style>
+:root{--bg:#101820;--panel:#1c2833;--card:#223244;--line:#34495e;--text:#fff;--muted:#b8c3cf;--blue:#0b57d0;--green:#5dd39e;--yellow:#ffcc00;--red:#ff4d4d;--violet:#c084fc;--grey:#4b5563;--cyan:#22d3ee}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text);padding:18px}
+.wrap{max-width:720px;margin:0 auto}
+a.back{display:inline-block;margin-bottom:10px;color:var(--muted);text-decoration:none;font-size:14px}
+h1{text-align:center;font-size:26px;margin:6px 0 4px}
+.subtitle{text-align:center;color:var(--muted);font-size:13px;margin-bottom:18px}
+h2{margin:0 0 10px;font-size:17px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin:14px 0}
+.trip-panel{display:grid;gap:16px}
+@media(min-width:620px){.trip-panel{grid-template-columns:1fr 1fr}}
+.trip-card h3{margin:0 0 8px;font-size:15px}
+.trip-card input{width:100%;padding:9px 10px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:#fff;font-size:13.5px;margin-bottom:7px}
+.trip-card .row2{display:flex;gap:7px}
+.trip-card .row2 input{flex:1}
+.trip-card label{font-size:11px;color:var(--muted);display:block;margin:0 0 2px}
+.btn{border:0;border-radius:9px;padding:9px 14px;background:var(--blue);color:#fff;font-weight:700;cursor:pointer;font-size:13.5px;width:100%}
+.btn:hover{background:#084298}
+.status{text-align:center;color:var(--muted);min-height:20px;margin:8px 0;font-size:13px}
+.status.ok{color:var(--green)}
+.empty{text-align:center;padding:32px 16px;color:var(--muted);font-size:14px}
+.entry{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px;position:relative}
+.entry-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.entry-date{font-weight:800;font-size:14px}
+.entry-train{color:var(--muted);font-size:12.5px}
+.entry-route{font-size:15px;font-weight:700;margin:6px 0}
+.entry-times{display:flex;flex-wrap:wrap;gap:14px;font-size:12.5px;color:#d8e2ee;margin-bottom:6px}
+.entry-times b{color:#fff}
+.entry-strike{text-decoration:line-through;color:#8b95a1;font-size:11.5px;margin-right:3px}
+.entry-bottom{display:flex;flex-wrap:wrap;align-items:center;gap:10px;font-size:12.5px;color:var(--muted)}
+.entry-delay{font-weight:800}
+.delay-zero{color:var(--green)}
+.delay-low{color:var(--yellow)}
+.delay-mid{color:var(--red)}
+.delay-high{color:var(--violet)}
+.entry-badge{background:rgba(11,87,208,.18);color:#8fb4f0;border-radius:999px;padding:2px 9px;font-size:11px;font-weight:700}
+.entry-del{position:absolute;top:10px;right:10px;background:transparent;border:0;color:#8b95a1;cursor:pointer;font-size:15px;padding:2px 6px}
+.entry-del:hover{color:var(--red)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="/">← Tablica</a>
+  <h1>📓 Dzienniczek podróży</h1>
+  <div class="subtitle">Zapisane przejazdy z zaznaczoną stacją wsiadania i wysiadania — dodajesz je na stronie biegu pociągu.</div>
+
+  <div class="panel">
+    <h2>Trasy typowe</h2>
+    <div class="status" id="tripStatus"></div>
+    <div class="trip-panel">
+      <div class="trip-card">
+        <h3>🏠→💼 Dom → Praca</h3>
+        <label>Stacja wsiadania</label>
+        <input type="text" id="trip_domPraca_board" placeholder="np. Tarnowskie Góry">
+        <label>Stacja wysiadania</label>
+        <input type="text" id="trip_domPraca_alight" placeholder="np. Katowice">
+        <div class="row2">
+          <div><label>Odjazd od</label><input type="time" id="trip_domPraca_from"></div>
+          <div><label>Odjazd do</label><input type="time" id="trip_domPraca_to"></div>
+        </div>
+        <label>Kilometraż (opcjonalnie)</label>
+        <input type="number" id="trip_domPraca_km" placeholder="np. 32" min="0">
+        <button type="button" class="btn" onclick="saveTrip('domPraca')">Zapisz trasę</button>
+      </div>
+      <div class="trip-card">
+        <h3>💼→🏠 Praca → Dom</h3>
+        <label>Stacja wsiadania</label>
+        <input type="text" id="trip_pracaDom_board" placeholder="np. Katowice">
+        <label>Stacja wysiadania</label>
+        <input type="text" id="trip_pracaDom_alight" placeholder="np. Tarnowskie Góry">
+        <div class="row2">
+          <div><label>Odjazd od</label><input type="time" id="trip_pracaDom_from"></div>
+          <div><label>Odjazd do</label><input type="time" id="trip_pracaDom_to"></div>
+        </div>
+        <label>Kilometraż (opcjonalnie)</label>
+        <input type="number" id="trip_pracaDom_km" placeholder="np. 32" min="0">
+        <button type="button" class="btn" onclick="saveTrip('pracaDom')">Zapisz trasę</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Wpisy (<span id="entryCount">0</span>)</h2>
+    <div id="entryList"></div>
+  </div>
+</div>
+
+<script src="/profile-sync.js"></script>
+<script src="/tutorial.js"></script>
+<script>
+const JOURNAL_KEY='dziennikPodrozy';
+const TYPICAL_TRIPS_KEY='dziennikTrasyTypowe';
+
+function getJournalEntries(){try{const v=JSON.parse(localStorage.getItem(JOURNAL_KEY));return Array.isArray(v)?v:[]}catch{return[]}}
+function saveJournalEntries(list){localStorage.setItem(JOURNAL_KEY,JSON.stringify(list));if(window.ProfileSync)ProfileSync.push({journalEntries:list})}
+function getTypicalTrips(){try{const v=JSON.parse(localStorage.getItem(TYPICAL_TRIPS_KEY));return v&&typeof v==='object'?v:{}}catch{return{}}}
+function saveTypicalTrips(trips){localStorage.setItem(TYPICAL_TRIPS_KEY,JSON.stringify(trips));if(window.ProfileSync)ProfileSync.push({typicalTrips:trips})}
+
+function escapeHtml(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}
+
+function delayClass(d){d=Number(d||0);return d>=20?'delay-high':d>10?'delay-mid':d>0?'delay-low':'delay-zero'}
+function fmtDelay(d){d=Number(d||0);return d>0?('+'+d):'0'}
+function fmtDur(min){if(min==null)return '—';const h=Math.floor(min/60),m=min%60;return h>0?(h+'h '+m+'min'):(m+' min')}
+
+function tripFields(id,label){
+  const g=k=>document.getElementById('trip_'+id+'_'+k);
+  return{
+    label,
+    board:g('board').value.trim(),
+    alight:g('alight').value.trim(),
+    timeFrom:g('from').value||'',
+    timeTo:g('to').value||'',
+    distanceKm:g('km').value?Number(g('km').value):null
+  };
+}
+function fillTripForm(id,trip){
+  const g=k=>document.getElementById('trip_'+id+'_'+k);
+  if(!trip)return;
+  g('board').value=trip.board||'';
+  g('alight').value=trip.alight||'';
+  g('from').value=trip.timeFrom||'';
+  g('to').value=trip.timeTo||'';
+  g('km').value=trip.distanceKm!=null?trip.distanceKm:'';
+}
+function renderTripsForm(){
+  const trips=getTypicalTrips();
+  fillTripForm('domPraca',trips.domPraca);
+  fillTripForm('pracaDom',trips.pracaDom);
+}
+function saveTrip(id){
+  const label=id==='domPraca'?'Dom → Praca':'Praca → Dom';
+  const f=tripFields(id,label);
+  const st=document.getElementById('tripStatus');
+  if(!f.board||!f.alight){st.textContent='Podaj obie stacje.';st.className='status';return}
+  const trips=getTypicalTrips();
+  trips[id]=f;
+  saveTypicalTrips(trips);
+  st.textContent='Zapisano trasę „'+label+'”.';
+  st.className='status ok';
+}
+
+function withCumulative(entries){
+  const sorted=[...entries].sort((a,b)=>(a.date+String(a.plannedDeparture||'')).localeCompare(b.date+String(b.plannedDeparture||'')));
+  let sum=0;const byKey={};
+  sorted.forEach(e=>{sum+=Number(e.delayMinutes||0);byKey[e._key]=sum});
+  return entries.map(e=>Object.assign({},e,{cumulativeDelay:byKey[e._key]}));
+}
+
+function entryCardHtml(e){
+  const dateFmt=(()=>{const p=String(e.date||'').split('-');return p.length===3?p[2]+'.'+p[1]+'.'+p[0]:e.date})();
+  const trainLabel=[e.category,e.trainNumber].filter(Boolean).join(' ')||'—';
+  const depReal=e.actualDeparture&&e.actualDeparture!==e.plannedDeparture;
+  const arrReal=e.actualArrival&&e.actualArrival!==e.plannedArrival;
+  const depHtml=depReal?('<span class="entry-strike">'+escapeHtml(e.plannedDeparture)+'</span>('+escapeHtml(e.actualDeparture)+')'):escapeHtml(e.plannedDeparture||'—');
+  const arrHtml=arrReal?('<span class="entry-strike">'+escapeHtml(e.plannedArrival)+'</span>('+escapeHtml(e.actualArrival)+')'):escapeHtml(e.plannedArrival||'—');
+  const tripBadge=e.tripLabel?('<span class="entry-badge">'+escapeHtml(e.tripLabel)+'</span>'):'';
+  const km=e.distanceKm!=null?(e.distanceKm+' km'):'';
+  return `<div class="entry">
+    <button type="button" class="entry-del" title="Usuń wpis" onclick="deleteEntry('${e._key}')">✕</button>
+    <div class="entry-top"><span class="entry-date">${escapeHtml(dateFmt)}</span><span class="entry-train">${escapeHtml(trainLabel)}</span></div>
+    <div class="entry-route">${escapeHtml(e.boardStation)} → ${escapeHtml(e.alightStation)}</div>
+    <div class="entry-times">
+      <span>Odjazd: <b>${depHtml}</b></span>
+      <span>Przyjazd: <b>${arrHtml}</b></span>
+    </div>
+    <div class="entry-bottom">
+      <span class="entry-delay ${delayClass(e.delayMinutes)}">Opóźnienie: ${fmtDelay(e.delayMinutes)} min</span>
+      <span>Czas: ${fmtDur(e.plannedDurationMin)} → ${fmtDur(e.actualDurationMin)}</span>
+      <span>Suma narastająco: ${fmtDelay(e.cumulativeDelay)} min</span>
+      ${tripBadge}
+      ${km?('<span>'+escapeHtml(km)+'</span>'):''}
+    </div>
+  </div>`;
+}
+
+function renderEntries(){
+  const raw=getJournalEntries();
+  document.getElementById('entryCount').textContent=raw.length;
+  const list=document.getElementById('entryList');
+  if(!raw.length){list.innerHTML='<div class="empty">Brak wpisów. Otwórz bieg pociągu (z tablicy albo Moich Pociągów V2), zaznacz stację wsiadania 🚏 i wysiadania 🏁, i zapisz przejazd.</div>';return}
+  const withSums=withCumulative(raw);
+  const byKey={};withSums.forEach(e=>byKey[e._key]=e);
+  const displayOrder=[...raw].sort((a,b)=>(b.date+String(b.plannedDeparture||'')).localeCompare(a.date+String(a.plannedDeparture||'')));
+  list.innerHTML=displayOrder.map(e=>entryCardHtml(byKey[e._key]||e)).join('');
+}
+
+function deleteEntry(key){
+  if(!confirm('Usunąć ten wpis z dzienniczka?'))return;
+  saveJournalEntries(getJournalEntries().filter(e=>e._key!==key));
+  renderEntries();
+}
+
+(async function start(){
+  if(window.ProfileSync&&ProfileSync.getToken()){
+    const profile=await ProfileSync.pull();
+    if(profile){
+      if(Array.isArray(profile.journalEntries)){
+        localStorage.setItem(JOURNAL_KEY,JSON.stringify(profile.journalEntries));
+      }else{
+        const local=getJournalEntries();
+        if(local.length)ProfileSync.push({journalEntries:local});
+      }
+      if(profile.typicalTrips&&typeof profile.typicalTrips==='object'){
+        localStorage.setItem(TYPICAL_TRIPS_KEY,JSON.stringify(profile.typicalTrips));
+      }else{
+        const localTrips=getTypicalTrips();
+        if(Object.keys(localTrips).length)ProfileSync.push({typicalTrips:localTrips});
+      }
+    }
+  }
+  renderTripsForm();
+  renderEntries();
+})();
+</script>
+</body>
+</html>

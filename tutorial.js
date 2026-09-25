@@ -45,7 +45,8 @@
     {
       match: function (p) { return p.indexOf("/train") === 0; },
       steps: [
-        { sel: "#status", title: "Cały bieg pociągu", text: "Trafiasz tu, klikając numer pociągu na tablicy albo na liście Moje Pociągi V2. Poniżej zobaczysz trasę stacja po stacji: godziny planowe i rzeczywiste, opóźnienie osobno dla przyjazdu i odjazdu, peron i tor." }
+        { sel: "#status", title: "Cały bieg pociągu", text: "Trafiasz tu, klikając numer pociągu na tablicy albo na liście Moje Pociągi V2. Poniżej zobaczysz trasę stacja po stacji: godziny planowe i rzeczywiste, opóźnienie osobno dla przyjazdu i odjazdu, peron i tor." },
+        { sel: ".mark-btns", title: "Dzienniczek podróży", text: "Zaznacz 🚏 stację wsiadania i 🏁 wysiadania, żeby zapisać ten przejazd do dzienniczka — z automatycznie policzonym czasem i opóźnieniem." }
       ]
     },
     {
@@ -53,6 +54,13 @@
       steps: [
         { sel: "#createPanel", title: "Nowy profil", text: "Jeśli nie masz jeszcze profilu, tu jednym kliknięciem tworzysz nowy token." },
         { sel: "#tokenInput", title: "Masz już token?", text: "Wklej tu token z innego urządzenia, żeby wczytać swoje ulubione stacje, pociągi i alarmy." }
+      ]
+    },
+    {
+      match: function (p) { return p.indexOf("/dziennik") === 0; },
+      steps: [
+        { sel: ".trip-panel", title: "Trasy typowe", text: "Zdefiniuj dom→praca i praca→dom — stacje, orientacyjną godzinę i kilometraż. Potem dodanie pasującego przejazdu to jeden klik na stronie biegu pociągu." },
+        { sel: "#entryList", title: "Zapisane przejazdy", text: "Tu widzisz wszystkie zapisane wpisy: godziny, opóźnienie, czas przejazdu i sumę opóźnień narastająco." }
       ]
     }
   ];

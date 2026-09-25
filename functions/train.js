@@ -216,6 +216,17 @@ const HTML = String.raw`<!DOCTYPE html>
 .badge.info{background:#5b4b1f;color:#ffe8a3}
 .delay-cell{text-align:center}
 .platform-cell{text-align:center}
+.mark-btns{display:flex;gap:4px;margin-top:4px}
+.mark-btn{border:1px solid var(--line);background:transparent;border-radius:6px;padding:2px 5px;font-size:12px;cursor:pointer;opacity:.5;line-height:1.3}
+.mark-btn:hover{opacity:.85}
+.mark-btn.active{opacity:1;border-color:var(--blue);background:rgba(11,87,208,.2)}
+.journal-bar{margin:8px 0 4px}
+.journal-note{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13px;color:#d8e2ee;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.journal-note a{color:var(--cyan)}
+.journal-note.ok{border-color:rgba(93,211,158,.4);color:var(--green)}
+.journal-note.warn{border-color:rgba(255,77,77,.4);color:var(--red)}
+.journal-note .hint{color:var(--muted);font-size:12px}
+.link-btn{background:transparent;border:0;color:var(--cyan);text-decoration:underline;cursor:pointer;font-size:12px;padding:0}
 .plat-num{font-size:20px;font-weight:800;line-height:1}
 .plat-track{font-size:11px;color:var(--muted);margin-top:2px}
 .err{background:#3b1d1d;border:1px solid #dc3545;color:#ffd6d6;border-radius:10px;padding:12px}.loader{display:flex;align-items:center;justify-content:center;gap:10px;margin:14px auto;color:#d8e2ee}.train-loader{position:relative;width:120px;height:22px;overflow:hidden}.train-dot{position:absolute;left:-35px;top:1px;font-size:20px;animation:ride 1.35s linear infinite}.track{position:absolute;left:0;right:0;bottom:0;border-bottom:2px dashed #5c6b7a}@keyframes ride{0%{left:-35px}100%{left:125px}}.copy-note{font-size:12px;color:var(--muted);text-align:center;margin-top:6px}
@@ -344,6 +355,148 @@ let autoRefreshTimer=null;
 let lastTrainFetchAt=0;
 let lastTrainArgs=null;
 
+// ============ Dzienniczek podróży ============
+// Wpis = konkretny przejazd (data + kurs + stacja wsiadania/wysiadania).
+// Trzymany lokalnie, synchronizowany przez profil (token) jak reszta
+// danych w tej aplikacji — ten sam wzorzec co listy pociągów w v2.
+const JOURNAL_KEY='dziennikPodrozy';
+const TYPICAL_TRIPS_KEY='dziennikTrasyTypowe';
+let currentTrainData=null,currentStations=[];
+let markBoardIdx=null,markAlightIdx=null;
+
+function getJournalEntries(){try{const v=JSON.parse(localStorage.getItem(JOURNAL_KEY));return Array.isArray(v)?v:[]}catch{return[]}}
+function saveJournalEntries(list){localStorage.setItem(JOURNAL_KEY,JSON.stringify(list));if(window.ProfileSync)ProfileSync.push({journalEntries:list})}
+function getTypicalTrips(){try{const v=JSON.parse(localStorage.getItem(TYPICAL_TRIPS_KEY));return v&&typeof v==='object'?v:{}}catch{return{}}}
+function normStation(s){return String(s||'').trim().toLowerCase()}
+function toMinutesJ(t){const m=String(t||'').match(/(\d{1,2}):(\d{2})/);return m?Number(m[1])*60+Number(m[2]):null}
+function durationMinJ(fromT,toT){const a=toMinutesJ(fromT),b=toMinutesJ(toT);if(a==null||b==null)return null;let d=b-a;if(d<0)d+=1440;return d}
+function journeyKey(date,scheduleId,orderId,boardStation,alightStation){return[date,scheduleId||'',orderId||'',normStation(boardStation),normStation(alightStation)].join('|')}
+function findExistingEntry(date,scheduleId,orderId,boardStation,alightStation){
+  const key=journeyKey(date,scheduleId,orderId,boardStation,alightStation);
+  return getJournalEntries().find(e=>e._key===key)||null;
+}
+function matchTypicalTrip(stations){
+  const trips=getTypicalTrips();
+  for(const id of['domPraca','pracaDom']){
+    const trip=trips[id];
+    if(!trip||!trip.board||!trip.alight)continue;
+    const bi=stations.findIndex(s=>normStation(s.stationName)===normStation(trip.board));
+    const ai=stations.findIndex(s=>normStation(s.stationName)===normStation(trip.alight));
+    if(bi>=0&&ai>bi)return{id,trip,boardIdx:bi,alightIdx:ai};
+  }
+  return null;
+}
+function canSaveJourney(stations,alightIdx){return alightIdx!=null&&stations[alightIdx]&&stations[alightIdx].status==='confirmed'}
+function buildJournalEntry(data,stations,boardIdx,alightIdx,tripMeta){
+  const b=stations[boardIdx],a=stations[alightIdx];
+  const plannedDep=b.plannedDeparture||b.plannedTime;
+  const actualDep=(b.status==='confirmed'?(b.actualDeparture||b.actualTime):'')||plannedDep;
+  const plannedArr=a.plannedArrival||a.plannedTime;
+  const actualArr=(a.status==='confirmed'?(a.actualArrival||a.actualTime):'')||plannedArr;
+  const delay=a.status==='confirmed'?(typeof a.arrivalDelay==='number'?a.arrivalDelay:(a.delay||0)):0;
+  return{
+    date:data.operatingDate,
+    trainNumber:data.trainNumber||data.train||'',
+    category:data.category||'',
+    boardStation:b.stationName,
+    alightStation:a.stationName,
+    plannedDeparture:plannedDep,
+    actualDeparture:actualDep,
+    plannedArrival:plannedArr,
+    actualArrival:actualArr,
+    delayMinutes:delay,
+    plannedDurationMin:durationMinJ(plannedDep,plannedArr),
+    actualDurationMin:durationMinJ(actualDep,actualArr),
+    tripType:tripMeta?tripMeta.id:'inna',
+    tripLabel:tripMeta?tripMeta.trip.label:'',
+    distanceKm:tripMeta&&tripMeta.trip.distanceKm?Number(tripMeta.trip.distanceKm):null,
+    scheduleId:data.scheduleId,
+    orderId:data.orderId,
+    _key:journeyKey(data.operatingDate,data.scheduleId,data.orderId,b.stationName,a.stationName),
+    createdAt:new Date().toISOString()
+  };
+}
+function updateMarkButtons(){
+  document.querySelectorAll('.mark-btn.board').forEach(function(b){b.classList.toggle('active',Number(b.dataset.idx)===markBoardIdx)});
+  document.querySelectorAll('.mark-btn.alight').forEach(function(b){b.classList.toggle('active',Number(b.dataset.idx)===markAlightIdx)});
+}
+function markBoard(i){markBoardIdx=(markBoardIdx===i?null:i);updateMarkButtons();renderJournalBar()}
+function markAlight(i){markAlightIdx=(markAlightIdx===i?null:i);updateMarkButtons();renderJournalBar()}
+function renderJournalBar(){
+  const bar=document.getElementById('journalBar');
+  if(!bar||!currentTrainData)return;
+  const data=currentTrainData,stations=currentStations;
+  const tripMatch=matchTypicalTrip(stations);
+  let html='';
+  if(tripMatch){
+    const bS=stations[tripMatch.boardIdx].stationName,aS=stations[tripMatch.alightIdx].stationName;
+    const existing=findExistingEntry(data.operatingDate,data.scheduleId,data.orderId,bS,aS);
+    if(existing){
+      html='<div class="journal-note ok">✓ Zapisano w dzienniczku jako „'+esc(tripMatch.trip.label||tripMatch.id)+'”. <button type="button" class="link-btn" onclick="removeJournalEntry(\''+existing._key+'\')">Usuń wpis</button></div>';
+    }else{
+      const canSave=canSaveJourney(stations,tripMatch.alightIdx);
+      html='<div class="journal-note">Ten kurs pasuje do trasy „'+esc(tripMatch.trip.label||tripMatch.id)+'” ('+esc(bS)+' → '+esc(aS)+'). '+(canSave?'<button type="button" class="btn small" onclick="saveTypicalJourney()">📓 Dodaj do dzienniczka</button>':'<span class="hint">Dostępne po dotarciu do stacji wysiadania.</span>')+'</div>';
+    }
+  }else if(markBoardIdx!=null&&markAlightIdx!=null&&markAlightIdx>markBoardIdx){
+    const bS=stations[markBoardIdx].stationName,aS=stations[markAlightIdx].stationName;
+    const existing=findExistingEntry(data.operatingDate,data.scheduleId,data.orderId,bS,aS);
+    if(existing){
+      html='<div class="journal-note ok">✓ Ten przejazd jest już w dzienniczku. <button type="button" class="link-btn" onclick="removeJournalEntry(\''+existing._key+'\')">Usuń wpis</button></div>';
+    }else{
+      const canSave=canSaveJourney(stations,markAlightIdx);
+      html='<div class="journal-note">🚏 '+esc(bS)+' → 🏁 '+esc(aS)+'. '+(canSave?'<button type="button" class="btn small" onclick="saveManualJourney()">💾 Zapisz do dzienniczka</button>':'<span class="hint">Dostępne po dotarciu do stacji wysiadania.</span>')+'</div>';
+    }
+  }else if(markBoardIdx!=null&&markAlightIdx!=null){
+    html='<div class="journal-note warn">Stacja wysiadania musi być dalej na trasie niż wsiadania.</div>';
+  }else{
+    html='<div class="journal-note hint">🚏 Zaznacz stację wsiadania i 🏁 wysiadania przy stacjach poniżej, żeby zapisać ten przejazd do <a href="/dziennik/">dzienniczka podróży</a>.</div>';
+  }
+  bar.innerHTML=html;
+}
+function saveTypicalJourney(){
+  if(!currentTrainData)return;
+  const tripMatch=matchTypicalTrip(currentStations);
+  if(!tripMatch)return;
+  const entry=buildJournalEntry(currentTrainData,currentStations,tripMatch.boardIdx,tripMatch.alightIdx,tripMatch);
+  const list=getJournalEntries();
+  list.push(entry);
+  saveJournalEntries(list);
+  renderJournalBar();
+}
+function saveManualJourney(){
+  if(!currentTrainData||markBoardIdx==null||markAlightIdx==null||markAlightIdx<=markBoardIdx)return;
+  const kmRaw=prompt('Kilometraż tej trasy (opcjonalnie, w km):','');
+  const kmNum=kmRaw?Number(String(kmRaw).replace(',','.')):NaN;
+  const km=kmRaw&&!isNaN(kmNum)?kmNum:null;
+  const entry=buildJournalEntry(currentTrainData,currentStations,markBoardIdx,markAlightIdx,null);
+  entry.distanceKm=km;
+  const list=getJournalEntries();
+  list.push(entry);
+  saveJournalEntries(list);
+  markBoardIdx=null;markAlightIdx=null;
+  updateMarkButtons();
+  renderJournalBar();
+}
+function removeJournalEntry(key){
+  saveJournalEntries(getJournalEntries().filter(function(e){return e._key!==key}));
+  renderJournalBar();
+}
+// /train nigdy dotąd nie pobierało profilu (tylko wysyłało lastTrain) — bez
+// tego trasy typowe zdefiniowane na innym urządzeniu (np. na /dziennik/ na
+// telefonie) nie byłyby tu widoczne, dopóki ktoś nie odwiedziłby /dziennik/
+// też na tym urządzeniu. Dociągamy je w tle i odświeżamy pasek, jeśli akurat
+// już renderujemy jakiś kurs.
+async function syncTypicalTripsFromProfile(){
+  if(!(window.ProfileSync&&ProfileSync.getToken()))return;
+  try{
+    const profile=await ProfileSync.pull();
+    if(profile&&profile.typicalTrips&&typeof profile.typicalTrips==='object'){
+      localStorage.setItem(TYPICAL_TRIPS_KEY,JSON.stringify(profile.typicalTrips));
+      renderJournalBar();
+    }
+  }catch(e){}
+}
+
 // Dopóki użytkownik stoi na biegu konkretnego pociągu, dociągamy świeże
 // dane co 5 minut — bez tego opóźnienie/ostatnia potwierdzona stacja
 // zamrażały się na moment otwarcia strony, mimo że pociąg jechał dalej.
@@ -414,6 +567,12 @@ async function fetchAndRenderTrain(train,opts){
 async function loadTrain(){const train=qs('train');if(!train){setStatus('Otwórz bieg pociągu, klikając jego numer na tablicy albo na liście Moje Pociągi V2.');return}setStatus('Pobieram bieg pociągu...');loading(train);const idp=detailsParams();let schedule=idp.get('scheduleId')||idp.get('scheduledId');let order=idp.get('orderId');try{if(!schedule||!order){const found=await findCourseFromOpenedContext(train,idp);if(found){await fetchAndRenderTrain(train,found);return}renderFallback(train,'Do pełnego biegu potrzebny jest link z tablicy odjazdów z identyfikatorami kursu. Kliknij numer pociągu bezpośrednio z tablicy albo z listy Moje Pociągi V2.');return}await fetchAndRenderTrain(train,{schedule,order,trainOrderId:idp.get('trainOrderId'),station:idp.get('station'),date:idp.get('date')||todayIso()})}catch(e){document.getElementById('content').innerHTML='<div class="panel err">Nie udało się pobrać biegu pociągu: '+esc(e.message)+'</div>';setStatus('Błąd pobierania biegu pociągu.')}}
 function renderTrain(train,data){
   const stations=Array.isArray(data.route)?data.route:[];
+  // Zaznaczenia wsiadania/wysiadania resetujemy tylko przy faktycznie
+  // NOWYM kursie — auto-odświeżenie co 5 min ładuje ten sam kurs od nowa
+  // i nie powinno kasować tego, co użytkownik już zaznaczył.
+  const isSameCourse=currentTrainData&&String(currentTrainData.scheduleId)===String(data.scheduleId)&&String(currentTrainData.orderId)===String(data.orderId);
+  if(!isSameCourse){markBoardIdx=null;markAlightIdx=null}
+  currentTrainData=data;currentStations=stations;
   const nm=nowMin();
   let passedIdx=-1;
   stations.forEach((s,i)=>{if(s.status==='confirmed')passedIdx=i});
@@ -427,7 +586,7 @@ function renderTrain(train,data){
   const lastTimeText=data.lastConfirmedStation?(data.lastConfirmedTime||''):'Brak twardego potwierdzenia realizacji z API PLK.';
 
   let html='<div class="panel"><div class="summary"><div class="card"><div class="label">Pociąg</div><div class="big">'+esc(title||('Pociąg '+train))+'</div><div class="hint'+(isCancelledTrain?' hint-cancelled':'')+'">Status: '+esc(st[0])+(st[1]?' <span class="station-meta">('+esc(st[1])+')</span>':'')+'</div></div><div class="card"><div class="label">Ostatnia potwierdzona stacja</div><div class="big">'+esc(lastStationText)+'</div><div class="hint">'+esc(lastTimeText)+'</div></div></div><div style="margin-top:10px"><a class="btn green" target="_blank" rel="noopener" href="'+esc(portalUrl(train))+'">Otwórz Portal Pasażera</a> <button class="btn small" onclick="copySummary()">Kopiuj podsumowanie</button></div></div>';
-  html+='<div class="panel"><div class="route-title"><h2>Trasa stacja po stacji</h2><div class="hint">„Zaliczona” tylko przy potwierdzeniu API. Gdy czas już minął, a API nie potwierdza stacji, pokazujemy „BRAK INFO Z API”.</div></div><div class="route-table">';
+  html+='<div class="panel"><div class="route-title"><h2>Trasa stacja po stacji</h2><div class="hint">„Zaliczona” tylko przy potwierdzeniu API. Gdy czas już minął, a API nie potwierdza stacji, pokazujemy „BRAK INFO Z API”.</div></div><div id="journalBar" class="journal-bar"></div><div class="route-table">';
 
   stations.forEach((s,i)=>{
     let state='future',txt='przed',badge='future';
@@ -446,12 +605,12 @@ function renderTrain(train,data){
     html+='<div id="station-'+i+'" class="rrow '+state+'">'
       +'<div class="time-cell">'+renderTime(s,state==='future'||state==='next'?'future':state)+'</div>'
       +'<div class="delay-cell">'+renderDelayCol(s)+'</div>'
-      +'<div class="station-cell"><span class="badge '+badge+'">'+esc(txt)+'</span><div class="station-name">'+esc(s.stationName)+'</div></div>'
+      +'<div class="station-cell"><span class="badge '+badge+'">'+esc(txt)+'</span><div class="station-name">'+esc(s.stationName)+'</div><div class="mark-btns"><button type="button" class="mark-btn board" data-idx="'+i+'" title="Tu wsiadam" onclick="markBoard('+i+')">🚏</button><button type="button" class="mark-btn alight" data-idx="'+i+'" title="Tu wysiadam" onclick="markAlight('+i+')">🏁</button></div></div>'
       +'<div class="platform-cell"><div class="plat-num">'+(hasPlatform?esc(s.platform):'—')+'</div>'+(hasTrack?'<div class="plat-track">tor '+esc(s.track)+'</div>':'')+'</div>'
     +'</div>';
   });
 
-  html+='</div></div>';document.getElementById('content').innerHTML=html;window._trainSummary=document.body.innerText.replace(/\n{3,}/g,'\n\n');setTimeout(()=>{const el=document.getElementById('station-'+focusIdx);if(el)el.scrollIntoView({behavior:'smooth',block:'center'})},150);
+  html+='</div></div>';document.getElementById('content').innerHTML=html;window._trainSummary=document.body.innerText.replace(/\n{3,}/g,'\n\n');updateMarkButtons();renderJournalBar();setTimeout(()=>{const el=document.getElementById('station-'+focusIdx);if(el)el.scrollIntoView({behavior:'smooth',block:'center'})},150);
 }
 function saveLastTrainContext(train,data){
   try{
@@ -467,7 +626,7 @@ function saveLastTrainContext(train,data){
 }
 function renderFallback(train,msg){setStatus('Nie mam identyfikatorów kursu z tablicy.');document.getElementById('content').innerHTML='<div class="panel"><h2>Pociąg '+esc(train)+'</h2><div class="err">'+esc(msg||'Brak pełnych identyfikatorów kursu.')+'</div><p class="hint">Kliknij numer pociągu bezpośrednio z naszej tablicy odjazdów. Sam numer może oznaczać więcej niż jeden kurs.</p><a class="btn green" target="_blank" rel="noopener" href="'+esc(portalUrl(train))+'">Otwórz wyszukiwarkę w Portal Pasażera</a></div>'}
 function copySummary(){navigator.clipboard&&navigator.clipboard.writeText(window._trainSummary||document.body.innerText)}
-document.addEventListener('DOMContentLoaded',function(){if(qs('train'))loadTrain()});
+document.addEventListener('DOMContentLoaded',function(){syncTypicalTripsFromProfile();if(qs('train'))loadTrain()});
 // Timery (scheduleAutoRefresh) bywają wstrzymywane, gdy strona trafia do
 // bfcache — po powrocie wznawiają się, ale mogły przespać kawałek 5-minutowego
 // okna. Gdy dane są starsze niż AUTO_REFRESH_MS, dociągamy je od razu.
