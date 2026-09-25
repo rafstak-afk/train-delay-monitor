@@ -7,6 +7,13 @@ const CORS_JSON = {
 const MAX_PATCH_BYTES = 200000;
 const TOKEN_RE = /^[A-Z0-9]{16}$/;
 
+// Profil wygasa sam (Cloudflare KV usuwa klucz po TTL) po tylu sekundach
+// BEZ żadnego zapisu. Każdy PUT — czyli każda realna czynność w aplikacji
+// (wyszukanie stacji, dodanie pociągu, alarm, obejrzenie biegu) — odświeża
+// ten licznik od nowa, więc aktywnie używany profil nigdy nie wygasa.
+// Ma to czyścić tokeny porzucone/zapomniane, nie karać rzadkiego użycia.
+const PROFILE_TTL_SECONDS = 60 * 60 * 24 * 180; // 180 dni
+
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: CORS_JSON });
 }
@@ -85,7 +92,9 @@ export async function onRequest(context) {
       updatedAt: new Date().toISOString()
     };
 
-    await env.USER_PROFILES.put(token, JSON.stringify(merged));
+    await env.USER_PROFILES.put(token, JSON.stringify(merged), {
+      expirationTtl: PROFILE_TTL_SECONDS
+    });
 
     return json({ ok: true, data: merged });
   }
