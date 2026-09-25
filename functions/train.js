@@ -217,8 +217,8 @@ const HTML = String.raw`<!DOCTYPE html>
 .delay-cell{text-align:center}
 .platform-cell{text-align:center}
 .mark-btns{display:flex;gap:4px;margin-top:4px}
-.mark-btn{border:1px solid var(--line);background:transparent;border-radius:6px;padding:2px 5px;font-size:12px;cursor:pointer;opacity:.5;line-height:1.3}
-.mark-btn:hover{opacity:.85}
+.mark-btn{border:1px solid #4b5f76;background:transparent;border-radius:7px;padding:4px 7px;font-size:14px;cursor:pointer;opacity:.75;line-height:1.3}
+.mark-btn:hover{opacity:1}
 .mark-btn.active{opacity:1;border-color:var(--blue);background:rgba(11,87,208,.2)}
 .journal-bar{margin:8px 0 4px}
 .journal-note{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13px;color:#d8e2ee;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
