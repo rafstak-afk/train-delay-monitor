@@ -505,8 +505,25 @@ function renderJournalBar(){
   if(!bar||!currentTrainData)return;
   const data=currentTrainData,stations=currentStations;
   const tripMatch=matchTypicalTrip(stations);
+  // Ręczne zaznaczenie ma pierwszeństwo przed automatycznym dopasowaniem
+  // trasy typowej — inaczej kurs pasujący JEDNOCZEŚNIE do trasy typowej
+  // (np. krótszy jej odcinek) i do dalszego ręcznego zaznaczenia zapisywał
+  // po cichu ten krótszy, typowy wariant, a ręczne zaznaczenie zostawało
+  // osierocone (i wiecznie "niezapisane" w przypomnieniu na tablicy).
+  const hasManualMark=markBoardIdx!=null&&markAlightIdx!=null;
   let html='';
-  if(tripMatch){
+  if(hasManualMark&&markAlightIdx>markBoardIdx){
+    const bS=stations[markBoardIdx].stationName,aS=stations[markAlightIdx].stationName;
+    const existing=findExistingEntry(data.operatingDate,data.scheduleId,data.orderId,bS,aS);
+    if(existing){
+      html='<div class="journal-note ok">✓ Ten przejazd jest już w dzienniczku. <button type="button" class="link-btn" onclick="removeJournalEntry(\''+existing._key+'\')">Usuń wpis</button></div>';
+    }else{
+      const canSave=canSaveJourney(stations,markAlightIdx);
+      html='<div class="journal-note">🚏 '+esc(bS)+' → 🏁 '+esc(aS)+'. '+(canSave?'<button type="button" class="btn small" onclick="saveManualJourney()">💾 Zapisz do dzienniczka</button>':'<span class="hint">Dostępne po dotarciu do stacji wysiadania.</span>')+'</div>';
+    }
+  }else if(hasManualMark){
+    html='<div class="journal-note warn">Stacja wysiadania musi być dalej na trasie niż wsiadania.</div>';
+  }else if(tripMatch){
     const bS=stations[tripMatch.boardIdx].stationName,aS=stations[tripMatch.alightIdx].stationName;
     const existing=findExistingEntry(data.operatingDate,data.scheduleId,data.orderId,bS,aS);
     const legTxt=tripMatch.trip.leg2?(' · odcinek '+tripMatch.legNumber+'/2'):'';
@@ -516,17 +533,6 @@ function renderJournalBar(){
       const canSave=canSaveJourney(stations,tripMatch.alightIdx);
       html='<div class="journal-note">Ten kurs pasuje do trasy „'+esc(tripMatch.trip.label||tripMatch.id)+legTxt+'” ('+esc(bS)+' → '+esc(aS)+'). '+(canSave?'<button type="button" class="btn small" onclick="saveTypicalJourney()">📓 Dodaj do dzienniczka</button>':'<span class="hint">Dostępne po dotarciu do stacji wysiadania.</span>')+'</div>';
     }
-  }else if(markBoardIdx!=null&&markAlightIdx!=null&&markAlightIdx>markBoardIdx){
-    const bS=stations[markBoardIdx].stationName,aS=stations[markAlightIdx].stationName;
-    const existing=findExistingEntry(data.operatingDate,data.scheduleId,data.orderId,bS,aS);
-    if(existing){
-      html='<div class="journal-note ok">✓ Ten przejazd jest już w dzienniczku. <button type="button" class="link-btn" onclick="removeJournalEntry(\''+existing._key+'\')">Usuń wpis</button></div>';
-    }else{
-      const canSave=canSaveJourney(stations,markAlightIdx);
-      html='<div class="journal-note">🚏 '+esc(bS)+' → 🏁 '+esc(aS)+'. '+(canSave?'<button type="button" class="btn small" onclick="saveManualJourney()">💾 Zapisz do dzienniczka</button>':'<span class="hint">Dostępne po dotarciu do stacji wysiadania.</span>')+'</div>';
-    }
-  }else if(markBoardIdx!=null&&markAlightIdx!=null){
-    html='<div class="journal-note warn">Stacja wysiadania musi być dalej na trasie niż wsiadania.</div>';
   }else{
     html='<div class="journal-note hint">🚏 Zaznacz stację wsiadania i 🏁 wysiadania przy stacjach poniżej, żeby zapisać ten przejazd do <a href="/dziennik/">dzienniczka podróży</a>.</div>';
   }
@@ -541,17 +547,17 @@ function updateFloatSaveBtn(tripMatch){
   if(!btn||!currentTrainData)return;
   const stations=currentStations,data=currentTrainData;
   let show=false,label='',handler=null,immediate=true;
-  if(tripMatch){
-    const bS=stations[tripMatch.boardIdx].stationName,aS=stations[tripMatch.alightIdx].stationName;
-    const existing=findExistingEntry(data.operatingDate,data.scheduleId,data.orderId,bS,aS);
-    if(!existing&&canSaveJourney(stations,tripMatch.alightIdx)){show=true;label='📓 Dodaj do dzienniczka';handler=saveTypicalJourney;immediate=true}
-  }else if(markBoardIdx!=null&&markAlightIdx!=null&&markAlightIdx>markBoardIdx){
+  if(markBoardIdx!=null&&markAlightIdx!=null&&markAlightIdx>markBoardIdx){
     const bS=stations[markBoardIdx].stationName,aS=stations[markAlightIdx].stationName;
     const existing=findExistingEntry(data.operatingDate,data.scheduleId,data.orderId,bS,aS);
     // Trasa nietypowa otwiera formularz (nazwa trasy + km) zamiast zapisywać
     // od razu, więc przycisk pływający po kliknięciu tylko się chowa —
     // stan "✓ Zapisano" pokazujemy dopiero po realnym zapisie w formularzu.
     if(!existing&&canSaveJourney(stations,markAlightIdx)){show=true;label='💾 Zapisz do dzienniczka';handler=saveManualJourney;immediate=false}
+  }else if(tripMatch){
+    const bS=stations[tripMatch.boardIdx].stationName,aS=stations[tripMatch.alightIdx].stationName;
+    const existing=findExistingEntry(data.operatingDate,data.scheduleId,data.orderId,bS,aS);
+    if(!existing&&canSaveJourney(stations,tripMatch.alightIdx)){show=true;label='📓 Dodaj do dzienniczka';handler=saveTypicalJourney;immediate=true}
   }
   if(!show){btn.style.display='none';return}
   btn.style.display='block';
