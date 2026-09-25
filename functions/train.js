@@ -437,8 +437,40 @@ function updateMarkButtons(){
   document.querySelectorAll('.mark-btn.board').forEach(function(b){b.classList.toggle('active',Number(b.dataset.idx)===markBoardIdx)});
   document.querySelectorAll('.mark-btn.alight').forEach(function(b){b.classList.toggle('active',Number(b.dataset.idx)===markAlightIdx)});
 }
-function markBoard(i){markBoardIdx=(markBoardIdx===i?null:i);updateMarkButtons();renderJournalBar()}
-function markAlight(i){markAlightIdx=(markAlightIdx===i?null:i);updateMarkButtons();renderJournalBar()}
+// Zaznaczenie wsiadania/wysiadania dla pociągu, który jeszcze nie jedzie,
+// trzymamy per kurs w localStorage — PLK po prostu nie ma jeszcze danych
+// rzeczywistych (bo nic się jeszcze nie wydarzyło), więc zapis do
+// dzienniczka i tak czeka na dotarcie do stacji wysiadania. Bez tego
+// zamknięcie karty przed zakończeniem kursu gubiło zaznaczenie — trzeba
+// było zaznaczać od nowa, wracając wieczorem sprawdzić, czy już można
+// zapisać.
+function courseMarkKey(data){return 'dziennikZaznaczenie_'+data.scheduleId+'_'+data.orderId+'_'+data.operatingDate}
+function saveMarksToStorage(){
+  if(!currentTrainData)return;
+  try{
+    if(markBoardIdx==null||markAlightIdx==null){
+      localStorage.removeItem(courseMarkKey(currentTrainData));
+      return;
+    }
+    localStorage.setItem(courseMarkKey(currentTrainData),JSON.stringify({
+      board:currentStations[markBoardIdx].stationName,
+      alight:currentStations[markAlightIdx].stationName
+    }));
+  }catch(e){}
+}
+function restoreMarksFromStorage(data,stations){
+  try{
+    const raw=localStorage.getItem(courseMarkKey(data));
+    if(!raw)return;
+    const saved=JSON.parse(raw);
+    const bi=stations.findIndex(function(s){return s.stationName===saved.board});
+    const ai=stations.findIndex(function(s){return s.stationName===saved.alight});
+    if(bi>=0)markBoardIdx=bi;
+    if(ai>=0)markAlightIdx=ai;
+  }catch(e){}
+}
+function markBoard(i){markBoardIdx=(markBoardIdx===i?null:i);saveMarksToStorage();updateMarkButtons();renderJournalBar()}
+function markAlight(i){markAlightIdx=(markAlightIdx===i?null:i);saveMarksToStorage();updateMarkButtons();renderJournalBar()}
 function renderJournalBar(){
   const bar=document.getElementById('journalBar');
   if(!bar||!currentTrainData)return;
@@ -521,6 +553,7 @@ function saveManualJourney(){
   list.push(entry);
   saveJournalEntries(list);
   markBoardIdx=null;markAlightIdx=null;
+  saveMarksToStorage();
   updateMarkButtons();
   renderJournalBar();
 }
@@ -618,7 +651,7 @@ function renderTrain(train,data){
   // NOWYM kursie — auto-odświeżenie co 5 min ładuje ten sam kurs od nowa
   // i nie powinno kasować tego, co użytkownik już zaznaczył.
   const isSameCourse=currentTrainData&&String(currentTrainData.scheduleId)===String(data.scheduleId)&&String(currentTrainData.orderId)===String(data.orderId);
-  if(!isSameCourse){markBoardIdx=null;markAlightIdx=null}
+  if(!isSameCourse){markBoardIdx=null;markAlightIdx=null;restoreMarksFromStorage(data,stations)}
   currentTrainData=data;currentStations=stations;
   const nm=nowMin();
   let passedIdx=-1;
