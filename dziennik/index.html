@@ -359,7 +359,10 @@ function exportToXlsx(){
   const ws=XLSX.utils.json_to_sheet(rows);
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,'Dzienniczek');
-  XLSX.writeFile(wb,'dzienniczek-podrozy.xlsx');
+  const n=new Date();
+  const pad=v=>String(v).padStart(2,'0');
+  const stamp=n.getFullYear()+'_'+pad(n.getMonth()+1)+'_'+pad(n.getDate())+'_'+pad(n.getHours())+'_'+pad(n.getMinutes())+'_'+pad(n.getSeconds());
+  XLSX.writeFile(wb,'dzienniczek-podrozy_'+stamp+'.xlsx');
 }
 
 function deleteEntry(key){
