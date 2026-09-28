@@ -15,7 +15,6 @@
   var GUIDE_KEY = "profileGuideV1";
   var SNOOZE_MS = 30 * 24 * 60 * 60 * 1000;
   var MAX_REFUSALS = 2;
-  var SHOW_DELAY_MS = 900;
 
   function load() {
     try {
@@ -32,8 +31,15 @@
     try { return !!(window.ProfileSync && ProfileSync.getToken()); } catch (e) { return false; }
   }
 
+  // Dymek samouczka zostaje w DOM po zakończeniu (tylko ukryty), więc liczy
+  // się wyłącznie widoczny.
+  function tourOpen() {
+    var t = document.querySelector(".spot-tooltip");
+    return !!(t && t.style.display !== "none");
+  }
+
   function blocked() {
-    return !!(document.querySelector(".spot-tooltip") ||
+    return !!(tourOpen() ||
       document.getElementById("profilePromptCard") ||
       document.getElementById("surveyCard"));
   }
@@ -107,10 +113,17 @@
     var s = load();
     if ((s.refusals || 0) >= MAX_REFUSALS) return;
     if (s.snoozeUntil && Date.now() < s.snoozeUntil) return;
-    setTimeout(function () {
-      if (hasToken() || blocked()) return;
+    // Gdy akurat trwa samouczek albo widać inną kartę, czekamy i próbujemy
+    // ponownie (do ok. minuty), zamiast rezygnować.
+    var attempts = 0;
+    setTimeout(function tryShow() {
+      if (hasToken()) return;
+      if (blocked()) {
+        if (attempts++ < 40) setTimeout(tryShow, 1500);
+        return;
+      }
       render(reason);
-    }, SHOW_DELAY_MS);
+    }, 700);
   }
 
   window.ProfilePrompt = { ask: ask };

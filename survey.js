@@ -65,7 +65,8 @@
 
   function blockedByOtherUi() {
     if (document.hidden) return true;
-    if (document.querySelector(".spot-tooltip")) return true;
+    var tip = document.querySelector(".spot-tooltip");
+    if (tip && tip.style.display !== "none") return true;
     if (document.querySelector(".confirm-overlay.open, .manual-save-overlay.open")) return true;
     var rem = document.getElementById("journalReminder");
     if (rem && rem.style.display !== "none" && rem.innerHTML.trim()) return true;
