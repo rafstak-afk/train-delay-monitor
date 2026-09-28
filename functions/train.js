@@ -194,6 +194,13 @@ const HTML = String.raw`<!DOCTYPE html>
 .rrow-head{display:grid;grid-template-columns:92px 60px 1fr 76px;gap:10px;padding:2px 8px 8px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);border-bottom:1px solid rgba(255,255,255,.18)}
 .rrow-head div:last-child,.rrow-head div:nth-child(2){text-align:center}
 .rrow:last-child{border-bottom:0}
+/* Kolumna stacji dopasowuje się do najdłuższej nazwy (a nie rozciąga na całą szerokość),
+   więc Per./Tor stoi tuż za nazwą. Wiersze są subgridami jednej siatki, żeby kolumny
+   były wyrównane między wierszami; ostatnia kolumna 1fr tylko domyka tło wiersza. */
+@supports (grid-template-columns:subgrid){
+.route-table{display:grid;grid-template-columns:92px 60px minmax(0,max-content) 76px minmax(0,1fr);column-gap:10px}
+.route-table>.rrow,.route-table>.rrow-head{grid-column:1/-1;grid-template-columns:subgrid;column-gap:10px}
+}
 .rrow.current{background:rgba(255,204,0,.13);outline:1px solid rgba(255,204,0,.35);border-radius:8px}
 .rrow.next{background:rgba(34,211,238,.10);border-radius:8px}
 .rrow.info{background:rgba(255,204,0,.055);border-radius:8px}
@@ -246,6 +253,10 @@ const HTML = String.raw`<!DOCTYPE html>
 @media(max-width:720px){body{padding:8px}.summary{grid-template-columns:1fr}.panel{padding:9px}
 .rrow{grid-template-columns:70px 40px 1fr 56px;gap:6px;padding:9px 6px}
 .rrow-head{grid-template-columns:70px 40px 1fr 56px;gap:6px;padding:0 6px 6px;font-size:10px}
+@supports (grid-template-columns:subgrid){
+.route-table{grid-template-columns:70px 40px minmax(0,max-content) 56px minmax(0,1fr);column-gap:6px}
+.route-table>.rrow,.route-table>.rrow-head{grid-template-columns:subgrid;column-gap:6px}
+}
 .time{font-size:20px}
 .delay-cell .time{font-size:16px}
 .station-name{font-size:15px}
