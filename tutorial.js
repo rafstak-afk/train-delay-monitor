@@ -62,7 +62,7 @@
       match: function (p) { return p.indexOf("/dziennik") === 0; },
       steps: [
         { sel: "#tripsToggle", title: "Trasy typowe", text: "Zwinięte, żeby wpisy były od razu na wierzchu. Rozwiń, by zdefiniować dom→praca i praca→dom — stacje, orientacyjną godzinę i kilometraż. Potem dodanie pasującego przejazdu to jeden klik na stronie biegu pociągu." },
-        { sel: "#entryList", title: "Zapisane przejazdy", text: "Tu widzisz wszystkie zapisane wpisy: godziny, opóźnienie, czas przejazdu i sumę opóźnień narastająco." }
+        { sel: "#entryList", title: "Zapisane przejazdy", text: "Tu widzisz wszystkie zapisane wpisy: godziny, opóźnienie i czas przejazdu. Od najnowszych, z możliwością eksportu do XLSX i ręcznej edycji (🔓 Odblokuj)." }
       ]
     }
   ];
