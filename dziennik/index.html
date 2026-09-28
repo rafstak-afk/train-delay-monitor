@@ -14,6 +14,23 @@ h1{text-align:center;font-size:26px;margin:6px 0 4px}
 .subtitle{text-align:center;color:var(--muted);font-size:13px;margin-bottom:18px}
 h2{margin:0 0 10px;font-size:17px}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin:14px 0}
+.trips-panel{padding:0;overflow:hidden}
+.trips-toggle{display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:0;color:var(--text);padding:13px 16px;cursor:pointer;text-align:left;font-family:inherit}
+.trips-toggle:hover{background:rgba(255,255,255,.04)}
+.trips-toggle:focus-visible{outline:2px solid var(--cyan);outline-offset:-2px}
+.trips-toggle-icon{font-size:20px}
+.trips-toggle-text{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.trips-toggle-title{font-size:15px;font-weight:800}
+.trips-toggle-summary{font-size:12px;color:var(--muted)}
+.trips-toggle-action{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:var(--cyan);background:rgba(34,211,238,.1);border:1px solid rgba(34,211,238,.35);border-radius:999px;padding:6px 12px;white-space:nowrap}
+.trips-chevron{display:inline-block;font-size:15px;line-height:1;transition:transform .3s ease}
+.trips-panel.open .trips-chevron{transform:rotate(180deg)}
+.trips-body{display:grid;grid-template-rows:0fr;transition:grid-template-rows .3s ease}
+.trips-panel.open .trips-body{grid-template-rows:1fr}
+.trips-body-inner{overflow:hidden;min-height:0;visibility:hidden;transition:visibility 0s linear .3s}
+.trips-panel.open .trips-body-inner{visibility:visible;transition-delay:0s}
+.trips-content{padding:0 16px 16px;border-top:1px solid var(--line)}
+@media(prefers-reduced-motion:reduce){.trips-body,.trips-chevron,.trips-body-inner{transition:none}}
 .trip-panel{display:grid;gap:16px}
 @media(min-width:620px){.trip-panel{grid-template-columns:1fr 1fr}}
 .trip-card h3{margin:0 0 8px;font-size:15px}
@@ -73,8 +90,13 @@ h2{margin:0 0 10px;font-size:17px}
   <h1>📓 Dzienniczek podróży</h1>
   <div class="subtitle">Zapisane przejazdy z zaznaczoną stacją wsiadania i wysiadania — dodajesz je na stronie biegu pociągu.</div>
 
-  <div class="panel">
-    <h2>Trasy typowe</h2>
+  <div class="panel trips-panel" id="tripsPanel">
+    <button type="button" class="trips-toggle" id="tripsToggle" aria-expanded="false" aria-controls="tripsBody" onclick="toggleTrips()">
+      <span class="trips-toggle-icon" aria-hidden="true">🛤️</span>
+      <span class="trips-toggle-text"><span class="trips-toggle-title">Trasy typowe</span><span class="trips-toggle-summary" id="tripsSummary"></span></span>
+      <span class="trips-toggle-action"><span id="tripsToggleLabel">Rozwiń</span><span class="trips-chevron" aria-hidden="true">▾</span></span>
+    </button>
+    <div class="trips-body" id="tripsBody"><div class="trips-body-inner"><div class="trips-content">
     <div class="status" id="tripStatus"></div>
     <div class="trip-panel">
       <div class="trip-card">
@@ -118,6 +140,7 @@ h2{margin:0 0 10px;font-size:17px}
         <button type="button" class="btn" onclick="saveTrip('pracaDom')">Zapisz trasę</button>
       </div>
     </div>
+    </div></div></div>
   </div>
 
   <div class="panel">
@@ -199,6 +222,21 @@ function renderTripsForm(){
   const trips=getTypicalTrips();
   fillTripForm('domPraca',trips.domPraca);
   fillTripForm('pracaDom',trips.pracaDom);
+  updateTripsSummary();
+}
+function toggleTrips(force){
+  const panel=document.getElementById('tripsPanel');
+  const open=typeof force==='boolean'?force:!panel.classList.contains('open');
+  panel.classList.toggle('open',open);
+  document.getElementById('tripsToggle').setAttribute('aria-expanded',open?'true':'false');
+  document.getElementById('tripsToggleLabel').textContent=open?'Zwiń':'Rozwiń';
+}
+function updateTripsSummary(){
+  const t=getTypicalTrips();
+  const names={domPraca:'Dom → Praca',pracaDom:'Praca → Dom'};
+  const set=['domPraca','pracaDom'].filter(id=>{const x=normalizeTrip(t[id]);return x&&x.leg1});
+  const el=document.getElementById('tripsSummary');
+  if(el)el.textContent=set.length?set.map(id=>names[id]).join(' · '):'Nie zdefiniowano — rozwiń, aby ustawić';
 }
 function saveTrip(id){
   const label=id==='domPraca'?'Dom → Praca':'Praca → Dom';
@@ -208,6 +246,7 @@ function saveTrip(id){
   const trips=getTypicalTrips();
   trips[id]=f;
   saveTypicalTrips(trips);
+  updateTripsSummary();
   st.textContent='Zapisano trasę „'+label+'”'+(f.leg2?' (z przesiadką).':'.');
   st.className='status ok';
 }
