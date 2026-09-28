@@ -37,7 +37,7 @@
       steps: [
         { sel: ".search-box", title: "Zacznij tutaj", text: "Wpisz nazwę dowolnej stacji, żeby sprawdzić jej odjazdy." },
         { sel: ".btn-api", title: "Żywa tablica", text: "Kliknij „Pokaż z API”, żeby zobaczyć odjazdy z realnymi opóźnieniami, nie tylko planem." },
-        { sel: "#stationButtons", title: "Ulubione stacje", text: "Twoje przypięte stacje. Puste miejsca same wypełniają się ostatnio przeglądanymi — gwiazdką ☆ przy tablicy przypinasz własne." },
+        { sel: "#stationButtons", title: "Ulubione stacje", text: "Twoje przypięte stacje. Dodaj własne gwiazdką ☆ przy tablicy poniżej." },
         { sel: "#alertButton", title: "Alarm opóźnień", text: "Włącz, żeby dostać powiadomienie o opóźnieniu lub odwołaniu na wybranej stacji." },
         { sel: '.bottom-nav button[onclick="toggleBurgerMenu()"]', title: "Dzienniczek podróży", text: "W menu (☰) jest 📓 Dzienniczek — notuje Twoje przejazdy razem z opóźnieniem." },
         { sel: '.bottom-nav a[href="/profil/"]', title: "Profil i synchronizacja", text: "Załóż tu token — 16 znaków, bez hasła i loginu — żeby zsynchronizować ulubione stacje, pociągi, alarmy i dzienniczek między urządzeniami." }
