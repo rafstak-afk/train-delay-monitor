@@ -267,7 +267,7 @@ const HTML = String.raw`<!DOCTYPE html>
     <label for="manualTripName">Nazwa trasy (opcjonalnie)</label>
     <input type="text" id="manualTripName" placeholder="np. Wycieczka do Krakowa">
     <label for="manualTripKm">Kilometraż (opcjonalnie)</label>
-    <input type="number" id="manualTripKm" min="0" placeholder="np. 45">
+    <input type="text" inputmode="decimal" id="manualTripKm" placeholder="np. 45">
     <div class="manual-save-actions">
       <button type="button" class="btn small secondary" onclick="closeManualSaveForm()">Anuluj</button>
       <button type="button" class="btn small" onclick="confirmManualSave()">Zapisz</button>
@@ -386,7 +386,7 @@ let lastTrainArgs=null;
 const JOURNAL_KEY='dziennikPodrozy';
 const TYPICAL_TRIPS_KEY='dziennikTrasyTypowe';
 let currentTrainData=null,currentStations=[];
-let markBoardIdx=null,markAlightIdx=null;
+let markBoardIdx=null,markAlightIdx=null,markMode=null;
 
 function getJournalEntries(){try{const v=JSON.parse(localStorage.getItem(JOURNAL_KEY));return Array.isArray(v)?v:[]}catch{return[]}}
 function saveJournalEntries(list){localStorage.setItem(JOURNAL_KEY,JSON.stringify(list));if(window.ProfileSync)ProfileSync.push({journalEntries:list})}
@@ -498,7 +498,8 @@ function saveMarksToStorage(){
       trainLabel:[currentTrainData.category,currentTrainData.trainNumber||currentTrainData.train].filter(Boolean).join(' '),
       // Zapisujemy dokładny adres do tego kursu — przypomnienie na tablicy
       // głównej (patrz index.html) prowadzi jednym klikiem z powrotem tutaj.
-      url:location.pathname+location.search
+      url:location.pathname+location.search,
+      mode:markMode||''
     };
     // JournalMarks (profile-sync.js) zapisuje lokalnie i, gdy jest profil,
     // synchronizuje zaznaczenie z innymi urządzeniami.
@@ -515,7 +516,7 @@ async function syncMarksFromProfile(){
     await JournalMarks.sync();
     if(!currentTrainData)return;
     if((markBoardIdx==null)!==(markAlightIdx==null))return;
-    markBoardIdx=null;markAlightIdx=null;
+    markBoardIdx=null;markAlightIdx=null;markMode=null;
     restoreMarksFromStorage(currentTrainData,currentStations);
     updateMarkButtons();
     renderJournalBar();
@@ -530,10 +531,56 @@ function restoreMarksFromStorage(data,stations){
     const ai=stations.findIndex(function(s){return s.stationName===saved.alight});
     if(bi>=0)markBoardIdx=bi;
     if(ai>=0)markAlightIdx=ai;
+    markMode=saved.mode||null;
   }catch(e){}
 }
-function markBoard(i){markBoardIdx=(markBoardIdx===i?null:i);saveMarksToStorage();updateMarkButtons();renderJournalBar()}
-function markAlight(i){markAlightIdx=(markAlightIdx===i?null:i);saveMarksToStorage();updateMarkButtons();renderJournalBar()}
+function markBoard(i){markBoardIdx=(markBoardIdx===i?null:i);if(markBoardIdx==null)markMode=null;saveMarksToStorage();updateMarkButtons();renderJournalBar()}
+function markAlight(i){markAlightIdx=(markAlightIdx===i?null:i);if(markAlightIdx==null)markMode=null;saveMarksToStorage();updateMarkButtons();renderJournalBar()}
+// Trasa typowa a godzina: godzina odjazdu ze stacji wsiadania mieści się
+// w oknie "Odjazd od–do" trasy (z zapasem 20 min). Bez ustawionych godzin
+// nie umiemy ocenić, więc uznajemy ją za typową.
+function isTypicalTime(trip,depTime){
+  const from=toMinutesJ(trip.timeFrom),to=toMinutesJ(trip.timeTo),d=toMinutesJ(depTime);
+  if(from==null||to==null||d==null)return true;
+  return d>=from-20&&d<=to+20;
+}
+// Czy ręcznie zaznaczone stacje są dokładnie jednym z odcinków trasy typowej
+// — wtedy zapis podstawia jej nazwę i km, bez pytania o nie za każdym razem.
+function typicalMetaForMarks(){
+  if(markBoardIdx==null||markAlightIdx==null||!currentStations[markBoardIdx]||!currentStations[markAlightIdx])return null;
+  const b=normStation(currentStations[markBoardIdx].stationName),a=normStation(currentStations[markAlightIdx].stationName);
+  const trips=getTypicalTrips();
+  for(const id of['domPraca','pracaDom']){
+    const trip=normalizeTrip(trips[id]);
+    if(!trip)continue;
+    for(const legNumber of[1,2]){
+      const leg=legNumber===1?trip.leg1:trip.leg2;
+      if(leg&&normStation(leg.board)===b&&normStation(leg.alight)===a)return{id,trip,leg,legNumber};
+    }
+  }
+  return null;
+}
+function promptDismissKey(){return currentTrainData?('dziennikPytanieNie_'+currentTrainData.scheduleId+'_'+currentTrainData.orderId+'_'+currentTrainData.operatingDate):null}
+function isPromptDismissed(){try{const k=promptDismissKey();return !!k&&localStorage.getItem(k)==='1'}catch(e){return false}}
+function dismissTypicalPrompt(){try{const k=promptDismissKey();if(k)localStorage.setItem(k,'1')}catch(e){}renderJournalBar()}
+// Zaznacza 🚏/🏁 na stacjach odcinka trasy typowej, do którego pasuje kurs.
+// mode 'edit' = przy zapisie pokaż formularz (nazwa, km) zamiast zapisu od razu.
+function markTypical(mode){
+  const m=matchTypicalTrip(currentStations);
+  if(!m)return;
+  markBoardIdx=m.boardIdx;markAlightIdx=m.alightIdx;markMode=mode||null;
+  saveMarksToStorage();updateMarkButtons();renderJournalBar();
+}
+function markTypicalNormal(){markTypical('typical')}
+function saveTypicalNow(){
+  const m=matchTypicalTrip(currentStations);
+  if(!m)return;
+  if(canSaveJourney(currentStations,m.alightIdx))saveTypicalJourney();else markTypical('typical');
+}
+function editTypicalNow(){
+  markTypical('edit');
+  if(markAlightIdx!=null&&canSaveJourney(currentStations,markAlightIdx))openManualSaveForm();
+}
 function renderJournalBar(){
   const bar=document.getElementById('journalBar');
   if(!bar||!currentTrainData)return;
@@ -553,7 +600,10 @@ function renderJournalBar(){
       html='<div class="journal-note ok">✓ Ten przejazd jest już w dzienniczku. <button type="button" class="link-btn" onclick="removeJournalEntry(\''+existing._key+'\')">Usuń wpis</button></div>';
     }else{
       const canSave=canSaveJourney(stations,markAlightIdx);
-      html='<div class="journal-note">🚏 '+esc(bS)+' → 🏁 '+esc(aS)+'. '+(canSave?'<button type="button" class="btn small" onclick="saveManualJourney()">💾 Zapisz do dzienniczka</button>':'<span class="hint">Dostępne po dotarciu do stacji wysiadania.</span>')+'</div>';
+      const meta=typicalMetaForMarks();
+      const direct=!!meta&&markMode!=='edit';
+      const metaTxt=meta?(' · trasa „'+esc(tripMetaName(meta))+'”'+(meta.trip.leg2?(' · odcinek '+meta.legNumber+'/2'):'')+(markMode==='edit'?' · do modyfikacji':'')):'';
+      html='<div class="journal-note">🚏 '+esc(bS)+' → 🏁 '+esc(aS)+metaTxt+'. '+(canSave?'<button type="button" class="btn small" onclick="saveManualJourney()">'+(direct?'📓 Dodaj do dzienniczka':'💾 Zapisz do dzienniczka')+'</button>':'<span class="hint">Dostępne po dotarciu do stacji wysiadania.</span>')+'</div>';
     }
   }else if(hasManualMark){
     html='<div class="journal-note warn">Stacja wysiadania musi być dalej na trasie niż wsiadania.</div>';
@@ -561,11 +611,22 @@ function renderJournalBar(){
     const bS=stations[tripMatch.boardIdx].stationName,aS=stations[tripMatch.alightIdx].stationName;
     const existing=findExistingEntry(data.operatingDate,data.scheduleId,data.orderId,bS,aS);
     const legTxt=tripMatch.trip.leg2?(' · odcinek '+tripMatch.legNumber+'/2'):'';
+    const name=tripMetaName(tripMatch);
+    const depT=stations[tripMatch.boardIdx].plannedDeparture||stations[tripMatch.boardIdx].plannedTime||'';
+    const typicalTime=isTypicalTime(tripMatch.trip,depT);
+    const canSave=canSaveJourney(stations,tripMatch.alightIdx);
     if(existing){
-      html='<div class="journal-note ok">✓ Zapisano w dzienniczku jako „'+esc(tripMatch.trip.label||tripMatch.id)+legTxt+'”. <button type="button" class="link-btn" onclick="removeJournalEntry(\''+existing._key+'\')">Usuń wpis</button></div>';
+      html='<div class="journal-note ok">✓ Zapisano w dzienniczku jako „'+esc(name)+legTxt+'”. <button type="button" class="link-btn" onclick="removeJournalEntry(\''+existing._key+'\')">Usuń wpis</button></div>';
+    }else if(isPromptDismissed()){
+      html='<div class="journal-note hint">🚏 Zaznacz stację wsiadania i 🏁 wysiadania przy stacjach poniżej, żeby zapisać ten przejazd do <a href="/dziennik/">dzienniczka podróży</a>.</div>';
+    }else if(typicalTime){
+      if(canSave){
+        html='<div class="journal-note">Ten kurs pasuje do trasy „'+esc(name)+legTxt+'” ('+esc(bS)+' → '+esc(aS)+'). <button type="button" class="btn small" onclick="saveTypicalJourney()">📓 Dodaj do dzienniczka</button></div>';
+      }else{
+        html='<div class="journal-note">🛤️ Kurs pasuje do trasy „'+esc(name)+legTxt+'” ('+esc(bS)+' → '+esc(aS)+') i mieści się w typowych godzinach. Zaznaczyć typowe przystanki? <button type="button" class="btn small" onclick="markTypicalNormal()">🚏🏁 Zaznacz</button><button type="button" class="link-btn" onclick="dismissTypicalPrompt()">Nie</button></div>';
+      }
     }else{
-      const canSave=canSaveJourney(stations,tripMatch.alightIdx);
-      html='<div class="journal-note">Ten kurs pasuje do trasy „'+esc(tripMatch.trip.label||tripMatch.id)+legTxt+'” ('+esc(bS)+' → '+esc(aS)+'). '+(canSave?'<button type="button" class="btn small" onclick="saveTypicalJourney()">📓 Dodaj do dzienniczka</button>':'<span class="hint">Dostępne po dotarciu do stacji wysiadania.</span>')+'</div>';
+      html='<div class="journal-note warn">🛤️ Trasa typowa „'+esc(name)+legTxt+'” ('+esc(bS)+' → '+esc(aS)+'), ale godzina odjazdu ('+esc(depT||'?')+') jest poza typową ('+esc(tripMatch.trip.timeFrom||'?')+'–'+esc(tripMatch.trip.timeTo||'?')+'). Zapisać typowo czy zmodyfikować? <button type="button" class="btn small" onclick="saveTypicalNow()">💾 Zapisz typowo</button><button type="button" class="btn small" onclick="editTypicalNow()">✏️ Zmodyfikuj</button><button type="button" class="link-btn" onclick="dismissTypicalPrompt()">Pomiń</button></div>';
     }
   }else{
     html='<div class="journal-note hint">🚏 Zaznacz stację wsiadania i 🏁 wysiadania przy stacjach poniżej, żeby zapisać ten przejazd do <a href="/dziennik/">dzienniczka podróży</a>.</div>';
@@ -574,8 +635,8 @@ function renderJournalBar(){
   updateFloatSaveBtn(tripMatch);
 }
 // Pływający przycisk zapisu — widoczny, gdy jest coś gotowego do zapisania
-// (oba przystanki zaznaczone albo pasuje trasa typowa), niezależnie od
-// tego, gdzie akurat przewinięta jest strona.
+// (oba przystanki zaznaczone albo pasuje trasa typowa w typowych godzinach),
+// niezależnie od tego, gdzie akurat przewinięta jest strona.
 function updateFloatSaveBtn(tripMatch){
   const btn=document.getElementById('floatSaveBtn');
   if(!btn||!currentTrainData)return;
@@ -584,14 +645,20 @@ function updateFloatSaveBtn(tripMatch){
   if(markBoardIdx!=null&&markAlightIdx!=null&&markAlightIdx>markBoardIdx){
     const bS=stations[markBoardIdx].stationName,aS=stations[markAlightIdx].stationName;
     const existing=findExistingEntry(data.operatingDate,data.scheduleId,data.orderId,bS,aS);
-    // Trasa nietypowa otwiera formularz (nazwa trasy + km) zamiast zapisywać
-    // od razu, więc przycisk pływający po kliknięciu tylko się chowa —
-    // stan "✓ Zapisano" pokazujemy dopiero po realnym zapisie w formularzu.
-    if(!existing&&canSaveJourney(stations,markAlightIdx)){show=true;label='💾 Zapisz do dzienniczka';handler=saveManualJourney;immediate=false}
-  }else if(tripMatch){
+    // Trasa nietypowa (albo oznaczona do modyfikacji) otwiera formularz
+    // (nazwa trasy + km) zamiast zapisywać od razu, więc przycisk pływający
+    // po kliknięciu tylko się chowa — stan "✓ Zapisano" pokazujemy dopiero
+    // po realnym zapisie w formularzu.
+    if(!existing&&canSaveJourney(stations,markAlightIdx)){
+      const direct=!!typicalMetaForMarks()&&markMode!=='edit';
+      show=true;label=direct?'📓 Dodaj do dzienniczka':'💾 Zapisz do dzienniczka';handler=saveManualJourney;immediate=direct;
+    }
+  }else if(tripMatch&&!isPromptDismissed()){
     const bS=stations[tripMatch.boardIdx].stationName,aS=stations[tripMatch.alightIdx].stationName;
     const existing=findExistingEntry(data.operatingDate,data.scheduleId,data.orderId,bS,aS);
-    if(!existing&&canSaveJourney(stations,tripMatch.alightIdx)){show=true;label='📓 Dodaj do dzienniczka';handler=saveTypicalJourney;immediate=true}
+    const b=stations[tripMatch.boardIdx];
+    const typicalTime=isTypicalTime(tripMatch.trip,b.plannedDeparture||b.plannedTime||'');
+    if(!existing&&typicalTime&&canSaveJourney(stations,tripMatch.alightIdx)){show=true;label='📓 Dodaj do dzienniczka';handler=saveTypicalJourney;immediate=true}
   }
   if(!show){btn.style.display='none';return}
   btn.style.display='block';
@@ -618,15 +685,41 @@ function saveTypicalJourney(){
   saveJournalEntries(list);
   renderJournalBar();
 }
+function clearMarksAfterSave(){
+  markBoardIdx=null;markAlightIdx=null;markMode=null;
+  saveMarksToStorage();
+  updateMarkButtons();
+  renderJournalBar();
+}
 function saveManualJourney(){
   if(!currentTrainData||markBoardIdx==null||markAlightIdx==null||markAlightIdx<=markBoardIdx)return;
+  // Zaznaczone stacje = odcinek trasy typowej (i nie prosiłeś o modyfikację)
+  // — zapisujemy od razu z jej nazwą i km.
+  const meta=typicalMetaForMarks();
+  if(meta&&markMode!=='edit'){
+    const entry=buildJournalEntry(currentTrainData,currentStations,markBoardIdx,markAlightIdx,meta);
+    const list=getJournalEntries();
+    list.push(entry);
+    saveJournalEntries(list);
+    clearMarksAfterSave();
+    return;
+  }
   openManualSaveForm();
+}
+function parseKmJ(v){
+  const s=String(v==null?'':v).trim().replace(',','.');
+  if(!s)return null;
+  const n=Number(s);
+  return isFinite(n)&&n>=0?n:null;
 }
 function openManualSaveForm(){
   const overlay=document.getElementById('manualSaveOverlay');
   if(!overlay)return;
-  document.getElementById('manualTripName').value='';
-  document.getElementById('manualTripKm').value='';
+  // Odcinek trasy typowej podstawia swoją nazwę i km jako punkt wyjścia do zmian.
+  const meta=typicalMetaForMarks();
+  const km=meta?tripMetaKm(meta):null;
+  document.getElementById('manualTripName').value=meta?tripMetaName(meta):'';
+  document.getElementById('manualTripKm').value=km!=null?String(km).replace('.',','):'';
   overlay.classList.add('open');
   setTimeout(function(){document.getElementById('manualTripName').focus()},50);
 }
@@ -638,19 +731,16 @@ function closeManualSaveForm(){
 function confirmManualSave(){
   if(!currentTrainData||markBoardIdx==null||markAlightIdx==null){closeManualSaveForm();return}
   const name=(document.getElementById('manualTripName').value||'').trim();
-  const kmRaw=document.getElementById('manualTripKm').value;
-  const km=kmRaw?Number(kmRaw):null;
+  const km=parseKmJ(document.getElementById('manualTripKm').value);
+  const meta=typicalMetaForMarks();
   closeManualSaveForm();
-  const entry=buildJournalEntry(currentTrainData,currentStations,markBoardIdx,markAlightIdx,null);
+  const entry=buildJournalEntry(currentTrainData,currentStations,markBoardIdx,markAlightIdx,meta);
   entry.distanceKm=km;
   if(name)entry.tripLabel=name;
   const list=getJournalEntries();
   list.push(entry);
   saveJournalEntries(list);
-  markBoardIdx=null;markAlightIdx=null;
-  saveMarksToStorage();
-  updateMarkButtons();
-  renderJournalBar();
+  clearMarksAfterSave();
 }
 function removeJournalEntry(key){
   saveJournalEntries(getJournalEntries().filter(function(e){return e._key!==key}));
@@ -746,7 +836,7 @@ function renderTrain(train,data){
   // NOWYM kursie — auto-odświeżenie co 5 min ładuje ten sam kurs od nowa
   // i nie powinno kasować tego, co użytkownik już zaznaczył.
   const isSameCourse=currentTrainData&&String(currentTrainData.scheduleId)===String(data.scheduleId)&&String(currentTrainData.orderId)===String(data.orderId);
-  if(!isSameCourse){markBoardIdx=null;markAlightIdx=null;restoreMarksFromStorage(data,stations)}
+  if(!isSameCourse){markBoardIdx=null;markAlightIdx=null;markMode=null;restoreMarksFromStorage(data,stations)}
   currentTrainData=data;currentStations=stations;
   const nm=nowMin();
   let passedIdx=-1;
