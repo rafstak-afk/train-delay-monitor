@@ -229,6 +229,8 @@ const HTML = String.raw`<!DOCTYPE html>
 .mark-btn{border:1px solid #4b5f76;background:transparent;border-radius:7px;padding:4px 7px;font-size:14px;cursor:pointer;opacity:.75;line-height:1.3}
 .mark-btn:hover{opacity:1}
 .mark-btn.active{opacity:1;border-color:var(--blue);background:rgba(11,87,208,.2)}
+.last-station{margin-top:8px;padding-top:7px;border-top:1px solid var(--line)}
+.last-line{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
 .journal-bar{margin:6px 0 4px}
 .legend{margin:8px 0 0;font-size:12px;color:var(--muted)}
 .legend summary{display:inline-block;cursor:pointer;list-style:none;padding:2px 9px;border:1px solid var(--line);border-radius:999px;user-select:none}
@@ -867,7 +869,7 @@ function renderTrain(train,data){
   const lastStationText=data.lastConfirmedStation||'brak potwierdzonej stacji';
   const lastTimeText=data.lastConfirmedStation?(data.lastConfirmedTime||''):'Brak twardego potwierdzenia realizacji z API PLK.';
 
-  let html='<div class="panel"><div class="summary"><div class="card"><div class="label">Pociąg</div><div class="big">'+esc(title||('Pociąg '+train))+'</div><div class="hint'+(isCancelledTrain?' hint-cancelled':'')+'">Status: '+esc(st[0])+(st[1]?' <span class="station-meta">('+esc(st[1])+')</span>':'')+'</div></div><div class="card"><div class="label">Ostatnia potwierdzona stacja</div><div class="big">'+esc(lastStationText)+'</div><div class="hint">'+esc(lastTimeText)+'</div></div></div>';
+  let html='<div class="panel"><div class="card"><div class="label">Pociąg</div><div class="big">'+esc(title||('Pociąg '+train))+'</div><div class="hint'+(isCancelledTrain?' hint-cancelled':'')+'">Status: '+esc(st[0])+(st[1]?' <span class="station-meta">('+esc(st[1])+')</span>':'')+'</div><div class="last-station"><div class="label">Ostatnia potwierdzona stacja</div><div class="last-line"><span class="big">'+esc(lastStationText)+'</span><span class="hint">'+esc(lastTimeText)+'</span></div></div></div>';
   html+='<details class="legend"><summary>ⓘ Jak czytać statusy stacji</summary><div class="hint">„Zaliczona” tylko przy potwierdzeniu API. Gdy czas już minął, a API nie potwierdza stacji, pokazujemy „BRAK INFO Z API”.</div></details><div id="journalBar" class="journal-bar"></div><div class="route-table"><div class="rrow-head"><div>Godz.</div><div>Opóźn.</div><div>Stacja</div><div>Per./Tor</div></div>';
 
   stations.forEach((s,i)=>{
