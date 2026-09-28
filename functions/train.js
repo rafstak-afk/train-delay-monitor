@@ -189,7 +189,7 @@ const HTML = String.raw`<!DOCTYPE html>
 <!-- app-version: 2026-06-01.1 status-human-confirmed-only -->
 <style>
 :root{--bg:#101820;--panel:#1c2833;--card:#223244;--line:#34495e;--text:#fff;--muted:#b8c3cf;--blue:#0b57d0;--green:#5dd39e;--yellow:#ffcc00;--red:#ff4d4d;--violet:#c084fc;--grey:#4b5563;--cyan:#22d3ee}
-*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text);padding:18px}.wrap{max-width:1180px;margin:0 auto}.btn{border:0;border-radius:10px;padding:12px 16px;background:var(--blue);color:#fff;font-weight:900;cursor:pointer;text-decoration:none;display:inline-block}.btn.secondary{background:var(--grey)}.btn.green{background:#198754}.btn.small{padding:8px 10px;font-size:12px;background:#374151}.status{text-align:center;color:var(--muted);min-height:28px;margin:12px 0}.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;margin:12px 0}.summary{display:grid;grid-template-columns:1fr 1fr;gap:10px}.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px}.label{color:var(--muted);font-size:13px}.big{font-size:24px;font-weight:900}.hint{font-size:13px;color:#d8e2ee;line-height:1.35}.hint-cancelled{font-size:19px;font-weight:900;color:var(--red)}.hint-cancelled .station-meta{color:var(--red);opacity:.85;font-weight:700}.route-title{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}h2{margin:0 0 8px;font-size:22px}.route-table{display:block}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text);padding:18px}.wrap{max-width:1180px;margin:0 auto}.btn{border:0;border-radius:10px;padding:12px 16px;background:var(--blue);color:#fff;font-weight:900;cursor:pointer;text-decoration:none;display:inline-block}.btn.secondary{background:var(--grey)}.btn.green{background:#198754}.btn.small{padding:8px 10px;font-size:12px;background:#374151}.status{text-align:center;color:var(--muted);min-height:28px;margin:12px 0}.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;margin:12px 0}.summary{display:grid;grid-template-columns:1fr 1fr;gap:8px}.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 11px}.label{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.03em}.big{font-size:19px;font-weight:900;line-height:1.2}.hint{font-size:13px;color:#d8e2ee;line-height:1.35}.hint-cancelled{font-size:19px;font-weight:900;color:var(--red)}.hint-cancelled .station-meta{color:var(--red);opacity:.85;font-weight:700}.route-title{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}h2{margin:0 0 8px;font-size:22px}.route-table{display:block}
 .rrow{display:grid;grid-template-columns:92px 60px 1fr 76px;gap:10px;align-items:center;padding:8px 8px;border-bottom:1px solid rgba(255,255,255,.10)}
 .rrow-head{display:grid;grid-template-columns:92px 60px 1fr 76px;gap:10px;padding:2px 8px 8px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);border-bottom:1px solid rgba(255,255,255,.18)}
 .rrow-head div:last-child,.rrow-head div:nth-child(2){text-align:center}
@@ -229,7 +229,13 @@ const HTML = String.raw`<!DOCTYPE html>
 .mark-btn{border:1px solid #4b5f76;background:transparent;border-radius:7px;padding:4px 7px;font-size:14px;cursor:pointer;opacity:.75;line-height:1.3}
 .mark-btn:hover{opacity:1}
 .mark-btn.active{opacity:1;border-color:var(--blue);background:rgba(11,87,208,.2)}
-.journal-bar{margin:8px 0 4px}
+.journal-bar{margin:6px 0 4px}
+.legend{margin:8px 0 0;font-size:12px;color:var(--muted)}
+.legend summary{display:inline-block;cursor:pointer;list-style:none;padding:2px 9px;border:1px solid var(--line);border-radius:999px;user-select:none}
+.legend summary::-webkit-details-marker{display:none}
+.legend[open] summary{border-color:var(--cyan);color:var(--cyan)}
+.legend .hint{margin-top:6px;font-size:12px}
+.journal-note.hint{display:block;background:transparent;border:0;padding:2px 2px;font-size:12px;color:var(--muted)}
 .journal-note{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13px;color:#d8e2ee;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .journal-note a{color:var(--cyan)}
 .journal-note.ok{border-color:rgba(93,211,158,.4);color:var(--green)}
@@ -250,7 +256,7 @@ const HTML = String.raw`<!DOCTYPE html>
 .plat-num{font-size:20px;font-weight:800;line-height:1}
 .plat-track{font-size:11px;color:var(--muted);margin-top:2px}
 .err{background:#3b1d1d;border:1px solid #dc3545;color:#ffd6d6;border-radius:10px;padding:12px}.loader{display:flex;align-items:center;justify-content:center;gap:10px;margin:14px auto;color:#d8e2ee}.train-loader{position:relative;width:120px;height:22px;overflow:hidden}.train-dot{position:absolute;left:-35px;top:1px;font-size:20px;animation:ride 1.35s linear infinite}.track{position:absolute;left:0;right:0;bottom:0;border-bottom:2px dashed #5c6b7a}@keyframes ride{0%{left:-35px}100%{left:125px}}.copy-note{font-size:12px;color:var(--muted);text-align:center;margin-top:6px}
-@media(max-width:720px){body{padding:8px}.summary{grid-template-columns:1fr}.panel{padding:9px}
+@media(max-width:720px){body{padding:8px}.summary{grid-template-columns:1fr 1fr;gap:6px}.card{padding:7px 9px}.panel{padding:9px}
 .rrow{grid-template-columns:70px 40px 1fr 56px;gap:6px;padding:9px 6px}
 .rrow-head{grid-template-columns:70px 40px 1fr 56px;gap:6px;padding:0 6px 6px;font-size:10px}
 @supports (grid-template-columns:subgrid){
@@ -263,7 +269,7 @@ const HTML = String.raw`<!DOCTYPE html>
 .badge{font-size:10px;padding:2px 6px}
 .plat-num{font-size:17px}
 .plat-track{font-size:10px}
-.big{font-size:20px}}
+.big{font-size:16px}.hint-cancelled{font-size:15px}}
 </style>
 </head>
 <body>
@@ -629,7 +635,7 @@ function renderJournalBar(){
     if(existing){
       html='<div class="journal-note ok">✓ Zapisano w dzienniczku jako „'+esc(name)+legTxt+'”. <button type="button" class="link-btn" onclick="removeJournalEntry(\''+existing._key+'\')">Usuń wpis</button></div>';
     }else if(isPromptDismissed()){
-      html='<div class="journal-note hint">🚏 Zaznacz stację wsiadania i 🏁 wysiadania przy stacjach poniżej, żeby zapisać ten przejazd do <a href="/dziennik/">dzienniczka podróży</a>.</div>';
+      html='<div class="journal-note hint">🚏🏁 Zaznacz przy stacjach, gdzie wsiadasz i wysiadasz — zapiszę przejazd w <a href="/dziennik/">dzienniczku</a>.</div>';
     }else if(typicalTime){
       if(canSave){
         html='<div class="journal-note">Ten kurs pasuje do trasy „'+esc(name)+legTxt+'” ('+esc(bS)+' → '+esc(aS)+'). <button type="button" class="btn small" onclick="saveTypicalJourney()">📓 Dodaj do dzienniczka</button></div>';
@@ -640,7 +646,7 @@ function renderJournalBar(){
       html='<div class="journal-note warn">🛤️ Trasa typowa „'+esc(name)+legTxt+'” ('+esc(bS)+' → '+esc(aS)+'), ale godzina odjazdu ('+esc(depT||'?')+') jest poza typową ('+esc(tripMatch.trip.timeFrom||'?')+'–'+esc(tripMatch.trip.timeTo||'?')+'). Zapisać typowo czy zmodyfikować? <button type="button" class="btn small" onclick="saveTypicalNow()">💾 Zapisz typowo</button><button type="button" class="btn small" onclick="editTypicalNow()">✏️ Zmodyfikuj</button><button type="button" class="link-btn" onclick="dismissTypicalPrompt()">Pomiń</button></div>';
     }
   }else{
-    html='<div class="journal-note hint">🚏 Zaznacz stację wsiadania i 🏁 wysiadania przy stacjach poniżej, żeby zapisać ten przejazd do <a href="/dziennik/">dzienniczka podróży</a>.</div>';
+    html='<div class="journal-note hint">🚏🏁 Zaznacz przy stacjach, gdzie wsiadasz i wysiadasz — zapiszę przejazd w <a href="/dziennik/">dzienniczku</a>.</div>';
   }
   bar.innerHTML=html;
   updateFloatSaveBtn(tripMatch);
@@ -861,8 +867,8 @@ function renderTrain(train,data){
   const lastStationText=data.lastConfirmedStation||'brak potwierdzonej stacji';
   const lastTimeText=data.lastConfirmedStation?(data.lastConfirmedTime||''):'Brak twardego potwierdzenia realizacji z API PLK.';
 
-  let html='<div class="panel"><div class="summary"><div class="card"><div class="label">Pociąg</div><div class="big">'+esc(title||('Pociąg '+train))+'</div><div class="hint'+(isCancelledTrain?' hint-cancelled':'')+'">Status: '+esc(st[0])+(st[1]?' <span class="station-meta">('+esc(st[1])+')</span>':'')+'</div></div><div class="card"><div class="label">Ostatnia potwierdzona stacja</div><div class="big">'+esc(lastStationText)+'</div><div class="hint">'+esc(lastTimeText)+'</div></div></div></div>';
-  html+='<div class="panel"><div class="route-title"><div class="hint">„Zaliczona” tylko przy potwierdzeniu API. Gdy czas już minął, a API nie potwierdza stacji, pokazujemy „BRAK INFO Z API”.</div></div><div id="journalBar" class="journal-bar"></div><div class="route-table"><div class="rrow-head"><div>Godz.</div><div>Opóźn.</div><div>Stacja</div><div>Per./Tor</div></div>';
+  let html='<div class="panel"><div class="summary"><div class="card"><div class="label">Pociąg</div><div class="big">'+esc(title||('Pociąg '+train))+'</div><div class="hint'+(isCancelledTrain?' hint-cancelled':'')+'">Status: '+esc(st[0])+(st[1]?' <span class="station-meta">('+esc(st[1])+')</span>':'')+'</div></div><div class="card"><div class="label">Ostatnia potwierdzona stacja</div><div class="big">'+esc(lastStationText)+'</div><div class="hint">'+esc(lastTimeText)+'</div></div></div>';
+  html+='<details class="legend"><summary>ⓘ Jak czytać statusy stacji</summary><div class="hint">„Zaliczona” tylko przy potwierdzeniu API. Gdy czas już minął, a API nie potwierdza stacji, pokazujemy „BRAK INFO Z API”.</div></details><div id="journalBar" class="journal-bar"></div><div class="route-table"><div class="rrow-head"><div>Godz.</div><div>Opóźn.</div><div>Stacja</div><div>Per./Tor</div></div>';
 
   stations.forEach((s,i)=>{
     let state='future',txt='przed',badge='future';
