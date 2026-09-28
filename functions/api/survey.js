@@ -3,6 +3,7 @@
 // POST /api/survey  {stars, hasToken, version}  -> zapisuje odpowiedź
 // GET  /api/survey  (nagłówek X-Survey-Key)     -> statystyki dla strony
 //                                                  /ankieta-wyniki/
+// DELETE /api/survey (nagłówek X-Survey-Key)    -> zeruje statystyki
 //
 // Nie zapisujemy ani tokenu profilu, ani adresu IP. Zamiast pojedynczych
 // odpowiedzi trzymamy jeden zbiorczy rekord (liczniki + ostatnie 50 wpisów),
@@ -121,7 +122,8 @@ async function handlePost(request, env) {
   return json({ ok: true });
 }
 
-async function handleGet(request, env) {
+// Wspólne sprawdzenie klucza dla odczytu i zerowania wyników.
+function checkAdmin(request, env) {
   const secret = String(env.SURVEY_ADMIN || "");
   if (secret.length < 8) {
     return json({ ok: false, error: "Wyniki nie są jeszcze skonfigurowane (zmienna SURVEY_ADMIN)." }, 503);
@@ -129,6 +131,19 @@ async function handleGet(request, env) {
   if (!safeEqual(request.headers.get("X-Survey-Key"), secret)) {
     return json({ ok: false, error: "Nieprawidłowy klucz." }, 401);
   }
+  return null;
+}
+
+async function handleDelete(request, env) {
+  const denied = checkAdmin(request, env);
+  if (denied) return denied;
+  await env.USER_PROFILES.delete(STATS_KEY);
+  return json({ ok: true });
+}
+
+async function handleGet(request, env) {
+  const denied = checkAdmin(request, env);
+  if (denied) return denied;
   let stats = null;
   try {
     stats = await env.USER_PROFILES.get(STATS_KEY, "json");
@@ -146,5 +161,6 @@ export async function onRequest(context) {
   }
   if (request.method === "POST") return handlePost(request, env);
   if (request.method === "GET") return handleGet(request, env);
+  if (request.method === "DELETE") return handleDelete(request, env);
   return json({ ok: false, error: "Method not allowed" }, 405);
 }

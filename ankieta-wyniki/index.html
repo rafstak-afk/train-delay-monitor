@@ -31,6 +31,7 @@ input{width:100%;padding:11px;border-radius:9px;border:1px solid var(--line);bac
 table{width:100%;border-collapse:collapse;font-size:13px}
 th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left}
 th{color:var(--muted);font-weight:700;font-size:12px}
+.btn.danger{background:var(--red)}
 .hide{display:none}
 </style>
 </head>
@@ -55,6 +56,7 @@ th{color:var(--muted);font-weight:700;font-size:12px}
     <div class="panel"><h2>Z tokenem i bez</h2><div class="split" id="split"></div></div>
     <div class="panel"><h2>Wersje aplikacji</h2><div id="versions"></div></div>
     <div class="panel"><h2>Ostatnie odpowiedzi</h2><div id="recent"></div></div>
+    <div class="panel"><h2>Zerowanie</h2><button type="button" class="btn danger" id="reset">🗑️ Wyzeruj wszystkie wyniki</button><div class="status" id="resetStatus"></div></div>
   </div>
 </div>
 
@@ -100,6 +102,15 @@ th{color:var(--muted);font-weight:700;font-size:12px}
       })
       .catch(function(){setStatus('Nie udało się połączyć z serwerem.',true)});
   }
+  $('reset').addEventListener('click',function(){
+    if(!confirm('Na pewno wyzerować WSZYSTKIE wyniki ankiety? Tego nie da się cofnąć.'))return;
+    var key=null;try{key=sessionStorage.getItem(STORE)}catch(e){}
+    if(!key){$('resetStatus').textContent='Zaloguj się ponownie.';return}
+    $('resetStatus').textContent='Zeruję…';
+    fetch('/api/survey',{method:'DELETE',headers:{'X-Survey-Key':key}}).then(function(r){return r.json()}).then(function(j){
+      if(j&&j.ok){$('resetStatus').textContent='Wyniki wyzerowane.';load(key)}else{$('resetStatus').textContent=(j&&j.error)||'Nie udało się wyzerować.'}
+    }).catch(function(){$('resetStatus').textContent='Nie udało się połączyć z serwerem.'});
+  });
   $('go').addEventListener('click',function(){var k=$('key').value.trim();if(!k){setStatus('Wpisz klucz.',true);return}load(k)});
   $('key').addEventListener('keydown',function(e){if(e.key==='Enter')$('go').click()});
   var saved=null;try{saved=sessionStorage.getItem(STORE)}catch(e){}
