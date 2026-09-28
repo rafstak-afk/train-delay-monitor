@@ -423,6 +423,20 @@ function matchTypicalTrip(stations){
   return null;
 }
 function canSaveJourney(stations,alightIdx){return alightIdx!=null&&stations[alightIdx]&&stations[alightIdx].status==='confirmed'}
+// Nazwa i kilometraż wpisu z trasy typowej — każdy odcinek przesiadki ma
+// własne km (leg.distanceKm), a nazwa (np. "do pracy") jest wspólna dla
+// odcinków. Starsze trasy miały jeden kilometraż całości, który ma sens
+// tylko bez przesiadki — przy przesiadce lepiej zostawić pusto niż wpisać
+// pełną trasę przy każdym odcinku.
+function tripMetaName(tripMeta){
+  return tripMeta.trip.name||(tripMeta.id==='domPraca'?'do pracy':'z pracy');
+}
+function tripMetaKm(tripMeta){
+  const leg=tripMeta.leg;
+  if(leg&&leg.distanceKm!=null&&leg.distanceKm!=='')return Number(leg.distanceKm);
+  if(!tripMeta.trip.leg2&&tripMeta.trip.distanceKm)return Number(tripMeta.trip.distanceKm);
+  return null;
+}
 function buildJournalEntry(data,stations,boardIdx,alightIdx,tripMeta){
   const b=stations[boardIdx],a=stations[alightIdx];
   const plannedDep=b.plannedDeparture||b.plannedTime;
@@ -444,9 +458,9 @@ function buildJournalEntry(data,stations,boardIdx,alightIdx,tripMeta){
     plannedDurationMin:durationMinJ(plannedDep,plannedArr),
     actualDurationMin:durationMinJ(actualDep,actualArr),
     tripType:tripMeta?tripMeta.id:'inna',
-    tripLabel:tripMeta?tripMeta.trip.label:'',
+    tripLabel:tripMeta?tripMetaName(tripMeta):'',
     legNumber:tripMeta?tripMeta.legNumber:null,
-    distanceKm:tripMeta&&tripMeta.trip.distanceKm?Number(tripMeta.trip.distanceKm):null,
+    distanceKm:tripMeta?tripMetaKm(tripMeta):null,
     scheduleId:data.scheduleId,
     orderId:data.orderId,
     _key:journeyKey(data.operatingDate,data.scheduleId,data.orderId,b.stationName,a.stationName),

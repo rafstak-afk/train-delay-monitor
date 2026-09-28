@@ -43,6 +43,8 @@ h2{margin:0 0 10px;font-size:17px}
 .leg-optional{font-weight:400;color:var(--muted)}
 .btn{border:0;border-radius:9px;padding:9px 14px;background:var(--blue);color:#fff;font-weight:700;cursor:pointer;font-size:13.5px;width:100%}
 .btn:hover{background:#084298}
+.btn.secondary{background:#4b5563;margin-bottom:8px}
+.btn.secondary:hover{background:#5b6472}
 .status{text-align:center;color:var(--muted);min-height:20px;margin:8px 0;font-size:13px}
 .status.ok{color:var(--green)}
 .empty{text-align:center;padding:32px 16px;color:var(--muted);font-size:14px}
@@ -101,42 +103,51 @@ h2{margin:0 0 10px;font-size:17px}
     <div class="trip-panel">
       <div class="trip-card">
         <h3>🏠→💼 Dom → Praca</h3>
+        <label>Nazwa przejazdu (dla każdego odcinka)</label>
+        <input type="text" id="trip_domPraca_name" placeholder="do pracy">
         <div class="leg-label">Odcinek 1<span class="leg-optional"> (przed przesiadką, jeśli jest)</span></div>
         <label>Stacja wsiadania</label>
         <input type="text" id="trip_domPraca_leg1board" placeholder="np. Tarnowskie Góry">
         <label>Stacja wysiadania</label>
-        <input type="text" id="trip_domPraca_leg1alight" placeholder="np. Katowice">
+        <input type="text" id="trip_domPraca_leg1alight" placeholder="np. Chorzów Batory">
+        <label>Kilometraż odcinka 1 (km)</label>
+        <input type="text" inputmode="decimal" id="trip_domPraca_leg1km" placeholder="np. 28,1">
         <div class="leg-label">Odcinek 2<span class="leg-optional"> (po przesiadce — zostaw puste, jeśli jedziesz bez przesiadki)</span></div>
         <label>Stacja wsiadania</label>
-        <input type="text" id="trip_domPraca_leg2board" placeholder="np. Katowice">
+        <input type="text" id="trip_domPraca_leg2board" placeholder="np. Chorzów Batory">
         <label>Stacja wysiadania</label>
-        <input type="text" id="trip_domPraca_leg2alight" placeholder="np. Gliwice">
+        <input type="text" id="trip_domPraca_leg2alight" placeholder="np. Katowice">
+        <label>Kilometraż odcinka 2 (km)</label>
+        <input type="text" inputmode="decimal" id="trip_domPraca_leg2km" placeholder="np. 5,8">
         <div class="row2">
           <div><label>Odjazd od</label><input type="time" id="trip_domPraca_from"></div>
           <div><label>Odjazd do</label><input type="time" id="trip_domPraca_to"></div>
         </div>
-        <label>Kilometraż całej trasy (opcjonalnie)</label>
-        <input type="number" id="trip_domPraca_km" placeholder="np. 32" min="0">
         <button type="button" class="btn" onclick="saveTrip('domPraca')">Zapisz trasę</button>
       </div>
       <div class="trip-card">
         <h3>💼→🏠 Praca → Dom</h3>
+        <label>Nazwa przejazdu (dla każdego odcinka)</label>
+        <input type="text" id="trip_pracaDom_name" placeholder="z pracy">
         <div class="leg-label">Odcinek 1<span class="leg-optional"> (przed przesiadką, jeśli jest)</span></div>
         <label>Stacja wsiadania</label>
         <input type="text" id="trip_pracaDom_leg1board" placeholder="np. Katowice">
         <label>Stacja wysiadania</label>
-        <input type="text" id="trip_pracaDom_leg1alight" placeholder="np. Tarnowskie Góry">
+        <input type="text" id="trip_pracaDom_leg1alight" placeholder="np. Chorzów Batory">
+        <label>Kilometraż odcinka 1 (km)</label>
+        <input type="text" inputmode="decimal" id="trip_pracaDom_leg1km" placeholder="np. 5,8">
         <div class="leg-label">Odcinek 2<span class="leg-optional"> (po przesiadce — zostaw puste, jeśli jedziesz bez przesiadki)</span></div>
         <label>Stacja wsiadania</label>
-        <input type="text" id="trip_pracaDom_leg2board" placeholder="np. Gliwice">
+        <input type="text" id="trip_pracaDom_leg2board" placeholder="np. Chorzów Batory">
         <label>Stacja wysiadania</label>
-        <input type="text" id="trip_pracaDom_leg2alight" placeholder="np. Katowice">
+        <input type="text" id="trip_pracaDom_leg2alight" placeholder="np. Tarnowskie Góry">
+        <label>Kilometraż odcinka 2 (km)</label>
+        <input type="text" inputmode="decimal" id="trip_pracaDom_leg2km" placeholder="np. 28,1">
         <div class="row2">
           <div><label>Odjazd od</label><input type="time" id="trip_pracaDom_from"></div>
           <div><label>Odjazd do</label><input type="time" id="trip_pracaDom_to"></div>
         </div>
-        <label>Kilometraż całej trasy (opcjonalnie)</label>
-        <input type="number" id="trip_pracaDom_km" placeholder="np. 32" min="0">
+        <button type="button" class="btn secondary" onclick="fillReverseTrip()">↩ Uzupełnij odwrotnie do trasy Dom → Praca</button>
         <button type="button" class="btn" onclick="saveTrip('pracaDom')">Zapisz trasę</button>
       </div>
     </div>
@@ -193,30 +204,63 @@ function normalizeTrip(trip){
   if(trip.board&&trip.alight)return Object.assign({},trip,{leg1:{board:trip.board,alight:trip.alight},leg2:null});
   return trip;
 }
+function parseKm(v){
+  const s=String(v==null?'':v).trim().replace(',','.');
+  if(!s)return null;
+  const n=Number(s);
+  return isFinite(n)&&n>=0?n:null;
+}
+function fmtKm(n){return String(n).replace('.',',')}
+function defaultTripName(id){return id==='domPraca'?'do pracy':'z pracy'}
 function tripFields(id,label){
   const g=k=>document.getElementById('trip_'+id+'_'+k);
-  const leg1={board:g('leg1board').value.trim(),alight:g('leg1alight').value.trim()};
+  const leg1={board:g('leg1board').value.trim(),alight:g('leg1alight').value.trim(),distanceKm:parseKm(g('leg1km').value)};
   const leg2b=g('leg2board').value.trim(),leg2a=g('leg2alight').value.trim();
   return{
     label,
-    leg1:(leg1.board&&leg1.alight)?leg1:null,
-    leg2:(leg2b&&leg2a)?{board:leg2b,alight:leg2a}:null,
+    name:g('name').value.trim()||defaultTripName(id),
+    leg1:leg1.board&&leg1.alight?leg1:null,
+    leg2:leg2b&&leg2a?{board:leg2b,alight:leg2a,distanceKm:parseKm(g('leg2km').value)}:null,
     timeFrom:g('from').value||'',
-    timeTo:g('to').value||'',
-    distanceKm:g('km').value?Number(g('km').value):null
+    timeTo:g('to').value||''
   };
 }
 function fillTripForm(id,tripRaw){
   const trip=normalizeTrip(tripRaw);
   const g=k=>document.getElementById('trip_'+id+'_'+k);
   if(!trip)return;
+  // Starsze trasy miały jeden kilometraż całości — sensowny tylko bez przesiadki.
+  const legacyKm=(!trip.leg2&&trip.distanceKm!=null)?trip.distanceKm:null;
+  const km1=trip.leg1&&trip.leg1.distanceKm!=null?trip.leg1.distanceKm:legacyKm;
+  const km2=trip.leg2&&trip.leg2.distanceKm!=null?trip.leg2.distanceKm:null;
+  g('name').value=trip.name||'';
   g('leg1board').value=trip.leg1?trip.leg1.board||'':'';
   g('leg1alight').value=trip.leg1?trip.leg1.alight||'':'';
+  g('leg1km').value=km1!=null?fmtKm(km1):'';
   g('leg2board').value=trip.leg2?trip.leg2.board||'':'';
   g('leg2alight').value=trip.leg2?trip.leg2.alight||'':'';
+  g('leg2km').value=km2!=null?fmtKm(km2):'';
   g('from').value=trip.timeFrom||'';
   g('to').value=trip.timeTo||'';
-  g('km').value=trip.distanceKm!=null?trip.distanceKm:'';
+}
+// Trasa powrotna to ta sama trasa od końca — te same odcinki w odwrotnej
+// kolejności i z tymi samymi kilometrami. Wypełnia tylko formularz "Praca → Dom"
+// (bez zapisu i bez godzin), użytkownik sprawdza i zapisuje sam.
+function fillReverseTrip(){
+  const g=(id,k)=>document.getElementById('trip_'+id+'_'+k);
+  const legs=[1,2].map(n=>({board:g('domPraca','leg'+n+'board').value.trim(),alight:g('domPraca','leg'+n+'alight').value.trim(),km:g('domPraca','leg'+n+'km').value.trim()})).filter(l=>l.board&&l.alight);
+  const st=document.getElementById('tripStatus');
+  if(!legs.length){st.textContent='Najpierw uzupełnij trasę Dom → Praca.';st.className='status';return}
+  const rev=legs.reverse().map(l=>({board:l.alight,alight:l.board,km:l.km}));
+  [1,2].forEach(n=>{
+    const l=rev[n-1]||{board:'',alight:'',km:''};
+    g('pracaDom','leg'+n+'board').value=l.board;
+    g('pracaDom','leg'+n+'alight').value=l.alight;
+    g('pracaDom','leg'+n+'km').value=l.km;
+  });
+  if(!g('pracaDom','name').value.trim())g('pracaDom','name').value=defaultTripName('pracaDom');
+  st.textContent='Uzupełniono trasę Praca → Dom odwrotnie. Ustaw godziny i kliknij „Zapisz trasę”.';
+  st.className='status ok';
 }
 function renderTripsForm(){
   const trips=getTypicalTrips();
@@ -259,7 +303,7 @@ function entryCardHtml(e){
   const depHtml=depReal?('<span class="entry-strike">'+escapeHtml(e.plannedDeparture)+'</span>('+escapeHtml(e.actualDeparture)+')'):escapeHtml(e.plannedDeparture||'—');
   const arrHtml=arrReal?('<span class="entry-strike">'+escapeHtml(e.plannedArrival)+'</span>('+escapeHtml(e.actualArrival)+')'):escapeHtml(e.plannedArrival||'—');
   const tripBadge=e.tripLabel?('<span class="entry-badge">'+escapeHtml(e.tripLabel)+(e.legNumber?(' · odc. '+e.legNumber+'/2'):'')+'</span>'):'';
-  const km=e.distanceKm!=null?(e.distanceKm+' km'):'';
+  const km=e.distanceKm!=null?(fmtKm(e.distanceKm)+' km'):'';
   return `<div class="entry">
     <button type="button" class="entry-del" title="Usuń wpis" onclick="deleteEntry('${e._key}')">✕</button>
     <div class="entry-top"><span class="entry-date">${escapeHtml(dateFmt)}</span><span class="entry-train">${escapeHtml(trainLabel)}</span></div>
@@ -288,7 +332,8 @@ function entryEditHtml(e){
     <div class="edit-row"><label>Odjazd pl.</label>${g('ef-depP',e.plannedDeparture,'time')}<label>rz.</label>${g('ef-depA',e.actualDeparture,'time')}</div>
     <div class="edit-row"><label>Przyj. pl.</label>${g('ef-arrP',e.plannedArrival,'time')}<label>rz.</label>${g('ef-arrA',e.actualArrival,'time')}</div>
     <div class="edit-row"><label>Opóźn. (min)</label><input type="number" class="ef-delay narrow" value="${e.delayMinutes||0}"></div>
-    <div class="edit-row"><label>Km</label><input type="number" class="ef-km narrow" value="${e.distanceKm!=null?e.distanceKm:''}"></div>
+    <div class="edit-row"><label>Km</label><input type="number" step="any" class="ef-km narrow" value="${e.distanceKm!=null?e.distanceKm:''}"></div>
+    <div class="edit-row"><label>Nazwa</label>${g('ef-label',e.tripLabel)}</div>
   </div>`;
 }
 
@@ -334,6 +379,7 @@ function readEditedEntries(){
     e.actualArrival=v('ef-arrA')||v('ef-arrP');
     e.delayMinutes=Number(v('ef-delay'))||0;
     e.distanceKm=v('ef-km')?Number(v('ef-km')):null;
+    e.tripLabel=v('ef-label').trim();
     e.plannedDurationMin=durationMinJ(e.plannedDeparture,e.plannedArrival);
     e.actualDurationMin=durationMinJ(e.actualDeparture,e.actualArrival);
   });
