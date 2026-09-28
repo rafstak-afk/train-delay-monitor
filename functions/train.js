@@ -468,12 +468,13 @@ function courseMarkKey(data){return 'dziennikZaznaczenie_'+data.scheduleId+'_'+d
 function saveMarksToStorage(){
   if(!currentTrainData)return;
   try{
+    const markKey=courseMarkKey(currentTrainData);
     if(markBoardIdx==null||markAlightIdx==null){
-      localStorage.removeItem(courseMarkKey(currentTrainData));
+      if(window.JournalMarks)JournalMarks.remove(markKey);else localStorage.removeItem(markKey);
       return;
     }
     const alight=currentStations[markAlightIdx];
-    localStorage.setItem(courseMarkKey(currentTrainData),JSON.stringify({
+    const markObj={
       board:currentStations[markBoardIdx].stationName,
       alight:alight.stationName,
       plannedArrival:alight.plannedArrival||alight.plannedTime||'',
@@ -484,7 +485,26 @@ function saveMarksToStorage(){
       // Zapisujemy dokładny adres do tego kursu — przypomnienie na tablicy
       // głównej (patrz index.html) prowadzi jednym klikiem z powrotem tutaj.
       url:location.pathname+location.search
-    }));
+    };
+    // JournalMarks (profile-sync.js) zapisuje lokalnie i, gdy jest profil,
+    // synchronizuje zaznaczenie z innymi urządzeniami.
+    if(window.JournalMarks)JournalMarks.set(markKey,markObj);else localStorage.setItem(markKey,JSON.stringify(markObj));
+  }catch(e){}
+}
+// Zaznaczenia zrobione na innym urządzeniu dociągamy z profilu i, jeśli
+// jest otwarty kurs, którego dotyczą, odtwarzamy je na ekranie. Niepełnego
+// (tylko wsiadanie) zaznaczenia w pamięci nie ruszamy — nie trafia do
+// localStorage, więc synchronizacja skasowałaby je użytkownikowi sprzed nosa.
+async function syncMarksFromProfile(){
+  if(!(window.JournalMarks&&window.ProfileSync&&ProfileSync.getToken()))return;
+  try{
+    await JournalMarks.sync();
+    if(!currentTrainData)return;
+    if((markBoardIdx==null)!==(markAlightIdx==null))return;
+    markBoardIdx=null;markAlightIdx=null;
+    restoreMarksFromStorage(currentTrainData,currentStations);
+    updateMarkButtons();
+    renderJournalBar();
   }catch(e){}
 }
 function restoreMarksFromStorage(data,stations){
@@ -768,6 +788,7 @@ function saveLastTrainContext(train,data){
 function renderFallback(train,msg){setStatus('Nie mam identyfikatorów kursu z tablicy.');document.getElementById('content').innerHTML='<div class="panel"><h2>Pociąg '+esc(train)+'</h2><div class="err">'+esc(msg||'Brak pełnych identyfikatorów kursu.')+'</div><p class="hint">Kliknij numer pociągu bezpośrednio z naszej tablicy odjazdów. Sam numer może oznaczać więcej niż jeden kurs.</p><a class="btn green" target="_blank" rel="noopener" href="'+esc(portalUrl(train))+'">Otwórz wyszukiwarkę w Portal Pasażera</a></div>'}
 document.addEventListener('DOMContentLoaded',function(){
   syncTypicalTripsFromProfile();
+  syncMarksFromProfile();
   if(qs('train'))loadTrain();
   const overlay=document.getElementById('manualSaveOverlay');
   if(overlay){
