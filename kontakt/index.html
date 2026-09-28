@@ -126,6 +126,7 @@ textarea{min-height:140px;resize:vertical;line-height:1.4}
       $('copyBtn').disabled=true;
       return;
     }
+    btn.style.pointerEvents='';btn.removeAttribute('aria-disabled');
     btn.style.opacity=empty?'.6':'1';
     btn.setAttribute('href',mailHref());
     $('copyBtn').disabled=false;
