@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Uwagi i kontakt</title>
+<style>
+:root{--bg:#101820;--panel:#1c2833;--card:#223244;--line:#34495e;--text:#fff;--muted:#b8c3cf;--blue:#0b57d0;--green:#5dd39e;--yellow:#ffcc00;--red:#ff4d4d;--cyan:#22d3ee}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text);padding:18px}
+.wrap{max-width:720px;margin:0 auto}
+a.back{display:inline-block;margin-bottom:10px;color:var(--muted);text-decoration:none;font-size:14px}
+h1{text-align:center;font-size:26px;margin:6px 0 4px}
+.subtitle{text-align:center;color:var(--muted);font-size:13px;margin-bottom:18px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin:14px 0}
+label{display:block;font-size:12px;color:var(--muted);margin:0 0 4px}
+select,textarea{width:100%;padding:10px;border-radius:9px;border:1px solid var(--line);background:var(--card);color:#fff;font-size:15px;font-family:inherit;margin-bottom:12px}
+textarea{min-height:140px;resize:vertical;line-height:1.4}
+.counter{text-align:right;font-size:11px;color:var(--muted);margin:-8px 0 10px}
+.check{display:flex;gap:9px;align-items:flex-start;font-size:13px;color:#d8e2ee;margin:2px 0 8px}
+.check input{margin-top:3px}
+.info{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:12.5px;color:var(--muted);line-height:1.6;margin-bottom:12px}
+.info b{color:#fff}
+.chip{display:inline-block;border-radius:999px;padding:1px 9px;font-size:11.5px;font-weight:800;margin-left:4px}
+.chip.on{background:rgba(93,211,158,.18);color:var(--green)}
+.chip.off{background:rgba(184,195,207,.16);color:var(--muted)}
+.btns{display:flex;gap:10px;flex-wrap:wrap}
+.btn{flex:1;min-width:150px;border:0;border-radius:10px;padding:12px 14px;background:var(--blue);color:#fff;font-weight:800;cursor:pointer;font-size:14px;text-align:center;text-decoration:none}
+.btn:hover{background:#084298}
+.btn.secondary{background:#4b5563}
+.btn.secondary:hover{background:#5b6472}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.status{min-height:20px;margin-top:10px;font-size:13px;color:var(--muted);text-align:center}
+.status.ok{color:var(--green)}
+.status.warn{color:var(--yellow)}
+.status.err{color:var(--red)}
+.hint{font-size:12px;color:var(--muted);line-height:1.5;margin-top:10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="/">← Tablica</a>
+  <h1>💬 Uwagi i kontakt</h1>
+  <div class="subtitle">Znalazłeś błąd albo masz pomysł? Napisz — otworzę Ci gotową wiadomość e-mail.</div>
+
+  <div class="panel">
+    <label for="kind">Rodzaj uwagi</label>
+    <select id="kind">
+      <option value="Błąd">🐞 Błąd / coś nie działa</option>
+      <option value="Pomysł">💡 Pomysł / propozycja</option>
+      <option value="Pytanie">❓ Pytanie</option>
+      <option value="Inne">✉️ Inne</option>
+    </select>
+
+    <label for="msg">Treść</label>
+    <textarea id="msg" maxlength="700" placeholder="Co się stało? Co miałoby działać inaczej?"></textarea>
+    <div class="counter"><span id="cnt">0</span> / 700</div>
+
+    <label class="check"><input type="checkbox" id="withInfo" checked><span>Dołącz dane techniczne (pomagają odtworzyć problem). Nie ma tu imienia, adresu ani tokenu profilu.</span></label>
+    <div class="info" id="infoBox"></div>
+
+    <div class="btns">
+      <a class="btn" id="mailBtn" href="#" role="button">✉️ Napisz e-mail</a>
+      <button type="button" class="btn secondary" id="copyBtn">📋 Kopiuj treść</button>
+    </div>
+    <div class="status" id="status"></div>
+    <div class="hint">Wiadomość otworzy się w Twoim programie pocztowym (wysyłasz ją sam, z własnego adresu). Jeśli nic się nie otworzy, użyj „Kopiuj treść” i wklej ją do maila.</div>
+  </div>
+</div>
+
+<script src="/profile-sync.js"></script>
+<script>
+(function(){
+  var TO=null,VERSION='nieznana';
+  var $=function(id){return document.getElementById(id)};
+
+  function hasProfile(){try{return !!(window.ProfileSync&&ProfileSync.getToken())}catch(e){return false}}
+  function referrerPath(){
+    try{
+      if(!document.referrer)return '—';
+      var u=new URL(document.referrer);
+      return u.origin===location.origin?(u.pathname+u.search):'—';
+    }catch(e){return '—'}
+  }
+  function techLines(){
+    var ua=String(navigator.userAgent||'').slice(0,140);
+    return [
+      ['Wersja aplikacji',VERSION],
+      ['Strona, z której piszesz',referrerPath()],
+      ['Urządzenie',ua],
+      ['Ekran',window.innerWidth+'×'+window.innerHeight],
+      ['Profil (token)',hasProfile()?'tak, używam profilu (sam token NIE jest dołączany)':'nie, bez profilu']
+    ];
+  }
+  function renderInfo(){
+    var lines=techLines();
+    var prof=hasProfile();
+    $('infoBox').innerHTML=lines.map(function(l){
+      var v=String(l[1]).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]});
+      if(l[0]==='Profil (token)')return '<div><b>'+l[0]+':</b><span class="chip '+(prof?'on':'off')+'">'+(prof?'używasz profilu':'bez profilu')+'</span></div>';
+      return '<div><b>'+l[0]+':</b> '+v+'</div>';
+    }).join('');
+    $('infoBox').style.display=$('withInfo').checked?'block':'none';
+  }
+  function buildBody(){
+    var text=$('msg').value.trim();
+    if($('withInfo').checked){
+      text+='\r\n\r\n--- dane techniczne ---\r\n'+techLines().map(function(l){return l[0]+': '+l[1]}).join('\r\n');
+    }
+    return text;
+  }
+  function subject(){return '[Tablica odjazdów] '+$('kind').value}
+  function mailHref(){
+    return 'mailto:'+TO+'?subject='+encodeURIComponent(subject())+'&body='+encodeURIComponent(buildBody());
+  }
+  function setStatus(t,cls){var s=$('status');s.textContent=t||'';s.className='status'+(cls?' '+cls:'')}
+
+  function refresh(){
+    $('cnt').textContent=$('msg').value.length;
+    renderInfo();
+    var ready=!!TO;
+    var empty=!$('msg').value.trim();
+    var btn=$('mailBtn');
+    if(!ready){
+      btn.setAttribute('aria-disabled','true');btn.style.opacity='.5';btn.style.pointerEvents='none';btn.removeAttribute('href');
+      $('copyBtn').disabled=true;
+      return;
+    }
+    btn.style.opacity=empty?'.6':'1';
+    btn.setAttribute('href',mailHref());
+    $('copyBtn').disabled=false;
+    if(mailHref().length>1900)setStatus('Wiadomość jest długa — jeśli poczta się nie otworzy, użyj „Kopiuj treść”.','warn');
+    else if($('status').className.indexOf('warn')>=0)setStatus('');
+  }
+
+  $('mailBtn').addEventListener('click',function(e){
+    if(!TO){e.preventDefault();return}
+    if(!$('msg').value.trim()){e.preventDefault();setStatus('Najpierw wpisz treść uwagi.','err');$('msg').focus();return}
+    setStatus('Otwieram program pocztowy…','ok');
+  });
+  $('copyBtn').addEventListener('click',function(){
+    if(!$('msg').value.trim()){setStatus('Najpierw wpisz treść uwagi.','err');$('msg').focus();return}
+    var full='Do: '+TO+'\r\nTemat: '+subject()+'\r\n\r\n'+buildBody();
+    var done=function(){setStatus('Skopiowano. Wklej do nowej wiadomości e-mail.','ok')};
+    var fail=function(){
+      var ta=document.createElement('textarea');ta.value=full;document.body.appendChild(ta);ta.select();
+      try{document.execCommand('copy');done()}catch(e){setStatus('Nie udało się skopiować. Zaznacz i skopiuj treść ręcznie.','err')}
+      document.body.removeChild(ta);
+    };
+    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(full).then(done,fail);else fail();
+  });
+  ['input','change'].forEach(function(ev){
+    $('msg').addEventListener(ev,refresh);
+    $('kind').addEventListener(ev,refresh);
+    $('withInfo').addEventListener(ev,refresh);
+  });
+
+  // Adres pochodzi z ustawień serwera (patrz functions/api/contact.js).
+  fetch('/api/contact',{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){
+    if(j&&j.ok&&j.to){TO=j.to}else{setStatus('Adres kontaktowy nie jest jeszcze skonfigurowany — formularz jest chwilowo nieaktywny.','warn')}
+  }).catch(function(){setStatus('Nie udało się pobrać adresu kontaktowego. Spróbuj ponownie później.','err')}).then(refresh);
+
+  // Numer wersji bierzemy z plakietki na tablicy głównej.
+  fetch('/',{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){
+    var m=t.match(/v\.\s*0\.\d+/);if(m)VERSION=m[0];
+  }).catch(function(){}).then(refresh);
+
+  refresh();
+})();
+</script>
+</body>
+</html>
