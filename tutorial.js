@@ -30,7 +30,7 @@
         { sel: ".btn-api", title: "Żywa tablica", text: "Kliknij „Pokaż z API”, żeby zobaczyć odjazdy z realnymi opóźnieniami, nie tylko planem." },
         { sel: "#stationButtons", title: "Ulubione stacje", text: "Twoje przypięte stacje. Puste miejsca same wypełniają się ostatnio przeglądanymi — gwiazdką ☆ przy tablicy przypinasz własne." },
         { sel: "#alertButton", title: "Alarm opóźnień", text: "Włącz, żeby dostać powiadomienie o opóźnieniu lub odwołaniu na wybranej stacji." },
-        { sel: '.bottom-nav button[onclick="toggleBurgerMenu()"]', title: "Dzienniczek podróży", text: "W menu (☰) znajdziesz też 📓 Dzienniczek podróży — zaznaczasz stację wsiadania i wysiadania na biegu pociągu, a on sam liczy czas przejazdu i opóźnienie." },
+        { sel: '.bottom-nav button[onclick="toggleBurgerMenu()"]', title: "Dzienniczek podróży", text: "W menu (☰) jest 📓 Dzienniczek — notuje Twoje przejazdy razem z opóźnieniem." },
         { sel: '.bottom-nav a[href="/profil/"]', title: "Profil i synchronizacja", text: "Załóż tu token — 16 znaków, bez hasła i loginu — żeby zsynchronizować ulubione stacje, pociągi, alarmy i dzienniczek między urządzeniami." }
       ]
     },
@@ -40,15 +40,15 @@
         { sel: "#list", title: "Twoje pociągi", text: "Tu widzisz status każdego śledzonego kursu: opóźnienie i ostatnią zaliczoną stację. Kliknij kartę, żeby zobaczyć cały bieg." },
         { sel: "#addTrainForm", title: "Dodaj pociąg", text: "Dodaj stację, numer i planową godzinę raz — od teraz zawsze zobaczysz go tu z aktualnym statusem." },
         { sel: "#refreshBtn", title: "Odśwież ręcznie", text: "Lista i tak sama się aktualizuje po powrocie po dłuższej przerwie, ale możesz też odświeżyć w każdej chwili." },
-        { sel: 'a[href="/dziennik/"]', title: "Dzienniczek podróży", text: "Notuj rzeczywiste przejazdy — zaznaczasz stację wsiadania i wysiadania na biegu pociągu, a dzienniczek sam liczy czas i opóźnienie." },
+        { sel: 'a[href="/dziennik/"]', title: "Dzienniczek podróży", text: "Twoje przejazdy z opóźnieniem — dodajesz je na stronie biegu pociągu." },
         { sel: 'a[href="/profil/"]', title: "Profil i synchronizacja", text: "Token z profilu zabierze tę listę, alarmy i dzienniczek na każde Twoje urządzenie." }
       ]
     },
     {
       match: function (p) { return p.indexOf("/train") === 0; },
       steps: [
-        { sel: "#status", title: "Cały bieg pociągu", text: "Trafiasz tu, klikając numer pociągu na tablicy albo na liście Moje Pociągi V2. Poniżej zobaczysz trasę stacja po stacji: godziny planowe i rzeczywiste, opóźnienie osobno dla przyjazdu i odjazdu, peron i tor." },
-        { sel: ".mark-btns", title: "Dzienniczek podróży", text: "Zaznacz 🚏 stację wsiadania i 🏁 wysiadania, żeby zapisać ten przejazd do dzienniczka — z automatycznie policzonym czasem i opóźnieniem." }
+        { sel: "#status", title: "Cały bieg pociągu", text: "Cała trasa pociągu stacja po stacji: godziny planowe i rzeczywiste, opóźnienie, peron i tor." },
+        { sel: ".mark-btns", title: "Dzienniczek podróży", text: "Jedziesz tym pociągiem? Zaznacz 🚏 gdzie wsiadasz i 🏁 gdzie wysiadasz — resztę policzymy." }
       ]
     },
     {
@@ -61,8 +61,8 @@
     {
       match: function (p) { return p.indexOf("/dziennik") === 0; },
       steps: [
-        { sel: "#tripsToggle", title: "Trasy typowe", text: "Zwinięte, żeby wpisy były od razu na wierzchu. Rozwiń, by zdefiniować dom→praca i praca→dom — stacje (także z przesiadką), orientacyjną godzinę, nazwę i kilometraż każdego odcinka. Potem dodanie pasującego przejazdu to jeden klik na stronie biegu pociągu." },
-        { sel: "#entryList", title: "Zapisane przejazdy", text: "Tu widzisz wszystkie zapisane wpisy: godziny, opóźnienie i czas przejazdu. Od najnowszych, z możliwością eksportu do XLSX i ręcznej edycji (🔓 Odblokuj)." }
+        { sel: "#tripsToggle", title: "Trasy typowe", text: "Ustaw raz swoją codzienną trasę (np. dom→praca). Potem aplikacja sama zapyta, czy zapisać pasujący pociąg." },
+        { sel: "#entryList", title: "Zapisane przejazdy", text: "Twoje zapisane przejazdy, od najnowszych. Możesz je poprawić (🔓) albo pobrać jako XLSX." }
       ]
     }
   ];
