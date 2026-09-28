@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Wyniki ankiety</title>
+<style>
+:root{--bg:#101820;--panel:#1c2833;--card:#223244;--line:#34495e;--text:#fff;--muted:#b8c3cf;--blue:#0b57d0;--green:#5dd39e;--yellow:#ffcc00;--red:#ff4d4d}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text);padding:18px}
+.wrap{max-width:720px;margin:0 auto}
+a.back{display:inline-block;margin-bottom:10px;color:var(--muted);text-decoration:none;font-size:14px}
+h1{text-align:center;font-size:24px;margin:6px 0 16px}
+h2{font-size:15px;margin:0 0 10px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin:14px 0}
+input{width:100%;padding:11px;border-radius:9px;border:1px solid var(--line);background:var(--card);color:#fff;font-size:15px;margin-bottom:10px}
+.btn{border:0;border-radius:10px;padding:11px 16px;background:var(--blue);color:#fff;font-weight:800;cursor:pointer;font-size:14px;width:100%}
+.status{min-height:20px;margin-top:8px;font-size:13px;color:var(--muted);text-align:center}
+.status.err{color:var(--red)}
+.big{font-size:40px;font-weight:900;text-align:center;line-height:1.1}
+.big small{font-size:16px;color:var(--muted);font-weight:400}
+.sub{text-align:center;color:var(--muted);font-size:13px;margin-top:4px}
+.bar-row{display:grid;grid-template-columns:34px 1fr 42px;gap:8px;align-items:center;margin:6px 0;font-size:13px}
+.bar{height:14px;background:var(--card);border-radius:7px;overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--yellow)}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.split .box{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px;text-align:center}
+.split .box b{font-size:22px;display:block}
+.split .box span{font-size:12px;color:var(--muted)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left}
+th{color:var(--muted);font-weight:700;font-size:12px}
+.hide{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="/">← Tablica</a>
+  <h1>⭐ Wyniki ankiety</h1>
+
+  <div class="panel" id="loginPanel">
+    <h2>Klucz dostępu</h2>
+    <input type="password" id="key" placeholder="Wartość zmiennej SURVEY_ADMIN" autocomplete="off">
+    <button type="button" class="btn" id="go">Pokaż wyniki</button>
+    <div class="status" id="status"></div>
+  </div>
+
+  <div id="results" class="hide">
+    <div class="panel">
+      <div class="big"><span id="avg">—</span> <small>/ 5</small></div>
+      <div class="sub"><span id="total">0</span> odpowiedzi</div>
+    </div>
+    <div class="panel"><h2>Rozkład ocen</h2><div id="dist"></div></div>
+    <div class="panel"><h2>Z tokenem i bez</h2><div class="split" id="split"></div></div>
+    <div class="panel"><h2>Wersje aplikacji</h2><div id="versions"></div></div>
+    <div class="panel"><h2>Ostatnie odpowiedzi</h2><div id="recent"></div></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id)};
+  var STORE='surveyAdminKey';
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+  function avg(sum,n){return n?(sum/n).toFixed(2).replace('.',','):'—'}
+  function setStatus(t,err){var s=$('status');s.textContent=t||'';s.className='status'+(err?' err':'')}
+
+  function render(st){
+    $('loginPanel').classList.add('hide');
+    $('results').classList.remove('hide');
+    $('avg').textContent=avg(st.sum,st.total);
+    $('total').textContent=st.total;
+    var max=Math.max.apply(null,st.dist.concat([1]));
+    var rows='';
+    for(var i=5;i>=1;i--){
+      var n=st.dist[i-1]||0;
+      rows+='<div class="bar-row"><span>'+i+' ★</span><div class="bar"><i style="width:'+Math.round(n/max*100)+'%"></i></div><span>'+n+'</span></div>';
+    }
+    $('dist').innerHTML=rows;
+    $('split').innerHTML=
+      '<div class="box"><b>'+avg(st.token.sum,st.token.n)+'</b><span>z tokenem ('+st.token.n+')</span></div>'+
+      '<div class="box"><b>'+avg(st.anon.sum,st.anon.n)+'</b><span>bez tokenu ('+st.anon.n+')</span></div>';
+    var vs=Object.keys(st.versions).sort();
+    $('versions').innerHTML=vs.length?'<table><tr><th>Wersja</th><th>Odpowiedzi</th><th>Średnia</th></tr>'+vs.map(function(v){var x=st.versions[v];return '<tr><td>'+esc(v)+'</td><td>'+x.n+'</td><td>'+avg(x.sum,x.n)+'</td></tr>'}).join('')+'</table>':'<div class="sub">Brak danych.</div>';
+    $('recent').innerHTML=st.recent.length?'<table><tr><th>Kiedy</th><th>Ocena</th><th>Token</th><th>Wersja</th></tr>'+st.recent.map(function(r){
+      var d=new Date(r.at);var when=isNaN(d)?esc(r.at):d.toLocaleString('pl-PL',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+      return '<tr><td>'+when+'</td><td>'+esc(r.stars)+' ★</td><td>'+(r.t?'tak':'nie')+'</td><td>'+esc(r.v)+'</td></tr>';
+    }).join('')+'</table>':'<div class="sub">Jeszcze nikt nie odpowiedział.</div>';
+  }
+
+  function load(key){
+    setStatus('Pobieram…');
+    fetch('/api/survey',{headers:{'X-Survey-Key':key},cache:'no-store'})
+      .then(function(r){return r.json().then(function(j){return {status:r.status,body:j}})})
+      .then(function(x){
+        if(x.body&&x.body.ok){try{sessionStorage.setItem(STORE,key)}catch(e){}render(x.body.stats);return}
+        try{sessionStorage.removeItem(STORE)}catch(e){}
+        setStatus((x.body&&x.body.error)||('Błąd '+x.status),true);
+      })
+      .catch(function(){setStatus('Nie udało się połączyć z serwerem.',true)});
+  }
+  $('go').addEventListener('click',function(){var k=$('key').value.trim();if(!k){setStatus('Wpisz klucz.',true);return}load(k)});
+  $('key').addEventListener('keydown',function(e){if(e.key==='Enter')$('go').click()});
+  var saved=null;try{saved=sessionStorage.getItem(STORE)}catch(e){}
+  if(saved)load(saved);
+})();
+</script>
+</body>
+</html>
