@@ -14,6 +14,25 @@ const TOKEN_RE = /^[A-Z0-9]{16}$/;
 // Ma to czyścić tokeny porzucone/zapomniane, nie karać rzadkiego użycia.
 const PROFILE_TTL_SECONDS = 60 * 60 * 24 * 180; // 180 dni
 
+// Nowy rekord powstaje TYLKO na wyraźne żądanie ("create": true), które
+// wysyła przycisk "Utwórz nowy profil" (albo urządzenie odtwarzające profil,
+// który wygasł). Zwykły zapis do nieistniejącego tokenu jest odrzucany —
+// inaczej literówka w tokenie zakładała po cichu "profil-widmo". Liczbę
+// utworzeń z jednego adresu na dobę ograniczamy, żeby nie dało się
+// zaśmiecać bazy pustymi rekordami.
+const MAX_CREATES_PER_IP_PER_DAY = 5;
+
+// Skrót adresu IP tylko do tego limitu (klucz żyje w KV maks. 2 doby).
+async function ipHash(request) {
+  const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+  const data = new TextEncoder().encode(ip + "|profile-create");
+  const buf = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(buf))
+    .slice(0, 12)
+    .map(b => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: CORS_JSON });
 }
@@ -84,6 +103,31 @@ export async function onRequest(context) {
     }
 
     const existingRaw = await env.USER_PROFILES.get(token);
+
+    if (!existingRaw) {
+      if (body?.create !== true) {
+        return json({
+          ok: false,
+          code: "no_profile",
+          error: "Nie ma takiego profilu."
+        }, 404);
+      }
+
+      const day = new Date().toISOString().slice(0, 10);
+      const limitKey = "profilecreate:" + (await ipHash(request)) + ":" + day;
+      const used = parseInt((await env.USER_PROFILES.get(limitKey)) || "0", 10) || 0;
+
+      if (used >= MAX_CREATES_PER_IP_PER_DAY) {
+        return json({
+          ok: false,
+          code: "create_limit",
+          error: "Dziś utworzono już zbyt wiele profili z tego adresu."
+        }, 429);
+      }
+
+      await env.USER_PROFILES.put(limitKey, String(used + 1), { expirationTtl: 172800 });
+    }
+
     const existing = existingRaw ? JSON.parse(existingRaw) : {};
 
     const merged = {

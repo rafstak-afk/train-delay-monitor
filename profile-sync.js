@@ -40,10 +40,32 @@
     }
   }
 
+  // Token jest "zweryfikowany", gdy serwer potwierdził, że taki profil
+  // istnieje (utworzony tu, wczytany albo udany zapis/odczyt). Tylko takie
+  // urządzenie może odtworzyć profil, który wygasł po 180 dniach; token, którego
+  // serwer nigdy nie znał (np. literówka), jest po prostu porzucany.
+  const VERIFIED_KEY = "profileTokenVerified";
+  let lastError = null;
+
+  function isVerified() {
+    try {
+      return localStorage.getItem(VERIFIED_KEY) === "1";
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function markVerified() {
+    try {
+      localStorage.setItem(VERIFIED_KEY, "1");
+    } catch (e) {}
+  }
+
   function setToken(token) {
     const t = normalize(token);
     try {
       localStorage.setItem(STORAGE_KEY, t);
+      localStorage.removeItem(VERIFIED_KEY);
     } catch (e) {}
     return t;
   }
@@ -51,6 +73,7 @@
   function clearToken() {
     try {
       localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(VERIFIED_KEY);
     } catch (e) {}
   }
 
@@ -64,26 +87,83 @@
       });
       if (!res.ok) return null;
       const body = await res.json();
-      return body && body.ok ? (body.data || null) : null;
+      const data = body && body.ok ? (body.data || null) : null;
+      if (data) markVerified();
+      return data;
     } catch (e) {
       return null;
     }
   }
 
-  async function push(patch) {
-    const token = getToken();
-    if (!token) return false;
+  // Czy profil o takim tokenie istnieje? "exists" | "missing" | "error" |
+  // "invalid". Nie zmienia niczego na urządzeniu — do sprawdzenia tokenu
+  // ZANIM zostanie zapisany.
+  async function check(rawToken) {
+    const token = normalize(rawToken);
+    if (!isValid(token)) return "invalid";
+    try {
+      const res = await fetch("/api/profile?token=" + encodeURIComponent(token), { cache: "no-store" });
+      if (!res.ok) return "error";
+      const body = await res.json();
+      if (!body || !body.ok) return "error";
+      return body.data ? "exists" : "missing";
+    } catch (e) {
+      return "error";
+    }
+  }
 
+  async function putOnce(token, patch, create) {
     try {
       const res = await fetch("/api/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, patch })
+        body: JSON.stringify({ token, patch, create: !!create })
       });
-      return res.ok;
+      let code = null;
+      if (!res.ok) {
+        try {
+          const j = await res.json();
+          code = j && j.code ? j.code : null;
+        } catch (e) {}
+      }
+      return { ok: res.ok, code: code || (res.ok ? null : "http_" + res.status) };
     } catch (e) {
+      return { ok: false, code: "network" };
+    }
+  }
+
+  // opts.create = true tylko przy świadomym zakładaniu profilu. Serwer nie
+  // tworzy rekordu przy zwykłym zapisie: jeśli profilu nie ma (wygasł albo
+  // token nigdy nie istniał), a urządzenie już go używało — odtwarzamy go;
+  // jeśli nie — porzucamy token.
+  async function push(patch, opts) {
+    const token = getToken();
+    if (!token) return false;
+    lastError = null;
+
+    const first = await putOnce(token, patch, !!(opts && opts.create));
+    if (first.ok) {
+      markVerified();
+      return true;
+    }
+
+    if (first.code === "no_profile") {
+      if (isVerified()) {
+        const again = await putOnce(token, patch, true);
+        if (again.ok) {
+          markVerified();
+          return true;
+        }
+        lastError = again.code;
+        return false;
+      }
+      clearToken();
+      lastError = "no_profile";
       return false;
     }
+
+    lastError = first.code;
+    return false;
   }
 
   window.ProfileSync = {
@@ -95,7 +175,11 @@
     format,
     isValid,
     pull,
-    push
+    push,
+    check,
+    markVerified,
+    isVerified,
+    get lastError() { return lastError; }
   };
 
   // Zaznaczenia 🚏/🏁 z /train (niezapisane przejazdy, z których tablica

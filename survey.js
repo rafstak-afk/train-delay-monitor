@@ -70,6 +70,7 @@
     var rem = document.getElementById("journalReminder");
     if (rem && rem.style.display !== "none" && rem.innerHTML.trim()) return true;
     if (document.getElementById("surveyCard")) return true;
+    if (document.getElementById("profilePromptCard")) return true;
     return false;
   }
 

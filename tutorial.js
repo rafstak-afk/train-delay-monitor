@@ -16,6 +16,15 @@
   "use strict";
 
   const SEEN_KEY = "tutorialSeenV1";
+  // Przewodnik po zakładaniu profilu: profile-prompt.js ustawia "pending" po
+  // zgodzie użytkownika, a na /profil/ ten plik prowadzi go krok po kroku.
+  const GUIDE_KEY = "profileGuideV1";
+
+  const GUIDED_PROFILE_STEPS = [
+    { sel: "#createBtn", waitClick: true, title: "Utwórz profil", text: "Kliknij ten przycisk. Nie ma hasła ani rejestracji — dostaniesz tylko kod (token), który jest kluczem do Twoich danych." },
+    { sel: "#activeToken", title: "To Twój token", text: "16 znaków. Kto go zna, ma dostęp do Twoich danych — dlatego nie udostępniaj go nikomu." },
+    { sel: "#copyBtn", title: "Zapisz go", text: "Skopiuj token i schowaj w bezpiecznym miejscu, np. w notatkach. Na innym urządzeniu wpiszesz go w „Wczytaj profil” i wszystko się pojawi. Od teraz Twoje ulubione i pociągi zapisują się w profilu same." }
+  ];
 
   // Kroki dobrane per strona — spotlight wskazuje tylko elementy, które
   // faktycznie na niej istnieją. `sel` to selektor CSS, `title`/`text`
@@ -125,6 +134,7 @@
   let currentSteps = [];
   let currentIndex = 0;
   let active = false;
+  let guided = false;
 
   function ensureTourUI() {
     if (highlightEl) return;
@@ -155,7 +165,10 @@
     document.addEventListener("keydown", function (e) {
       if (!active) return;
       if (e.key === "Escape") endTour();
-      else if (e.key === "ArrowRight") tooltipEl.querySelector("#spotNext").click();
+      else if (e.key === "ArrowRight") {
+        const cur = currentSteps[currentIndex];
+        if (!(cur && cur.def.waitClick)) tooltipEl.querySelector("#spotNext").click();
+      }
       else if (e.key === "ArrowLeft" && currentIndex > 0) goToStep(currentIndex - 1);
     });
     window.addEventListener("resize", function () { if (active) positionAll(); });
@@ -191,20 +204,64 @@
     if (index < 0 || index >= currentSteps.length) return;
     currentIndex = index;
     const step = currentSteps[index];
-    step.el.scrollIntoView({ behavior: "smooth", block: "center" });
+    // Kroki przewodnika mogą wskazywać elementy, które pojawiają się dopiero
+    // po poprzednim kroku (np. token po utworzeniu profilu) — szukamy na bieżąco.
+    if (!step.el || !isVisible(step.el)) step.el = document.querySelector(step.def.sel);
+    if (step.el) step.el.scrollIntoView({ behavior: "smooth", block: "center" });
 
     tooltipEl.querySelector("#spotProgress").textContent = "Krok " + (index + 1) + " z " + currentSteps.length;
     tooltipEl.querySelector("#spotTitle").textContent = step.def.title;
     tooltipEl.querySelector("#spotText").textContent = step.def.text;
     tooltipEl.querySelector("#spotBack").disabled = index === 0;
     tooltipEl.querySelector("#spotNext").textContent = index === currentSteps.length - 1 ? "Zakończ" : "Dalej";
+    tooltipEl.querySelector("#spotBack").style.display = guided ? "none" : "";
+    tooltipEl.querySelector("#spotNext").style.display = step.def.waitClick ? "none" : "";
+    if (step.def.waitClick) armWaitClick(step, index);
 
     // Przybliżona pozycja od razu, dokładna po dojechaniu przewijania na miejsce.
     positionAll();
     setTimeout(positionAll, 260);
   }
 
+  // Krok "kliknij podświetlony przycisk": użytkownik klika naprawdę (podświetlenie
+  // nie blokuje kliknięć), a my czekamy, aż pojawi się panel aktywnego profilu.
+  function waitForVisible(sel, timeoutMs, cb) {
+    const t0 = Date.now();
+    (function poll() {
+      const el = document.querySelector(sel);
+      if (el && isVisible(el)) return cb(true);
+      if (Date.now() - t0 > timeoutMs) return cb(false);
+      setTimeout(poll, 150);
+    })();
+  }
+
+  function armWaitClick(step, index) {
+    if (!step.el) return;
+    const onClick = function () {
+      step.el.removeEventListener("click", onClick, true);
+      waitForVisible("#activePanel", 10000, function (ok) {
+        if (!active || currentIndex !== index) return;
+        if (ok) goToStep(index + 1);
+        else armWaitClick(step, index); // np. błąd sieci — czekamy na kolejną próbę
+      });
+    };
+    step.el.addEventListener("click", onClick, true);
+  }
+
+  function startGuidedProfile() {
+    ensureTourUI();
+    guided = true;
+    currentSteps = GUIDED_PROFILE_STEPS.map(function (s) {
+      return { def: s, el: document.querySelector(s.sel) };
+    });
+    active = true;
+    highlightEl.style.display = "block";
+    tooltipEl.style.display = "block";
+    goToStep(0);
+  }
+
   function startTour() {
+    guided = false;
     const steps = getSteps();
     if (!steps.length) return;
     ensureTourUI();
@@ -217,6 +274,10 @@
 
   function endTour() {
     active = false;
+    if (guided) {
+      guided = false;
+      try { localStorage.setItem(GUIDE_KEY, "done"); } catch (e) {}
+    }
     if (highlightEl) highlightEl.style.display = "none";
     if (tooltipEl) tooltipEl.style.display = "none";
     try {
@@ -257,6 +318,19 @@
 
   document.addEventListener("DOMContentLoaded", function () {
     injectStyles();
+    // Przewodnik po zgodzie na założenie profilu ma pierwszeństwo przed
+    // zwykłym samouczkiem.
+    let guide = null;
+    try { guide = localStorage.getItem(GUIDE_KEY); } catch (e) {}
+    if (guide === "pending" && location.pathname.indexOf("/profil") === 0 && !hasToken()) {
+      try { localStorage.setItem(GUIDE_KEY, "running"); } catch (e) {}
+      startGuidedProfile();
+      injectDemoButton(false);
+      return;
+    }
+    if (guide === "pending") {
+      try { localStorage.removeItem(GUIDE_KEY); } catch (e) {}
+    }
     const autoShown = maybeAutoShow();
     injectDemoButton(!autoShown);
   });

@@ -193,6 +193,7 @@ h1{ margin:0; font-size:20px; }
 <script src="/profile-sync.js"></script>
 <script src="/tutorial.js"></script>
 <script src="/survey.js"></script>
+<script src="/profile-prompt.js"></script>
 <script>
 const STORAGE_KEY = 'rafstakMojePociagiV4';
 
@@ -748,6 +749,7 @@ document.getElementById('addTrainForm').addEventListener('submit', (e) => {
     saveTrains(currentTrains);
     document.getElementById('addTrainForm').reset();
     init();
+    if (window.ProfilePrompt) ProfilePrompt.ask('train');
   }
 });
 

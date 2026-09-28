@@ -88,6 +88,8 @@ function renderActive() {
 }
 
 document.getElementById('createBtn').addEventListener('click', async () => {
+  const createBtn = document.getElementById('createBtn');
+  createBtn.disabled = true;
   const token = ProfileSync.generateToken();
   ProfileSync.setToken(token);
   setStatus('Tworzę profil...', '');
@@ -101,7 +103,18 @@ document.getElementById('createBtn').addEventListener('click', async () => {
   if (Array.isArray(mo) && mo.length) snap.monitoredTrains = mo;
   if (Array.isArray(fav)) snap.favoriteStations = fav;
   if (lt && lt.url) snap.lastTrain = lt;
-  await ProfileSync.push(snap);
+  // create: true — to jedyny zapis, który może założyć nowy rekord w bazie.
+  const ok = await ProfileSync.push(snap, { create: true });
+  createBtn.disabled = false;
+  if (!ok) {
+    const code = ProfileSync.lastError;
+    ProfileSync.clearToken();
+    setStatus(code === 'create_limit'
+      ? 'Dziś utworzono już zbyt wiele profili z tego adresu. Spróbuj jutro.'
+      : 'Nie udało się utworzyć profilu. Sprawdź połączenie i spróbuj ponownie.', 'err');
+    renderActive();
+    return;
+  }
   setStatus('Nowy profil utworzony. Zapisz token, żeby wczytać go na innym urządzeniu.', 'ok');
   renderActive();
 });
@@ -129,12 +142,28 @@ document.getElementById('loadBtn').addEventListener('click', async () => {
     return;
   }
 
+  setStatus('Sprawdzam profil...', '');
+  // Najpierw pytamy serwer, czy taki profil istnieje — token, którego nie ma,
+  // nie zostaje zapisany na urządzeniu (inaczej pierwsza zmiana założyłaby
+  // "profil-widmo" pod literówką).
+  const found = await ProfileSync.check(input);
+  if (found === 'error') {
+    setStatus('Nie udało się połączyć z serwerem. Spróbuj ponownie.', 'err');
+    return;
+  }
+  if (found === 'missing') {
+    setStatus('Nie ma profilu o tym tokenie. Sprawdź, czy wpisałeś go dobrze. Jeśli profil powstał przed chwilą, odczekaj minutę i spróbuj ponownie.', 'err');
+    return;
+  }
+
   setStatus('Wczytuję profil...', '');
   ProfileSync.setToken(input);
+  ProfileSync.markVerified();
   const data = await ProfileSync.pull();
 
   if (!data) {
-    setStatus('Nie znaleziono profilu o tym tokenie (albo jest jeszcze pusty). Token został ustawiony na tym urządzeniu.', 'err');
+    setStatus('Nie udało się pobrać danych profilu. Spróbuj ponownie.', 'err');
+    ProfileSync.clearToken();
     renderActive();
     return;
   }
