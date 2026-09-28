@@ -276,7 +276,7 @@ const HTML = String.raw`<!DOCTYPE html>
 </head>
 <body>
 <div class="wrap">
-  <div id="status" class="status">Kliknij numer pociągu na tablicy albo na liście Moje Pociągi V2.</div>
+  <div id="status" class="status">Kliknij numer pociągu na tablicy albo na liście Moje pociągi.</div>
   <div id="content"></div>
 </div>
 <button type="button" id="floatSaveBtn" class="float-save-btn" style="display:none"></button>
@@ -646,7 +646,7 @@ function renderJournalBar(){
         html='<div class="journal-note">🛤️ Kurs pasuje do trasy „'+esc(name)+legTxt+'” ('+esc(bS)+' → '+esc(aS)+') i mieści się w typowych godzinach. Zaznaczyć typowe przystanki? <button type="button" class="btn small" onclick="markTypicalNormal()">🚏🏁 Zaznacz</button><button type="button" class="link-btn" onclick="dismissTypicalPrompt()">Nie</button></div>';
       }
     }else{
-      html='<div class="journal-note warn">🛤️ Trasa typowa „'+esc(name)+legTxt+'” ('+esc(bS)+' → '+esc(aS)+'), ale godzina odjazdu ('+esc(depT||'?')+') jest poza typową ('+esc(tripMatch.trip.timeFrom||'?')+'–'+esc(tripMatch.trip.timeTo||'?')+'). Zapisać typowo czy zmodyfikować? <button type="button" class="btn small" onclick="saveTypicalNow()">💾 Zapisz typowo</button><button type="button" class="btn small" onclick="editTypicalNow()">✏️ Zmodyfikuj</button><button type="button" class="link-btn" onclick="dismissTypicalPrompt()">Pomiń</button></div>';
+      html='<div class="journal-note warn">🛤️ Moja trasa „'+esc(name)+legTxt+'” ('+esc(bS)+' → '+esc(aS)+'), ale godzina odjazdu ('+esc(depT||'?')+') jest poza typową ('+esc(tripMatch.trip.timeFrom||'?')+'–'+esc(tripMatch.trip.timeTo||'?')+'). Zapisać typowo czy zmodyfikować? <button type="button" class="btn small" onclick="saveTypicalNow()">💾 Zapisz typowo</button><button type="button" class="btn small" onclick="editTypicalNow()">✏️ Zmodyfikuj</button><button type="button" class="link-btn" onclick="dismissTypicalPrompt()">Pomiń</button></div>';
     }
   }else{
     html='<div class="journal-note hint">🚏🏁 Zaznacz przy stacjach, gdzie wsiadasz i wysiadasz — zapiszę przejazd w <a href="/dziennik/">dzienniczku</a>.</div>';
@@ -850,7 +850,7 @@ async function fetchAndRenderTrain(train,opts){
   }
 }
 
-async function loadTrain(){const train=qs('train');if(!train){setStatus('Otwórz bieg pociągu, klikając jego numer na tablicy albo na liście Moje Pociągi V2.');return}setStatus('Pobieram bieg pociągu...');loading(train);const idp=detailsParams();let schedule=idp.get('scheduleId')||idp.get('scheduledId');let order=idp.get('orderId');try{if(!schedule||!order){const found=await findCourseFromOpenedContext(train,idp);if(found){await fetchAndRenderTrain(train,found);return}renderFallback(train,'Do pełnego biegu potrzebny jest link z tablicy odjazdów z identyfikatorami kursu. Kliknij numer pociągu bezpośrednio z tablicy albo z listy Moje Pociągi V2.');return}await fetchAndRenderTrain(train,{schedule,order,trainOrderId:idp.get('trainOrderId'),station:idp.get('station'),date:idp.get('date')||todayIso()})}catch(e){document.getElementById('content').innerHTML='<div class="panel err">Nie udało się pobrać biegu pociągu: '+esc(e.message)+'</div>';setStatus('Błąd pobierania biegu pociągu.')}}
+async function loadTrain(){const train=qs('train');if(!train){setStatus('Otwórz bieg pociągu, klikając jego numer na tablicy albo na liście Moje pociągi.');return}setStatus('Pobieram bieg pociągu...');loading(train);const idp=detailsParams();let schedule=idp.get('scheduleId')||idp.get('scheduledId');let order=idp.get('orderId');try{if(!schedule||!order){const found=await findCourseFromOpenedContext(train,idp);if(found){await fetchAndRenderTrain(train,found);return}renderFallback(train,'Do pełnego biegu potrzebny jest link z tablicy odjazdów z identyfikatorami kursu. Kliknij numer pociągu bezpośrednio z tablicy albo z listy Moje Pociągi V2.');return}await fetchAndRenderTrain(train,{schedule,order,trainOrderId:idp.get('trainOrderId'),station:idp.get('station'),date:idp.get('date')||todayIso()})}catch(e){document.getElementById('content').innerHTML='<div class="panel err">Nie udało się pobrać biegu pociągu: '+esc(e.message)+'</div>';setStatus('Błąd pobierania biegu pociągu.')}}
 function renderTrain(train,data){
   const stations=Array.isArray(data.route)?data.route:[];
   // Zaznaczenia wsiadania/wysiadania resetujemy tylko przy faktycznie

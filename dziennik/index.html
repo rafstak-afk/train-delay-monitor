@@ -95,7 +95,7 @@ h2{margin:0 0 10px;font-size:17px}
   <div class="panel trips-panel" id="tripsPanel">
     <button type="button" class="trips-toggle" id="tripsToggle" aria-expanded="false" aria-controls="tripsBody" onclick="toggleTrips()">
       <span class="trips-toggle-icon" aria-hidden="true">🛤️</span>
-      <span class="trips-toggle-text"><span class="trips-toggle-title">Trasy typowe</span><span class="trips-toggle-summary" id="tripsSummary"></span></span>
+      <span class="trips-toggle-text"><span class="trips-toggle-title">Moje trasy</span><span class="trips-toggle-summary" id="tripsSummary"></span></span>
       <span class="trips-toggle-action"><span id="tripsToggleLabel">Rozwiń</span><span class="trips-chevron" aria-hidden="true">▾</span></span>
     </button>
     <div class="trips-body" id="tripsBody"><div class="trips-body-inner"><div class="trips-content">
@@ -346,7 +346,7 @@ function renderEntries(){
   document.getElementById('entryCount').textContent=raw.length;
   const list=document.getElementById('entryList');
   const source=editMode?editBuffer:raw;
-  if(!source.length){list.innerHTML='<div class="empty">Brak wpisów. Otwórz bieg pociągu (z tablicy albo Moich Pociągów V2), zaznacz stację wsiadania 🚏 i wysiadania 🏁, i zapisz przejazd.</div>';return}
+  if(!source.length){list.innerHTML='<div class="empty">Brak wpisów. Otwórz bieg pociągu (z tablicy albo z Moich pociągów), zaznacz stację wsiadania 🚏 i wysiadania 🏁, i zapisz przejazd.</div>';return}
   const displayOrder=[...source].sort((a,b)=>(b.date+String(b.plannedDeparture||'')).localeCompare(a.date+String(a.plannedDeparture||'')));
   list.innerHTML=displayOrder.map(e=>editMode?entryEditHtml(e):entryCardHtml(e)).join('');
 }

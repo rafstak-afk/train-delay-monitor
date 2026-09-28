@@ -70,7 +70,7 @@
     {
       match: function (p) { return p.indexOf("/dziennik") === 0; },
       steps: [
-        { sel: "#tripsToggle", title: "Trasy typowe", text: "Ustaw raz swoją codzienną trasę (np. dom→praca). Potem aplikacja sama zapyta, czy zapisać pasujący pociąg." },
+        { sel: "#tripsToggle", title: "Moje trasy", text: "Ustaw raz swoją codzienną trasę (np. dom→praca). Potem aplikacja sama zapyta, czy zapisać pasujący pociąg." },
         { sel: "#entryList", title: "Zapisane przejazdy", text: "Twoje zapisane przejazdy, od najnowszych. Możesz je poprawić (🔓) albo pobrać jako XLSX." }
       ]
     }
