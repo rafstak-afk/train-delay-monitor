@@ -44,6 +44,7 @@
     st.id = "profilePromptStyle";
     st.textContent =
       "#profilePromptCard{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:9991;width:min(380px,calc(100vw - 24px));background:#1c2833;color:#fff;border:1px solid #0b57d0;border-radius:14px;padding:14px 16px 12px;box-shadow:0 14px 40px rgba(0,0,0,.55);font-family:Arial,sans-serif}" +
+      "#profilePromptCard.pp-lift{bottom:84px}" +
       "@media(max-width:700px){#profilePromptCard{bottom:84px}}" +
       "#profilePromptCard .pp-x{position:absolute;top:6px;right:8px;background:transparent;border:0;color:#8b95a1;font-size:16px;cursor:pointer;padding:4px 6px}" +
       "#profilePromptCard .pp-x:hover{color:#fff}" +
@@ -92,6 +93,8 @@
       '<button type="button" class="pp-b pp-yes">Tak, poprowadź mnie</button>' +
       '<button type="button" class="pp-b pp-no">Nie teraz</button>' +
       '</div>';
+    // Dolny pasek nawigacji (KŚ / Profil / Menu) jest na wierzchu — unosimy kartę nad niego.
+    if (document.querySelector(".bottom-nav")) card.classList.add("pp-lift");
     card.querySelector(".pp-x").addEventListener("click", refuse);
     card.querySelector(".pp-no").addEventListener("click", refuse);
     card.querySelector(".pp-yes").addEventListener("click", accept);

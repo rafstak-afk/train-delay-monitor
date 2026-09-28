@@ -113,6 +113,7 @@
     st.id = "surveyStyle";
     st.textContent =
       "#surveyCard{position:fixed;right:16px;bottom:16px;z-index:9990;width:min(320px,calc(100vw - 24px));background:#1c2833;color:#fff;border:1px solid #34495e;border-radius:14px;padding:14px 16px 12px;box-shadow:0 14px 40px rgba(0,0,0,.5);font-family:Arial,sans-serif;text-align:center}" +
+      "#surveyCard.sv-lift{bottom:84px}" +
       "@media(max-width:700px){#surveyCard{right:50%;transform:translateX(50%);bottom:84px}}" +
       "#surveyCard .sv-x{position:absolute;top:6px;right:8px;background:transparent;border:0;color:#8b95a1;font-size:16px;cursor:pointer;padding:4px 6px}" +
       "#surveyCard .sv-x:hover{color:#fff}" +
@@ -186,6 +187,8 @@
     function paint(n) {
       stars.forEach(function (b, idx) { b.classList.toggle("on", idx < n); });
     }
+    // Dolny pasek nawigacji jest na wierzchu — unosimy kartę nad niego.
+    if (document.querySelector(".bottom-nav")) card.classList.add("sv-lift");
     card.querySelector(".sv-x").addEventListener("click", later);
     card.querySelector(".sv-later").addEventListener("click", later);
     document.body.appendChild(card);
