@@ -1,1 +1,3 @@
 /train*  /index.html  200
+/moje-pociagi-v2/*  /moje-pociagi/  301
+/moje-pociagi-v2  /moje-pociagi/  301

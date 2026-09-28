@@ -1,5 +1,5 @@
 // Współdzielony interaktywny samouczek typu "spotlight" — ładowany na
-// tablicy głównej, moje-pociagi-v2, /train i /profil/ (tak jak
+// tablicy głównej, moje-pociagi, /train i /profil/ (tak jak
 // profile-sync.js). Prowadzi użytkownika krok po kroku po REALNYCH
 // elementach interfejsu danej strony: reszta ekranu jest przyciemniona,
 // wskazany element podświetlony, obok niego dymek z opisem.
@@ -44,7 +44,7 @@
       ]
     },
     {
-      match: function (p) { return p.indexOf("/moje-pociagi-v2") === 0; },
+      match: function (p) { return p.indexOf("/moje-pociagi") === 0; },
       steps: [
         { sel: "#list", title: "Twoje pociągi", text: "Tu widzisz status każdego śledzonego kursu: opóźnienie i ostatnią zaliczoną stację. Kliknij kartę, żeby zobaczyć cały bieg." },
         { sel: "#addTrainForm", title: "Dodaj pociąg", text: "Dodaj stację, numer i planową godzinę raz — od teraz zawsze zobaczysz go tu z aktualnym statusem." },

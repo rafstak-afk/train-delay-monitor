@@ -285,7 +285,7 @@ export async function onRequestGet(context) {
       : (targetStop && targetStop.status === "confirmed" ? targetStop.delay : (confirmed?.delay || 0));
 
     // Kody statusu PLK: C = zrealizowany/zakończony, Z = zakończony.
-    // Bez tego pola front-end (moje-pociagi-v2) domyślał się "true" dla
+    // Bez tego pola front-end (moje-pociagi) domyślał się "true" dla
     // KAŻDEGO pociągu, dla którego to pole nie istniało w odpowiedzi —
     // czyli pokazywał "pociąg skończył bieg" nawet dla kursów, które
     // jeszcze się nie zaczęły. Dodatkowo wymagamy potwierdzenia OSTATNIEJ
