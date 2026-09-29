@@ -462,7 +462,11 @@ function deleteEntry(key){
   renderEntries();
 }
 
-(async function start(){
+// Dociąga świeże dane z profilu i renderuje od nowa. Wywoływane przy
+// starcie ORAZ przy każdym powrocie na tę stronę (bfcache, powrót do karty) —
+// bez tego strona pokazywała stan sprzed otwarcia, nawet jeśli w międzyczasie
+// coś zapisano na /train w innej karcie albo na innym urządzeniu.
+async function refreshFromProfile(){
   if(window.ProfileSync&&ProfileSync.getToken()){
     const profile=await ProfileSync.pull();
     if(profile){
@@ -481,8 +485,13 @@ function deleteEntry(key){
     }
   }
   renderTripsForm();
-  renderEntries();
-})();
+  // W trybie edycji NIE nadpisujemy tego, co użytkownik akurat poprawia —
+  // podmiana listy pod ręką skasowałaby niezapisane zmiany.
+  if(!editMode)renderEntries();
+}
+refreshFromProfile();
+window.addEventListener('pageshow',function(e){if(e.persisted)refreshFromProfile()});
+document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')refreshFromProfile()});
 </script>
 </body>
 </html>
