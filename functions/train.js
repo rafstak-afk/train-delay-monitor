@@ -409,7 +409,24 @@ let currentTrainData=null,currentStations=[];
 let markBoardIdx=null,markAlightIdx=null,markMode=null;
 
 function getJournalEntries(){try{const v=JSON.parse(localStorage.getItem(JOURNAL_KEY));return Array.isArray(v)?v:[]}catch{return[]}}
-function saveJournalEntries(list){localStorage.setItem(JOURNAL_KEY,JSON.stringify(list));if(window.ProfileSync)ProfileSync.push({journalEntries:list})}
+// Zwraca true/false zamiast po cichu wywalać się w localStorage.setItem
+// (pełny magazyn, tryb prywatny w niektórych przeglądarkach) — bez tego
+// przycisk "Dodaj do dzienniczka" po prostu nic nie robił i wpis ginął,
+// a użytkownik nie miał jak się o tym dowiedzieć.
+function saveJournalEntries(list){
+  try{
+    localStorage.setItem(JOURNAL_KEY,JSON.stringify(list));
+  }catch(e){
+    return false;
+  }
+  if(window.ProfileSync)ProfileSync.push({journalEntries:list});
+  return true;
+}
+function showJournalSaveError(msg){
+  const el=document.getElementById('journalSaveError');
+  if(!el)return;
+  if(msg){el.textContent='⚠️ '+msg;el.style.display='block'}else{el.style.display='none';el.textContent=''}
+}
 function getTypicalTrips(){try{const v=JSON.parse(localStorage.getItem(TYPICAL_TRIPS_KEY));return v&&typeof v==='object'?v:{}}catch{return{}}}
 function normStation(s){return String(s||'').trim().toLowerCase()}
 function toMinutesJ(t){const m=String(t||'').match(/(\d{1,2}):(\d{2})/);return m?Number(m[1])*60+Number(m[2]):null}
@@ -699,10 +716,16 @@ function saveTypicalJourney(){
   if(!currentTrainData)return;
   const tripMatch=matchTypicalTrip(currentStations);
   if(!tripMatch)return;
-  const entry=buildJournalEntry(currentTrainData,currentStations,tripMatch.boardIdx,tripMatch.alightIdx,tripMatch);
-  const list=getJournalEntries();
-  list.push(entry);
-  saveJournalEntries(list);
+  showJournalSaveError(null);
+  try{
+    const entry=buildJournalEntry(currentTrainData,currentStations,tripMatch.boardIdx,tripMatch.alightIdx,tripMatch);
+    const list=getJournalEntries();
+    list.push(entry);
+    const ok=saveJournalEntries(list)&&getJournalEntries().some(e=>e._key===entry._key);
+    if(!ok)throw new Error('not persisted');
+  }catch(e){
+    showJournalSaveError('Nie udało się zapisać przejazdu w tej przeglądarce. Spróbuj ponownie albo odśwież stronę.');
+  }
   renderJournalBar();
 }
 function clearMarksAfterSave(){
@@ -754,12 +777,18 @@ function confirmManualSave(){
   const km=parseKmJ(document.getElementById('manualTripKm').value);
   const meta=typicalMetaForMarks();
   closeManualSaveForm();
-  const entry=buildJournalEntry(currentTrainData,currentStations,markBoardIdx,markAlightIdx,meta);
-  entry.distanceKm=km;
-  if(name)entry.tripLabel=name;
-  const list=getJournalEntries();
-  list.push(entry);
-  saveJournalEntries(list);
+  showJournalSaveError(null);
+  try{
+    const entry=buildJournalEntry(currentTrainData,currentStations,markBoardIdx,markAlightIdx,meta);
+    entry.distanceKm=km;
+    if(name)entry.tripLabel=name;
+    const list=getJournalEntries();
+    list.push(entry);
+    const ok=saveJournalEntries(list)&&getJournalEntries().some(e=>e._key===entry._key);
+    if(!ok)throw new Error('not persisted');
+  }catch(e){
+    showJournalSaveError('Nie udało się zapisać przejazdu w tej przeglądarce. Spróbuj ponownie albo odśwież stronę.');
+  }
   clearMarksAfterSave();
 }
 function removeJournalEntry(key){
@@ -872,7 +901,7 @@ function renderTrain(train,data){
   const lastTimeText=data.lastConfirmedStation?(data.lastConfirmedTime||''):'Brak twardego potwierdzenia realizacji z API PLK.';
 
   let html='<div class="panel"><div class="card"><div class="label">Pociąg</div><div class="big">'+esc(title||('Pociąg '+train))+'</div><div class="hint'+(isCancelledTrain?' hint-cancelled':'')+'">Status: '+esc(st[0])+(st[1]?' <span class="station-meta">('+esc(st[1])+')</span>':'')+'</div><div class="last-station"><div class="label">Ostatnia potwierdzona stacja</div><div class="last-line"><span class="big">'+esc(lastStationText)+'</span><span class="hint">'+esc(lastTimeText)+'</span></div></div></div>';
-  html+='<details class="legend"><summary>ⓘ Jak czytać statusy stacji</summary><div class="hint">„Zaliczona” tylko przy potwierdzeniu API. Gdy czas już minął, a API nie potwierdza stacji, pokazujemy „BRAK INFO Z API”.</div></details><div id="journalBar" class="journal-bar"></div><div class="route-table"><div class="rrow-head"><div>Godz.</div><div>Opóźn.</div><div>Stacja</div><div>Per./Tor</div></div>';
+  html+='<details class="legend"><summary>ⓘ Jak czytać statusy stacji</summary><div class="hint">„Zaliczona” tylko przy potwierdzeniu API. Gdy czas już minął, a API nie potwierdza stacji, pokazujemy „BRAK INFO Z API”.</div></details><div id="journalBar" class="journal-bar"></div><div id="journalSaveError" class="journal-note warn" style="display:none"></div><div class="route-table"><div class="rrow-head"><div>Godz.</div><div>Opóźn.</div><div>Stacja</div><div>Per./Tor</div></div>';
 
   stations.forEach((s,i)=>{
     let state='future',txt='przed',badge='future';
