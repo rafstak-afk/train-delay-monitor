@@ -730,7 +730,11 @@ function saveTypicalJourney(){
     const ok=saveJournalEntries(list)&&getJournalEntries().some(e=>e._key===entry._key);
     if(!ok)throw new Error('not persisted');
   }catch(e){
-    showJournalSaveError('Nie udało się zapisać przejazdu w tej przeglądarce. Spróbuj ponownie albo odśwież stronę.');
+    const msg='Nie udało się zapisać przejazdu w tej przeglądarce. Spróbuj ponownie albo odśwież stronę.';
+    showJournalSaveError(msg);
+    // Mały czerwony tekst pod paskiem łatwo przeoczyć — alert() jest
+    // niemożliwy do pominięcia, a to jedyny sygnał, że coś nie wyszło.
+    alert('⚠️ '+msg);
   }
   renderJournalBar();
 }
@@ -792,10 +796,16 @@ function confirmManualSave(){
     list.push(entry);
     const ok=saveJournalEntries(list)&&getJournalEntries().some(e=>e._key===entry._key);
     if(!ok)throw new Error('not persisted');
+    // Zaznaczenie czyścimy TYLKO po potwierdzonym sukcesie — przy błędzie
+    // zostaje, żeby dało się kliknąć "Zapisz" jeszcze raz bez ponownego
+    // szukania i zaznaczania tych samych dwóch stacji.
+    clearMarksAfterSave();
   }catch(e){
-    showJournalSaveError('Nie udało się zapisać przejazdu w tej przeglądarce. Spróbuj ponownie albo odśwież stronę.');
+    const msg='Nie udało się zapisać przejazdu w tej przeglądarce. Spróbuj ponownie albo odśwież stronę.';
+    showJournalSaveError(msg);
+    alert('⚠️ '+msg);
+    renderJournalBar();
   }
-  clearMarksAfterSave();
 }
 function removeJournalEntry(key){
   saveJournalEntries(getJournalEntries().filter(function(e){return e._key!==key}));
