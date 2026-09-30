@@ -49,7 +49,7 @@ h2{margin:0 0 10px;font-size:17px}
 .status.ok{color:var(--green)}
 .empty{text-align:center;padding:32px 16px;color:var(--muted);font-size:14px}
 .entry{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px;position:relative}
-.entry-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.entry-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;padding-right:28px}
 .entry-date{font-weight:800;font-size:14px}
 .entry-train{color:var(--muted);font-size:12.5px}
 .entry-route{font-size:15px;font-weight:700;margin:6px 0}
@@ -63,6 +63,8 @@ h2{margin:0 0 10px;font-size:17px}
 .delay-mid{color:var(--red)}
 .delay-high{color:var(--violet)}
 .entry-badge{background:rgba(11,87,208,.18);color:#8fb4f0;border-radius:999px;padding:2px 9px;font-size:11px;font-weight:700}
+.entry-missing{background:rgba(255,204,0,.12);color:var(--yellow);border:1px solid var(--yellow);border-radius:999px;padding:2px 9px;font-size:11px;font-weight:700}
+.field-missing{border-color:var(--yellow)!important;box-shadow:0 0 0 1px var(--yellow)}
 .entry-del{position:absolute;top:10px;right:10px;background:transparent;border:0;color:#8b95a1;cursor:pointer;font-size:15px;padding:2px 6px}
 .entry-del:hover{color:var(--red)}
 .entries-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:4px}
@@ -306,8 +308,9 @@ function entryCardHtml(e){
   const arrReal=e.actualArrival&&e.actualArrival!==e.plannedArrival;
   const depHtml=depReal?('<span class="entry-strike">'+escapeHtml(e.plannedDeparture)+'</span>('+escapeHtml(e.actualDeparture)+')'):escapeHtml(e.plannedDeparture||'—');
   const arrHtml=arrReal?('<span class="entry-strike">'+escapeHtml(e.plannedArrival)+'</span>('+escapeHtml(e.actualArrival)+')'):escapeHtml(e.plannedArrival||'—');
-  const tripBadge=e.tripLabel?('<span class="entry-badge">'+escapeHtml(e.tripLabel)+(e.legNumber?(' · odc. '+e.legNumber+'/2'):'')+'</span>'):'';
+  const tripBadge=e.tripLabel?('<span class="entry-badge">'+escapeHtml(e.tripLabel)+(e.legNumber?(' · odc. '+e.legNumber+'/2'):'')+'</span>'):'<span class="entry-missing" title="Dodaj nazwę trasy w edycji (🔓 Odblokuj)">⚠️ Brak nazwy</span>';
   const km=e.distanceKm!=null?(fmtKm(e.distanceKm)+' km'):'';
+  const kmBadge=km?('<span>'+escapeHtml(km)+'</span>'):'<span class="entry-missing" title="Dodaj km w edycji (🔓 Odblokuj)">⚠️ Brak km</span>';
   return `<div class="entry">
     <button type="button" class="entry-del" title="Usuń wpis" onclick="deleteEntry('${e._key}')">✕</button>
     <div class="entry-top"><span class="entry-date">${escapeHtml(dateFmt)}</span><span class="entry-train">${escapeHtml(trainLabel)}</span></div>
@@ -320,7 +323,7 @@ function entryCardHtml(e){
       <span class="entry-delay ${delayClass(e.delayMinutes)}">Opóźnienie: ${fmtDelay(e.delayMinutes)} min</span>
       <span>Czas: ${fmtDur(e.plannedDurationMin)} → ${fmtDur(e.actualDurationMin)}</span>
       ${tripBadge}
-      ${km?('<span>'+escapeHtml(km)+'</span>'):''}
+      ${kmBadge}
     </div>
   </div>`;
 }
@@ -336,8 +339,8 @@ function entryEditHtml(e){
     <div class="edit-row"><label>Odjazd pl.</label>${g('ef-depP',e.plannedDeparture,'time')}<label>rz.</label>${g('ef-depA',e.actualDeparture,'time')}</div>
     <div class="edit-row"><label>Przyj. pl.</label>${g('ef-arrP',e.plannedArrival,'time')}<label>rz.</label>${g('ef-arrA',e.actualArrival,'time')}</div>
     <div class="edit-row"><label>Opóźn. (min)</label><input type="number" class="ef-delay narrow" value="${e.delayMinutes||0}"></div>
-    <div class="edit-row"><label>Km</label><input type="number" step="any" class="ef-km narrow" value="${e.distanceKm!=null?e.distanceKm:''}"></div>
-    <div class="edit-row"><label>Nazwa</label>${g('ef-label',e.tripLabel)}</div>
+    <div class="edit-row"><label>Km</label><input type="number" step="any" class="ef-km narrow${e.distanceKm==null?' field-missing':''}" value="${e.distanceKm!=null?e.distanceKm:''}" oninput="this.classList.toggle('field-missing',!this.value.trim())"></div>
+    <div class="edit-row"><label>Nazwa</label><input type="text" class="ef-label${e.tripLabel?'':' field-missing'}" value="${escapeHtml(e.tripLabel==null?'':e.tripLabel)}" oninput="this.classList.toggle('field-missing',!this.value.trim())"></div>
   </div>`;
 }
 
