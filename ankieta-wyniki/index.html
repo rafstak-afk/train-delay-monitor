@@ -49,6 +49,13 @@ th{color:var(--muted);font-weight:700;font-size:12px}
 
   <div id="results" class="hide">
     <div class="panel">
+      <h2>Profile</h2>
+      <div class="big"><span id="profTotal">—</span></div>
+      <div class="sub">aktywnych profili łącznie (bez profilu strona i tak działa, więc to nie jest pełna liczba użytkowników)</div>
+      <div class="split" id="profileSplit" style="margin-top:12px"></div>
+      <div class="sub" id="profileNote" style="margin-top:8px"></div>
+    </div>
+    <div class="panel">
       <div class="big"><span id="avg">—</span> <small>/ 5</small></div>
       <div class="sub"><span id="total">0</span> odpowiedzi</div>
     </div>
@@ -67,6 +74,19 @@ th{color:var(--muted);font-weight:700;font-size:12px}
   function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
   function avg(sum,n){return n?(sum/n).toFixed(2).replace('.',','):'—'}
   function setStatus(t,err){var s=$('status');s.textContent=t||'';s.className='status'+(err?' err':'')}
+
+  function renderProfileStats(ps){
+    if(!ps){$('profTotal').textContent='—';$('profileSplit').innerHTML='';$('profileNote').textContent='Nie udało się pobrać statystyk profili.';return}
+    $('profTotal').textContent=ps.total;
+    $('profileSplit').innerHTML=
+      '<div class="box"><b>'+ps.active7+'</b><span>aktywne w 7 dni</span></div>'+
+      '<div class="box"><b>'+ps.active30+'</b><span>aktywne w 30 dni</span></div>'+
+      '<div class="box"><b>'+ps.createdLast7+'</b><span>nowe w 7 dni</span></div>'+
+      '<div class="box"><b>'+ps.createdLast30+'</b><span>nowe w 30 dni</span></div>';
+    $('profileNote').textContent=ps.unknownMeta
+      ? ('„Nowe”/„aktywne” liczymy tylko od uruchomienia tego licznika — '+ps.unknownMeta+' profili sprzed tej zmiany jest wliczonych w łączną liczbę, ale bez znanej daty.')
+      : '';
+  }
 
   function render(st){
     $('loginPanel').classList.add('hide');
@@ -96,7 +116,15 @@ th{color:var(--muted);font-weight:700;font-size:12px}
     fetch('/api/survey',{headers:{'X-Survey-Key':key},cache:'no-store'})
       .then(function(r){return r.json().then(function(j){return {status:r.status,body:j}})})
       .then(function(x){
-        if(x.body&&x.body.ok){try{sessionStorage.setItem(STORE,key)}catch(e){}render(x.body.stats);return}
+        if(x.body&&x.body.ok){
+          try{sessionStorage.setItem(STORE,key)}catch(e){}
+          render(x.body.stats);
+          fetch('/api/stats',{headers:{'X-Survey-Key':key},cache:'no-store'})
+            .then(function(r){return r.json()})
+            .then(function(j){renderProfileStats(j&&j.ok?j.stats:null)})
+            .catch(function(){renderProfileStats(null)});
+          return;
+        }
         try{sessionStorage.removeItem(STORE)}catch(e){}
         setStatus((x.body&&x.body.error)||('Błąd '+x.status),true);
       })

@@ -133,15 +133,23 @@ export async function onRequest(context) {
     }
 
     const existing = existingRaw ? JSON.parse(existingRaw) : {};
+    const nowIso = new Date().toISOString();
 
     const merged = {
       ...existing,
       ...patch,
-      updatedAt: new Date().toISOString()
+      // createdAt ustawiamy raz, przy pierwszym zapisie, i już nie ruszamy —
+      // pozwala to policzyć "ile nowych profili" bez osobnego licznika.
+      // Profile założone PRZED tą zmianą go nie mają (nie znamy ich daty).
+      createdAt: existing.createdAt || nowIso,
+      updatedAt: nowIso
     };
 
     await env.USER_PROFILES.put(token, JSON.stringify(merged), {
-      expirationTtl: PROFILE_TTL_SECONDS
+      expirationTtl: PROFILE_TTL_SECONDS,
+      // Metadane KV pozwalają policzyć statystyki (functions/api/stats.js)
+      // samym listowaniem kluczy, bez odczytywania zawartości każdego profilu.
+      metadata: { createdAt: merged.createdAt, updatedAt: merged.updatedAt }
     });
 
     return json({ ok: true, data: merged });
