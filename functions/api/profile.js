@@ -75,7 +75,11 @@ export async function onRequest(context) {
     });
   }
 
-  if (request.method === "PUT") {
+  if (request.method === "PUT" || request.method === "POST") {
+    // POST obsługujemy tak samo jak PUT — potrzebny dla navigator.sendBeacon()
+    // (profile-sync.js: pushBeacon), który zawsze wysyła POST i nie umie PUT.
+    // sendBeacon dostarcza zapis nawet gdy strona w międzyczasie się zamyka —
+    // zwykły fetch() w takiej chwili bywa po cichu przerywany przez przeglądarkę.
     let body;
 
     try {

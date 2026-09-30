@@ -166,6 +166,35 @@
     return false;
   }
 
+  // Zwykły push() to fetch() bez oczekiwania — jeśli użytkownik zaraz po
+  // zapisie przejdzie na inną stronę (np. wraca na tablicę sprawdzić wynik),
+  // przeglądarka potrafi po cichu przerwać jeszcze niedokończone zapytanie.
+  // Z zewnątrz wygląda to jak udany zapis (dane są lokalnie, żadnego błędu),
+  // a do profilu nic nie dociera. sendBeacon jest zaprojektowany właśnie do
+  // takich zapisów "wyślij i nie czekaj" — przeglądarka gwarantuje dostarczenie
+  // nawet w trakcie zamykania/nawigacji strony. Używamy go dla najcenniejszych,
+  // trudnych do odtworzenia danych (wpisy dzienniczka), nie dla wszystkiego —
+  // sendBeacon nie daje żadnej odpowiedzi, więc nie nadaje się tam, gdzie
+  // potrzebny jest kod błędu (np. zakładanie nowego profilu).
+  function pushBeacon(patch) {
+    const token = getToken();
+    if (!token) return false;
+    const body = JSON.stringify({ token, patch, create: false });
+    if (typeof navigator !== "undefined" && navigator.sendBeacon) {
+      try {
+        const blob = new Blob([body], { type: "application/json" });
+        if (navigator.sendBeacon("/api/profile", blob)) {
+          markVerified();
+          return true;
+        }
+      } catch (e) {}
+    }
+    // Awaryjnie (stara przeglądarka bez sendBeacon, albo kolejka pełna):
+    // zwykły push, lepsze to niż nic.
+    push(patch);
+    return true;
+  }
+
   window.ProfileSync = {
     generateToken,
     getToken,
@@ -176,6 +205,7 @@
     isValid,
     pull,
     push,
+    pushBeacon,
     check,
     markVerified,
     isVerified,

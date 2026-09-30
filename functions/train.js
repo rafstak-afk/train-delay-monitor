@@ -419,7 +419,13 @@ function saveJournalEntries(list){
   }catch(e){
     return false;
   }
-  if(window.ProfileSync)ProfileSync.push({journalEntries:list});
+  // pushBeacon (nie zwykły push) — użytkownik często zaraz po zapisie
+  // przechodzi na tablicę sprawdzić wynik; sendBeacon dostarcza zapis do
+  // profilu nawet wtedy, gdy zwykłe zapytanie zostałoby przerwane nawigacją.
+  if(window.ProfileSync){
+    if(ProfileSync.pushBeacon)ProfileSync.pushBeacon({journalEntries:list});
+    else ProfileSync.push({journalEntries:list});
+  }
   return true;
 }
 function showJournalSaveError(msg){
