@@ -943,7 +943,7 @@ function renderTrain(train,data){
   const lastStationText=data.lastConfirmedStation||'brak potwierdzonej stacji';
   const lastTimeText=data.lastConfirmedStation?(data.lastConfirmedTime||''):'Brak twardego potwierdzenia realizacji z API PLK.';
 
-  let html='<div class="panel"><div class="card"><div class="label">Pociąg</div><div class="big">'+esc(title||('Pociąg '+train))+'</div><div class="hint'+(isCancelledTrain?' hint-cancelled':'')+'">Status: '+esc(st[0])+(st[1]?' <span class="station-meta">('+esc(st[1])+')</span>':'')+'</div><div class="last-station"><div class="label">Ostatnia potwierdzona stacja</div><div class="last-line"><span class="big">'+esc(lastStationText)+'</span><span class="hint">'+esc(lastTimeText)+'</span></div></div></div>';
+  let html='<div class="panel"><div class="card"><div class="label">Pociąg</div><div class="big">'+esc(title||('Pociąg '+train))+'</div><div class="hint'+(isCancelledTrain?' hint-cancelled':'')+'">Status: '+esc(st[0])+(st[1]?' <span class="station-meta">('+esc(st[1])+')</span>':'')+'</div><div class="last-station"><div class="label">Ostatnia potwierdzona stacja</div><div class="last-line"><span class="big">'+esc(lastStationText)+'</span><span class="hint">'+esc(lastTimeText)+'</span></div></div><button type="button" class="btn small" style="margin-top:8px" onclick="addToMyTrains()">🚆+ Dodaj do Moich pociągów</button></div>';
   html+='<details class="legend"><summary>ⓘ Jak czytać statusy stacji</summary><div class="hint">„Zaliczona” tylko przy potwierdzeniu API. Gdy czas już minął, a API nie potwierdza stacji, pokazujemy „BRAK INFO Z API”.</div></details><div id="journalBar" class="journal-bar"></div><div id="journalSaveError" class="journal-note warn" style="display:none"></div><div class="route-table"><div class="rrow-head"><div>Godz.</div><div>Opóźn.</div><div>Stacja</div><div>Per./Tor</div></div>';
 
   stations.forEach((s,i)=>{
@@ -969,6 +969,37 @@ function renderTrain(train,data){
   });
 
   html+='</div></div>';document.getElementById('content').innerHTML=html;updateMarkButtons();renderJournalBar();setTimeout(()=>{const el=document.getElementById('station-'+focusIdx);if(el)el.scrollIntoView({behavior:'smooth',block:'center'})},150);
+}
+// "Moje pociągi" trzyma prostą listę {station,trainNum,planTime} pod tym
+// samym kluczem co moje-pociagi/index.html. Stacją jest ta, z której ktoś
+// przyszedł na ten bieg (qs('station') — z tablicy albo z listy Moich
+// pociągów), a w braku takiego kontekstu pierwsza stacja trasy.
+const MY_TRAINS_KEY='rafstakMojePociagiV4';
+function addToMyTrains(){
+  if(!currentTrainData||!currentStations.length)return;
+  const data=currentTrainData,stations=currentStations;
+  const ctxStation=qs('station');
+  let idx=ctxStation?stations.findIndex(s=>normStation(s.stationName)===normStation(ctxStation)):-1;
+  if(idx<0)idx=0;
+  const anchor=stations[idx];
+  const station=anchor.stationName;
+  const trainNum=String(data.trainNumber||qs('train')||'').trim();
+  const planTime=(String(anchor.plannedDeparture||anchor.plannedTime||'').match(/\d{1,2}:\d{2}/)||[])[0]||'';
+  if(!station||!trainNum){setStatus('Brak danych, żeby dodać ten pociąg do Moich pociągów.');return}
+  let list=[];
+  try{list=JSON.parse(localStorage.getItem(MY_TRAINS_KEY));if(!Array.isArray(list))list=[]}catch(e){list=[]}
+  const norm=s=>String(s).replace(/\D/g,'');
+  if(list.some(x=>x.station===station&&norm(x.trainNum)===norm(trainNum))){
+    setStatus('„'+trainNum+'” ze stacji „'+station+'” jest już na liście Moich pociągów.');
+    return;
+  }
+  list.push({station,trainNum,planTime:planTime||'--:--'});
+  try{localStorage.setItem(MY_TRAINS_KEY,JSON.stringify(list))}catch(e){}
+  if(window.ProfileSync){
+    if(ProfileSync.pushBeacon)ProfileSync.pushBeacon({trains:list});
+    else ProfileSync.push({trains:list});
+  }
+  setStatus('Dodano „'+trainNum+'” (stacja: '+station+') do Moich pociągów.');
 }
 function saveLastTrainContext(train,data){
   try{
