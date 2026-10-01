@@ -425,8 +425,34 @@ function saveJournalEntries(list){
   if(window.ProfileSync){
     if(ProfileSync.pushBeacon)ProfileSync.pushBeacon({journalEntries:list});
     else ProfileSync.push({journalEntries:list});
+    // sendBeacon NIE daje żadnego potwierdzenia dostarczenia — tylko "udało
+    // się zakolejkować", nie "serwer to dostał". Niektóre przeglądarki (np.
+    // Firefox z ochroną przed śledzeniem) potrafią go po cichu zablokować,
+    // więc "✓ Zapisano" widoczne od razu po zapisie lokalnym może się mijać
+    // z prawdą. Kilka sekund później sprawdzamy naprawdę i w razie potrzeby
+    // próbujemy ponownie zwykłym zapytaniem (to jedyny sposób na realne
+    // potwierdzenie — sendBeacon go nie daje).
+    scheduleJournalSyncVerification(list);
   }
   return true;
+}
+let journalVerifyTimer=null;
+function scheduleJournalSyncVerification(expectedList){
+  if(!(window.ProfileSync&&ProfileSync.getToken()))return;
+  if(journalVerifyTimer)clearTimeout(journalVerifyTimer);
+  journalVerifyTimer=setTimeout(async function(){
+    journalVerifyTimer=null;
+    try{
+      const profile=await ProfileSync.pull();
+      const remoteKeys=new Set(((profile&&profile.journalEntries)||[]).map(function(e){return e._key}));
+      const missing=expectedList.filter(function(e){return !remoteKeys.has(e._key)});
+      if(!missing.length)return;
+      const ok=await ProfileSync.push({journalEntries:getJournalEntries()});
+      if(!ok){
+        showJournalSaveError('Wpis zapisał się tylko lokalnie w tej przeglądarce — synchronizacja z profilem nie powiodła się. Sprawdź połączenie i spróbuj ponownie (np. odśwież stronę).');
+      }
+    }catch(e){}
+  },4000);
 }
 function showJournalSaveError(msg){
   const el=document.getElementById('journalSaveError');

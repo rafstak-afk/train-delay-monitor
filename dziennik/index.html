@@ -190,7 +190,28 @@ function getJournalEntries(){try{const v=JSON.parse(localStorage.getItem(JOURNAL
 // pushBeacon (nie zwykły push) — po zapisie/edycji łatwo od razu przejść
 // dalej (np. wrócić do biegu pociągu); sendBeacon dostarcza zapis do profilu
 // nawet gdy zwykłe zapytanie zostałoby przerwane przez taką nawigację.
-function saveJournalEntries(list){localStorage.setItem(JOURNAL_KEY,JSON.stringify(list));if(window.ProfileSync){if(ProfileSync.pushBeacon)ProfileSync.pushBeacon({journalEntries:list});else ProfileSync.push({journalEntries:list})}}
+// sendBeacon nie daje zadnego potwierdzenia dostarczenia (tylko "udalo sie
+// zakolejkowac", nie "serwer to dostal") — niektore przegladarki (np.
+// Firefox z ochrona przed sledzeniem) potrafia go po cichu zablokowac.
+// Kilka sekund po zapisie sprawdzamy naprawde i w razie potrzeby probujemy
+// ponownie zwyklym zapytaniem.
+let journalVerifyTimer=null;
+function scheduleJournalSyncVerification(expectedList){
+  if(!(window.ProfileSync&&ProfileSync.getToken()))return;
+  if(journalVerifyTimer)clearTimeout(journalVerifyTimer);
+  journalVerifyTimer=setTimeout(async function(){
+    journalVerifyTimer=null;
+    try{
+      const profile=await ProfileSync.pull();
+      const remoteKeys=new Set(((profile&&profile.journalEntries)||[]).map(function(e){return e._key}));
+      const missing=expectedList.filter(function(e){return !remoteKeys.has(e._key)});
+      if(!missing.length)return;
+      const ok=await ProfileSync.push({journalEntries:getJournalEntries()});
+      if(!ok)alert('⚠️ Zmiana zapisała się tylko lokalnie w tej przeglądarce — synchronizacja z profilem nie powiodła się. Sprawdź połączenie i spróbuj ponownie (np. odśwież stronę).');
+    }catch(e){}
+  },4000);
+}
+function saveJournalEntries(list){localStorage.setItem(JOURNAL_KEY,JSON.stringify(list));if(window.ProfileSync){if(ProfileSync.pushBeacon)ProfileSync.pushBeacon({journalEntries:list});else ProfileSync.push({journalEntries:list});scheduleJournalSyncVerification(list)}}
 function getTypicalTrips(){try{const v=JSON.parse(localStorage.getItem(TYPICAL_TRIPS_KEY));return v&&typeof v==='object'?v:{}}catch{return{}}}
 function saveTypicalTrips(trips){localStorage.setItem(TYPICAL_TRIPS_KEY,JSON.stringify(trips));if(window.ProfileSync)ProfileSync.push({typicalTrips:trips})}
 
