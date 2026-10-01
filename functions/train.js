@@ -273,6 +273,7 @@ const HTML = String.raw`<!DOCTYPE html>
 .plat-track{font-size:10px}
 .big{font-size:16px}.hint-cancelled{font-size:15px}}
 </style>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "a3663c820f4e414ab15c7a64a8aa36ec"}'></script><!-- End Cloudflare Web Analytics -->
 </head>
 <body>
 <div class="wrap">
