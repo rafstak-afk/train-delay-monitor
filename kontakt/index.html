@@ -110,7 +110,7 @@ textarea{min-height:140px;resize:vertical;line-height:1.4}
     }
     return text;
   }
-  function subject(){return '[Tablica odjazdów] '+$('kind').value}
+  function subject(){return '[Czy zdążę] '+$('kind').value}
   function mailHref(){
     return 'mailto:'+TO+'?subject='+encodeURIComponent(subject())+'&body='+encodeURIComponent(buildBody());
   }
