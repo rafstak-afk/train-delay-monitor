@@ -33,3 +33,27 @@ self.addEventListener("fetch", event => {
     fetch(event.request).catch(() => caches.match(event.request))
   );
 });
+
+// Bez tego kliknięcie powiadomienia o alarmie (showAlarmNotification w
+// index.html) nic nie robiło — przeglądarka samo z siebie nie wie, dokąd
+// ma zaprowadzić, trzeba to obsłużyć jawnie. Jeśli karta z aplikacją jest
+// już otwarta, tylko ją aktywujemy i przenawigowujemy (bez otwierania
+// drugiej); w przeciwnym razie otwieramy nową.
+self.addEventListener("notificationclick", event => {
+  event.notification.close();
+  const url = (event.notification.data && event.notification.data.url) || "/";
+  const targetUrl = new URL(url, self.location.origin).href;
+
+  event.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then(list => {
+      for (const client of list) {
+        if ("focus" in client) {
+          client.focus();
+          if ("navigate" in client) return client.navigate(targetUrl);
+          return;
+        }
+      }
+      return clients.openWindow(targetUrl);
+    })
+  );
+});
