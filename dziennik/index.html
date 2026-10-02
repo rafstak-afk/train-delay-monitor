@@ -91,7 +91,11 @@ h2{margin:0 0 10px;font-size:17px}
 .info-pop{display:none;background:rgba(34,211,238,.08);border:1px solid rgba(34,211,238,.3);border-radius:10px;padding:10px 12px;font-size:12.5px;color:#d8e2ee;line-height:1.5;margin:0 0 14px}
 .info-pop.open{display:block}
 .trip-card-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
-.trip-card-head h3{margin:0;font-size:15px}
+.trip-card-head h3{margin:0;font-size:15px;display:flex;align-items:center;gap:2px;min-width:0}
+.trip-heading-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.trip-rename-btn{background:transparent;border:0;color:var(--muted);cursor:pointer;font-size:12px;padding:2px 4px;flex:0 0 auto}
+.trip-rename-btn:hover{color:var(--cyan)}
+.trip-rename-input{font-size:14px!important;font-weight:700;padding:5px 7px!important;margin:0!important;width:140px!important}
 .trip-remove{background:transparent;border:0;color:#8b95a1;cursor:pointer;font-size:13px;padding:4px 6px;border-radius:7px;white-space:nowrap}
 .trip-remove:hover{color:var(--red);background:rgba(255,77,77,.1)}
 .trip-reverse-row{display:flex;gap:7px;margin-bottom:8px}
@@ -110,7 +114,7 @@ h2{margin:0 0 10px;font-size:17px}
   <div class="panel trips-panel" id="tripsPanel">
     <button type="button" class="trips-toggle" id="tripsToggle" aria-expanded="false" aria-controls="tripsBody" onclick="toggleTrips()">
       <span class="trips-toggle-icon" aria-hidden="true">🛤️</span>
-      <span class="trips-toggle-text"><span class="trips-toggle-title">Moje trasy</span><span class="trips-toggle-summary" id="tripsSummary"></span></span>
+      <span class="trips-toggle-text"><span class="trips-toggle-title">Ulubione trasy</span><span class="trips-toggle-summary" id="tripsSummary"></span></span>
       <span class="trips-toggle-action"><span id="tripsToggleLabel">Rozwiń</span><span class="trips-chevron" aria-hidden="true">▾</span></span>
     </button>
     <div class="trips-body" id="tripsBody"><div class="trips-body-inner"><div class="trips-content">
@@ -280,10 +284,44 @@ function reverseSelectOptions(excludeId){
     return '<option value="'+escapeHtml(t.id)+'">'+escapeHtml(label)+'</option>';
   }).join('');
 }
+// Nagłówek karty i pole "Nazwa przejazdu" to ta sama wartość (trip.name) —
+// ołóweczek w nagłówku to tylko wygodny skrót do zmiany tego samego pola,
+// nie osobna etykieta. Jeśli trasa jest już zapisana, zmiana nazwy zapisuje
+// się od razu (bez klikania "Zapisz trasę" ponownie).
+function startRenameTrip(id){
+  const idx=tripsState.findIndex(t=>t.id===id);
+  const head=document.getElementById('tripHead_'+id);
+  if(!head)return;
+  const current=(document.getElementById('trip_'+id+'_name').value||'').trim();
+  head.innerHTML='<input type="text" class="trip-rename-input" id="tripRenameInput_'+id+'" value="'+escapeHtml(current)+'" placeholder="'+escapeHtml(tripHeading(idx<0?0:idx))+'"><button type="button" class="trip-rename-btn" title="Zapisz nazwę" onclick="confirmRenameTrip(\''+id+'\')">✓</button>';
+  const inp=document.getElementById('tripRenameInput_'+id);
+  inp.focus();inp.select();
+  inp.addEventListener('keydown',e=>{
+    if(e.key==='Enter'){e.preventDefault();confirmRenameTrip(id)}
+    else if(e.key==='Escape'){renderTripCards()}
+  });
+}
+function confirmRenameTrip(id){
+  const idx=tripsState.findIndex(t=>t.id===id);
+  const inp=document.getElementById('tripRenameInput_'+id);
+  const val=inp?inp.value.trim():'';
+  const nameField=document.getElementById('trip_'+id+'_name');
+  if(nameField)nameField.value=val;
+  if(idx>=0)tripsState[idx]=Object.assign({},tripsState[idx],{name:val});
+  const savedTrips=getTypicalTrips();
+  const savedIdx=savedTrips.findIndex(t=>t.id===id);
+  if(savedIdx>=0){
+    savedTrips[savedIdx]=Object.assign({},savedTrips[savedIdx],{name:val||tripHeading(idx<0?0:idx)});
+    saveTypicalTrips(savedTrips);
+    if(idx>=0)tripsState[idx]=savedTrips[savedIdx];
+    updateTripsSummary();
+  }
+  renderTripCards();
+}
 function tripCardHtml(trip,idx){
   const id=trip.id;
   return `<div class="trip-card">
-    <div class="trip-card-head"><h3>${escapeHtml(tripHeading(idx))}</h3><button type="button" class="trip-remove" title="Usuń tę trasę" onclick="removeTrip('${id}')">🗑 Usuń</button></div>
+    <div class="trip-card-head"><h3 id="tripHead_${id}"><span class="trip-heading-text">${escapeHtml(trip.name||tripHeading(idx))}</span><button type="button" class="trip-rename-btn" title="Zmień nazwę trasy" onclick="startRenameTrip('${id}')">✏️</button></h3><button type="button" class="trip-remove" title="Usuń tę trasę" onclick="removeTrip('${id}')">🗑 Usuń</button></div>
     <label>Nazwa przejazdu (dla każdego odcinka)</label>
     <input type="text" id="trip_${id}_name" placeholder="np. do pracy, zakupy, wizyta">
     <div class="leg-label">Odcinek 1<span class="leg-optional"> (przed przesiadką, jeśli jest)</span></div>
