@@ -86,13 +86,25 @@ h2{margin:0 0 10px;font-size:17px}
 .confirm-msg{font-size:14px;line-height:1.5;margin-bottom:16px}
 .confirm-actions{display:flex;gap:10px}
 .confirm-actions button{flex:1}
+.info-dot{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:50%;background:rgba(255,255,255,.1);color:var(--cyan);font-size:11px;font-weight:700;border:1px solid rgba(34,211,238,.4);cursor:pointer;margin-left:4px;vertical-align:middle;line-height:1;padding:0}
+.info-dot:hover{background:rgba(34,211,238,.2)}
+.info-pop{display:none;background:rgba(34,211,238,.08);border:1px solid rgba(34,211,238,.3);border-radius:10px;padding:10px 12px;font-size:12.5px;color:#d8e2ee;line-height:1.5;margin:0 0 14px}
+.info-pop.open{display:block}
+.trip-card-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.trip-card-head h3{margin:0;font-size:15px}
+.trip-remove{background:transparent;border:0;color:#8b95a1;cursor:pointer;font-size:13px;padding:4px 6px;border-radius:7px;white-space:nowrap}
+.trip-remove:hover{color:var(--red);background:rgba(255,77,77,.1)}
+.trip-reverse-row{display:flex;gap:7px;margin-bottom:8px}
+.reverse-select{flex:1;padding:9px 8px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:#fff;font-size:12.5px}
+.trip-reverse-row .btn.secondary{width:auto;margin-bottom:0;white-space:nowrap}
 </style>
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "a3663c820f4e414ab15c7a64a8aa36ec"}'></script><!-- End Cloudflare Web Analytics -->
 </head>
 <body>
 <div class="wrap">
   <a class="back" href="/">← Tablica</a>
-  <h1>📓 Dzienniczek podróży</h1>
+  <h1>📓 Dzienniczek podróży <button type="button" class="info-dot" title="Co to jest i jak wypełniać" onclick="toggleInfo('journal')">ⓘ</button></h1>
+  <div class="info-pop" id="info-journal">Zapisz tu swoje stałe, powtarzalne trasy (np. codzienny dojazd) — wystarczy raz uzupełnić stacje wsiadania i wysiadania. Dzienniczek sam rozpozna, że jedziesz jedną z zapisanych tras, i przy pasującym kursie zaproponuje szybki zapis z właściwą nazwą. Jeśli trasa ma przesiadkę, uzupełnij też „Odcinek 2” — każdy odcinek zapisze się jako osobny wpis. Pole „Odjazd od–do” to okno godzinowe, w którym przejazd uznajemy za typowy; poza nim dostaniesz pytanie, czy zapisać mimo to. Przyciskiem „➕ Dodaj kolejną trasę” możesz dodać ich dowolnie wiele — przydatne np. przy różnych godzinach w różne dni albo przy innych, też powtarzalnych przejazdach.</div>
   <div class="subtitle">Zapisane przejazdy z zaznaczoną stacją wsiadania i wysiadania — dodajesz je na stronie biegu pociągu.</div>
 
   <div class="panel trips-panel" id="tripsPanel">
@@ -103,57 +115,8 @@ h2{margin:0 0 10px;font-size:17px}
     </button>
     <div class="trips-body" id="tripsBody"><div class="trips-body-inner"><div class="trips-content">
     <div class="status" id="tripStatus"></div>
-    <div class="trip-panel">
-      <div class="trip-card">
-        <h3>🏠→💼 Dom → Praca</h3>
-        <label>Nazwa przejazdu (dla każdego odcinka)</label>
-        <input type="text" id="trip_domPraca_name" placeholder="do pracy">
-        <div class="leg-label">Odcinek 1<span class="leg-optional"> (przed przesiadką, jeśli jest)</span></div>
-        <label>Stacja wsiadania</label>
-        <input type="text" id="trip_domPraca_leg1board" placeholder="np. Tarnowskie Góry">
-        <label>Stacja wysiadania</label>
-        <input type="text" id="trip_domPraca_leg1alight" placeholder="np. Chorzów Batory">
-        <label>Kilometraż odcinka 1 (km)</label>
-        <input type="text" inputmode="decimal" id="trip_domPraca_leg1km" placeholder="np. 28,1">
-        <div class="leg-label">Odcinek 2<span class="leg-optional"> (po przesiadce — zostaw puste, jeśli jedziesz bez przesiadki)</span></div>
-        <label>Stacja wsiadania</label>
-        <input type="text" id="trip_domPraca_leg2board" placeholder="np. Chorzów Batory">
-        <label>Stacja wysiadania</label>
-        <input type="text" id="trip_domPraca_leg2alight" placeholder="np. Katowice">
-        <label>Kilometraż odcinka 2 (km)</label>
-        <input type="text" inputmode="decimal" id="trip_domPraca_leg2km" placeholder="np. 5,8">
-        <div class="row2">
-          <div><label>Odjazd od</label><input type="time" id="trip_domPraca_from"></div>
-          <div><label>Odjazd do</label><input type="time" id="trip_domPraca_to"></div>
-        </div>
-        <button type="button" class="btn" onclick="saveTrip('domPraca')">Zapisz trasę</button>
-      </div>
-      <div class="trip-card">
-        <h3>💼→🏠 Praca → Dom</h3>
-        <label>Nazwa przejazdu (dla każdego odcinka)</label>
-        <input type="text" id="trip_pracaDom_name" placeholder="z pracy">
-        <div class="leg-label">Odcinek 1<span class="leg-optional"> (przed przesiadką, jeśli jest)</span></div>
-        <label>Stacja wsiadania</label>
-        <input type="text" id="trip_pracaDom_leg1board" placeholder="np. Katowice">
-        <label>Stacja wysiadania</label>
-        <input type="text" id="trip_pracaDom_leg1alight" placeholder="np. Chorzów Batory">
-        <label>Kilometraż odcinka 1 (km)</label>
-        <input type="text" inputmode="decimal" id="trip_pracaDom_leg1km" placeholder="np. 5,8">
-        <div class="leg-label">Odcinek 2<span class="leg-optional"> (po przesiadce — zostaw puste, jeśli jedziesz bez przesiadki)</span></div>
-        <label>Stacja wsiadania</label>
-        <input type="text" id="trip_pracaDom_leg2board" placeholder="np. Chorzów Batory">
-        <label>Stacja wysiadania</label>
-        <input type="text" id="trip_pracaDom_leg2alight" placeholder="np. Tarnowskie Góry">
-        <label>Kilometraż odcinka 2 (km)</label>
-        <input type="text" inputmode="decimal" id="trip_pracaDom_leg2km" placeholder="np. 28,1">
-        <div class="row2">
-          <div><label>Odjazd od</label><input type="time" id="trip_pracaDom_from"></div>
-          <div><label>Odjazd do</label><input type="time" id="trip_pracaDom_to"></div>
-        </div>
-        <button type="button" class="btn secondary" onclick="fillReverseTrip()">↩ Uzupełnij odwrotnie do trasy Dom → Praca</button>
-        <button type="button" class="btn" onclick="saveTrip('pracaDom')">Zapisz trasę</button>
-      </div>
-    </div>
+    <div class="trip-panel" id="tripCards"></div>
+    <button type="button" class="btn secondary" id="addTripBtn" onclick="addNewTrip()" style="margin-top:4px">➕ Dodaj kolejną trasę</button>
     </div></div></div>
   </div>
 
@@ -213,8 +176,20 @@ function scheduleJournalSyncVerification(expectedList){
   },4000);
 }
 function saveJournalEntries(list){localStorage.setItem(JOURNAL_KEY,JSON.stringify(list));if(window.ProfileSync){if(ProfileSync.pushBeacon)ProfileSync.pushBeacon({journalEntries:list});else ProfileSync.push({journalEntries:list});scheduleJournalSyncVerification(list)}}
-function getTypicalTrips(){try{const v=JSON.parse(localStorage.getItem(TYPICAL_TRIPS_KEY));return v&&typeof v==='object'?v:{}}catch{return{}}}
+// Trasy typowe sa teraz lista (dowolna liczba), nie sztywnym obiektem z
+// dwoma kluczami jak do v0.98. Stary zapis {domPraca:{...},pracaDom:{...}}
+// czytamy tu i zamieniamy w locie na liste, zachowujac oryginalne id —
+// dzieki temu stare odrzucenia przypomnien (kluczowane po id trasy) i
+// "tripType" juz zapisanych wpisow w dzienniczku dalej pasuja bez zmian.
+function getTypicalTrips(){
+  let v;
+  try{v=JSON.parse(localStorage.getItem(TYPICAL_TRIPS_KEY))}catch(e){v=null}
+  if(Array.isArray(v))return v;
+  if(v&&typeof v==='object')return['domPraca','pracaDom'].filter(id=>v[id]).map(id=>Object.assign({id},v[id]));
+  return[];
+}
 function saveTypicalTrips(trips){localStorage.setItem(TYPICAL_TRIPS_KEY,JSON.stringify(trips));if(window.ProfileSync)ProfileSync.push({typicalTrips:trips})}
+function toggleInfo(id){const el=document.getElementById('info-'+id);if(el)el.classList.toggle('open')}
 
 function escapeHtml(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}
 
@@ -239,14 +214,14 @@ function parseKm(v){
   return isFinite(n)&&n>=0?n:null;
 }
 function fmtKm(n){return String(n).replace('.',',')}
-function defaultTripName(id){return id==='domPraca'?'do pracy':'z pracy'}
-function tripFields(id,label){
+function tripHeading(idx){return 'Ulubiona trasa '+(idx+1)}
+function tripFields(id,idx){
   const g=k=>document.getElementById('trip_'+id+'_'+k);
   const leg1={board:g('leg1board').value.trim(),alight:g('leg1alight').value.trim(),distanceKm:parseKm(g('leg1km').value)};
   const leg2b=g('leg2board').value.trim(),leg2a=g('leg2alight').value.trim();
   return{
-    label,
-    name:g('name').value.trim()||defaultTripName(id),
+    id,
+    name:g('name').value.trim()||tripHeading(idx),
     leg1:leg1.board&&leg1.alight?leg1:null,
     leg2:leg2b&&leg2a?{board:leg2b,alight:leg2a,distanceKm:parseKm(g('leg2km').value)}:null,
     timeFrom:g('from').value||'',
@@ -271,29 +246,95 @@ function fillTripForm(id,tripRaw){
   g('from').value=trip.timeFrom||'';
   g('to').value=trip.timeTo||'';
 }
-// Trasa powrotna to ta sama trasa od końca — te same odcinki w odwrotnej
-// kolejności i z tymi samymi kilometrami. Wypełnia tylko formularz "Praca → Dom"
-// (bez zapisu i bez godzin), użytkownik sprawdza i zapisuje sam.
-function fillReverseTrip(){
-  const g=(id,k)=>document.getElementById('trip_'+id+'_'+k);
-  const legs=[1,2].map(n=>({board:g('domPraca','leg'+n+'board').value.trim(),alight:g('domPraca','leg'+n+'alight').value.trim(),km:g('domPraca','leg'+n+'km').value.trim()})).filter(l=>l.board&&l.alight);
+// Trasa odwrotna: te same odcinki w odwrotnej kolejności i z tymi samymi
+// kilometrami, skopiowane z WYBRANEJ innej karty (na żywo z jej pól, nie
+// z zapisu) — użytkownik wybiera źródło z listy, bo tras może być dowolnie
+// wiele, nie tylko sztywna para dom/praca jak kiedyś.
+function fillReverseTrip(targetId){
+  const srcId=document.getElementById('trip_'+targetId+'_reverseSrc').value;
   const st=document.getElementById('tripStatus');
-  if(!legs.length){st.textContent='Najpierw uzupełnij trasę Dom → Praca.';st.className='status';return}
+  if(!srcId){st.textContent='Wybierz trasę, z której skopiować odcinki odwrotnie.';st.className='status';return}
+  const g=(id,k)=>document.getElementById('trip_'+id+'_'+k);
+  const legs=[1,2].map(n=>({board:g(srcId,'leg'+n+'board').value.trim(),alight:g(srcId,'leg'+n+'alight').value.trim(),km:g(srcId,'leg'+n+'km').value.trim()})).filter(l=>l.board&&l.alight);
+  if(!legs.length){st.textContent='Wybrana trasa nie ma jeszcze uzupełnionych odcinków.';st.className='status';return}
   const rev=legs.reverse().map(l=>({board:l.alight,alight:l.board,km:l.km}));
   [1,2].forEach(n=>{
     const l=rev[n-1]||{board:'',alight:'',km:''};
-    g('pracaDom','leg'+n+'board').value=l.board;
-    g('pracaDom','leg'+n+'alight').value=l.alight;
-    g('pracaDom','leg'+n+'km').value=l.km;
+    g(targetId,'leg'+n+'board').value=l.board;
+    g(targetId,'leg'+n+'alight').value=l.alight;
+    g(targetId,'leg'+n+'km').value=l.km;
   });
-  if(!g('pracaDom','name').value.trim())g('pracaDom','name').value=defaultTripName('pracaDom');
-  st.textContent='Uzupełniono trasę Praca → Dom odwrotnie. Ustaw godziny i kliknij „Zapisz trasę”.';
+  st.textContent='Uzupełniono odwrotnie. Ustaw godziny i kliknij „Zapisz trasę”.';
   st.className='status ok';
 }
+// tripsState = lista kart otwartych w edytorze (może zawierać świeżo
+// dodane, jeszcze niezapisane karty) — oddzielona od tego, co faktycznie
+// jest w localStorage/profilu. Zapis/usunięcie każdej karty operuje wprost
+// na storage, więc niezapisane sąsiednie karty nigdy nie trafiają do zapisu.
+let tripsState=[];
+function nextTripId(){return't'+Date.now().toString(36)+Math.floor(Math.random()*1000)}
+function reverseSelectOptions(excludeId){
+  return tripsState.filter(t=>t.id!==excludeId).map((t,i)=>{
+    const idx=tripsState.findIndex(x=>x.id===t.id);
+    const label=tripHeading(idx)+(t.name?(' ('+t.name+')'):'');
+    return '<option value="'+escapeHtml(t.id)+'">'+escapeHtml(label)+'</option>';
+  }).join('');
+}
+function tripCardHtml(trip,idx){
+  const id=trip.id;
+  return `<div class="trip-card">
+    <div class="trip-card-head"><h3>${escapeHtml(tripHeading(idx))}</h3><button type="button" class="trip-remove" title="Usuń tę trasę" onclick="removeTrip('${id}')">🗑 Usuń</button></div>
+    <label>Nazwa przejazdu (dla każdego odcinka)</label>
+    <input type="text" id="trip_${id}_name" placeholder="np. do pracy, zakupy, wizyta">
+    <div class="leg-label">Odcinek 1<span class="leg-optional"> (przed przesiadką, jeśli jest)</span></div>
+    <label>Stacja wsiadania</label>
+    <input type="text" id="trip_${id}_leg1board" placeholder="nazwa stacji">
+    <label>Stacja wysiadania</label>
+    <input type="text" id="trip_${id}_leg1alight" placeholder="nazwa stacji">
+    <label>Kilometraż odcinka 1 (km) <button type="button" class="info-dot" title="Dlaczego trzeba wpisać ręcznie" onclick="toggleInfo('km_${id}')">ⓘ</button></label>
+    <div class="info-pop" id="info-km_${id}">PLK w swoich danych podaje rozkład jazdy i opóźnienia, ale nie podaje odległości między stacjami — stąd nie da się tego uzupełnić automatycznie. Wpisz km raz ręcznie (np. z biletu, rozkładu PKP albo taryfikatora przewoźnika) — dzienniczek zapamięta tę wartość i będzie ją sam podstawiał przy każdym kolejnym przejeździe tą samą trasą.</div>
+    <input type="text" inputmode="decimal" id="trip_${id}_leg1km" placeholder="np. 12,0">
+    <div class="leg-label">Odcinek 2<span class="leg-optional"> (po przesiadce — zostaw puste, jeśli jedziesz bez przesiadki)</span></div>
+    <label>Stacja wsiadania</label>
+    <input type="text" id="trip_${id}_leg2board" placeholder="nazwa stacji">
+    <label>Stacja wysiadania</label>
+    <input type="text" id="trip_${id}_leg2alight" placeholder="nazwa stacji">
+    <label>Kilometraż odcinka 2 (km)</label>
+    <input type="text" inputmode="decimal" id="trip_${id}_leg2km" placeholder="np. 8,0">
+    <div class="row2">
+      <div><label>Odjazd od</label><input type="time" id="trip_${id}_from"></div>
+      <div><label>Odjazd do</label><input type="time" id="trip_${id}_to"></div>
+    </div>
+    <div class="trip-reverse-row">
+      <select id="trip_${id}_reverseSrc" class="reverse-select"><option value="">↩ Uzupełnij odwrotnie z…</option>${reverseSelectOptions(id)}</select>
+      <button type="button" class="btn secondary" onclick="fillReverseTrip('${id}')">Uzupełnij</button>
+    </div>
+    <button type="button" class="btn" onclick="saveTrip('${id}')">Zapisz trasę</button>
+  </div>`;
+}
+function renderTripCards(){
+  document.getElementById('tripCards').innerHTML=tripsState.map((t,i)=>tripCardHtml(t,i)).join('');
+  tripsState.forEach(t=>fillTripForm(t.id,t));
+}
+function addNewTrip(){
+  const t={id:nextTripId()};
+  tripsState.push(t);
+  renderTripCards();
+  document.getElementById('trip_'+t.id+'_leg1board')?.scrollIntoView({behavior:'smooth',block:'center'});
+}
+function removeTrip(id){
+  if(!confirm('Usunąć tę trasę? Wpisy już zapisane w dzienniczku zostaną — usuwamy tylko ten szablon.'))return;
+  tripsState=tripsState.filter(t=>t.id!==id);
+  saveTypicalTrips(getTypicalTrips().filter(t=>t.id!==id));
+  renderTripCards();
+  updateTripsSummary();
+  const st=document.getElementById('tripStatus');
+  st.textContent='Usunięto trasę.';st.className='status ok';
+}
 function renderTripsForm(){
-  const trips=getTypicalTrips();
-  fillTripForm('domPraca',trips.domPraca);
-  fillTripForm('pracaDom',trips.pracaDom);
+  const saved=getTypicalTrips();
+  tripsState=saved.length?saved.slice():[{id:'domPraca'},{id:'pracaDom'}];
+  renderTripCards();
   updateTripsSummary();
 }
 function toggleTrips(force){
@@ -304,22 +345,21 @@ function toggleTrips(force){
   document.getElementById('tripsToggleLabel').textContent=open?'Zwiń':'Rozwiń';
 }
 function updateTripsSummary(){
-  const t=getTypicalTrips();
-  const names={domPraca:'Dom → Praca',pracaDom:'Praca → Dom'};
-  const set=['domPraca','pracaDom'].filter(id=>{const x=normalizeTrip(t[id]);return x&&x.leg1});
+  const saved=getTypicalTrips();
+  const names=saved.map((t,i)=>{const x=normalizeTrip(t);return x&&x.leg1?(t.name||tripHeading(i)):null}).filter(Boolean);
   const el=document.getElementById('tripsSummary');
-  if(el)el.textContent=set.length?set.map(id=>names[id]).join(' · '):'Nie zdefiniowano — rozwiń, aby ustawić';
+  if(el)el.textContent=names.length?names.join(' · '):'Nie zdefiniowano — rozwiń, aby ustawić';
 }
 function saveTrip(id){
-  const label=id==='domPraca'?'Dom → Praca':'Praca → Dom';
-  const f=tripFields(id,label);
+  const idx=tripsState.findIndex(t=>t.id===id);
+  const f=tripFields(id,idx<0?0:idx);
   const st=document.getElementById('tripStatus');
   if(!f.leg1){st.textContent='Podaj przynajmniej stacje odcinka 1 (wsiadanie i wysiadanie).';st.className='status';return}
-  const trips=getTypicalTrips();
-  trips[id]=f;
+  const trips=getTypicalTrips().filter(t=>t.id!==id);
+  trips.push(f);
   saveTypicalTrips(trips);
   updateTripsSummary();
-  st.textContent='Zapisano trasę „'+label+'”'+(f.leg2?' (z przesiadką).':'.');
+  st.textContent='Zapisano trasę „'+(f.name||tripHeading(idx<0?0:idx))+'”'+(f.leg2?' (z przesiadką).':'.');
   st.className='status ok';
 }
 

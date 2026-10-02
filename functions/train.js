@@ -487,7 +487,13 @@ function showJournalSaveError(msg){
   if(!el)return;
   if(msg){el.textContent='⚠️ '+msg;el.style.display='block'}else{el.style.display='none';el.textContent=''}
 }
-function getTypicalTrips(){try{const v=JSON.parse(localStorage.getItem(TYPICAL_TRIPS_KEY));return v&&typeof v==='object'?v:{}}catch{return{}}}
+function getTypicalTrips(){
+  let v;
+  try{v=JSON.parse(localStorage.getItem(TYPICAL_TRIPS_KEY))}catch(e){v=null}
+  if(Array.isArray(v))return v;
+  if(v&&typeof v==='object')return['domPraca','pracaDom'].filter(id=>v[id]).map(id=>Object.assign({id},v[id]));
+  return[];
+}
 function normStation(s){return String(s||'').trim().toLowerCase()}
 function toMinutesJ(t){const m=String(t||'').match(/(\d{1,2}):(\d{2})/);return m?Number(m[1])*60+Number(m[2]):null}
 function durationMinJ(fromT,toT){const a=toMinutesJ(fromT),b=toMinutesJ(toT);if(a==null||b==null)return null;let d=b-a;if(d<0)d+=1440;return d}
@@ -506,15 +512,15 @@ function normalizeTrip(trip){
 }
 function matchTypicalTrip(stations){
   const trips=getTypicalTrips();
-  for(const id of['domPraca','pracaDom']){
-    const trip=normalizeTrip(trips[id]);
+  for(const raw of trips){
+    const trip=normalizeTrip(raw);
     if(!trip)continue;
     for(const legNumber of[1,2]){
       const leg=legNumber===1?trip.leg1:trip.leg2;
       if(!leg||!leg.board||!leg.alight)continue;
       const bi=stations.findIndex(s=>normStation(s.stationName)===normStation(leg.board));
       const ai=stations.findIndex(s=>normStation(s.stationName)===normStation(leg.alight));
-      if(bi>=0&&ai>bi)return{id,trip,leg,legNumber,boardIdx:bi,alightIdx:ai};
+      if(bi>=0&&ai>bi)return{id:trip.id,trip,leg,legNumber,boardIdx:bi,alightIdx:ai};
     }
   }
   return null;
@@ -526,7 +532,7 @@ function canSaveJourney(stations,alightIdx){return alightIdx!=null&&stations[ali
 // tylko bez przesiadki — przy przesiadce lepiej zostawić pusto niż wpisać
 // pełną trasę przy każdym odcinku.
 function tripMetaName(tripMeta){
-  return tripMeta.trip.name||(tripMeta.id==='domPraca'?'do pracy':'z pracy');
+  return tripMeta.trip.name||'trasa';
 }
 function tripMetaKm(tripMeta){
   const leg=tripMeta.leg;
@@ -647,12 +653,12 @@ function typicalMetaForMarks(){
   if(markBoardIdx==null||markAlightIdx==null||!currentStations[markBoardIdx]||!currentStations[markAlightIdx])return null;
   const b=normStation(currentStations[markBoardIdx].stationName),a=normStation(currentStations[markAlightIdx].stationName);
   const trips=getTypicalTrips();
-  for(const id of['domPraca','pracaDom']){
-    const trip=normalizeTrip(trips[id]);
+  for(const raw of trips){
+    const trip=normalizeTrip(raw);
     if(!trip)continue;
     for(const legNumber of[1,2]){
       const leg=legNumber===1?trip.leg1:trip.leg2;
-      if(leg&&normStation(leg.board)===b&&normStation(leg.alight)===a)return{id,trip,leg,legNumber};
+      if(leg&&normStation(leg.board)===b&&normStation(leg.alight)===a)return{id:trip.id,trip,leg,legNumber};
     }
   }
   return null;
