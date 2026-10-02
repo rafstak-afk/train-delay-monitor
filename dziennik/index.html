@@ -91,6 +91,9 @@ h2{margin:0 0 10px;font-size:17px}
 .info-pop{display:none;background:rgba(34,211,238,.08);border:1px solid rgba(34,211,238,.3);border-radius:10px;padding:10px 12px;font-size:12.5px;color:#d8e2ee;line-height:1.5;margin:0 0 14px}
 .info-pop.open{display:block}
 .info-pop a{color:var(--cyan)}
+@keyframes btnPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,204,0,.55)}50%{box-shadow:0 0 0 7px rgba(255,204,0,0)}}
+.btn-unsaved{animation:btnPulse 1.3s ease-in-out infinite;position:relative}
+.btn-unsaved::after{content:"●";position:absolute;top:-6px;right:-4px;color:var(--yellow);font-size:13px}
 .trip-card-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
 .trip-card-head h3{margin:0;font-size:15px;display:flex;align-items:center;gap:2px;min-width:0}
 .trip-heading-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -340,7 +343,7 @@ function confirmRenameTrip(id){
 }
 function tripCardHtml(trip,idx){
   const id=trip.id;
-  return `<div class="trip-card">
+  return `<div class="trip-card" data-trip-id="${id}">
     <div class="trip-card-head"><h3 id="tripHead_${id}"><span class="trip-heading-text">${escapeHtml(trip.name||tripHeading(idx))}</span><button type="button" class="trip-rename-btn" title="Zmień nazwę trasy" onclick="startRenameTrip('${id}')">✏️</button></h3><button type="button" class="trip-remove" title="Usuń tę trasę" onclick="removeTrip('${id}')">🗑 Usuń</button></div>
     <label>Nazwa przejazdu (dla każdego odcinka)</label>
     <input type="text" id="trip_${id}_name" placeholder="np. do pracy, zakupy, wizyta">
@@ -367,13 +370,43 @@ function tripCardHtml(trip,idx){
       <select id="trip_${id}_reverseSrc" class="reverse-select"><option value="">↩ Uzupełnij odwrotnie z…</option>${reverseSelectOptions(id)}</select>
       <button type="button" class="btn secondary" onclick="fillReverseTrip('${id}')">Uzupełnij</button>
     </div>
-    <button type="button" class="btn" onclick="saveTrip('${id}')">Zapisz trasę</button>
+    <button type="button" class="btn" id="tripSaveBtn_${id}" onclick="saveTrip('${id}')">Zapisz trasę</button>
   </div>`;
 }
 function renderTripCards(){
   document.getElementById('tripCards').innerHTML=tripsState.map((t,i)=>tripCardHtml(t,i)).join('');
   tripsState.forEach(t=>fillTripForm(t.id,t));
+  tripsState.forEach(t=>updateTripDirtyUI(t.id));
 }
+// Czy to, co jest aktualnie w polach karty, różni się od tego, co faktycznie
+// zapisane (albo jest niezapisane, ale coś w nią wpisano) — steruje migotaniem
+// przycisku "Zapisz trasę" i ostrzeżeniem przy opuszczaniu strony.
+function isTripDirty(id){
+  const g=k=>document.getElementById('trip_'+id+'_'+k);
+  if(!g('name'))return false;
+  const name=g('name').value.trim();
+  const leg1b=g('leg1board').value.trim(),leg1a=g('leg1alight').value.trim(),leg1k=g('leg1km').value.trim();
+  const leg2b=g('leg2board').value.trim(),leg2a=g('leg2alight').value.trim(),leg2k=g('leg2km').value.trim();
+  const from=g('from').value,to=g('to').value;
+  const anyFilled=!!(name||leg1b||leg1a||leg1k||leg2b||leg2a||leg2k||from||to);
+  const saved=getTypicalTrips().find(t=>t.id===id);
+  if(!saved)return anyFilled;
+  const kmStr=v=>v==null?'':fmtKm(v);
+  return (saved.name||'')!==name
+    ||((saved.leg1&&saved.leg1.board)||'')!==leg1b
+    ||((saved.leg1&&saved.leg1.alight)||'')!==leg1a
+    ||kmStr(saved.leg1&&saved.leg1.distanceKm)!==leg1k
+    ||((saved.leg2&&saved.leg2.board)||'')!==leg2b
+    ||((saved.leg2&&saved.leg2.alight)||'')!==leg2a
+    ||kmStr(saved.leg2&&saved.leg2.distanceKm)!==leg2k
+    ||(saved.timeFrom||'')!==from
+    ||(saved.timeTo||'')!==to;
+}
+function updateTripDirtyUI(id){
+  const btn=document.getElementById('tripSaveBtn_'+id);
+  if(btn)btn.classList.toggle('btn-unsaved',isTripDirty(id));
+}
+function anyTripDirty(){return tripsState.some(t=>isTripDirty(t.id))}
 function addNewTrip(){
   const t={id:nextTripId()};
   tripsState.push(t);
@@ -425,6 +458,7 @@ function saveTrip(id){
   // właśnie zapisano (dane w storage zostają poprawne, ale znikają z widoku).
   if(idx>=0)tripsState[idx]=f;else tripsState.push(f);
   updateTripsSummary();
+  updateTripDirtyUI(id);
   st.textContent='Zapisano trasę „'+(f.name||tripHeading(idx<0?0:idx))+'”'+(f.leg2?' (z przesiadką).':'.');
   st.className='status ok';
 }
@@ -480,9 +514,10 @@ function renderEntries(){
   document.getElementById('entryCount').textContent=raw.length;
   const list=document.getElementById('entryList');
   const source=editMode?editBuffer:raw;
-  if(!source.length){list.innerHTML='<div class="empty">Brak wpisów. Otwórz bieg pociągu (z tablicy albo z Moich pociągów), zaznacz stację wsiadania 🚏 i wysiadania 🏁, i zapisz przejazd.</div>';return}
+  if(!source.length){list.innerHTML='<div class="empty">Brak wpisów. Otwórz bieg pociągu (z tablicy albo z Moich pociągów), zaznacz stację wsiadania 🚏 i wysiadania 🏁, i zapisz przejazd.</div>';if(editMode)updateJournalDirtyUI();return}
   const displayOrder=[...source].sort((a,b)=>(b.date+String(b.plannedDeparture||'')).localeCompare(a.date+String(a.plannedDeparture||'')));
   list.innerHTML=displayOrder.map(e=>editMode?entryEditHtml(e):entryCardHtml(e)).join('');
+  if(editMode)updateJournalDirtyUI();
 }
 
 // === Tryb edycji ===
@@ -492,8 +527,20 @@ function unlockEdit(){
   document.getElementById('entriesActions').innerHTML=
     '<button type="button" class="btn-sm" id="exportBtn" onclick="exportToXlsx()">⬇️ XLSX</button>'+
     '<button type="button" class="btn-sm secondary" onclick="askCancelEdit()">✕ Rezygnuj z zapisu</button>'+
-    '<button type="button" class="btn-sm" onclick="askSaveEdit()">💾 Zapisz</button>';
+    '<button type="button" class="btn-sm" id="journalSaveBtn" onclick="askSaveEdit()">💾 Zapisz</button>';
   renderEntries();
+}
+// Czy bufor edycji (to, co widać w polach) różni się od tego, co faktycznie
+// zapisane — steruje migotaniem przycisku "💾 Zapisz" i ostrzeżeniem przy
+// opuszczaniu strony w trakcie edycji wpisów.
+function isJournalEditDirty(){
+  if(!editMode)return false;
+  readEditedEntries();
+  return JSON.stringify(editBuffer)!==JSON.stringify(getJournalEntries());
+}
+function updateJournalDirtyUI(){
+  const btn=document.getElementById('journalSaveBtn');
+  if(btn)btn.classList.toggle('btn-unsaved',isJournalEditDirty());
 }
 function readEditedEntries(){
   const cards=document.querySelectorAll('.entry.editing');
@@ -642,6 +689,19 @@ async function refreshFromProfile(){
 refreshFromProfile();
 window.addEventListener('pageshow',function(e){if(e.persisted)refreshFromProfile()});
 document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')refreshFromProfile()});
+
+// Delegacja na stałym kontenerze — przeżywa wymianę zawartości (kart tras /
+// wpisów w edycji) przy każdym renderze, więc nie trzeba podpinać jej na nowo.
+document.getElementById('tripCards').addEventListener('input',function(e){
+  const card=e.target.closest('.trip-card');
+  if(card)updateTripDirtyUI(card.dataset.tripId);
+});
+document.getElementById('entryList').addEventListener('input',function(){
+  if(editMode)updateJournalDirtyUI();
+});
+window.addEventListener('beforeunload',function(e){
+  if(anyTripDirty()||isJournalEditDirty()){e.preventDefault();e.returnValue=''}
+});
 </script>
 </body>
 </html>
