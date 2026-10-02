@@ -880,7 +880,7 @@ async function syncTypicalTripsFromProfile(){
   if(!(window.ProfileSync&&ProfileSync.getToken()))return;
   try{
     const profile=await ProfileSync.pull();
-    if(profile&&profile.typicalTrips&&typeof profile.typicalTrips==='object'){
+    if(profile&&profile.typicalTrips&&typeof profile.typicalTrips==='object'&&(Date.parse(profile.updatedAt||'')||0)>=Number(localStorage.getItem('dziennikTrasyTypoweLocalAt')||0)){
       localStorage.setItem(TYPICAL_TRIPS_KEY,JSON.stringify(profile.typicalTrips));
       renderJournalBar();
     }

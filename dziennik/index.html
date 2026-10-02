@@ -193,8 +193,16 @@ function getTypicalTrips(){
   if(v&&typeof v==='object')return['domPraca','pracaDom'].filter(id=>v[id]).map(id=>Object.assign({id},v[id]));
   return[];
 }
+const TYPICAL_TRIPS_LOCAL_AT_KEY='dziennikTrasyTypoweLocalAt';
 function saveTypicalTrips(trips){
   localStorage.setItem(TYPICAL_TRIPS_KEY,JSON.stringify(trips));
+  // Znacznik czasu lokalnego zapisu — chroni przed tym, żeby "pociągnięcie"
+  // profilu (np. visibilitychange tuż po zapisie, zanim push() zdążył
+  // dotrzeć do serwera) nadpisało to, co właśnie zapisano, starszą wersją
+  // z serwera. Ten sam problem journalEntries rozwiązuje przez createdAt
+  // na wpisach — typicalTrips go nie ma, więc porównujemy całe listy wg
+  // czasu ostatniego lokalnego zapisu vs. profile.updatedAt z pull().
+  localStorage.setItem(TYPICAL_TRIPS_LOCAL_AT_KEY,String(Date.now()));
   lastTripsSnapshot=localStorage.getItem(TYPICAL_TRIPS_KEY);
   if(window.ProfileSync)ProfileSync.push({typicalTrips:trips});
 }
@@ -616,11 +624,13 @@ async function refreshFromProfile(){
         const local=getJournalEntries();
         if(local.length)ProfileSync.push({journalEntries:local});
       }
-      if(profile.typicalTrips&&typeof profile.typicalTrips==='object'){
+      const tripsLocalAt=Number(localStorage.getItem(TYPICAL_TRIPS_LOCAL_AT_KEY)||0);
+      const tripsRemoteAt=Date.parse(profile.updatedAt||'')||0;
+      if(profile.typicalTrips&&typeof profile.typicalTrips==='object'&&tripsRemoteAt>=tripsLocalAt){
         localStorage.setItem(TYPICAL_TRIPS_KEY,JSON.stringify(profile.typicalTrips));
-      }else{
+      }else if(!profile.typicalTrips){
         const localTrips=getTypicalTrips();
-        if(Object.keys(localTrips).length)ProfileSync.push({typicalTrips:localTrips});
+        if(localTrips.length)ProfileSync.push({typicalTrips:localTrips});
       }
     }
   }
