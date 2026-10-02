@@ -90,6 +90,7 @@ h2{margin:0 0 10px;font-size:17px}
 .info-dot:hover{background:rgba(34,211,238,.2)}
 .info-pop{display:none;background:rgba(34,211,238,.08);border:1px solid rgba(34,211,238,.3);border-radius:10px;padding:10px 12px;font-size:12.5px;color:#d8e2ee;line-height:1.5;margin:0 0 14px}
 .info-pop.open{display:block}
+.info-pop a{color:var(--cyan)}
 .trip-card-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
 .trip-card-head h3{margin:0;font-size:15px;display:flex;align-items:center;gap:2px;min-width:0}
 .trip-heading-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -108,7 +109,7 @@ h2{margin:0 0 10px;font-size:17px}
 <div class="wrap">
   <a class="back" href="/">← Tablica</a>
   <h1>📓 Dzienniczek podróży <button type="button" class="info-dot" title="Co to jest i jak wypełniać" onclick="toggleInfo('journal')">ⓘ</button></h1>
-  <div class="info-pop" id="info-journal">Zapisz tu swoje stałe, powtarzalne trasy (np. codzienny dojazd) — wystarczy raz uzupełnić stacje wsiadania i wysiadania. Dzienniczek sam rozpozna, że jedziesz jedną z zapisanych tras, i przy pasującym kursie zaproponuje szybki zapis z właściwą nazwą. Jeśli trasa ma przesiadkę, uzupełnij też „Odcinek 2” — każdy odcinek zapisze się jako osobny wpis. Pole „Odjazd od–do” to okno godzinowe, w którym przejazd uznajemy za typowy; poza nim dostaniesz pytanie, czy zapisać mimo to. Przyciskiem „➕ Dodaj kolejną trasę” możesz dodać ich dowolnie wiele — przydatne np. przy różnych godzinach w różne dni albo przy innych, też powtarzalnych przejazdach.</div>
+  <div class="info-pop" id="info-journal">Zapisz tu swoje stałe, powtarzalne trasy (np. codzienny dojazd) — wystarczy raz uzupełnić stacje wsiadania i wysiadania. Dzienniczek sam rozpozna, że jedziesz jedną z zapisanych tras, i przy pasującym kursie zaproponuje szybki zapis z właściwą nazwą. Jeśli trasa ma przesiadkę, uzupełnij też „Odcinek 2” — każdy odcinek zapisze się jako osobny wpis. Pole „Odjazd od–do” to okno godzinowe, w którym przejazd uznajemy za typowy; poza nim dostaniesz pytanie, czy zapisać mimo to. Przyciskiem „➕ Dodaj kolejną trasę” możesz dodać ich dowolnie wiele — przydatne np. przy różnych godzinach w różne dni albo przy innych, też powtarzalnych przejazdach. Wszystko to (trasy, wpisy, ulubione stacje, Moje pociągi) widać tylko w tej przeglądarce, chyba że założysz <a href="/profil/">profil</a> — wtedy to samo zobaczysz też na innych urządzeniach. Bez profilu (np. w oknie incognito) dane znikają razem z zamknięciem przeglądarki.</div>
   <div class="subtitle">Zapisane przejazdy z zaznaczoną stacją wsiadania i wysiadania — dodajesz je na stronie biegu pociągu.</div>
 
   <div class="panel trips-panel" id="tripsPanel">
@@ -192,7 +193,11 @@ function getTypicalTrips(){
   if(v&&typeof v==='object')return['domPraca','pracaDom'].filter(id=>v[id]).map(id=>Object.assign({id},v[id]));
   return[];
 }
-function saveTypicalTrips(trips){localStorage.setItem(TYPICAL_TRIPS_KEY,JSON.stringify(trips));if(window.ProfileSync)ProfileSync.push({typicalTrips:trips})}
+function saveTypicalTrips(trips){
+  localStorage.setItem(TYPICAL_TRIPS_KEY,JSON.stringify(trips));
+  lastTripsSnapshot=localStorage.getItem(TYPICAL_TRIPS_KEY);
+  if(window.ProfileSync)ProfileSync.push({typicalTrips:trips});
+}
 function toggleInfo(id){const el=document.getElementById('info-'+id);if(el)el.classList.toggle('open')}
 
 function escapeHtml(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}
@@ -276,6 +281,13 @@ function fillReverseTrip(targetId){
 // jest w localStorage/profilu. Zapis/usunięcie każdej karty operuje wprost
 // na storage, więc niezapisane sąsiednie karty nigdy nie trafiają do zapisu.
 let tripsState=[];
+// Zapamiętujemy ostatni zapisany JSON tras, żeby odróżnić "ktoś/coś naprawdę
+// zmienił dane trasy (profil, inna karta)" od zwykłego powrotu na tę kartę
+// (visibilitychange/pageshow). Bez tego KAŻDY powrót na kartę wywoływał
+// renderTripsForm(), które bezwarunkowo odtwarzało tripsState z tego, co jest
+// w localStorage — i kasowało każdą świeżo dodaną, jeszcze niezapisaną kartę
+// (np. uzupełnioną "odwrotnie", ale bez kliknięcia "Zapisz trasę").
+let lastTripsSnapshot;
 function nextTripId(){return't'+Date.now().toString(36)+Math.floor(Math.random()*1000)}
 function reverseSelectOptions(excludeId){
   return tripsState.filter(t=>t.id!==excludeId).map((t,i)=>{
@@ -370,6 +382,9 @@ function removeTrip(id){
   st.textContent='Usunięto trasę.';st.className='status ok';
 }
 function renderTripsForm(){
+  const raw=localStorage.getItem(TYPICAL_TRIPS_KEY);
+  if(raw===lastTripsSnapshot)return;
+  lastTripsSnapshot=raw;
   const saved=getTypicalTrips();
   tripsState=saved.length?saved.slice():[{id:'domPraca'},{id:'pracaDom'}];
   renderTripCards();
