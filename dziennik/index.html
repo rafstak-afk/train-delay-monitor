@@ -392,7 +392,12 @@ function isTripDirty(id){
   const saved=getTypicalTrips().find(t=>t.id===id);
   if(!saved)return anyFilled;
   const kmStr=v=>v==null?'':fmtKm(v);
-  return (saved.name||'')!==name
+  // saveTrip() wstawia domyślną nazwę ("Ulubiona trasa N"), gdy pole jest
+  // puste — porównujemy do tej samej wartości, inaczej zapisana karta z
+  // pustym polem nazwy zawsze wyglądałaby na "niezapisaną".
+  const idx=tripsState.findIndex(t=>t.id===id);
+  const effectiveName=name||tripHeading(idx<0?0:idx);
+  return (saved.name||'')!==effectiveName
     ||((saved.leg1&&saved.leg1.board)||'')!==leg1b
     ||((saved.leg1&&saved.leg1.alight)||'')!==leg1a
     ||kmStr(saved.leg1&&saved.leg1.distanceKm)!==leg1k
