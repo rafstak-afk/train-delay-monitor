@@ -358,6 +358,11 @@ function saveTrip(id){
   const trips=getTypicalTrips().filter(t=>t.id!==id);
   trips.push(f);
   saveTypicalTrips(trips);
+  // tripsState (stan edytora) musi dostać te same dane co storage — inaczej
+  // kolejne dodanie/usunięcie innej karty wywoła renderTripCards() i
+  // nadpisze tę kartę z powrotem pustym szkieletem {id}, kasując to, co
+  // właśnie zapisano (dane w storage zostają poprawne, ale znikają z widoku).
+  if(idx>=0)tripsState[idx]=f;else tripsState.push(f);
   updateTripsSummary();
   st.textContent='Zapisano trasę „'+(f.name||tripHeading(idx<0?0:idx))+'”'+(f.leg2?' (z przesiadką).':'.');
   st.className='status ok';
