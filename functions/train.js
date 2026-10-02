@@ -230,6 +230,7 @@ const HTML = String.raw`<!DOCTYPE html>
 .toast.show{opacity:1}
 .mt-star{font-size:18px}
 .mt-star.star-filled{color:#ffd400;text-shadow:0 0 6px rgba(255,212,0,.5)}
+button.mt-star{background:transparent;border:0;color:#8fa6bf;cursor:pointer;padding:0 0 0 4px;vertical-align:middle;line-height:1}
 .mark-btn{border:1.5px solid #8fa6bf;background:rgba(255,255,255,.08);border-radius:7px;padding:5px 8px;font-size:16px;cursor:pointer;opacity:1;line-height:1.2}
 .mark-btn:hover{background:rgba(255,255,255,.16);border-color:#c3d3e5}
 .mark-btn.active{border-color:#fff;background:var(--blue);box-shadow:0 0 0 2px rgba(11,87,208,.55),0 2px 10px rgba(11,87,208,.7);transform:scale(1.1)}
@@ -975,7 +976,7 @@ function renderTrain(train,data){
   const mtStation=stations[mtIdx].stationName;
   const mtTrainNum=String(data.trainNumber||train||'').trim();
   const mtFilled=isInMyTrains(mtStation,mtTrainNum);
-  let html='<div class="panel"><div class="card"><div class="label">Pociąg</div><div class="big">'+esc(title||('Pociąg '+train))+'</div><div class="hint'+(isCancelledTrain?' hint-cancelled':'')+'">Status: '+esc(st[0])+(st[1]?' <span class="station-meta">('+esc(st[1])+')</span>':'')+'</div><div class="last-station"><div class="label">Ostatnia potwierdzona stacja</div><div class="last-line"><span class="big">'+esc(lastStationText)+'</span><span class="hint">'+esc(lastTimeText)+'</span></div></div><button type="button" id="mtAddBtn" class="btn small" style="margin-top:8px" onclick="addToMyTrains(this)"><span id="mtStarIcon" class="mt-star'+(mtFilled?' star-filled':'')+'">'+(mtFilled?'★':'☆')+'</span> Dodaj do Moich pociągów</button></div>';
+  let html='<div class="panel"><div class="card"><div class="label">Pociąg</div><div class="big">'+esc(title||('Pociąg '+train))+' <button type="button" id="mtStarBtn" class="mt-star'+(mtFilled?' star-filled':'')+'" title="'+(mtFilled?'Usuń z Moich pociągów':'Dodaj do Moich pociągów')+'" onclick="addToMyTrains(this)">'+(mtFilled?'★':'☆')+'</button></div><div class="hint'+(isCancelledTrain?' hint-cancelled':'')+'">Status: '+esc(st[0])+(st[1]?' <span class="station-meta">('+esc(st[1])+')</span>':'')+'</div><div class="last-station"><div class="label">Ostatnia potwierdzona stacja</div><div class="last-line"><span class="big">'+esc(lastStationText)+'</span><span class="hint">'+esc(lastTimeText)+'</span></div></div></div>';
   html+='<details class="legend"><summary>ⓘ Jak czytać statusy stacji</summary><div class="hint">„Zaliczona” tylko przy potwierdzeniu API. Gdy czas już minął, a API nie potwierdza stacji, pokazujemy „BRAK INFO Z API”.</div></details><div id="journalBar" class="journal-bar"></div><div id="journalSaveError" class="journal-note warn" style="display:none"></div><div class="route-table"><div class="rrow-head"><div>Godz.</div><div>Opóźn.</div><div>Stacja</div><div>Per./Tor</div></div>';
 
   stations.forEach((s,i)=>{
@@ -1013,9 +1014,11 @@ function isInMyTrains(station,trainNum){
   const norm=s=>String(s).replace(/\D/g,'');
   return list.some(x=>x.station===station&&norm(x.trainNum)===norm(trainNum));
 }
-function markStarFilled(){
-  const icon=document.getElementById('mtStarIcon');
-  if(icon){icon.textContent='★';icon.classList.add('star-filled')}
+function markStarState(filled){
+  const btn=document.getElementById('mtStarBtn');
+  if(!btn)return;
+  if(filled){btn.classList.add('star-filled');btn.textContent='★';btn.title='Usuń z Moich pociągów'}
+  else{btn.classList.remove('star-filled');btn.textContent='☆';btn.title='Dodaj do Moich pociągów'}
 }
 function addToMyTrains(btnEl){
   if(!currentTrainData||!currentStations.length)return;
@@ -1031,10 +1034,17 @@ function addToMyTrains(btnEl){
   let list=[];
   try{list=JSON.parse(localStorage.getItem(MY_TRAINS_KEY));if(!Array.isArray(list))list=[]}catch(e){list=[]}
   const norm=s=>String(s).replace(/\D/g,'');
-  if(list.some(x=>x.station===station&&norm(x.trainNum)===norm(trainNum))){
-    setStatus('„'+trainNum+'” ze stacji „'+station+'” jest już na liście Moich pociągów.');
-    markStarFilled();
-    showToastNear(btnEl,'ℹ️ „'+trainNum+'” już jest na liście Moich pociągów.');
+  const existingIdx=list.findIndex(x=>x.station===station&&norm(x.trainNum)===norm(trainNum));
+  if(existingIdx>=0){
+    list.splice(existingIdx,1);
+    try{localStorage.setItem(MY_TRAINS_KEY,JSON.stringify(list))}catch(e){}
+    if(window.ProfileSync){
+      if(ProfileSync.pushBeacon)ProfileSync.pushBeacon({trains:list});
+      else ProfileSync.push({trains:list});
+    }
+    setStatus('Usunięto „'+trainNum+'” (stacja: '+station+') z Moich pociągów.');
+    markStarState(false);
+    showToastNear(btnEl,'🗑️ Usunięto „'+trainNum+'” z Moich pociągów');
     return;
   }
   list.push({station,trainNum,planTime:planTime||'--:--'});
@@ -1044,7 +1054,7 @@ function addToMyTrains(btnEl){
     else ProfileSync.push({trains:list});
   }
   setStatus('Dodano „'+trainNum+'” (stacja: '+station+') do Moich pociągów.');
-  markStarFilled();
+  markStarState(true);
   showToastNear(btnEl,'✓ Dodano „'+trainNum+'” do Moich pociągów');
 }
 function saveLastTrainContext(train,data){
