@@ -226,6 +226,8 @@ const HTML = String.raw`<!DOCTYPE html>
 .delay-cell{text-align:center}
 .platform-cell{text-align:center}
 .mark-btns{display:flex;gap:4px;margin-top:4px}
+.toast{position:fixed;left:50%;top:14px;transform:translate(-50%,-20px);background:#1c2833;color:#fff;border:1px solid #0b57d0;border-radius:999px;padding:10px 18px;font-size:13px;font-weight:700;box-shadow:0 10px 30px rgba(0,0,0,.45);z-index:10000;opacity:0;pointer-events:none;transition:opacity .25s ease,transform .25s ease;max-width:calc(100vw - 24px);text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
 .mark-btn{border:1.5px solid #8fa6bf;background:rgba(255,255,255,.08);border-radius:7px;padding:5px 8px;font-size:16px;cursor:pointer;opacity:1;line-height:1.2}
 .mark-btn:hover{background:rgba(255,255,255,.16);border-color:#c3d3e5}
 .mark-btn.active{border-color:#fff;background:var(--blue);box-shadow:0 0 0 2px rgba(11,87,208,.55),0 2px 10px rgba(11,87,208,.7);transform:scale(1.1)}
@@ -302,6 +304,18 @@ function qs(name){return new URLSearchParams(location.search).get(name)||''}
 function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}
 function shortTime(v){if(!v)return'';const m=String(v).match(/(\d{2}:\d{2})/);return m?m[1]:String(v)}
 function setStatus(t){document.getElementById('status').textContent=t}
+// Krótki dymek na środku ekranu — linijka statusu bywa latwa do przeoczenia.
+let toastTimer=null;
+function showToast(t){
+  let el=document.getElementById('toast');
+  if(!el){el=document.createElement('div');el.id='toast';el.className='toast';document.body.appendChild(el)}
+  el.textContent=t;
+  el.classList.remove('show');
+  void el.offsetWidth;
+  el.classList.add('show');
+  if(toastTimer)clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>{el.classList.remove('show')},2600);
+}
 function todayIso(){return new Date().toLocaleDateString('sv-SE',{timeZone:'Europe/Warsaw'})}
 function nowMin(){const p=new Date().toLocaleTimeString('pl-PL',{timeZone:'Europe/Warsaw',hour:'2-digit',minute:'2-digit',hour12:false}).split(':').map(Number);return p[0]*60+p[1]}
 function toMin(t){const s=shortTime(t);const m=s.match(/^(\d{2}):(\d{2})$/);return m?Number(m[1])*60+Number(m[2]):null}
@@ -985,12 +999,13 @@ function addToMyTrains(){
   const station=anchor.stationName;
   const trainNum=String(data.trainNumber||qs('train')||'').trim();
   const planTime=(String(anchor.plannedDeparture||anchor.plannedTime||'').match(/\d{1,2}:\d{2}/)||[])[0]||'';
-  if(!station||!trainNum){setStatus('Brak danych, żeby dodać ten pociąg do Moich pociągów.');return}
+  if(!station||!trainNum){setStatus('Brak danych, żeby dodać ten pociąg do Moich pociągów.');showToast('⚠️ Brak danych do dodania pociągu.');return}
   let list=[];
   try{list=JSON.parse(localStorage.getItem(MY_TRAINS_KEY));if(!Array.isArray(list))list=[]}catch(e){list=[]}
   const norm=s=>String(s).replace(/\D/g,'');
   if(list.some(x=>x.station===station&&norm(x.trainNum)===norm(trainNum))){
     setStatus('„'+trainNum+'” ze stacji „'+station+'” jest już na liście Moich pociągów.');
+    showToast('ℹ️ „'+trainNum+'” już jest na liście Moich pociągów.');
     return;
   }
   list.push({station,trainNum,planTime:planTime||'--:--'});
@@ -1000,6 +1015,7 @@ function addToMyTrains(){
     else ProfileSync.push({trains:list});
   }
   setStatus('Dodano „'+trainNum+'” (stacja: '+station+') do Moich pociągów.');
+  showToast('✓ Dodano „'+trainNum+'” do Moich pociągów');
 }
 function saveLastTrainContext(train,data){
   try{
