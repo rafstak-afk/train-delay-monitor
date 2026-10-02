@@ -226,8 +226,10 @@ const HTML = String.raw`<!DOCTYPE html>
 .delay-cell{text-align:center}
 .platform-cell{text-align:center}
 .mark-btns{display:flex;gap:4px;margin-top:4px}
-.toast{position:fixed;left:50%;top:14px;transform:translate(-50%,-20px);background:#1c2833;color:#fff;border:1px solid #0b57d0;border-radius:999px;padding:10px 18px;font-size:13px;font-weight:700;box-shadow:0 10px 30px rgba(0,0,0,.45);z-index:10000;opacity:0;pointer-events:none;transition:opacity .25s ease,transform .25s ease;max-width:calc(100vw - 24px);text-align:center}
-.toast.show{opacity:1;transform:translate(-50%,0)}
+.toast{position:fixed;left:50%;top:14px;transform:translate(-50%,-20px);background:#1c2833;color:#fff;border:1px solid #0b57d0;border-radius:999px;padding:13px 22px;font-size:17px;font-weight:700;box-shadow:0 10px 30px rgba(0,0,0,.45);z-index:10000;opacity:0;pointer-events:none;transition:opacity .2s ease;max-width:calc(100vw - 24px);text-align:center}
+.toast.show{opacity:1}
+.mt-star{font-size:18px}
+.mt-star.star-filled{color:#ffd400;text-shadow:0 0 6px rgba(255,212,0,.5)}
 .mark-btn{border:1.5px solid #8fa6bf;background:rgba(255,255,255,.08);border-radius:7px;padding:5px 8px;font-size:16px;cursor:pointer;opacity:1;line-height:1.2}
 .mark-btn:hover{background:rgba(255,255,255,.16);border-color:#c3d3e5}
 .mark-btn.active{border-color:#fff;background:var(--blue);box-shadow:0 0 0 2px rgba(11,87,208,.55),0 2px 10px rgba(11,87,208,.7);transform:scale(1.1)}
@@ -306,12 +308,22 @@ function shortTime(v){if(!v)return'';const m=String(v).match(/(\d{2}:\d{2})/);re
 function setStatus(t){document.getElementById('status').textContent=t}
 // Krótki dymek na środku ekranu — linijka statusu bywa latwa do przeoczenia.
 let toastTimer=null;
-function showToast(t){
+function showToastNear(anchorEl,t){
   let el=document.getElementById('toast');
   if(!el){el=document.createElement('div');el.id='toast';el.className='toast';document.body.appendChild(el)}
   el.textContent=t;
   el.classList.remove('show');
   void el.offsetWidth;
+  const vw=window.innerWidth;
+  if(anchorEl&&anchorEl.getBoundingClientRect){
+    const r=anchorEl.getBoundingClientRect();
+    const left=Math.max(90,Math.min(vw-90,Math.round(r.left+r.width/2)));
+    el.style.left=left+'px';
+    if(r.top>70){el.style.top=Math.round(r.top-10)+'px';el.style.transform='translate(-50%,-100%)'}
+    else{el.style.top=Math.round(r.bottom+10)+'px';el.style.transform='translate(-50%,0)'}
+  }else{
+    el.style.left='50%';el.style.top='14px';el.style.transform='translate(-50%,-20px)';
+  }
   el.classList.add('show');
   if(toastTimer)clearTimeout(toastTimer);
   toastTimer=setTimeout(()=>{el.classList.remove('show')},2600);
@@ -957,7 +969,13 @@ function renderTrain(train,data){
   const lastStationText=data.lastConfirmedStation||'brak potwierdzonej stacji';
   const lastTimeText=data.lastConfirmedStation?(data.lastConfirmedTime||''):'Brak twardego potwierdzenia realizacji z API PLK.';
 
-  let html='<div class="panel"><div class="card"><div class="label">Pociąg</div><div class="big">'+esc(title||('Pociąg '+train))+'</div><div class="hint'+(isCancelledTrain?' hint-cancelled':'')+'">Status: '+esc(st[0])+(st[1]?' <span class="station-meta">('+esc(st[1])+')</span>':'')+'</div><div class="last-station"><div class="label">Ostatnia potwierdzona stacja</div><div class="last-line"><span class="big">'+esc(lastStationText)+'</span><span class="hint">'+esc(lastTimeText)+'</span></div></div><button type="button" class="btn small" style="margin-top:8px" onclick="addToMyTrains()">🚆+ Dodaj do Moich pociągów</button></div>';
+  const mtCtxStation=qs('station');
+  let mtIdx=mtCtxStation?stations.findIndex(s=>normStation(s.stationName)===normStation(mtCtxStation)):-1;
+  if(mtIdx<0)mtIdx=0;
+  const mtStation=stations[mtIdx].stationName;
+  const mtTrainNum=String(data.trainNumber||train||'').trim();
+  const mtFilled=isInMyTrains(mtStation,mtTrainNum);
+  let html='<div class="panel"><div class="card"><div class="label">Pociąg</div><div class="big">'+esc(title||('Pociąg '+train))+'</div><div class="hint'+(isCancelledTrain?' hint-cancelled':'')+'">Status: '+esc(st[0])+(st[1]?' <span class="station-meta">('+esc(st[1])+')</span>':'')+'</div><div class="last-station"><div class="label">Ostatnia potwierdzona stacja</div><div class="last-line"><span class="big">'+esc(lastStationText)+'</span><span class="hint">'+esc(lastTimeText)+'</span></div></div><button type="button" id="mtAddBtn" class="btn small" style="margin-top:8px" onclick="addToMyTrains(this)"><span id="mtStarIcon" class="mt-star'+(mtFilled?' star-filled':'')+'">'+(mtFilled?'★':'☆')+'</span> Dodaj do Moich pociągów</button></div>';
   html+='<details class="legend"><summary>ⓘ Jak czytać statusy stacji</summary><div class="hint">„Zaliczona” tylko przy potwierdzeniu API. Gdy czas już minął, a API nie potwierdza stacji, pokazujemy „BRAK INFO Z API”.</div></details><div id="journalBar" class="journal-bar"></div><div id="journalSaveError" class="journal-note warn" style="display:none"></div><div class="route-table"><div class="rrow-head"><div>Godz.</div><div>Opóźn.</div><div>Stacja</div><div>Per./Tor</div></div>';
 
   stations.forEach((s,i)=>{
@@ -989,7 +1007,17 @@ function renderTrain(train,data){
 // przyszedł na ten bieg (qs('station') — z tablicy albo z listy Moich
 // pociągów), a w braku takiego kontekstu pierwsza stacja trasy.
 const MY_TRAINS_KEY='rafstakMojePociagiV4';
-function addToMyTrains(){
+function isInMyTrains(station,trainNum){
+  let list=[];
+  try{list=JSON.parse(localStorage.getItem(MY_TRAINS_KEY));if(!Array.isArray(list))list=[]}catch(e){list=[]}
+  const norm=s=>String(s).replace(/\D/g,'');
+  return list.some(x=>x.station===station&&norm(x.trainNum)===norm(trainNum));
+}
+function markStarFilled(){
+  const icon=document.getElementById('mtStarIcon');
+  if(icon){icon.textContent='★';icon.classList.add('star-filled')}
+}
+function addToMyTrains(btnEl){
   if(!currentTrainData||!currentStations.length)return;
   const data=currentTrainData,stations=currentStations;
   const ctxStation=qs('station');
@@ -999,13 +1027,14 @@ function addToMyTrains(){
   const station=anchor.stationName;
   const trainNum=String(data.trainNumber||qs('train')||'').trim();
   const planTime=(String(anchor.plannedDeparture||anchor.plannedTime||'').match(/\d{1,2}:\d{2}/)||[])[0]||'';
-  if(!station||!trainNum){setStatus('Brak danych, żeby dodać ten pociąg do Moich pociągów.');showToast('⚠️ Brak danych do dodania pociągu.');return}
+  if(!station||!trainNum){setStatus('Brak danych, żeby dodać ten pociąg do Moich pociągów.');showToastNear(btnEl,'⚠️ Brak danych do dodania pociągu.');return}
   let list=[];
   try{list=JSON.parse(localStorage.getItem(MY_TRAINS_KEY));if(!Array.isArray(list))list=[]}catch(e){list=[]}
   const norm=s=>String(s).replace(/\D/g,'');
   if(list.some(x=>x.station===station&&norm(x.trainNum)===norm(trainNum))){
     setStatus('„'+trainNum+'” ze stacji „'+station+'” jest już na liście Moich pociągów.');
-    showToast('ℹ️ „'+trainNum+'” już jest na liście Moich pociągów.');
+    markStarFilled();
+    showToastNear(btnEl,'ℹ️ „'+trainNum+'” już jest na liście Moich pociągów.');
     return;
   }
   list.push({station,trainNum,planTime:planTime||'--:--'});
@@ -1015,7 +1044,8 @@ function addToMyTrains(){
     else ProfileSync.push({trains:list});
   }
   setStatus('Dodano „'+trainNum+'” (stacja: '+station+') do Moich pociągów.');
-  showToast('✓ Dodano „'+trainNum+'” do Moich pociągów');
+  markStarFilled();
+  showToastNear(btnEl,'✓ Dodano „'+trainNum+'” do Moich pociągów');
 }
 function saveLastTrainContext(train,data){
   try{
