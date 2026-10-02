@@ -91,9 +91,17 @@ h2{margin:0 0 10px;font-size:17px}
 .info-pop{display:none;background:rgba(34,211,238,.08);border:1px solid rgba(34,211,238,.3);border-radius:10px;padding:10px 12px;font-size:12.5px;color:#d8e2ee;line-height:1.5;margin:0 0 14px}
 .info-pop.open{display:block}
 .info-pop a{color:var(--cyan)}
-@keyframes btnPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,204,0,.55)}50%{box-shadow:0 0 0 7px rgba(255,204,0,0)}}
-.btn-unsaved{animation:btnPulse 1.3s ease-in-out infinite;position:relative}
-.btn-unsaved::after{content:"●";position:absolute;top:-6px;right:-4px;color:var(--yellow);font-size:13px}
+.trip-save-status,.entry-save-status{font-size:12px;color:var(--muted);min-height:16px;margin-top:6px}
+.trip-save-status.saving,.entry-save-status.saving{color:var(--cyan)}
+.trip-save-status.saved,.entry-save-status.saved{color:var(--green)}
+.trip-save-status.incomplete{color:var(--yellow)}
+.trip-card{transition:box-shadow .4s ease}
+.entry.editing{transition:box-shadow .4s ease}
+.trip-card.trip-just-saved{box-shadow:0 0 0 2px var(--green)}
+.entry.editing.entry-just-saved{box-shadow:0 0 0 2px var(--green)}
+.profile-hint{display:none;align-items:center;gap:10px;background:rgba(34,211,238,.08);border:1px solid rgba(34,211,238,.3);border-radius:12px;padding:10px 12px;font-size:12.5px;color:#d8e2ee;line-height:1.5;margin-bottom:14px}
+.profile-hint a{color:var(--cyan);font-weight:700}
+.profile-hint-close{background:transparent;border:0;color:var(--muted);cursor:pointer;font-size:15px;padding:2px 6px;flex:0 0 auto;align-self:flex-start}
 .trip-card-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
 .trip-card-head h3{margin:0;font-size:15px;display:flex;align-items:center;gap:2px;min-width:0}
 .trip-heading-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -114,6 +122,10 @@ h2{margin:0 0 10px;font-size:17px}
   <h1>📓 Dzienniczek podróży <button type="button" class="info-dot" title="Co to jest i jak wypełniać" onclick="toggleInfo('journal')">ⓘ</button></h1>
   <div class="info-pop" id="info-journal">Zapisz tu swoje stałe, powtarzalne trasy (np. codzienny dojazd) — wystarczy raz uzupełnić stacje wsiadania i wysiadania. Dzienniczek sam rozpozna, że jedziesz jedną z zapisanych tras, i przy pasującym kursie zaproponuje szybki zapis z właściwą nazwą. Jeśli trasa ma przesiadkę, uzupełnij też „Odcinek 2” — każdy odcinek zapisze się jako osobny wpis. Pole „Odjazd od–do” to okno godzinowe, w którym przejazd uznajemy za typowy; poza nim dostaniesz pytanie, czy zapisać mimo to. Przyciskiem „➕ Dodaj kolejną trasę” możesz dodać ich dowolnie wiele — przydatne np. przy różnych godzinach w różne dni albo przy innych, też powtarzalnych przejazdach. Wszystko to (trasy, wpisy, ulubione stacje, Moje pociągi) widać tylko w tej przeglądarce, chyba że założysz <a href="/profil/">profil</a> — wtedy to samo zobaczysz też na innych urządzeniach. Bez profilu (np. w oknie incognito) dane znikają razem z zamknięciem przeglądarki.</div>
   <div class="subtitle">Zapisane przejazdy z zaznaczoną stacją wsiadania i wysiadania — dodajesz je na stronie biegu pociągu.</div>
+  <div class="profile-hint" id="profileHint">
+    <div>💾 Zmiany zapisują się automatycznie w tej przeglądarce. Nie masz założonego profilu — bez niego nic z tego nie zobaczysz na innym urządzeniu, a np. w oknie incognito zniknie razem z jego zamknięciem. <a href="/profil/">Załóż profil</a> — to chwila.</div>
+    <button type="button" class="profile-hint-close" title="Zamknij" onclick="dismissProfileHint()">✕</button>
+  </div>
 
   <div class="panel trips-panel" id="tripsPanel">
     <button type="button" class="trips-toggle" id="tripsToggle" aria-expanded="false" aria-controls="tripsBody" onclick="toggleTrips()">
@@ -210,6 +222,20 @@ function saveTypicalTrips(trips){
   if(window.ProfileSync)ProfileSync.push({typicalTrips:trips});
 }
 function toggleInfo(id){const el=document.getElementById('info-'+id);if(el)el.classList.toggle('open')}
+const PROFILE_HINT_DISMISSED_KEY='dziennikProfileHintDismissed';
+// Pokazujemy to tylko wtedy, gdy coś się realnie zapisało (nie od razu przy
+// wejściu na stronę) — inaczej wyglądałoby jak natarczywa reklama od progu.
+function maybeShowProfileHint(){
+  if(window.ProfileSync&&ProfileSync.getToken())return;
+  if(localStorage.getItem(PROFILE_HINT_DISMISSED_KEY)==='1')return;
+  const el=document.getElementById('profileHint');
+  if(el)el.style.display='flex';
+}
+function dismissProfileHint(){
+  localStorage.setItem(PROFILE_HINT_DISMISSED_KEY,'1');
+  const el=document.getElementById('profileHint');
+  if(el)el.style.display='none';
+}
 
 function escapeHtml(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}
 
@@ -284,8 +310,12 @@ function fillReverseTrip(targetId){
     g(targetId,'leg'+n+'alight').value=l.alight;
     g(targetId,'leg'+n+'km').value=l.km;
   });
-  st.textContent='Uzupełniono odwrotnie. Ustaw godziny i kliknij „Zapisz trasę”.';
+  st.textContent='Uzupełniono odwrotnie.';
   st.className='status ok';
+  // Pola wypełnione programowo (nie prawdziwym wpisywaniem), więc delegacja
+  // na zdarzeniu "input" się nie uruchomi — zapisujemy od razu, to jawna,
+  // celowa akcja (klik w przycisk), nie przypadkowe naciśnięcie klawisza.
+  autosaveTrip(targetId);
 }
 // tripsState = lista kart otwartych w edytorze (może zawierać świeżo
 // dodane, jeszcze niezapisane karty) — oddzielona od tego, co faktycznie
@@ -325,21 +355,16 @@ function startRenameTrip(id){
   });
 }
 function confirmRenameTrip(id){
-  const idx=tripsState.findIndex(t=>t.id===id);
   const inp=document.getElementById('tripRenameInput_'+id);
   const val=inp?inp.value.trim():'';
   const nameField=document.getElementById('trip_'+id+'_name');
   if(nameField)nameField.value=val;
-  if(idx>=0)tripsState[idx]=Object.assign({},tripsState[idx],{name:val});
-  const savedTrips=getTypicalTrips();
-  const savedIdx=savedTrips.findIndex(t=>t.id===id);
-  if(savedIdx>=0){
-    savedTrips[savedIdx]=Object.assign({},savedTrips[savedIdx],{name:val||tripHeading(idx<0?0:idx)});
-    saveTypicalTrips(savedTrips);
-    if(idx>=0)tripsState[idx]=savedTrips[savedIdx];
-    updateTripsSummary();
-  }
-  renderTripCards();
+  autosaveTrip(id);
+  // Wracamy z pola edycji nagłówka do zwykłego widoku bez przebudowy całej
+  // karty (pełny renderTripCards() zresetowałby focus/kursor w innych polach).
+  const idx=tripsState.findIndex(t=>t.id===id);
+  const head=document.getElementById('tripHead_'+id);
+  if(head)head.innerHTML='<span class="trip-heading-text">'+escapeHtml(val||tripHeading(idx<0?0:idx))+'</span><button type="button" class="trip-rename-btn" title="Zmień nazwę trasy" onclick="startRenameTrip(\''+id+'\')">✏️</button>';
 }
 function tripCardHtml(trip,idx){
   const id=trip.id;
@@ -370,48 +395,66 @@ function tripCardHtml(trip,idx){
       <select id="trip_${id}_reverseSrc" class="reverse-select"><option value="">↩ Uzupełnij odwrotnie z…</option>${reverseSelectOptions(id)}</select>
       <button type="button" class="btn secondary" onclick="fillReverseTrip('${id}')">Uzupełnij</button>
     </div>
-    <button type="button" class="btn" id="tripSaveBtn_${id}" onclick="saveTrip('${id}')">Zapisz trasę</button>
+    <div class="trip-save-status" id="tripSaveStatus_${id}"></div>
   </div>`;
 }
 function renderTripCards(){
   document.getElementById('tripCards').innerHTML=tripsState.map((t,i)=>tripCardHtml(t,i)).join('');
   tripsState.forEach(t=>fillTripForm(t.id,t));
-  tripsState.forEach(t=>updateTripDirtyUI(t.id));
+  tripsState.forEach(t=>setTripSaveStatus(t.id,tripStatusFor(t.id)));
 }
-// Czy to, co jest aktualnie w polach karty, różni się od tego, co faktycznie
-// zapisane (albo jest niezapisane, ale coś w nią wpisano) — steruje migotaniem
-// przycisku "Zapisz trasę" i ostrzeżeniem przy opuszczaniu strony.
-function isTripDirty(id){
+// Stan zapisu karty do wyświetlenia (bez żadnego zapisywania) — używane przy
+// (od)budowie karty, żeby pokazać właściwy komunikat bez animacji "zapisano".
+function tripStatusFor(id){
   const g=k=>document.getElementById('trip_'+id+'_'+k);
-  if(!g('name'))return false;
-  const name=g('name').value.trim();
-  const leg1b=g('leg1board').value.trim(),leg1a=g('leg1alight').value.trim(),leg1k=g('leg1km').value.trim();
-  const leg2b=g('leg2board').value.trim(),leg2a=g('leg2alight').value.trim(),leg2k=g('leg2km').value.trim();
-  const from=g('from').value,to=g('to').value;
-  const anyFilled=!!(name||leg1b||leg1a||leg1k||leg2b||leg2a||leg2k||from||to);
+  if(!g('name'))return '';
+  const anyFilled=['name','leg1board','leg1alight','leg1km','leg2board','leg2alight','leg2km'].some(k=>g(k).value.trim())||g('from').value||g('to').value;
   const saved=getTypicalTrips().find(t=>t.id===id);
-  if(!saved)return anyFilled;
-  const kmStr=v=>v==null?'':fmtKm(v);
-  // saveTrip() wstawia domyślną nazwę ("Ulubiona trasa N"), gdy pole jest
-  // puste — porównujemy do tej samej wartości, inaczej zapisana karta z
-  // pustym polem nazwy zawsze wyglądałaby na "niezapisaną".
+  if(saved)return 'saved';
+  if(anyFilled)return 'incomplete';
+  return '';
+}
+function setTripSaveStatus(id,state){
+  const el=document.getElementById('tripSaveStatus_'+id);
+  if(!el)return;
+  el.className='trip-save-status'+(state?' '+state:'');
+  el.textContent=state==='saving'?'Zapisywanie…':state==='saved'?'✓ Zapisano':state==='incomplete'?'Uzupełnij stację wsiadania i wysiadania (odcinek 1), żeby zapisać':'';
+}
+// Zapis automatyczny — wywoływany z debounce po wpisywaniu (patrz delegacja
+// "input" niżej) oraz od razu po jawnych akcjach (odwrócenie trasy, zmiana
+// nazwy). Nie zgłasza błędu przy niepełnych danych — po prostu nie zapisuje
+// i pokazuje łagodną podpowiedź, zamiast przerywać pisanie komunikatem.
+let tripAutosaveTimers={};
+function scheduleTripAutosave(id){
+  setTripSaveStatus(id,'saving');
+  clearTimeout(tripAutosaveTimers[id]);
+  tripAutosaveTimers[id]=setTimeout(()=>autosaveTrip(id),700);
+}
+function flushTripAutosave(id){
+  if(tripAutosaveTimers[id]){clearTimeout(tripAutosaveTimers[id]);delete tripAutosaveTimers[id];autosaveTrip(id)}
+}
+function autosaveTrip(id){
+  delete tripAutosaveTimers[id];
   const idx=tripsState.findIndex(t=>t.id===id);
-  const effectiveName=name||tripHeading(idx<0?0:idx);
-  return (saved.name||'')!==effectiveName
-    ||((saved.leg1&&saved.leg1.board)||'')!==leg1b
-    ||((saved.leg1&&saved.leg1.alight)||'')!==leg1a
-    ||kmStr(saved.leg1&&saved.leg1.distanceKm)!==leg1k
-    ||((saved.leg2&&saved.leg2.board)||'')!==leg2b
-    ||((saved.leg2&&saved.leg2.alight)||'')!==leg2a
-    ||kmStr(saved.leg2&&saved.leg2.distanceKm)!==leg2k
-    ||(saved.timeFrom||'')!==from
-    ||(saved.timeTo||'')!==to;
+  const f=tripFields(id,idx<0?0:idx);
+  if(!f.leg1){setTripSaveStatus(id,tripStatusFor(id));return}
+  const trips=getTypicalTrips().filter(t=>t.id!==id);
+  trips.push(f);
+  saveTypicalTrips(trips);
+  if(idx>=0)tripsState[idx]=f;else tripsState.push(f);
+  updateTripsSummary();
+  setTripSaveStatus(id,'saved');
+  flashTripCardSaved(id);
+  maybeShowProfileHint();
 }
-function updateTripDirtyUI(id){
-  const btn=document.getElementById('tripSaveBtn_'+id);
-  if(btn)btn.classList.toggle('btn-unsaved',isTripDirty(id));
+function flashTripCardSaved(id){
+  const card=document.querySelector('.trip-card[data-trip-id="'+id+'"]');
+  if(!card)return;
+  card.classList.remove('trip-just-saved');
+  void card.offsetWidth;
+  card.classList.add('trip-just-saved');
+  setTimeout(()=>card.classList.remove('trip-just-saved'),1200);
 }
-function anyTripDirty(){return tripsState.some(t=>isTripDirty(t.id))}
 function addNewTrip(){
   const t={id:nextTripId()};
   tripsState.push(t);
@@ -420,6 +463,7 @@ function addNewTrip(){
 }
 function removeTrip(id){
   if(!confirm('Usunąć tę trasę? Wpisy już zapisane w dzienniczku zostaną — usuwamy tylko ten szablon.'))return;
+  if(tripAutosaveTimers[id]){clearTimeout(tripAutosaveTimers[id]);delete tripAutosaveTimers[id]}
   tripsState=tripsState.filter(t=>t.id!==id);
   saveTypicalTrips(getTypicalTrips().filter(t=>t.id!==id));
   renderTripCards();
@@ -448,24 +492,6 @@ function updateTripsSummary(){
   const names=saved.map((t,i)=>{const x=normalizeTrip(t);return x&&x.leg1?(t.name||tripHeading(i)):null}).filter(Boolean);
   const el=document.getElementById('tripsSummary');
   if(el)el.textContent=names.length?names.join(' · '):'Nie zdefiniowano — rozwiń, aby ustawić';
-}
-function saveTrip(id){
-  const idx=tripsState.findIndex(t=>t.id===id);
-  const f=tripFields(id,idx<0?0:idx);
-  const st=document.getElementById('tripStatus');
-  if(!f.leg1){st.textContent='Podaj przynajmniej stacje odcinka 1 (wsiadanie i wysiadanie).';st.className='status';return}
-  const trips=getTypicalTrips().filter(t=>t.id!==id);
-  trips.push(f);
-  saveTypicalTrips(trips);
-  // tripsState (stan edytora) musi dostać te same dane co storage — inaczej
-  // kolejne dodanie/usunięcie innej karty wywoła renderTripCards() i
-  // nadpisze tę kartę z powrotem pustym szkieletem {id}, kasując to, co
-  // właśnie zapisano (dane w storage zostają poprawne, ale znikają z widoku).
-  if(idx>=0)tripsState[idx]=f;else tripsState.push(f);
-  updateTripsSummary();
-  updateTripDirtyUI(id);
-  st.textContent='Zapisano trasę „'+(f.name||tripHeading(idx<0?0:idx))+'”'+(f.leg2?' (z przesiadką).':'.');
-  st.className='status ok';
 }
 
 function entryCardHtml(e){
@@ -508,94 +534,92 @@ function entryEditHtml(e){
     <div class="edit-row"><label>Opóźn. (min)</label><input type="number" class="ef-delay narrow" value="${e.delayMinutes||0}"></div>
     <div class="edit-row"><label>Km</label><input type="number" step="any" class="ef-km narrow${e.distanceKm==null?' field-missing':''}" value="${e.distanceKm!=null?e.distanceKm:''}" oninput="this.classList.toggle('field-missing',!this.value.trim())"></div>
     <div class="edit-row"><label>Nazwa</label><input type="text" class="ef-label${e.tripLabel?'':' field-missing'}" value="${escapeHtml(e.tripLabel==null?'':e.tripLabel)}" oninput="this.classList.toggle('field-missing',!this.value.trim())"></div>
+    <div class="entry-save-status" id="entrySaveStatus_${escapeHtml(e._key)}"></div>
   </div>`;
 }
 
 let editMode=false;
-let editBuffer=null;
 
 function renderEntries(){
   const raw=getJournalEntries();
   document.getElementById('entryCount').textContent=raw.length;
   const list=document.getElementById('entryList');
-  const source=editMode?editBuffer:raw;
-  if(!source.length){list.innerHTML='<div class="empty">Brak wpisów. Otwórz bieg pociągu (z tablicy albo z Moich pociągów), zaznacz stację wsiadania 🚏 i wysiadania 🏁, i zapisz przejazd.</div>';if(editMode)updateJournalDirtyUI();return}
-  const displayOrder=[...source].sort((a,b)=>(b.date+String(b.plannedDeparture||'')).localeCompare(a.date+String(a.plannedDeparture||'')));
+  if(!raw.length){list.innerHTML='<div class="empty">Brak wpisów. Otwórz bieg pociągu (z tablicy albo z Moich pociągów), zaznacz stację wsiadania 🚏 i wysiadania 🏁, i zapisz przejazd.</div>';return}
+  const displayOrder=[...raw].sort((a,b)=>(b.date+String(b.plannedDeparture||'')).localeCompare(a.date+String(a.plannedDeparture||'')));
   list.innerHTML=displayOrder.map(e=>editMode?entryEditHtml(e):entryCardHtml(e)).join('');
-  if(editMode)updateJournalDirtyUI();
 }
 
-// === Tryb edycji ===
+// === Tryb edycji (autosave per pole, bez osobnego bufora) ===
 function unlockEdit(){
   editMode=true;
-  editBuffer=JSON.parse(JSON.stringify(getJournalEntries()));
   document.getElementById('entriesActions').innerHTML=
     '<button type="button" class="btn-sm" id="exportBtn" onclick="exportToXlsx()">⬇️ XLSX</button>'+
-    '<button type="button" class="btn-sm secondary" onclick="askCancelEdit()">✕ Rezygnuj z zapisu</button>'+
-    '<button type="button" class="btn-sm" id="journalSaveBtn" onclick="askSaveEdit()">💾 Zapisz</button>';
+    '<button type="button" class="btn-sm" onclick="exitEditMode()">✓ Gotowe</button>';
   renderEntries();
 }
-// Czy bufor edycji (to, co widać w polach) różni się od tego, co faktycznie
-// zapisane — steruje migotaniem przycisku "💾 Zapisz" i ostrzeżeniem przy
-// opuszczaniu strony w trakcie edycji wpisów.
-function isJournalEditDirty(){
-  if(!editMode)return false;
-  readEditedEntries();
-  return JSON.stringify(editBuffer)!==JSON.stringify(getJournalEntries());
-}
-function updateJournalDirtyUI(){
-  const btn=document.getElementById('journalSaveBtn');
-  if(btn)btn.classList.toggle('btn-unsaved',isJournalEditDirty());
-}
-function readEditedEntries(){
-  const cards=document.querySelectorAll('.entry.editing');
-  const byKey={};editBuffer.forEach(e=>byKey[e._key]=e);
-  cards.forEach(card=>{
-    const key=card.dataset.key;
-    const e=byKey[key];
-    if(!e)return;
-    const v=cls=>card.querySelector('.'+cls).value;
-    e.date=v('ef-date')||e.date;
-    e.trainNumber=v('ef-train');
-    e.category=v('ef-category');
-    e.boardStation=v('ef-board');
-    e.alightStation=v('ef-alight');
-    e.plannedDeparture=v('ef-depP');
-    e.actualDeparture=v('ef-depA')||v('ef-depP');
-    e.plannedArrival=v('ef-arrP');
-    e.actualArrival=v('ef-arrA')||v('ef-arrP');
-    e.delayMinutes=Number(v('ef-delay'))||0;
-    e.distanceKm=v('ef-km')?Number(v('ef-km')):null;
-    e.tripLabel=v('ef-label').trim();
-    e.plannedDurationMin=durationMinJ(e.plannedDeparture,e.plannedArrival);
-    e.actualDurationMin=durationMinJ(e.actualDeparture,e.actualArrival);
-  });
-  return editBuffer;
-}
-function toMinutesJ(t){const m=String(t||'').match(/(\d{1,2}):(\d{2})/);return m?Number(m[1])*60+Number(m[2]):null}
-function durationMinJ(fromT,toT){const a=toMinutesJ(fromT),b=toMinutesJ(toT);if(a==null||b==null)return null;let d=b-a;if(d<0)d+=1440;return d}
-
 function exitEditMode(){
-  editMode=false;editBuffer=null;
+  editMode=false;
   document.getElementById('entriesActions').innerHTML=
     '<button type="button" class="btn-sm" id="exportBtn" onclick="exportToXlsx()">⬇️ XLSX</button>'+
     '<button type="button" class="btn-sm" id="unlockBtn" onclick="unlockEdit()">🔓 Odblokuj</button>';
   renderEntries();
 }
-function askSaveEdit(){
-  readEditedEntries();
-  showConfirm('Zapisać zmiany we wpisach dzienniczka?',()=>{
-    saveJournalEntries(editBuffer);
-    exitEditMode();
-  });
+function toMinutesJ(t){const m=String(t||'').match(/(\d{1,2}):(\d{2})/);return m?Number(m[1])*60+Number(m[2]):null}
+function durationMinJ(fromT,toT){const a=toMinutesJ(fromT),b=toMinutesJ(toT);if(a==null||b==null)return null;let d=b-a;if(d<0)d+=1440;return d}
+
+let journalAutosaveTimers={};
+function scheduleJournalAutosave(key){
+  setEntrySaveStatus(key,'saving');
+  clearTimeout(journalAutosaveTimers[key]);
+  journalAutosaveTimers[key]=setTimeout(()=>autosaveJournalEntry(key),700);
 }
-function askCancelEdit(){
-  showConfirm('Zrezygnować z niezapisanych zmian?',()=>{
-    exitEditMode();
-  });
+function flushJournalAutosave(key){
+  if(journalAutosaveTimers[key]){clearTimeout(journalAutosaveTimers[key]);delete journalAutosaveTimers[key];autosaveJournalEntry(key)}
+}
+function setEntrySaveStatus(key,state){
+  const el=document.getElementById('entrySaveStatus_'+key);
+  if(!el)return;
+  el.className='entry-save-status'+(state?' '+state:'');
+  el.textContent=state==='saving'?'Zapisywanie…':state==='saved'?'✓ Zapisano':'';
+}
+function autosaveJournalEntry(key){
+  delete journalAutosaveTimers[key];
+  const card=document.querySelector('.entry.editing[data-key="'+CSS.escape(key)+'"]');
+  if(!card)return;
+  const list=getJournalEntries();
+  const idx=list.findIndex(x=>x._key===key);
+  if(idx<0)return;
+  const e=list[idx];
+  const v=cls=>card.querySelector('.'+cls).value;
+  e.date=v('ef-date')||e.date;
+  e.trainNumber=v('ef-train');
+  e.category=v('ef-category');
+  e.boardStation=v('ef-board');
+  e.alightStation=v('ef-alight');
+  e.plannedDeparture=v('ef-depP');
+  e.actualDeparture=v('ef-depA')||v('ef-depP');
+  e.plannedArrival=v('ef-arrP');
+  e.actualArrival=v('ef-arrA')||v('ef-arrP');
+  e.delayMinutes=Number(v('ef-delay'))||0;
+  e.distanceKm=v('ef-km')?Number(v('ef-km')):null;
+  e.tripLabel=v('ef-label').trim();
+  e.plannedDurationMin=durationMinJ(e.plannedDeparture,e.plannedArrival);
+  e.actualDurationMin=durationMinJ(e.actualDeparture,e.actualArrival);
+  saveJournalEntries(list);
+  setEntrySaveStatus(key,'saved');
+  flashEntrySaved(key);
+  maybeShowProfileHint();
+}
+function flashEntrySaved(key){
+  const card=document.querySelector('.entry.editing[data-key="'+CSS.escape(key)+'"]');
+  if(!card)return;
+  card.classList.remove('entry-just-saved');
+  void card.offsetWidth;
+  card.classList.add('entry-just-saved');
+  setTimeout(()=>card.classList.remove('entry-just-saved'),1200);
 }
 
-// === Modal potwierdzenia (wspólny dla Zapisz i Rezygnuj) ===
+// === Modal potwierdzenia (używane przez eksport XLSX przy pustym dzienniczku) ===
 function showConfirm(message,onConfirm){
   const overlay=document.getElementById('confirmOverlay');
   document.getElementById('confirmMsg').textContent=message;
@@ -638,12 +662,8 @@ function exportToXlsx(){
 }
 
 function deleteEntry(key){
-  if(editMode){
-    editBuffer=editBuffer.filter(e=>e._key!==key);
-    renderEntries();
-    return;
-  }
   if(!confirm('Usunąć ten wpis z dzienniczka?'))return;
+  if(journalAutosaveTimers[key]){clearTimeout(journalAutosaveTimers[key]);delete journalAutosaveTimers[key]}
   saveJournalEntries(getJournalEntries().filter(e=>e._key!==key));
   renderEntries();
 }
@@ -699,13 +719,19 @@ document.addEventListener('visibilitychange',function(){if(document.visibilitySt
 // wpisów w edycji) przy każdym renderze, więc nie trzeba podpinać jej na nowo.
 document.getElementById('tripCards').addEventListener('input',function(e){
   const card=e.target.closest('.trip-card');
-  if(card)updateTripDirtyUI(card.dataset.tripId);
+  if(card)scheduleTripAutosave(card.dataset.tripId);
 });
-document.getElementById('entryList').addEventListener('input',function(){
-  if(editMode)updateJournalDirtyUI();
+document.getElementById('entryList').addEventListener('input',function(e){
+  if(!editMode)return;
+  const card=e.target.closest('.entry.editing');
+  if(card)scheduleJournalAutosave(card.dataset.key);
 });
-window.addEventListener('beforeunload',function(e){
-  if(anyTripDirty()||isJournalEditDirty()){e.preventDefault();e.returnValue=''}
+// Zapis jest odłożony w czasie (debounce) — przy opuszczeniu strony od razu
+// dokańczamy wszystko, co jeszcze czeka, zamiast ostrzegać dialogiem
+// przeglądarki (i tak nie da się dziś dodać do niego własnej treści).
+window.addEventListener('beforeunload',function(){
+  Object.keys(tripAutosaveTimers).forEach(flushTripAutosave);
+  Object.keys(journalAutosaveTimers).forEach(flushJournalAutosave);
 });
 </script>
 </body>
