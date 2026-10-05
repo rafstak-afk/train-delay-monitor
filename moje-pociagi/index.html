@@ -205,6 +205,8 @@ h1{ margin:0; font-size:20px; }
 .reorder-btn{font-size:11px;padding:2px 6px;background:transparent;border:1px solid #34495e;border-radius:6px;color:#dbeafe;cursor:pointer}
 .reorder-btn:disabled{opacity:.3;cursor:default}
 .status-line{grid-column:1/-1;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.1);font-size:12.5px;color:var(--muted)}
+.last-station{font-size:15px;font-weight:800;color:#fff}
+.last-time{font-size:15px;font-weight:800}
 </style>
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "a3663c820f4e414ab15c7a64a8aa36ec"}'></script><!-- End Cloudflare Web Analytics -->
 </head>
@@ -516,14 +518,15 @@ function extractCourseParams(row) {
   return params.join('&');
 }
 
+// Zwraca osobno nazwę stacji i godzinę — statusText niżej buduje z nich
+// podświetlony HTML (stacja i godzina większą czcionką, godzina w kolorze
+// gradientu punktualności), zamiast zwykłego, trudnego do wyłapania tekstu.
 function extractLastStation(row) {
   if (!row) return null;
   const st = row.lastConfirmedStation || row.lastStation || row.lastLocation;
   const tm = row.lastConfirmedTime || row.lastTime || row.arrivalTime;
-  if (st) {
-    return tm ? `${st} (${tm})` : st;
-  }
-  return null;
+  if (!st) return null;
+  return { station: st, time: tm || '' };
 }
 
 function getDelay(row) {
@@ -633,8 +636,10 @@ function renderCard(item, index, row) {
       const timeText = endFormattedTime ? ` o ${endFormattedTime}` : "";
       statusText = `🏁 Pociąg skończył bieg${destText}${timeText}`;
     } else if (lastLoc) {
-      const destText = destStation ? ` ➔ ${destStation}` : "";
-      statusText = `📍 Ostatnio: ${lastLoc}${destText}`;
+      const destText = destStation ? ` ➔ ${escapeHtml(destStation)}` : "";
+      const timeClass = getTimeDelayClass(isDelayed ? delay : 0);
+      const timeHtml = lastLoc.time ? ' <span class="last-time ' + timeClass + '">(' + escapeHtml(lastLoc.time) + ')</span>' : '';
+      statusText = `📍 Ostatnio: <span class="last-station">${escapeHtml(lastLoc.station)}</span>${timeHtml}${destText}`;
     } else {
       statusText = `Planowany odjazd: ${item.planTime || "--:--"}`;
     }
