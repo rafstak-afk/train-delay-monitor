@@ -451,7 +451,7 @@ async function fetchTrainByNumber(trainNum, station, _isRetry) {
     // wprost, ale ma pełną trasę, z której da się je wyliczyć dokładnie
     // tak samo jak robi to enrichWithFullRoutes() na tablicy głównej.
     let arrivalTime = "", plannedArrivalTime = "", arrivalDelay = null;
-    let routeDestination = "", via = "";
+    let routeDestination = "", via = "", platform = "", track = "";
     if (Array.isArray(data.route) && data.route.length) {
       const wanted = station.trim().toLowerCase();
       const stop = data.route.find(s => (s.stationName || "").trim().toLowerCase() === wanted);
@@ -460,6 +460,10 @@ async function fetchTrainByNumber(trainNum, station, _isRetry) {
         arrivalTime = stop.actualArrival || stop.plannedArrival;
         arrivalDelay = stop.arrivalDelay;
       }
+      // Peron/tor z pełnej trasy — przydaje się, gdy ten kurs nie jest już
+      // (albo jeszcze nie jest) w oknie /api/departures dla tej stacji.
+      if (stop && stop.platform && stop.platform !== "-") platform = stop.platform;
+      if (stop && stop.track && stop.track !== "-") track = stop.track;
       const destStop = data.route[data.route.length - 1];
       routeDestination = (destStop && destStop.stationName) || "";
       const idx = data.route.findIndex(s => (s.stationName || "").trim().toLowerCase() === wanted);
@@ -478,6 +482,8 @@ async function fetchTrainByNumber(trainNum, station, _isRetry) {
       trainOrderId: data.trainOrderId,
       destination: data.destination || data.direction || routeDestination,
       via,
+      ...(platform ? { platform } : {}),
+      ...(track ? { track } : {}),
       category: data.category || "",
       name: data.name || data.trainName || "",
       status: data.status || "",
