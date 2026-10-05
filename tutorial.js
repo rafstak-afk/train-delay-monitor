@@ -38,6 +38,7 @@
         { sel: ".search-box", title: "Zacznij tutaj", text: "Wpisz nazwę dowolnej stacji, żeby sprawdzić jej odjazdy." },
         { sel: ".btn-api", title: "Żywa tablica", text: "Kliknij „Pokaż z API”, żeby zobaczyć odjazdy z realnymi opóźnieniami, nie tylko planem." },
         { sel: "#stationButtons", title: "Ulubione stacje", text: "Twoje przypięte stacje. Dodaj własne gwiazdką ☆ przy tablicy poniżej." },
+        { sel: 'a[href="/moje-pociagi/"]', title: "Ulubione pociągi", text: "⭐ Gwiazdka przy każdym odjeździe (i w szczegółach pociągu) dodaje go do „Moich pociągów” — stamtąd jednym rzutem oka, bez dodatkowych kliknięć, zobaczysz gdzie ostatnio potwierdził się na stacji i czy jedzie punktualnie. Dodaj ich kilka, żeby śledzić całą podróż — jednorazową wycieczkę albo codzienny dojazd do pracy." },
         { sel: "#alertButton", title: "Alarm opóźnień", text: "Włącz, żeby dostać powiadomienie o opóźnieniu lub odwołaniu na wybranej stacji." },
         { sel: '.bottom-nav button[onclick="toggleBurgerMenu()"]', title: "Dzienniczek podróży", text: "W menu (☰) jest 📓 Dzienniczek — notuje Twoje przejazdy razem z opóźnieniem." },
         { sel: '.bottom-nav a[href="/profil/"]', title: "Profil i synchronizacja", text: "Załóż tu token — 16 znaków, bez hasła i loginu — żeby zsynchronizować ulubione stacje, pociągi, alarmy i dzienniczek między urządzeniami." }
@@ -56,6 +57,7 @@
     {
       match: function (p) { return p.indexOf("/train") === 0; },
       steps: [
+        { sel: "#mtStarBtn", title: "Dodaj do Moich pociągów", text: "Kliknij gwiazdkę, żeby mieć ten kurs zawsze pod ręką na liście Moich pociągów — z aktualnym statusem, bez ponownego wyszukiwania." },
         { sel: "#status", title: "Cały bieg pociągu", text: "Cała trasa pociągu stacja po stacji: godziny planowe i rzeczywiste, opóźnienie, peron i tor." },
         { sel: ".mark-btns", title: "Dzienniczek podróży", text: "Jedziesz tym pociągiem? Zaznacz 🚏 gdzie wsiadasz i 🏁 gdzie wysiadasz — resztę policzymy." }
       ]
