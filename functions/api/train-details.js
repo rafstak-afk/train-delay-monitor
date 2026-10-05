@@ -252,6 +252,28 @@ export async function onRequestGet(context) {
     const route = routeData?.route || routeData || {};
     const operation = operationData?.operation || operationData || {};
 
+    // Przyczyna opóźnienia/odwołania z PLK (np. "Awaria taboru"), dociągana
+    // po stacjach CAŁEJ trasy — w odróżnieniu od tablicy (jedna stacja) tu
+    // znamy pełną trasę, więc łapiemy też przyczynę powstałą wcześniej,
+    // zanim pociąg dotarł do oglądanej właśnie stacji.
+    const routeStationIds = [...new Set(
+      (Array.isArray(route.stations) ? route.stations : [])
+        .map(s => s.stationId)
+        .filter(Boolean)
+    )];
+
+    let disruptionsRaw = null;
+    if (routeStationIds.length) {
+      try {
+        disruptionsRaw = await plkGet(
+          `/disruptions?dateFrom=${encodeURIComponent(operatingDate)}&dateTo=${encodeURIComponent(operatingDate)}&stations=${routeStationIds.join(",")}`,
+          apiKey
+        );
+      } catch (e) {
+        disruptionsRaw = null;
+      }
+    }
+
     const routeStations = Array.isArray(route.stations) ? route.stations : [];
     const opStations = Array.isArray(operation.stations) ? operation.stations : [];
 
@@ -294,6 +316,33 @@ export async function onRequestGet(context) {
     const isFinished =
       (operation.trainStatus === "C" || operation.trainStatus === "Z") && journeyDone;
 
+    const disruptionDict = disruptionsRaw?.disruptionTypes || {};
+    const isDisruptionCode = v => /^utr_\d+$/.test(String(v || ""));
+    const resolveDisruptionMessage = d => {
+      if (d.message && !isDisruptionCode(d.message)) return d.message;
+      const code = isDisruptionCode(d.message) ? d.message : d.disruptionTypeCode;
+      return (code && disruptionDict[code]) || d.message || "";
+    };
+
+    const disruptions = [];
+    const seenDisruptions = new Set();
+
+    for (const d of (disruptionsRaw?.disruptions || [])) {
+      for (const ar of (d.affectedRoutes || [])) {
+        if (Number(ar.orderId) !== Number(orderId)) continue;
+
+        const text = resolveDisruptionMessage(d);
+        if (!text) continue;
+
+        const stName = stationNames.get(String(ar.stationId)) || "";
+        const key = text + "|" + stName;
+        if (seenDisruptions.has(key)) continue;
+
+        seenDisruptions.add(key);
+        disruptions.push({ message: text, stationName: stName });
+      }
+    }
+
     return json({
       train: trainNum,
       scheduleId,
@@ -311,7 +360,8 @@ export async function onRequestGet(context) {
       lastConfirmedStation: confirmed?.station || "",
       lastConfirmedTime: confirmed?.time || "",
       route: stops,
-      connections: Array.isArray(route.connections) ? route.connections : []
+      connections: Array.isArray(route.connections) ? route.connections : [],
+      disruptions
     });
   } catch (err) {
     return json({ error: err.message, route: [] }, 502);

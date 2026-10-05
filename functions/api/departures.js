@@ -172,6 +172,13 @@ export async function onRequestGet(context) {
     // pojedynczo dla każdego już wybranego do wyświetlenia odjazdu.
     const enrichment = await enrichWithFullRoutes(departures, headers, stationNames, station.id);
 
+    // Przyczyna opóźnienia/odwołania z PLK (np. "Awaria taboru") — tylko dla
+    // odjazdów, które już i tak pokazujemy w alarmie (opóźnienie >=5 min albo
+    // odwołany), żeby nie odpytywać PLK dla reszty tablicy. Filtrujemy po
+    // stacji tablicy — nie łapie przyczyny powstałej wcześniej na trasie
+    // pociągu na INNEJ stacji, tylko tę zarejestrowaną na/dla tej stacji.
+    await enrichWithDisruptions(departures, headers, station.id, date);
+
     const responsePayload = {
       station,
       generatedAt: new Date().toISOString(),
@@ -569,6 +576,55 @@ async function enrichWithFullRoutes(departures, headers, stationNames, stationId
   );
 
   return { requested: targets.length, failed: failures.length, errors: failures.slice(0, 3) };
+}
+
+function isAlarmRow(row) {
+  return row.status === "X" || Number(row.delay || 0) >= 5;
+}
+
+// "message" bywa gotowym, przetłumaczonym zdaniem (np. "Na odcinku od stacji
+// X do Y obowiązuje komunikacja zastępcza"), ale czasem PLK zostawia tam sam
+// kod (np. "utr_40") i dopiero słownik disruptionTypes tłumaczy go na tekst
+// ("Awaria taboru").
+function resolveDisruptionMessage(d, dict) {
+  const isCode = v => /^utr_\d+$/.test(String(v || ""));
+  if (d.message && !isCode(d.message)) return d.message;
+  const code = isCode(d.message) ? d.message : d.disruptionTypeCode;
+  return (code && dict && dict[code]) || d.message || "";
+}
+
+async function enrichWithDisruptions(departures, headers, stationId, date) {
+  const alarmRows = departures.filter(isAlarmRow);
+  if (!alarmRows.length) return;
+
+  const url = `${PLK_BASE}/disruptions?dateFrom=${date}&dateTo=${date}&stations=${stationId}`;
+
+  let data;
+  try {
+    const result = await getJsonCached(url, headers, CACHE_TTL.OPERATIONS);
+    data = result.data;
+  } catch (e) {
+    return;
+  }
+
+  const dict = data?.disruptionTypes || {};
+  const byOrderId = new Map();
+
+  for (const d of (data?.disruptions || [])) {
+    const text = resolveDisruptionMessage(d, dict);
+    if (!text) continue;
+
+    for (const ar of (d.affectedRoutes || [])) {
+      const oid = Number(ar.orderId);
+      if (!byOrderId.has(oid)) byOrderId.set(oid, []);
+      if (!byOrderId.get(oid).includes(text)) byOrderId.get(oid).push(text);
+    }
+  }
+
+  for (const row of alarmRows) {
+    const texts = byOrderId.get(Number(row.orderId));
+    if (texts && texts.length) row.disruptionReason = texts.join(" / ");
+  }
 }
 
 function buildStationNameMap(stationsDictionaryRaw) {

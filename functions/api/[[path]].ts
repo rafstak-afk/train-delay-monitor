@@ -430,8 +430,7 @@ export const onRequest: PagesFunction<Env> = async (
     'schedules',
     'operations',
     'dictionaries',
-    'apikey',
-    'disruptions'
+    'apikey'
   ];
 
   const firstSegment = pathArray[0] || '';
