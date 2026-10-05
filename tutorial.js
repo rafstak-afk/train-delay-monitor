@@ -333,7 +333,18 @@
     if (guide === "pending") {
       try { localStorage.removeItem(GUIDE_KEY); } catch (e) {}
     }
-    const autoShown = maybeAutoShow();
-    injectDemoButton(!autoShown);
+    function proceed() {
+      const autoShown = maybeAutoShow();
+      injectDemoButton(!autoShown);
+    }
+    // Na /train nagłówek pociągu (razem z gwiazdką #mtStarBtn) doczytuje się
+    // asynchronicznie, już po DOMContentLoaded — gdyby samouczek wystartował
+    // od razu, getSteps() po cichu pominąłby ten krok, bo elementu jeszcze
+    // by nie było. Czekamy chwilę (z sensownym limitem), zanim policzymy kroki.
+    if (location.pathname.indexOf("/train") === 0) {
+      waitForVisible("#mtStarBtn", 4000, proceed);
+    } else {
+      proceed();
+    }
   });
 })();
