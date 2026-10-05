@@ -158,6 +158,53 @@ h1{ margin:0; font-size:20px; }
 @media(max-width:600px){
   .form-grid{ grid-template-columns:1fr; }
 }
+
+/* === Poniżej: dokładnie te same reguły (i te same wartości kolorów) co
+   karta pociągu na tablicy głównej (index.html) — żeby wiersz pociągu
+   wyglądał identycznie na obu stronach. Reszta strony (nagłówek, formularz
+   dodawania) zostaje w swojej dotychczasowej palecie (--cyan/--bg itd.),
+   tylko sam wiersz pociągu przełącza się na kolory tablicy. */
+.row-clickable{cursor:pointer}
+.time-rows{display:flex;flex-direction:column;gap:6px}
+.time-rows .muted.plan-small{color:#8b95a1;opacity:1;font-size:12px;line-height:1.1;margin:0}
+.time-real{font-weight:800;font-size:15px}
+.delay-val{white-space:nowrap}
+.plan-strike{text-decoration:line-through}
+.time-delay-low{color:#ffcc00}
+.time-delay-mid{color:#ff4d4d}
+.time-delay-high{color:#c084fc}
+.delay{color:#ffcc00;font-weight:700}
+.delay-mid{color:#ff4d4d;font-weight:700}
+.delay-high{color:#c084fc;font-weight:700}
+.ontime{color:#5dd39e;font-weight:700}
+.muted{opacity:.65;font-size:12px}
+.train-main,.direction-main{font-weight:700;color:#fff}
+.train-name,.direction-via{opacity:.78;font-size:12px;margin-top:3px;line-height:1.25;color:#fff}
+.train-delay-under{font-size:12px;margin-top:3px}
+.cancel-badge{display:inline-block;margin-top:4px;padding:2px 7px;border-radius:999px;background:#7f1d1d;color:#fff;font-size:11px;font-weight:900;letter-spacing:.03em;text-decoration:none!important}
+.status-note{display:block;margin-top:4px;color:#ffb4b4;font-size:11px;font-weight:800}
+.train-cancelled{opacity:.72;background:rgba(120,120,120,.15)!important}
+.train-cancelled .direction-via{text-decoration:line-through}
+
+.mobile-layout{display:grid;grid-template-columns:80px 36px 76px 1fr 40px;gap:6px;align-items:start}
+.mobile-dcol .time-real{font-size:22px;line-height:1}
+.mobile-dcol .delay-val{font-size:16px;line-height:22px;height:22px}
+.mobile-dcol .plan-small{font-size:12px}
+.mobile-time .time-real{font-size:22px;line-height:1}
+.mobile-time .muted{font-size:13px;margin-top:2px}
+.mobile-train .train-main{font-size:17px;line-height:1.05}
+.mobile-train .train-name{font-size:12px;line-height:1.1}
+.mobile-direction .direction-main{font-size:17px;line-height:1.05}
+.mobile-direction .direction-via{font-size:12px;line-height:1.2}
+.mobile-side{display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center}
+.mobile-platform{font-size:22px;font-weight:700;line-height:1;color:#fff}
+.mobile-track{font-size:11px;opacity:.8;margin-top:3px}
+.mt-star{font-size:18px;line-height:1;background:transparent;border:1px solid #8fa6bf;border-radius:7px;padding:3px 6px;cursor:pointer}
+.mt-star.star-filled{color:#ffd400;text-shadow:0 0 6px rgba(255,212,0,.5)}
+.reorder-row{display:flex;gap:3px}
+.reorder-btn{font-size:11px;padding:2px 6px;background:transparent;border:1px solid #34495e;border-radius:6px;color:#dbeafe;cursor:pointer}
+.reorder-btn:disabled{opacity:.3;cursor:default}
+.status-line{grid-column:1/-1;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.1);font-size:12.5px;color:var(--muted)}
 </style>
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "a3663c820f4e414ab15c7a64a8aa36ec"}'></script><!-- End Cloudflare Web Analytics -->
 </head>
@@ -197,6 +244,18 @@ h1{ margin:0; font-size:20px; }
 <script src="/profile-prompt.js"></script>
 <script>
 const STORAGE_KEY = 'rafstakMojePociagiV4';
+
+// === Dokładnie te same funkcje co na tablicy głównej (index.html) — budują
+// identyczny HTML dla kolumny godzin/opóźnienia, żeby wiersz pociągu
+// wyglądał tak samo na obu stronach. ===
+function escapeHtml(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}
+function shortTime(v){if(!v)return'';const m=String(v).match(/(\d{2}:\d{2})/);return m?m[1]:v}
+function getTimeDelayClass(d){return d>=20?'time-delay-high':d>10?'time-delay-mid':d>=5?'time-delay-low':'ontime'}
+function getDelayClass(d){return d>=20?'delay-high':d>10?'delay-mid':d>=5?'delay':'ontime'}
+function timeRowHtml(real,planned,delay,cancelled){if(!planned)return '';const r=shortTime(real),p=shortTime(planned),d=Number(delay||0);if(!(r&&r!==p&&d>0))return '<div class="trow"><div class="time-real '+(cancelled?'delay-mid':'ontime')+'">'+escapeHtml(p)+'</div></div>';return '<div class="trow"><div class="muted plan-strike plan-small">'+escapeHtml(p)+'</div><div class="time-real '+getTimeDelayClass(d)+'">('+escapeHtml(r)+')</div></div>'}
+function delayRowHtml(real,planned,delay,cancelled){if(!planned)return '';const r=shortTime(real),p=shortTime(planned),d=Number(delay||0);if(cancelled||!(r&&r!==p&&d>0))return '<div class="trow"><div class="time-real" style="visibility:hidden">0</div></div>';return '<div class="trow"><div class="muted plan-small" style="visibility:hidden">00:00</div><div class="time-real delay-val '+getTimeDelayClass(d)+'">+'+d+'</div></div>'}
+function delayColHtml(d,cancelled){return '<div class="time-rows">'+delayRowHtml(d.arrivalTime,d.plannedArrivalTime,d.arrivalDelay,cancelled)+delayRowHtml(d.time,d.plannedTime,d.delay,cancelled)+'</div>'}
+function timeCellHtml(d,tc,delay,delayText,cancelled){return '<div class="time-rows">'+timeRowHtml(d.arrivalTime,d.plannedArrivalTime,d.arrivalDelay,cancelled)+timeRowHtml(d.time,d.plannedTime,delay,cancelled)+(cancelled?'<div class="train-delay-under delay-mid">'+escapeHtml(delayText)+'</div>':'')+'</div>'}
 
 // UWAGA: dawniej brak zapisanej listy (pierwsza wizyta, pusty localStorage)
 // oznaczał pokazanie listy prywatnych pociągów autora jako "domyślnej" —
@@ -386,9 +445,14 @@ async function fetchTrainByNumber(trainNum, station, _isRetry) {
     }
 
     // Osobny planowy przyjazd NA TĘ stację (postój przed odjazdem) —
-    // szukamy jej w pełnej trasie zwróconej przez train-details.
+    // szukamy jej w pełnej trasie zwróconej przez train-details. Przy
+    // okazji liczymy tu też "przez" (stacje pośrednie) i stację docelową —
+    // /api/train-details (w odróżnieniu od /api/departures) nie zna ich
+    // wprost, ale ma pełną trasę, z której da się je wyliczyć dokładnie
+    // tak samo jak robi to enrichWithFullRoutes() na tablicy głównej.
     let arrivalTime = "", plannedArrivalTime = "", arrivalDelay = null;
-    if (Array.isArray(data.route)) {
+    let routeDestination = "", via = "";
+    if (Array.isArray(data.route) && data.route.length) {
       const wanted = station.trim().toLowerCase();
       const stop = data.route.find(s => (s.stationName || "").trim().toLowerCase() === wanted);
       if (stop && stop.plannedArrival) {
@@ -396,13 +460,27 @@ async function fetchTrainByNumber(trainNum, station, _isRetry) {
         arrivalTime = stop.actualArrival || stop.plannedArrival;
         arrivalDelay = stop.arrivalDelay;
       }
+      const destStop = data.route[data.route.length - 1];
+      routeDestination = (destStop && destStop.stationName) || "";
+      const idx = data.route.findIndex(s => (s.stationName || "").trim().toLowerCase() === wanted);
+      if (idx >= 0) {
+        via = data.route.slice(idx + 1, idx + 6)
+          .map(s => s.stationName)
+          .filter(Boolean)
+          .filter(name => name.trim().toLowerCase() !== routeDestination.trim().toLowerCase())
+          .join(", ");
+      }
     }
 
     return {
       scheduleId: data.scheduleId || data.id,
       orderId: data.orderId,
       trainOrderId: data.trainOrderId,
-      destination: data.destination || data.direction,
+      destination: data.destination || data.direction || routeDestination,
+      via,
+      category: data.category || "",
+      name: data.name || data.trainName || "",
+      status: data.status || "",
       lastConfirmedStation: lastSt,
       lastConfirmedTime: lastTm,
       delay: data.delay ?? 0,
@@ -474,13 +552,13 @@ function moveTrain(index, direction) {
   renderFromCache();
 }
 
+// Bez potwierdzenia — ta sama, od razu działająca logika co gwiazdka
+// (odznaczenie ulubionego) na tablicy głównej.
 function deleteTrain(index) {
-  if (confirm('Czy na pewno usunąć ten pociąg z listy?')) {
-    currentTrains.splice(index, 1);
-    lastRows.splice(index, 1);
-    saveTrains(currentTrains);
-    renderFromCache();
-  }
+  currentTrains.splice(index, 1);
+  lastRows.splice(index, 1);
+  saveTrains(currentTrains);
+  renderFromCache();
 }
 
 function goDetails(station, number, courseQuery) {
@@ -538,6 +616,7 @@ function renderCard(item, index, row) {
   }
 
   const isDelayed = delay !== null && delay > 0;
+  const cancelled = !!(row && row.status === 'X');
   const isFinished = row && (row.isFinished || row.status === "FINISHED" || row.status === "COMPLETED");
   const lastLoc = extractLastStation(row);
 
@@ -555,62 +634,28 @@ function renderCard(item, index, row) {
     }
   }
 
-  // Wyliczanie godzin
   const adjustedTime = isDelayed ? getAdjustedTime(item.planTime, delay) : null;
-  const delayBadge = isDelayed ? `+${delay}` : "0";
-
-  // Układ jak w Portalu Pasażera, bez etykiet: dwa wiersze — przybycie
-  // wyżej (jeśli pociąg tu przystaje), odjazd niżej. Bez opóźnienia tylko
-  // godzina planowa; z opóźnieniem: mała, szara, przekreślona godzina
-  // planowa nad godziną prognozy w nawiasie, kolor wg gradientu opóźnień.
   const hasArrival = !!(row && row.plannedArrivalTime);
 
-  const delayColor = (d) => d >= 20 ? '#c084fc' : d > 10 ? '#ff4d4d' : '#ffcc00';
-
-  const timeRowV2 = (planned, real, d) => {
-    if (!planned) return '';
-    const dm = Number(d) || 0;
-    if (!(real && real !== planned && dm > 0)) {
-      return `<div style="font-size:1.3rem; font-weight:800; color:#51cf66; line-height:1.2;">${planned}</div>`;
-    }
-    return `
-      <div style="font-size:0.8rem; color:#8b95a1; text-decoration:line-through; line-height:1.1;">${planned}</div>
-      <div style="font-size:1.3rem; font-weight:800; color:${delayColor(dm)}; line-height:1.2;">(${real})</div>
-    `;
+  // Poniżej: dokładnie ten sam obiekt "d" i te same funkcje
+  // (timeCellHtml/delayColHtml), co dla wiersza pociągu na tablicy głównej.
+  const d = {
+    time: adjustedTime || item.planTime || '--:--',
+    plannedTime: item.planTime || '--:--',
+    delay: isDelayed ? delay : 0,
+    arrivalTime: hasArrival ? row.arrivalTime : '',
+    plannedArrivalTime: hasArrival ? row.plannedArrivalTime : '',
+    arrivalDelay: hasArrival ? row.arrivalDelay : null
   };
+  const tc = getTimeDelayClass(isDelayed ? delay : 0);
+  const delayText = cancelled ? 'ODWOŁANY' : (isDelayed ? '+' + delay : '0');
+  const cancelBadge = cancelled ? '<span class="cancel-badge">ODWOŁANY</span>' : '';
 
-  const depRow = timeRowV2(item.planTime || "--:--", adjustedTime, isDelayed ? delay : 0);
-  const arrRow = hasArrival ? timeRowV2(row.plannedArrivalTime, row.arrivalTime, row.arrivalDelay) : '';
-
-  const timeHtml = `
-    <div style="display:flex; flex-direction:column; gap:6px; align-items:center;">
-      ${arrRow ? `<div>${arrRow}</div>` : ''}
-      <div>${depRow}</div>
-    </div>
-  `;
-
-  // Kolumna z opóźnieniem w minutach, między godziną a pociągiem. Wiersze
-  // mają dokładnie te same wysokości co w kolumnie godzin (niewidoczne
-  // przekładki), żeby wartość stała w linii z godziną, której dotyczy.
-  const delayRowV2 = (planned, real, d) => {
-    if (!planned) return '';
-    const dm = Number(d) || 0;
-    if (!(real && real !== planned && dm > 0)) {
-      return `<div style="font-size:1.3rem; line-height:1.2; visibility:hidden;">0</div>`;
-    }
-    return `
-      <div style="font-size:0.8rem; line-height:1.1; visibility:hidden;">0</div>
-      <div style="font-size:1.3rem; font-weight:800; line-height:1.2; color:${delayColor(dm)}; white-space:nowrap;">+${dm}</div>
-    `;
-  };
-  const arrDelayRow = hasArrival ? delayRowV2(row.plannedArrivalTime, row.arrivalTime, row.arrivalDelay) : '';
-  const depDelayRow = delayRowV2(item.planTime || "--:--", adjustedTime, isDelayed ? delay : 0);
-  const delayColHtml = `
-    <div style="display:flex; flex-direction:column; gap:6px; align-items:center;">
-      ${arrDelayRow ? `<div>${arrDelayRow}</div>` : ''}
-      <div>${depDelayRow}</div>
-    </div>
-  `;
+  const trainLabel = [row && row.category, item.trainNum].filter(Boolean).join(' ');
+  const trainName = (row && row.name) || '';
+  const via = (row && row.via) || '';
+  const platform = (row && row.platform) || '';
+  const track = (row && row.track) || '';
 
   // Budowanie linku /train
   const cleanTrainNo = String(item.trainNum || '').replace(/\D+/g, '');
@@ -622,19 +667,19 @@ function renderCard(item, index, row) {
     if (row.name) params.set('name', row.name);
     if (destStation || row.destination) params.set('destination', destStation || row.destination);
     if (row.date) params.set('date', row.date);
-    
+
     const schedId = row.scheduleId || row.scheduledId || row.id;
     if (schedId) {
       params.set('scheduleId', schedId);
       params.set('scheduledId', schedId);
     }
-    
+
     const ordId = row.orderId || row.trainOrderId || row.trainOrder;
     if (ordId) {
       params.set('orderId', ordId);
       params.set('trainOrderId', ordId);
     }
-    
+
     if (row.stationId) params.set('stationId', row.stationId);
   }
 
@@ -642,29 +687,27 @@ function renderCard(item, index, row) {
 
   const detailsUrl = `/train?${params.toString()}`;
 
-  const cardOpacity = isLoaded ? "1" : "0.65";
-  const cardBg = isLoaded ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.02)";
-
   return `
-    <div id="card-${index}" class="card" onclick="window.location.href='${detailsUrl}'" style="display:flex; align-items:center; justify-content:space-between; padding:14px; border-bottom:1px solid #333; cursor:pointer; background:${cardBg}; opacity:${cardOpacity}; margin-bottom:8px; border-radius:8px; transition: all 0.3s ease;">
-      <div style="text-align:center; min-width:95px; padding-right:12px; border-right:1px solid rgba(255,255,255,0.1);">
-        ${timeHtml}
-      </div>
-
-      <div style="text-align:center; min-width:62px; padding:0 6px;">
-        ${delayColHtml}
-      </div>
-
-      <div style="flex:1; padding-left:6px;">
-        <div style="font-weight:bold; font-size:1.25rem; color:#ffffff;">#${item.trainNum}</div>
-        <div style="color:#f0f0f0; font-size:1.05rem; font-weight:600; margin-top:2px;">${item.station}</div>
-        <div style="font-size:0.95rem; color:${isLoaded ? '#cccccc' : '#e0a82e'}; font-weight:500; margin-top:4px;">${statusText}</div>
-      </div>
-
-      <div style="display:flex; flex-direction:column; gap:6px;" onclick="event.stopPropagation();">
-        <button onclick="moveTrain(${index}, -1)" style="padding:4px 8px; background:#2b2b2b; color:#fff; border:1px solid #444; border-radius:4px; cursor:pointer;">▲</button>
-        <button onclick="moveTrain(${index}, 1)" style="padding:4px 8px; background:#2b2b2b; color:#fff; border:1px solid #444; border-radius:4px; cursor:pointer;">▼</button>
-        <button onclick="deleteTrain(${index})" style="padding:4px 8px; background:#2b2b2b; color:#ff6b6b; border:1px solid #444; border-radius:4px; cursor:pointer;">✕</button>
+    <div id="card-${index}" class="row-clickable${cancelled ? ' train-cancelled' : ''}" onclick="window.location.href='${detailsUrl}'" style="background:#1c2833;border-radius:12px;margin-bottom:8px;padding:10px;border:1px solid var(--border);">
+      <div class="mobile-layout">
+        <div class="mobile-time">${timeCellHtml(d, tc, d.delay, delayText, cancelled)}</div>
+        <div class="mobile-dcol">${delayColHtml(d, cancelled)}</div>
+        <div class="mobile-train"><div class="train-main">${escapeHtml(trainLabel)}</div><div class="train-name">${escapeHtml(trainName)}</div>${cancelBadge}</div>
+        <div class="mobile-direction">
+          <div class="direction-main">${escapeHtml(item.station)}</div>
+          <div class="direction-via">${via ? escapeHtml(via) : (destStation ? '➔ ' + escapeHtml(destStation) : '')}</div>
+          ${cancelled ? '<span class="status-note">Pociąg odwołany według API PLK</span>' : ''}
+        </div>
+        <div class="mobile-side">
+          <div class="mobile-platform">${escapeHtml(platform)}</div>
+          <div class="mobile-track">${track ? 'tor ' + escapeHtml(track) : ''}</div>
+          <div class="reorder-row" onclick="event.stopPropagation();">
+            <button class="reorder-btn" title="Przesuń wyżej" onclick="moveTrain(${index}, -1)" ${index === 0 ? 'disabled' : ''}>▲</button>
+            <button class="reorder-btn" title="Przesuń niżej" onclick="moveTrain(${index}, 1)">▼</button>
+          </div>
+          <button class="btn-cal mt-star star-filled" title="Usuń z Moich pociągów" onclick="event.stopPropagation();deleteTrain(${index})">★</button>
+        </div>
+        <div class="status-line">${statusText}</div>
       </div>
     </div>
   `;
