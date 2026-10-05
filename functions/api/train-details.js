@@ -294,6 +294,8 @@ export async function onRequestGet(context) {
     const isFinished =
       (operation.trainStatus === "C" || operation.trainStatus === "Z") && journeyDone;
 
+    const debugRaw = url.searchParams.get("debugRaw") === "1";
+
     return json({
       train: trainNum,
       scheduleId,
@@ -310,7 +312,8 @@ export async function onRequestGet(context) {
       isFinished,
       lastConfirmedStation: confirmed?.station || "",
       lastConfirmedTime: confirmed?.time || "",
-      route: stops
+      route: stops,
+      ...(debugRaw ? { _rawRoute: routeData, _rawOperation: operationData } : {})
     });
   } catch (err) {
     return json({ error: err.message, route: [] }, 502);
