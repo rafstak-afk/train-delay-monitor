@@ -985,7 +985,8 @@ function renderTrain(train,data){
   let html='<div class="panel"><div class="card"><div class="label">Pociąg</div><div class="big">'+esc(title||('Pociąg '+train))+' <button type="button" id="mtStarBtn" class="mt-star'+(mtFilled?' star-filled':'')+'" title="'+(mtFilled?'Usuń z Moich pociągów':'Dodaj do Moich pociągów')+'" onclick="addToMyTrains(this)">'+(mtFilled?'★':'☆')+'</button></div><div class="hint'+(isCancelledTrain?' hint-cancelled':'')+'">Status: '+esc(st[0])+(st[1]?' <span class="station-meta">('+esc(st[1])+')</span>':'')+'</div><div class="last-station"><div class="label">Ostatnia potwierdzona stacja</div><div class="last-line"><span class="big">'+esc(lastStationText)+'</span><span class="hint">'+esc(lastTimeText)+'</span></div></div></div>';
   if(Array.isArray(data.disruptions)&&data.disruptions.length){
     html+='<div class="panel disruption-note"><div class="disruption-title">⚠️ Przyczyna opóźnienia / odwołania</div>'+data.disruptions.map(function(d){
-      return '<div class="disruption-row">'+esc(d.message)+(d.stationName?' <span class="disruption-station">('+esc(d.stationName)+')</span>':'')+'</div>';
+      const stTxt=(d.stations&&d.stations.length)?d.stations.join(', '):'';
+      return '<div class="disruption-row">'+esc(d.message)+(stTxt?' <span class="disruption-station">('+esc(stTxt)+')</span>':'')+'</div>';
     }).join('')+'</div>';
   }
   html+='<details class="legend"><summary>ⓘ Jak czytać statusy stacji</summary><div class="hint">„Zaliczona” tylko przy potwierdzeniu API. Gdy czas już minął, a API nie potwierdza stacji, pokazujemy „BRAK INFO Z API”.</div></details><div id="journalBar" class="journal-bar"></div><div id="journalSaveError" class="journal-note warn" style="display:none"></div><div class="route-table"><div class="rrow-head"><div>Godz.</div><div>Opóźn.</div><div>Stacja</div><div>Per./Tor</div></div>';

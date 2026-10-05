@@ -324,24 +324,30 @@ export async function onRequestGet(context) {
       return (code && disruptionDict[code]) || d.message || "";
     };
 
-    const disruptions = [];
-    const seenDisruptions = new Set();
+    // Ten sam powód (np. "Ograniczenie prędkości pociągu") potrafi być
+    // zgłoszony osobno dla kilku stacji na długiej trasie tego samego
+    // pociągu — grupujemy po treści, zamiast powtarzać tę samą linijkę
+    // kilka razy z inną tylko stacją.
+    const disruptionGroups = new Map();
 
     for (const d of (disruptionsRaw?.disruptions || [])) {
       for (const ar of (d.affectedRoutes || [])) {
         if (Number(ar.orderId) !== Number(orderId)) continue;
+        if (ar.operatingDate && String(ar.operatingDate).slice(0, 10) !== operatingDate) continue;
 
         const text = resolveDisruptionMessage(d);
         if (!text) continue;
 
         const stName = stationNames.get(String(ar.stationId)) || "";
-        const key = text + "|" + stName;
-        if (seenDisruptions.has(key)) continue;
-
-        seenDisruptions.add(key);
-        disruptions.push({ message: text, stationName: stName });
+        if (!disruptionGroups.has(text)) disruptionGroups.set(text, new Set());
+        if (stName) disruptionGroups.get(text).add(stName);
       }
     }
+
+    const disruptions = [...disruptionGroups.entries()].map(([message, stations]) => ({
+      message,
+      stations: [...stations]
+    }));
 
     return json({
       train: trainNum,

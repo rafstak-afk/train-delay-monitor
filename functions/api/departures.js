@@ -571,6 +571,9 @@ async function enrichWithFullRoutes(departures, headers, stationNames, stationId
 
       row.destination = destination;
       row.via = via;
+      // Tymczasowe, do dopasowania utrudnień po całej trasie (patrz
+      // enrichWithDisruptions) — usuwane przed wysłaniem odpowiedzi.
+      row._routeStationIds = [...new Set(routeStations.map(s => s.stationId).filter(Boolean))];
     },
     ENRICH_CONCURRENCY
   );
@@ -594,16 +597,34 @@ function resolveDisruptionMessage(d, dict) {
 }
 
 async function enrichWithDisruptions(departures, headers, stationId, date) {
-  const alarmRows = departures.filter(isAlarmRow);
-  if (!alarmRows.length) return;
+  // _routeStationIds (ustawione przez enrichWithFullRoutes na WSZYSTKICH
+  // wzbogaconych odjazdach, nie tylko alarmowanych) jest tylko wewnętrzną
+  // pomocą do zapytania niżej — zawsze sprzątamy je przed odpowiedzią,
+  // niezależnie od tego, czy jest cokolwiek do dopasowania.
+  const cleanup = () => { for (const row of departures) delete row._routeStationIds; };
 
-  const url = `${PLK_BASE}/disruptions?dateFrom=${date}&dateTo=${date}&stations=${stationId}`;
+  const alarmRows = departures.filter(isAlarmRow);
+  if (!alarmRows.length) { cleanup(); return; }
+
+  // Nie ograniczamy się do stacji tablicy — przyczyna często jest zgłoszona
+  // na INNEJ stacji na trasie pociągu (np. wcześniejszej, gdzie faktycznie
+  // powstała). enrichWithFullRoutes już dociągnęła pełną trasę każdego
+  // odjazdu (_routeStationIds) — używamy sumy tych stacji, żeby złapać
+  // przyczynę niezależnie od tego, z której stacji akurat oglądamy tablicę.
+  const stationIdSet = new Set([stationId]);
+  for (const row of alarmRows) {
+    for (const id of (row._routeStationIds || [])) stationIdSet.add(id);
+  }
+  const stationsParam = [...stationIdSet].join(",");
+
+  const url = `${PLK_BASE}/disruptions?dateFrom=${date}&dateTo=${date}&stations=${stationsParam}`;
 
   let data;
   try {
     const result = await getJsonCached(url, headers, CACHE_TTL.OPERATIONS);
     data = result.data;
   } catch (e) {
+    cleanup();
     return;
   }
 
@@ -615,6 +636,7 @@ async function enrichWithDisruptions(departures, headers, stationId, date) {
     if (!text) continue;
 
     for (const ar of (d.affectedRoutes || [])) {
+      if (ar.operatingDate && String(ar.operatingDate).slice(0, 10) !== date) continue;
       const oid = Number(ar.orderId);
       if (!byOrderId.has(oid)) byOrderId.set(oid, []);
       if (!byOrderId.get(oid).includes(text)) byOrderId.get(oid).push(text);
@@ -625,6 +647,8 @@ async function enrichWithDisruptions(departures, headers, stationId, date) {
     const texts = byOrderId.get(Number(row.orderId));
     if (texts && texts.length) row.disruptionReason = texts.join(" / ");
   }
+
+  cleanup();
 }
 
 function buildStationNameMap(stationsDictionaryRaw) {
