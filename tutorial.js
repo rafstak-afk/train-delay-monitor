@@ -39,7 +39,8 @@
         { sel: ".btn-api", title: "Żywa tablica", text: "Kliknij „Pokaż z API”, żeby zobaczyć odjazdy z realnymi opóźnieniami, nie tylko planem." },
         { sel: "#stationButtons", title: "Ulubione stacje", text: "Twoje przypięte stacje. Dodaj własne gwiazdką ☆ przy tablicy poniżej." },
         { sel: 'a[href="/moje-pociagi/"]', title: "Ulubione pociągi", text: "⭐ Gwiazdka przy każdym odjeździe (i w szczegółach pociągu) dodaje go do „Moich pociągów” — stamtąd jednym rzutem oka, bez dodatkowych kliknięć, zobaczysz gdzie ostatnio potwierdził się na stacji i czy jedzie punktualnie. Dodaj ich kilka, żeby śledzić całą podróż — jednorazową wycieczkę albo codzienny dojazd do pracy." },
-        { sel: "#alertButton", title: "Alarm opóźnień", text: "Włącz, żeby dostać powiadomienie o opóźnieniu lub odwołaniu na wybranej stacji." },
+        { sel: ".action-head", title: "Więcej opcji w jednym miejscu", text: "Przytrzymaj palcem (albo kliknij prawym przyciskiem myszy) dowolny wiersz — otworzy się menu z wszystkimi akcjami: szczegóły, ulubione, kalendarz i dzienniczek naraz." },
+        { sel: "#alertButton", title: "Alarm opóźnień", text: "Włącz, żeby dostać powiadomienie o opóźnieniu lub odwołaniu na wybranej stacji. Jeśli PLK poda przyczynę (np. „Awaria taboru”), zobaczysz ją pod wpisem alarmu po kliknięciu małego ⓘ." },
         { sel: '.bottom-nav button[onclick="toggleBurgerMenu()"]', title: "Dzienniczek podróży", text: "W menu (☰) jest 📓 Dzienniczek — notuje Twoje przejazdy wraz z ewentualnym opóźnieniem." },
         { sel: '.bottom-nav a[href="/profil/"]', title: "Profil i synchronizacja", text: "Załóż tu token — 16 znaków, bez hasła i loginu — żeby zsynchronizować ulubione stacje, pociągi, alarmy i dzienniczek między urządzeniami." }
       ]
@@ -47,7 +48,8 @@
     {
       match: function (p) { return p.indexOf("/moje-pociagi") === 0; },
       steps: [
-        { sel: "#list", title: "Twoje pociągi", text: "Tu widzisz status każdego śledzonego kursu: opóźnienie i ostatnią zaliczoną stację. Kliknij kartę, żeby zobaczyć cały bieg." },
+        { sel: "#list", title: "Twoje pociągi", text: "Tu widzisz status każdego śledzonego kursu: opóźnienie, peron/tor i ostatnią potwierdzoną stację. Kliknij kartę, żeby zobaczyć cały bieg." },
+        { sel: ".mt-star", title: "Gwiazdka i kolejność", text: "Gwiazdka ★ usuwa pociąg z listy (bez potwierdzenia) — kliknij ponownie taki sam na tablicy, żeby dodać go z powrotem. Strzałkami ▲▼ zmienisz kolejność kart." },
         { sel: "#addTrainForm", title: "Dodaj pociąg", text: "Dodaj stację, numer i planową godzinę raz — od teraz zawsze zobaczysz go tu z aktualnym statusem." },
         { sel: "#refreshBtn", title: "Odśwież ręcznie", text: "Lista i tak sama się aktualizuje po powrocie po dłuższej przerwie, ale możesz też odświeżyć w każdej chwili." },
         { sel: 'a[href="/dziennik/"]', title: "Dzienniczek podróży", text: "Twoje przejazdy wraz z ewentualnym opóźnieniem — dodajesz je na stronie biegu pociągu." },
@@ -57,23 +59,24 @@
     {
       match: function (p) { return p.indexOf("/train") === 0; },
       steps: [
-        { sel: "#mtStarBtn", title: "Dodaj do Moich pociągów", text: "Kliknij gwiazdkę, żeby mieć ten kurs zawsze pod ręką na liście Moich pociągów — z aktualnym statusem, bez ponownego wyszukiwania." },
-        { sel: "#status", title: "Cały bieg pociągu", text: "Cała trasa pociągu stacja po stacji: godziny planowe i rzeczywiste, opóźnienie, peron i tor." },
-        { sel: ".mark-btns", title: "Dzienniczek podróży", text: "Jedziesz tym pociągiem? Zaznacz 🚏 gdzie wsiadasz i 🏁 gdzie wysiadasz — resztę policzymy." }
+        { sel: "#mtStarBtn", title: "Dodaj do Moich pociągów", text: "Kliknij gwiazdkę, żeby mieć ten kurs zawsze pod ręką na liście Moich pociągów — z aktualnym statusem, bez ponownego wyszukiwania. Drugie kliknięcie usuwa go z listy." },
+        { sel: "#status", title: "Cały bieg pociągu", text: "Cała trasa pociągu stacja po stacji: godziny planowe i rzeczywiste, opóźnienie, peron i tor. Jeśli PLK poda przyczynę opóźnienia (np. „Awaria taboru”), zobaczysz ją w czerwonej notce pod nagłówkiem." },
+        { sel: ".mark-btns", title: "Dzienniczek podróży", text: "Jedziesz tym pociągiem? Zaznacz 🚏 gdzie wsiadasz i 🏁 gdzie wysiadasz — resztę policzymy. Pływający przycisk zapisu pojawi się u dołu ekranu, gdziekolwiek przewiniesz stronę." }
       ]
     },
     {
       match: function (p) { return p.indexOf("/profil") === 0; },
       steps: [
         { sel: "#createPanel", title: "Nowy profil", text: "Jeśli nie masz jeszcze profilu, tu jednym kliknięciem tworzysz nowy token." },
-        { sel: "#tokenInput", title: "Masz już token?", text: "Wklej tu token z innego urządzenia, żeby wczytać swoje ulubione stacje, pociągi i alarmy." }
+        { sel: "#tokenInput", title: "Masz już token?", text: "Wklej tu token z innego urządzenia, żeby wczytać swoje ulubione stacje, pociągi, alarmy, dzienniczek i ulubione trasy." },
+        { sel: "#unlinkBtn", title: "Odepnij urządzenie", text: "Usuwa token TYLKO z tego urządzenia — dane w chmurze zostają i nadal można je wczytać tym samym tokenem gdziekolwiek indziej." }
       ]
     },
     {
       match: function (p) { return p.indexOf("/dziennik") === 0; },
       steps: [
-        { sel: "#tripsToggle", title: "Moje trasy", text: "Ustaw raz swoją codzienną trasę (np. dom→praca). Potem aplikacja sama zapyta, czy zapisać pasujący pociąg." },
-        { sel: "#entryList", title: "Zapisane przejazdy", text: "Twoje zapisane przejazdy, od najnowszych. Możesz je poprawić (🔓) albo pobrać jako XLSX." }
+        { sel: "#tripsToggle", title: "Ulubione trasy", text: "Ustaw raz swoją powtarzalną trasę (np. dom→praca) — wszystko zapisuje się samo w trakcie wpisywania. Potem aplikacja sama zapyta na biegu pociągu, czy zapisać pasujący kurs. Przyciskiem „➕ Dodaj kolejną trasę” dodasz ich dowolnie wiele." },
+        { sel: "#entryList", title: "Zapisane przejazdy", text: "Twoje zapisane przejazdy, od najnowszych. Możesz je poprawić (🔓) — zmiany też zapisują się same — albo pobrać wszystko jako XLSX." }
       ]
     }
   ];
