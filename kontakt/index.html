@@ -35,6 +35,10 @@ textarea{min-height:140px;resize:vertical;line-height:1.4}
 .status.warn{color:var(--yellow)}
 .status.err{color:var(--red)}
 .hint{font-size:12px;color:var(--muted);line-height:1.5;margin-top:10px}
+.rodo-title{margin:0 0 10px;font-size:17px}
+.rodo-text{font-size:15px;font-weight:700;color:#fff;line-height:1.65}
+.rodo-text a{color:var(--cyan)}
+.rodo-text+.rodo-text{margin-top:10px}
 </style>
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "a3663c820f4e414ab15c7a64a8aa36ec"}'></script><!-- End Cloudflare Web Analytics -->
 </head>
@@ -66,6 +70,12 @@ textarea{min-height:140px;resize:vertical;line-height:1.4}
     </div>
     <div class="status" id="status"></div>
     <div class="hint">Wiadomość otworzy się w Twoim programie pocztowym (wysyłasz ją sam, z własnego adresu). Jeśli nic się nie otworzy, użyj „Kopiuj treść” i wklej ją do maila.</div>
+  </div>
+
+  <div class="panel" id="rodo">
+    <h2 class="rodo-title">🔒 RODO i prywatność</h2>
+    <div class="rodo-text">Nie zapisujemy adresów IP ani żadnych danych osobowych. Jedyny wyjątek: przy zakładaniu nowego profilu adres IP jest na chwilę zamieniany na nieodwracalny skrót (hash), wyłącznie po to, by ograniczyć liczbę profili zakładanych z jednego miejsca w ciągu doby — sam skrót nie pozwala odtworzyć adresu i znika automatycznie po 2 dniach.</div>
+    <div class="rodo-text">Jeśli założysz <a href="/profil/">profil</a> — dobrowolnie, bez logowania, bez podawania e-maila — pod jego tokenem przechowujemy wyłącznie Twoje własne ustawienia: ulubione stacje, ulubione pociągi oraz ulubione trasy w dzienniczku podróży. Nic poza tym: żadnego imienia, adresu ani historii przeglądania.</div>
   </div>
 </div>
 
@@ -164,7 +174,7 @@ textarea{min-height:140px;resize:vertical;line-height:1.4}
 
   // Numer wersji bierzemy z plakietki na tablicy głównej.
   fetch('/',{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){
-    var m=t.match(/v\.\s*0\.\d+/);if(m)VERSION=m[0];
+    var m=t.match(/v\.\s*\d+\.\d+/);if(m)VERSION=m[0];
   }).catch(function(){}).then(refresh);
 
   refresh();
