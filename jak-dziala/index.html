@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Jak działa Czy zdążę?</title>
+<meta name="description" content="Jak korzystać z aplikacji Czy zdążę? — tablica odjazdów, alarmy opóźnień, Moje pociągi, bieg pociągu i dzienniczek podróży na podstawie danych PLK." />
+<style>
+:root{--bg:#101820;--panel:#1c2833;--card:#223244;--line:#34495e;--text:#fff;--muted:#b8c3cf;--blue:#0b57d0;--green:#5dd39e;--yellow:#ffcc00;--red:#ff4d4d;--cyan:#22d3ee;--purple:#c084fc}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text);padding:18px}
+.wrap{max-width:760px;margin:0 auto}
+a.back{display:inline-block;margin-bottom:10px;color:var(--muted);text-decoration:none;font-size:14px}
+h1{text-align:center;font-size:27px;margin:6px 0 4px}
+.subtitle{text-align:center;color:var(--muted);font-size:14px;margin-bottom:6px;line-height:1.5}
+.lede{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin:18px 0;font-size:15px;line-height:1.6;color:#e7edf4}
+.lede b{color:#fff}
+.toc{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 22px;justify-content:center}
+.toc a{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:7px 13px;font-size:12.5px;color:#d8e2ee;text-decoration:none}
+.toc a:hover{border-color:var(--blue)}
+.section{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin:14px 0;scroll-margin-top:14px}
+.section h2{margin:0 0 4px;font-size:19px;display:flex;align-items:center;gap:8px}
+.section .tag{font-size:11px;font-weight:800;color:var(--muted);background:var(--card);border-radius:999px;padding:2px 9px;margin-left:auto}
+.section p{font-size:14.5px;line-height:1.65;color:#d8e2ee;margin:10px 0}
+.section ul{margin:8px 0;padding-left:20px}
+.section li{font-size:14.5px;line-height:1.6;color:#d8e2ee;margin:6px 0}
+.section li b{color:#fff}
+.pill{display:inline-block;background:var(--card);border:1px solid var(--line);border-radius:7px;padding:1px 7px;font-size:12.5px;font-weight:700;color:#fff;white-space:nowrap}
+.sample{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 13px;font-size:13.5px;color:var(--muted);margin-top:10px;line-height:1.5}
+.sample b{color:#fff}
+.ontime{color:var(--green);font-weight:800}
+.delay-low{color:var(--yellow);font-weight:800}
+.delay-mid{color:var(--red);font-weight:800}
+.delay-high{color:var(--purple);font-weight:800}
+.cta{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:26px 0 10px}
+.btn{border:0;border-radius:10px;padding:12px 18px;background:var(--blue);color:#fff;font-weight:800;cursor:pointer;font-size:14.5px;text-align:center;text-decoration:none}
+.btn:hover{background:#084298}
+.btn.secondary{background:#4b5563}
+.btn.secondary:hover{background:#5b6472}
+.footnote{text-align:center;color:var(--muted);font-size:12px;margin:22px 0 4px;line-height:1.6}
+.footnote a{color:var(--cyan)}
+</style>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "a3663c820f4e414ab15c7a64a8aa36ec"}'></script><!-- End Cloudflare Web Analytics -->
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="/">← Tablica</a>
+  <h1>📖 Czy zdążę?</h1>
+  <div class="subtitle">Darmowa tablica odjazdów i monitoring opóźnień na podstawie danych PLK —<br>bez reklam, bez logowania, bez aplikacji do instalowania.</div>
+
+  <div class="lede">
+    <b>Czy zdążę?</b> pokazuje realny rozkład jazdy pociągów: godziny, opóźnienia, perony i tory wprost z danych PLK, a do tego alarmuje o opóźnieniach, pilnuje Twoich ulubionych kursów i prowadzi dzienniczek przejazdów. Działa w przeglądarce — na telefonie i komputerze — bez instalowania czegokolwiek.
+  </div>
+
+  <div class="toc">
+    <a href="#tablica">🚉 Tablica</a>
+    <a href="#alarm">🔔 Alarm i przyczyny</a>
+    <a href="#menu">👆 Menu kontekstowe</a>
+    <a href="#moje-pociagi">⭐ Moje pociągi</a>
+    <a href="#bieg">🛤️ Bieg pociągu</a>
+    <a href="#dziennik">📓 Dzienniczek</a>
+    <a href="#profil">👤 Profil</a>
+    <a href="#prywatnosc">🔒 Prywatność</a>
+  </div>
+
+  <div class="section" id="tablica">
+    <h2>🚉 Tablica odjazdów</h2>
+    <p>Wpisz nazwę stacji (albo kliknij jeden z szybkich przycisków) i zobacz <b>żywą</b> tablicę odjazdów: godzinę planowaną i rzeczywistą, opóźnienie, numer i kategorię pociągu, kierunek z przystankami „przez”, peron i tor.</p>
+    <ul>
+      <li>Opóźnienie jest kolorowane: <span class="ontime">na czas</span>, <span class="delay-low">do 10 min</span>, <span class="delay-mid">10–20 min</span>, <span class="delay-high">ponad 20 min</span>.</li>
+      <li>Kliknięcie w dowolny wiersz otwiera pełny <a href="#bieg">bieg pociągu</a> — wszystkie stacje na trasie z czasami i opóźnieniem na każdej z nich.</li>
+      <li>Gwiazdka <span class="pill">☆/★</span> obok wiersza dodaje kurs do <a href="#moje-pociagi">Moich pociągów</a>, ikonka <span class="pill">📅</span> dodaje go do kalendarza.</li>
+      <li>Gwiazdka <span class="pill">☆/★</span> przy nazwie stacji (nad tablicą) zapisuje ją jako ulubioną — pojawi się potem jako szybki przycisk na stronie głównej.</li>
+    </ul>
+  </div>
+
+  <div class="section" id="alarm">
+    <h2>🔔 Alarm i przyczyny opóźnień</h2>
+    <p>Przycisk <span class="pill">Alarm: OFF/ON</span> nad tablicą włącza podsumowanie: lista kursów ze statusem „opóźniony” albo „odwołany” pojawia się w jednym miejscu nad odjazdami, więc nie trzeba przeglądać całej tablicy.</p>
+    <ul>
+      <li>Jeśli PLK udostępnia przyczynę zakłócenia (np. „Awaria taboru”, „Usterka urządzeń sterowania ruchem”), zobaczysz ją po kliknięciu małej ikonki <span class="pill">ⓘ</span> na końcu wiersza alarmu — rozwinie się pod spodem.</li>
+      <li>Przyczyna jest dociągana nie tylko ze stacji, na której stoisz — jeśli pociąg ma już opóźnienie zanim do niej dotrze, też ją zobaczysz.</li>
+      <li>Nie każde opóźnienie ma podaną przyczynę — zdarza się, że dyżurny ruchu jej po prostu nie wpisał. To nie błąd aplikacji, tylko stan danych źródłowych.</li>
+    </ul>
+  </div>
+
+  <div class="section" id="menu">
+    <h2>👆 Menu kontekstowe wiersza</h2>
+    <p>Przytrzymaj palcem dowolny wiersz na tablicy (albo kliknij go prawym przyciskiem myszy na komputerze) — otworzy się menu ze wszystkimi akcjami naraz:</p>
+    <ul>
+      <li><b>Szczegóły pociągu</b> — pełny bieg trasy.</li>
+      <li><b>Dodaj / usuń z ulubionych</b> — to samo co gwiazdka w wierszu.</li>
+      <li><b>Dodaj do kalendarza</b> — gotowe wydarzenie z godziną odjazdu.</li>
+      <li><b>Dodaj do dzienniczka jako trasa typowa</b> — pojawia się tylko wtedy, gdy ten kurs pasuje do jednej z Twoich zapisanych <a href="#dziennik">ulubionych tras</a> — zapis jednym kliknięciem, bez przechodzenia na stronę biegu pociągu.</li>
+      <li><b>Dodaj do dzienniczka z możliwością zmiany</b> — przenosi na stronę biegu pociągu z od razu zaznaczoną stacją wsiadania, zostaje tylko wskazać wysiadanie.</li>
+    </ul>
+  </div>
+
+  <div class="section" id="moje-pociagi">
+    <h2>⭐ Moje pociągi</h2>
+    <p>Lista kursów, które śledzisz na stałe — np. codzienny dojazd do pracy albo kilka pociągów jednej, dłuższej podróży. Każda karta wygląda jak wiersz na tablicy (te same kolory i układ), a dodatkowo pokazuje ostatnią potwierdzoną stację pociągu.</p>
+    <ul>
+      <li>Gwiazdka <span class="pill">★</span> usuwa kurs z listy od razu, bez pytania o potwierdzenie — na tablicy wystarczy kliknąć tę samą gwiazdkę jeszcze raz, żeby dodać go z powrotem.</li>
+      <li>Strzałkami <span class="pill">▲▼</span> ustawiasz własną kolejność kart.</li>
+      <li>Kliknięcie karty otwiera pełny <a href="#bieg">bieg pociągu</a>.</li>
+    </ul>
+  </div>
+
+  <div class="section" id="bieg">
+    <h2>🛤️ Bieg pociągu</h2>
+    <p>Pełna trasa wybranego kursu: wszystkie stacje po kolei, planowany i rzeczywisty czas na każdej z nich, bieżące opóźnienie oraz — jeśli PLK je podaje — przyczyna zakłócenia w czerwonej ramce na górze strony.</p>
+    <ul>
+      <li>Gwiazdka przy numerze pociągu dodaje go do <a href="#moje-pociagi">Moich pociągów</a> (drugie kliknięcie usuwa).</li>
+      <li>Ikonki <span class="pill">🚏</span> (wsiadanie) i <span class="pill">🏁</span> (wysiadanie) przy stacjach zaznaczają Twój odcinek podróży.</li>
+      <li>Po zaznaczeniu obu stacji na dole ekranu pojawia się pływający przycisk zapisu do <a href="#dziennik">dzienniczka</a> — zostaje widoczny podczas przewijania całej trasy.</li>
+      <li>Jeśli zaznaczony przejazd pasuje do zapisanej trasy typowej, zapis od razu dostaje jej nazwę; jeśli nie, możesz zapisać go jako nowy, jednorazowy wpis.</li>
+    </ul>
+  </div>
+
+  <div class="section" id="dziennik">
+    <h2>📓 Dzienniczek podróży</h2>
+    <p>Historia Twoich przejazdów — z faktyczną godziną i opóźnieniem na stacji wsiadania i wysiadania, nie tylko planem.</p>
+    <ul>
+      <li><b>Ulubione trasy</b> — zapisz raz stacje powtarzalnego przejazdu (np. codzienny dojazd), a dzienniczek sam rozpozna pasujący kurs i zaproponuje zapis pod właściwą nazwą. Przyciskiem „➕ Dodaj kolejną trasę” dodasz ich dowolnie wiele, także z przesiadką (Odcinek 2).</li>
+      <li><b>Zapisane przejazdy</b> — lista wpisów z datą, godzinami i opóźnieniem; edycja (np. dopisanie kilometrów) zapisuje się automatycznie, bez osobnego przycisku „Zapisz”.</li>
+      <li><b>Eksport ⬇️ XLSX</b> — pobierz całą historię jako arkusz kalkulacyjny, np. do rozliczenia abonamentu albo własnych statystyk.</li>
+    </ul>
+  </div>
+
+  <div class="section" id="profil">
+    <h2>👤 Profil — synchronizacja między urządzeniami</h2>
+    <p>Bez zakładania profilu wszystko (ulubione stacje i pociągi, dzienniczek) zapisuje się tylko w tej jednej przeglądarce. Profil pozwala mieć to samo na kilku urządzeniach — bez loginu, hasła i e-maila.</p>
+    <ul>
+      <li>Profil to losowy token — utwórz go raz, a na kolejnym urządzeniu po prostu wklej ten sam token, żeby wczytać te same dane.</li>
+      <li>„Odepnij urządzenie” usuwa token tylko z telefonu/komputera, na którym klikasz — dane w chmurze zostają i nadal można je wczytać tym samym tokenem gdziekolwiek indziej.</li>
+      <li>Token działa jak klucz — kto go ma, może wczytać Twój profil, więc nie udostępniaj go dalej.</li>
+    </ul>
+  </div>
+
+  <div class="section" id="prywatnosc">
+    <h2>🔒 Prywatność</h2>
+    <p>Nie zapisujemy adresów IP ani żadnych danych osobowych. Profil (jeśli go założysz) przechowuje wyłącznie Twoje własne ustawienia: ulubione stacje, pociągi i trasy w dzienniczku — nic więcej. Pełny opis, wraz z jedynym technicznym wyjątkiem (chwilowy, nieodwracalny skrót IP przy zakładaniu profilu), znajdziesz w <a href="/kontakt/#rodo" style="color:var(--cyan)">sekcji RODO i prywatność</a>.</p>
+  </div>
+
+  <div class="cta">
+    <a class="btn" href="/">🚉 Otwórz tablicę</a>
+    <a class="btn secondary" href="/kontakt/">💬 Uwagi i kontakt</a>
+  </div>
+
+  <div class="footnote">Dane rozkładowe i o opóźnieniach pochodzą z publicznego API PLK. Aplikacja nie jest oficjalnym serwisem PKP ani PLK.<br>Masz pytanie, którego tu nie ma? <a href="/kontakt/">Napisz</a>.</div>
+</div>
+</body>
+</html>
