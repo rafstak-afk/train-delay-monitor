@@ -113,6 +113,11 @@ h2{margin:0 0 10px;font-size:17px}
 .trip-reverse-row{display:flex;gap:7px;margin-bottom:8px}
 .reverse-select{flex:1;padding:9px 8px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:#fff;font-size:12.5px}
 .trip-reverse-row .btn.secondary{width:auto;margin-bottom:0;white-space:nowrap}
+.plan-entry{background:var(--card);border:1px dashed var(--cyan);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.plan-entry-route{font-size:15px;font-weight:700;margin:6px 0}
+.plan-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.plan-status{font-size:12px;color:var(--muted);min-height:16px;margin-top:6px}
+.plan-status.warn{color:var(--yellow)}
 </style>
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "a3663c820f4e414ab15c7a64a8aa36ec"}'></script><!-- End Cloudflare Web Analytics -->
 </head>
@@ -138,6 +143,14 @@ h2{margin:0 0 10px;font-size:17px}
     <div class="trip-panel" id="tripCards"></div>
     <button type="button" class="btn secondary" id="addTripBtn" onclick="addNewTrip()" style="margin-top:4px">➕ Dodaj kolejną trasę</button>
     </div></div></div>
+  </div>
+
+  <div class="panel" id="planPanel">
+    <div class="entries-head">
+      <h2>📋 Plan podróży (<span id="planCount">0</span>) <button type="button" class="info-dot" title="Co to jest" onclick="toggleInfo('plan')">ⓘ</button></h2>
+    </div>
+    <div class="info-pop" id="info-plan">Tu trafiają przejazdy, które dopiero planujesz — zaznaczone (🚏/🏁) na biegu pociągu, który jeszcze nie dotarł do stacji wysiadania. Zobaczysz tu wszystkie zaplanowane odcinki razem, więc łatwiej ocenić, czy cała trasa (nawet z przesiadkami) w ogóle się spina. Gdy pociąg faktycznie dojedzie, wróć tu i kliknij „✅ Potwierdź” — wpis przeniesie się do dzienniczka poniżej z prawdziwym czasem i opóźnieniem. „❌ Odrzuć” po prostu usuwa plan.</div>
+    <div id="planList"></div>
   </div>
 
   <div class="panel">
@@ -168,7 +181,103 @@ h2{margin:0 0 10px;font-size:17px}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 const JOURNAL_KEY='dziennikPodrozy';
+const PLAN_KEY='dziennikPlanPodrozy';
 const TYPICAL_TRIPS_KEY='dziennikTrasyTypowe';
+
+function getPlannedTrips(){try{const v=JSON.parse(localStorage.getItem(PLAN_KEY));return Array.isArray(v)?v:[]}catch{return[]}}
+function savePlannedTrips(list){
+  try{localStorage.setItem(PLAN_KEY,JSON.stringify(list))}catch(e){return false}
+  if(window.ProfileSync){if(ProfileSync.pushBeacon)ProfileSync.pushBeacon({plannedTrips:list});else ProfileSync.push({plannedTrips:list})}
+  return true;
+}
+function planEntryHtml(e){
+  const dateFmt=(()=>{const p=String(e.date||'').split('-');return p.length===3?p[2]+'.'+p[1]+'.'+p[0]:e.date})();
+  const trainLabel=[e.category,e.trainNumber].filter(Boolean).join(' ')||'—';
+  return `<div class="plan-entry" data-key="${escapeHtml(e._key)}">
+    <div class="entry-top"><span class="entry-date">${escapeHtml(dateFmt)}</span><span class="entry-train">${escapeHtml(trainLabel)}</span></div>
+    <div class="plan-entry-route">${escapeHtml(e.boardStation)} → ${escapeHtml(e.alightStation)}</div>
+    <div class="entry-times">
+      <span>Odjazd: <b>${escapeHtml(e.plannedDeparture||'—')}</b></span>
+      <span>Przyjazd: <b>${escapeHtml(e.plannedArrival||'—')}</b></span>
+    </div>
+    <div class="plan-actions">
+      <button type="button" class="btn-sm" onclick="confirmPlanEntry('${e._key}')">✅ Potwierdź</button>
+      <button type="button" class="btn-sm secondary" onclick="rejectPlanEntry('${e._key}')">❌ Odrzuć</button>
+    </div>
+    <div class="plan-status" id="planStatus_${escapeHtml(e._key)}"></div>
+  </div>`;
+}
+function renderPlan(){
+  const list=[...getPlannedTrips()].sort((a,b)=>(a.date+String(a.plannedDeparture||'')).localeCompare(b.date+String(b.plannedDeparture||'')));
+  const countEl=document.getElementById('planCount');
+  if(countEl)countEl.textContent=list.length;
+  const el=document.getElementById('planList');
+  if(!el)return;
+  el.innerHTML=list.length?list.map(planEntryHtml).join(''):'<div class="empty">Brak zaplanowanych przejazdów. Na biegu pociągu, który jeszcze nie dotarł do stacji wysiadania, zaznacz 🚏/🏁 i dodaj „📋 Do planu”.</div>';
+}
+function rejectPlanEntry(key){
+  savePlannedTrips(getPlannedTrips().filter(e=>e._key!==key));
+  renderPlan();
+}
+async function confirmPlanEntry(key){
+  const list=getPlannedTrips();
+  const e=list.find(x=>x._key===key);
+  if(!e)return;
+  const statusEl=document.getElementById('planStatus_'+CSS.escape(key));
+  if(statusEl){statusEl.textContent='Sprawdzam aktualny status…';statusEl.className='plan-status'}
+  try{
+    const q=new URLSearchParams({scheduleId:e.scheduleId||'',orderId:e.orderId||'',operatingDate:e.date||''});
+    const r=await fetch('/api/train-details?'+q.toString(),{headers:{Accept:'application/json'},cache:'no-store'});
+    const data=await r.json().catch(()=>null);
+    if(!r.ok||!data||data.error||!Array.isArray(data.route))throw new Error('fetch-failed');
+    const norm=s=>String(s||'').trim().toLowerCase();
+    const stations=data.route;
+    const bi=stations.findIndex(s=>norm(s.stationName)===norm(e.boardStation));
+    const ai=stations.findIndex(s=>norm(s.stationName)===norm(e.alightStation));
+    if(bi<0||ai<0||ai<=bi)throw new Error('route-mismatch');
+    const b=stations[bi],a=stations[ai];
+    if(a.status!=='confirmed'){
+      if(statusEl){statusEl.textContent='Pociąg jeszcze nie dotarł do stacji wysiadania — spróbuj ponownie później.';statusEl.className='plan-status warn'}
+      return;
+    }
+    const plannedDep=b.plannedDeparture||b.plannedTime;
+    const actualDep=(b.status==='confirmed'?(b.actualDeparture||b.actualTime):'')||plannedDep;
+    const plannedArr=a.plannedArrival||a.plannedTime;
+    const actualArr=(a.actualArrival||a.actualTime)||plannedArr;
+    const delay=typeof a.arrivalDelay==='number'?a.arrivalDelay:(a.delay||0);
+    const journalEntry={
+      date:data.operatingDate||e.date,
+      trainNumber:data.trainNumber||data.train||e.trainNumber||'',
+      category:data.category||e.category||'',
+      boardStation:b.stationName,
+      alightStation:a.stationName,
+      plannedDeparture:plannedDep,
+      actualDeparture:actualDep,
+      plannedArrival:plannedArr,
+      actualArrival:actualArr,
+      delayMinutes:delay,
+      plannedDurationMin:durationMinJ(plannedDep,plannedArr),
+      actualDurationMin:durationMinJ(actualDep,actualArr),
+      tripType:'inna',
+      tripLabel:e.tripLabel||'',
+      legNumber:e.legNumber||null,
+      distanceKm:e.distanceKm!=null?e.distanceKm:null,
+      scheduleId:data.scheduleId||e.scheduleId,
+      orderId:data.orderId||e.orderId,
+      _key:e._key,
+      createdAt:new Date().toISOString()
+    };
+    const journal=getJournalEntries();
+    const dupIdx=journal.findIndex(x=>x._key===journalEntry._key);
+    if(dupIdx>=0)journal[dupIdx]=journalEntry;else journal.push(journalEntry);
+    saveJournalEntries(journal);
+    savePlannedTrips(getPlannedTrips().filter(x=>x._key!==key));
+    renderPlan();
+    renderEntries();
+  }catch(err){
+    if(statusEl){statusEl.textContent='Nie udało się sprawdzić statusu. Spróbuj ponownie.';statusEl.className='plan-status warn'}
+  }
+}
 
 function getJournalEntries(){try{const v=JSON.parse(localStorage.getItem(JOURNAL_KEY));return Array.isArray(v)?v:[]}catch{return[]}}
 // pushBeacon (nie zwykły push) — po zapisie/edycji łatwo od razu przejść
@@ -696,6 +805,18 @@ async function refreshFromProfile(){
         const local=getJournalEntries();
         if(local.length)ProfileSync.push({journalEntries:local});
       }
+      if(Array.isArray(profile.plannedTrips)){
+        const remoteP=profile.plannedTrips;
+        const remoteAtP=Date.parse(profile.updatedAt||'')||0;
+        const remoteKeysP=new Set(remoteP.map(e=>e._key));
+        const pendingLocalP=getPlannedTrips().filter(e=>!remoteKeysP.has(e._key)&&Date.parse(e.createdAt||'')>remoteAtP);
+        const mergedP=pendingLocalP.length?[...remoteP,...pendingLocalP]:remoteP;
+        localStorage.setItem(PLAN_KEY,JSON.stringify(mergedP));
+        if(pendingLocalP.length&&ProfileSync.pushBeacon)ProfileSync.pushBeacon({plannedTrips:mergedP});
+      }else{
+        const localPlan=getPlannedTrips();
+        if(localPlan.length)ProfileSync.push({plannedTrips:localPlan});
+      }
       const tripsLocalAt=Number(localStorage.getItem(TYPICAL_TRIPS_LOCAL_AT_KEY)||0);
       const tripsRemoteAt=Date.parse(profile.updatedAt||'')||0;
       if(profile.typicalTrips&&typeof profile.typicalTrips==='object'&&tripsRemoteAt>=tripsLocalAt){
@@ -710,6 +831,7 @@ async function refreshFromProfile(){
   // W trybie edycji NIE nadpisujemy tego, co użytkownik akurat poprawia —
   // podmiana listy pod ręką skasowałaby niezapisane zmiany.
   if(!editMode)renderEntries();
+  renderPlan();
 }
 refreshFromProfile();
 window.addEventListener('pageshow',function(e){if(e.persisted)refreshFromProfile()});

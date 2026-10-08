@@ -432,6 +432,7 @@ let lastTrainArgs=null;
 // Trzymany lokalnie, synchronizowany przez profil (token) jak reszta
 // danych w tej aplikacji — ten sam wzorzec co listy pociągów w v2.
 const JOURNAL_KEY='dziennikPodrozy';
+const PLAN_KEY='dziennikPlanPodrozy';
 const TYPICAL_TRIPS_KEY='dziennikTrasyTypowe';
 let currentTrainData=null,currentStations=[];
 let markBoardIdx=null,markAlightIdx=null,markMode=null;
@@ -501,6 +502,56 @@ function journeyKey(date,scheduleId,orderId,boardStation,alightStation){return[d
 function findExistingEntry(date,scheduleId,orderId,boardStation,alightStation){
   const key=journeyKey(date,scheduleId,orderId,boardStation,alightStation);
   return getJournalEntries().find(e=>e._key===key)||null;
+}
+// Plan podróży = przejazdy zaznaczone (🚏/🏁) na kursie, który jeszcze nie
+// dotarł do stacji wysiadania — dzienniczek wymaga potwierdzonych danych, więc
+// taki przejazd trzymamy osobno, dopóki ktoś go ręcznie nie potwierdzi (albo
+// odrzuci) na /dziennik/. Pozwala to ocenić z wyprzedzeniem, czy planowana
+// trasa (z przesiadkami) w ogóle się spina.
+function getPlannedTrips(){try{const v=JSON.parse(localStorage.getItem(PLAN_KEY));return Array.isArray(v)?v:[]}catch{return[]}}
+function savePlannedTrips(list){
+  try{localStorage.setItem(PLAN_KEY,JSON.stringify(list))}catch(e){return false}
+  if(window.ProfileSync){
+    if(ProfileSync.pushBeacon)ProfileSync.pushBeacon({plannedTrips:list});
+    else ProfileSync.push({plannedTrips:list});
+  }
+  return true;
+}
+function findExistingPlan(date,scheduleId,orderId,boardStation,alightStation){
+  const key=journeyKey(date,scheduleId,orderId,boardStation,alightStation);
+  return getPlannedTrips().find(e=>e._key===key)||null;
+}
+function buildPlannedEntry(data,stations,boardIdx,alightIdx,tripMeta){
+  const b=stations[boardIdx],a=stations[alightIdx];
+  return{
+    date:data.operatingDate,
+    trainNumber:data.trainNumber||data.train||'',
+    category:data.category||'',
+    boardStation:b.stationName,
+    alightStation:a.stationName,
+    plannedDeparture:b.plannedDeparture||b.plannedTime,
+    plannedArrival:a.plannedArrival||a.plannedTime,
+    tripLabel:tripMeta?tripMetaName(tripMeta):'',
+    legNumber:tripMeta?tripMeta.legNumber:null,
+    distanceKm:tripMeta?tripMetaKm(tripMeta):null,
+    scheduleId:data.scheduleId,
+    orderId:data.orderId,
+    _key:journeyKey(data.operatingDate,data.scheduleId,data.orderId,b.stationName,a.stationName),
+    createdAt:new Date().toISOString()
+  };
+}
+function savePlannedTrip(){
+  if(!currentTrainData||markBoardIdx==null||markAlightIdx==null||markAlightIdx<=markBoardIdx)return;
+  const meta=typicalMetaForMarks();
+  const entry=buildPlannedEntry(currentTrainData,currentStations,markBoardIdx,markAlightIdx,meta);
+  const list=getPlannedTrips();
+  list.push(entry);
+  savePlannedTrips(list);
+  renderJournalBar();
+}
+function removePlannedTrip(key){
+  savePlannedTrips(getPlannedTrips().filter(e=>e._key!==key));
+  renderJournalBar();
 }
 // Wcześniejsze wersje zapisywały płaskie board/alight (jeden odcinek) —
 // czytamy taki stary zapis jako sam odcinek 1, żeby nic nie zniknęło.
@@ -706,7 +757,16 @@ function renderJournalBar(){
       const meta=typicalMetaForMarks();
       const direct=!!meta&&markMode!=='edit';
       const metaTxt=meta?(' · trasa „'+esc(tripMetaName(meta))+'”'+(meta.trip.leg2?(' · odcinek '+meta.legNumber+'/2'):'')+(markMode==='edit'?' · do modyfikacji':'')):'';
-      html='<div class="journal-note">🚏 '+esc(bS)+' → 🏁 '+esc(aS)+metaTxt+'. '+(canSave?'<button type="button" class="btn small" onclick="saveManualJourney()">'+(direct?'📓 Dodaj do dzienniczka':'💾 Zapisz do dzienniczka')+'</button>':'<span class="hint">Dostępne po dotarciu do stacji wysiadania.</span>')+'</div>';
+      let actionHtml;
+      if(canSave){
+        actionHtml='<button type="button" class="btn small" onclick="saveManualJourney()">'+(direct?'📓 Dodaj do dzienniczka':'💾 Zapisz do dzienniczka')+'</button>';
+      }else{
+        const existingPlan=findExistingPlan(data.operatingDate,data.scheduleId,data.orderId,bS,aS);
+        actionHtml=existingPlan
+          ?'<span class="hint">📋 Już w <a href="/dziennik/">planie podróży</a>.</span> <button type="button" class="link-btn" onclick="removePlannedTrip(\''+existingPlan._key+'\')">Usuń z planu</button>'
+          :'<span class="hint">Pociąg jeszcze nie dotarł do stacji wysiadania.</span> <button type="button" class="btn small" onclick="savePlannedTrip()">📋 Dodaj do planu</button>';
+      }
+      html='<div class="journal-note">🚏 '+esc(bS)+' → 🏁 '+esc(aS)+metaTxt+'. '+actionHtml+'</div>';
     }
   }else if(hasManualMark){
     html='<div class="journal-note warn">Stacja wysiadania musi być dalej na trasie niż wsiadania.</div>';
@@ -755,6 +815,8 @@ function updateFloatSaveBtn(tripMatch){
     if(!existing&&canSaveJourney(stations,markAlightIdx)){
       const direct=!!typicalMetaForMarks()&&markMode!=='edit';
       show=true;label=direct?'📓 Dodaj do dzienniczka':'💾 Zapisz do dzienniczka';handler=saveManualJourney;immediate=direct;
+    }else if(!existing&&!findExistingPlan(data.operatingDate,data.scheduleId,data.orderId,bS,aS)){
+      show=true;label='📋 Dodaj do planu';handler=savePlannedTrip;immediate=true;
     }
   }else if(tripMatch&&!isPromptDismissed()){
     const bS=stations[tripMatch.boardIdx].stationName,aS=stations[tripMatch.alightIdx].stationName;

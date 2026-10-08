@@ -61,7 +61,7 @@
       steps: [
         { sel: "#mtStarBtn", title: "Dodaj do Moich pociągów", text: "Kliknij gwiazdkę, żeby mieć ten kurs zawsze pod ręką na liście Moich pociągów — z aktualnym statusem, bez ponownego wyszukiwania. Drugie kliknięcie usuwa go z listy." },
         { sel: "#status", title: "Cały bieg pociągu", text: "Cała trasa pociągu stacja po stacji: godziny planowe i rzeczywiste, opóźnienie, peron i tor. Jeśli PLK poda przyczynę opóźnienia (np. „Awaria taboru”), zobaczysz ją w czerwonej notce pod nagłówkiem." },
-        { sel: ".mark-btns", title: "Dzienniczek podróży", text: "Jedziesz tym pociągiem? Zaznacz 🚏 gdzie wsiadasz i 🏁 gdzie wysiadasz — resztę policzymy. Pływający przycisk zapisu pojawi się u dołu ekranu, gdziekolwiek przewiniesz stronę." }
+        { sel: ".mark-btns", title: "Dzienniczek podróży", text: "Jedziesz tym pociągiem? Zaznacz 🚏 gdzie wsiadasz i 🏁 gdzie wysiadasz — resztę policzymy. Pływający przycisk zapisu pojawi się u dołu ekranu, gdziekolwiek przewiniesz stronę. Dla kursu, który jeszcze nie dotarł do stacji wysiadania, zamiast zapisu zobaczysz „📋 Dodaj do planu” — to wpis do planu podróży w dzienniczku, nie od razu realny przejazd." }
       ]
     },
     {
@@ -76,7 +76,8 @@
       match: function (p) { return p.indexOf("/dziennik") === 0; },
       steps: [
         { sel: "#tripsToggle", title: "Ulubione trasy", text: "Ustaw raz swoją powtarzalną trasę (np. dom→praca) — wszystko zapisuje się samo w trakcie wpisywania. Potem aplikacja sama zapyta na biegu pociągu, czy zapisać pasujący kurs. Przyciskiem „➕ Dodaj kolejną trasę” dodasz ich dowolnie wiele." },
-        { sel: "#entryList", title: "Zapisane przejazdy", text: "Twoje zapisane przejazdy, od najnowszych. Możesz je poprawić (🔓) — zmiany też zapisują się same — albo pobrać wszystko jako XLSX." }
+        { sel: "#planPanel", title: "Plan podróży", text: "Planujesz trasę (np. z przesiadką) i chcesz sprawdzić, czy się spina, zanim wyjedziesz? Zaznacz stacje na biegu każdego pociągu i dodaj „📋 Do planu” — zobaczysz tu wszystkie odcinki naraz. Gdy pociąg faktycznie dojedzie, wróć i kliknij „✅ Potwierdź” (przejazd trafi do wpisów poniżej) albo „❌ Odrzuć”." },
+        { sel: "#entryList", title: "Zapisane przejazdy", text: "Twoje zapisane, potwierdzone przejazdy, od najnowszych. Możesz je poprawić (🔓) — zmiany też zapisują się same — albo pobrać wszystko jako XLSX." }
       ]
     }
   ];
