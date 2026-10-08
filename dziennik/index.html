@@ -223,7 +223,7 @@ async function confirmPlanEntry(key){
   const list=getPlannedTrips();
   const e=list.find(x=>x._key===key);
   if(!e)return;
-  const statusEl=document.getElementById('planStatus_'+CSS.escape(key));
+  const statusEl=document.getElementById('planStatus_'+key);
   if(statusEl){statusEl.textContent='Sprawdzam aktualny status…';statusEl.className='plan-status'}
   try{
     const q=new URLSearchParams({scheduleId:e.scheduleId||'',orderId:e.orderId||'',operatingDate:e.date||''});
