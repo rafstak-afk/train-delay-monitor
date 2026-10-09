@@ -181,11 +181,29 @@ input[type=text],input[type=date],input[type=time],select{width:100%;padding:10p
 
   function escapeHtml(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]})}
 
+  function todayYYYYMMDD(){
+    var n=new Date();
+    return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');
+  }
+
   function setDefaultDateTime(){
-    var n=new Date(),y=n.getFullYear(),m=String(n.getMonth()+1).padStart(2,'0'),d=String(n.getDate()).padStart(2,'0'),h=String(n.getHours()).padStart(2,'0'),i=String(n.getMinutes()).padStart(2,'0');
-    $('dateInput').value=y+'-'+m+'-'+d;
+    var n=new Date(),h=String(n.getHours()).padStart(2,'0'),i=String(n.getMinutes()).padStart(2,'0');
+    $('dateInput').value=todayYYYYMMDD();
     $('timeInput').value=h+':'+i;
   }
+
+  // Zmiana daty na inną niż dzisiejsza z pozostawioną "teraz" (np. 22:36) w
+  // polu godziny w praktyce odcinała niemal wszystkie połączenia następnego
+  // dnia — godzina ma sens tylko razem z datą, więc reset przy każdej
+  // zmianie daty, tak samo jak domyślne zachowanie samego /api/planner.
+  $('dateInput').addEventListener('change',function(){
+    var n=new Date();
+    if(this.value===todayYYYYMMDD()){
+      $('timeInput').value=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
+    }else{
+      $('timeInput').value='00:00';
+    }
+  });
 
   function toggleAdv(){
     var panel=$('advPanel');
