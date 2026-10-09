@@ -79,6 +79,13 @@
         { sel: "#planPanel", title: "Plan podróży", text: "Planujesz trasę (np. z przesiadką) i chcesz sprawdzić, czy się spina, zanim wyjedziesz? Zaznacz stacje na biegu każdego pociągu i dodaj „📋 Do planu” — zobaczysz tu wszystkie odcinki naraz. Gdy pociąg faktycznie dojedzie, wróć i kliknij „✅ Potwierdź” (przejazd trafi do wpisów poniżej) albo „❌ Odrzuć”." },
         { sel: "#entryList", title: "Zapisane przejazdy", text: "Twoje zapisane, potwierdzone przejazdy, od najnowszych. Możesz je poprawić (🔓) — zmiany też zapisują się same — albo pobrać wszystko jako XLSX." }
       ]
+    },
+    {
+      match: function (p) { return p.indexOf("/planer") === 0; },
+      steps: [
+        { sel: ".station-row", title: "Planer podróży", text: "Wpisz skąd i dokąd — znajdzie połączenia bezpośrednie i z jedną przesiadką na podstawie rozkładu PLK, dla całej sieci, nie tylko wybranych stacji." },
+        { sel: "#advPanel", title: "Minimalny czas na przesiadkę", text: "Domyślnie 5 minut. Zwiększ, jeśli wolisz mieć zapas na dużych stacjach, albo zmniejsz, jeśli ufasz krótkim przesiadkom." }
+      ]
     }
   ];
 

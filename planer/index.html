@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Planer podróży</title>
+<style>
+:root{--bg:#101820;--panel:#1c2833;--card:#223244;--line:#34495e;--text:#fff;--muted:#b8c3cf;--blue:#0b57d0;--green:#5dd39e;--yellow:#ffcc00;--red:#ff4d4d;--violet:#c084fc;--grey:#4b5563;--cyan:#22d3ee}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text);padding:18px}
+.wrap{max-width:720px;margin:0 auto}
+a.back{display:inline-block;margin-bottom:10px;color:var(--muted);text-decoration:none;font-size:14px}
+h1{text-align:center;font-size:26px;margin:6px 0 4px}
+.subtitle{text-align:center;color:var(--muted);font-size:13px;margin-bottom:18px;line-height:1.5}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin:14px 0}
+label{display:block;font-size:12px;color:var(--muted);margin:0 0 4px}
+input[type=text],input[type=date],input[type=time],select{width:100%;padding:10px;border-radius:9px;border:1px solid var(--line);background:var(--card);color:#fff;font-size:15px;font-family:inherit}
+.station-row{display:flex;align-items:flex-end;gap:8px}
+.station-field{position:relative;flex:1;min-width:0;margin-bottom:12px}
+.swap-btn{flex:0 0 auto;border:1px solid var(--line);background:var(--card);color:#fff;border-radius:9px;width:42px;height:42px;font-size:18px;cursor:pointer;margin-bottom:12px}
+.swap-btn:hover{background:#2a3b4d}
+.station-dropdown{display:none;position:absolute;z-index:10000;top:calc(100% + 4px);left:0;right:0;background:#172433;border:1px solid #48627c;border-radius:12px;box-shadow:0 14px 35px rgba(0,0,0,.45);max-height:280px;overflow:auto;text-align:left}
+.station-dropdown.open{display:block}
+.station-dd-item{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;width:100%;border:0;border-bottom:1px solid rgba(255,255,255,.07);background:transparent;color:#fff;padding:10px 12px;text-align:left;cursor:pointer;font-family:inherit}
+.station-dd-item:hover{background:#223244}
+.station-dd-name{font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.station-dd-id{opacity:.65;font-size:12px}
+.date-time-row{display:flex;gap:8px;margin-bottom:12px}
+.date-time-row>div{flex:1}
+.trips-panel{padding:0;overflow:hidden;margin:0 0 14px;background:var(--card)}
+.trips-toggle{display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:0;color:var(--text);padding:12px 14px;cursor:pointer;text-align:left;font-family:inherit}
+.trips-toggle:hover{background:rgba(255,255,255,.04)}
+.trips-toggle-icon{font-size:18px}
+.trips-toggle-text{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.trips-toggle-title{font-size:14px;font-weight:800}
+.trips-toggle-summary{font-size:12px;color:var(--muted)}
+.trips-chevron{display:inline-block;font-size:14px;line-height:1;transition:transform .3s ease}
+.trips-panel.open .trips-chevron{transform:rotate(180deg)}
+.trips-body{display:grid;grid-template-rows:0fr;transition:grid-template-rows .3s ease}
+.trips-panel.open .trips-body{grid-template-rows:1fr}
+.trips-body-inner{overflow:hidden;min-height:0}
+.trips-content{padding:2px 14px 14px;border-top:1px solid var(--line)}
+@media(prefers-reduced-motion:reduce){.trips-body,.trips-chevron{transition:none}}
+.btn{border:0;border-radius:10px;padding:13px 16px;background:var(--blue);color:#fff;font-weight:800;cursor:pointer;font-size:15px;width:100%}
+.btn:hover{background:#084298}
+.btn:disabled{opacity:.6;cursor:default}
+.status{text-align:center;color:var(--muted);min-height:20px;margin:10px 0;font-size:13.5px}
+.status.err{color:var(--red)}
+.empty{text-align:center;padding:28px 16px;color:var(--muted);font-size:14px;line-height:1.6}
+.muted-note{font-size:12.5px;color:var(--muted);margin:0 0 10px;text-align:center}
+.entry{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.itin-head{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.itin-time{font-size:21px;font-weight:900}
+.itin-arrow{color:var(--muted);font-size:16px}
+.itin-dur{font-size:12.5px;color:var(--muted);margin-left:4px}
+.itin-nextday{font-size:11px;color:var(--yellow);font-weight:800}
+.itin-badge{margin-left:auto;border-radius:999px;padding:3px 11px;font-size:11.5px;font-weight:800;white-space:nowrap}
+.itin-badge.direct{background:rgba(93,211,158,.18);color:var(--green)}
+.itin-badge.transfer{background:rgba(192,132,252,.18);color:var(--violet)}
+.itin-leg{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13.5px;margin-top:8px;padding:9px 10px;background:rgba(255,255,255,.04);border-radius:9px}
+.itin-leg a{color:#fff;font-weight:800;text-decoration:none}
+.itin-leg a:hover{text-decoration:underline}
+.itin-leg .leg-muted{color:var(--muted);font-size:12px}
+.itin-transfer{font-size:12px;color:var(--cyan);text-align:center;margin:4px 0;font-weight:700}
+.ambiguous-note{font-size:12.5px;color:var(--yellow);margin:0 0 10px;text-align:center}
+</style>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "a3663c820f4e414ab15c7a64a8aa36ec"}'></script><!-- End Cloudflare Web Analytics -->
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="/">← Tablica</a>
+  <h1>🧭 Planer podróży</h1>
+  <div class="subtitle">Szuka połączeń bezpośrednich i z jedną przesiadką na podstawie rozkładu PLK — bez znajomości aktualnych opóźnień.</div>
+
+  <div class="panel">
+    <div class="station-row">
+      <div class="station-field">
+        <label for="fromInput">Skąd</label>
+        <input id="fromInput" type="text" placeholder="Nazwa stacji..." autocomplete="off">
+        <div class="station-dropdown" id="fromDropdown"></div>
+      </div>
+      <button type="button" class="swap-btn" id="swapBtn" title="Zamień miejscami">⇅</button>
+      <div class="station-field">
+        <label for="toInput">Dokąd</label>
+        <input id="toInput" type="text" placeholder="Nazwa stacji..." autocomplete="off">
+        <div class="station-dropdown" id="toDropdown"></div>
+      </div>
+    </div>
+    <div class="date-time-row">
+      <div><label for="dateInput">Data</label><input id="dateInput" type="date"></div>
+      <div><label for="timeInput">Od godziny</label><input id="timeInput" type="time"></div>
+    </div>
+    <div class="trips-panel" id="advPanel">
+      <button type="button" class="trips-toggle" id="advToggle" aria-expanded="false" onclick="toggleAdv()">
+        <span class="trips-toggle-icon" aria-hidden="true">⚙️</span>
+        <span class="trips-toggle-text"><span class="trips-toggle-title">Zaawansowane</span><span class="trips-toggle-summary" id="advSummary">Min. czas na przesiadkę: 5 min</span></span>
+        <span class="trips-chevron" aria-hidden="true">▾</span>
+      </button>
+      <div class="trips-body" id="advBody"><div class="trips-body-inner"><div class="trips-content">
+        <label for="transferMinutesSelect">Minimalny czas na przesiadkę</label>
+        <select id="transferMinutesSelect">
+          <option value="0">0 min</option>
+          <option value="3">3 min</option>
+          <option value="5" selected>5 min</option>
+          <option value="10">10 min</option>
+          <option value="15">15 min</option>
+          <option value="20">20 min</option>
+          <option value="30">30 min</option>
+        </select>
+      </div></div></div>
+    </div>
+    <button type="button" class="btn" id="searchBtn" onclick="search()">🔎 Szukaj połączeń</button>
+  </div>
+
+  <div id="resultsStatus" class="status"></div>
+  <div id="resultsList"></div>
+</div>
+
+<script src="/tutorial.js"></script>
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id)};
+  var selected={from:{id:'',name:''},to:{id:'',name:''}};
+  var searchTimers={from:null,to:null};
+
+  function escapeHtml(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]})}
+
+  function setDefaultDateTime(){
+    var n=new Date(),y=n.getFullYear(),m=String(n.getMonth()+1).padStart(2,'0'),d=String(n.getDate()).padStart(2,'0'),h=String(n.getHours()).padStart(2,'0'),i=String(n.getMinutes()).padStart(2,'0');
+    $('dateInput').value=y+'-'+m+'-'+d;
+    $('timeInput').value=h+':'+i;
+  }
+
+  function toggleAdv(){
+    var panel=$('advPanel');
+    var open=!panel.classList.contains('open');
+    panel.classList.toggle('open',open);
+    $('advToggle').setAttribute('aria-expanded',open?'true':'false');
+  }
+  window.toggleAdv=toggleAdv;
+
+  function updateAdvSummary(){
+    $('advSummary').textContent='Min. czas na przesiadkę: '+$('transferMinutesSelect').value+' min';
+  }
+  $('transferMinutesSelect').addEventListener('change',updateAdvSummary);
+
+  function renderDropdown(side,stations){
+    var el=$(side+'Dropdown');
+    if(!stations.length){el.classList.remove('open');el.innerHTML='';return}
+    el.innerHTML=stations.map(function(s){
+      return '<button type="button" class="station-dd-item" data-id="'+escapeHtml(s.id)+'" data-name="'+escapeHtml(s.name)+'"><span class="station-dd-name">'+escapeHtml(s.name)+'</span><span class="station-dd-id">'+escapeHtml(s.id)+'</span></button>';
+    }).join('');
+    el.classList.add('open');
+  }
+
+  function hideDropdown(side){$(side+'Dropdown').classList.remove('open')}
+
+  function fetchStations(side,query){
+    if(!query||query.length<2){hideDropdown(side);return}
+    fetch('/api/dictionaries/stations?search='+encodeURIComponent(query)+'&pageSize=12',{headers:{Accept:'application/json'}})
+      .then(function(r){return r.json()})
+      .then(function(data){renderDropdown(side,Array.isArray(data.stations)?data.stations:[])})
+      .catch(function(){hideDropdown(side)});
+  }
+
+  ['from','to'].forEach(function(side){
+    $(side+'Input').addEventListener('input',function(){
+      selected[side]={id:'',name:''};
+      var q=this.value.trim();
+      clearTimeout(searchTimers[side]);
+      searchTimers[side]=setTimeout(function(){fetchStations(side,q)},250);
+    });
+    $(side+'Input').addEventListener('focus',function(){
+      var q=this.value.trim();
+      if(q.length>=2)fetchStations(side,q);
+    });
+    $(side+'Dropdown').addEventListener('click',function(e){
+      var btn=e.target.closest('.station-dd-item');
+      if(!btn)return;
+      selected[side]={id:btn.dataset.id,name:btn.dataset.name};
+      $(side+'Input').value=btn.dataset.name;
+      hideDropdown(side);
+    });
+  });
+
+  document.addEventListener('click',function(e){
+    if(!e.target.closest('.station-field')){hideDropdown('from');hideDropdown('to')}
+  });
+
+  $('swapBtn').addEventListener('click',function(){
+    var f=selected.from,t=selected.to;
+    selected.from=t;selected.to=f;
+    $('fromInput').value=selected.from.name||'';
+    $('toInput').value=selected.to.name||'';
+  });
+
+  function shortDur(min){
+    if(min==null)return'';
+    var h=Math.floor(min/60),m=min%60;
+    return h>0?(h+'h '+m+'min'):(m+' min');
+  }
+
+  function legHtml(leg){
+    var tr=[leg.train.category,leg.train.number].filter(Boolean).join(' ');
+    var plat=leg.board.platform?(' · peron '+escapeHtml(leg.board.platform)+(leg.board.track?'/'+escapeHtml(leg.board.track):'')):'';
+    return '<div class="itin-leg">'+
+      '<a href="'+escapeHtml(leg.trainUrl)+'" target="_blank" rel="noopener">'+escapeHtml(tr)+'</a>'+
+      (leg.train.name?' <span class="leg-muted">'+escapeHtml(leg.train.name)+'</span>':'')+
+      ' <span class="leg-muted">'+escapeHtml(leg.board.stationName)+' ('+escapeHtml(leg.board.time)+')'+plat+' → '+escapeHtml(leg.alight.stationName)+' ('+escapeHtml(leg.alight.time)+(leg.alight.nextDay?' +1 dzień':'')+')</span>'+
+      '</div>';
+  }
+
+  function itineraryHtml(it){
+    var badge=it.type==='direct'?'<span class="itin-badge direct">BEZPOŚREDNIO</span>':'<span class="itin-badge transfer">1 PRZESIADKA</span>';
+    var legsHtml=it.legs.map(legHtml).join(
+      it.transfer?('<div class="itin-transfer">🔁 Przesiadka w '+escapeHtml(it.transfer.stationName)+': '+it.transfer.bufferMinutes+' min</div>'):''
+    );
+    return '<div class="entry">'+
+      '<div class="itin-head">'+
+        '<span class="itin-time">'+escapeHtml(it.departureTime)+'</span><span class="itin-arrow">→</span><span class="itin-time">'+escapeHtml(it.arrivalTime)+'</span>'+
+        (it.arrivalNextDay?'<span class="itin-nextday">+1 dzień</span>':'')+
+        '<span class="itin-dur">'+shortDur(it.durationMinutes)+'</span>'+
+        badge+
+      '</div>'+
+      legsHtml+
+      '</div>';
+  }
+
+  function renderResults(data){
+    var statusEl=$('resultsStatus'),listEl=$('resultsList');
+    statusEl.className='status';
+    var notes='';
+    if(data.resolvedFrom&&data.resolvedFrom.ambiguous)notes+='<div class="ambiguous-note">Znaleziono więcej niż jedną stację o nazwie „'+escapeHtml(data.resolvedFrom.name)+'” — pokazano wyniki dla najbardziej prawdopodobnej. Wybierz dokładną stację z podpowiedzi, jeśli to nie ta.</div>';
+    if(data.resolvedTo&&data.resolvedTo.ambiguous)notes+='<div class="ambiguous-note">Znaleziono więcej niż jedną stację o nazwie „'+escapeHtml(data.resolvedTo.name)+'” — pokazano wyniki dla najbardziej prawdopodobnej. Wybierz dokładną stację z podpowiedzi, jeśli to nie ta.</div>';
+
+    if(data.noConnectionFound){
+      statusEl.textContent='';
+      listEl.innerHTML=notes+'<div class="empty">Nie znaleziono dziś połączenia bezpośredniego ani z jedną przesiadką między „'+escapeHtml(data.query.from)+'” a „'+escapeHtml(data.query.to)+'”. Spróbuj innej daty lub godziny — na trasach z więcej niż jedną przesiadką planer na razie nie szuka połączeń.</div>';
+      return;
+    }
+
+    statusEl.textContent='Znaleziono '+data.counts.direct+' bezpośrednich i '+data.counts.transfer+' z przesiadką.';
+    listEl.innerHTML=notes+data.itineraries.map(itineraryHtml).join('');
+  }
+
+  function search(){
+    var from=selected.from.name||$('fromInput').value.trim();
+    var to=selected.to.name||$('toInput').value.trim();
+    if(!from||!to){$('resultsStatus').className='status err';$('resultsStatus').textContent='Wpisz stację początkową i docelową.';return}
+
+    hideDropdown('from');hideDropdown('to');
+    var btn=$('searchBtn');
+    btn.disabled=true;
+    $('resultsStatus').className='status';
+    $('resultsStatus').textContent='Szukam połączeń...';
+    $('resultsList').innerHTML='';
+
+    var params=new URLSearchParams({from:from,to:to,date:$('dateInput').value,time:$('timeInput').value,transferMinutes:$('transferMinutesSelect').value});
+    if(selected.from.id)params.set('fromId',selected.from.id);
+    if(selected.to.id)params.set('toId',selected.to.id);
+
+    fetch('/api/planner?'+params.toString(),{headers:{Accept:'application/json'}})
+      .then(function(r){return r.json().then(function(data){return {ok:r.ok,data:data}}) })
+      .then(function(res){
+        btn.disabled=false;
+        if(!res.ok||!res.data.ok){
+          $('resultsStatus').className='status err';
+          $('resultsStatus').textContent=res.data.error||'Błąd wyszukiwania połączeń.';
+          return;
+        }
+        renderResults(res.data);
+      })
+      .catch(function(){
+        btn.disabled=false;
+        $('resultsStatus').className='status err';
+        $('resultsStatus').textContent='Nie udało się połączyć z API.';
+      });
+  }
+  window.search=search;
+
+  setDefaultDateTime();
+  updateAdvSummary();
+})();
+</script>
+</body>
+</html>
