@@ -772,7 +772,10 @@ function stitchViaChain(segmentResults, waypoints, transferMinutes, timeFloor) {
 
 function combineViaChain(chosen, waypoints) {
   const legs = [...chosen[0].legs];
-  const transfers = [];
+  // gaps[k] opisuje przerwę między legs[k] i legs[k+1] — albo prawdziwe
+  // złączenie segmentów (stacja "przez"), albo przesiadka WEWNĄTRZ
+  // pojedynczego segmentu (gdy ten segment sam w sobie był typu "transfer").
+  const gaps = [...(chosen[0].transfers || [])];
   let runningArr = minutesFromTime(chosen[0].departureTime) + chosen[0].durationMinutes;
 
   for (let i = 1; i < chosen.length; i++) {
@@ -780,17 +783,39 @@ function combineViaChain(chosen, waypoints) {
     while (dep < runningArr) dep += 1440;
     const bufferMinutes = dep - runningArr;
     const viaStation = waypoints[i];
-    transfers.push({ stationId: String(viaStation.id), stationName: viaStation.name, bufferMinutes, ok: true });
+    gaps.push({ stationId: String(viaStation.id), stationName: viaStation.name, bufferMinutes, ok: true });
     legs.push(...chosen[i].legs);
+    gaps.push(...(chosen[i].transfers || []));
     runningArr = dep + chosen[i].durationMinutes;
   }
 
-  const departureTime = chosen[0].departureTime;
-  const totalDuration = runningArr - minutesFromTime(departureTime);
-  const arrivalTime = hhmmFromMinutes(runningArr);
+  const totalDuration = runningArr - minutesFromTime(chosen[0].departureTime);
   const arrivalNextDay = runningArr >= 1440;
 
-  return { type: "via", departureTime, arrivalTime, arrivalNextDay, durationMinutes: totalDuration, legs, transfers };
+  // Ten sam fizyczny kurs bywa jednocześnie "ostatnią nogą" jednego segmentu
+  // i "pierwszą nogą" następnego — jedzie dalej przez wymuszoną stację
+  // "przez", pasażer wcale nie wysiada. Scalamy sąsiednie nogi tego samego
+  // kursu w jedną, usuwając sztuczną przesiadkę między nimi.
+  let k = 0;
+  while (k < legs.length - 1) {
+    if (legs[k].scheduleId === legs[k + 1].scheduleId && legs[k].orderId === legs[k + 1].orderId) {
+      legs[k] = { ...legs[k], alight: legs[k + 1].alight };
+      legs.splice(k + 1, 1);
+      gaps.splice(k, 1);
+    } else {
+      k++;
+    }
+  }
+
+  return {
+    type: "via",
+    departureTime: chosen[0].departureTime,
+    arrivalTime: hhmmFromMinutes(runningArr),
+    arrivalNextDay,
+    durationMinutes: totalDuration,
+    legs,
+    transfers: gaps
+  };
 }
 
 // ============ Deduplikacja ============
