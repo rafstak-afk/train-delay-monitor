@@ -44,6 +44,11 @@ input[type=text],input[type=date],input[type=time],select{width:100%;padding:10p
 .btn{border:0;border-radius:10px;padding:13px 16px;background:var(--blue);color:#fff;font-weight:800;cursor:pointer;font-size:15px;width:100%}
 .btn:hover{background:#084298}
 .btn:disabled{opacity:.6;cursor:default}
+.btn-sm{border:0;border-radius:8px;padding:8px 12px;background:var(--blue);color:#fff;font-weight:700;cursor:pointer;font-size:12.5px}
+.btn-sm:hover{background:#084298}
+.btn-sm.secondary{background:#4b5563}
+.btn-sm.secondary:hover{background:#5b6472}
+.btn-sm:disabled{opacity:.5;cursor:default}
 .status{text-align:center;color:var(--muted);min-height:20px;margin:10px 0;font-size:13.5px}
 .status.err{color:var(--red)}
 .empty{text-align:center;padding:28px 16px;color:var(--muted);font-size:14px;line-height:1.6}
@@ -57,12 +62,29 @@ input[type=text],input[type=date],input[type=time],select{width:100%;padding:10p
 .itin-badge{margin-left:auto;border-radius:999px;padding:3px 11px;font-size:11.5px;font-weight:800;white-space:nowrap}
 .itin-badge.direct{background:rgba(93,211,158,.18);color:var(--green)}
 .itin-badge.transfer{background:rgba(192,132,252,.18);color:var(--violet)}
+.itin-badge.multi-transfer{background:rgba(192,132,252,.28);color:var(--violet)}
+.itin-badge.via{background:rgba(34,211,238,.18);color:var(--cyan)}
 .itin-leg{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13.5px;margin-top:8px;padding:9px 10px;background:rgba(255,255,255,.04);border-radius:9px}
 .itin-leg a{color:#fff;font-weight:800;text-decoration:none}
 .itin-leg a:hover{text-decoration:underline}
 .itin-leg .leg-muted{color:var(--muted);font-size:12px}
 .itin-transfer{font-size:12px;color:var(--cyan);text-align:center;margin:4px 0;font-weight:700}
+.risk-safe{color:var(--green);font-weight:800}
+.risk-tight{color:var(--yellow);font-weight:800}
+.risk-missed{color:var(--red);font-weight:900}
 .ambiguous-note{font-size:12.5px;color:var(--yellow);margin:0 0 10px;text-align:center}
+.itin-actions{display:flex;justify-content:flex-end;margin-top:8px}
+.saved-at{font-size:11.5px;color:var(--muted);margin-top:6px;font-style:italic}
+.via-row{margin-bottom:8px}
+.via-row .station-field{margin-bottom:0}
+.via-remove{flex:0 0 auto;border:1px solid var(--line);background:var(--card);color:var(--red);border-radius:9px;width:42px;height:42px;font-size:16px;cursor:pointer}
+.via-remove:hover{background:#2a3b4d}
+.carrier-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;margin-top:4px}
+@media(max-width:480px){.carrier-grid{grid-template-columns:1fr}}
+.carrier-chip{display:flex;align-items:center;gap:7px;font-size:12.5px;color:#d8e2ee;cursor:pointer}
+.carrier-chip input{width:auto;margin:0}
+.adv-section{margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.adv-section-title{font-size:12.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-bottom:8px}
 </style>
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "a3663c820f4e414ab15c7a64a8aa36ec"}'></script><!-- End Cloudflare Web Analytics -->
 </head>
@@ -70,7 +92,7 @@ input[type=text],input[type=date],input[type=time],select{width:100%;padding:10p
 <div class="wrap">
   <a class="back" href="/">← Tablica</a>
   <h1>🧭 Planer podróży</h1>
-  <div class="subtitle">Szuka połączeń bezpośrednich i z jedną przesiadką na podstawie rozkładu PLK — bez znajomości aktualnych opóźnień.</div>
+  <div class="subtitle">Szuka połączeń bezpośrednich i z przesiadką(ami) na podstawie rozkładu PLK, z czasem rzeczywistym tam, gdzie już jest znany.</div>
 
   <div class="panel">
     <div class="station-row">
@@ -93,20 +115,35 @@ input[type=text],input[type=date],input[type=time],select{width:100%;padding:10p
     <div class="trips-panel" id="advPanel">
       <button type="button" class="trips-toggle" id="advToggle" aria-expanded="false" onclick="toggleAdv()">
         <span class="trips-toggle-icon" aria-hidden="true">⚙️</span>
-        <span class="trips-toggle-text"><span class="trips-toggle-title">Zaawansowane</span><span class="trips-toggle-summary" id="advSummary">Min. czas na przesiadkę: 5 min</span></span>
+        <span class="trips-toggle-text"><span class="trips-toggle-title">Zaawansowane</span><span class="trips-toggle-summary" id="advSummary">Min. czas na przesiadkę: 3 min</span></span>
         <span class="trips-chevron" aria-hidden="true">▾</span>
       </button>
       <div class="trips-body" id="advBody"><div class="trips-body-inner"><div class="trips-content">
         <label for="transferMinutesSelect">Minimalny czas na przesiadkę</label>
         <select id="transferMinutesSelect">
           <option value="0">0 min</option>
-          <option value="3">3 min</option>
-          <option value="5" selected>5 min</option>
+          <option value="3" selected>3 min</option>
+          <option value="5">5 min</option>
           <option value="10">10 min</option>
           <option value="15">15 min</option>
           <option value="20">20 min</option>
+          <option value="25">25 min</option>
           <option value="30">30 min</option>
+          <option value="60">60 min</option>
+          <option value="90">90 min</option>
+          <option value="120">120 min</option>
         </select>
+
+        <div class="adv-section">
+          <div class="adv-section-title">Przez stację (opcjonalnie)</div>
+          <div id="viaContainer"></div>
+          <button type="button" class="btn-sm secondary" id="addViaBtn" onclick="addViaStation()">➕ Dodaj kolejną stację</button>
+        </div>
+
+        <div class="adv-section">
+          <div class="adv-section-title">Wyklucz przewoźników</div>
+          <div class="carrier-grid" id="carrierGrid"><div class="muted-note">Ładowanie listy przewoźników...</div></div>
+        </div>
       </div></div></div>
     </div>
     <button type="button" class="btn" id="searchBtn" onclick="search()">🔎 Szukaj połączeń</button>
@@ -114,14 +151,33 @@ input[type=text],input[type=date],input[type=time],select{width:100%;padding:10p
 
   <div id="resultsStatus" class="status"></div>
   <div id="resultsList"></div>
+
+  <div class="trips-panel" id="savedPanel">
+    <button type="button" class="trips-toggle" id="savedToggle" aria-expanded="false" onclick="toggleSaved()">
+      <span class="trips-toggle-icon" aria-hidden="true">📌</span>
+      <span class="trips-toggle-text"><span class="trips-toggle-title">Zapisane wyniki (<span id="savedCount">0</span>)</span><span class="trips-toggle-summary">Do późniejszego przejrzenia</span></span>
+      <span class="trips-chevron" aria-hidden="true">▾</span>
+    </button>
+    <div class="trips-body" id="savedBody"><div class="trips-body-inner"><div class="trips-content">
+      <div id="savedList"></div>
+    </div></div></div>
+  </div>
 </div>
 
+<script src="/profile-sync.js"></script>
 <script src="/tutorial.js"></script>
 <script>
 (function(){
   var $=function(id){return document.getElementById(id)};
   var selected={from:{id:'',name:''},to:{id:'',name:''}};
-  var searchTimers={from:null,to:null};
+  var searchTimers={};
+  var viaRows=[];
+  var viaCounter=0;
+  var excludedCarriers=new Set();
+  var lastItineraries=[];
+  var lastQuery=null;
+  var SAVED_KEY='planerZapisaneTrasy';
+  var CARRIERS_KEY='planerWykluczeniPrzewoznicy';
 
   function escapeHtml(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]})}
 
@@ -139,13 +195,23 @@ input[type=text],input[type=date],input[type=time],select{width:100%;padding:10p
   }
   window.toggleAdv=toggleAdv;
 
+  function toggleSaved(force){
+    var panel=$('savedPanel');
+    var open=typeof force==='boolean'?force:!panel.classList.contains('open');
+    panel.classList.toggle('open',open);
+    $('savedToggle').setAttribute('aria-expanded',open?'true':'false');
+  }
+  window.toggleSaved=toggleSaved;
+
   function updateAdvSummary(){
     $('advSummary').textContent='Min. czas na przesiadkę: '+$('transferMinutesSelect').value+' min';
   }
   $('transferMinutesSelect').addEventListener('change',updateAdvSummary);
 
-  function renderDropdown(side,stations){
-    var el=$(side+'Dropdown');
+  // === Skąd/Dokąd: autouzupełnianie stacji ===
+  function renderDropdown(side,stations,onPick){
+    var el=$(side+'Dropdown')||document.querySelector('.station-dropdown[data-key="'+side+'"]');
+    if(!el)return;
     if(!stations.length){el.classList.remove('open');el.innerHTML='';return}
     el.innerHTML=stations.map(function(s){
       return '<button type="button" class="station-dd-item" data-id="'+escapeHtml(s.id)+'" data-name="'+escapeHtml(s.name)+'"><span class="station-dd-name">'+escapeHtml(s.name)+'</span><span class="station-dd-id">'+escapeHtml(s.id)+'</span></button>';
@@ -153,7 +219,10 @@ input[type=text],input[type=date],input[type=time],select{width:100%;padding:10p
     el.classList.add('open');
   }
 
-  function hideDropdown(side){$(side+'Dropdown').classList.remove('open')}
+  function hideDropdown(side){
+    var el=$(side+'Dropdown')||document.querySelector('.station-dropdown[data-key="'+side+'"]');
+    if(el)el.classList.remove('open');
+  }
 
   function fetchStations(side,query){
     if(!query||query.length<2){hideDropdown(side);return}
@@ -184,7 +253,10 @@ input[type=text],input[type=date],input[type=time],select{width:100%;padding:10p
   });
 
   document.addEventListener('click',function(e){
-    if(!e.target.closest('.station-field')){hideDropdown('from');hideDropdown('to')}
+    if(!e.target.closest('.station-field')){
+      hideDropdown('from');hideDropdown('to');
+      viaRows.forEach(function(r){hideDropdown(r.key)});
+    }
   });
 
   $('swapBtn').addEventListener('click',function(){
@@ -194,6 +266,99 @@ input[type=text],input[type=date],input[type=time],select{width:100%;padding:10p
     $('toInput').value=selected.to.name||'';
   });
 
+  // === Przez stację (opcjonalnie), do 3 ===
+  var MAX_VIA=3;
+
+  function renderViaRows(){
+    var container=$('viaContainer');
+    container.innerHTML=viaRows.map(function(row){
+      return '<div class="station-row via-row">'+
+        '<div class="station-field">'+
+          '<input type="text" class="via-input" data-key="'+row.key+'" placeholder="Nazwa stacji..." autocomplete="off" value="'+escapeHtml(row.name)+'">'+
+          '<div class="station-dropdown" data-key="'+row.key+'"></div>'+
+        '</div>'+
+        '<button type="button" class="via-remove" data-key="'+row.key+'" title="Usuń">✕</button>'+
+      '</div>';
+    }).join('');
+    $('addViaBtn').disabled=viaRows.length>=MAX_VIA;
+
+    container.querySelectorAll('.via-input').forEach(function(inp){
+      var key=inp.dataset.key;
+      inp.addEventListener('input',function(){
+        var row=viaRows.filter(function(r){return r.key===key})[0];
+        if(!row)return;
+        row.id='';row.name=this.value;
+        var q=this.value.trim();
+        clearTimeout(searchTimers[key]);
+        searchTimers[key]=setTimeout(function(){fetchStations(key,q)},250);
+      });
+      inp.addEventListener('focus',function(){
+        var q=this.value.trim();
+        if(q.length>=2)fetchStations(key,q);
+      });
+    });
+    container.querySelectorAll('.station-dropdown').forEach(function(dd){
+      var key=dd.dataset.key;
+      dd.addEventListener('click',function(e){
+        var btn=e.target.closest('.station-dd-item');
+        if(!btn)return;
+        var row=viaRows.filter(function(r){return r.key===key})[0];
+        if(!row)return;
+        row.id=btn.dataset.id;row.name=btn.dataset.name;
+        container.querySelector('.via-input[data-key="'+key+'"]').value=btn.dataset.name;
+        hideDropdown(key);
+      });
+    });
+    container.querySelectorAll('.via-remove').forEach(function(btn){
+      btn.addEventListener('click',function(){
+        var key=this.dataset.key;
+        viaRows=viaRows.filter(function(r){return r.key!==key});
+        renderViaRows();
+      });
+    });
+  }
+
+  function addViaStation(){
+    if(viaRows.length>=MAX_VIA)return;
+    viaRows.push({key:'via'+(viaCounter++),id:'',name:''});
+    renderViaRows();
+  }
+  window.addViaStation=addViaStation;
+
+  // === Wykluczanie przewoźników ===
+  function loadCarrierPrefs(){
+    try{
+      var raw=JSON.parse(localStorage.getItem(CARRIERS_KEY)||'[]');
+      if(Array.isArray(raw))excludedCarriers=new Set(raw);
+    }catch(e){}
+  }
+  function saveCarrierPrefs(){
+    try{localStorage.setItem(CARRIERS_KEY,JSON.stringify([...excludedCarriers]))}catch(e){}
+    if(window.ProfileSync)ProfileSync.push({excludedCarriers:[...excludedCarriers]});
+  }
+  function renderCarrierCheckboxes(carriers){
+    var el=$('carrierGrid');
+    if(!carriers.length){el.innerHTML='<div class="muted-note">Lista przewoźników chwilowo niedostępna.</div>';return}
+    el.innerHTML=carriers.map(function(c){
+      var checked=excludedCarriers.has(c.code)?' checked':'';
+      return '<label class="carrier-chip"><input type="checkbox" data-code="'+escapeHtml(c.code)+'"'+checked+'> '+escapeHtml(c.name)+'</label>';
+    }).join('');
+    el.querySelectorAll('input[type=checkbox]').forEach(function(cb){
+      cb.addEventListener('change',function(){
+        var code=this.dataset.code;
+        if(this.checked)excludedCarriers.add(code);else excludedCarriers.delete(code);
+        saveCarrierPrefs();
+      });
+    });
+  }
+  function loadCarriers(){
+    fetch('/api/carriers',{headers:{Accept:'application/json'}})
+      .then(function(r){return r.json()})
+      .then(function(data){renderCarrierCheckboxes(data.ok&&Array.isArray(data.carriers)?data.carriers:[])})
+      .catch(function(){$('carrierGrid').innerHTML='<div class="muted-note">Lista przewoźników chwilowo niedostępna.</div>'});
+  }
+
+  // === Render wyników ===
   function shortDur(min){
     if(min==null)return'';
     var h=Math.floor(min/60),m=min%60;
@@ -210,45 +375,167 @@ input[type=text],input[type=date],input[type=time],select{width:100%;padding:10p
       '</div>';
   }
 
-  function itineraryHtml(it){
-    var badge=it.type==='direct'?'<span class="itin-badge direct">BEZPOŚREDNIO</span>':'<span class="itin-badge transfer">1 PRZESIADKA</span>';
-    var legsHtml=it.legs.map(legHtml).join(
-      it.transfer?('<div class="itin-transfer">🔁 Przesiadka w '+escapeHtml(it.transfer.stationName)+': '+it.transfer.bufferMinutes+' min</div>'):''
-    );
+  function badgeHtml(it){
+    if(it.type==='direct')return '<span class="itin-badge direct">BEZPOŚREDNIO</span>';
+    if(it.type==='transfer')return '<span class="itin-badge transfer">1 PRZESIADKA</span>';
+    if(it.type==='multi-transfer')return '<span class="itin-badge multi-transfer">2 PRZESIADKI</span>';
+    if(it.type==='via')return '<span class="itin-badge via">TRASA PRZEZ '+((it.transfers||[]).length)+' ST.</span>';
+    return '';
+  }
+
+  function riskHtml(t){
+    if(!t.liveDataAvailable)return '';
+    if(t.liveRisk==='safe')return ' <span class="risk-safe">🟢 na czas</span>';
+    if(t.liveRisk==='tight')return ' <span class="risk-tight">🟡 ciasno: '+t.realBufferMinutes+' min</span>';
+    if(t.liveRisk==='missed')return ' <span class="risk-missed">🔴 prawdopodobnie nie zdążysz</span>';
+    return '';
+  }
+
+  function itineraryHtml(it,opts){
+    opts=opts||{};
+    var transfers=it.transfers||[];
+    var legsHtml='';
+    it.legs.forEach(function(leg,idx){
+      legsHtml+=legHtml(leg);
+      if(idx<it.legs.length-1&&transfers[idx]){
+        var t=transfers[idx];
+        legsHtml+='<div class="itin-transfer">🔁 Przesiadka w '+escapeHtml(t.stationName)+': '+t.bufferMinutes+' min'+riskHtml(t)+'</div>';
+      }
+    });
+    var actionHtml='';
+    if(opts.savedKey){
+      actionHtml='<button type="button" class="btn-sm secondary itin-remove" data-saved-key="'+escapeHtml(opts.savedKey)+'">🗑️ Usuń</button>';
+    }else if(opts.index!=null){
+      actionHtml='<button type="button" class="btn-sm itin-save" data-idx="'+opts.index+'">💾 Zapisz</button>';
+    }
+    var savedLine=opts.savedAt?'<div class="saved-at">zapisano '+escapeHtml(new Date(opts.savedAt).toLocaleString('pl-PL'))+'</div>':'';
     return '<div class="entry">'+
       '<div class="itin-head">'+
         '<span class="itin-time">'+escapeHtml(it.departureTime)+'</span><span class="itin-arrow">→</span><span class="itin-time">'+escapeHtml(it.arrivalTime)+'</span>'+
         (it.arrivalNextDay?'<span class="itin-nextday">+1 dzień</span>':'')+
         '<span class="itin-dur">'+shortDur(it.durationMinutes)+'</span>'+
-        badge+
+        badgeHtml(it)+
       '</div>'+
       legsHtml+
+      savedLine+
+      (actionHtml?'<div class="itin-actions">'+actionHtml+'</div>':'')+
       '</div>';
   }
 
   function renderResults(data){
     var statusEl=$('resultsStatus'),listEl=$('resultsList');
     statusEl.className='status';
+    lastItineraries=data.itineraries||[];
+    lastQuery=data.query;
+
     var notes='';
     if(data.resolvedFrom&&data.resolvedFrom.ambiguous)notes+='<div class="ambiguous-note">Znaleziono więcej niż jedną stację o nazwie „'+escapeHtml(data.resolvedFrom.name)+'” — pokazano wyniki dla najbardziej prawdopodobnej. Wybierz dokładną stację z podpowiedzi, jeśli to nie ta.</div>';
     if(data.resolvedTo&&data.resolvedTo.ambiguous)notes+='<div class="ambiguous-note">Znaleziono więcej niż jedną stację o nazwie „'+escapeHtml(data.resolvedTo.name)+'” — pokazano wyniki dla najbardziej prawdopodobnej. Wybierz dokładną stację z podpowiedzi, jeśli to nie ta.</div>';
+    (data.resolvedVia||[]).forEach(function(v){
+      if(v.ambiguous)notes+='<div class="ambiguous-note">Znaleziono więcej niż jedną stację o nazwie „'+escapeHtml(v.name)+'” dla punktu „przez” — pokazano wyniki dla najbardziej prawdopodobnej.</div>';
+    });
 
     if(data.noConnectionFound){
       statusEl.textContent='';
-      listEl.innerHTML=notes+'<div class="empty">Nie znaleziono dziś połączenia bezpośredniego ani z jedną przesiadką między „'+escapeHtml(data.query.from)+'” a „'+escapeHtml(data.query.to)+'”. Spróbuj innej daty lub godziny — na trasach z więcej niż jedną przesiadką planer na razie nie szuka połączeń.</div>';
+      var msg=data.viaFailedAt
+        ? 'Nie znaleziono połączenia przez „'+escapeHtml(data.viaFailedAt)+'” — spróbuj innej daty/godziny albo usuń ten punkt.'
+        : 'Nie znaleziono dziś połączenia między „'+escapeHtml(data.query.from)+'” a „'+escapeHtml(data.query.to)+'”. Spróbuj innej daty, godziny albo zmień ustawienia w „Zaawansowane”.';
+      listEl.innerHTML=notes+'<div class="empty">'+msg+'</div>';
       return;
     }
 
-    statusEl.textContent='Znaleziono '+data.counts.direct+' bezpośrednich i '+data.counts.transfer+' z przesiadką.';
-    listEl.innerHTML=notes+data.itineraries.map(itineraryHtml).join('');
+    var parts=[];
+    if(data.counts.direct)parts.push(data.counts.direct+' bezpośrednich');
+    if(data.counts.transfer)parts.push(data.counts.transfer+' z 1 przesiadką');
+    if(data.counts.multiTransfer)parts.push(data.counts.multiTransfer+' z 2 przesiadkami');
+    if(data.counts.via)parts.push(data.counts.via+' przez wskazane stacje');
+    statusEl.textContent='Znaleziono: '+parts.join(', ')+'.';
+    listEl.innerHTML=notes+lastItineraries.map(function(it,i){return itineraryHtml(it,{index:i})}).join('');
   }
 
+  $('resultsList').addEventListener('click',function(e){
+    var btn=e.target.closest('.itin-save');
+    if(!btn)return;
+    var idx=Number(btn.dataset.idx);
+    var it=lastItineraries[idx];
+    if(it&&lastQuery)saveItinerary(it,lastQuery);
+  });
+
+  // === Zapisane wyniki ===
+  function getSavedResults(){try{var v=JSON.parse(localStorage.getItem(SAVED_KEY));return Array.isArray(v)?v:[]}catch(e){return[]}}
+  function saveSavedResultsList(list){
+    try{localStorage.setItem(SAVED_KEY,JSON.stringify(list))}catch(e){return false}
+    if(window.ProfileSync){if(ProfileSync.pushBeacon)ProfileSync.pushBeacon({savedPlannerResults:list});else ProfileSync.push({savedPlannerResults:list})}
+    return true;
+  }
+  function itineraryKey(it,query){
+    return [query.from,query.to,query.date,it.departureTime,it.arrivalTime,it.legs.map(function(l){return l.scheduleId+'-'+l.orderId}).join('>')].join('|');
+  }
+  function saveItinerary(it,query){
+    var list=getSavedResults();
+    var key=itineraryKey(it,query);
+    var entry={_key:key,createdAt:new Date().toISOString(),query:query,snapshot:it};
+    var idx=-1;
+    for(var i=0;i<list.length;i++){if(list[i]._key===key){idx=i;break}}
+    if(idx>=0)list[idx]=entry;else list.push(entry);
+    saveSavedResultsList(list);
+    renderSavedPanel();
+    toggleSaved(true);
+  }
+  function removeSavedResult(key){
+    saveSavedResultsList(getSavedResults().filter(function(e){return e._key!==key}));
+    renderSavedPanel();
+  }
+  function renderSavedPanel(){
+    var list=getSavedResults();
+    $('savedCount').textContent=list.length;
+    var el=$('savedList');
+    if(!list.length){el.innerHTML='<div class="empty">Brak zapisanych wyników. Kliknij „💾 Zapisz” przy dowolnym wyniku wyszukiwania.</div>';return}
+    el.innerHTML=list.slice().reverse().map(function(e){
+      return itineraryHtml(e.snapshot,{savedKey:e._key,savedAt:e.createdAt});
+    }).join('');
+  }
+  $('savedList').addEventListener('click',function(e){
+    var btn=e.target.closest('.itin-remove');
+    if(!btn)return;
+    removeSavedResult(btn.dataset.savedKey);
+  });
+
+  async function refreshFromProfile(){
+    if(window.ProfileSync&&ProfileSync.getToken()){
+      try{
+        var profile=await ProfileSync.pull();
+        if(profile){
+          if(Array.isArray(profile.savedPlannerResults)){
+            var remote=profile.savedPlannerResults;
+            var remoteAt=Date.parse(profile.updatedAt||'')||0;
+            var remoteKeys={};
+            remote.forEach(function(e){remoteKeys[e._key]=true});
+            var pendingLocal=getSavedResults().filter(function(e){return !remoteKeys[e._key]&&Date.parse(e.createdAt||'')>remoteAt});
+            var merged=pendingLocal.length?remote.concat(pendingLocal):remote;
+            localStorage.setItem(SAVED_KEY,JSON.stringify(merged));
+          }else{
+            var local=getSavedResults();
+            if(local.length)ProfileSync.push({savedPlannerResults:local});
+          }
+          if(Array.isArray(profile.excludedCarriers)){
+            excludedCarriers=new Set(profile.excludedCarriers);
+          }
+        }
+      }catch(e){}
+    }
+    renderSavedPanel();
+  }
+
+  // === Szukaj ===
   function search(){
     var from=selected.from.name||$('fromInput').value.trim();
     var to=selected.to.name||$('toInput').value.trim();
     if(!from||!to){$('resultsStatus').className='status err';$('resultsStatus').textContent='Wpisz stację początkową i docelową.';return}
 
     hideDropdown('from');hideDropdown('to');
+    viaRows.forEach(function(r){hideDropdown(r.key)});
+
     var btn=$('searchBtn');
     btn.disabled=true;
     $('resultsStatus').className='status';
@@ -258,6 +545,13 @@ input[type=text],input[type=date],input[type=time],select{width:100%;padding:10p
     var params=new URLSearchParams({from:from,to:to,date:$('dateInput').value,time:$('timeInput').value,transferMinutes:$('transferMinutesSelect').value});
     if(selected.from.id)params.set('fromId',selected.from.id);
     if(selected.to.id)params.set('toId',selected.to.id);
+
+    var viaFiltered=viaRows.filter(function(r){return r.name.trim()});
+    if(viaFiltered.length){
+      params.set('via',viaFiltered.map(function(r){return r.name.trim()}).join(','));
+      params.set('viaIds',viaFiltered.map(function(r){return r.id||''}).join(','));
+    }
+    if(excludedCarriers.size)params.set('excludeCarriers',[...excludedCarriers].join(','));
 
     fetch('/api/planner?'+params.toString(),{headers:{Accept:'application/json'}})
       .then(function(r){return r.json().then(function(data){return {ok:r.ok,data:data}}) })
@@ -280,6 +574,10 @@ input[type=text],input[type=date],input[type=time],select{width:100%;padding:10p
 
   setDefaultDateTime();
   updateAdvSummary();
+  loadCarrierPrefs();
+  loadCarriers();
+  refreshFromProfile();
+  window.addEventListener('pageshow',function(e){if(e.persisted)refreshFromProfile()});
 })();
 </script>
 </body>
