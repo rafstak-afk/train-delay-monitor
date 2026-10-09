@@ -431,7 +431,25 @@ function buildTransferItineraries(fromRoutes, toRoutes, from, to, transferMinute
     }
   }
 
-  return results;
+  // Ta sama para kursów (leg1+leg2) potrafi mieć KILKA wspólnych przystanków
+  // z rzędu (pociągi jadą przez kilka stacji, zanim się rozjadą) — bez tego
+  // ta sama, w istocie jedna, przesiadka powielałaby się kilkanaście razy,
+  // tylko z inną stacją zmiany. dep1 i arrivalTime (przyjazd leg2 do celu)
+  // są identyczne dla każdego wariantu tej samej pary kursów — jedyne, co
+  // się różni, to bufor. Zostaje jeden reprezentant na parę kursów: ten z
+  // najciaśniejszym, ale wciąż ważnym buforem (najmniej czasu traconego na
+  // peronie).
+  const bestPerRoutePair = new Map();
+  for (const it of results) {
+    const key =
+      it.legs[0].scheduleId + "|" + it.legs[0].orderId + ">" + it.legs[1].scheduleId + "|" + it.legs[1].orderId;
+    const existing = bestPerRoutePair.get(key);
+    if (!existing || it.transfer.bufferMinutes < existing.transfer.bufferMinutes) {
+      bestPerRoutePair.set(key, it);
+    }
+  }
+
+  return [...bestPerRoutePair.values()];
 }
 
 // ============ Słownik ID stacji → nazwa (ten sam wzorzec co departures.js) ============
