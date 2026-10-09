@@ -24,6 +24,12 @@ const COMPOSED_CACHE_TTL = 1800;
 const UPSTREAM_TIMEOUT_MS = 9000;
 const DEFAULT_TRANSFER_MINUTES = 5;
 const DEFAULT_MAX_RESULTS = 20;
+// Bez górnego limitu ten sam pierwszy kurs łączył się z KAŻDYM późniejszym
+// kursem na drugiej nodze — technicznie ważna przesiadka, praktycznie
+// wielogodzinne czekanie na peronie. Realne, sensowne przesiadki mieszczą
+// się w tym oknie; dłuższe czekanie to już nie przesiadka, tylko dwa
+// osobne przejazdy z przypadkowym odstępem.
+const MAX_TRANSFER_WAIT_MINUTES = 120;
 
 export async function onRequestGet(context) {
   const { request, env } = context;
@@ -376,7 +382,7 @@ function buildTransferItineraries(fromRoutes, toRoutes, from, to, transferMinute
 
         const dep2 = minutesFromTime(leg2.boardTime);
         const bufferMinutes = dep2 - arr1;
-        if (bufferMinutes < transferMinutes) continue;
+        if (bufferMinutes < transferMinutes || bufferMinutes > MAX_TRANSFER_WAIT_MINUTES) continue;
 
         let arr2 = minutesFromTime(leg2.arrTime);
         let nextDay = false;
