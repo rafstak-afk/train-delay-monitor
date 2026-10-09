@@ -88,6 +88,7 @@ export async function onRequestGet(context) {
     from: fromIdParam || normalize(fromName),
     to: toIdParam || normalize(toName),
     via: viaNames.map(normalize).join(">"),
+    viaIds: viaIds.join(","),
     date,
     time,
     transferMinutes,
