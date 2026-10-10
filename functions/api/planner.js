@@ -212,6 +212,18 @@ export async function onRequestGet(context) {
 
       itineraries = combined.sort((a, b) => a.departureTime.localeCompare(b.departureTime)).slice(0, maxResults);
       noConnectionFound = itineraries.length === 0;
+
+      if (url.searchParams.get("debug") === "1") {
+        return json({
+          debug: true,
+          reachableAfterASize: segment.reachableAfterA.size,
+          reachableBeforeBSize: segment.reachableBeforeB.size,
+          directCount: segment.itineraries.filter((it) => it.type === "direct").length,
+          transferCount: segment.itineraries.filter((it) => it.type === "transfer").length,
+          combinedBeforeMulti: combined.length,
+          maxTransfersParam: maxTransfers
+        });
+      }
     }
 
     itineraries.forEach((it) => {
