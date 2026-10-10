@@ -648,14 +648,19 @@ async function buildMultiTransferItineraries({
 
     const xiRoutes = result.data?.rt || [];
     const reachableAfterXi = buildReachableAfter(xiRoutes, xi, excludeCarrierSet);
-    const leg1List = (reachableAfterA.get(xi) || []).slice(0, 10);
+    // Realne listy mają tu zwykle kilkadziesiąt wpisów (nie setki) — ucinanie
+    // ich do pierwszych 10 w kolejności napotkania (nie czasu!) po cichu
+    // gubiło akurat potrzebny kurs na żywym przykładzie. Sortujemy po
+    // godzinie i zostawiamy szeroki, ale skończony margines bezpieczeństwa.
+    const byTime = (key) => (a, b) => minutesFromTime(a[key]) - minutesFromTime(b[key]);
+    const leg1List = (reachableAfterA.get(xi) || []).slice().sort(byTime("boardTime")).slice(0, 40);
 
     for (const [yId, leg2ListFull] of reachableAfterXi) {
       const leg3ListFull = reachableBeforeB.get(yId);
       if (!leg3ListFull) continue;
 
-      const leg2List = leg2ListFull.slice(0, 10);
-      const leg3List = leg3ListFull.slice(0, 10);
+      const leg2List = leg2ListFull.slice().sort(byTime("boardTime")).slice(0, 40);
+      const leg3List = leg3ListFull.slice().sort(byTime("boardTime")).slice(0, 40);
 
       for (const leg1 of leg1List) {
         const arr1 = minutesFromTime(leg1.arrTime);
