@@ -43,6 +43,10 @@ const MAX_VIA_STATIONS = 3;
 // liczbę połączeń (to te same linie, zatrzymujące się po drodze) — realnie
 // potrzebny węzeł (Chorzów Batory) odpadał tuż za progiem przy remisie.
 const MULTI_TRANSFER_CANDIDATES = 12;
+// Twardy sufit na połączoną listę (ranking + gwarantowane końcówki tras) —
+// chroni budżet zapytań do PLK/subrequestów, gdyby jedna stacja miała
+// dziesiątki różnych tras z różnymi końcówkami.
+const MULTI_TRANSFER_CANDIDATES_HARD_CAP = 25;
 // Backtracking przy "przez": ile najwcześniejszych kandydatów na segment
 // bierzemy pod uwagę na każdym kroku DFS — bez nowych zapytań, to tylko
 // porównania w pamięci, więc nawet pełne przeszukanie jest trywialne.
@@ -200,6 +204,7 @@ export async function onRequestGet(context) {
         const multi = await buildMultiTransferItineraries({
           reachableAfterA: segment.reachableAfterA,
           reachableBeforeB: segment.reachableBeforeB,
+          fromRoutes: segment.fromRoutes,
           from: resolvedWaypoints[0],
           to: resolvedWaypoints[1],
           transferMinutes,
@@ -316,6 +321,7 @@ async function searchSegment({ from, to, date, transferMinutes, excludeCarrierSe
     itineraries,
     reachableAfterA,
     reachableBeforeB,
+    fromRoutes,
     apiLimitsList: [directResult.apiLimits, fromFullResult.apiLimits, toFullResult.apiLimits],
     cache: { direct: directResult.cache, fromFullRoute: fromFullResult.cache, toFullRoute: toFullResult.cache }
   };
@@ -590,6 +596,7 @@ function buildTransferItineraries(fromRoutes, toRoutes, from, to, transferMinute
 async function buildMultiTransferItineraries({
   reachableAfterA,
   reachableBeforeB,
+  fromRoutes,
   from,
   to,
   transferMinutes,
@@ -609,7 +616,30 @@ async function buildMultiTransferItineraries({
   // Góry→Chorzów Batory→Katowice→Radziechowy Wieprz ginęło właśnie przez
   // ten filtr.
   const ranked = [...reachableAfterA.entries()].sort((a, b) => b[1].length - a[1].length);
-  const candidateIds = ranked.slice(0, MULTI_TRANSFER_CANDIDATES).map(([stationId]) => stationId);
+  const rankedIds = ranked.slice(0, MULTI_TRANSFER_CANDIDATES).map(([stationId]) => stationId);
+
+  // Samo "ile moich kursów tamtędy przejeżdża" faworyzuje drobne lokalne
+  // przystanki na gęstej linii (dużo pociągów, ale donikąd) kosztem
+  // faktycznych węzłów przesiadkowych, które mogą być KOŃCEM tylko
+  // pojedynczego kursu (więc nisko w rankingu), a mimo to świetnym miejscem
+  // na przesiadkę dalej. Złapane na żywym przykładzie: Radziechowy Wieprz→
+  // Katowice (koniec trasy 3 kursów) wypadało poza próg, bo kilkanaście
+  // lokalnych przystanków miało wyższy "wynik". Końcowa stacja KAŻDEGO kursu
+  // zawsze dostaje szansę, niezależnie od rankingu — to tani (skończona,
+  // zwykle mała liczba różnych tras), pewny sposób, żeby taki węzeł nigdy
+  // nie zniknął.
+  const terminusIds = new Set();
+  for (const r of fromRoutes || []) {
+    const stops = r.st || [];
+    if (!stops.length) continue;
+    const last = stops[stops.length - 1];
+    if (last && last.atm) terminusIds.add(String(last.id));
+  }
+
+  // Końcowe stacje kursów idą pierwsze (gwarantowany wybór), ranking
+  // dopełnia resztę — twardy sufit na wypadek linii z dziesiątkami różnych
+  // tras/końcówek, żeby nie przekroczyć budżetu zapytań do PLK.
+  const candidateIds = [...new Set([...terminusIds, ...rankedIds])].slice(0, MULTI_TRANSFER_CANDIDATES_HARD_CAP);
 
   if (!candidateIds.length) {
     return { itineraries: [], apiLimitsList: [], fetchedCount: 0 };
