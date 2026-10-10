@@ -38,7 +38,11 @@ const MAX_VIA_STATIONS = 3;
 // M kandydatów, bez listy węzłów — ranking po liczbie kursów, jakie już i
 // tak policzyliśmy przy okazji 1-przesiadki. N=2 celowo (jedna dodatkowa
 // runda, nie zagnieżdżona — M wywołań, nie M²).
-const MULTI_TRANSFER_CANDIDATES = 5;
+// M=5 było za mało na żywym przykładzie: w gęstej aglomeracji (Tarnowskie
+// Góry/Chorzów/Katowice) kilkanaście sąsiednich stacji ma DOKŁADNIE tę samą
+// liczbę połączeń (to te same linie, zatrzymujące się po drodze) — realnie
+// potrzebny węzeł (Chorzów Batory) odpadał tuż za progiem przy remisie.
+const MULTI_TRANSFER_CANDIDATES = 12;
 // Backtracking przy "przez": ile najwcześniejszych kandydatów na segment
 // bierzemy pod uwagę na każdym kroku DFS — bez nowych zapytań, to tylko
 // porównania w pamięci, więc nawet pełne przeszukanie jest trywialne.
