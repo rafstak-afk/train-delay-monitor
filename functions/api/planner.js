@@ -67,6 +67,7 @@ export async function onRequestGet(context) {
   const maxResults = clamp(Number(url.searchParams.get("maxResults") || DEFAULT_MAX_RESULTS), 1, 50);
   const maxTransfers = clamp(Number(url.searchParams.get("maxTransfers") ?? 2), 1, 2);
   const excludeCarrierSet = parseCarrierSet(url.searchParams.get("excludeCarriers"));
+  globalThis.__plannerDebug = url.searchParams.get("debug") === "1" ? {} : null;
 
   if (!fromName || !toName) {
     return json({ ok: false, error: "Brak parametru from/to" }, 400);
@@ -95,7 +96,7 @@ export async function onRequestGet(context) {
     maxTransfers: hasVia ? 1 : maxTransfers,
     excludeCarriers: [...excludeCarrierSet].sort().join(",")
   });
-  const cachedComposed = await caches.default.match(composedKey);
+  const cachedComposed = globalThis.__plannerDebug ? null : await caches.default.match(composedKey);
   if (cachedComposed) {
     const payload = await cachedComposed.json();
     payload.cache = { ...payload.cache, composed: "HIT" };
@@ -252,20 +253,23 @@ export async function onRequestGet(context) {
       itineraries,
       liveDelay,
       apiLimits,
-      cache: { ...cacheInfo, composed: "MISS" }
+      cache: { ...cacheInfo, composed: "MISS" },
+      __debug: globalThis.__plannerDebug || undefined
     };
 
-    context.waitUntil(
-      caches.default.put(
-        composedKey,
-        new Response(JSON.stringify(responsePayload), {
-          headers: {
-            "Content-Type": "application/json; charset=utf-8",
-            "Cache-Control": `public, max-age=${COMPOSED_CACHE_TTL}`
-          }
-        })
-      )
-    );
+    if (!globalThis.__plannerDebug) {
+      context.waitUntil(
+        caches.default.put(
+          composedKey,
+          new Response(JSON.stringify(responsePayload), {
+            headers: {
+              "Content-Type": "application/json; charset=utf-8",
+              "Cache-Control": `public, max-age=${COMPOSED_CACHE_TTL}`
+            }
+          })
+        )
+      );
+    }
 
     return json(responsePayload);
   } catch (error) {
@@ -604,10 +608,16 @@ async function buildMultiTransferItineraries({
   // kandydatami na przesiadkę. Złapane na żywym przykładzie: Tarnowskie
   // Góry→Chorzów Batory→Katowice→Radziechowy Wieprz ginęło właśnie przez
   // ten filtr.
-  const candidateIds = [...reachableAfterA.entries()]
-    .sort((a, b) => b[1].length - a[1].length)
-    .slice(0, MULTI_TRANSFER_CANDIDATES)
-    .map(([stationId]) => stationId);
+  const ranked = [...reachableAfterA.entries()].sort((a, b) => b[1].length - a[1].length);
+  const candidateIds = ranked.slice(0, MULTI_TRANSFER_CANDIDATES).map(([stationId]) => stationId);
+
+  if (globalThis.__plannerDebug) {
+    globalThis.__plannerDebug.reachableAfterAKeys = [...reachableAfterA.keys()];
+    globalThis.__plannerDebug.reachableAfterATop = ranked.slice(0, 15).map(([id, list]) => [id, list.length]);
+    globalThis.__plannerDebug.candidateIds = candidateIds;
+    globalThis.__plannerDebug.chorzowBatoryInReachableAfterA = reachableAfterA.has("73106");
+    globalThis.__plannerDebug.chorzowBatoryInReachableBeforeB = reachableBeforeB.has("73106");
+  }
 
   if (!candidateIds.length) {
     return { itineraries: [], apiLimitsList: [], fetchedCount: 0 };
