@@ -212,18 +212,6 @@ export async function onRequestGet(context) {
 
       itineraries = combined.sort((a, b) => a.departureTime.localeCompare(b.departureTime)).slice(0, maxResults);
       noConnectionFound = itineraries.length === 0;
-
-      if (url.searchParams.get("debug") === "1") {
-        return json({
-          debug: true,
-          reachableAfterASize: segment.reachableAfterA.size,
-          reachableBeforeBSize: segment.reachableBeforeB.size,
-          directCount: segment.itineraries.filter((it) => it.type === "direct").length,
-          transferCount: segment.itineraries.filter((it) => it.type === "transfer").length,
-          combinedBeforeMulti: combined.length,
-          maxTransfersParam: maxTransfers
-        });
-      }
     }
 
     itineraries.forEach((it) => {
@@ -607,8 +595,16 @@ async function buildMultiTransferItineraries({
   scheduleTtl,
   date
 }) {
+  // UWAGA: świadomie BEZ odrzucania stacji, które już są kluczem w
+  // reachableBeforeB. To, że JAKIŚ pociąg stamtąd dojeżdża do B, nie znaczy,
+  // że MOJA konkretna pierwsza noga (ten akurat przyjazd z A) zdąży się z
+  // nim połączyć — bufor czasowy mógł się nie zgadzać. Taki filtr
+  // systematycznie wykluczał właśnie największe węzły (np. Katowice —
+  // "już i tak coś stamtąd jedzie do B"), które realnie są NAJLEPSZYMI
+  // kandydatami na przesiadkę. Złapane na żywym przykładzie: Tarnowskie
+  // Góry→Chorzów Batory→Katowice→Radziechowy Wieprz ginęło właśnie przez
+  // ten filtr.
   const candidateIds = [...reachableAfterA.entries()]
-    .filter(([stationId]) => !reachableBeforeB.has(stationId))
     .sort((a, b) => b[1].length - a[1].length)
     .slice(0, MULTI_TRANSFER_CANDIDATES)
     .map(([stationId]) => stationId);
