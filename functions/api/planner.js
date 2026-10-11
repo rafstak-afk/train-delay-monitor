@@ -617,6 +617,54 @@ function buildTransferItineraries(fromRoutes, toRoutes, from, to, transferMinute
 // osiągalnych z A (reachableAfterA), które same nie dały żadnej ważnej
 // 1-przesiadki, ranking po liczbie różnych kursów stamtąd — to już policzone
 // przy okazji 1-przesiadki, za darmo.
+const CANDIDATE_FETCH_CHUNK_SIZE = 6;
+
+// Pobiera rozkłady kandydatów na drugi skok w małych, kolejnych turach
+// (nie jednym wielkim Promise.all) — duża jednoczesna pula zapytań do PLK
+// okazała się zawodna (większość po cichu padała timeoutem), gubiąc akurat
+// potrzebnego kandydata. Jedno ponowienie dla tych, które i tak padły w
+// swojej turze — zwykle wystarcza, to przejściowe przeciążenie, nie trwały
+// błąd danego zapytania.
+async function fetchCandidatesInChunks(candidateIds, date, headers, scheduleTtl) {
+  const out = [];
+  for (let i = 0; i < candidateIds.length; i += CANDIDATE_FETCH_CHUNK_SIZE) {
+    const chunk = candidateIds.slice(i, i + CANDIDATE_FETCH_CHUNK_SIZE);
+    const chunkResults = await Promise.all(
+      chunk.map((stationId) =>
+        getJsonCached(
+          `${PLK_BASE}/schedules/shortened?stations=${stationId}&fullRoute=true&dateFrom=${date}&dateTo=${date}`,
+          headers,
+          scheduleTtl
+        )
+          .then((r) => ({ stationId, result: r }))
+          .catch(() => ({ stationId, result: null }))
+      )
+    );
+    out.push(...chunkResults);
+  }
+
+  const retryTargets = out.filter((r) => !r.result).map((r) => r.stationId);
+  if (retryTargets.length) {
+    const retried = await Promise.all(
+      retryTargets.map((stationId) =>
+        getJsonCached(
+          `${PLK_BASE}/schedules/shortened?stations=${stationId}&fullRoute=true&dateFrom=${date}&dateTo=${date}`,
+          headers,
+          scheduleTtl
+        )
+          .then((r) => ({ stationId, result: r }))
+          .catch(() => ({ stationId, result: null }))
+      )
+    );
+    const retriedMap = new Map(retried.map((r) => [r.stationId, r.result]));
+    for (const r of out) {
+      if (!r.result && retriedMap.has(r.stationId)) r.result = retriedMap.get(r.stationId);
+    }
+  }
+
+  return out;
+}
+
 async function buildMultiTransferItineraries({
   reachableAfterA,
   reachableBeforeB,
@@ -662,24 +710,23 @@ async function buildMultiTransferItineraries({
 
   // Końcowe stacje kursów idą pierwsze (gwarantowany wybór), ranking
   // dopełnia resztę — twardy sufit na wypadek linii z dziesiątkami różnych
-  // tras/końcówek, żeby nie przekroczyć budżetu zapytań do PLK.
-  const candidateIds = [...new Set([...terminusIds, ...rankedIds])].slice(0, MULTI_TRANSFER_CANDIDATES_HARD_CAP);
+  // tras/końcówek, żeby nie przekroczyć budżetu zapytań do PLK. Stacja A
+  // sama bywa swoją własną "końcówką" w degenerate przypadkach — odrzucamy,
+  // bo pytanie PLK o rozkład A jeszcze raz niczego nowego nie wnosi.
+  const candidateIds = [...new Set([...terminusIds, ...rankedIds])]
+    .filter((id) => id !== String(from.id))
+    .slice(0, MULTI_TRANSFER_CANDIDATES_HARD_CAP);
 
   if (!candidateIds.length) {
     return { itineraries: [], apiLimitsList: [], fetchedCount: 0 };
   }
 
-  const fetched = await Promise.all(
-    candidateIds.map((stationId) =>
-      getJsonCached(
-        `${PLK_BASE}/schedules/shortened?stations=${stationId}&fullRoute=true&dateFrom=${date}&dateTo=${date}`,
-        headers,
-        scheduleTtl
-      )
-        .then((r) => ({ stationId, result: r }))
-        .catch(() => ({ stationId, result: null }))
-    )
-  );
+  // 20+ zapytań odpalonych NARAZ jednym Promise.all okazało się zawodne na
+  // żywo — większość (nawet 23 z 25) po cichu padała (timeout/przeciążenie)
+  // i lądowała w .catch(()=>null), gubiąc akurat potrzebnego kandydata
+  // (złapane na żywym przykładzie: Chorzów Batory akurat wypadał z puli).
+  // Pytamy więc w mniejszych, kolejnych turach zamiast całą pulą naraz.
+  const fetched = await fetchCandidatesInChunks(candidateIds, date, headers, scheduleTtl);
 
   const apiLimitsList = [];
   const results = [];
