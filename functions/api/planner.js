@@ -103,8 +103,9 @@ export async function onRequestGet(context) {
     maxTransfers: hasVia ? 1 : maxTransfers,
     excludeCarriers: [...excludeCarrierSet].sort().join(",")
   });
-  const cachedComposed =
-    url.searchParams.get("debug") === "1" ? null : await caches.default.match(composedKey);
+  const isDebug = url.searchParams.get("debug") === "1";
+  globalThis.__mtDebug = isDebug ? {} : null;
+  const cachedComposed = isDebug ? null : await caches.default.match(composedKey);
   if (cachedComposed) {
     const payload = await cachedComposed.json();
     payload.cache = { ...payload.cache, composed: "HIT" };
@@ -235,7 +236,8 @@ export async function onRequestGet(context) {
               dep: it.departureTime,
               arr: it.arrivalTime,
               legs: it.legs.map((l) => l.train.number + "(" + l.train.carrier + ")")
-            }))
+            })),
+            mtDebug: globalThis.__mtDebug
           });
         }
       }
@@ -681,6 +683,12 @@ async function buildMultiTransferItineraries({
 
   const apiLimitsList = [];
   const results = [];
+  const dbg = globalThis.__mtDebug;
+  if (dbg) {
+    dbg.candidateIds = candidateIds;
+    dbg.has73312InB = reachableBeforeB.has("73312");
+    dbg.fetchedResults = fetched.map((f) => ({ xi: f.stationId, ok: !!f.result, routeCount: f.result ? (f.result.data?.rt || []).length : null }));
+  }
 
   for (const { stationId: xi, result } of fetched) {
     if (!result) continue;
@@ -688,6 +696,10 @@ async function buildMultiTransferItineraries({
 
     const xiRoutes = result.data?.rt || [];
     const reachableAfterXi = buildReachableAfter(xiRoutes, xi, excludeCarrierSet);
+    if (dbg && xi === "73106") {
+      dbg.xi73106ReachableKeys = [...reachableAfterXi.keys()];
+      dbg.xi73106Has73312 = reachableAfterXi.has("73312");
+    }
     // Realne listy mają tu zwykle kilkadziesiąt wpisów (nie setki) — ucinanie
     // ich do pierwszych 10 w kolejności napotkania (nie czasu!) po cichu
     // gubiło akurat potrzebny kurs na żywym przykładzie. Sortujemy po
