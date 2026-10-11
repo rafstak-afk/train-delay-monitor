@@ -160,6 +160,7 @@ export async function onRequestGet(context) {
     let itineraries = [];
     let noConnectionFound = false;
     let viaFailedAt = null;
+    let lastDepartureToday = null;
     let cacheInfo = { stationsDictionary: stationsDictionaryResult.cache };
 
     if (hasVia) {
@@ -209,7 +210,8 @@ export async function onRequestGet(context) {
       const minMinutes = minutesFromTime(time) ?? 0;
       const afterTime = (it) => (minutesFromTime(it.departureTime) ?? 0) >= minMinutes;
 
-      let combined = segment.itineraries.filter(afterTime);
+      let combinedAll = [...segment.itineraries];
+      let combined = combinedAll.filter(afterTime);
 
       if (maxTransfers === 2 && combined.length < maxResults) {
         const multi = await buildMultiTransferItineraries({
@@ -227,12 +229,26 @@ export async function onRequestGet(context) {
         });
         apiLimitsList.push(...multi.apiLimitsList);
         requestBudgetUsed += multi.fetchedCount * 3;
+        combinedAll = combinedAll.concat(multi.itineraries);
         combined = combined.concat(multi.itineraries.filter(afterTime));
       }
 
       combined = pruneDominated(combined);
       itineraries = combined.sort((a, b) => a.departureTime.localeCompare(b.departureTime)).slice(0, maxResults);
       noConnectionFound = itineraries.length === 0;
+
+      // Rozróżnienie "dziś w ogóle nic nie ma" od "było, ale już odjechało" —
+      // bez tego pusty wynik wygląda jak awaria, a bywa po prostu uczciwą
+      // informacją "ostatni kurs dziś już minął". Liczone z PEŁNEJ (przed
+      // filtrem godziny) listy, więc łapie też takie, które same w sobie
+      // mieszczą się w oknie maxTransfers, ale wypadły przez porę dnia.
+      if (noConnectionFound && combinedAll.length) {
+        const latestMin = combinedAll.reduce((max, it) => {
+          const d = minutesFromTime(it.departureTime);
+          return d != null && d > max ? d : max;
+        }, -1);
+        if (latestMin >= 0) lastDepartureToday = hhmmFromMinutes(latestMin);
+      }
     }
 
     itineraries.forEach((it) => {
@@ -270,6 +286,7 @@ export async function onRequestGet(context) {
       counts,
       noConnectionFound,
       viaFailedAt,
+      lastDepartureToday,
       itineraries,
       liveDelay,
       apiLimits,

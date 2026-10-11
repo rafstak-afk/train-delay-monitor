@@ -519,9 +519,16 @@ input[type=date],input[type=time]{width:100%;font-size:15px;font-family:inherit}
 
     if(data.noConnectionFound){
       statusEl.textContent='';
-      var msg=data.viaFailedAt
-        ? 'Nie znaleziono połączenia przez „'+escapeHtml(data.viaFailedAt)+'” — spróbuj innej daty/godziny albo usuń ten punkt.'
-        : 'Nie znaleziono dziś połączenia między „'+escapeHtml(data.query.from)+'” a „'+escapeHtml(data.query.to)+'”. Spróbuj innej daty, godziny albo zmień ustawienia w „Zaawansowane”.';
+      var msg;
+      if(data.viaFailedAt){
+        msg='Nie znaleziono połączenia przez „'+escapeHtml(data.viaFailedAt)+'” — spróbuj innej daty/godziny albo usuń ten punkt.';
+      }else if(data.lastDepartureToday){
+        // Rozroznienie "nic nie ma" od "bylo, ale juz odjechalo" — bez tego
+        // uczciwa informacja "ostatni kurs dzis juz minal" wygladala jak awaria.
+        msg='Dziś między „'+escapeHtml(data.query.from)+'” a „'+escapeHtml(data.query.to)+'” (przy tych ustawieniach) ostatnie pasujące połączenie odjechało już o '+escapeHtml(data.lastDepartureToday)+'. Wybierz jutrzejszą datę albo zmień ustawienia w „Zaawansowane”.';
+      }else{
+        msg='Nie znaleziono dziś połączenia między „'+escapeHtml(data.query.from)+'” a „'+escapeHtml(data.query.to)+'”. Spróbuj innej daty, godziny albo zmień ustawienia w „Zaawansowane”.';
+      }
       listEl.innerHTML=notes+'<div class="empty">'+msg+'</div>';
       return;
     }
