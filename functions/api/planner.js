@@ -237,6 +237,7 @@ export async function onRequestGet(context) {
           date,
           maxExtraRounds: maxTransfers - 1,
           budgetUsedSoFar: requestBudgetUsed,
+          minDepartureMinutes: minMinutes,
           debugLog
         });
         apiLimitsList.push(...multi.apiLimitsList);
@@ -811,6 +812,7 @@ async function buildExtendedTransferItineraries({
   date,
   maxExtraRounds,
   budgetUsedSoFar = 0,
+  minDepartureMinutes = 0,
   debugLog = null
 }) {
   const apiLimitsList = [];
@@ -821,15 +823,25 @@ async function buildExtendedTransferItineraries({
 
   // Warstwa 0: jeden skok od A (to samo źródło co 1-przesiadka), bez
   // sprawdzania domknięcia — to już policzyła osobno zwykła 1-przesiadka.
+  // Odrzucamy od razu pierwsze nogi odjeżdżające przed żądaną godziną — bez
+  // tego sufit CHAIN_FRONTIER_CAP (najwcześniejsze warianty na stację) na
+  // każdej kolejnej stacji-granicy wypełniał się porannymi wariantami,
+  // wypychając te po południu/wieczorem, mimo że użytkownik pytał właśnie o
+  // nie — złapane na żywym przykładzie: Tarnowskie Góry→Kraków Olszanica
+  // (bez IC, od 17:00) nie znajdowało ŻADNEGO z 5 połączeń przez Chorzów
+  // Batory/Katowice widocznych w PLK, bo wariant "Katowice" na granicy po
+  // rundzie 2 był w 100% wypełniony kursami porannymi.
   let frontier = new Map();
   for (const [stationId, hops] of reachableAfterA) {
     const stName = stationNames.get(Number(stationId)) || `Stacja ${stationId}`;
-    const chains = hops.map((h) => ({
-      legs: [buildLegInfo(from.id, from.name, stationId, stName, h, stName)],
-      transfers: [],
-      arrMin: minutesFromTime(h.arrTime)
-    }));
-    frontier.set(stationId, capChains(chains));
+    const chains = hops
+      .filter((h) => minutesFromTime(h.boardTime) >= minDepartureMinutes)
+      .map((h) => ({
+        legs: [buildLegInfo(from.id, from.name, stationId, stName, h, stName)],
+        transfers: [],
+        arrMin: minutesFromTime(h.arrTime)
+      }));
+    if (chains.length) frontier.set(stationId, capChains(chains));
   }
 
   for (let round = 1; round <= maxExtraRounds; round++) {
