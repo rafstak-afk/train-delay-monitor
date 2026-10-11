@@ -24,6 +24,12 @@ const CACHE_TTL = {
   SCHEDULES_TODAY: 1800
 };
 const COMPOSED_CACHE_TTL = 1800;
+// "Brak połączenia" bywa prawdziwy, ale bywa też skutkiem przejściowej
+// awarii jednego z wielu równoległych zapytań do PLK (duże stacje, rzadkie
+// przeciążenia) — bez krótszego TTL taki pusty wynik "zamrażał się" w
+// cache'u na całe 30 minut, więc to samo wyszukiwanie dawało ten sam zły
+// wynik, mimo że kolejna, świeża próba już by się udała.
+const COMPOSED_CACHE_TTL_EMPTY = 90;
 const UPSTREAM_TIMEOUT_MS = 12000;
 const DEFAULT_TRANSFER_MINUTES = 3;
 const TRANSFER_MINUTES_MIN = 0;
@@ -266,13 +272,14 @@ export async function onRequestGet(context) {
       cache: { ...cacheInfo, composed: "MISS" }
     };
 
+    const composedTtl = noConnectionFound ? COMPOSED_CACHE_TTL_EMPTY : COMPOSED_CACHE_TTL;
     context.waitUntil(
       caches.default.put(
         composedKey,
         new Response(JSON.stringify(responsePayload), {
           headers: {
             "Content-Type": "application/json; charset=utf-8",
-            "Cache-Control": `public, max-age=${COMPOSED_CACHE_TTL}`
+            "Cache-Control": `public, max-age=${composedTtl}`
           }
         })
       )
