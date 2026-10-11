@@ -800,6 +800,7 @@ async function buildExtendedTransferItineraries({
 }) {
   const apiLimitsList = [];
   let fetchedCount = 0;
+  const allClosed = [];
 
   // Warstwa 0: jeden skok od A (to samo źródło co 1-przesiadka), bez
   // sprawdzania domknięcia — to już policzyła osobno zwykła 1-przesiadka.
@@ -889,13 +890,18 @@ async function buildExtendedTransferItineraries({
     for (const [k, v] of nextFrontier) nextFrontier.set(k, capChains(v));
     frontier = nextFrontier;
 
-    const closed = closeFrontier(frontier, reachableBeforeB, to, stationNames, transferMinutes);
-    if (closed.length) {
-      return { itineraries: dedupItineraries(closed), apiLimitsList, fetchedCount, transfersUsed: round + 1 };
-    }
+    // UWAGA: świadomie BEZ przerywania po pierwszej warstwie, która cokolwiek
+    // znajdzie. Jedno znalezione połączenie przy 2 przesiadkach nie znaczy, że
+    // 3-przesiadkowa warstwa nie kryje kilku DALSZYCH, równie prawdziwych
+    // połączeń o innych porach — złapane na żywym przykładzie: Tarnowskie
+    // Góry→Kraków Olszanica (bez IC, od 17:00) dawało u nas tylko 1 wynik
+    // (przez Zawiercie, 2 przesiadki), a PLK pokazywał 5 innych, realnych
+    // połączeń przez Chorzów Batory/Katowice (3 przesiadki) — które w ogóle
+    // nie były przeszukiwane, bo silnik zatrzymał się po pierwszym trafieniu.
+    allClosed.push(...closeFrontier(frontier, reachableBeforeB, to, stationNames, transferMinutes));
   }
 
-  return { itineraries: [], apiLimitsList, fetchedCount, transfersUsed: null };
+  return { itineraries: dedupItineraries(allClosed), apiLimitsList, fetchedCount };
 }
 
 // ============ Przesiadki "przez" wskazane stacje — sklejanie segmentów ============
