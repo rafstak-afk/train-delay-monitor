@@ -103,7 +103,8 @@ export async function onRequestGet(context) {
     maxTransfers: hasVia ? 1 : maxTransfers,
     excludeCarriers: [...excludeCarrierSet].sort().join(",")
   });
-  const cachedComposed = await caches.default.match(composedKey);
+  const cachedComposed =
+    url.searchParams.get("debug") === "1" ? null : await caches.default.match(composedKey);
   if (cachedComposed) {
     const payload = await cachedComposed.json();
     payload.cache = { ...payload.cache, composed: "HIT" };
@@ -218,6 +219,25 @@ export async function onRequestGet(context) {
         apiLimitsList.push(...multi.apiLimitsList);
         requestBudgetUsed += multi.fetchedCount * 3;
         combined = combined.concat(multi.itineraries.filter(afterTime));
+
+        if (url.searchParams.get("debug") === "1") {
+          return json({
+            debug: true,
+            segmentItinerariesCount: segment.itineraries.length,
+            combinedBeforePrune: combined.length,
+            reachableAfterASize: segment.reachableAfterA.size,
+            reachableBeforeBSize: segment.reachableBeforeB.size,
+            has73106InA: segment.reachableAfterA.has("73106"),
+            has73312InA: segment.reachableAfterA.has("73312"),
+            multiFetchedCount: multi.fetchedCount,
+            multiItinerariesCount: multi.itineraries.length,
+            sampleMulti: multi.itineraries.slice(0, 5).map((it) => ({
+              dep: it.departureTime,
+              arr: it.arrivalTime,
+              legs: it.legs.map((l) => l.train.number + "(" + l.train.carrier + ")")
+            }))
+          });
+        }
       }
 
       combined = pruneDominated(combined);
