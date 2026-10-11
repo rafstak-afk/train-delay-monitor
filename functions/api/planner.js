@@ -876,13 +876,7 @@ async function buildExtendedTransferItineraries({
 
     const candidateIds = selectExpansionCandidates(frontier, routesSeenSoFar, from.id, limit);
     if (debugLog) {
-      debugLog.push({
-        round,
-        limit,
-        frontierSize: frontier.size,
-        frontierKeys: [...frontier.keys()].slice(0, 30),
-        candidateIds
-      });
+      debugLog.push({ round, limit, frontierSize: frontier.size, candidateCount: candidateIds.length });
     }
     if (!candidateIds.length) break;
 
@@ -952,7 +946,6 @@ async function buildExtendedTransferItineraries({
       debugLog.push({
         round,
         nextFrontierSize: frontier.size,
-        nextFrontierKeys: [...frontier.keys()].slice(0, 30),
         closedThisRound: closedThisRound.length,
         subrequestsUsedSoFar: subrequestsUsed
       });
