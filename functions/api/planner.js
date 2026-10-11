@@ -60,7 +60,7 @@ const EXTENDED_TRANSFER_MAX_ROUNDS = EXTENDED_TRANSFER_CANDIDATES.length; // do 
 // Sufit na liczbę wariantów łańcucha trzymanych per stacja-granica między
 // rundami — bez tego kombinatoryka (warianty × nowe kursy) rosłaby bez
 // kontroli na gęstych węzłach.
-const CHAIN_FRONTIER_CAP = 30;
+const CHAIN_FRONTIER_CAP = 15;
 // Sufit na CAŁKOWITĄ liczbę różnych stacji-granic między rundami. Jedna
 // runda ekspansji potrafi wygenerować setki różnych stacji docelowych (złapane
 // na żywo: 477 po jednej rundzie z zaledwie 25 kandydatów) — bez tego kolejna
@@ -69,7 +69,7 @@ const CHAIN_FRONTIER_CAP = 30;
 // (niezacache'owanym) zapytaniu. Zatrzymujemy najbardziej obiecujące stacje —
 // te z najwcześniejszym możliwym przyjazdem — reszta i tak rzadko prowadzi do
 // czegokolwiek lepszego niż już znalezione warianty.
-const MAX_FRONTIER_STATIONS = 120;
+const MAX_FRONTIER_STATIONS = 80;
 // Backtracking przy "przez": ile najwcześniejszych kandydatów na segment
 // bierzemy pod uwagę na każdym kroku DFS — bez nowych zapytań, to tylko
 // porównania w pamięci, więc nawet pełne przeszukanie jest trywialne.
@@ -725,7 +725,7 @@ function closeFrontier(frontier, reachableBeforeB, to, stationNames, transferMin
     const lastLegList = lastLegListFull
       .slice()
       .sort((a, b) => minutesFromTime(a.boardTime) - minutesFromTime(b.boardTime))
-      .slice(0, 30);
+      .slice(0, 15);
     const stName = stationNames.get(Number(stationId)) || `Stacja ${stationId}`;
 
     for (const chain of chains) {
@@ -909,7 +909,7 @@ async function buildExtendedTransferItineraries({
         const hops = hopsFull
           .slice()
           .sort((a, b) => minutesFromTime(a.boardTime) - minutesFromTime(b.boardTime))
-          .slice(0, 30);
+          .slice(0, 15);
 
         for (const chain of chainsAtXi) {
           const usedKeys = chainRouteKeySet(chain);
