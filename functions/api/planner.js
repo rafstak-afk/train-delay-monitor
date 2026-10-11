@@ -92,6 +92,8 @@ export async function onRequestGet(context) {
   // na którym cokolwiek znalazł. Domyślnie "tyle ile trzeba" aż do 4.
   const maxTransfers = clamp(Number(url.searchParams.get("maxTransfers") ?? 4), 1, 4);
   const excludeCarrierSet = parseCarrierSet(url.searchParams.get("excludeCarriers"));
+  const debugMode = url.searchParams.get("debug") === "1";
+  const debugLog = debugMode ? [] : null;
 
   if (!fromName || !toName) {
     return json({ ok: false, error: "Brak parametru from/to" }, 400);
@@ -120,7 +122,7 @@ export async function onRequestGet(context) {
     maxTransfers: hasVia ? 1 : maxTransfers,
     excludeCarriers: [...excludeCarrierSet].sort().join(",")
   });
-  const cachedComposed = await caches.default.match(composedKey);
+  const cachedComposed = debugMode ? null : await caches.default.match(composedKey);
   if (cachedComposed) {
     const payload = await cachedComposed.json();
     payload.cache = { ...payload.cache, composed: "HIT" };
@@ -234,7 +236,8 @@ export async function onRequestGet(context) {
           scheduleTtl,
           date,
           maxExtraRounds: maxTransfers - 1,
-          budgetUsedSoFar: requestBudgetUsed
+          budgetUsedSoFar: requestBudgetUsed,
+          debugLog
         });
         apiLimitsList.push(...multi.apiLimitsList);
         requestBudgetUsed += multi.fetchedCount * 3;
@@ -299,21 +302,24 @@ export async function onRequestGet(context) {
       itineraries,
       liveDelay,
       apiLimits,
-      cache: { ...cacheInfo, composed: "MISS" }
+      cache: { ...cacheInfo, composed: "MISS" },
+      ...(debugMode ? { debugLog } : {})
     };
 
     const composedTtl = noConnectionFound ? COMPOSED_CACHE_TTL_EMPTY : COMPOSED_CACHE_TTL;
-    context.waitUntil(
-      caches.default.put(
-        composedKey,
-        new Response(JSON.stringify(responsePayload), {
-          headers: {
-            "Content-Type": "application/json; charset=utf-8",
-            "Cache-Control": `public, max-age=${composedTtl}`
-          }
-        })
-      )
-    );
+    if (!debugMode) {
+      context.waitUntil(
+        caches.default.put(
+          composedKey,
+          new Response(JSON.stringify(responsePayload), {
+            headers: {
+              "Content-Type": "application/json; charset=utf-8",
+              "Cache-Control": `public, max-age=${composedTtl}`
+            }
+          })
+        )
+      );
+    }
 
     return json(responsePayload);
   } catch (error) {
@@ -796,7 +802,8 @@ async function buildExtendedTransferItineraries({
   scheduleTtl,
   date,
   maxExtraRounds,
-  budgetUsedSoFar = 0
+  budgetUsedSoFar = 0,
+  debugLog = null
 }) {
   const apiLimitsList = [];
   let fetchedCount = 0;
@@ -843,6 +850,15 @@ async function buildExtendedTransferItineraries({
     }
 
     const candidateIds = selectExpansionCandidates(frontier, fromRoutes, round === 1, from.id, limit);
+    if (debugLog) {
+      debugLog.push({
+        round,
+        limit,
+        frontierSize: frontier.size,
+        frontierKeys: [...frontier.keys()].slice(0, 30),
+        candidateIds
+      });
+    }
     if (!candidateIds.length) break;
 
     // 20+ zapytań odpalonych NARAZ jednym Promise.all okazało się zawodne na
@@ -905,7 +921,17 @@ async function buildExtendedTransferItineraries({
     // (przez Zawiercie, 2 przesiadki), a PLK pokazywał 5 innych, realnych
     // połączeń przez Chorzów Batory/Katowice (3 przesiadki) — które w ogóle
     // nie były przeszukiwane, bo silnik zatrzymał się po pierwszym trafieniu.
-    allClosed.push(...closeFrontier(frontier, reachableBeforeB, to, stationNames, transferMinutes));
+    const closedThisRound = closeFrontier(frontier, reachableBeforeB, to, stationNames, transferMinutes);
+    if (debugLog) {
+      debugLog.push({
+        round,
+        nextFrontierSize: frontier.size,
+        nextFrontierKeys: [...frontier.keys()].slice(0, 30),
+        closedThisRound: closedThisRound.length,
+        subrequestsUsedSoFar: subrequestsUsed
+      });
+    }
+    allClosed.push(...closedThisRound);
   }
 
   return { itineraries: dedupItineraries(allClosed), apiLimitsList, fetchedCount };
