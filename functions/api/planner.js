@@ -948,7 +948,19 @@ async function buildExtendedTransferItineraries({
     allClosed.push(...closedThisRound);
   }
 
-  return { itineraries: dedupItineraries(allClosed), apiLimitsList, fetchedCount };
+  const deduped = dedupItineraries(allClosed);
+  if (debugLog) {
+    debugLog.push({
+      rawClosedCount: allClosed.length,
+      dedupedCount: deduped.length,
+      sample: deduped.slice(0, 15).map((it) => ({
+        dep: it.departureTime,
+        arr: it.arrivalTime,
+        transfers: (it.transfers || []).length
+      }))
+    });
+  }
+  return { itineraries: deduped, apiLimitsList, fetchedCount };
 }
 
 // ============ Przesiadki "przez" wskazane stacje — sklejanie segmentów ============
