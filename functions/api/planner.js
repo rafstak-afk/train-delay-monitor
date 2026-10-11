@@ -950,10 +950,17 @@ async function buildExtendedTransferItineraries({
 
   const deduped = dedupItineraries(allClosed);
   if (debugLog) {
+    const afterFromName = deduped.filter((it) => it.departureTime >= "17:00");
     debugLog.push({
       rawClosedCount: allClosed.length,
       dedupedCount: deduped.length,
-      sample: deduped.slice(0, 15).map((it) => ({
+      afterCount: afterFromName.length,
+      byTransferCount: afterFromName.reduce((m, it) => {
+        const k = (it.transfers || []).length;
+        m[k] = (m[k] || 0) + 1;
+        return m;
+      }, {}),
+      sample: afterFromName.slice(0, 15).map((it) => ({
         dep: it.departureTime,
         arr: it.arrivalTime,
         transfers: (it.transfers || []).length
