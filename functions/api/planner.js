@@ -1029,21 +1029,36 @@ function dedupItineraries(results) {
 // kilka itinerarzy do TEJ SAMEJ drugiej nogi — każdy "technicznie ważny"
 // (bufor w oknie), ale po co jechać wcześniej i czekać na peronie 90 minut,
 // skoro późniejszy odjazd dowozi na miejsce równie szybko albo szybciej?
-// Wariant A jest zdominowany przez B, gdy B odjeżdża nie wcześniej I
-// przyjeżdża nie później niż A (a przynajmniej jedno jest ostro lepsze) —
-// zostaje tylko "granica efektywności" odjazd/przyjazd, reszta znika.
+// Wariant A jest zdominowany przez B, gdy B odjeżdża nie wcześniej, przyjeżdża
+// nie później I ma nie więcej przesiadek niż A (a przynajmniej jedno jest
+// ostro lepsze) — zostaje tylko "granica efektywności" odjazd/przyjazd/liczba
+// przesiadek, reszta znika. Liczba przesiadek w porównaniu jest konieczna od
+// czasu adaptacyjnego poszerzania (do 4 przesiadek) — bez niej identyczny
+// odjazd/przyjazd z dodatkową, zbędną przesiadką "w drodze" (ten sam pierwszy
+// i ostatni kurs, z jakimś pociągiem wstawionym pośrodku) NIE był odrzucany,
+// bo ani odjazd, ani przyjazd nie były ostro gorsze — złapane na żywym
+// przykładzie (Krynica-Zdrój→Świnoujście: 7 wariantów z dokładnie tym samym
+// 05:04→18:52, różniących się tylko zbędnym dodatkowym przesiadaniem).
 function pruneDominated(itineraries) {
   const dep = (it) => minutesFromTime(it.departureTime);
   const arr = (it) => minutesFromTime(it.arrivalTime) + (it.arrivalNextDay ? 1440 : 0);
+  const transferCount = (it) => (it.transfers || []).length;
 
   return itineraries.filter((it) => {
     const itDep = dep(it);
     const itArr = arr(it);
+    const itTransfers = transferCount(it);
     return !itineraries.some((other) => {
       if (other === it) return false;
       const oDep = dep(other);
       const oArr = arr(other);
-      return oDep >= itDep && oArr <= itArr && (oDep > itDep || oArr < itArr);
+      const oTransfers = transferCount(other);
+      return (
+        oDep >= itDep &&
+        oArr <= itArr &&
+        oTransfers <= itTransfers &&
+        (oDep > itDep || oArr < itArr || oTransfers < itTransfers)
+      );
     });
   });
 }
