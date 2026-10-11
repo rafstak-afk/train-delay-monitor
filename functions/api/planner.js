@@ -101,8 +101,6 @@ export async function onRequestGet(context) {
   // na którym cokolwiek znalazł. Domyślnie "tyle ile trzeba" aż do 4.
   const maxTransfers = clamp(Number(url.searchParams.get("maxTransfers") ?? 4), 1, 4);
   const excludeCarrierSet = parseCarrierSet(url.searchParams.get("excludeCarriers"));
-  const debugMode = url.searchParams.get("debug") === "1";
-  const debugLog = debugMode ? [] : null;
 
   if (!fromName || !toName) {
     return json({ ok: false, error: "Brak parametru from/to" }, 400);
@@ -131,7 +129,7 @@ export async function onRequestGet(context) {
     maxTransfers: hasVia ? 1 : maxTransfers,
     excludeCarriers: [...excludeCarrierSet].sort().join(",")
   });
-  const cachedComposed = debugMode ? null : await caches.default.match(composedKey);
+  const cachedComposed = await caches.default.match(composedKey);
   if (cachedComposed) {
     const payload = await cachedComposed.json();
     payload.cache = { ...payload.cache, composed: "HIT" };
@@ -246,8 +244,7 @@ export async function onRequestGet(context) {
           date,
           maxExtraRounds: maxTransfers - 1,
           budgetUsedSoFar: requestBudgetUsed,
-          minDepartureMinutes: minMinutes,
-          debugLog
+          minDepartureMinutes: minMinutes
         });
         apiLimitsList.push(...multi.apiLimitsList);
         requestBudgetUsed += multi.fetchedCount * 3;
@@ -312,24 +309,21 @@ export async function onRequestGet(context) {
       itineraries,
       liveDelay,
       apiLimits,
-      cache: { ...cacheInfo, composed: "MISS" },
-      ...(debugMode ? { debugLog } : {})
+      cache: { ...cacheInfo, composed: "MISS" }
     };
 
     const composedTtl = noConnectionFound ? COMPOSED_CACHE_TTL_EMPTY : COMPOSED_CACHE_TTL;
-    if (!debugMode) {
-      context.waitUntil(
-        caches.default.put(
-          composedKey,
-          new Response(JSON.stringify(responsePayload), {
-            headers: {
-              "Content-Type": "application/json; charset=utf-8",
-              "Cache-Control": `public, max-age=${composedTtl}`
-            }
-          })
-        )
-      );
-    }
+    context.waitUntil(
+      caches.default.put(
+        composedKey,
+        new Response(JSON.stringify(responsePayload), {
+          headers: {
+            "Content-Type": "application/json; charset=utf-8",
+            "Cache-Control": `public, max-age=${composedTtl}`
+          }
+        })
+      )
+    );
 
     return json(responsePayload);
   } catch (error) {
@@ -825,8 +819,7 @@ async function buildExtendedTransferItineraries({
   date,
   maxExtraRounds,
   budgetUsedSoFar = 0,
-  minDepartureMinutes = 0,
-  debugLog = null
+  minDepartureMinutes = 0
 }) {
   const apiLimitsList = [];
   let fetchedCount = 0;
@@ -888,9 +881,6 @@ async function buildExtendedTransferItineraries({
     }
 
     const candidateIds = selectExpansionCandidates(frontier, routesSeenSoFar, from.id, limit);
-    if (debugLog) {
-      debugLog.push({ round, limit, frontierSize: frontier.size, candidateIds });
-    }
     if (!candidateIds.length) break;
 
     // 20+ zapytań odpalonych NARAZ jednym Promise.all okazało się zawodne na
@@ -961,38 +951,10 @@ async function buildExtendedTransferItineraries({
     // (przez Zawiercie, 2 przesiadki), a PLK pokazywał 5 innych, realnych
     // połączeń przez Chorzów Batory/Katowice (3 przesiadki) — które w ogóle
     // nie były przeszukiwane, bo silnik zatrzymał się po pierwszym trafieniu.
-    const closedThisRound = closeFrontier(frontier, reachableBeforeB, to, stationNames, transferMinutes);
-    if (debugLog) {
-      debugLog.push({
-        round,
-        nextFrontierSize: frontier.size,
-        closedThisRound: closedThisRound.length,
-        subrequestsUsedSoFar: subrequestsUsed
-      });
-    }
-    allClosed.push(...closedThisRound);
+    allClosed.push(...closeFrontier(frontier, reachableBeforeB, to, stationNames, transferMinutes));
   }
 
-  const deduped = dedupItineraries(allClosed);
-  if (debugLog) {
-    const afterFromName = deduped.filter((it) => it.departureTime >= "17:00");
-    debugLog.push({
-      rawClosedCount: allClosed.length,
-      dedupedCount: deduped.length,
-      afterCount: afterFromName.length,
-      byTransferCount: afterFromName.reduce((m, it) => {
-        const k = (it.transfers || []).length;
-        m[k] = (m[k] || 0) + 1;
-        return m;
-      }, {}),
-      sample: afterFromName.slice(0, 15).map((it) => ({
-        dep: it.departureTime,
-        arr: it.arrivalTime,
-        transfers: (it.transfers || []).length
-      }))
-    });
-  }
-  return { itineraries: deduped, apiLimitsList, fetchedCount };
+  return { itineraries: dedupItineraries(allClosed), apiLimitsList, fetchedCount };
 }
 
 // ============ Przesiadki "przez" wskazane stacje — sklejanie segmentów ============
