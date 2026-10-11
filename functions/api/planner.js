@@ -103,9 +103,7 @@ export async function onRequestGet(context) {
     maxTransfers: hasVia ? 1 : maxTransfers,
     excludeCarriers: [...excludeCarrierSet].sort().join(",")
   });
-  const isDebug = url.searchParams.get("debug") === "1";
-  globalThis.__mtDebug = isDebug ? {} : null;
-  const cachedComposed = isDebug ? null : await caches.default.match(composedKey);
+  const cachedComposed = await caches.default.match(composedKey);
   if (cachedComposed) {
     const payload = await cachedComposed.json();
     payload.cache = { ...payload.cache, composed: "HIT" };
@@ -220,26 +218,6 @@ export async function onRequestGet(context) {
         apiLimitsList.push(...multi.apiLimitsList);
         requestBudgetUsed += multi.fetchedCount * 3;
         combined = combined.concat(multi.itineraries.filter(afterTime));
-
-        if (url.searchParams.get("debug") === "1") {
-          return json({
-            debug: true,
-            segmentItinerariesCount: segment.itineraries.length,
-            combinedBeforePrune: combined.length,
-            reachableAfterASize: segment.reachableAfterA.size,
-            reachableBeforeBSize: segment.reachableBeforeB.size,
-            has73106InA: segment.reachableAfterA.has("73106"),
-            has73312InA: segment.reachableAfterA.has("73312"),
-            multiFetchedCount: multi.fetchedCount,
-            multiItinerariesCount: multi.itineraries.length,
-            sampleMulti: multi.itineraries.slice(0, 5).map((it) => ({
-              dep: it.departureTime,
-              arr: it.arrivalTime,
-              legs: it.legs.map((l) => l.train.number + "(" + l.train.carrier + ")")
-            })),
-            mtDebug: globalThis.__mtDebug
-          });
-        }
       }
 
       combined = pruneDominated(combined);
@@ -730,12 +708,6 @@ async function buildMultiTransferItineraries({
 
   const apiLimitsList = [];
   const results = [];
-  const dbg = globalThis.__mtDebug;
-  if (dbg) {
-    dbg.candidateIds = candidateIds;
-    dbg.has73312InB = reachableBeforeB.has("73312");
-    dbg.fetchedResults = fetched.map((f) => ({ xi: f.stationId, ok: !!f.result, routeCount: f.result ? (f.result.data?.rt || []).length : null }));
-  }
 
   for (const { stationId: xi, result } of fetched) {
     if (!result) continue;
@@ -743,10 +715,6 @@ async function buildMultiTransferItineraries({
 
     const xiRoutes = result.data?.rt || [];
     const reachableAfterXi = buildReachableAfter(xiRoutes, xi, excludeCarrierSet);
-    if (dbg && xi === "73106") {
-      dbg.xi73106ReachableKeys = [...reachableAfterXi.keys()];
-      dbg.xi73106Has73312 = reachableAfterXi.has("73312");
-    }
     // Realne listy mają tu zwykle kilkadziesiąt wpisów (nie setki) — ucinanie
     // ich do pierwszych 10 w kolejności napotkania (nie czasu!) po cichu
     // gubiło akurat potrzebny kurs na żywym przykładzie. Sortujemy po
