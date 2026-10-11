@@ -233,7 +233,8 @@ export async function onRequestGet(context) {
           headers,
           scheduleTtl,
           date,
-          maxExtraRounds: maxTransfers - 1
+          maxExtraRounds: maxTransfers - 1,
+          budgetUsedSoFar: requestBudgetUsed
         });
         apiLimitsList.push(...multi.apiLimitsList);
         requestBudgetUsed += multi.fetchedCount * 3;
@@ -794,7 +795,8 @@ async function buildExtendedTransferItineraries({
   headers,
   scheduleTtl,
   date,
-  maxExtraRounds
+  maxExtraRounds,
+  budgetUsedSoFar = 0
 }) {
   const apiLimitsList = [];
   let fetchedCount = 0;
@@ -813,7 +815,28 @@ async function buildExtendedTransferItineraries({
   }
 
   for (let round = 1; round <= maxExtraRounds; round++) {
-    const limit = EXTENDED_TRANSFER_CANDIDATES[round - 1] ?? 5;
+    let limit = EXTENDED_TRANSFER_CANDIDATES[round - 1] ?? 5;
+
+    // Realny limit Cloudflare Workera to 50 subrequestów na wywołanie;
+    // getJsonCached kosztuje do 3 (cache.match+fetch+cache.put) przy
+    // "cache miss". Runda 1 (M=25) jest sprawdzonym na żywo, od dawna
+    // działającym ustawieniem — NIE dotykamy jej. Ale głębsze rundy (2., 3.)
+    // to zupełnie nowa, dodatkowa głębokość, która może dobić już wysokie
+    // zużycie z rundy 1 do przekroczenia limitu — złapane na żywym
+    // przykładzie: Gdynia Główna→Zakopane bez IC/EIP skończyło się błędem
+    // Cloudflare 1102 ("przekroczono limit zasobów"), bo rzadko odpytywane,
+    // niezacache'owane stacje w głębszych rundach to same "cache miss".
+    // Od rundy 2 w górę przycinamy do tego, na co realnie starcza budżetu,
+    // zamiast ryzykować twardy crash zamiast uczciwego "nie znaleziono".
+    if (round > 1) {
+      const safeCeiling = 45;
+      const usedSoFar = budgetUsedSoFar + fetchedCount * 3;
+      const remaining = safeCeiling - usedSoFar;
+      const affordable = Math.floor(remaining / 3);
+      if (affordable <= 0) break;
+      limit = Math.min(limit, affordable);
+    }
+
     const candidateIds = selectExpansionCandidates(frontier, fromRoutes, round === 1, from.id, limit);
     if (!candidateIds.length) break;
 
