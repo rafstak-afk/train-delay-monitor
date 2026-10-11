@@ -129,7 +129,7 @@ export async function onRequestGet(context) {
     maxTransfers: hasVia ? 1 : maxTransfers,
     excludeCarriers: [...excludeCarrierSet].sort().join(",")
   });
-  const cachedComposed = url.searchParams.get("debug") === "1" ? null : await caches.default.match(composedKey);
+  const cachedComposed = await caches.default.match(composedKey);
   if (cachedComposed) {
     const payload = await cachedComposed.json();
     payload.cache = { ...payload.cache, composed: "HIT" };
@@ -177,7 +177,6 @@ export async function onRequestGet(context) {
     let noConnectionFound = false;
     let viaFailedAt = null;
     let lastDepartureToday = null;
-    let debugInfo = null;
     let cacheInfo = { stationsDictionary: stationsDictionaryResult.cache };
 
     if (hasVia) {
@@ -245,20 +244,12 @@ export async function onRequestGet(context) {
           date,
           maxExtraRounds: maxTransfers - 1,
           budgetUsedSoFar: requestBudgetUsed,
-          minDepartureMinutes: minMinutes,
-          probe: url.searchParams.get("debug") === "1" ? [] : null
+          minDepartureMinutes: minMinutes
         });
         apiLimitsList.push(...multi.apiLimitsList);
         requestBudgetUsed += multi.fetchedCount * 3;
         combinedAll = combinedAll.concat(multi.itineraries);
         combined = combined.concat(multi.itineraries.filter(afterTime));
-        if (url.searchParams.get("debug") === "1") {
-          debugInfo = {
-            multiCount: multi.itineraries.length,
-            multiFetchedCount: multi.fetchedCount,
-            probe: multi.probe
-          };
-        }
       }
 
       combined = pruneDominated(combined);
@@ -318,8 +309,7 @@ export async function onRequestGet(context) {
       itineraries,
       liveDelay,
       apiLimits,
-      cache: { ...cacheInfo, composed: "MISS" },
-      ...(debugInfo ? { debugInfo } : {})
+      cache: { ...cacheInfo, composed: "MISS" }
     };
 
     const composedTtl = noConnectionFound ? COMPOSED_CACHE_TTL_EMPTY : COMPOSED_CACHE_TTL;
@@ -732,8 +722,13 @@ function closeFrontier(frontier, reachableBeforeB, to, stationNames, transferMin
   for (const [stationId, chains] of frontier) {
     const lastLegListFull = reachableBeforeB.get(stationId);
     if (!lastLegListFull) continue;
+    // Ta sama poprawka co przy rozszerzaniu granicy (patrz komentarz w
+    // buildExtendedTransferItineraries): bez odcięcia od przyjazdu
+    // najwcześniejszego łańcucha, 15 najwcześniejszych odjazdów W CAŁYM DNIU
+    // z tej stacji systemowo wycinało popołudniowe/wieczorne opcje.
+    const earliestArr = Math.min(...chains.map((c) => c.arrMin));
     const lastLegList = lastLegListFull
-      .slice()
+      .filter((h) => minutesFromTime(h.boardTime) >= earliestArr)
       .sort((a, b) => minutesFromTime(a.boardTime) - minutesFromTime(b.boardTime))
       .slice(0, 15);
     const stName = stationNames.get(Number(stationId)) || `Stacja ${stationId}`;
@@ -829,8 +824,7 @@ async function buildExtendedTransferItineraries({
   date,
   maxExtraRounds,
   budgetUsedSoFar = 0,
-  minDepartureMinutes = 0,
-  probe = null
+  minDepartureMinutes = 0
 }) {
   const apiLimitsList = [];
   let fetchedCount = 0;
@@ -902,14 +896,6 @@ async function buildExtendedTransferItineraries({
     for (const { result } of fetched) {
       subrequestsUsed += result ? (result.cache === "HIT" ? 1 : 3) : 3;
     }
-    if (probe) {
-      probe.push({
-        round,
-        candidateIds,
-        failedIds: fetched.filter((f) => !f.result).map((f) => f.stationId),
-        has75309Chains: (frontier.get("75309") || []).length
-      });
-    }
 
     const nextFrontier = new Map();
     for (const { stationId: xi, result } of fetched) {
@@ -921,19 +907,23 @@ async function buildExtendedTransferItineraries({
       routesSeenSoFar = routesSeenSoFar.concat(xiRoutes);
       const reachableAfterXi = buildReachableAfter(xiRoutes, xi, excludeCarrierSet);
       const chainsAtXi = frontier.get(xi) || [];
-      if (probe && xi === "75309") {
-        probe.push({
-          zawiercieRoutesFetched: xiRoutes.length,
-          zawiercieReachableKeys: [...reachableAfterXi.keys()],
-          zawiercieChainsAtXi: chainsAtXi.length
-        });
-      }
       if (!chainsAtXi.length) continue;
+
+      // Odrzucamy od razu odjazdy sprzed przyjazdu NAJWCZEŚNIEJSZEGO z
+      // naszych łańcuchów — żaden z nich i tak nie mógłby się z nimi połączyć
+      // (bufor ujemny). Bez tego ".slice(0, 15)" poniżej trzymał 15
+      // najwcześniejszych odjazdów w CAŁYM DNIU z tej stacji, co dla
+      // popołudniowego/wieczornego przyjazdu ucinało WŁAŚNIE potrzebny kurs
+      // na rzecz nieprzydatnych porannych — złapane na żywym przykładzie:
+      // Zawiercie→Kraków Bronowice ma kilkadziesiąt kursów dziennie, a nasz
+      // przyjazd o 17:48 potrzebował tego o 18:54 (66. w kolejności), dawno
+      // za progiem 15 najwcześniejszych.
+      const earliestArr = Math.min(...chainsAtXi.map((c) => c.arrMin));
 
       for (const [yId, hopsFull] of reachableAfterXi) {
         const yName = stationNames.get(Number(yId)) || `Stacja ${yId}`;
         const hops = hopsFull
-          .slice()
+          .filter((h) => minutesFromTime(h.boardTime) >= earliestArr)
           .sort((a, b) => minutesFromTime(a.boardTime) - minutesFromTime(b.boardTime))
           .slice(0, 15);
 
@@ -989,7 +979,7 @@ async function buildExtendedTransferItineraries({
     allClosed.push(...closeFrontier(frontier, reachableBeforeB, to, stationNames, transferMinutes));
   }
 
-  return { itineraries: dedupItineraries(allClosed), apiLimitsList, fetchedCount, probe };
+  return { itineraries: dedupItineraries(allClosed), apiLimitsList, fetchedCount };
 }
 
 // ============ Przesiadki "przez" wskazane stacje — sklejanie segmentów ============
