@@ -800,6 +800,7 @@ async function buildExtendedTransferItineraries({
 }) {
   const apiLimitsList = [];
   let fetchedCount = 0;
+  let subrequestsUsed = 0;
   const allClosed = [];
 
   // Warstwa 0: jeden skok od A (to samo źródło co 1-przesiadka), bez
@@ -819,20 +820,23 @@ async function buildExtendedTransferItineraries({
     let limit = EXTENDED_TRANSFER_CANDIDATES[round - 1] ?? 5;
 
     // Realny limit Cloudflare Workera to 50 subrequestów na wywołanie;
-    // getJsonCached kosztuje do 3 (cache.match+fetch+cache.put) przy
-    // "cache miss". Runda 1 (M=25) jest sprawdzonym na żywo, od dawna
-    // działającym ustawieniem — NIE dotykamy jej. Ale głębsze rundy (2., 3.)
-    // to zupełnie nowa, dodatkowa głębokość, która może dobić już wysokie
-    // zużycie z rundy 1 do przekroczenia limitu — złapane na żywym
+    // getJsonCached kosztuje 1 przy "cache hit" (samo cache.match) albo do 3
+    // przy "cache miss" (cache.match+fetch+cache.put). Runda 1 (M=25) jest
+    // sprawdzonym na żywo, od dawna działającym ustawieniem — NIE dotykamy
+    // jej. Głębsze rundy (2., 3.) to dodatkowa głębokość, która może dobić
+    // już zużyty budżet do przekroczenia limitu — złapane na żywym
     // przykładzie: Gdynia Główna→Zakopane bez IC/EIP skończyło się błędem
-    // Cloudflare 1102 ("przekroczono limit zasobów"), bo rzadko odpytywane,
-    // niezacache'owane stacje w głębszych rundach to same "cache miss".
-    // Od rundy 2 w górę przycinamy do tego, na co realnie starcza budżetu,
-    // zamiast ryzykować twardy crash zamiast uczciwego "nie znaleziono".
+    // Cloudflare 1102. Liczymy tu RZECZYWISTE zużycie (hit/miss), nie
+    // ryczałtowe ×3 — ryczałt zakładałby, że runda 1 (M=25) sama z siebie
+    // prawie zawsze wyczerpuje budżet (nawet gdy w praktyce większość to
+    // "cache hit"), co w praktyce całkowicie blokowało rundę 2 niezależnie od
+    // realnego zużycia — złapane na żywym przykładzie: Tarnowskie Góry→
+    // Kraków Olszanica (bez IC) nie znajdowało żadnego z 5 połączeń przez
+    // Chorzów Batory/Katowice widocznych w PLK, bo runda 2 nigdy nie
+    // startowała.
     if (round > 1) {
       const safeCeiling = 45;
-      const usedSoFar = budgetUsedSoFar + fetchedCount * 3;
-      const remaining = safeCeiling - usedSoFar;
+      const remaining = safeCeiling - budgetUsedSoFar - subrequestsUsed;
       const affordable = Math.floor(remaining / 3);
       if (affordable <= 0) break;
       limit = Math.min(limit, affordable);
@@ -846,6 +850,9 @@ async function buildExtendedTransferItineraries({
     // potrzebnego kandydata. Pytamy więc w mniejszych, kolejnych turach.
     const fetched = await fetchCandidatesInChunks(candidateIds, date, headers, scheduleTtl);
     fetchedCount += fetched.length;
+    for (const { result } of fetched) {
+      subrequestsUsed += result ? (result.cache === "HIT" ? 1 : 3) : 3;
+    }
 
     const nextFrontier = new Map();
     for (const { stationId: xi, result } of fetched) {
