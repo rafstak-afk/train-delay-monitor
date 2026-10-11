@@ -24,7 +24,7 @@ const CACHE_TTL = {
   SCHEDULES_TODAY: 1800
 };
 const COMPOSED_CACHE_TTL = 1800;
-const UPSTREAM_TIMEOUT_MS = 9000;
+const UPSTREAM_TIMEOUT_MS = 12000;
 const DEFAULT_TRANSFER_MINUTES = 3;
 const TRANSFER_MINUTES_MIN = 0;
 const TRANSFER_MINUTES_MAX = 120;
@@ -603,40 +603,41 @@ const CANDIDATE_FETCH_CHUNK_SIZE = 6;
 // potrzebnego kandydata. Jedno ponowienie dla tych, które i tak padły w
 // swojej turze — zwykle wystarcza, to przejściowe przeciążenie, nie trwały
 // błąd danego zapytania.
+async function fetchOneCandidate(stationId, date, headers, scheduleTtl) {
+  return getJsonCached(
+    `${PLK_BASE}/schedules/shortened?stations=${stationId}&fullRoute=true&dateFrom=${date}&dateTo=${date}`,
+    headers,
+    scheduleTtl
+  )
+    .then((r) => ({ stationId, result: r }))
+    .catch(() => ({ stationId, result: null }));
+}
+
+// Nawet w małych turach po 6 część zapytań do PLK bywa zawodna (duże stacje
+// potrafią ważyć 1-2 MB) — do 2 dodatkowych rund powtórzeń TYLKO dla
+// kandydatów, którzy padli, w tych samych małych turach, zanim uznamy
+// kandydata za trwale niedostępny w tym żądaniu.
+const CANDIDATE_FETCH_MAX_RETRY_ROUNDS = 2;
+
 async function fetchCandidatesInChunks(candidateIds, date, headers, scheduleTtl) {
   const out = [];
   for (let i = 0; i < candidateIds.length; i += CANDIDATE_FETCH_CHUNK_SIZE) {
     const chunk = candidateIds.slice(i, i + CANDIDATE_FETCH_CHUNK_SIZE);
-    const chunkResults = await Promise.all(
-      chunk.map((stationId) =>
-        getJsonCached(
-          `${PLK_BASE}/schedules/shortened?stations=${stationId}&fullRoute=true&dateFrom=${date}&dateTo=${date}`,
-          headers,
-          scheduleTtl
-        )
-          .then((r) => ({ stationId, result: r }))
-          .catch(() => ({ stationId, result: null }))
-      )
-    );
+    const chunkResults = await Promise.all(chunk.map((id) => fetchOneCandidate(id, date, headers, scheduleTtl)));
     out.push(...chunkResults);
   }
 
-  const retryTargets = out.filter((r) => !r.result).map((r) => r.stationId);
-  if (retryTargets.length) {
-    const retried = await Promise.all(
-      retryTargets.map((stationId) =>
-        getJsonCached(
-          `${PLK_BASE}/schedules/shortened?stations=${stationId}&fullRoute=true&dateFrom=${date}&dateTo=${date}`,
-          headers,
-          scheduleTtl
-        )
-          .then((r) => ({ stationId, result: r }))
-          .catch(() => ({ stationId, result: null }))
-      )
-    );
-    const retriedMap = new Map(retried.map((r) => [r.stationId, r.result]));
-    for (const r of out) {
-      if (!r.result && retriedMap.has(r.stationId)) r.result = retriedMap.get(r.stationId);
+  for (let round = 0; round < CANDIDATE_FETCH_MAX_RETRY_ROUNDS; round++) {
+    const retryTargets = out.filter((r) => !r.result).map((r) => r.stationId);
+    if (!retryTargets.length) break;
+
+    for (let i = 0; i < retryTargets.length; i += CANDIDATE_FETCH_CHUNK_SIZE) {
+      const chunk = retryTargets.slice(i, i + CANDIDATE_FETCH_CHUNK_SIZE);
+      const retried = await Promise.all(chunk.map((id) => fetchOneCandidate(id, date, headers, scheduleTtl)));
+      const retriedMap = new Map(retried.map((r) => [r.stationId, r.result]));
+      for (const r of out) {
+        if (!r.result && retriedMap.has(r.stationId)) r.result = retriedMap.get(r.stationId);
+      }
     }
   }
 

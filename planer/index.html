@@ -14,10 +14,16 @@ h1{text-align:center;font-size:26px;margin:6px 0 4px}
 .subtitle{text-align:center;color:var(--muted);font-size:13px;margin-bottom:18px;line-height:1.5}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin:14px 0}
 label{display:block;font-size:12px;color:var(--muted);margin:0 0 4px}
-input[type=text],input[type=date],input[type=time],select{width:100%;padding:10px;border-radius:9px;border:1px solid var(--line);background:var(--card);color:#fff;font-size:15px;font-family:inherit}
-.station-row{display:flex;align-items:flex-end;gap:8px}
-.station-field{position:relative;flex:1;min-width:0;margin-bottom:12px}
-.swap-btn{flex:0 0 auto;border:1px solid var(--line);background:var(--card);color:#fff;border-radius:9px;width:42px;height:42px;font-size:18px;cursor:pointer;margin-bottom:12px}
+input[type=text],select{width:100%;padding:10px;border-radius:9px;border:1px solid var(--line);background:var(--card);color:#fff;font-size:15px;font-family:inherit}
+input[type=date],input[type=time]{width:100%;font-size:15px;font-family:inherit}
+.station-stack{position:relative}
+.station-field{position:relative;min-width:0;margin-bottom:12px}
+.input-wrap{position:relative}
+.input-wrap input{padding-right:38px}
+.field-clear{display:none;position:absolute;right:4px;top:50%;transform:translateY(-50%);width:28px;height:28px;border-radius:50%;border:0;background:transparent;color:var(--yellow);font-size:16px;cursor:pointer;align-items:center;justify-content:center;line-height:1}
+.field-clear.show{display:flex}
+.field-clear:hover{background:rgba(255,204,0,.12)}
+.swap-btn{position:absolute;right:10px;top:50%;transform:translateY(-50%);z-index:6;border:1px solid var(--line);background:var(--panel);color:#fff;border-radius:50%;width:38px;height:38px;font-size:16px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.35)}
 .swap-btn:hover{background:#2a3b4d}
 .station-dropdown{display:none;position:absolute;z-index:10000;top:calc(100% + 4px);left:0;right:0;background:#172433;border:1px solid #48627c;border-radius:12px;box-shadow:0 14px 35px rgba(0,0,0,.45);max-height:280px;overflow:auto;text-align:left}
 .station-dropdown.open{display:block}
@@ -33,6 +39,8 @@ input[type=text],input[type=date],input[type=time],select{width:100%;padding:10p
 .trips-toggle-icon{font-size:18px}
 .trips-toggle-text{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
 .trips-toggle-title{font-size:14px;font-weight:800}
+.adv-dot{display:none;width:9px;height:9px;border-radius:50%;background:var(--red);margin-left:7px;vertical-align:middle;box-shadow:0 0 0 2px rgba(255,77,77,.25)}
+.adv-dot.show{display:inline-block}
 .trips-toggle-summary{font-size:12px;color:var(--muted)}
 .trips-chevron{display:inline-block;font-size:14px;line-height:1;transition:transform .3s ease}
 .trips-panel.open .trips-chevron{transform:rotate(180deg)}
@@ -95,18 +103,24 @@ input[type=text],input[type=date],input[type=time],select{width:100%;padding:10p
   <div class="subtitle">Szuka połączeń bezpośrednich i z przesiadką(ami) na podstawie rozkładu PLK, z czasem rzeczywistym tam, gdzie już jest znany.</div>
 
   <div class="panel">
-    <div class="station-row">
+    <div class="station-stack">
       <div class="station-field">
         <label for="fromInput">Skąd</label>
-        <input id="fromInput" type="text" placeholder="Nazwa stacji..." autocomplete="off">
+        <div class="input-wrap">
+          <input id="fromInput" type="text" placeholder="Nazwa stacji..." autocomplete="off">
+          <button type="button" class="field-clear" data-side="from" title="Wyczyść">✳</button>
+        </div>
         <div class="station-dropdown" id="fromDropdown"></div>
       </div>
-      <button type="button" class="swap-btn" id="swapBtn" title="Zamień miejscami">⇅</button>
       <div class="station-field">
         <label for="toInput">Dokąd</label>
-        <input id="toInput" type="text" placeholder="Nazwa stacji..." autocomplete="off">
+        <div class="input-wrap">
+          <input id="toInput" type="text" placeholder="Nazwa stacji..." autocomplete="off">
+          <button type="button" class="field-clear" data-side="to" title="Wyczyść">✳</button>
+        </div>
         <div class="station-dropdown" id="toDropdown"></div>
       </div>
+      <button type="button" class="swap-btn" id="swapBtn" title="Zamień miejscami">⇅</button>
     </div>
     <div class="date-time-row">
       <div><label for="dateInput">Data</label><input id="dateInput" type="date"></div>
@@ -115,7 +129,7 @@ input[type=text],input[type=date],input[type=time],select{width:100%;padding:10p
     <div class="trips-panel" id="advPanel">
       <button type="button" class="trips-toggle" id="advToggle" aria-expanded="false" onclick="toggleAdv()">
         <span class="trips-toggle-icon" aria-hidden="true">⚙️</span>
-        <span class="trips-toggle-text"><span class="trips-toggle-title">Zaawansowane</span><span class="trips-toggle-summary" id="advSummary">Min. czas na przesiadkę: 3 min</span></span>
+        <span class="trips-toggle-text"><span class="trips-toggle-title">Zaawansowane<span class="adv-dot" id="advDot" title="Aktywne ustawienie niedomyślne"></span></span><span class="trips-toggle-summary" id="advSummary">Min. czas na przesiadkę: 3 min</span></span>
         <span class="trips-chevron" aria-hidden="true">▾</span>
       </button>
       <div class="trips-body" id="advBody"><div class="trips-body-inner"><div class="trips-content">
@@ -224,7 +238,20 @@ input[type=text],input[type=date],input[type=time],select{width:100%;padding:10p
   function updateAdvSummary(){
     $('advSummary').textContent='Min. czas na przesiadkę: '+$('transferMinutesSelect').value+' min';
   }
-  $('transferMinutesSelect').addEventListener('change',updateAdvSummary);
+  $('transferMinutesSelect').addEventListener('change',function(){updateAdvSummary();updateAdvDot()});
+
+  // Czerwona kropka przy "Zaawansowane" — widoczna nawet w zwiniętej sekcji,
+  // żeby było wiadomo, że coś tam zmieniono z ustawień domyślnych.
+  function updateAdvDot(){
+    var active=$('transferMinutesSelect').value!=='3'||excludedCarriers.size>0||viaRows.some(function(r){return r.name.trim()});
+    var el=$('advDot');
+    if(el)el.classList.toggle('show',active);
+  }
+
+  function updateClearVisibility(btn,input){
+    if(!btn||!input)return;
+    btn.classList.toggle('show',!!input.value);
+  }
 
   // === Skąd/Dokąd: autouzupełnianie stacji ===
   function renderDropdown(side,stations,onPick){
@@ -251,8 +278,10 @@ input[type=text],input[type=date],input[type=time],select{width:100%;padding:10p
   }
 
   ['from','to'].forEach(function(side){
+    var clearBtn=document.querySelector('.field-clear[data-side="'+side+'"]');
     $(side+'Input').addEventListener('input',function(){
       selected[side]={id:'',name:''};
+      updateClearVisibility(clearBtn,this);
       var q=this.value.trim();
       clearTimeout(searchTimers[side]);
       searchTimers[side]=setTimeout(function(){fetchStations(side,q)},250);
@@ -266,8 +295,17 @@ input[type=text],input[type=date],input[type=time],select{width:100%;padding:10p
       if(!btn)return;
       selected[side]={id:btn.dataset.id,name:btn.dataset.name};
       $(side+'Input').value=btn.dataset.name;
+      updateClearVisibility(clearBtn,$(side+'Input'));
       hideDropdown(side);
     });
+    if(clearBtn){
+      clearBtn.addEventListener('click',function(){
+        selected[side]={id:'',name:''};
+        $(side+'Input').value='';
+        updateClearVisibility(clearBtn,$(side+'Input'));
+        $(side+'Input').focus();
+      });
+    }
   });
 
   document.addEventListener('click',function(e){
@@ -292,13 +330,29 @@ input[type=text],input[type=date],input[type=time],select{width:100%;padding:10p
     container.innerHTML=viaRows.map(function(row){
       return '<div class="station-row via-row">'+
         '<div class="station-field">'+
-          '<input type="text" class="via-input" data-key="'+row.key+'" placeholder="Nazwa stacji..." autocomplete="off" value="'+escapeHtml(row.name)+'">'+
+          '<div class="input-wrap">'+
+            '<input type="text" class="via-input" data-key="'+row.key+'" placeholder="Nazwa stacji..." autocomplete="off" value="'+escapeHtml(row.name)+'">'+
+            '<button type="button" class="field-clear" data-via-key="'+row.key+'" title="Wyczyść">✳</button>'+
+          '</div>'+
           '<div class="station-dropdown" data-key="'+row.key+'"></div>'+
         '</div>'+
         '<button type="button" class="via-remove" data-key="'+row.key+'" title="Usuń">✕</button>'+
       '</div>';
     }).join('');
     $('addViaBtn').disabled=viaRows.length>=MAX_VIA;
+    container.querySelectorAll('.field-clear').forEach(function(btn){
+      var key=btn.dataset.viaKey;
+      updateClearVisibility(btn, container.querySelector('.via-input[data-key="'+key+'"]'));
+      btn.addEventListener('click',function(){
+        var inp=container.querySelector('.via-input[data-key="'+key+'"]');
+        inp.value='';
+        var row=viaRows.filter(function(r){return r.key===key})[0];
+        if(row){row.id='';row.name=''}
+        updateClearVisibility(btn, inp);
+        updateAdvDot();
+        inp.focus();
+      });
+    });
 
     container.querySelectorAll('.via-input').forEach(function(inp){
       var key=inp.dataset.key;
@@ -306,6 +360,8 @@ input[type=text],input[type=date],input[type=time],select{width:100%;padding:10p
         var row=viaRows.filter(function(r){return r.key===key})[0];
         if(!row)return;
         row.id='';row.name=this.value;
+        updateClearVisibility(container.querySelector('.field-clear[data-via-key="'+key+'"]'), this);
+        updateAdvDot();
         var q=this.value.trim();
         clearTimeout(searchTimers[key]);
         searchTimers[key]=setTimeout(function(){fetchStations(key,q)},250);
@@ -332,6 +388,7 @@ input[type=text],input[type=date],input[type=time],select{width:100%;padding:10p
         var key=this.dataset.key;
         viaRows=viaRows.filter(function(r){return r.key!==key});
         renderViaRows();
+        updateAdvDot();
       });
     });
   }
@@ -366,6 +423,7 @@ input[type=text],input[type=date],input[type=time],select{width:100%;padding:10p
         var code=this.dataset.code;
         if(this.checked)excludedCarriers.add(code);else excludedCarriers.delete(code);
         saveCarrierPrefs();
+        updateAdvDot();
       });
     });
   }
@@ -440,11 +498,16 @@ input[type=text],input[type=date],input[type=time],select{width:100%;padding:10p
       '</div>';
   }
 
+  var RESULTS_PAGE_SIZE=5;
+  var visibleCount=RESULTS_PAGE_SIZE;
+  var lastNotes='';
+
   function renderResults(data){
     var statusEl=$('resultsStatus'),listEl=$('resultsList');
     statusEl.className='status';
     lastItineraries=data.itineraries||[];
     lastQuery=data.query;
+    visibleCount=RESULTS_PAGE_SIZE;
 
     var notes='';
     if(data.resolvedFrom&&data.resolvedFrom.ambiguous)notes+='<div class="ambiguous-note">Znaleziono więcej niż jedną stację o nazwie „'+escapeHtml(data.resolvedFrom.name)+'” — pokazano wyniki dla najbardziej prawdopodobnej. Wybierz dokładną stację z podpowiedzi, jeśli to nie ta.</div>';
@@ -452,6 +515,7 @@ input[type=text],input[type=date],input[type=time],select{width:100%;padding:10p
     (data.resolvedVia||[]).forEach(function(v){
       if(v.ambiguous)notes+='<div class="ambiguous-note">Znaleziono więcej niż jedną stację o nazwie „'+escapeHtml(v.name)+'” dla punktu „przez” — pokazano wyniki dla najbardziej prawdopodobnej.</div>';
     });
+    lastNotes=notes;
 
     if(data.noConnectionFound){
       statusEl.textContent='';
@@ -468,10 +532,25 @@ input[type=text],input[type=date],input[type=time],select{width:100%;padding:10p
     if(data.counts.multiTransfer)parts.push(data.counts.multiTransfer+' z 2 przesiadkami');
     if(data.counts.via)parts.push(data.counts.via+' przez wskazane stacje');
     statusEl.textContent='Znaleziono: '+parts.join(', ')+'.';
-    listEl.innerHTML=notes+lastItineraries.map(function(it,i){return itineraryHtml(it,{index:i})}).join('');
+    renderVisibleItineraries();
+  }
+
+  function renderVisibleItineraries(){
+    var listEl=$('resultsList');
+    var toShow=lastItineraries.slice(0,visibleCount);
+    var remaining=lastItineraries.length-toShow.length;
+    var moreHtml=remaining>0
+      ? '<button type="button" class="btn-sm" id="loadMoreBtn" style="width:100%;margin-top:4px">⬇️ Pobierz kolejnych '+Math.min(RESULTS_PAGE_SIZE,remaining)+' połączeń ('+remaining+' więcej)</button>'
+      : '';
+    listEl.innerHTML=lastNotes+toShow.map(function(it,i){return itineraryHtml(it,{index:i})}).join('')+moreHtml;
   }
 
   $('resultsList').addEventListener('click',function(e){
+    if(e.target.closest('#loadMoreBtn')){
+      visibleCount+=RESULTS_PAGE_SIZE;
+      renderVisibleItineraries();
+      return;
+    }
     var btn=e.target.closest('.itin-save');
     if(!btn)return;
     var idx=Number(btn.dataset.idx);
@@ -538,6 +617,9 @@ input[type=text],input[type=date],input[type=time],select{width:100%;padding:10p
           }
           if(Array.isArray(profile.excludedCarriers)){
             excludedCarriers=new Set(profile.excludedCarriers);
+            updateAdvDot();
+            var grid=$('carrierGrid');
+            if(grid)grid.querySelectorAll('input[type=checkbox]').forEach(function(cb){cb.checked=excludedCarriers.has(cb.dataset.code)});
           }
         }
       }catch(e){}
@@ -593,6 +675,7 @@ input[type=text],input[type=date],input[type=time],select{width:100%;padding:10p
   setDefaultDateTime();
   updateAdvSummary();
   loadCarrierPrefs();
+  updateAdvDot();
   loadCarriers();
   refreshFromProfile();
   window.addEventListener('pageshow',function(e){if(e.persisted)refreshFromProfile()});
