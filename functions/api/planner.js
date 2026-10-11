@@ -129,7 +129,7 @@ export async function onRequestGet(context) {
     maxTransfers: hasVia ? 1 : maxTransfers,
     excludeCarriers: [...excludeCarrierSet].sort().join(",")
   });
-  const cachedComposed = await caches.default.match(composedKey);
+  const cachedComposed = url.searchParams.get("debug") === "1" ? null : await caches.default.match(composedKey);
   if (cachedComposed) {
     const payload = await cachedComposed.json();
     payload.cache = { ...payload.cache, composed: "HIT" };
@@ -177,6 +177,7 @@ export async function onRequestGet(context) {
     let noConnectionFound = false;
     let viaFailedAt = null;
     let lastDepartureToday = null;
+    let debugInfo = null;
     let cacheInfo = { stationsDictionary: stationsDictionaryResult.cache };
 
     if (hasVia) {
@@ -250,6 +251,9 @@ export async function onRequestGet(context) {
         requestBudgetUsed += multi.fetchedCount * 3;
         combinedAll = combinedAll.concat(multi.itineraries);
         combined = combined.concat(multi.itineraries.filter(afterTime));
+        if (url.searchParams.get("debug") === "1") {
+          debugInfo = { multiCount: multi.itineraries.length, multiFetchedCount: multi.fetchedCount };
+        }
       }
 
       combined = pruneDominated(combined);
@@ -309,7 +313,8 @@ export async function onRequestGet(context) {
       itineraries,
       liveDelay,
       apiLimits,
-      cache: { ...cacheInfo, composed: "MISS" }
+      cache: { ...cacheInfo, composed: "MISS" },
+      ...(debugInfo ? { debugInfo } : {})
     };
 
     const composedTtl = noConnectionFound ? COMPOSED_CACHE_TTL_EMPTY : COMPOSED_CACHE_TTL;
