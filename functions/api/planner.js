@@ -934,8 +934,17 @@ async function buildExtendedTransferItineraries({
     }
 
     for (const [k, v] of nextFrontier) nextFrontier.set(k, capChains(v));
+    // Sufit na CAŁKOWITY rozmiar granicy dotyczy TYLKO rund 2+. Runda 1 (2
+    // przesiadki) to sprawdzony od miesięcy, pojedynczy etap systemu
+    // sprzed tej sesji — jego granica bywała duża (setki stacji) i zawsze
+    // bezpiecznie się zamykała, bo to tylko JEDNO domknięcie, bez żadnej
+    // kolejnej rundy na wierzchu. Przycinanie jej tym samym sufitem co
+    // głębsze rundy zgubiło podstawowy wynik (Tarnowskie Góry→Kraków
+    // Olszanica, Zawiercie) — stacja z przyjazdem późnym popołudniem
+    // wypadała poza "80 najwcześniej przyjeżdżających" przy pytaniu o cały
+    // dzień.
     frontier =
-      nextFrontier.size > MAX_FRONTIER_STATIONS
+      round > 1 && nextFrontier.size > MAX_FRONTIER_STATIONS
         ? new Map(
             [...nextFrontier.entries()]
               .sort((a, b) => Math.min(...a[1].map((c) => c.arrMin)) - Math.min(...b[1].map((c) => c.arrMin)))
