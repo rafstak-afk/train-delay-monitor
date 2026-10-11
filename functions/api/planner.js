@@ -245,14 +245,19 @@ export async function onRequestGet(context) {
           date,
           maxExtraRounds: maxTransfers - 1,
           budgetUsedSoFar: requestBudgetUsed,
-          minDepartureMinutes: minMinutes
+          minDepartureMinutes: minMinutes,
+          probe: url.searchParams.get("debug") === "1" ? [] : null
         });
         apiLimitsList.push(...multi.apiLimitsList);
         requestBudgetUsed += multi.fetchedCount * 3;
         combinedAll = combinedAll.concat(multi.itineraries);
         combined = combined.concat(multi.itineraries.filter(afterTime));
         if (url.searchParams.get("debug") === "1") {
-          debugInfo = { multiCount: multi.itineraries.length, multiFetchedCount: multi.fetchedCount };
+          debugInfo = {
+            multiCount: multi.itineraries.length,
+            multiFetchedCount: multi.fetchedCount,
+            probe: multi.probe
+          };
         }
       }
 
@@ -824,7 +829,8 @@ async function buildExtendedTransferItineraries({
   date,
   maxExtraRounds,
   budgetUsedSoFar = 0,
-  minDepartureMinutes = 0
+  minDepartureMinutes = 0,
+  probe = null
 }) {
   const apiLimitsList = [];
   let fetchedCount = 0;
@@ -896,6 +902,14 @@ async function buildExtendedTransferItineraries({
     for (const { result } of fetched) {
       subrequestsUsed += result ? (result.cache === "HIT" ? 1 : 3) : 3;
     }
+    if (probe) {
+      probe.push({
+        round,
+        candidateIds,
+        failedIds: fetched.filter((f) => !f.result).map((f) => f.stationId),
+        has75309Chains: (frontier.get("75309") || []).length
+      });
+    }
 
     const nextFrontier = new Map();
     for (const { stationId: xi, result } of fetched) {
@@ -907,6 +921,13 @@ async function buildExtendedTransferItineraries({
       routesSeenSoFar = routesSeenSoFar.concat(xiRoutes);
       const reachableAfterXi = buildReachableAfter(xiRoutes, xi, excludeCarrierSet);
       const chainsAtXi = frontier.get(xi) || [];
+      if (probe && xi === "75309") {
+        probe.push({
+          zawiercieRoutesFetched: xiRoutes.length,
+          zawiercieReachableKeys: [...reachableAfterXi.keys()],
+          zawiercieChainsAtXi: chainsAtXi.length
+        });
+      }
       if (!chainsAtXi.length) continue;
 
       for (const [yId, hopsFull] of reachableAfterXi) {
@@ -968,7 +989,7 @@ async function buildExtendedTransferItineraries({
     allClosed.push(...closeFrontier(frontier, reachableBeforeB, to, stationNames, transferMinutes));
   }
 
-  return { itineraries: dedupItineraries(allClosed), apiLimitsList, fetchedCount };
+  return { itineraries: dedupItineraries(allClosed), apiLimitsList, fetchedCount, probe };
 }
 
 // ============ Przesiadki "przez" wskazane stacje — sklejanie segmentów ============
