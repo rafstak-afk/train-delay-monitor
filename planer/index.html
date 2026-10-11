@@ -454,7 +454,7 @@ input[type=date],input[type=time]{width:100%;font-size:15px;font-family:inherit}
   function badgeHtml(it){
     if(it.type==='direct')return '<span class="itin-badge direct">BEZPOŚREDNIO</span>';
     if(it.type==='transfer')return '<span class="itin-badge transfer">1 PRZESIADKA</span>';
-    if(it.type==='multi-transfer')return '<span class="itin-badge multi-transfer">2 PRZESIADKI</span>';
+    if(it.type==='multi-transfer')return '<span class="itin-badge multi-transfer">'+((it.transfers||[]).length)+' PRZESIADKI</span>';
     if(it.type==='via')return '<span class="itin-badge via">TRASA PRZEZ '+((it.transfers||[]).length)+' ST.</span>';
     return '';
   }

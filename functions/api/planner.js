@@ -44,19 +44,23 @@ const DEFAULT_MAX_RESULTS = 20;
 // wielogodzinne czekanie na peronie.
 const MAX_TRANSFER_WAIT_MINUTES = 120;
 const MAX_VIA_STATIONS = 3;
-// Automatyczne rozszerzenie o drugi skok (bez wskazanej stacji "przez"):
-// M kandydatów, bez listy węzłów — ranking po liczbie kursów, jakie już i
-// tak policzyliśmy przy okazji 1-przesiadki. N=2 celowo (jedna dodatkowa
-// runda, nie zagnieżdżona — M wywołań, nie M²).
-// M=5 było za mało na żywym przykładzie: w gęstej aglomeracji (Tarnowskie
-// Góry/Chorzów/Katowice) kilkanaście sąsiednich stacji ma DOKŁADNIE tę samą
-// liczbę połączeń (to te same linie, zatrzymujące się po drodze) — realnie
-// potrzebny węzeł (Chorzów Batory) odpadał tuż za progiem przy remisie.
-const MULTI_TRANSFER_CANDIDATES = 12;
-// Twardy sufit na połączoną listę (ranking + gwarantowane końcówki tras) —
-// chroni budżet zapytań do PLK/subrequestów, gdyby jedna stacja miała
-// dziesiątki różnych tras z różnymi końcówkami.
-const MULTI_TRANSFER_CANDIDATES_HARD_CAP = 25;
+// Automatyczne rozszerzenie o kolejne skoki (bez wskazanej stacji "przez"):
+// adaptacyjnie, warstwa po warstwie — 2 przesiadki, jeśli nic nie ma to 3,
+// jeśli wciąż nic to 4. Użytkownik: "tyle ile trzeba, jak nie znajdujesz przy
+// dwóch to w drugim przebiegu lecisz w 3 albo i 4" — więc płacimy za kolejną,
+// droższą rundę TYLKO gdy poprzednia naprawdę niczego nie znalazła, nie z
+// góry. Malejący budżet kandydatów na rundę — koszt rośnie z głębokością
+// (każda runda to nowe zapytania dla WSZYSTKICH łańcuchów z poprzedniej), więc
+// głębsze, rzadziej potrzebne rundy dostają mniejszy budżet.
+// Runda 1 (→2 przesiadki) = 25, dokładnie jak dawny twardy sufit (ranking +
+// gwarantowane końcówki tras) — to sprawdzone na żywo minimum, które złapało
+// realny węzeł (Chorzów Batory) odpadający z samego rankingu przy remisie.
+const EXTENDED_TRANSFER_CANDIDATES = [25, 12, 6];
+const EXTENDED_TRANSFER_MAX_ROUNDS = EXTENDED_TRANSFER_CANDIDATES.length; // do 4 przesiadek
+// Sufit na liczbę wariantów łańcucha trzymanych per stacja-granica między
+// rundami — bez tego kombinatoryka (warianty × nowe kursy) rosłaby bez
+// kontroli na gęstych węzłach.
+const CHAIN_FRONTIER_CAP = 40;
 // Backtracking przy "przez": ile najwcześniejszych kandydatów na segment
 // bierzemy pod uwagę na każdym kroku DFS — bez nowych zapytań, to tylko
 // porównania w pamięci, więc nawet pełne przeszukanie jest trywialne.
@@ -83,7 +87,10 @@ export async function onRequestGet(context) {
     TRANSFER_MINUTES_MAX
   );
   const maxResults = clamp(Number(url.searchParams.get("maxResults") || DEFAULT_MAX_RESULTS), 1, 50);
-  const maxTransfers = clamp(Number(url.searchParams.get("maxTransfers") ?? 2), 1, 2);
+  // Teraz to SUFIT dla adaptacyjnego poszerzania (patrz EXTENDED_TRANSFER_*),
+  // nie sztywna liczba — silnik sam zatrzyma się na najpłytszym poziomie,
+  // na którym cokolwiek znalazł. Domyślnie "tyle ile trzeba" aż do 4.
+  const maxTransfers = clamp(Number(url.searchParams.get("maxTransfers") ?? 4), 1, 4);
   const excludeCarrierSet = parseCarrierSet(url.searchParams.get("excludeCarriers"));
 
   if (!fromName || !toName) {
@@ -213,8 +220,8 @@ export async function onRequestGet(context) {
       let combinedAll = [...segment.itineraries];
       let combined = combinedAll.filter(afterTime);
 
-      if (maxTransfers === 2 && combined.length < maxResults) {
-        const multi = await buildMultiTransferItineraries({
+      if (maxTransfers >= 2 && combined.length < maxResults) {
+        const multi = await buildExtendedTransferItineraries({
           reachableAfterA: segment.reachableAfterA,
           reachableBeforeB: segment.reachableBeforeB,
           fromRoutes: segment.fromRoutes,
@@ -225,7 +232,8 @@ export async function onRequestGet(context) {
           excludeCarrierSet,
           headers,
           scheduleTtl,
-          date
+          date,
+          maxExtraRounds: maxTransfers - 1
         });
         apiLimitsList.push(...multi.apiLimitsList);
         requestBudgetUsed += multi.fetchedCount * 3;
@@ -672,7 +680,109 @@ async function fetchCandidatesInChunks(candidateIds, date, headers, scheduleTtl)
   return out;
 }
 
-async function buildMultiTransferItineraries({
+function buildLegInfo(boardId, boardName, alightId, alightName, hop, destName) {
+  const info = {
+    train: trainInfoFromShort(hop.route),
+    scheduleId: String(hop.route.sid || ""),
+    orderId: String(hop.route.oid || ""),
+    trainOrderId: String(hop.route.toid || ""),
+    board: { stationId: String(boardId), stationName: boardName, time: hop.boardTime },
+    alight: { stationId: String(alightId), stationName: alightName, time: hop.arrTime, nextDay: false }
+  };
+  info.trainUrl = buildTrainUrl(info, destName, null);
+  return info;
+}
+
+function chainRouteKeySet(chain) {
+  return new Set(chain.legs.map((l) => l.scheduleId + "|" + l.orderId));
+}
+
+function capChains(chains) {
+  return chains.sort((a, b) => a.arrMin - b.arrMin).slice(0, CHAIN_FRONTIER_CAP);
+}
+
+// Dla każdej stacji-granicy aktualnej "fali" sprawdza, czy stamtąd da się już
+// domknąć do B (ten sam warunek bufora co każde wcześniejsze złączenie).
+// Wywoływane PO każdej rundzie rozszerzenia — jeśli coś znajdzie, silnik
+// przestaje schodzić głębiej (płacimy za kolejną rundę tylko gdy naprawdę
+// trzeba).
+function closeFrontier(frontier, reachableBeforeB, to, stationNames, transferMinutes) {
+  const results = [];
+  for (const [stationId, chains] of frontier) {
+    const lastLegList = reachableBeforeB.get(stationId);
+    if (!lastLegList) continue;
+    const stName = stationNames.get(Number(stationId)) || `Stacja ${stationId}`;
+
+    for (const chain of chains) {
+      const usedKeys = chainRouteKeySet(chain);
+      for (const h of lastLegList) {
+        const routeKey = h.route.sid + "|" + h.route.oid;
+        if (usedKeys.has(routeKey)) continue;
+        const depMin = minutesFromTime(h.boardTime);
+        const buf = depMin - chain.arrMin;
+        if (buf < transferMinutes || buf > MAX_TRANSFER_WAIT_MINUTES) continue;
+
+        let arrMin = minutesFromTime(h.arrTime);
+        let nextDay = false;
+        if (arrMin < depMin) {
+          arrMin += 1440;
+          nextDay = true;
+        }
+
+        const lastLeg = buildLegInfo(stationId, stName, to.id, to.name, h, to.name);
+        lastLeg.alight.nextDay = nextDay;
+
+        const firstLeg = chain.legs[0];
+        const depFirst = minutesFromTime(firstLeg.board.time);
+
+        results.push({
+          type: "multi-transfer",
+          departureTime: firstLeg.board.time,
+          arrivalTime: h.arrTime,
+          arrivalNextDay: nextDay,
+          durationMinutes: arrMin - depFirst,
+          legs: [...chain.legs, lastLeg],
+          transfers: [...chain.transfers, { stationId, stationName: stName, bufferMinutes: buf, ok: true }]
+        });
+      }
+    }
+  }
+  return results;
+}
+
+// Wybór kandydatów na kolejną stację rozszerzenia — identyczna zasada jak w
+// dawnym jednorundowym mechanizmie: ranking po "ile łańcuchów już tu dociera"
+// (im więcej wariantów kończy się na tej stacji, tym bardziej prawdopodobny
+// węzeł), PLUS w pierwszej rundzie gwarantowane końcówki tras z A (ranking
+// systematycznie zaniża stacje będące końcem TYLKO jednego kursu, a to
+// bywają właśnie najlepsze węzły — złapane na żywym przykładzie Radziechowy
+// Wieprz→Katowice).
+function selectExpansionCandidates(frontier, fromRoutes, isFirstRound, fromId, limit) {
+  const ranked = [...frontier.entries()].sort((a, b) => b[1].length - a[1].length).map(([id]) => id);
+
+  let guaranteedIds = [];
+  if (isFirstRound) {
+    const terminusIds = new Set();
+    for (const r of fromRoutes || []) {
+      const stops = r.st || [];
+      if (!stops.length) continue;
+      const last = stops[stops.length - 1];
+      if (last && last.atm) terminusIds.add(String(last.id));
+    }
+    guaranteedIds = [...terminusIds].filter((id) => frontier.has(id));
+  }
+
+  return [...new Set([...guaranteedIds, ...ranked])]
+    .filter((id) => id !== String(fromId))
+    .slice(0, limit);
+}
+
+// Adaptacyjne, warstwowe poszerzanie poza zwykłą 1-przesiadkę: zamiast z góry
+// płacić za ustaloną liczbę skoków, próbujemy najpłytszej warstwy, która
+// faktycznie coś znajduje. Użytkownik: "tyle ile trzeba, jak nie znajdujesz
+// przy dwóch to w drugim przebiegu lecisz w 3 albo i 4" — każda kolejna,
+// droższa runda uruchamia się TYLKO jeśli poprzednia zwróciła zero.
+async function buildExtendedTransferItineraries({
   reachableAfterA,
   reachableBeforeB,
   fromRoutes,
@@ -683,156 +793,86 @@ async function buildMultiTransferItineraries({
   excludeCarrierSet,
   headers,
   scheduleTtl,
-  date
+  date,
+  maxExtraRounds
 }) {
-  // UWAGA: świadomie BEZ odrzucania stacji, które już są kluczem w
-  // reachableBeforeB. To, że JAKIŚ pociąg stamtąd dojeżdża do B, nie znaczy,
-  // że MOJA konkretna pierwsza noga (ten akurat przyjazd z A) zdąży się z
-  // nim połączyć — bufor czasowy mógł się nie zgadzać. Taki filtr
-  // systematycznie wykluczał właśnie największe węzły (np. Katowice —
-  // "już i tak coś stamtąd jedzie do B"), które realnie są NAJLEPSZYMI
-  // kandydatami na przesiadkę. Złapane na żywym przykładzie: Tarnowskie
-  // Góry→Chorzów Batory→Katowice→Radziechowy Wieprz ginęło właśnie przez
-  // ten filtr.
-  const ranked = [...reachableAfterA.entries()].sort((a, b) => b[1].length - a[1].length);
-  const rankedIds = ranked.slice(0, MULTI_TRANSFER_CANDIDATES).map(([stationId]) => stationId);
-
-  // Samo "ile moich kursów tamtędy przejeżdża" faworyzuje drobne lokalne
-  // przystanki na gęstej linii (dużo pociągów, ale donikąd) kosztem
-  // faktycznych węzłów przesiadkowych, które mogą być KOŃCEM tylko
-  // pojedynczego kursu (więc nisko w rankingu), a mimo to świetnym miejscem
-  // na przesiadkę dalej. Złapane na żywym przykładzie: Radziechowy Wieprz→
-  // Katowice (koniec trasy 3 kursów) wypadało poza próg, bo kilkanaście
-  // lokalnych przystanków miało wyższy "wynik". Końcowa stacja KAŻDEGO kursu
-  // zawsze dostaje szansę, niezależnie od rankingu — to tani (skończona,
-  // zwykle mała liczba różnych tras), pewny sposób, żeby taki węzeł nigdy
-  // nie zniknął.
-  const terminusIds = new Set();
-  for (const r of fromRoutes || []) {
-    const stops = r.st || [];
-    if (!stops.length) continue;
-    const last = stops[stops.length - 1];
-    if (last && last.atm) terminusIds.add(String(last.id));
-  }
-
-  // Końcowe stacje kursów idą pierwsze (gwarantowany wybór), ranking
-  // dopełnia resztę — twardy sufit na wypadek linii z dziesiątkami różnych
-  // tras/końcówek, żeby nie przekroczyć budżetu zapytań do PLK. Stacja A
-  // sama bywa swoją własną "końcówką" w degenerate przypadkach — odrzucamy,
-  // bo pytanie PLK o rozkład A jeszcze raz niczego nowego nie wnosi.
-  const candidateIds = [...new Set([...terminusIds, ...rankedIds])]
-    .filter((id) => id !== String(from.id))
-    .slice(0, MULTI_TRANSFER_CANDIDATES_HARD_CAP);
-
-  if (!candidateIds.length) {
-    return { itineraries: [], apiLimitsList: [], fetchedCount: 0 };
-  }
-
-  // 20+ zapytań odpalonych NARAZ jednym Promise.all okazało się zawodne na
-  // żywo — większość (nawet 23 z 25) po cichu padała (timeout/przeciążenie)
-  // i lądowała w .catch(()=>null), gubiąc akurat potrzebnego kandydata
-  // (złapane na żywym przykładzie: Chorzów Batory akurat wypadał z puli).
-  // Pytamy więc w mniejszych, kolejnych turach zamiast całą pulą naraz.
-  const fetched = await fetchCandidatesInChunks(candidateIds, date, headers, scheduleTtl);
-
   const apiLimitsList = [];
-  const results = [];
+  let fetchedCount = 0;
 
-  for (const { stationId: xi, result } of fetched) {
-    if (!result) continue;
-    apiLimitsList.push(result.apiLimits);
+  // Warstwa 0: jeden skok od A (to samo źródło co 1-przesiadka), bez
+  // sprawdzania domknięcia — to już policzyła osobno zwykła 1-przesiadka.
+  let frontier = new Map();
+  for (const [stationId, hops] of reachableAfterA) {
+    const stName = stationNames.get(Number(stationId)) || `Stacja ${stationId}`;
+    const chains = hops.map((h) => ({
+      legs: [buildLegInfo(from.id, from.name, stationId, stName, h, stName)],
+      transfers: [],
+      arrMin: minutesFromTime(h.arrTime)
+    }));
+    frontier.set(stationId, capChains(chains));
+  }
 
-    const xiRoutes = result.data?.rt || [];
-    const reachableAfterXi = buildReachableAfter(xiRoutes, xi, excludeCarrierSet);
-    // Realne listy mają tu zwykle kilkadziesiąt wpisów (nie setki) — ucinanie
-    // ich do pierwszych 10 w kolejności napotkania (nie czasu!) po cichu
-    // gubiło akurat potrzebny kurs na żywym przykładzie. Sortujemy po
-    // godzinie i zostawiamy szeroki, ale skończony margines bezpieczeństwa.
-    const byTime = (key) => (a, b) => minutesFromTime(a[key]) - minutesFromTime(b[key]);
-    const leg1List = (reachableAfterA.get(xi) || []).slice().sort(byTime("boardTime")).slice(0, 40);
+  for (let round = 1; round <= maxExtraRounds; round++) {
+    const limit = EXTENDED_TRANSFER_CANDIDATES[round - 1] ?? 5;
+    const candidateIds = selectExpansionCandidates(frontier, fromRoutes, round === 1, from.id, limit);
+    if (!candidateIds.length) break;
 
-    for (const [yId, leg2ListFull] of reachableAfterXi) {
-      const leg3ListFull = reachableBeforeB.get(yId);
-      if (!leg3ListFull) continue;
+    // 20+ zapytań odpalonych NARAZ jednym Promise.all okazało się zawodne na
+    // żywo — większość po cichu padała (timeout/przeciążenie) i gubiła akurat
+    // potrzebnego kandydata. Pytamy więc w mniejszych, kolejnych turach.
+    const fetched = await fetchCandidatesInChunks(candidateIds, date, headers, scheduleTtl);
+    fetchedCount += fetched.length;
 
-      const leg2List = leg2ListFull.slice().sort(byTime("boardTime")).slice(0, 40);
-      const leg3List = leg3ListFull.slice().sort(byTime("boardTime")).slice(0, 40);
+    const nextFrontier = new Map();
+    for (const { stationId: xi, result } of fetched) {
+      if (!result) continue;
+      apiLimitsList.push(result.apiLimits);
 
-      for (const leg1 of leg1List) {
-        const arr1 = minutesFromTime(leg1.arrTime);
+      const xiName = stationNames.get(Number(xi)) || `Stacja ${xi}`;
+      const xiRoutes = result.data?.rt || [];
+      const reachableAfterXi = buildReachableAfter(xiRoutes, xi, excludeCarrierSet);
+      const chainsAtXi = frontier.get(xi) || [];
+      if (!chainsAtXi.length) continue;
 
-        for (const leg2 of leg2List) {
-          if (leg2.routeKey === leg1.routeKey) continue;
-          const dep2 = minutesFromTime(leg2.boardTime);
-          const buf1 = dep2 - arr1;
-          if (buf1 < transferMinutes || buf1 > MAX_TRANSFER_WAIT_MINUTES) continue;
-          const arr2 = minutesFromTime(leg2.arrTime);
+      for (const [yId, hopsFull] of reachableAfterXi) {
+        const yName = stationNames.get(Number(yId)) || `Stacja ${yId}`;
+        const hops = hopsFull
+          .slice()
+          .sort((a, b) => minutesFromTime(a.boardTime) - minutesFromTime(b.boardTime))
+          .slice(0, 40);
 
-          for (const leg3 of leg3List) {
-            if (leg3.routeKey === leg2.routeKey || leg3.routeKey === leg1.routeKey) continue;
-            const dep3 = minutesFromTime(leg3.boardTime);
-            const buf2 = dep3 - arr2;
-            if (buf2 < transferMinutes || buf2 > MAX_TRANSFER_WAIT_MINUTES) continue;
+        for (const chain of chainsAtXi) {
+          const usedKeys = chainRouteKeySet(chain);
+          for (const h of hops) {
+            const routeKey = h.route.sid + "|" + h.route.oid;
+            if (usedKeys.has(routeKey)) continue;
+            const depMin = minutesFromTime(h.boardTime);
+            const buf = depMin - chain.arrMin;
+            if (buf < transferMinutes || buf > MAX_TRANSFER_WAIT_MINUTES) continue;
 
-            let arr3 = minutesFromTime(leg3.arrTime);
-            let nextDay = false;
-            if (arr3 < dep3) {
-              arr3 += 1440;
-              nextDay = true;
-            }
-
-            const xiName = stationNames.get(Number(xi)) || `Stacja ${xi}`;
-            const yName = stationNames.get(Number(yId)) || `Stacja ${yId}`;
-
-            const leg1Info = {
-              train: trainInfoFromShort(leg1.route),
-              scheduleId: String(leg1.route.sid || ""),
-              orderId: String(leg1.route.oid || ""),
-              trainOrderId: String(leg1.route.toid || ""),
-              board: { stationId: String(from.id), stationName: from.name, time: leg1.boardTime },
-              alight: { stationId: xi, stationName: xiName, time: leg1.arrTime, nextDay: false }
+            const legInfo = buildLegInfo(xi, xiName, yId, yName, h, yName);
+            const newChain = {
+              legs: [...chain.legs, legInfo],
+              transfers: [...chain.transfers, { stationId: xi, stationName: xiName, bufferMinutes: buf, ok: true }],
+              arrMin: minutesFromTime(h.arrTime)
             };
-            leg1Info.trainUrl = buildTrainUrl(leg1Info, xiName, null);
-
-            const leg2Info = {
-              train: trainInfoFromShort(leg2.route),
-              scheduleId: String(leg2.route.sid || ""),
-              orderId: String(leg2.route.oid || ""),
-              trainOrderId: String(leg2.route.toid || ""),
-              board: { stationId: xi, stationName: xiName, time: leg2.boardTime },
-              alight: { stationId: yId, stationName: yName, time: leg2.arrTime, nextDay: false }
-            };
-            leg2Info.trainUrl = buildTrainUrl(leg2Info, yName, null);
-
-            const leg3Info = {
-              train: trainInfoFromShort(leg3.route),
-              scheduleId: String(leg3.route.sid || ""),
-              orderId: String(leg3.route.oid || ""),
-              trainOrderId: String(leg3.route.toid || ""),
-              board: { stationId: yId, stationName: yName, time: leg3.boardTime },
-              alight: { stationId: String(to.id), stationName: to.name, time: leg3.arrTime, nextDay }
-            };
-            leg3Info.trainUrl = buildTrainUrl(leg3Info, to.name, null);
-
-            results.push({
-              type: "multi-transfer",
-              departureTime: leg1.boardTime,
-              arrivalTime: leg3.arrTime,
-              arrivalNextDay: nextDay,
-              durationMinutes: arr3 - minutesFromTime(leg1.boardTime),
-              legs: [leg1Info, leg2Info, leg3Info],
-              transfers: [
-                { stationId: xi, stationName: xiName, bufferMinutes: buf1, ok: true },
-                { stationId: yId, stationName: yName, bufferMinutes: buf2, ok: true }
-              ]
-            });
+            if (!nextFrontier.has(yId)) nextFrontier.set(yId, []);
+            nextFrontier.get(yId).push(newChain);
           }
         }
       }
     }
+
+    for (const [k, v] of nextFrontier) nextFrontier.set(k, capChains(v));
+    frontier = nextFrontier;
+
+    const closed = closeFrontier(frontier, reachableBeforeB, to, stationNames, transferMinutes);
+    if (closed.length) {
+      return { itineraries: dedupItineraries(closed), apiLimitsList, fetchedCount, transfersUsed: round + 1 };
+    }
   }
 
-  return { itineraries: dedupItineraries(results), apiLimitsList, fetchedCount: fetched.length };
+  return { itineraries: [], apiLimitsList, fetchedCount, transfersUsed: null };
 }
 
 // ============ Przesiadki "przez" wskazane stacje — sklejanie segmentów ============
