@@ -889,7 +889,7 @@ async function buildExtendedTransferItineraries({
 
     const candidateIds = selectExpansionCandidates(frontier, routesSeenSoFar, from.id, limit);
     if (debugLog) {
-      debugLog.push({ round, limit, frontierSize: frontier.size, candidateCount: candidateIds.length });
+      debugLog.push({ round, limit, frontierSize: frontier.size, candidateIds });
     }
     if (!candidateIds.length) break;
 
