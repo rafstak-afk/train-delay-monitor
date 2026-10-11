@@ -175,7 +175,8 @@ export async function onRequestGet(context) {
 
       const timeFloor = minutesFromTime(time) ?? 0;
       const stitched = stitchViaChain(segmentResults, resolvedWaypoints, transferMinutes, timeFloor);
-      itineraries = stitched.combos.sort((a, b) => a.departureTime.localeCompare(b.departureTime)).slice(0, maxResults);
+      const prunedCombos = pruneDominated(stitched.combos);
+      itineraries = prunedCombos.sort((a, b) => a.departureTime.localeCompare(b.departureTime)).slice(0, maxResults);
       if (!itineraries.length) {
         noConnectionFound = true;
         viaFailedAt = stitched.failedAt;
@@ -219,6 +220,7 @@ export async function onRequestGet(context) {
         combined = combined.concat(multi.itineraries.filter(afterTime));
       }
 
+      combined = pruneDominated(combined);
       itineraries = combined.sort((a, b) => a.departureTime.localeCompare(b.departureTime)).slice(0, maxResults);
       noConnectionFound = itineraries.length === 0;
     }
@@ -881,6 +883,30 @@ function dedupItineraries(results) {
     if (!existing || score < existingScore) best.set(key, it);
   }
   return [...best.values()];
+}
+
+// ============ Odrzucanie zdominowanych wariantów ============
+// Różne kandydaci na pierwszą nogę (np. 3 kolejne odjazdy z A) łatwo tworzą
+// kilka itinerarzy do TEJ SAMEJ drugiej nogi — każdy "technicznie ważny"
+// (bufor w oknie), ale po co jechać wcześniej i czekać na peronie 90 minut,
+// skoro późniejszy odjazd dowozi na miejsce równie szybko albo szybciej?
+// Wariant A jest zdominowany przez B, gdy B odjeżdża nie wcześniej I
+// przyjeżdża nie później niż A (a przynajmniej jedno jest ostro lepsze) —
+// zostaje tylko "granica efektywności" odjazd/przyjazd, reszta znika.
+function pruneDominated(itineraries) {
+  const dep = (it) => minutesFromTime(it.departureTime);
+  const arr = (it) => minutesFromTime(it.arrivalTime) + (it.arrivalNextDay ? 1440 : 0);
+
+  return itineraries.filter((it) => {
+    const itDep = dep(it);
+    const itArr = arr(it);
+    return !itineraries.some((other) => {
+      if (other === it) return false;
+      const oDep = dep(other);
+      const oArr = arr(other);
+      return oDep >= itDep && oArr <= itArr && (oDep > itDep || oArr < itArr);
+    });
+  });
 }
 
 // ============ Wzbogacenie o czas rzeczywisty (opóźnienia na żywo) ============
