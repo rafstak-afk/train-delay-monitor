@@ -60,7 +60,16 @@ const EXTENDED_TRANSFER_MAX_ROUNDS = EXTENDED_TRANSFER_CANDIDATES.length; // do 
 // Sufit na liczbę wariantów łańcucha trzymanych per stacja-granica między
 // rundami — bez tego kombinatoryka (warianty × nowe kursy) rosłaby bez
 // kontroli na gęstych węzłach.
-const CHAIN_FRONTIER_CAP = 40;
+const CHAIN_FRONTIER_CAP = 15;
+// Sufit na CAŁKOWITĄ liczbę różnych stacji-granic między rundami. Jedna
+// runda ekspansji potrafi wygenerować setki różnych stacji docelowych (złapane
+// na żywo: 477 po jednej rundzie z zaledwie 25 kandydatów) — bez tego kolejna
+// runda mnoży to dalej (stacje × warianty × nowe kursy) i realnie przekracza
+// limit zasobów Workera (błąd Cloudflare 1102) nawet przy "świeżym"
+// (niezacache'owanym) zapytaniu. Zatrzymujemy najbardziej obiecujące stacje —
+// te z najwcześniejszym możliwym przyjazdem — reszta i tak rzadko prowadzi do
+// czegokolwiek lepszego niż już znalezione warianty.
+const MAX_FRONTIER_STATIONS = 120;
 // Backtracking przy "przez": ile najwcześniejszych kandydatów na segment
 // bierzemy pod uwagę na każdym kroku DFS — bez nowych zapytań, to tylko
 // porównania w pamięci, więc nawet pełne przeszukanie jest trywialne.
@@ -717,8 +726,12 @@ function capChains(chains) {
 function closeFrontier(frontier, reachableBeforeB, to, stationNames, transferMinutes) {
   const results = [];
   for (const [stationId, chains] of frontier) {
-    const lastLegList = reachableBeforeB.get(stationId);
-    if (!lastLegList) continue;
+    const lastLegListFull = reachableBeforeB.get(stationId);
+    if (!lastLegListFull) continue;
+    const lastLegList = lastLegListFull
+      .slice()
+      .sort((a, b) => minutesFromTime(a.boardTime) - minutesFromTime(b.boardTime))
+      .slice(0, 15);
     const stName = stationNames.get(Number(stationId)) || `Stacja ${stationId}`;
 
     for (const chain of chains) {
@@ -906,7 +919,7 @@ async function buildExtendedTransferItineraries({
         const hops = hopsFull
           .slice()
           .sort((a, b) => minutesFromTime(a.boardTime) - minutesFromTime(b.boardTime))
-          .slice(0, 40);
+          .slice(0, 15);
 
         for (const chain of chainsAtXi) {
           const usedKeys = chainRouteKeySet(chain);
@@ -931,7 +944,14 @@ async function buildExtendedTransferItineraries({
     }
 
     for (const [k, v] of nextFrontier) nextFrontier.set(k, capChains(v));
-    frontier = nextFrontier;
+    frontier =
+      nextFrontier.size > MAX_FRONTIER_STATIONS
+        ? new Map(
+            [...nextFrontier.entries()]
+              .sort((a, b) => Math.min(...a[1].map((c) => c.arrMin)) - Math.min(...b[1].map((c) => c.arrMin)))
+              .slice(0, MAX_FRONTIER_STATIONS)
+          )
+        : nextFrontier;
 
     // UWAGA: świadomie BEZ przerywania po pierwszej warstwie, która cokolwiek
     // znajdzie. Jedno znalezione połączenie przy 2 przesiadkach nie znaczy, że
