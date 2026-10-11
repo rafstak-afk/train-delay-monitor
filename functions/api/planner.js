@@ -28,8 +28,12 @@ const COMPOSED_CACHE_TTL = 1800;
 // awarii jednego z wielu równoległych zapytań do PLK (duże stacje, rzadkie
 // przeciążenia) — bez krótszego TTL taki pusty wynik "zamrażał się" w
 // cache'u na całe 30 minut, więc to samo wyszukiwanie dawało ten sam zły
-// wynik, mimo że kolejna, świeża próba już by się udała.
-const COMPOSED_CACHE_TTL_EMPTY = 90;
+// wynik, mimo że kolejna, świeża próba już by się udała. 90s okazało się
+// WCIĄŻ za długo — użytkownik klikający "Szukaj" jeszcze raz po minucie
+// (naturalna reakcja na "nie znaleziono") wciąż trafiał w ten sam,
+// zbuforowany błąd. 10s to wciąż ochrona przed przypadkowym podwójnym
+// kliknięciem, ale każda świadoma, kolejna próba liczy się od nowa.
+const COMPOSED_CACHE_TTL_EMPTY = 10;
 const UPSTREAM_TIMEOUT_MS = 12000;
 const DEFAULT_TRANSFER_MINUTES = 3;
 const TRANSFER_MINUTES_MIN = 0;
