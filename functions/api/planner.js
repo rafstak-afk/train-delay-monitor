@@ -764,20 +764,28 @@ function closeFrontier(frontier, reachableBeforeB, to, stationNames, transferMin
 // systematycznie zaniża stacje będące końcem TYLKO jednego kursu, a to
 // bywają właśnie najlepsze węzły — złapane na żywym przykładzie Radziechowy
 // Wieprz→Katowice).
-function selectExpansionCandidates(frontier, fromRoutes, isFirstRound, fromId, limit) {
+// `routesSeenSoFar`: WSZYSTKIE pełnodniowe trasy pobrane do tej pory (A plus
+// każdy odpytany dotąd kandydat z poprzednich rund) — rośnie z każdą rundą,
+// bez żadnego dodatkowego zapytania. Końcowa stacja KAŻDEJ z nich zawsze
+// dostaje szansę, niezależnie od rankingu. To samo ograniczenie, które
+// naprawiło rundę 1 (Radziechowy Wieprz→Katowice, kilkanaście lokalnych
+// przystanków z wyższym "wynikiem" niż prawdziwy węzeł), stosowane dawniej
+// TYLKO do rundy 1 — złapane na żywym przykładzie: w rundzie 2 (477
+// kandydatów) czysty ranking po liczbie łańcuchów wybierał Koszęcin i
+// Rusinowice (drobne przystanki na gęstej lokalnej linii) zamiast Katowic,
+// bo ranking strukturalnie zaniża duże węzły z mniejszą liczbą, ale
+// ważniejszych tras.
+function selectExpansionCandidates(frontier, routesSeenSoFar, fromId, limit) {
   const ranked = [...frontier.entries()].sort((a, b) => b[1].length - a[1].length).map(([id]) => id);
 
-  let guaranteedIds = [];
-  if (isFirstRound) {
-    const terminusIds = new Set();
-    for (const r of fromRoutes || []) {
-      const stops = r.st || [];
-      if (!stops.length) continue;
-      const last = stops[stops.length - 1];
-      if (last && last.atm) terminusIds.add(String(last.id));
-    }
-    guaranteedIds = [...terminusIds].filter((id) => frontier.has(id));
+  const terminusIds = new Set();
+  for (const r of routesSeenSoFar || []) {
+    const stops = r.st || [];
+    if (!stops.length) continue;
+    const last = stops[stops.length - 1];
+    if (last && last.atm) terminusIds.add(String(last.id));
   }
+  const guaranteedIds = [...terminusIds].filter((id) => frontier.has(id));
 
   return [...new Set([...guaranteedIds, ...ranked])]
     .filter((id) => id !== String(fromId))
@@ -809,6 +817,7 @@ async function buildExtendedTransferItineraries({
   let fetchedCount = 0;
   let subrequestsUsed = 0;
   const allClosed = [];
+  let routesSeenSoFar = [...(fromRoutes || [])];
 
   // Warstwa 0: jeden skok od A (to samo źródło co 1-przesiadka), bez
   // sprawdzania domknięcia — to już policzyła osobno zwykła 1-przesiadka.
@@ -828,28 +837,32 @@ async function buildExtendedTransferItineraries({
 
     // Realny limit Cloudflare Workera to 50 subrequestów na wywołanie;
     // getJsonCached kosztuje 1 przy "cache hit" (samo cache.match) albo do 3
-    // przy "cache miss" (cache.match+fetch+cache.put). Runda 1 (M=25) jest
-    // sprawdzonym na żywo, od dawna działającym ustawieniem — NIE dotykamy
-    // jej. Głębsze rundy (2., 3.) to dodatkowa głębokość, która może dobić
+    // przy "cache miss". Runda 1 (M=25) jest sprawdzonym na żywo, od dawna
+    // działającym ustawieniem — NIE dotykamy jej. Głębsze rundy mogą dobić
     // już zużyty budżet do przekroczenia limitu — złapane na żywym
     // przykładzie: Gdynia Główna→Zakopane bez IC/EIP skończyło się błędem
-    // Cloudflare 1102. Liczymy tu RZECZYWISTE zużycie (hit/miss), nie
-    // ryczałtowe ×3 — ryczałt zakładałby, że runda 1 (M=25) sama z siebie
-    // prawie zawsze wyczerpuje budżet (nawet gdy w praktyce większość to
-    // "cache hit"), co w praktyce całkowicie blokowało rundę 2 niezależnie od
-    // realnego zużycia — złapane na żywym przykładzie: Tarnowskie Góry→
-    // Kraków Olszanica (bez IC) nie znajdowało żadnego z 5 połączeń przez
-    // Chorzów Batory/Katowice widocznych w PLK, bo runda 2 nigdy nie
-    // startowała.
+    // Cloudflare 1102. Ale zakładanie Z GÓRY ryczałtowego ×3 dla kolejnej
+    // rundy (zanim jeszcze cokolwiek z niej pobraliśmy) okazało się PRZESADNE
+    // w drugą stronę — złapane na żywym przykładzie: Tarnowskie Góry→Kraków
+    // Olszanica (bez IC), gdzie runda 1 (M=25) to w 100% "cache hit"
+    // (popularna aglomeracja śląska), a mimo to ryczałt ×3 "na papierze"
+    // niemal wyczerpywał budżet i zostawiał rundzie 2 limit=2 kandydatów —
+    // za mało, by w ogóle trafić na Katowice. Estymujemy więc koszt kolejnej
+    // rundy na bazie RZECZYWISTEGO współczynnika trafień zaobserwowanego do
+    // tej pory (z podłogą 1.5 — głębsze rundy dotykają rzadziej odpytywanych
+    // stacji, więc pełne zaufanie do dotychczasowego, zwykle wysokiego
+    // odsetka trafień też byłoby ryzykowne).
     if (round > 1) {
-      const safeCeiling = 45;
+      const safeCeiling = 48;
+      const observedRate = fetchedCount > 0 ? subrequestsUsed / fetchedCount : 3;
+      const perCandidateEstimate = Math.max(1.5, observedRate);
       const remaining = safeCeiling - budgetUsedSoFar - subrequestsUsed;
-      const affordable = Math.floor(remaining / 3);
+      const affordable = Math.floor(remaining / perCandidateEstimate);
       if (affordable <= 0) break;
       limit = Math.min(limit, affordable);
     }
 
-    const candidateIds = selectExpansionCandidates(frontier, fromRoutes, round === 1, from.id, limit);
+    const candidateIds = selectExpansionCandidates(frontier, routesSeenSoFar, from.id, limit);
     if (debugLog) {
       debugLog.push({
         round,
@@ -877,6 +890,7 @@ async function buildExtendedTransferItineraries({
 
       const xiName = stationNames.get(Number(xi)) || `Stacja ${xi}`;
       const xiRoutes = result.data?.rt || [];
+      routesSeenSoFar = routesSeenSoFar.concat(xiRoutes);
       const reachableAfterXi = buildReachableAfter(xiRoutes, xi, excludeCarrierSet);
       const chainsAtXi = frontier.get(xi) || [];
       if (!chainsAtXi.length) continue;
