@@ -791,6 +791,17 @@ function flattenConnections(routes, excludeCarrierSet) {
   for (const r of routes) {
     if (excludeCarrierSet && excludeCarrierSet.has(carrierCodeOf(r.cc))) continue;
     const stops = r.st || [];
+    // UWAGA: ten sam obiekt trasy (sid/oid) bywa w środku PRZENUMEROWANY
+    // (np. 46541 staje się 46540 bez zmiany sid/oid) — Portal Pasażera
+    // liczy to jako przesiadkę. Świadomie NIE traktujemy zmiany numeru jako
+    // granicy kursu: sprawdzone na żywo na dwóch przykładach (Katowice
+    // 43052→43053: 30 sekund przerwy; Lubliniec 46541→46540: ~2,5 min) —
+    // oba to ewidentnie ten sam fizyczny pociąg, nie realna przesiadka.
+    // Próba rozdzielenia po numerze (v2.0, cofnięta) naprawiała zgłoszony
+    // przykład, ale psuła inny (Katowice→Kraków Główny), bo nie potrafimy
+    // z tych danych odróżnić "kosmetyczne przenumerowanie" od prawdziwej
+    // zmiany składu — a krótkie odstępy w OBU zbadanych przypadkach
+    // wskazują, że to pierwsze jest normą, nie wyjątkiem.
     const tripId = r.sid + "|" + r.oid;
     for (let i = 0; i < stops.length - 1; i++) {
       const depTime = shortTime(stops[i].dtm);
