@@ -963,14 +963,25 @@ function csaLegsToItinerary(legs, from, to, stationNames, date) {
   };
 }
 
-// Odkrywanie: zamiast rankingu kandydatów, po każdym przebiegu CSA pytamy
-// PLK o KAŻDĄ stację, którą CSA uznało za osiągalną (w limicie przesiadek) a
-// której jeszcze nie znamy — bez żadnego sztywnego sufitu "ile kandydatów".
-// Jedyne zabezpieczenie to realny koszt: łączna liczba pobranych tras
-// (dużych węzłów, np. Katowice/Kraków Główny, nie da się tanio pobierać w
-// nieskończoność) oraz liczba rund.
+// Odkrywanie: zamiast rankingu kandydatów WEDŁUG WAŻNOŚCI (to był błąd
+// poprzedniej heurystyki), po każdym przebiegu CSA pytamy PLK o stacje,
+// które CSA uznało za osiągalne (w limicie przesiadek), a których jeszcze
+// nie znamy. Jedyne ograniczenie to realny koszt sieciowy — a ten okazał
+// się ostrzejszy, niż zakładano: złapane na żywo (2026-10-13), zapytanie z
+// 61 kandydatami w rundzie 1 (24 nieudane, w tym samo Katowice) i 172
+// kandydatami w rundzie 2 (WSZYSTKIE 172 nieudane) — 235 prób pobrania w
+// JEDNYM żądaniu to realny atak typu "burst" na limit PLK, nie subtelna
+// zawodność pojedynczych zapytań. Dlatego poza sufitem na objętość tras
+// (CSA_ROUTE_VOLUME_CEILING) i liczbę rund, jest teraz TWARDY sufit na
+// łączną liczbę prób pobrania w jednym żądaniu (CSA_MAX_TOTAL_FETCHES) oraz
+// na rozmiar pojedynczej rundy (CSA_MAX_CANDIDATES_PER_ROUND) — a gdy trzeba
+// przyciąć, wybieramy stacje z NAJWCZEŚNIEJSZYM możliwym przyjazdem (jak
+// blisko w czasie są od źródła), nie "ile tras tamtędy przechodzi" (to
+// właśnie ten ranking systematycznie zaniżał prawdziwe węzły).
 const CSA_ROUTE_VOLUME_CEILING = 6000;
 const CSA_DISCOVERY_MAX_ROUNDS = 6;
+const CSA_MAX_CANDIDATES_PER_ROUND = 40;
+const CSA_MAX_TOTAL_FETCHES = 120;
 
 async function searchWithCSA({
   from,
@@ -1018,18 +1029,31 @@ async function searchWithCSA({
   const floorMin = minutesFromTime(time) ?? 0;
   let round = 0;
   const debugRounds = [];
-  while (round < CSA_DISCOVERY_MAX_ROUNDS && totalRoutesVolume < CSA_ROUTE_VOLUME_CEILING) {
+  while (
+    round < CSA_DISCOVERY_MAX_ROUNDS &&
+    totalRoutesVolume < CSA_ROUTE_VOLUME_CEILING &&
+    fetchedIds.size < CSA_MAX_TOTAL_FETCHES
+  ) {
     round++;
     const sorted = allConnections.slice().sort((a, b) => a.depMin - b.depMin);
     const { labels } = runMultiLabelCSA(sorted, String(from.id), floorMin, maxTransfers, transferMinutes);
     const frontier = [];
     for (const [stationId, labelArr] of labels) {
       if (fetchedIds.has(stationId)) continue;
-      if (labelArr.some((v) => v !== Infinity)) frontier.push(stationId);
+      const earliest = Math.min(...labelArr);
+      if (earliest !== Infinity) frontier.push([stationId, earliest]);
     }
     if (!frontier.length) break;
-    const added = await fetchAndAdd(frontier);
-    debugRounds.push({ round, frontierSize: frontier.length, added, totalRoutesVolumeAfter: totalRoutesVolume });
+    // Gdy trzeba przyciąć do budżetu rundy/żądania, pierwszeństwo mają
+    // stacje z najwcześniejszym osiągalnym przyjazdem — to najbliższe w
+    // czasie, nie "najwięcej tras przez nie przechodzi" (patrz komentarz
+    // wyżej przy stałych).
+    frontier.sort((a, b) => a[1] - b[1]);
+    const remainingBudget = CSA_MAX_TOTAL_FETCHES - fetchedIds.size;
+    const roundIds = frontier.slice(0, Math.min(CSA_MAX_CANDIDATES_PER_ROUND, remainingBudget)).map(([id]) => id);
+    if (!roundIds.length) break;
+    const added = await fetchAndAdd(roundIds);
+    debugRounds.push({ round, frontierSize: frontier.length, attempted: roundIds.length, added, totalRoutesVolumeAfter: totalRoutesVolume });
     if (!added) break;
   }
   globalThis.__csaDebug = { fetchedCount: fetchedIds.size, totalRoutesVolume, rounds: round, debugRounds, failedIds };
