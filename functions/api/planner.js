@@ -831,6 +831,17 @@ async function buildExtendedTransferItineraries({
   let subrequestsUsed = 0;
   const allClosed = [];
   let routesSeenSoFar = [...(fromRoutes || [])];
+  // Liczba KANDYDATÓW na rundę (25/12/6) nie odzwierciedla realnego kosztu —
+  // jeden duży węzeł (Katowice: 327 tras dziennie, Kraków Główny: 544) kosztuje
+  // tyle, co kilkadziesiąt małych stacji razem. Gwarancja węzłów w granicy
+  // (patrz niżej) zwiększa szansę, że DUŻO takich węzłów trafi do jednej rundy
+  // naraz — złapane na żywo: nawet z pamięcią podręczną (v1.60) 2/10 świeżych
+  // prób wciąż kończyło się błędem 1102. Liczymy więc realną "objętość"
+  // (sumę tras ze wszystkich dotąd przetworzonych kandydatów) i zatrzymujemy
+  // dalsze poszerzanie, gdy zrobi się zbyt duża — niezależnie od tego, ile to
+  // było stacji.
+  const ROUTE_VOLUME_CEILING = 1200;
+  let totalRoutesProcessed = 0;
   // Ta sama stacja (zwłaszcza duży węzeł typu Katowice/Kraków Główny, po
   // kilkaset tras dziennie) bywa wybrana jako kandydat w WIĘCEJ NIŻ jednej
   // rundzie — bez tej pamięci byłaby pobierana i przetwarzana od nowa za
@@ -884,6 +895,7 @@ async function buildExtendedTransferItineraries({
     // stacji, więc pełne zaufanie do dotychczasowego, zwykle wysokiego
     // odsetka trafień też byłoby ryzykowne).
     if (round > 1) {
+      if (totalRoutesProcessed > ROUTE_VOLUME_CEILING) break;
       const safeCeiling = 48;
       const observedRate = fetchedCount > 0 ? subrequestsUsed / fetchedCount : 3;
       const perCandidateEstimate = Math.max(1.5, observedRate);
@@ -908,8 +920,16 @@ async function buildExtendedTransferItineraries({
     for (const { stationId: xi, result } of fetchedFresh) {
       if (!result) continue;
       apiLimitsList.push(result.apiLimits);
+      // Sam fetch już się odbył (koszt sieciowy nie do odzyskania), ale
+      // kosztowne, zagnieżdżone przeliczenie (buildReachableAfter na setkach
+      // tras + dopasowywanie do łańcuchów) pomijamy, gdy w TEJ SAMEJ rundzie
+      // zdążyliśmy już przetworzyć zbyt dużo — złapane na żywo: Katowice i
+      // Kraków Główny wybrane RAZEM w jednej rundzie już same w sobie (871
+      // tras) wystarczały do przekroczenia limitu zasobów.
+      if (round > 1 && totalRoutesProcessed > ROUTE_VOLUME_CEILING) continue;
       const xiRoutes = result.data?.rt || [];
       routesSeenSoFar = routesSeenSoFar.concat(xiRoutes);
+      totalRoutesProcessed += xiRoutes.length;
       fetchedRoutesCache.set(xi, {
         xiName: stationNames.get(Number(xi)) || `Stacja ${xi}`,
         reachableAfterXi: buildReachableAfter(xiRoutes, xi, excludeCarrierSet)
