@@ -1,19 +1,28 @@
 // ============ Planer podróży ============
 // Szuka połączeń bezpośrednich, z przesiadką(ami) i z wymuszonymi stacjami
 // "przez" między dwiema dowolnymi stacjami w kraju, bez żadnej
-// predefiniowanej listy węzłów przesiadkowych. Algorytm: "meet in the
-// middle" — pyta PLK osobno o wszystko, co dotyka stacji A (gdzie da się
-// dojechać jadąc stąd) i osobno o wszystko, co dotyka stacji B (skąd da się
-// dojechać do B), a potem szuka części wspólnej stacji — to jest kandydat na
-// przesiadkę, gdziekolwiek faktycznie leży.
+// predefiniowanej listy węzłów przesiadkowych.
 //
-// Trzy ścieżki w jednym endpointzie:
-//  - brak "przez": bezpośrednio + 1 przesiadka zawsze; automatyczne 2
-//    przesiadki (maxTransfers=2) tylko gdy to nie wystarczy.
-//  - "przez" podane: łańcuch segmentów (from→via1→...→to), każdy segment to
-//    bezpośrednio+1 przesiadka, sklejone z ograniczonym backtrackingiem.
-//  - wzbogacenie o czas rzeczywisty (operations/train/...) dla dzisiejszej
-//    daty, tylko dla wyników faktycznie zwracanych.
+// Silnik bez "przez" (searchWithCSA): Connection Scan Algorithm. Zamiast
+// zgadywać i rankingować kandydatów na przesiadkę (dawna heurystyka —
+// porzucona po serii błędów: ranking zaniżał prawdziwe węzły jak Katowice czy
+// Kraków Główny, sufity na listę kandydatów ucinały właściwe kursy), CSA
+// przetwarza w jednym przebiegu WSZYSTKIE pobrane dotąd połączenia (każdy
+// przystanek→przystanek skok każdej trasy), licząc dla każdej stacji
+// najwcześniejszy przyjazd przy 0..maxTransfers przesiadkach. Stacje do
+// dociągnięcia nie są wybierane przez ranking — to te, które CSA uznało za
+// osiągalne, a których jeszcze nie znamy (CSA_ROUTE_VOLUME_CEILING /
+// CSA_DISCOVERY_MAX_ROUNDS to jedyne, czysto zasobowe ograniczenie). Kilka
+// różnych, sensownych odjazdów w ciągu dnia dostajemy przez wielokrotne
+// uruchomienie CSA z progiem przesuwanym tuż za poprzednio znaleziony odjazd
+// (findMultipleItineraries).
+//
+// "Przez" wskazane stacje: wciąż dawny mechanizm (searchSegment + stitchViaChain)
+// — bezpośrednio+1 przesiadka per segment, sklejone ograniczonym DFS. Nie
+// przepisane na CSA w tej turze (mniejszy, rzadziej zgłaszany przypadek).
+//
+// Wzbogacenie o czas rzeczywisty (operations/train/...) dla dzisiejszej
+// daty, tylko dla wyników faktycznie zwracanych — bez zmian.
 
 const PLK_BASE = "https://pdp-api.plk-sa.pl/api/v1";
 
@@ -44,32 +53,6 @@ const DEFAULT_MAX_RESULTS = 20;
 // wielogodzinne czekanie na peronie.
 const MAX_TRANSFER_WAIT_MINUTES = 120;
 const MAX_VIA_STATIONS = 3;
-// Automatyczne rozszerzenie o kolejne skoki (bez wskazanej stacji "przez"):
-// adaptacyjnie, warstwa po warstwie — 2 przesiadki, jeśli nic nie ma to 3,
-// jeśli wciąż nic to 4. Użytkownik: "tyle ile trzeba, jak nie znajdujesz przy
-// dwóch to w drugim przebiegu lecisz w 3 albo i 4" — więc płacimy za kolejną,
-// droższą rundę TYLKO gdy poprzednia naprawdę niczego nie znalazła, nie z
-// góry. Malejący budżet kandydatów na rundę — koszt rośnie z głębokością
-// (każda runda to nowe zapytania dla WSZYSTKICH łańcuchów z poprzedniej), więc
-// głębsze, rzadziej potrzebne rundy dostają mniejszy budżet.
-// Runda 1 (→2 przesiadki) = 25, dokładnie jak dawny twardy sufit (ranking +
-// gwarantowane końcówki tras) — to sprawdzone na żywo minimum, które złapało
-// realny węzeł (Chorzów Batory) odpadający z samego rankingu przy remisie.
-const EXTENDED_TRANSFER_CANDIDATES = [25, 12, 6];
-const EXTENDED_TRANSFER_MAX_ROUNDS = EXTENDED_TRANSFER_CANDIDATES.length; // do 4 przesiadek
-// Sufit na liczbę wariantów łańcucha trzymanych per stacja-granica między
-// rundami — bez tego kombinatoryka (warianty × nowe kursy) rosłaby bez
-// kontroli na gęstych węzłach.
-const CHAIN_FRONTIER_CAP = 15;
-// Sufit na CAŁKOWITĄ liczbę różnych stacji-granic między rundami. Jedna
-// runda ekspansji potrafi wygenerować setki różnych stacji docelowych (złapane
-// na żywo: 477 po jednej rundzie z zaledwie 25 kandydatów) — bez tego kolejna
-// runda mnoży to dalej (stacje × warianty × nowe kursy) i realnie przekracza
-// limit zasobów Workera (błąd Cloudflare 1102) nawet przy "świeżym"
-// (niezacache'owanym) zapytaniu. Zatrzymujemy najbardziej obiecujące stacje —
-// te z najwcześniejszym możliwym przyjazdem — reszta i tak rzadko prowadzi do
-// czegokolwiek lepszego niż już znalezione warianty.
-const MAX_FRONTIER_STATIONS = 80;
 // Backtracking przy "przez": ile najwcześniejszych kandydatów na segment
 // bierzemy pod uwagę na każdym kroku DFS — bez nowych zapytań, to tylko
 // porównania w pamięci, więc nawet pełne przeszukanie jest trywialne.
@@ -209,64 +192,54 @@ export async function onRequestGet(context) {
         viaFailedAt = stitched.failedAt;
       }
     } else {
-      const segment = await searchSegment({
+      const csa = await searchWithCSA({
         from: resolvedWaypoints[0],
         to: resolvedWaypoints[1],
         date,
+        time,
         transferMinutes,
+        maxTransfers,
         excludeCarrierSet,
         headers,
         scheduleTtl,
-        stationNames
+        stationNames,
+        maxResults
       });
-      apiLimitsList.push(...segment.apiLimitsList);
-      requestBudgetUsed += 9;
-      cacheInfo = { ...cacheInfo, ...segment.cache };
+      apiLimitsList.push(...csa.apiLimitsList);
+      requestBudgetUsed += csa.fetchedCount * 3;
 
-      const minMinutes = minutesFromTime(time) ?? 0;
-      const afterTime = (it) => (minutesFromTime(it.departureTime) ?? 0) >= minMinutes;
-
-      let combinedAll = [...segment.itineraries];
-      let combined = combinedAll.filter(afterTime);
-
-      if (maxTransfers >= 2 && combined.length < maxResults) {
-        const multi = await buildExtendedTransferItineraries({
-          reachableAfterA: segment.reachableAfterA,
-          reachableBeforeB: segment.reachableBeforeB,
-          fromRoutes: segment.fromRoutes,
-          from: resolvedWaypoints[0],
-          to: resolvedWaypoints[1],
-          transferMinutes,
-          stationNames,
-          excludeCarrierSet,
-          headers,
-          scheduleTtl,
-          date,
-          maxExtraRounds: maxTransfers - 1,
-          budgetUsedSoFar: requestBudgetUsed,
-          minDepartureMinutes: minMinutes
-        });
-        apiLimitsList.push(...multi.apiLimitsList);
-        requestBudgetUsed += multi.fetchedCount * 3;
-        combinedAll = combinedAll.concat(multi.itineraries);
-        combined = combined.concat(multi.itineraries.filter(afterTime));
-      }
-
-      combined = pruneDominated(combined);
+      const combined = pruneDominated(dedupItineraries(csa.itineraries));
       itineraries = combined.sort((a, b) => a.departureTime.localeCompare(b.departureTime)).slice(0, maxResults);
       noConnectionFound = itineraries.length === 0;
 
       // Rozróżnienie "dziś w ogóle nic nie ma" od "było, ale już odjechało" —
       // bez tego pusty wynik wygląda jak awaria, a bywa po prostu uczciwą
-      // informacją "ostatni kurs dziś już minął". Liczone z PEŁNEJ (przed
-      // filtrem godziny) listy, więc łapie też takie, które same w sobie
-      // mieszczą się w oknie maxTransfers, ale wypadły przez porę dnia.
-      if (noConnectionFound && combinedAll.length) {
-        const latestMin = combinedAll.reduce((max, it) => {
-          const d = minutesFromTime(it.departureTime);
-          return d != null && d > max ? d : max;
-        }, -1);
-        if (latestMin >= 0) lastDepartureToday = hhmmFromMinutes(latestMin);
+      // informacją "ostatni kurs dziś już minął". Sprawdzane osobnym
+      // przebiegiem od początku dnia TYLKO gdy pierwszy (z progiem godziny)
+      // nic nie znalazł — nie płacimy za to w normalnym przypadku.
+      if (noConnectionFound && minutesFromTime(time) > 0) {
+        const fullDay = await searchWithCSA({
+          from: resolvedWaypoints[0],
+          to: resolvedWaypoints[1],
+          date,
+          time: "00:00",
+          transferMinutes,
+          maxTransfers,
+          excludeCarrierSet,
+          headers,
+          scheduleTtl,
+          stationNames,
+          maxResults: 50
+        });
+        apiLimitsList.push(...fullDay.apiLimitsList);
+        requestBudgetUsed += fullDay.fetchedCount * 3;
+        if (fullDay.itineraries.length) {
+          const latestMin = fullDay.itineraries.reduce((max, it) => {
+            const d = minutesFromTime(it.departureTime);
+            return d != null && d > max ? d : max;
+          }, -1);
+          if (latestMin >= 0) lastDepartureToday = hhmmFromMinutes(latestMin);
+        }
       }
     }
 
@@ -691,347 +664,6 @@ async function fetchCandidatesInChunks(candidateIds, date, headers, scheduleTtl)
   return out;
 }
 
-function buildLegInfo(boardId, boardName, alightId, alightName, hop, destName) {
-  const info = {
-    train: trainInfoFromShort(hop.route),
-    scheduleId: String(hop.route.sid || ""),
-    orderId: String(hop.route.oid || ""),
-    trainOrderId: String(hop.route.toid || ""),
-    board: { stationId: String(boardId), stationName: boardName, time: hop.boardTime },
-    alight: { stationId: String(alightId), stationName: alightName, time: hop.arrTime, nextDay: false }
-  };
-  info.trainUrl = buildTrainUrl(info, destName, null);
-  return info;
-}
-
-function chainRouteKeySet(chain) {
-  return new Set(chain.legs.map((l) => l.scheduleId + "|" + l.orderId));
-}
-
-function capChains(chains) {
-  return chains.sort((a, b) => a.arrMin - b.arrMin).slice(0, CHAIN_FRONTIER_CAP);
-}
-
-// Dla każdej stacji-granicy aktualnej "fali" sprawdza, czy stamtąd da się już
-// domknąć do B (ten sam warunek bufora co każde wcześniejsze złączenie).
-// Wywoływane PO każdej rundzie rozszerzenia — jeśli coś znajdzie, silnik
-// przestaje schodzić głębiej (płacimy za kolejną rundę tylko gdy naprawdę
-// trzeba).
-function closeFrontier(frontier, reachableBeforeB, to, stationNames, transferMinutes) {
-  const results = [];
-  for (const [stationId, chains] of frontier) {
-    const lastLegListFull = reachableBeforeB.get(stationId);
-    if (!lastLegListFull) continue;
-    // Ta sama poprawka co przy rozszerzaniu granicy (patrz komentarz w
-    // buildExtendedTransferItineraries): bez odcięcia od przyjazdu
-    // najwcześniejszego łańcucha, 15 najwcześniejszych odjazdów W CAŁYM DNIU
-    // z tej stacji systemowo wycinało popołudniowe/wieczorne opcje.
-    const earliestArr = Math.min(...chains.map((c) => c.arrMin));
-    const lastLegList = lastLegListFull
-      .filter((h) => minutesFromTime(h.boardTime) >= earliestArr)
-      .sort((a, b) => minutesFromTime(a.boardTime) - minutesFromTime(b.boardTime))
-      .slice(0, 15);
-    const stName = stationNames.get(Number(stationId)) || `Stacja ${stationId}`;
-
-    for (const chain of chains) {
-      const usedKeys = chainRouteKeySet(chain);
-      for (const h of lastLegList) {
-        const routeKey = h.route.sid + "|" + h.route.oid;
-        if (usedKeys.has(routeKey)) continue;
-        const depMin = minutesFromTime(h.boardTime);
-        const buf = depMin - chain.arrMin;
-        if (buf < transferMinutes || buf > MAX_TRANSFER_WAIT_MINUTES) continue;
-
-        let arrMin = minutesFromTime(h.arrTime);
-        let nextDay = false;
-        if (arrMin < depMin) {
-          arrMin += 1440;
-          nextDay = true;
-        }
-
-        const lastLeg = buildLegInfo(stationId, stName, to.id, to.name, h, to.name);
-        lastLeg.alight.nextDay = nextDay;
-
-        const firstLeg = chain.legs[0];
-        const depFirst = minutesFromTime(firstLeg.board.time);
-
-        results.push({
-          type: "multi-transfer",
-          departureTime: firstLeg.board.time,
-          arrivalTime: h.arrTime,
-          arrivalNextDay: nextDay,
-          durationMinutes: arrMin - depFirst,
-          legs: [...chain.legs, lastLeg],
-          transfers: [...chain.transfers, { stationId, stationName: stName, bufferMinutes: buf, ok: true }]
-        });
-      }
-    }
-  }
-  return results;
-}
-
-// Wybór kandydatów na kolejną stację rozszerzenia — identyczna zasada jak w
-// dawnym jednorundowym mechanizmie: ranking po "ile łańcuchów już tu dociera"
-// (im więcej wariantów kończy się na tej stacji, tym bardziej prawdopodobny
-// węzeł), PLUS w pierwszej rundzie gwarantowane końcówki tras z A (ranking
-// systematycznie zaniża stacje będące końcem TYLKO jednego kursu, a to
-// bywają właśnie najlepsze węzły — złapane na żywym przykładzie Radziechowy
-// Wieprz→Katowice).
-// `routesSeenSoFar`: WSZYSTKIE pełnodniowe trasy pobrane do tej pory (A plus
-// każdy odpytany dotąd kandydat z poprzednich rund) — rośnie z każdą rundą,
-// bez żadnego dodatkowego zapytania. Końcowa stacja KAŻDEJ z nich zawsze
-// dostaje szansę, niezależnie od rankingu. To samo ograniczenie, które
-// naprawiło rundę 1 (Radziechowy Wieprz→Katowice, kilkanaście lokalnych
-// przystanków z wyższym "wynikiem" niż prawdziwy węzeł), stosowane dawniej
-// TYLKO do rundy 1 — złapane na żywym przykładzie: w rundzie 2 (477
-// kandydatów) czysty ranking po liczbie łańcuchów wybierał Koszęcin i
-// Rusinowice (drobne przystanki na gęstej lokalnej linii) zamiast Katowic,
-// bo ranking strukturalnie zaniża duże węzły z mniejszą liczbą, ale
-// ważniejszych tras.
-function selectExpansionCandidates(frontier, routesSeenSoFar, fromId, limit) {
-  const ranked = [...frontier.entries()].sort((a, b) => b[1].length - a[1].length).map(([id]) => id);
-
-  const terminusIds = new Set();
-  for (const r of routesSeenSoFar || []) {
-    const stops = r.st || [];
-    if (!stops.length) continue;
-    const last = stops[stops.length - 1];
-    if (last && last.atm) terminusIds.add(String(last.id));
-  }
-  const guaranteedIds = [...terminusIds].filter((id) => frontier.has(id));
-
-  return [...new Set([...guaranteedIds, ...ranked])]
-    .filter((id) => id !== String(fromId))
-    .slice(0, limit);
-}
-
-// Adaptacyjne, warstwowe poszerzanie poza zwykłą 1-przesiadkę: zamiast z góry
-// płacić za ustaloną liczbę skoków, próbujemy najpłytszej warstwy, która
-// faktycznie coś znajduje. Użytkownik: "tyle ile trzeba, jak nie znajdujesz
-// przy dwóch to w drugim przebiegu lecisz w 3 albo i 4" — każda kolejna,
-// droższa runda uruchamia się TYLKO jeśli poprzednia zwróciła zero.
-async function buildExtendedTransferItineraries({
-  reachableAfterA,
-  reachableBeforeB,
-  fromRoutes,
-  from,
-  to,
-  transferMinutes,
-  stationNames,
-  excludeCarrierSet,
-  headers,
-  scheduleTtl,
-  date,
-  maxExtraRounds,
-  budgetUsedSoFar = 0,
-  minDepartureMinutes = 0
-}) {
-  const apiLimitsList = [];
-  let fetchedCount = 0;
-  let subrequestsUsed = 0;
-  const allClosed = [];
-  let routesSeenSoFar = [...(fromRoutes || [])];
-  // Liczba KANDYDATÓW na rundę (25/12/6) nie odzwierciedla realnego kosztu —
-  // jeden duży węzeł (Katowice: 327 tras dziennie, Kraków Główny: 544) kosztuje
-  // tyle, co kilkadziesiąt małych stacji razem. Gwarancja węzłów w granicy
-  // (patrz niżej) zwiększa szansę, że DUŻO takich węzłów trafi do jednej rundy
-  // naraz — złapane na żywo: nawet z pamięcią podręczną (v1.60) 2/10 świeżych
-  // prób wciąż kończyło się błędem 1102. Liczymy więc realną "objętość"
-  // (sumę tras ze wszystkich dotąd przetworzonych kandydatów) i zatrzymujemy
-  // dalsze poszerzanie, gdy zrobi się zbyt duża — niezależnie od tego, ile to
-  // było stacji.
-  const ROUTE_VOLUME_CEILING = 3000;
-  let totalRoutesProcessed = 0;
-  // Ta sama stacja (zwłaszcza duży węzeł typu Katowice/Kraków Główny, po
-  // kilkaset tras dziennie) bywa wybrana jako kandydat w WIĘCEJ NIŻ jednej
-  // rundzie — bez tej pamięci byłaby pobierana i przetwarzana od nowa za
-  // każdym razem, co dla kilku takich węzłów naraz potrafiło przekroczyć
-  // limit zasobów Workera (błąd 1102) — złapane na żywo po wprowadzeniu
-  // gwarancji węzłów w granicy (patrz niżej), która właśnie zwiększa szansę,
-  // że ten sam duży węzeł wróci w kolejnej rundzie.
-  const fetchedRoutesCache = new Map();
-
-  // Warstwa 0: jeden skok od A (to samo źródło co 1-przesiadka), bez
-  // sprawdzania domknięcia — to już policzyła osobno zwykła 1-przesiadka.
-  // Odrzucamy od razu pierwsze nogi odjeżdżające przed żądaną godziną — bez
-  // tego sufit CHAIN_FRONTIER_CAP (najwcześniejsze warianty na stację) na
-  // każdej kolejnej stacji-granicy wypełniał się porannymi wariantami,
-  // wypychając te po południu/wieczorem, mimo że użytkownik pytał właśnie o
-  // nie — złapane na żywym przykładzie: Tarnowskie Góry→Kraków Olszanica
-  // (bez IC, od 17:00) nie znajdowało ŻADNEGO z 5 połączeń przez Chorzów
-  // Batory/Katowice widocznych w PLK, bo wariant "Katowice" na granicy po
-  // rundzie 2 był w 100% wypełniony kursami porannymi.
-  let frontier = new Map();
-  for (const [stationId, hops] of reachableAfterA) {
-    const stName = stationNames.get(Number(stationId)) || `Stacja ${stationId}`;
-    const chains = hops
-      .filter((h) => minutesFromTime(h.boardTime) >= minDepartureMinutes)
-      .map((h) => ({
-        legs: [buildLegInfo(from.id, from.name, stationId, stName, h, stName)],
-        transfers: [],
-        arrMin: minutesFromTime(h.arrTime)
-      }));
-    if (chains.length) frontier.set(stationId, capChains(chains));
-  }
-
-  for (let round = 1; round <= maxExtraRounds; round++) {
-    let limit = EXTENDED_TRANSFER_CANDIDATES[round - 1] ?? 5;
-
-    // Realny limit Cloudflare Workera to 50 subrequestów na wywołanie;
-    // getJsonCached kosztuje 1 przy "cache hit" (samo cache.match) albo do 3
-    // przy "cache miss". Runda 1 (M=25) jest sprawdzonym na żywo, od dawna
-    // działającym ustawieniem — NIE dotykamy jej. Głębsze rundy mogą dobić
-    // już zużyty budżet do przekroczenia limitu — złapane na żywym
-    // przykładzie: Gdynia Główna→Zakopane bez IC/EIP skończyło się błędem
-    // Cloudflare 1102. Ale zakładanie Z GÓRY ryczałtowego ×3 dla kolejnej
-    // rundy (zanim jeszcze cokolwiek z niej pobraliśmy) okazało się PRZESADNE
-    // w drugą stronę — złapane na żywym przykładzie: Tarnowskie Góry→Kraków
-    // Olszanica (bez IC), gdzie runda 1 (M=25) to w 100% "cache hit"
-    // (popularna aglomeracja śląska), a mimo to ryczałt ×3 "na papierze"
-    // niemal wyczerpywał budżet i zostawiał rundzie 2 limit=2 kandydatów —
-    // za mało, by w ogóle trafić na Katowice. Estymujemy więc koszt kolejnej
-    // rundy na bazie RZECZYWISTEGO współczynnika trafień zaobserwowanego do
-    // tej pory (z podłogą 1.5 — głębsze rundy dotykają rzadziej odpytywanych
-    // stacji, więc pełne zaufanie do dotychczasowego, zwykle wysokiego
-    // odsetka trafień też byłoby ryzykowne).
-    if (round > 1) {
-      if (totalRoutesProcessed > ROUTE_VOLUME_CEILING) break;
-      const safeCeiling = 48;
-      const observedRate = fetchedCount > 0 ? subrequestsUsed / fetchedCount : 3;
-      const perCandidateEstimate = Math.max(1.5, observedRate);
-      const remaining = safeCeiling - budgetUsedSoFar - subrequestsUsed;
-      const affordable = Math.floor(remaining / perCandidateEstimate);
-      if (affordable <= 0) break;
-      limit = Math.min(limit, affordable);
-    }
-
-    const candidateIds = selectExpansionCandidates(frontier, routesSeenSoFar, from.id, limit);
-    if (!candidateIds.length) break;
-
-    // 20+ zapytań odpalonych NARAZ jednym Promise.all okazało się zawodne na
-    // żywo — większość po cichu padała (timeout/przeciążenie) i gubiła akurat
-    // potrzebnego kandydata. Pytamy więc w mniejszych, kolejnych turach.
-    const idsToFetch = candidateIds.filter((id) => !fetchedRoutesCache.has(id));
-    const fetchedFresh = await fetchCandidatesInChunks(idsToFetch, date, headers, scheduleTtl);
-    fetchedCount += fetchedFresh.length;
-    for (const { result } of fetchedFresh) {
-      subrequestsUsed += result ? (result.cache === "HIT" ? 1 : 3) : 3;
-    }
-    for (const { stationId: xi, result } of fetchedFresh) {
-      if (!result) continue;
-      apiLimitsList.push(result.apiLimits);
-      // Sam fetch już się odbył (koszt sieciowy nie do odzyskania), ale
-      // kosztowne, zagnieżdżone przeliczenie (buildReachableAfter na setkach
-      // tras + dopasowywanie do łańcuchów) pomijamy, gdy w TEJ SAMEJ rundzie
-      // zdążyliśmy już przetworzyć zbyt dużo — złapane na żywo: Katowice i
-      // Kraków Główny wybrane RAZEM w jednej rundzie już same w sobie (871
-      // tras) wystarczały do przekroczenia limitu zasobów.
-      if (round > 1 && totalRoutesProcessed > ROUTE_VOLUME_CEILING) continue;
-      const xiRoutes = result.data?.rt || [];
-      routesSeenSoFar = routesSeenSoFar.concat(xiRoutes);
-      totalRoutesProcessed += xiRoutes.length;
-      fetchedRoutesCache.set(xi, {
-        xiName: stationNames.get(Number(xi)) || `Stacja ${xi}`,
-        reachableAfterXi: buildReachableAfter(xiRoutes, xi, excludeCarrierSet)
-      });
-    }
-
-    const nextFrontier = new Map();
-    for (const xi of candidateIds) {
-      const cached = fetchedRoutesCache.get(xi);
-      if (!cached) continue;
-      const { xiName, reachableAfterXi } = cached;
-      const chainsAtXi = frontier.get(xi) || [];
-      if (!chainsAtXi.length) continue;
-
-      // Odrzucamy od razu odjazdy sprzed przyjazdu NAJWCZEŚNIEJSZEGO z
-      // naszych łańcuchów — żaden z nich i tak nie mógłby się z nimi połączyć
-      // (bufor ujemny). Bez tego ".slice(0, 15)" poniżej trzymał 15
-      // najwcześniejszych odjazdów w CAŁYM DNIU z tej stacji, co dla
-      // popołudniowego/wieczornego przyjazdu ucinało WŁAŚNIE potrzebny kurs
-      // na rzecz nieprzydatnych porannych — złapane na żywym przykładzie:
-      // Zawiercie→Kraków Bronowice ma kilkadziesiąt kursów dziennie, a nasz
-      // przyjazd o 17:48 potrzebował tego o 18:54 (66. w kolejności), dawno
-      // za progiem 15 najwcześniejszych.
-      const earliestArr = Math.min(...chainsAtXi.map((c) => c.arrMin));
-
-      for (const [yId, hopsFull] of reachableAfterXi) {
-        const yName = stationNames.get(Number(yId)) || `Stacja ${yId}`;
-        const hops = hopsFull
-          .filter((h) => minutesFromTime(h.boardTime) >= earliestArr)
-          .sort((a, b) => minutesFromTime(a.boardTime) - minutesFromTime(b.boardTime))
-          .slice(0, 15);
-
-        for (const chain of chainsAtXi) {
-          const usedKeys = chainRouteKeySet(chain);
-          for (const h of hops) {
-            const routeKey = h.route.sid + "|" + h.route.oid;
-            if (usedKeys.has(routeKey)) continue;
-            const depMin = minutesFromTime(h.boardTime);
-            const buf = depMin - chain.arrMin;
-            if (buf < transferMinutes || buf > MAX_TRANSFER_WAIT_MINUTES) continue;
-
-            const legInfo = buildLegInfo(xi, xiName, yId, yName, h, yName);
-            const newChain = {
-              legs: [...chain.legs, legInfo],
-              transfers: [...chain.transfers, { stationId: xi, stationName: xiName, bufferMinutes: buf, ok: true }],
-              arrMin: minutesFromTime(h.arrTime)
-            };
-            if (!nextFrontier.has(yId)) nextFrontier.set(yId, []);
-            nextFrontier.get(yId).push(newChain);
-          }
-        }
-      }
-    }
-
-    for (const [k, v] of nextFrontier) nextFrontier.set(k, capChains(v));
-    // Sufit na CAŁKOWITY rozmiar granicy dotyczy TYLKO rund 2+. Runda 1 (2
-    // przesiadki) to sprawdzony od miesięcy, pojedynczy etap systemu
-    // sprzed tej sesji — jego granica bywała duża (setki stacji) i zawsze
-    // bezpiecznie się zamykała, bo to tylko JEDNO domknięcie, bez żadnej
-    // kolejnej rundy na wierzchu.
-    if (round > 1 && nextFrontier.size > MAX_FRONTIER_STATIONS) {
-      // Samo sortowanie "najwcześniejszy przyjazd pierwszy" systematycznie
-      // wycinało prawdziwe węzły przesiadkowe (Katowice, Kraków Główny) na
-      // rzecz dziesiątek mniej ważnych stacji, które akurat miały wcześniejszy
-      // najlepszy wariant — złapane na żywym przykładzie: Tarnowskie Góry→
-      // Kraków Olszanica (bez IC, od 05:00) nie znajdowało połączenia przez
-      // Chorzów Batory→Katowice→Kraków Główny widocznego w PLK, bo Kraków
-      // Główny (694 konkurujące stacje w tej rundzie) wypadał poza top-80.
-      // Ta sama zasada co przy wyborze kandydatów: końcowa stacja KAŻDEGO
-      // widzianego dotąd kursu zawsze dostaje miejsce w granicy, niezależnie
-      // od rankingu po godzinie.
-      const terminusIds = new Set();
-      for (const r of routesSeenSoFar || []) {
-        const stops = r.st || [];
-        if (!stops.length) continue;
-        const last = stops[stops.length - 1];
-        if (last && last.atm) terminusIds.add(String(last.id));
-      }
-      const byEarliest = (a, b) => Math.min(...a[1].map((c) => c.arrMin)) - Math.min(...b[1].map((c) => c.arrMin));
-      const entries = [...nextFrontier.entries()];
-      const guaranteed = entries.filter(([id]) => terminusIds.has(id)).sort(byEarliest).slice(0, MAX_FRONTIER_STATIONS);
-      const rest = entries.filter(([id]) => !terminusIds.has(id)).sort(byEarliest);
-      const remaining = Math.max(0, MAX_FRONTIER_STATIONS - guaranteed.length);
-      frontier = new Map([...guaranteed, ...rest.slice(0, remaining)]);
-    } else {
-      frontier = nextFrontier;
-    }
-
-    // UWAGA: świadomie BEZ przerywania po pierwszej warstwie, która cokolwiek
-    // znajdzie. Jedno znalezione połączenie przy 2 przesiadkach nie znaczy, że
-    // 3-przesiadkowa warstwa nie kryje kilku DALSZYCH, równie prawdziwych
-    // połączeń o innych porach — złapane na żywym przykładzie: Tarnowskie
-    // Góry→Kraków Olszanica (bez IC, od 17:00) dawało u nas tylko 1 wynik
-    // (przez Zawiercie, 2 przesiadki), a PLK pokazywał 5 innych, realnych
-    // połączeń przez Chorzów Batory/Katowice (3 przesiadki) — które w ogóle
-    // nie były przeszukiwane, bo silnik zatrzymał się po pierwszym trafieniu.
-    allClosed.push(...closeFrontier(frontier, reachableBeforeB, to, stationNames, transferMinutes));
-  }
-
-  return { itineraries: dedupItineraries(allClosed), apiLimitsList, fetchedCount };
-}
-
 // ============ Przesiadki "przez" wskazane stacje — sklejanie segmentów ============
 // Każdy segment (from→via1, via1→via2, ..., viaN→to) to już policzone
 // bezpośrednio+1 przesiadka. Sklejamy z ograniczonym DFS: bez segmentu 0
@@ -1137,6 +769,265 @@ function combineViaChain(chosen, waypoints) {
     legs,
     transfers: gaps
   };
+}
+
+// ============ Connection Scan Algorithm (bez „przez”) ============
+// Zamiast heurystyki "zgadnij, które stacje pośrednie są ważne i ogranicz
+// się do garstki kandydatów rankingowanych po jakiejś metryce" (źródło
+// całej serii błędów w tej sesji: ranking zaniżał prawdziwe węzły, sufity
+// na granicę/listę wariantów ucinały właściwy kurs) — CSA przetwarza
+// WSZYSTKIE pobrane dotąd połączenia w jednym przejściu, bez żadnego
+// sztywnego limitu kandydatów. Jedyne ograniczenie to to, ILE stacji w ogóle
+// zdążyliśmy pobrać z PLK (realny koszt sieciowy/CPU Workera) — nie które z
+// nich "wyglądają" na ważne.
+//
+// Etykieta wielokryterialna: labels[stacja][k] = najwcześniejszy przyjazd
+// przy DOKŁADNIE k wsiadaniach na pokład (k=0 to sama stacja źródłowa,
+// k=1 to bezpośrednio, k=2 to 1 przesiadka, itd. — więc "do N przesiadek"
+// odpowiada k=1..N+1). Ten sam fizyczny kurs, raz "wsiadany", jedzie dalej
+// za darmo (bez buforu) aż do wysiadki — klasyczna właściwość CSA.
+function flattenConnections(routes, excludeCarrierSet) {
+  const conns = [];
+  for (const r of routes) {
+    if (excludeCarrierSet && excludeCarrierSet.has(carrierCodeOf(r.cc))) continue;
+    const stops = r.st || [];
+    const tripId = r.sid + "|" + r.oid;
+    for (let i = 0; i < stops.length - 1; i++) {
+      const depTime = shortTime(stops[i].dtm);
+      const arrTime = shortTime(stops[i + 1].atm);
+      if (!depTime || !arrTime) continue;
+      const depMin = minutesFromTime(depTime);
+      const arrMin = minutesFromTime(arrTime);
+      if (arrMin < depMin) continue; // przejście przez północ na JEDNYM skoku — pomijamy, jak dotąd
+      conns.push({ depStop: String(stops[i].id), depMin, arrStop: String(stops[i + 1].id), arrMin, tripId, route: r });
+    }
+  }
+  return conns;
+}
+
+function runMultiLabelCSA(sortedConnections, sourceId, sourceMin, maxTransfers, transferMinutes) {
+  const SIZE = maxTransfers + 2;
+  const labels = new Map();
+  const parent = new Map();
+  const tripInfo = new Map();
+
+  function getLabels(id) {
+    let a = labels.get(id);
+    if (!a) {
+      a = new Array(SIZE).fill(Infinity);
+      labels.set(id, a);
+    }
+    return a;
+  }
+  const src = getLabels(sourceId);
+  for (let k = 0; k < SIZE; k++) src[k] = sourceMin;
+
+  for (const c of sortedConnections) {
+    if (c.depMin < sourceMin) continue;
+    let outputLevel;
+    if (tripInfo.has(c.tripId)) {
+      outputLevel = tripInfo.get(c.tripId).outputLevel;
+    } else {
+      const depLabels = labels.get(c.depStop);
+      if (!depLabels) continue;
+      let boardLevel = null;
+      for (let k = 0; k < SIZE - 1; k++) {
+        const avail = depLabels[k];
+        if (avail === Infinity) continue;
+        const needed = c.depStop === sourceId ? avail : avail + transferMinutes;
+        if (needed <= c.depMin) {
+          boardLevel = k;
+          break;
+        }
+      }
+      if (boardLevel === null) continue;
+      outputLevel = boardLevel + 1;
+      tripInfo.set(c.tripId, { outputLevel, boardStop: c.depStop, boardMin: c.depMin, boardLevel });
+    }
+    const arrLabels = getLabels(c.arrStop);
+    if (c.arrMin < arrLabels[outputLevel]) {
+      arrLabels[outputLevel] = c.arrMin;
+      const ti = tripInfo.get(c.tripId);
+      parent.set(`${c.arrStop}|${outputLevel}`, {
+        tripId: c.tripId,
+        route: c.route,
+        boardStop: ti.boardStop,
+        boardMin: ti.boardMin,
+        boardLevel: ti.boardLevel,
+        alightStop: c.arrStop,
+        alightMin: c.arrMin
+      });
+    }
+  }
+  return { labels, parent };
+}
+
+function reconstructPath(parent, labels, destId) {
+  const destLabels = labels.get(destId);
+  if (!destLabels) return null;
+  let bestK = null;
+  let bestArr = Infinity;
+  for (let k = 1; k < destLabels.length; k++) {
+    if (destLabels[k] < bestArr) {
+      bestArr = destLabels[k];
+      bestK = k;
+    }
+  }
+  if (bestK === null) return null;
+  const legs = [];
+  let curStation = destId;
+  let curK = bestK;
+  while (curK > 0) {
+    const p = parent.get(`${curStation}|${curK}`);
+    if (!p) return null;
+    legs.unshift(p);
+    curStation = p.boardStop;
+    curK = p.boardLevel;
+  }
+  return legs;
+}
+
+// Jedno uruchomienie CSA daje TYLKO najlepszy (najwcześniejszy) przyjazd od
+// zadanej godziny w górę. Żeby dostać kilka różnych, sensownych odjazdów w
+// ciągu dnia (czego oczekuje użytkownik — i co pokazuje sam portal PLK),
+// uruchamiamy ponownie z progiem tuż po odjeździe poprzednio znalezionego
+// wariantu — klasyczna technika "profile search przez powtórzenia".
+const CSA_FLOOR_ADVANCE_MAX_ITERATIONS = 40;
+
+function findMultipleItineraries(sortedConnections, sourceId, destId, floorMin, maxTransfers, transferMinutes, maxResults) {
+  const results = [];
+  let curFloor = floorMin;
+  let iterations = 0;
+  while (results.length < maxResults && iterations < CSA_FLOOR_ADVANCE_MAX_ITERATIONS && curFloor <= 1439) {
+    iterations++;
+    const { labels, parent } = runMultiLabelCSA(sortedConnections, sourceId, curFloor, maxTransfers, transferMinutes);
+    const legs = reconstructPath(parent, labels, destId);
+    if (!legs || !legs.length) break;
+    results.push(legs);
+    curFloor = legs[0].boardMin + 1;
+  }
+  return results;
+}
+
+function csaLegsToItinerary(legs, from, to, stationNames, date) {
+  const legInfos = legs.map((l, i) => {
+    const boardId = l.boardStop;
+    const alightId = l.alightStop;
+    const boardName = boardId === String(from.id) ? from.name : stationNames.get(Number(boardId)) || `Stacja ${boardId}`;
+    const alightName = alightId === String(to.id) ? to.name : stationNames.get(Number(alightId)) || `Stacja ${alightId}`;
+    const info = {
+      train: trainInfoFromShort(l.route),
+      scheduleId: String(l.route.sid || ""),
+      orderId: String(l.route.oid || ""),
+      trainOrderId: String(l.route.toid || ""),
+      board: { stationId: String(boardId), stationName: boardName, time: hhmmFromMinutes(l.boardMin), nextDay: false },
+      alight: { stationId: String(alightId), stationName: alightName, time: hhmmFromMinutes(l.alightMin), nextDay: false }
+    };
+    info.trainUrl = buildTrainUrl(info, alightName, null);
+    return info;
+  });
+
+  const transfers = [];
+  for (let i = 0; i < legInfos.length - 1; i++) {
+    transfers.push({
+      stationId: legInfos[i].alight.stationId,
+      stationName: legInfos[i].alight.stationName,
+      bufferMinutes: legs[i + 1].boardMin - legs[i].alightMin,
+      ok: true
+    });
+  }
+
+  const depMin = legs[0].boardMin;
+  const arrMin = legs[legs.length - 1].alightMin;
+
+  return {
+    type: legs.length === 1 ? "direct" : legs.length === 2 ? "transfer" : "multi-transfer",
+    departureTime: hhmmFromMinutes(depMin),
+    arrivalTime: hhmmFromMinutes(arrMin),
+    arrivalNextDay: false,
+    durationMinutes: arrMin - depMin,
+    legs: legInfos,
+    transfers
+  };
+}
+
+// Odkrywanie: zamiast rankingu kandydatów, po każdym przebiegu CSA pytamy
+// PLK o KAŻDĄ stację, którą CSA uznało za osiągalną (w limicie przesiadek) a
+// której jeszcze nie znamy — bez żadnego sztywnego sufitu "ile kandydatów".
+// Jedyne zabezpieczenie to realny koszt: łączna liczba pobranych tras
+// (dużych węzłów, np. Katowice/Kraków Główny, nie da się tanio pobierać w
+// nieskończoność) oraz liczba rund.
+const CSA_ROUTE_VOLUME_CEILING = 6000;
+const CSA_DISCOVERY_MAX_ROUNDS = 6;
+
+async function searchWithCSA({
+  from,
+  to,
+  date,
+  time,
+  transferMinutes,
+  maxTransfers,
+  excludeCarrierSet,
+  headers,
+  scheduleTtl,
+  stationNames,
+  maxResults
+}) {
+  const apiLimitsList = [];
+  const fetchedIds = new Set();
+  let allConnections = [];
+  let totalRoutesVolume = 0;
+  let fetchedCount = 0;
+
+  async function fetchAndAdd(ids) {
+    const toFetch = ids.filter((id) => !fetchedIds.has(id));
+    if (!toFetch.length) return 0;
+    const fetched = await fetchCandidatesInChunks(toFetch, date, headers, scheduleTtl);
+    fetchedCount += fetched.length;
+    let added = 0;
+    for (const { stationId, result } of fetched) {
+      fetchedIds.add(stationId);
+      if (!result) continue;
+      apiLimitsList.push(result.apiLimits);
+      const routes = result.data?.rt || [];
+      totalRoutesVolume += routes.length;
+      allConnections = allConnections.concat(flattenConnections(routes, excludeCarrierSet));
+      added++;
+    }
+    return added;
+  }
+
+  await fetchAndAdd([String(from.id), String(to.id)]);
+
+  const floorMin = minutesFromTime(time) ?? 0;
+  let round = 0;
+  while (round < CSA_DISCOVERY_MAX_ROUNDS && totalRoutesVolume < CSA_ROUTE_VOLUME_CEILING) {
+    round++;
+    const sorted = allConnections.slice().sort((a, b) => a.depMin - b.depMin);
+    const { labels } = runMultiLabelCSA(sorted, String(from.id), floorMin, maxTransfers, transferMinutes);
+    const frontier = [];
+    for (const [stationId, labelArr] of labels) {
+      if (fetchedIds.has(stationId)) continue;
+      if (labelArr.some((v) => v !== Infinity)) frontier.push(stationId);
+    }
+    if (!frontier.length) break;
+    const added = await fetchAndAdd(frontier);
+    if (!added) break;
+  }
+
+  const sortedFinal = allConnections.slice().sort((a, b) => a.depMin - b.depMin);
+  const rawLegs = findMultipleItineraries(
+    sortedFinal,
+    String(from.id),
+    String(to.id),
+    floorMin,
+    maxTransfers,
+    transferMinutes,
+    maxResults
+  );
+  const itineraries = rawLegs.map((legs) => csaLegsToItinerary(legs, from, to, stationNames, date));
+
+  return { itineraries, apiLimitsList, fetchedCount };
 }
 
 // ============ Deduplikacja ============
