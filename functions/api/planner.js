@@ -831,6 +831,14 @@ async function buildExtendedTransferItineraries({
   let subrequestsUsed = 0;
   const allClosed = [];
   let routesSeenSoFar = [...(fromRoutes || [])];
+  // Ta sama stacja (zwłaszcza duży węzeł typu Katowice/Kraków Główny, po
+  // kilkaset tras dziennie) bywa wybrana jako kandydat w WIĘCEJ NIŻ jednej
+  // rundzie — bez tej pamięci byłaby pobierana i przetwarzana od nowa za
+  // każdym razem, co dla kilku takich węzłów naraz potrafiło przekroczyć
+  // limit zasobów Workera (błąd 1102) — złapane na żywo po wprowadzeniu
+  // gwarancji węzłów w granicy (patrz niżej), która właśnie zwiększa szansę,
+  // że ten sam duży węzeł wróci w kolejnej rundzie.
+  const fetchedRoutesCache = new Map();
 
   // Warstwa 0: jeden skok od A (to samo źródło co 1-przesiadka), bez
   // sprawdzania domknięcia — to już policzyła osobno zwykła 1-przesiadka.
@@ -891,21 +899,28 @@ async function buildExtendedTransferItineraries({
     // 20+ zapytań odpalonych NARAZ jednym Promise.all okazało się zawodne na
     // żywo — większość po cichu padała (timeout/przeciążenie) i gubiła akurat
     // potrzebnego kandydata. Pytamy więc w mniejszych, kolejnych turach.
-    const fetched = await fetchCandidatesInChunks(candidateIds, date, headers, scheduleTtl);
-    fetchedCount += fetched.length;
-    for (const { result } of fetched) {
+    const idsToFetch = candidateIds.filter((id) => !fetchedRoutesCache.has(id));
+    const fetchedFresh = await fetchCandidatesInChunks(idsToFetch, date, headers, scheduleTtl);
+    fetchedCount += fetchedFresh.length;
+    for (const { result } of fetchedFresh) {
       subrequestsUsed += result ? (result.cache === "HIT" ? 1 : 3) : 3;
+    }
+    for (const { stationId: xi, result } of fetchedFresh) {
+      if (!result) continue;
+      apiLimitsList.push(result.apiLimits);
+      const xiRoutes = result.data?.rt || [];
+      routesSeenSoFar = routesSeenSoFar.concat(xiRoutes);
+      fetchedRoutesCache.set(xi, {
+        xiName: stationNames.get(Number(xi)) || `Stacja ${xi}`,
+        reachableAfterXi: buildReachableAfter(xiRoutes, xi, excludeCarrierSet)
+      });
     }
 
     const nextFrontier = new Map();
-    for (const { stationId: xi, result } of fetched) {
-      if (!result) continue;
-      apiLimitsList.push(result.apiLimits);
-
-      const xiName = stationNames.get(Number(xi)) || `Stacja ${xi}`;
-      const xiRoutes = result.data?.rt || [];
-      routesSeenSoFar = routesSeenSoFar.concat(xiRoutes);
-      const reachableAfterXi = buildReachableAfter(xiRoutes, xi, excludeCarrierSet);
+    for (const xi of candidateIds) {
+      const cached = fetchedRoutesCache.get(xi);
+      if (!cached) continue;
+      const { xiName, reachableAfterXi } = cached;
       const chainsAtXi = frontier.get(xi) || [];
       if (!chainsAtXi.length) continue;
 
