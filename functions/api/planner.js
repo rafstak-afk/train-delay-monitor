@@ -840,7 +840,7 @@ async function buildExtendedTransferItineraries({
   // (sumę tras ze wszystkich dotąd przetworzonych kandydatów) i zatrzymujemy
   // dalsze poszerzanie, gdy zrobi się zbyt duża — niezależnie od tego, ile to
   // było stacji.
-  const ROUTE_VOLUME_CEILING = 1200;
+  const ROUTE_VOLUME_CEILING = 3000;
   let totalRoutesProcessed = 0;
   // Ta sama stacja (zwłaszcza duży węzeł typu Katowice/Kraków Główny, po
   // kilkaset tras dziennie) bywa wybrana jako kandydat w WIĘCEJ NIŻ jednej
