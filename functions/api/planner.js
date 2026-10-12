@@ -112,7 +112,7 @@ export async function onRequestGet(context) {
     maxTransfers: hasVia ? 1 : maxTransfers,
     excludeCarriers: [...excludeCarrierSet].sort().join(",")
   });
-  const cachedComposed = await caches.default.match(composedKey);
+  const cachedComposed = url.searchParams.get("debug") === "1" ? null : await caches.default.match(composedKey);
   if (cachedComposed) {
     const payload = await cachedComposed.json();
     payload.cache = { ...payload.cache, composed: "HIT" };
@@ -282,7 +282,8 @@ export async function onRequestGet(context) {
       itineraries,
       liveDelay,
       apiLimits,
-      cache: { ...cacheInfo, composed: "MISS" }
+      cache: { ...cacheInfo, composed: "MISS" },
+      ...(url.searchParams.get("debug") === "1" ? { csaDebug: globalThis.__csaDebug } : {})
     };
 
     const composedTtl = noConnectionFound ? COMPOSED_CACHE_TTL_EMPTY : COMPOSED_CACHE_TTL;
@@ -990,6 +991,7 @@ async function searchWithCSA({
   let totalRoutesVolume = 0;
   let fetchedCount = 0;
 
+  const failedIds = [];
   async function fetchAndAdd(ids) {
     const toFetch = ids.filter((id) => !fetchedIds.has(id));
     if (!toFetch.length) return 0;
@@ -998,7 +1000,10 @@ async function searchWithCSA({
     let added = 0;
     for (const { stationId, result } of fetched) {
       fetchedIds.add(stationId);
-      if (!result) continue;
+      if (!result) {
+        failedIds.push(stationId);
+        continue;
+      }
       apiLimitsList.push(result.apiLimits);
       const routes = result.data?.rt || [];
       totalRoutesVolume += routes.length;
@@ -1012,6 +1017,7 @@ async function searchWithCSA({
 
   const floorMin = minutesFromTime(time) ?? 0;
   let round = 0;
+  const debugRounds = [];
   while (round < CSA_DISCOVERY_MAX_ROUNDS && totalRoutesVolume < CSA_ROUTE_VOLUME_CEILING) {
     round++;
     const sorted = allConnections.slice().sort((a, b) => a.depMin - b.depMin);
@@ -1023,8 +1029,10 @@ async function searchWithCSA({
     }
     if (!frontier.length) break;
     const added = await fetchAndAdd(frontier);
+    debugRounds.push({ round, frontierSize: frontier.length, added, totalRoutesVolumeAfter: totalRoutesVolume });
     if (!added) break;
   }
+  globalThis.__csaDebug = { fetchedCount: fetchedIds.size, totalRoutesVolume, rounds: round, debugRounds, failedIds };
 
   const sortedFinal = allConnections.slice().sort((a, b) => a.depMin - b.depMin);
   const rawLegs = findMultipleItineraries(
