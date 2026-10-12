@@ -954,19 +954,34 @@ async function buildExtendedTransferItineraries({
     // przesiadki) to sprawdzony od miesięcy, pojedynczy etap systemu
     // sprzed tej sesji — jego granica bywała duża (setki stacji) i zawsze
     // bezpiecznie się zamykała, bo to tylko JEDNO domknięcie, bez żadnej
-    // kolejnej rundy na wierzchu. Przycinanie jej tym samym sufitem co
-    // głębsze rundy zgubiło podstawowy wynik (Tarnowskie Góry→Kraków
-    // Olszanica, Zawiercie) — stacja z przyjazdem późnym popołudniem
-    // wypadała poza "80 najwcześniej przyjeżdżających" przy pytaniu o cały
-    // dzień.
-    frontier =
-      round > 1 && nextFrontier.size > MAX_FRONTIER_STATIONS
-        ? new Map(
-            [...nextFrontier.entries()]
-              .sort((a, b) => Math.min(...a[1].map((c) => c.arrMin)) - Math.min(...b[1].map((c) => c.arrMin)))
-              .slice(0, MAX_FRONTIER_STATIONS)
-          )
-        : nextFrontier;
+    // kolejnej rundy na wierzchu.
+    if (round > 1 && nextFrontier.size > MAX_FRONTIER_STATIONS) {
+      // Samo sortowanie "najwcześniejszy przyjazd pierwszy" systematycznie
+      // wycinało prawdziwe węzły przesiadkowe (Katowice, Kraków Główny) na
+      // rzecz dziesiątek mniej ważnych stacji, które akurat miały wcześniejszy
+      // najlepszy wariant — złapane na żywym przykładzie: Tarnowskie Góry→
+      // Kraków Olszanica (bez IC, od 05:00) nie znajdowało połączenia przez
+      // Chorzów Batory→Katowice→Kraków Główny widocznego w PLK, bo Kraków
+      // Główny (694 konkurujące stacje w tej rundzie) wypadał poza top-80.
+      // Ta sama zasada co przy wyborze kandydatów: końcowa stacja KAŻDEGO
+      // widzianego dotąd kursu zawsze dostaje miejsce w granicy, niezależnie
+      // od rankingu po godzinie.
+      const terminusIds = new Set();
+      for (const r of routesSeenSoFar || []) {
+        const stops = r.st || [];
+        if (!stops.length) continue;
+        const last = stops[stops.length - 1];
+        if (last && last.atm) terminusIds.add(String(last.id));
+      }
+      const byEarliest = (a, b) => Math.min(...a[1].map((c) => c.arrMin)) - Math.min(...b[1].map((c) => c.arrMin));
+      const entries = [...nextFrontier.entries()];
+      const guaranteed = entries.filter(([id]) => terminusIds.has(id)).sort(byEarliest).slice(0, MAX_FRONTIER_STATIONS);
+      const rest = entries.filter(([id]) => !terminusIds.has(id)).sort(byEarliest);
+      const remaining = Math.max(0, MAX_FRONTIER_STATIONS - guaranteed.length);
+      frontier = new Map([...guaranteed, ...rest.slice(0, remaining)]);
+    } else {
+      frontier = nextFrontier;
+    }
 
     // UWAGA: świadomie BEZ przerywania po pierwszej warstwie, która cokolwiek
     // znajdzie. Jedno znalezione połączenie przy 2 przesiadkach nie znaczy, że
