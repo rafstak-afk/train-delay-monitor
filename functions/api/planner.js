@@ -634,7 +634,7 @@ async function fetchOneCandidate(stationId, date, headers, scheduleTtl) {
     scheduleTtl
   )
     .then((r) => ({ stationId, result: r }))
-    .catch(() => ({ stationId, result: null }));
+    .catch((e) => ({ stationId, result: null, errorMessage: String(e && e.message) }));
 }
 
 // Nawet w małych turach po 6 część zapytań do PLK bywa zawodna (duże stacje
@@ -658,9 +658,13 @@ async function fetchCandidatesInChunks(candidateIds, date, headers, scheduleTtl)
     for (let i = 0; i < retryTargets.length; i += CANDIDATE_FETCH_CHUNK_SIZE) {
       const chunk = retryTargets.slice(i, i + CANDIDATE_FETCH_CHUNK_SIZE);
       const retried = await Promise.all(chunk.map((id) => fetchOneCandidate(id, date, headers, scheduleTtl)));
-      const retriedMap = new Map(retried.map((r) => [r.stationId, r.result]));
+      const retriedMap = new Map(retried.map((r) => [r.stationId, r]));
       for (const r of out) {
-        if (!r.result && retriedMap.has(r.stationId)) r.result = retriedMap.get(r.stationId);
+        if (!r.result && retriedMap.has(r.stationId)) {
+          const rr = retriedMap.get(r.stationId);
+          r.result = rr.result;
+          if (rr.errorMessage) r.errorMessage = rr.errorMessage;
+        }
       }
     }
   }
@@ -1012,10 +1016,10 @@ async function searchWithCSA({
     const fetched = await fetchCandidatesInChunks(toFetch, date, headers, scheduleTtl);
     fetchedCount += fetched.length;
     let added = 0;
-    for (const { stationId, result } of fetched) {
+    for (const { stationId, result, errorMessage } of fetched) {
       fetchedIds.add(stationId);
       if (!result) {
-        failedIds.push(stationId);
+        failedIds.push(stationId + (errorMessage ? ":" + errorMessage : ""));
         continue;
       }
       apiLimitsList.push(result.apiLimits);
