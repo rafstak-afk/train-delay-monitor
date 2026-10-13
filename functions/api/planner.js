@@ -1033,6 +1033,19 @@ async function searchWithCSA({
 
   await fetchAndAdd([String(from.id), String(to.id)]);
 
+  // Stacje z bezpośrednim skokiem DO B (już wiemy z pełnodniowego rozkładu B,
+  // pobranego wyżej za darmo) to zwykle krytyczne, "wąskie gardło" węzły —
+  // dla niektórych relacji (np. Tarnowskie Góry→Wisła Głębce) WSZYSTKIE
+  // sensowne trasy przechodzą przez JEDEN taki węzeł (tam: Katowice), bez
+  // żadnej równoległej alternatywy. Jeśli zabraknie budżetu i TEN węzeł nie
+  // zdąży się pobrać, wynik spada do zera zamiast tylko się zubożyć — złapane
+  // na żywym przykładzie. Dajemy im pierwszeństwo przed zwykłym sortowaniem
+  // "najwcześniejszy przyjazd", żeby budżet subrequestów trafiał w nie, zanim
+  // się wyczerpie na mniej krytycznych stacjach.
+  const directPredecessorsOfB = new Set(
+    allConnections.filter((c) => c.arrStop === String(to.id)).map((c) => c.depStop)
+  );
+
   const floorMin = minutesFromTime(time) ?? 0;
   let round = 0;
   while (round < CSA_DISCOVERY_MAX_ROUNDS && totalRoutesVolume < CSA_ROUTE_VOLUME_CEILING) {
@@ -1057,11 +1070,18 @@ async function searchWithCSA({
       if (earliest !== Infinity) frontier.push([stationId, earliest]);
     }
     if (!frontier.length) break;
-    // Gdy trzeba przyciąć do budżetu, pierwszeństwo mają stacje z
-    // najwcześniejszym osiągalnym przyjazdem — to najbliższe w czasie, nie
-    // "najwięcej tras przez nie przechodzi" (patrz komentarz wyżej przy
-    // stałych — to właśnie ten ranking zaniżał prawdziwe węzły).
-    frontier.sort((a, b) => a[1] - b[1]);
+    // Gdy trzeba przyciąć do budżetu: najpierw stacje bezpośrednio łączące
+    // się z B (patrz komentarz przy directPredecessorsOfB — to one bywają
+    // jedynym, krytycznym węzłem bez żadnej alternatywy), potem reszta wg
+    // najwcześniejszego osiągalnego przyjazdu — nie "najwięcej tras przez
+    // nie przechodzi" (to właśnie ten ranking zaniżał prawdziwe węzły w
+    // poprzedniej heurystyce).
+    frontier.sort((a, b) => {
+      const aCrit = directPredecessorsOfB.has(a[0]) ? 0 : 1;
+      const bCrit = directPredecessorsOfB.has(b[0]) ? 0 : 1;
+      if (aCrit !== bCrit) return aCrit - bCrit;
+      return a[1] - b[1];
+    });
     const roundIds = frontier.slice(0, affordable).map(([id]) => id);
     if (!roundIds.length) break;
     const added = await fetchAndAdd(roundIds);
