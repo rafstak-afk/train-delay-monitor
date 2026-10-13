@@ -1308,13 +1308,27 @@ async function getJsonCached(url, headers, ttlSeconds) {
 
   const result = await getJsonWithMeta(url, headers);
 
-  const responseForCache = new Response(JSON.stringify(result.data), {
-    headers: {
-      "Content-Type": "application/json; charset=utf-8",
-      "Cache-Control": `public, max-age=${ttlSeconds}`
-    }
-  });
-  await cache.put(cacheKey, responseForCache);
+  // Zapis do cache'a NIE MOŻE wywrócić udanego pobrania — duże odpowiedzi
+  // (np. Katowice, ~1,2MB) potrafiły sprawić, że cache.put rzucał wyjątkiem
+  // (limit Cache API), a ponieważ nie był osłonięty, CAŁE zapytanie lądowało
+  // w .catch() wywołującego i stacja wyglądała na "niedostępną", mimo że dane
+  // już mieliśmy w ręku — złapane na żywo: Katowice konsekwentnie "zawodziło"
+  // w odkrywaniu CSA (nawet przy mniejszych paczkach równoległych zapytań,
+  // co wykluczyło rywalizację o zasoby jako przyczynę), choć pobrane w
+  // izolacji (bez cache'owania) działało bez problemu w 1,2s.
+  try {
+    const responseForCache = new Response(JSON.stringify(result.data), {
+      headers: {
+        "Content-Type": "application/json; charset=utf-8",
+        "Cache-Control": `public, max-age=${ttlSeconds}`
+      }
+    });
+    await cache.put(cacheKey, responseForCache);
+  } catch (e) {
+    // Nie udało się zacache'ować — trudno, kolejne zapytanie o tę samą
+    // stację po prostu znów pójdzie do PLK. Dane, które już mamy, i tak
+    // zwracamy.
+  }
 
   return { ...result, cache: "MISS" };
 }
