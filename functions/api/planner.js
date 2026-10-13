@@ -112,7 +112,7 @@ export async function onRequestGet(context) {
     maxTransfers: hasVia ? 1 : maxTransfers,
     excludeCarriers: [...excludeCarrierSet].sort().join(",")
   });
-  const cachedComposed = url.searchParams.get("debug") === "1" ? null : await caches.default.match(composedKey);
+  const cachedComposed = await caches.default.match(composedKey);
   if (cachedComposed) {
     const payload = await cachedComposed.json();
     payload.cache = { ...payload.cache, composed: "HIT" };
@@ -284,8 +284,7 @@ export async function onRequestGet(context) {
       itineraries,
       liveDelay,
       apiLimits,
-      cache: { ...cacheInfo, composed: "MISS" },
-      ...(url.searchParams.get("debug") === "1" ? { csaDebug: globalThis.__csaDebug } : {})
+      cache: { ...cacheInfo, composed: "MISS" }
     };
 
     const composedTtl = noConnectionFound ? COMPOSED_CACHE_TTL_EMPTY : COMPOSED_CACHE_TTL;
@@ -614,14 +613,10 @@ function buildTransferItineraries(fromRoutes, toRoutes, from, to, transferMinute
 }
 
 // Rozmiar porcji równoległych zapytań o rozkład kandydata (CSA i dawna
-// heurystyka obie korzystają z tej samej funkcji). 6 równoległych zapytań
-// potrafiło zawodzić akurat dla dużych stacji (Katowice, ~1,2MB) — pobrane W
-// IZOLACJI trwa to ok. 1,2s bez problemu, ale w paczce po 6 (gdzie więcej niż
-// jedna bywa duża) rywalizacja o zasoby pojedynczego wywołania Workera
-// potrafiła ją wywalić, powtarzalnie, nawet mimo retry — złapane na żywo
-// 2026-10-13. Mniejsza paczka = więcej kolejnych tur, ale to czysto czas
-// sieciowy (nie liczy się do budżetu CPU Workera), więc tania zamiana.
-const CANDIDATE_FETCH_CHUNK_SIZE = 3;
+// heurystyka obie korzystają z tej samej funkcji). 20+ zapytań odpalonych
+// NARAZ jednym Promise.all okazało się zawodne na żywo — mniejsze,
+// kolejne tury są bezpieczniejsze.
+const CANDIDATE_FETCH_CHUNK_SIZE = 6;
 
 // Pobiera rozkłady kandydatów na drugi skok w małych, kolejnych turach
 // (nie jednym wielkim Promise.all) — duża jednoczesna pula zapytań do PLK
@@ -636,7 +631,7 @@ async function fetchOneCandidate(stationId, date, headers, scheduleTtl) {
     scheduleTtl
   )
     .then((r) => ({ stationId, result: r }))
-    .catch((e) => ({ stationId, result: null, errorMessage: String(e && e.message) }));
+    .catch(() => ({ stationId, result: null }));
 }
 
 // Nawet w małych turach po 6 część zapytań do PLK bywa zawodna (duże stacje
@@ -660,13 +655,9 @@ async function fetchCandidatesInChunks(candidateIds, date, headers, scheduleTtl)
     for (let i = 0; i < retryTargets.length; i += CANDIDATE_FETCH_CHUNK_SIZE) {
       const chunk = retryTargets.slice(i, i + CANDIDATE_FETCH_CHUNK_SIZE);
       const retried = await Promise.all(chunk.map((id) => fetchOneCandidate(id, date, headers, scheduleTtl)));
-      const retriedMap = new Map(retried.map((r) => [r.stationId, r]));
+      const retriedMap = new Map(retried.map((r) => [r.stationId, r.result]));
       for (const r of out) {
-        if (!r.result && retriedMap.has(r.stationId)) {
-          const rr = retriedMap.get(r.stationId);
-          r.result = rr.result;
-          if (rr.errorMessage) r.errorMessage = rr.errorMessage;
-        }
+        if (!r.result && retriedMap.has(r.stationId)) r.result = retriedMap.get(r.stationId);
       }
     }
   }
@@ -1019,22 +1010,18 @@ async function searchWithCSA({
   let subrequestsUsed = budgetUsedSoFar;
   let fetchSubrequestsUsed = 0; // bez budgetUsedSoFar — czyste zużycie NA FETCHE, do rzetelnej estymacji kosztu/kandydata
 
-  const failedIds = [];
   async function fetchAndAdd(ids) {
     const toFetch = ids.filter((id) => !fetchedIds.has(id));
     if (!toFetch.length) return 0;
     const fetched = await fetchCandidatesInChunks(toFetch, date, headers, scheduleTtl);
     fetchedCount += fetched.length;
     let added = 0;
-    for (const { stationId, result, errorMessage } of fetched) {
+    for (const { stationId, result } of fetched) {
       fetchedIds.add(stationId);
       const cost = result ? (result.cache === "HIT" ? 1 : 3) : 3;
       subrequestsUsed += cost;
       fetchSubrequestsUsed += cost;
-      if (!result) {
-        failedIds.push(stationId + (errorMessage ? ":" + errorMessage : ""));
-        continue;
-      }
+      if (!result) continue;
       apiLimitsList.push(result.apiLimits);
       const routes = result.data?.rt || [];
       totalRoutesVolume += routes.length;
@@ -1048,7 +1035,6 @@ async function searchWithCSA({
 
   const floorMin = minutesFromTime(time) ?? 0;
   let round = 0;
-  const debugRounds = [];
   while (round < CSA_DISCOVERY_MAX_ROUNDS && totalRoutesVolume < CSA_ROUTE_VOLUME_CEILING) {
     // Prawdziwy, twardy limit Cloudflare na subrequesty (patrz komentarz przy
     // stałych) — liczony na bieżąco z rzeczywistych trafień/pudeł cache'a, nie
@@ -1079,10 +1065,8 @@ async function searchWithCSA({
     const roundIds = frontier.slice(0, affordable).map(([id]) => id);
     if (!roundIds.length) break;
     const added = await fetchAndAdd(roundIds);
-    debugRounds.push({ round, frontierSize: frontier.length, attempted: roundIds.length, added, subrequestsUsed, totalRoutesVolumeAfter: totalRoutesVolume });
     if (!added) break;
   }
-  globalThis.__csaDebug = { fetchedCount: fetchedIds.size, totalRoutesVolume, subrequestsUsed, rounds: round, debugRounds, failedIds };
 
   const sortedFinal = allConnections.slice().sort((a, b) => a.depMin - b.depMin);
   const rawLegs = findMultipleItineraries(
