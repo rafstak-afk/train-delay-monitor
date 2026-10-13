@@ -611,12 +611,15 @@ function buildTransferItineraries(fromRoutes, toRoutes, from, to, transferMinute
   return { itineraries: dedupItineraries(results), reachableAfterA, reachableBeforeB };
 }
 
-// ============ Automatyczne 2 przesiadki (bez wskazanej stacji "przez") ============
-// M=5 kandydatów na drugi skok, wybranych BEZ listy węzłów: ze stacji już
-// osiągalnych z A (reachableAfterA), które same nie dały żadnej ważnej
-// 1-przesiadki, ranking po liczbie różnych kursów stamtąd — to już policzone
-// przy okazji 1-przesiadki, za darmo.
-const CANDIDATE_FETCH_CHUNK_SIZE = 6;
+// Rozmiar porcji równoległych zapytań o rozkład kandydata (CSA i dawna
+// heurystyka obie korzystają z tej samej funkcji). 6 równoległych zapytań
+// potrafiło zawodzić akurat dla dużych stacji (Katowice, ~1,2MB) — pobrane W
+// IZOLACJI trwa to ok. 1,2s bez problemu, ale w paczce po 6 (gdzie więcej niż
+// jedna bywa duża) rywalizacja o zasoby pojedynczego wywołania Workera
+// potrafiła ją wywalić, powtarzalnie, nawet mimo retry — złapane na żywo
+// 2026-10-13. Mniejsza paczka = więcej kolejnych tur, ale to czysto czas
+// sieciowy (nie liczy się do budżetu CPU Workera), więc tania zamiana.
+const CANDIDATE_FETCH_CHUNK_SIZE = 3;
 
 // Pobiera rozkłady kandydatów na drugi skok w małych, kolejnych turach
 // (nie jednym wielkim Promise.all) — duża jednoczesna pula zapytań do PLK
