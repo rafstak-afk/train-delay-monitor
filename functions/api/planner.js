@@ -203,7 +203,8 @@ export async function onRequestGet(context) {
         headers,
         scheduleTtl,
         stationNames,
-        maxResults
+        maxResults,
+        budgetUsedSoFar: requestBudgetUsed
       });
       apiLimitsList.push(...csa.apiLimitsList);
       requestBudgetUsed += csa.fetchedCount * 3;
@@ -229,7 +230,8 @@ export async function onRequestGet(context) {
           headers,
           scheduleTtl,
           stationNames,
-          maxResults: 50
+          maxResults: 50,
+          budgetUsedSoFar: requestBudgetUsed
         });
         apiLimitsList.push(...fullDay.apiLimitsList);
         requestBudgetUsed += fullDay.fetchedCount * 3;
@@ -973,22 +975,27 @@ function csaLegsToItinerary(legs, from, to, stationNames, date) {
 // Odkrywanie: zamiast rankingu kandydatów WEDŁUG WAŻNOŚCI (to był błąd
 // poprzedniej heurystyki), po każdym przebiegu CSA pytamy PLK o stacje,
 // które CSA uznało za osiągalne (w limicie przesiadek), a których jeszcze
-// nie znamy. Jedyne ograniczenie to realny koszt sieciowy — a ten okazał
-// się ostrzejszy, niż zakładano: złapane na żywo (2026-10-13), zapytanie z
-// 61 kandydatami w rundzie 1 (24 nieudane, w tym samo Katowice) i 172
-// kandydatami w rundzie 2 (WSZYSTKIE 172 nieudane) — 235 prób pobrania w
-// JEDNYM żądaniu to realny atak typu "burst" na limit PLK, nie subtelna
-// zawodność pojedynczych zapytań. Dlatego poza sufitem na objętość tras
-// (CSA_ROUTE_VOLUME_CEILING) i liczbę rund, jest teraz TWARDY sufit na
-// łączną liczbę prób pobrania w jednym żądaniu (CSA_MAX_TOTAL_FETCHES) oraz
-// na rozmiar pojedynczej rundy (CSA_MAX_CANDIDATES_PER_ROUND) — a gdy trzeba
-// przyciąć, wybieramy stacje z NAJWCZEŚNIEJSZYM możliwym przyjazdem (jak
-// blisko w czasie są od źródła), nie "ile tras tamtędy przechodzi" (to
-// właśnie ten ranking systematycznie zaniżał prawdziwe węzły).
+// nie znamy. Jedyne ograniczenie to realny koszt — a znaleziony na żywo
+// (2026-10-13) prawdziwy komunikat błędu PLK-owych fetchy to dosłownie
+// "Too many subrequests by single Worker invocation": twardy, PLATFORMOWY
+// limit Cloudflare na liczbę pod-zapytań w jednym wywołaniu Workera (ten sam
+// limit, który dawno temu udokumentowano w departures.js jako 50). Jeden
+// getJsonCached kosztuje do 3 subrequestów (cache.match+fetch+cache.put) przy
+// "cache miss" — a odkrywanie CSA bez sztywnego sufitu potrafiło wygenerować
+// 235 prób pobrania w JEDNYM żądaniu (do 705 subrequestów!). To nie ranking
+// ani zawodność sieci — to fizyczna ściana. Śledzimy więc RZECZYWISTE zużycie
+// (hit=1/miss=3, jak w budżecie subrequestów gdzie indziej w tym pliku) i
+// przycinamy liczbę kandydatów na rundę do tego, na co realnie starcza —
+// a gdy trzeba wybierać, pierwszeństwo mają stacje z NAJWCZEŚNIEJSZYM
+// możliwym przyjazdem (blisko w czasie od źródła), nie "ile tras tamtędy
+// przechodzi" (to właśnie ten ranking systematycznie zaniżał prawdziwe
+// węzły w poprzedniej heurystyce).
 const CSA_ROUTE_VOLUME_CEILING = 6000;
 const CSA_DISCOVERY_MAX_ROUNDS = 6;
-const CSA_MAX_CANDIDATES_PER_ROUND = 40;
-const CSA_MAX_TOTAL_FETCHES = 120;
+// Bezpieczny sufit NA CAŁE żądanie: słownik stacji (~3) + A+B (~6) już
+// zużywają część z 50 — zostawiamy margines na ewentualne wzbogacenie o czas
+// rzeczywisty po zakończeniu wyszukiwania.
+const CSA_SUBREQUEST_CEILING = 46;
 
 async function searchWithCSA({
   from,
@@ -1001,13 +1008,16 @@ async function searchWithCSA({
   headers,
   scheduleTtl,
   stationNames,
-  maxResults
+  maxResults,
+  budgetUsedSoFar = 9
 }) {
   const apiLimitsList = [];
   const fetchedIds = new Set();
   let allConnections = [];
   let totalRoutesVolume = 0;
   let fetchedCount = 0;
+  let subrequestsUsed = budgetUsedSoFar;
+  let fetchSubrequestsUsed = 0; // bez budgetUsedSoFar — czyste zużycie NA FETCHE, do rzetelnej estymacji kosztu/kandydata
 
   const failedIds = [];
   async function fetchAndAdd(ids) {
@@ -1018,6 +1028,9 @@ async function searchWithCSA({
     let added = 0;
     for (const { stationId, result, errorMessage } of fetched) {
       fetchedIds.add(stationId);
+      const cost = result ? (result.cache === "HIT" ? 1 : 3) : 3;
+      subrequestsUsed += cost;
+      fetchSubrequestsUsed += cost;
       if (!result) {
         failedIds.push(stationId + (errorMessage ? ":" + errorMessage : ""));
         continue;
@@ -1036,11 +1049,18 @@ async function searchWithCSA({
   const floorMin = minutesFromTime(time) ?? 0;
   let round = 0;
   const debugRounds = [];
-  while (
-    round < CSA_DISCOVERY_MAX_ROUNDS &&
-    totalRoutesVolume < CSA_ROUTE_VOLUME_CEILING &&
-    fetchedIds.size < CSA_MAX_TOTAL_FETCHES
-  ) {
+  while (round < CSA_DISCOVERY_MAX_ROUNDS && totalRoutesVolume < CSA_ROUTE_VOLUME_CEILING) {
+    // Prawdziwy, twardy limit Cloudflare na subrequesty (patrz komentarz przy
+    // stałych) — liczony na bieżąco z rzeczywistych trafień/pudeł cache'a, nie
+    // ryczałtowo. Gdy budżetu starcza na mniej niż 1 kandydata, kończymy —
+    // to jedyny sufit w tej funkcji oparty na "ile stacji", reszta (który
+    // kandydat) zawsze wybiera najwcześniejszy osiągalny przyjazd.
+    const observedRate = fetchedIds.size > 0 ? fetchSubrequestsUsed / fetchedIds.size : 3;
+    const perCandidateEstimate = Math.max(1.2, observedRate);
+    const remaining = CSA_SUBREQUEST_CEILING - subrequestsUsed;
+    const affordable = Math.floor(remaining / perCandidateEstimate);
+    if (affordable <= 0) break;
+
     round++;
     const sorted = allConnections.slice().sort((a, b) => a.depMin - b.depMin);
     const { labels } = runMultiLabelCSA(sorted, String(from.id), floorMin, maxTransfers, transferMinutes);
@@ -1051,19 +1071,18 @@ async function searchWithCSA({
       if (earliest !== Infinity) frontier.push([stationId, earliest]);
     }
     if (!frontier.length) break;
-    // Gdy trzeba przyciąć do budżetu rundy/żądania, pierwszeństwo mają
-    // stacje z najwcześniejszym osiągalnym przyjazdem — to najbliższe w
-    // czasie, nie "najwięcej tras przez nie przechodzi" (patrz komentarz
-    // wyżej przy stałych).
+    // Gdy trzeba przyciąć do budżetu, pierwszeństwo mają stacje z
+    // najwcześniejszym osiągalnym przyjazdem — to najbliższe w czasie, nie
+    // "najwięcej tras przez nie przechodzi" (patrz komentarz wyżej przy
+    // stałych — to właśnie ten ranking zaniżał prawdziwe węzły).
     frontier.sort((a, b) => a[1] - b[1]);
-    const remainingBudget = CSA_MAX_TOTAL_FETCHES - fetchedIds.size;
-    const roundIds = frontier.slice(0, Math.min(CSA_MAX_CANDIDATES_PER_ROUND, remainingBudget)).map(([id]) => id);
+    const roundIds = frontier.slice(0, affordable).map(([id]) => id);
     if (!roundIds.length) break;
     const added = await fetchAndAdd(roundIds);
-    debugRounds.push({ round, frontierSize: frontier.length, attempted: roundIds.length, added, totalRoutesVolumeAfter: totalRoutesVolume });
+    debugRounds.push({ round, frontierSize: frontier.length, attempted: roundIds.length, added, subrequestsUsed, totalRoutesVolumeAfter: totalRoutesVolume });
     if (!added) break;
   }
-  globalThis.__csaDebug = { fetchedCount: fetchedIds.size, totalRoutesVolume, rounds: round, debugRounds, failedIds };
+  globalThis.__csaDebug = { fetchedCount: fetchedIds.size, totalRoutesVolume, subrequestsUsed, rounds: round, debugRounds, failedIds };
 
   const sortedFinal = allConnections.slice().sort((a, b) => a.depMin - b.depMin);
   const rawLegs = findMultipleItineraries(
