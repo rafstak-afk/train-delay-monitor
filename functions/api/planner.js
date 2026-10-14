@@ -612,59 +612,6 @@ function buildTransferItineraries(fromRoutes, toRoutes, from, to, transferMinute
   return { itineraries: dedupItineraries(results), reachableAfterA, reachableBeforeB };
 }
 
-// Rozmiar porcji równoległych zapytań o rozkład kandydata (CSA i dawna
-// heurystyka obie korzystają z tej samej funkcji). 20+ zapytań odpalonych
-// NARAZ jednym Promise.all okazało się zawodne na żywo — mniejsze,
-// kolejne tury są bezpieczniejsze.
-const CANDIDATE_FETCH_CHUNK_SIZE = 6;
-
-// Pobiera rozkłady kandydatów na drugi skok w małych, kolejnych turach
-// (nie jednym wielkim Promise.all) — duża jednoczesna pula zapytań do PLK
-// okazała się zawodna (większość po cichu padała timeoutem), gubiąc akurat
-// potrzebnego kandydata. Jedno ponowienie dla tych, które i tak padły w
-// swojej turze — zwykle wystarcza, to przejściowe przeciążenie, nie trwały
-// błąd danego zapytania.
-async function fetchOneCandidate(stationId, date, headers, scheduleTtl) {
-  return getJsonCached(
-    `${PLK_BASE}/schedules/shortened?stations=${stationId}&fullRoute=true&dateFrom=${date}&dateTo=${date}`,
-    headers,
-    scheduleTtl
-  )
-    .then((r) => ({ stationId, result: r }))
-    .catch(() => ({ stationId, result: null }));
-}
-
-// Nawet w małych turach po 6 część zapytań do PLK bywa zawodna (duże stacje
-// potrafią ważyć 1-2 MB) — do 2 dodatkowych rund powtórzeń TYLKO dla
-// kandydatów, którzy padli, w tych samych małych turach, zanim uznamy
-// kandydata za trwale niedostępny w tym żądaniu.
-const CANDIDATE_FETCH_MAX_RETRY_ROUNDS = 2;
-
-async function fetchCandidatesInChunks(candidateIds, date, headers, scheduleTtl) {
-  const out = [];
-  for (let i = 0; i < candidateIds.length; i += CANDIDATE_FETCH_CHUNK_SIZE) {
-    const chunk = candidateIds.slice(i, i + CANDIDATE_FETCH_CHUNK_SIZE);
-    const chunkResults = await Promise.all(chunk.map((id) => fetchOneCandidate(id, date, headers, scheduleTtl)));
-    out.push(...chunkResults);
-  }
-
-  for (let round = 0; round < CANDIDATE_FETCH_MAX_RETRY_ROUNDS; round++) {
-    const retryTargets = out.filter((r) => !r.result).map((r) => r.stationId);
-    if (!retryTargets.length) break;
-
-    for (let i = 0; i < retryTargets.length; i += CANDIDATE_FETCH_CHUNK_SIZE) {
-      const chunk = retryTargets.slice(i, i + CANDIDATE_FETCH_CHUNK_SIZE);
-      const retried = await Promise.all(chunk.map((id) => fetchOneCandidate(id, date, headers, scheduleTtl)));
-      const retriedMap = new Map(retried.map((r) => [r.stationId, r.result]));
-      for (const r of out) {
-        if (!r.result && retriedMap.has(r.stationId)) r.result = retriedMap.get(r.stationId);
-      }
-    }
-  }
-
-  return out;
-}
-
 // ============ Przesiadki "przez" wskazane stacje — sklejanie segmentów ============
 // Każdy segment (from→via1, via1→via2, ..., viaN→to) to już policzone
 // bezpośrednio+1 przesiadka. Sklejamy z ograniczonym DFS: bez segmentu 0
@@ -1005,6 +952,16 @@ const CSA_DISCOVERY_MAX_ROUNDS = 6;
 // zużywają część z 50 — zostawiamy margines na ewentualne wzbogacenie o czas
 // rzeczywisty po zakończeniu wyszukiwania.
 const CSA_SUBREQUEST_CEILING = 46;
+// PLK API przyjmuje WIELE stacji naraz w jednym `stations=id1,id2,...`
+// (zweryfikowane na żywo: 35 stacji w jednym zapytaniu, ~1,5 MB, ~1,1 s,
+// zero błędów) — kosztuje to TYLE SAMO co jedna stacja (1-3 subrequesty),
+// bo limit Cloudflare liczy WYWOŁANIA, nie stacje w parametrze. Wcześniej
+// każdy kandydat kosztował osobne wywołanie, więc budżet 46 subrequestów
+// wystarczał na raptem ~12-14 stacji łącznie w całym wyszukiwaniu — za mało
+// dla relacji wymagających dalszych węzłów (np. Katowice dla tras
+// przechodzących przez Śląsk). Łączenie całej tury w jedno zapytanie
+// zostawia budżet na kilkukrotnie więcej odkrytych stacji.
+const CSA_CANDIDATES_PER_ROUND = 30;
 
 async function searchWithCSA({
   from,
@@ -1022,31 +979,36 @@ async function searchWithCSA({
 }) {
   const apiLimitsList = [];
   const fetchedIds = new Set();
+  const seenRouteKeys = new Set();
   let allConnections = [];
   let totalRoutesVolume = 0;
   let fetchedCount = 0;
   let subrequestsUsed = budgetUsedSoFar;
-  let fetchSubrequestsUsed = 0; // bez budgetUsedSoFar — czyste zużycie NA FETCHE, do rzetelnej estymacji kosztu/kandydata
 
   async function fetchAndAdd(ids) {
     const toFetch = ids.filter((id) => !fetchedIds.has(id));
     if (!toFetch.length) return 0;
-    const fetched = await fetchCandidatesInChunks(toFetch, date, headers, scheduleTtl);
-    fetchedCount += fetched.length;
-    let added = 0;
-    for (const { stationId, result } of fetched) {
-      fetchedIds.add(stationId);
-      const cost = result ? (result.cache === "HIT" ? 1 : 3) : 3;
-      subrequestsUsed += cost;
-      fetchSubrequestsUsed += cost;
-      if (!result) continue;
-      apiLimitsList.push(result.apiLimits);
-      const routes = result.data?.rt || [];
-      totalRoutesVolume += routes.length;
-      allConnections = allConnections.concat(flattenConnections(routes, excludeCarrierSet));
-      added++;
+    toFetch.forEach((id) => fetchedIds.add(id));
+    fetchedCount += toFetch.length;
+    const url = `${PLK_BASE}/schedules/shortened?stations=${toFetch.join(",")}&fullRoute=true&dateFrom=${date}&dateTo=${date}`;
+    let result = null;
+    try {
+      result = await getJsonCached(url, headers, scheduleTtl);
+    } catch (e) {
+      result = null;
     }
-    return added;
+    subrequestsUsed += result ? (result.cache === "HIT" ? 1 : 3) : 3;
+    if (!result) return 0;
+    apiLimitsList.push(result.apiLimits);
+    const routes = (result.data?.rt || []).filter((r) => {
+      const key = r.sid + "|" + r.oid;
+      if (seenRouteKeys.has(key)) return false;
+      seenRouteKeys.add(key);
+      return true;
+    });
+    totalRoutesVolume += routes.length;
+    allConnections = allConnections.concat(flattenConnections(routes, excludeCarrierSet));
+    return toFetch.length;
   }
 
   await fetchAndAdd([String(from.id), String(to.id)]);
@@ -1068,15 +1030,11 @@ async function searchWithCSA({
   let round = 0;
   while (round < CSA_DISCOVERY_MAX_ROUNDS && totalRoutesVolume < CSA_ROUTE_VOLUME_CEILING) {
     // Prawdziwy, twardy limit Cloudflare na subrequesty (patrz komentarz przy
-    // stałych) — liczony na bieżąco z rzeczywistych trafień/pudeł cache'a, nie
-    // ryczałtowo. Gdy budżetu starcza na mniej niż 1 kandydata, kończymy —
-    // to jedyny sufit w tej funkcji oparty na "ile stacji", reszta (który
-    // kandydat) zawsze wybiera najwcześniejszy osiągalny przyjazd.
-    const observedRate = fetchedIds.size > 0 ? fetchSubrequestsUsed / fetchedIds.size : 3;
-    const perCandidateEstimate = Math.max(1.2, observedRate);
-    const remaining = CSA_SUBREQUEST_CEILING - subrequestsUsed;
-    const affordable = Math.floor(remaining / perCandidateEstimate);
-    if (affordable <= 0) break;
+    // stałych) — cała tura to TERAZ jedno połączone zapytanie (do
+    // CSA_CANDIDATES_PER_ROUND stacji naraz), więc koszt tury jest stały
+    // (3 przy pudle cache'a, 1 przy trafieniu), niezależny od tego, ile
+    // stacji się w niej mieści.
+    if (CSA_SUBREQUEST_CEILING - subrequestsUsed < 3) break;
 
     round++;
     const sorted = allConnections.slice().sort((a, b) => a.depMin - b.depMin);
@@ -1100,7 +1058,7 @@ async function searchWithCSA({
       if (aCrit !== bCrit) return aCrit - bCrit;
       return a[1] - b[1];
     });
-    const roundIds = frontier.slice(0, affordable).map(([id]) => id);
+    const roundIds = frontier.slice(0, CSA_CANDIDATES_PER_ROUND).map(([id]) => id);
     if (!roundIds.length) break;
     const added = await fetchAndAdd(roundIds);
     if (!added) break;
