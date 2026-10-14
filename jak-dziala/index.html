@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Jak działa Czy zdążę?</title>
-<meta name="description" content="Jak korzystać z aplikacji Czy zdążę? — tablica odjazdów, alarmy opóźnień, Moje pociągi, bieg pociągu i dzienniczek podróży na podstawie danych PLK." />
+<meta name="description" content="Jak korzystać z aplikacji Czy zdążę? — tablica odjazdów, alarmy opóźnień, Moje pociągi, bieg pociągu, planer podróży i dzienniczek podróży na podstawie danych PLK." />
 <style>
 :root{--bg:#101820;--panel:#1c2833;--card:#223244;--line:#34495e;--text:#fff;--muted:#b8c3cf;--blue:#0b57d0;--green:#5dd39e;--yellow:#ffcc00;--red:#ff4d4d;--cyan:#22d3ee;--purple:#c084fc}
 *{box-sizing:border-box}
@@ -49,7 +49,7 @@ h1{text-align:center;font-size:27px;margin:6px 0 4px}
   <div class="subtitle">Darmowa tablica odjazdów i monitoring opóźnień na podstawie danych PLK —<br>bez reklam, bez logowania, bez aplikacji do instalowania.</div>
 
   <div class="lede">
-    <b>Czy zdążę?</b> pokazuje realny rozkład jazdy pociągów: godziny, opóźnienia, perony i tory wprost z danych PLK, a do tego alarmuje o opóźnieniach, pilnuje Twoich ulubionych kursów i prowadzi dzienniczek przejazdów. Działa w przeglądarce — na telefonie i komputerze — bez instalowania czegokolwiek.
+    <b>Czy zdążę?</b> pokazuje realny rozkład jazdy pociągów: godziny, opóźnienia, perony i tory wprost z danych PLK, a do tego alarmuje o opóźnieniach, pilnuje Twoich ulubionych kursów, pomaga zaplanować podróż z przesiadkami i prowadzi dzienniczek przejazdów. Działa w przeglądarce — na telefonie i komputerze — bez instalowania czegokolwiek.
   </div>
 
   <div class="toc">
@@ -58,6 +58,7 @@ h1{text-align:center;font-size:27px;margin:6px 0 4px}
     <a href="#menu">👆 Menu kontekstowe</a>
     <a href="#moje-pociagi">⭐ Moje pociągi</a>
     <a href="#bieg">🛤️ Bieg pociągu</a>
+    <a href="#planer">🧭 Planer (beta)</a>
     <a href="#dziennik">📓 Dzienniczek</a>
     <a href="#profil">👤 Profil</a>
     <a href="#prywatnosc">🔒 Prywatność</a>
@@ -117,11 +118,23 @@ h1{text-align:center;font-size:27px;margin:6px 0 4px}
     </ul>
   </div>
 
+  <div class="section" id="planer">
+    <h2>🧭 Planer podróży<span class="tag">beta</span></h2>
+    <p>Szuka połączeń między dwiema dowolnymi stacjami w całej sieci PLK — nie tylko Twoimi ulubionymi — łącznie z przesiadkami (nawet kilkoma), na podstawie tego samego rozkładu co tablica. To wciąż testowany moduł, więc mogą się zdarzać niedoskonałości.</p>
+    <ul>
+      <li>Każda noga wyniku to klikalna karta w stylu wiersza na tablicy odjazdów — kliknięcie otwiera pełny <a href="#bieg">bieg pociągu</a>.</li>
+      <li>W <b>Zaawansowanych</b> ustawisz minimalny czas na przesiadkę (domyślnie 3 min), włączysz „Tylko bezpośrednie” (bez przesiadek), wymusisz konkretną stację „przez” albo wykluczysz wybranych przewoźników.</li>
+      <li><b>💾 Zapisz</b> zachowuje wynik do późniejszego przejrzenia w panelu „Zapisane wyniki”.</li>
+      <li><b>📋 Do dziennika</b> dodaje każdą nogę wyniku jako osobny wpis do <a href="#dziennik">planu podróży</a> w dzienniczku — stamtąd, po faktycznym przejeździe, potwierdzisz rzeczywisty czas i opóźnienie.</li>
+    </ul>
+  </div>
+
   <div class="section" id="dziennik">
     <h2>📓 Dzienniczek podróży</h2>
     <p>Historia Twoich przejazdów — z faktyczną godziną i opóźnieniem na stacji wsiadania i wysiadania, nie tylko planem.</p>
     <ul>
       <li><b>Ulubione trasy</b> — zapisz raz stacje powtarzalnego przejazdu (np. codzienny dojazd), a dzienniczek sam rozpozna pasujący kurs i zaproponuje zapis pod właściwą nazwą. Przyciskiem „➕ Dodaj kolejną trasę” dodasz ich dowolnie wiele, także z przesiadką (Odcinek 2).</li>
+      <li><b>Plan podróży</b> — wpisy czekające na potwierdzenie: z biegu pociągu (zaznacz 🚏/🏁 i „📋 Do planu”) albo z <a href="#planer">planera</a> („📋 Do dziennika”). Gdy pociąg faktycznie dojedzie, wróć tu i kliknij „✅ Potwierdź” (przejazd trafi do wpisów poniżej) albo „❌ Odrzuć”.</li>
       <li><b>Zapisane przejazdy</b> — lista wpisów z datą, godzinami i opóźnieniem; edycja (np. dopisanie kilometrów) zapisuje się automatycznie, bez osobnego przycisku „Zapisz”.</li>
       <li><b>Eksport ⬇️ XLSX</b> — pobierz całą historię jako arkusz kalkulacyjny, np. do rozliczenia abonamentu albo własnych statystyk.</li>
     </ul>

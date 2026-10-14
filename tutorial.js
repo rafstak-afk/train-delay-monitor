@@ -83,8 +83,9 @@
     {
       match: function (p) { return p.indexOf("/planer") === 0; },
       steps: [
-        { sel: ".station-row", title: "Planer podróży", text: "Wpisz skąd i dokąd — znajdzie połączenia bezpośrednie i z jedną przesiadką na podstawie rozkładu PLK, dla całej sieci, nie tylko wybranych stacji." },
-        { sel: "#advPanel", title: "Minimalny czas na przesiadkę", text: "Domyślnie 5 minut. Zwiększ, jeśli wolisz mieć zapas na dużych stacjach, albo zmniejsz, jeśli ufasz krótkim przesiadkom." }
+        { sel: ".station-stack", title: "Planer podróży (beta)", text: "Wpisz skąd i dokąd — znajdzie połączenia bezpośrednie i z przesiadkami (nawet kilkoma) na podstawie rozkładu PLK, dla całej sieci, nie tylko wybranych stacji. Jeszcze testujemy, więc zdarzają się niedoskonałości." },
+        { sel: "#advPanel", title: "Zaawansowane", text: "Minimalny czas na przesiadkę (domyślnie 3 min), opcja „Tylko bezpośrednie” (bez przesiadek), wymuszenie konkretnej stacji „przez” oraz wykluczanie wybranych przewoźników z wyników." },
+        { sel: "#savedPanel", title: "Zapisz albo dodaj do dziennika", text: "Każdy wynik możesz 💾 zapisać do późniejszego przejrzenia albo 📋 dodać do planu podróży w dzienniczku — każda noga osobno. Gdy faktycznie pojedziesz, w dzienniczku potwierdzisz rzeczywisty przejazd jednym kliknięciem." }
       ]
     }
   ];
