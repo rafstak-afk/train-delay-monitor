@@ -804,14 +804,32 @@ function flattenConnections(routes, excludeCarrierSet) {
     // zmiany składu — a krótkie odstępy w OBU zbadanych przypadkach
     // wskazują, że to pierwsze jest normą, nie wyjątkiem.
     const tripId = r.sid + "|" + r.oid;
-    for (let i = 0; i < stops.length - 1; i++) {
-      const depTime = shortTime(stops[i].dtm);
-      const arrTime = shortTime(stops[i + 1].atm);
-      if (!depTime || !arrTime) continue;
-      const depMin = minutesFromTime(depTime);
-      const arrMin = minutesFromTime(arrTime);
-      if (arrMin < depMin) continue; // przejście przez północ na JEDNYM skoku — pomijamy, jak dotąd
-      conns.push({ depStop: String(stops[i].id), depMin, arrStop: String(stops[i + 1].id), arrMin, tripId, route: r });
+    // Niektóre przystanki w środku trasy mają puste `dtm` (brak odjazdu) —
+    // najpewniej punkty "tylko wysiadanie" (por. /dictionaries/stop-types),
+    // gdzie PLK nie publikuje czasu odjazdu, bo nikt stamtąd nie wsiada.
+    // Złapane na żywo: Nałęczów→Lublin Główny (IC 6202/BOLKO) ma taki
+    // przystanek pośrodku (262848, tylko atm) — łączenie WYŁĄCZNIE sąsiednich
+    // przystanków i-i+1 gubiło tam całą dalszą część trasy, bo stops[i].dtm
+    // było puste: CSA przestawało "widzieć" kontynuację fizycznego kursu i
+    // wymyślało zbędną przesiadkę zamiast zostawić pasażera w tym samym
+    // pociągu. Dlatego łączymy OSTATNI przystanek z sensownym odjazdem z
+    // KAŻDYM kolejnym przystankiem mającym sensowny przyjazd — przystanki bez
+    // własnego odjazdu są przezroczyste (nie przerywają łańcucha), ale wciąż
+    // tworzą normalny "cel" skoku, gdyby ktoś akurat tam wysiadał.
+    let depIdx = -1;
+    for (let i = 0; i < stops.length; i++) {
+      const dtm = shortTime(stops[i].dtm);
+      if (depIdx !== -1) {
+        const arrTime = shortTime(stops[i].atm);
+        if (arrTime) {
+          const depMin = minutesFromTime(shortTime(stops[depIdx].dtm));
+          const arrMin = minutesFromTime(arrTime);
+          if (arrMin >= depMin) { // przejście przez północ na JEDNYM skoku — pomijamy, jak dotąd
+            conns.push({ depStop: String(stops[depIdx].id), depMin, arrStop: String(stops[i].id), arrMin, tripId, route: r });
+          }
+        }
+      }
+      if (dtm) depIdx = i;
     }
   }
   return conns;
