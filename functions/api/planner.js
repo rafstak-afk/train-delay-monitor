@@ -801,25 +801,37 @@ function runMultiLabelCSA(sortedConnections, sourceId, sourceMin, maxTransfers, 
 
   for (const c of sortedConnections) {
     if (c.depMin < sourceMin) continue;
-    let outputLevel;
-    if (tripInfo.has(c.tripId)) {
-      outputLevel = tripInfo.get(c.tripId).outputLevel;
-    } else {
-      const depLabels = labels.get(c.depStop);
-      if (!depLabels) continue;
-      let boardLevel = null;
+    // Na KAŻDYM przystanku kursu (nie tylko pierwszym napotkanym w tej
+    // pętli) sprawdzamy, czy wsiadanie WŁAŚNIE TU dałoby MNIEJ przesiadek
+    // niż poziom, na którym kurs został już "złapany" wcześniej — bez tego
+    // silnik gubił możliwość wsiadania PÓŹNIEJ, ale BLIŻEJ POCZĄTKU trasy
+    // (złapany na żywo przykład: kurs odjeżdżający z Chorzowa Miasto o
+    // 12:34 wraca też przez stację źródłową o 12:53 — tam wsiadałoby się
+    // z zerem przesiadek zamiast jechać tam najpierw innym pociągiem i
+    // dopiero w Chorzowie Mieście łapać ten sam kurs z 1 przesiadką,
+    // czyli dosłownie jechać ten sam odcinek dwa razy).
+    const existing = tripInfo.get(c.tripId);
+    const depLabels = labels.get(c.depStop);
+    let freshBoardLevel = null;
+    if (depLabels) {
       for (let k = 0; k < SIZE - 1; k++) {
         const avail = depLabels[k];
         if (avail === Infinity) continue;
         const needed = c.depStop === sourceId ? avail : avail + transferMinutes;
         if (needed <= c.depMin) {
-          boardLevel = k;
+          freshBoardLevel = k;
           break;
         }
       }
-      if (boardLevel === null) continue;
-      outputLevel = boardLevel + 1;
-      tripInfo.set(c.tripId, { outputLevel, boardStop: c.depStop, boardMin: c.depMin, boardLevel });
+    }
+    let outputLevel;
+    if (existing && (freshBoardLevel === null || existing.boardLevel <= freshBoardLevel)) {
+      outputLevel = existing.outputLevel;
+    } else if (freshBoardLevel !== null) {
+      outputLevel = freshBoardLevel + 1;
+      tripInfo.set(c.tripId, { outputLevel, boardStop: c.depStop, boardMin: c.depMin, boardLevel: freshBoardLevel });
+    } else {
+      continue;
     }
     const arrLabels = getLabels(c.arrStop);
     if (c.arrMin < arrLabels[outputLevel]) {
