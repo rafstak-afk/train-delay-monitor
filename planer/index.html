@@ -86,7 +86,7 @@ input[type=date],input[type=time]{width:100%;font-size:15px;font-family:inherit}
 .risk-tight{color:var(--yellow);font-weight:800}
 .risk-missed{color:var(--red);font-weight:900}
 .ambiguous-note{font-size:12.5px;color:var(--yellow);margin:0 0 10px;text-align:center}
-.itin-actions{display:flex;justify-content:flex-end;margin-top:8px}
+.itin-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:8px}
 .saved-at{font-size:11.5px;color:var(--muted);margin-top:6px;font-style:italic}
 .via-row{margin-bottom:8px}
 .via-row .station-field{margin-bottom:0}
@@ -152,6 +152,10 @@ input[type=date],input[type=time]{width:100%;font-size:15px;font-family:inherit}
           <option value="90">90 min</option>
           <option value="120">120 min</option>
         </select>
+
+        <div class="adv-section">
+          <label class="carrier-chip"><input type="checkbox" id="directOnlyCheckbox"> Tylko połączenia bezpośrednie (bez przesiadek)</label>
+        </div>
 
         <div class="adv-section">
           <div class="adv-section-title">Przez stację (opcjonalnie)</div>
@@ -244,11 +248,12 @@ input[type=date],input[type=time]{width:100%;font-size:15px;font-family:inherit}
     $('advSummary').textContent='Min. czas na przesiadkę: '+$('transferMinutesSelect').value+' min';
   }
   $('transferMinutesSelect').addEventListener('change',function(){updateAdvSummary();updateAdvDot()});
+  $('directOnlyCheckbox').addEventListener('change',updateAdvDot);
 
   // Czerwona kropka przy "Zaawansowane" — widoczna nawet w zwiniętej sekcji,
   // żeby było wiadomo, że coś tam zmieniono z ustawień domyślnych.
   function updateAdvDot(){
-    var active=$('transferMinutesSelect').value!=='3'||excludedCarriers.size>0||viaRows.some(function(r){return r.name.trim()});
+    var active=$('transferMinutesSelect').value!=='3'||excludedCarriers.size>0||viaRows.some(function(r){return r.name.trim()})||$('directOnlyCheckbox').checked;
     var el=$('advDot');
     if(el)el.classList.toggle('show',active);
   }
@@ -489,10 +494,13 @@ input[type=date],input[type=time]{width:100%;font-size:15px;font-family:inherit}
       }
     });
     var actionHtml='';
+    var planTitle=' title="Dodaj do planu podróży w dzienniczku — potem potwierdzisz każdy odcinek osobno"';
     if(opts.savedKey){
-      actionHtml='<button type="button" class="btn-sm secondary itin-remove" data-saved-key="'+escapeHtml(opts.savedKey)+'">🗑️ Usuń</button>';
+      actionHtml='<button type="button" class="btn-sm secondary itin-remove" data-saved-key="'+escapeHtml(opts.savedKey)+'">🗑️ Usuń</button>'+
+        '<button type="button" class="btn-sm secondary itin-addplan" data-saved-key="'+escapeHtml(opts.savedKey)+'"'+planTitle+'>📋 Do dziennika</button>';
     }else if(opts.index!=null){
-      actionHtml='<button type="button" class="btn-sm itin-save" data-idx="'+opts.index+'">💾 Zapisz</button>';
+      actionHtml='<button type="button" class="btn-sm itin-save" data-idx="'+opts.index+'">💾 Zapisz</button>'+
+        '<button type="button" class="btn-sm secondary itin-addplan" data-idx="'+opts.index+'"'+planTitle+'>📋 Do dziennika</button>';
     }
     var savedLine=opts.savedAt?'<div class="saved-at">zapisano '+escapeHtml(new Date(opts.savedAt).toLocaleString('pl-PL'))+'</div>':'';
     return '<div class="entry">'+
@@ -573,6 +581,17 @@ input[type=date],input[type=time]{width:100%;font-size:15px;font-family:inherit}
       window.open(legRow.dataset.trainUrl,'_blank');
       return;
     }
+    var planBtn=e.target.closest('.itin-addplan');
+    if(planBtn){
+      var pIdx=Number(planBtn.dataset.idx);
+      var pIt=lastItineraries[pIdx];
+      if(pIt&&lastQuery){
+        addItineraryToJournalPlan(pIt,lastQuery);
+        planBtn.textContent='✅ Dodano do dziennika';
+        planBtn.disabled=true;
+      }
+      return;
+    }
     var btn=e.target.closest('.itin-save');
     if(!btn)return;
     var idx=Number(btn.dataset.idx);
@@ -601,6 +620,41 @@ input[type=date],input[type=time]{width:100%;font-size:15px;font-family:inherit}
     renderSavedPanel();
     toggleSaved(true);
   }
+  // === Dodanie do planu podróży dzienniczka ===
+  // Reużywa DOKŁADNIE tego samego mechanizmu co "Plan podróży" w /dziennik/
+  // (ten sam klucz localStorage i pole profilu) — dzięki temu istniejący tam
+  // przycisk "✅ Potwierdź" (sprawdzający rzeczywisty status po fakcie,
+  // dopiero gdy pociąg naprawdę dojechał) działa bez żadnych zmian w
+  // dzienniczku. Jeden wielonogowy wynik planera = jeden wpis planu NA
+  // KAŻDĄ nogę (dzienniczek śledzi pojedyncze przejazdy, nie całe trasy).
+  var JOURNAL_PLAN_KEY='dziennikPlanPodrozy';
+  function getJournalPlan(){try{var v=JSON.parse(localStorage.getItem(JOURNAL_PLAN_KEY));return Array.isArray(v)?v:[]}catch(e){return[]}}
+  function saveJournalPlan(list){
+    try{localStorage.setItem(JOURNAL_PLAN_KEY,JSON.stringify(list))}catch(e){return false}
+    if(window.ProfileSync){if(ProfileSync.pushBeacon)ProfileSync.pushBeacon({plannedTrips:list});else ProfileSync.push({plannedTrips:list})}
+    return true;
+  }
+  function addItineraryToJournalPlan(it,query){
+    var list=getJournalPlan();
+    var tripLabel=(query.from||'')+' → '+(query.to||'');
+    it.legs.forEach(function(leg,idx){
+      var key=[query.date,leg.scheduleId,leg.orderId].join('|');
+      var entry={
+        _key:key,date:query.date,scheduleId:leg.scheduleId,orderId:leg.orderId,
+        trainNumber:leg.train.number,category:leg.train.category,
+        boardStation:leg.board.stationName,alightStation:leg.alight.stationName,
+        plannedDeparture:leg.board.time,plannedArrival:leg.alight.time,
+        tripLabel:tripLabel,legNumber:idx+1,distanceKm:null,
+        createdAt:new Date().toISOString()
+      };
+      var dupIdx=-1;
+      for(var i=0;i<list.length;i++){if(list[i]._key===key){dupIdx=i;break}}
+      if(dupIdx>=0)list[dupIdx]=entry;else list.push(entry);
+    });
+    saveJournalPlan(list);
+    return it.legs.length;
+  }
+
   function removeSavedResult(key){
     saveSavedResultsList(getSavedResults().filter(function(e){return e._key!==key}));
     renderSavedPanel();
@@ -618,6 +672,16 @@ input[type=date],input[type=time]{width:100%;font-size:15px;font-family:inherit}
     var legRow=e.target.closest('.leg-row');
     if(legRow){
       window.open(legRow.dataset.trainUrl,'_blank');
+      return;
+    }
+    var planBtn=e.target.closest('.itin-addplan');
+    if(planBtn){
+      var saved=getSavedResults().find(function(x){return x._key===planBtn.dataset.savedKey});
+      if(saved){
+        addItineraryToJournalPlan(saved.snapshot,saved.query);
+        planBtn.textContent='✅ Dodano do dziennika';
+        planBtn.disabled=true;
+      }
       return;
     }
     var btn=e.target.closest('.itin-remove');
@@ -679,6 +743,7 @@ input[type=date],input[type=time]{width:100%;font-size:15px;font-family:inherit}
       params.set('viaIds',viaFiltered.map(function(r){return r.id||''}).join(','));
     }
     if(excludedCarriers.size)params.set('excludeCarriers',[...excludedCarriers].join(','));
+    if($('directOnlyCheckbox').checked)params.set('maxTransfers','0');
 
     fetch('/api/planner?'+params.toString(),{headers:{Accept:'application/json'}})
       .then(function(r){return r.json().then(function(data){return {ok:r.ok,data:data}}) })

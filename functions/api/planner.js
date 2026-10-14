@@ -79,10 +79,10 @@ export async function onRequestGet(context) {
     TRANSFER_MINUTES_MAX
   );
   const maxResults = clamp(Number(url.searchParams.get("maxResults") || DEFAULT_MAX_RESULTS), 1, 50);
-  // Teraz to SUFIT dla adaptacyjnego poszerzania (patrz EXTENDED_TRANSFER_*),
-  // nie sztywna liczba — silnik sam zatrzyma się na najpłytszym poziomie,
-  // na którym cokolwiek znalazł. Domyślnie "tyle ile trzeba" aż do 4.
-  const maxTransfers = clamp(Number(url.searchParams.get("maxTransfers") ?? 4), 1, 4);
+  // Maksymalna liczba przesiadek przekazywana wprost do CSA (etykiety
+  // 0..maxTransfers). Domyślnie "tyle ile trzeba" aż do 4; 0 = tylko
+  // połączenia bezpośrednie (opcja "Tylko bezpośrednie" w Zaawansowanych).
+  const maxTransfers = clamp(Number(url.searchParams.get("maxTransfers") ?? 4), 0, 4);
   const excludeCarrierSet = parseCarrierSet(url.searchParams.get("excludeCarriers"));
 
   if (!fromName || !toName) {
