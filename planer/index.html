@@ -88,6 +88,11 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
 .ambiguous-note{font-size:12.5px;color:var(--yellow);margin:0 0 10px;text-align:center}
 .itin-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:8px}
 .saved-at{font-size:11.5px;color:var(--muted);margin-top:6px;font-style:italic}
+.history-entry{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px}
+.history-entry:last-child{margin-bottom:0}
+.history-route{font-weight:800;font-size:14px}
+.history-meta{color:var(--muted);font-size:12px;margin-top:2px}
+.history-rerun{margin-top:8px;width:100%}
 .via-row{margin-bottom:8px}
 .via-row .station-field{margin-bottom:0}
 .via-remove{flex:0 0 auto;border:1px solid var(--line);background:var(--card);color:var(--red);border-radius:9px;width:42px;height:42px;font-size:16px;cursor:pointer}
@@ -169,6 +174,16 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
         </div>
       </div></div></div>
     </div>
+    <div class="trips-panel" id="historyPanel">
+      <button type="button" class="trips-toggle" id="historyToggle" aria-expanded="false" onclick="toggleHistory()">
+        <span class="trips-toggle-icon" aria-hidden="true">🕘</span>
+        <span class="trips-toggle-text"><span class="trips-toggle-title">Ostatnie wyszukiwania (<span id="historyCount">0</span>)</span><span class="trips-toggle-summary">Szybki powrót do wcześniejszych tras</span></span>
+        <span class="trips-chevron" aria-hidden="true">▾</span>
+      </button>
+      <div class="trips-body" id="historyBody"><div class="trips-body-inner"><div class="trips-content">
+        <div id="historyList"></div>
+      </div></div></div>
+    </div>
     <button type="button" class="btn" id="searchBtn" onclick="search()">🔎 Szukaj połączeń</button>
   </div>
 
@@ -200,6 +215,8 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
   var lastItineraries=[];
   var lastQuery=null;
   var SAVED_KEY='planerZapisaneTrasy';
+  var HISTORY_KEY='planerOstatnieWyszukiwania';
+  var HISTORY_MAX=5;
   var CARRIERS_KEY='planerWykluczeniPrzewoznicy';
 
   function escapeHtml(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]})}
@@ -243,6 +260,14 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     $('savedToggle').setAttribute('aria-expanded',open?'true':'false');
   }
   window.toggleSaved=toggleSaved;
+
+  function toggleHistory(force){
+    var panel=$('historyPanel');
+    var open=typeof force==='boolean'?force:!panel.classList.contains('open');
+    panel.classList.toggle('open',open);
+    $('historyToggle').setAttribute('aria-expanded',open?'true':'false');
+  }
+  window.toggleHistory=toggleHistory;
 
   function updateAdvSummary(){
     $('advSummary').textContent='Min. czas na przesiadkę: '+$('transferMinutesSelect').value+' min';
@@ -526,6 +551,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     lastItineraries=data.itineraries||[];
     lastQuery=data.query;
     visibleCount=RESULTS_PAGE_SIZE;
+    recordSearchHistory(data.query,data.resolvedFrom,data.resolvedTo);
 
     var notes='';
     if(data.resolvedFrom&&data.resolvedFrom.ambiguous)notes+='<div class="ambiguous-note">Znaleziono więcej niż jedną stację o nazwie „'+escapeHtml(data.resolvedFrom.name)+'” — pokazano wyniki dla najbardziej prawdopodobnej. Wybierz dokładną stację z podpowiedzi, jeśli to nie ta.</div>';
@@ -720,6 +746,78 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     removeSavedResult(btn.dataset.savedKey);
   });
 
+  // === Ostatnie wyszukiwania ===
+  function getSearchHistory(){try{var v=JSON.parse(localStorage.getItem(HISTORY_KEY));return Array.isArray(v)?v:[]}catch(e){return[]}}
+  function saveSearchHistoryList(list){
+    try{localStorage.setItem(HISTORY_KEY,JSON.stringify(list))}catch(e){return false}
+    if(window.ProfileSync){if(ProfileSync.pushBeacon)ProfileSync.pushBeacon({plannerSearchHistory:list});else ProfileSync.push({plannerSearchHistory:list})}
+    return true;
+  }
+  function historySignature(q){
+    return[q.from,q.to,(q.via||[]).join('>'),q.date,q.time,q.transferMinutes,q.maxTransfers,(q.excludeCarriers||[]).slice().sort().join(',')].join('|');
+  }
+  function recordSearchHistory(query,resolvedFrom,resolvedTo){
+    var sig=historySignature(query);
+    var list=getSearchHistory().filter(function(e){return e.sig!==sig});
+    list.unshift({
+      sig:sig,
+      query:query,
+      fromId:resolvedFrom?resolvedFrom.id:'',
+      toId:resolvedTo?resolvedTo.id:'',
+      searchedAt:new Date().toISOString()
+    });
+    if(list.length>HISTORY_MAX)list=list.slice(0,HISTORY_MAX);
+    saveSearchHistoryList(list);
+    renderHistoryPanel();
+  }
+  function historyEntryHtml(e,idx){
+    var q=e.query;
+    var dateFmt=(function(){var p=String(q.date||'').split('-');return p.length===3?p[2]+'.'+p[1]+'.'+p[0]:q.date})();
+    var metaBits=[];
+    if(q.transferMinutes!=null&&q.transferMinutes!=='3')metaBits.push('bufor '+q.transferMinutes+' min');
+    if(q.maxTransfers===0||q.maxTransfers==='0')metaBits.push('tylko bezpośrednie');
+    if((q.via||[]).length)metaBits.push('przez '+q.via.join(', '));
+    if((q.excludeCarriers||[]).length)metaBits.push((q.excludeCarriers.length)+' wykl. przewoźników');
+    var metaTxt=metaBits.length?(' · '+metaBits.join(' · ')):'';
+    return '<div class="history-entry">'+
+      '<div class="history-route">'+escapeHtml(q.from)+' → '+escapeHtml(q.to)+'</div>'+
+      '<div class="history-meta">'+escapeHtml(dateFmt)+', od '+escapeHtml(q.time)+escapeHtml(metaTxt)+'</div>'+
+      '<button type="button" class="btn-sm history-rerun" data-idx="'+idx+'">🔎 Szukaj ponownie</button>'+
+      '</div>';
+  }
+  function renderHistoryPanel(){
+    var list=getSearchHistory();
+    $('historyCount').textContent=list.length;
+    var el=$('historyList');
+    el.innerHTML=list.length?list.map(historyEntryHtml).join(''):'<div class="empty">Brak wcześniejszych wyszukiwań.</div>';
+  }
+  function rerunHistoryEntry(idx){
+    var list=getSearchHistory();
+    var e=list[idx];
+    if(!e)return;
+    var q=e.query;
+    selected.from={id:e.fromId||'',name:q.from||''};
+    selected.to={id:e.toId||'',name:q.to||''};
+    $('fromInput').value=q.from||'';
+    $('toInput').value=q.to||'';
+    $('dateInput').value=q.date||'';
+    $('timeInput').value=q.time||'';
+    viaRows=(q.via||[]).map(function(name){return{key:'via'+(viaCounter++),id:'',name:name}});
+    renderViaRows();
+    if(q.transferMinutes!=null)$('transferMinutesSelect').value=String(q.transferMinutes);
+    $('directOnlyCheckbox').checked=(q.maxTransfers===0||q.maxTransfers==='0');
+    excludedCarriers=new Set(q.excludeCarriers||[]);
+    var grid=$('carrierGrid');
+    if(grid)grid.querySelectorAll('input[type=checkbox]').forEach(function(cb){cb.checked=excludedCarriers.has(cb.dataset.code)});
+    updateAdvSummary();updateAdvDot();
+    search();
+  }
+  $('historyList').addEventListener('click',function(e){
+    var btn=e.target.closest('.history-rerun');
+    if(!btn)return;
+    rerunHistoryEntry(Number(btn.dataset.idx));
+  });
+
   async function refreshFromProfile(){
     if(window.ProfileSync&&ProfileSync.getToken()){
       try{
@@ -743,10 +841,24 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
             var grid=$('carrierGrid');
             if(grid)grid.querySelectorAll('input[type=checkbox]').forEach(function(cb){cb.checked=excludedCarriers.has(cb.dataset.code)});
           }
+          if(Array.isArray(profile.plannerSearchHistory)){
+            var remoteH=profile.plannerSearchHistory;
+            var remoteSigs={};
+            remoteH.forEach(function(e){remoteSigs[e.sig]=true});
+            var localOnly=getSearchHistory().filter(function(e){return !remoteSigs[e.sig]});
+            var mergedH=remoteH.concat(localOnly)
+              .sort(function(a,b){return(Date.parse(b.searchedAt||'')||0)-(Date.parse(a.searchedAt||'')||0)})
+              .slice(0,HISTORY_MAX);
+            localStorage.setItem(HISTORY_KEY,JSON.stringify(mergedH));
+          }else{
+            var localH=getSearchHistory();
+            if(localH.length)ProfileSync.push({plannerSearchHistory:localH});
+          }
         }
       }catch(e){}
     }
     renderSavedPanel();
+    renderHistoryPanel();
   }
 
   // === Szukaj ===
@@ -800,6 +912,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
   loadCarrierPrefs();
   updateAdvDot();
   loadCarriers();
+  renderHistoryPanel();
   refreshFromProfile();
   window.addEventListener('pageshow',function(e){if(e.persisted)refreshFromProfile()});
 })();
