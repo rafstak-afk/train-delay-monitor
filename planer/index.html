@@ -50,6 +50,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
 .trips-content{padding:2px 14px 14px;border-top:1px solid var(--line)}
 @media(prefers-reduced-motion:reduce){.trips-body,.trips-chevron{transition:none}}
 .btn{border:0;border-radius:10px;padding:13px 16px;background:var(--blue);color:#fff;font-weight:800;cursor:pointer;font-size:15px;width:100%}
+#searchBtn{box-shadow:0 4px 16px rgba(11,87,208,.45);font-size:16px}
 .btn:hover{background:#084298}
 .btn:disabled{opacity:.6;cursor:default}
 .btn-sm{border:0;border-radius:8px;padding:8px 12px;background:var(--blue);color:#fff;font-weight:700;cursor:pointer;font-size:12.5px}
@@ -88,11 +89,13 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
 .ambiguous-note{font-size:12.5px;color:var(--yellow);margin:0 0 10px;text-align:center}
 .itin-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:8px}
 .saved-at{font-size:11.5px;color:var(--muted);margin-top:6px;font-style:italic}
-.history-entry{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px}
+.history-entry{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px}
 .history-entry:last-child{margin-bottom:0}
+.history-info{min-width:0}
 .history-route{font-weight:800;font-size:14px}
-.history-meta{color:var(--muted);font-size:12px;margin-top:2px}
-.history-rerun{margin-top:8px;width:100%}
+.history-meta{color:var(--muted);font-size:12px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.history-rerun{flex:0 0 auto;border:1.5px solid var(--blue);background:transparent;color:#8fb8f5;border-radius:8px;padding:9px 12px;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap}
+.history-rerun:hover{background:rgba(11,87,208,.18)}
 .via-row{margin-bottom:8px}
 .via-row .station-field{margin-bottom:0}
 .via-remove{flex:0 0 auto;border:1px solid var(--line);background:var(--card);color:var(--red);border-radius:9px;width:42px;height:42px;font-size:16px;cursor:pointer}
@@ -174,17 +177,18 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
         </div>
       </div></div></div>
     </div>
-    <div class="trips-panel" id="historyPanel">
-      <button type="button" class="trips-toggle" id="historyToggle" aria-expanded="false" onclick="toggleHistory()">
-        <span class="trips-toggle-icon" aria-hidden="true">🕘</span>
-        <span class="trips-toggle-text"><span class="trips-toggle-title">Ostatnie wyszukiwania (<span id="historyCount">0</span>)</span><span class="trips-toggle-summary">Szybki powrót do wcześniejszych tras</span></span>
-        <span class="trips-chevron" aria-hidden="true">▾</span>
-      </button>
-      <div class="trips-body" id="historyBody"><div class="trips-body-inner"><div class="trips-content">
-        <div id="historyList"></div>
-      </div></div></div>
-    </div>
     <button type="button" class="btn" id="searchBtn" onclick="search()">🔎 Szukaj połączeń</button>
+  </div>
+
+  <div class="trips-panel" id="historyPanel">
+    <button type="button" class="trips-toggle" id="historyToggle" aria-expanded="false" onclick="toggleHistory()">
+      <span class="trips-toggle-icon" aria-hidden="true">🕘</span>
+      <span class="trips-toggle-text"><span class="trips-toggle-title">Ostatnie wyszukiwania (<span id="historyCount">0</span>)</span><span class="trips-toggle-summary">Szybki powrót do wcześniejszych tras</span></span>
+      <span class="trips-chevron" aria-hidden="true">▾</span>
+    </button>
+    <div class="trips-body" id="historyBody"><div class="trips-body-inner"><div class="trips-content">
+      <div id="historyList"></div>
+    </div></div></div>
   </div>
 
   <div id="resultsStatus" class="status"></div>
@@ -780,9 +784,11 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     if((q.excludeCarriers||[]).length)metaBits.push((q.excludeCarriers.length)+' wykl. przewoźników');
     var metaTxt=metaBits.length?(' · '+metaBits.join(' · ')):'';
     return '<div class="history-entry">'+
-      '<div class="history-route">'+escapeHtml(q.from)+' → '+escapeHtml(q.to)+'</div>'+
-      '<div class="history-meta">'+escapeHtml(dateFmt)+', od '+escapeHtml(q.time)+escapeHtml(metaTxt)+'</div>'+
-      '<button type="button" class="btn-sm history-rerun" data-idx="'+idx+'">🔎 Szukaj ponownie</button>'+
+      '<div class="history-info">'+
+        '<div class="history-route">'+escapeHtml(q.from)+' → '+escapeHtml(q.to)+'</div>'+
+        '<div class="history-meta">'+escapeHtml(dateFmt)+', od '+escapeHtml(q.time)+escapeHtml(metaTxt)+'</div>'+
+      '</div>'+
+      '<button type="button" class="history-rerun" data-idx="'+idx+'">🔎 Szukaj ponownie</button>'+
       '</div>';
   }
   function renderHistoryPanel(){
