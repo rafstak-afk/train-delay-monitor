@@ -628,23 +628,54 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
   // dzienniczku. Jeden wielonogowy wynik planera = jeden wpis planu NA
   // KAŻDĄ nogę (dzienniczek śledzi pojedyncze przejazdy, nie całe trasy).
   var JOURNAL_PLAN_KEY='dziennikPlanPodrozy';
+  var TYPICAL_TRIPS_KEY='dziennikTrasyTypowe';
   function getJournalPlan(){try{var v=JSON.parse(localStorage.getItem(JOURNAL_PLAN_KEY));return Array.isArray(v)?v:[]}catch(e){return[]}}
   function saveJournalPlan(list){
     try{localStorage.setItem(JOURNAL_PLAN_KEY,JSON.stringify(list))}catch(e){return false}
     if(window.ProfileSync){if(ProfileSync.pushBeacon)ProfileSync.pushBeacon({plannedTrips:list});else ProfileSync.push({plannedTrips:list})}
     return true;
   }
+  function normStationPlan(s){return String(s||'').trim().toLowerCase()}
+  // Ta sama logika dopasowania co na stronie biegu pociągu (matchTypicalTrip
+  // w functions/train.js) — jeśli odcinek odpowiada zapisanej trasie typowej
+  // (np. "do pracy"), jej nazwa i kilometraż mają PIERWSZEŃSTWO przed
+  // generyczną etykietą "Skąd → Dokąd" z wyszukiwania planera. Bez tego ten
+  // sam fizyczny odcinek dostawał dwie różne nazwy w zależności od tego,
+  // którą drogą trafił do dzienniczka (zgłoszone na żywo: "do pracy" dla
+  // nogi dodanej ręcznie na biegu pociągu, generyczna nazwa planera dla tej
+  // samej nogi dodanej przez planer).
+  function matchTypicalLegPlan(boardName,alightName){
+    var raw;
+    try{raw=JSON.parse(localStorage.getItem(TYPICAL_TRIPS_KEY))}catch(e){raw=null}
+    var trips=Array.isArray(raw)?raw:(raw&&typeof raw==='object'?['domPraca','pracaDom'].filter(function(id){return raw[id]}).map(function(id){return Object.assign({id:id},raw[id])}):[]);
+    var b=normStationPlan(boardName),a=normStationPlan(alightName);
+    for(var i=0;i<trips.length;i++){
+      var trip=trips[i];
+      var legs=trip.leg1?[[1,trip.leg1],[2,trip.leg2]]:(trip.board&&trip.alight?[[1,{board:trip.board,alight:trip.alight,distanceKm:trip.distanceKm}]]:[]);
+      for(var j=0;j<legs.length;j++){
+        var legNumber=legs[j][0],leg=legs[j][1];
+        if(!leg||!leg.board||!leg.alight)continue;
+        if(normStationPlan(leg.board)===b&&normStationPlan(leg.alight)===a){
+          return{name:trip.name||'trasa',legNumber:legNumber,distanceKm:(leg.distanceKm!=null&&leg.distanceKm!=='')?Number(leg.distanceKm):null};
+        }
+      }
+    }
+    return null;
+  }
   function addItineraryToJournalPlan(it,query){
     var list=getJournalPlan();
-    var tripLabel=(query.from||'')+' → '+(query.to||'');
+    var genericLabel=(query.from||'')+' → '+(query.to||'');
     it.legs.forEach(function(leg,idx){
       var key=[query.date,leg.scheduleId,leg.orderId].join('|');
+      var typical=matchTypicalLegPlan(leg.board.stationName,leg.alight.stationName);
       var entry={
         _key:key,date:query.date,scheduleId:leg.scheduleId,orderId:leg.orderId,
         trainNumber:leg.train.number,category:leg.train.category,
         boardStation:leg.board.stationName,alightStation:leg.alight.stationName,
         plannedDeparture:leg.board.time,plannedArrival:leg.alight.time,
-        tripLabel:tripLabel,legNumber:idx+1,distanceKm:null,
+        tripLabel:typical?typical.name:genericLabel,
+        legNumber:typical?typical.legNumber:(it.legs.length===2?idx+1:null),
+        distanceKm:typical?typical.distanceKm:null,
         createdAt:new Date().toISOString()
       };
       var dupIdx=-1;
