@@ -774,7 +774,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     var q=e.query;
     var dateFmt=(function(){var p=String(q.date||'').split('-');return p.length===3?p[2]+'.'+p[1]+'.'+p[0]:q.date})();
     var metaBits=[];
-    if(q.transferMinutes!=null&&q.transferMinutes!=='3')metaBits.push('bufor '+q.transferMinutes+' min');
+    if(q.transferMinutes!=null&&Number(q.transferMinutes)!==3)metaBits.push('bufor '+q.transferMinutes+' min');
     if(q.maxTransfers===0||q.maxTransfers==='0')metaBits.push('tylko bezpośrednie');
     if((q.via||[]).length)metaBits.push('przez '+q.via.join(', '));
     if((q.excludeCarriers||[]).length)metaBits.push((q.excludeCarriers.length)+' wykl. przewoźników');
