@@ -71,6 +71,21 @@ export async function onRequestGet(context) {
   const viaIdsRaw = (url.searchParams.get("viaIds") || "").trim();
   const viaNames = viaNamesRaw ? viaNamesRaw.split(",").map((s) => s.trim()).filter(Boolean) : [];
   const viaIds = viaIdsRaw ? viaIdsRaw.split(",").map((s) => s.trim()) : [];
+  // Nadpisania per stacja "przez" — pozycyjnie jak via/viaIds. Dotyczą
+  // odcinka ODJEŻDŻAJĄCEGO z danej stacji (ku kolejnej stacji/celowi), nie
+  // tego, który do niej dojeżdża — spójne z sensem "czas na przesiadkę
+  // tutaj". Pierwszy odcinek (Skąd → pierwsza stacja "przez") nie ma własnej
+  // kontrolki, bo nie ma przed nim żadnej nazwanej stacji "przez".
+  const viaTransferMinutesRaw = (url.searchParams.get("viaTransferMinutes") || "").split(",");
+  const viaExcludeCarriersRaw = (url.searchParams.get("viaExcludeCarriers") || "").split(";");
+  const viaOverrides = viaNames.map((_, i) => {
+    const tmRaw = (viaTransferMinutesRaw[i] || "").trim();
+    const tm = tmRaw === "" ? null : clamp(Number(tmRaw), TRANSFER_MINUTES_MIN, TRANSFER_MINUTES_MAX);
+    return {
+      transferMinutes: Number.isFinite(tm) ? tm : null,
+      excludeCarrierSet: parseCarrierSet(viaExcludeCarriersRaw[i] || "")
+    };
+  });
   const date = url.searchParams.get("date") || localDateYYYYMMDD();
   const isToday = date === localDateYYYYMMDD();
   const time = url.searchParams.get("time") || (isToday ? currentTimeHHMM() : "00:00");
@@ -111,7 +126,9 @@ export async function onRequestGet(context) {
     time,
     transferMinutes,
     maxTransfers: hasVia ? 1 : maxTransfers,
-    excludeCarriers: [...excludeCarrierSet].sort().join(",")
+    excludeCarriers: [...excludeCarrierSet].sort().join(","),
+    viaTransferMinutes: viaOverrides.map((v) => (v.transferMinutes == null ? "" : v.transferMinutes)).join(","),
+    viaExcludeCarriers: viaOverrides.map((v) => [...v.excludeCarrierSet].sort().join(",")).join(";")
   });
   const cachedComposed = await caches.default.match(composedKey);
   if (cachedComposed) {
@@ -166,13 +183,23 @@ export async function onRequestGet(context) {
     if (hasVia) {
       const segmentPromises = [];
       for (let i = 0; i < resolvedWaypoints.length - 1; i++) {
+        // Odcinek i odjeżdża ze stacji resolvedWaypoints[i] — jeśli to jedna
+        // z nazwanych stacji "przez" (i>=1, bo resolvedWaypoints[0] to Skąd),
+        // jej dodatkowe wykluczenia przewoźników DOCHODZĄ do globalnych
+        // (nie zastępują ich).
+        const viaIdx = i - 1;
+        const override = viaIdx >= 0 ? viaOverrides[viaIdx] : null;
+        const segmentExcludeSet =
+          override && override.excludeCarrierSet.size
+            ? new Set([...excludeCarrierSet, ...override.excludeCarrierSet])
+            : excludeCarrierSet;
         segmentPromises.push(
           searchSegment({
             from: resolvedWaypoints[i],
             to: resolvedWaypoints[i + 1],
             date,
             transferMinutes,
-            excludeCarrierSet,
+            excludeCarrierSet: segmentExcludeSet,
             headers,
             scheduleTtl,
             stationNames
@@ -185,7 +212,8 @@ export async function onRequestGet(context) {
       cacheInfo = { ...cacheInfo, segments: segmentResults.map((s) => s.cache) };
 
       const timeFloor = minutesFromTime(time) ?? 0;
-      const stitched = stitchViaChain(segmentResults, resolvedWaypoints, transferMinutes, timeFloor);
+      const transferMinutesByGap = viaOverrides.map((v) => v.transferMinutes);
+      const stitched = stitchViaChain(segmentResults, resolvedWaypoints, transferMinutes, timeFloor, transferMinutesByGap);
       const prunedCombos = pruneDominated(stitched.combos);
       itineraries = prunedCombos.sort((a, b) => a.departureTime.localeCompare(b.departureTime)).slice(0, maxResults);
       if (!itineraries.length) {
@@ -272,7 +300,9 @@ export async function onRequestGet(context) {
         time,
         transferMinutes,
         maxTransfers,
-        excludeCarriers: [...excludeCarrierSet]
+        excludeCarriers: [...excludeCarrierSet],
+        viaTransferMinutes: viaOverrides.map((v) => v.transferMinutes),
+        viaExcludeCarriers: viaOverrides.map((v) => [...v.excludeCarrierSet])
       },
       resolvedFrom: resolvedWaypoints[0],
       resolvedTo: resolvedWaypoints[resolvedWaypoints.length - 1],
@@ -621,9 +651,16 @@ function buildTransferItineraries(fromRoutes, toRoutes, from, to, transferMinute
 // Żadnych nowych zapytań — to czyste porównania w pamięci na już pobranych
 // listach, więc nawet pełne przeszukanie (max VIA_SCAN_WINDOW^segmenty) jest
 // trywialne obliczeniowo.
-function stitchViaChain(segmentResults, waypoints, transferMinutes, timeFloor) {
+function stitchViaChain(segmentResults, waypoints, transferMinutes, timeFloor, transferMinutesByGap) {
   const n = segmentResults.length;
   const combos = [];
+  // Brama segIdx odpowiada stacji "przez" waypoints[segIdx+1] (dokładnie ta,
+  // z której odjeżdża KOLEJNY odcinek) — jej nadpisanie (jeśli podane)
+  // zastępuje globalny czas na przesiadkę WYŁĄCZNIE na tym złączeniu.
+  function gapTransferMinutes(segIdx) {
+    const override = transferMinutesByGap && transferMinutesByGap[segIdx];
+    return override != null ? override : transferMinutes;
+  }
 
   // Samo okienko "pierwsze VIA_SCAN_WINDOW wg godziny odjazdu" potrafi
   // całkowicie wyciąć bezpośrednie połączenie: meet-in-the-middle dla
@@ -659,7 +696,7 @@ function stitchViaChain(segmentResults, waypoints, transferMinutes, timeFloor) {
       const dep = minutesFromTime(cand.departureTime);
       const arr = dep + cand.durationMinutes;
       chosen.push(cand);
-      dfs(segIdx + 1, arr + transferMinutes, arr + MAX_TRANSFER_WAIT_MINUTES, chosen);
+      dfs(segIdx + 1, arr + gapTransferMinutes(segIdx), arr + MAX_TRANSFER_WAIT_MINUTES, chosen);
       chosen.pop();
     }
   }
@@ -679,7 +716,7 @@ function stitchViaChain(segmentResults, waypoints, transferMinutes, timeFloor) {
       const best = cands[0];
       const dep = minutesFromTime(best.departureTime);
       const arr = dep + best.durationMinutes;
-      floor = arr + transferMinutes;
+      floor = arr + gapTransferMinutes(i);
       ceil = arr + MAX_TRANSFER_WAIT_MINUTES;
     }
   }

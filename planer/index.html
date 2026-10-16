@@ -100,6 +100,10 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
 .via-row .station-field{margin-bottom:0}
 .via-remove{flex:0 0 auto;border:1px solid var(--line);background:var(--card);color:var(--red);border-radius:9px;width:42px;height:42px;font-size:16px;cursor:pointer}
 .via-remove:hover{background:#2a3b4d}
+.via-advanced-toggle{flex:0 0 auto;border:1px solid var(--line);background:var(--card);color:#fff;border-radius:9px;width:42px;height:42px;font-size:16px;cursor:pointer}
+.via-advanced-toggle:hover,.via-advanced-toggle.open{background:#2a3b4d;border-color:var(--blue)}
+.via-advanced{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px;margin:-2px 0 10px}
+.via-advanced .carrier-grid{margin-top:4px}
 .carrier-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;margin-top:4px}
 @media(max-width:480px){.carrier-grid{grid-template-columns:1fr}}
 .carrier-chip{display:flex;align-items:center;gap:7px;font-size:12.5px;color:#d8e2ee;cursor:pointer}
@@ -363,7 +367,28 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
 
   // === Przez stację (opcjonalnie), do 3 ===
   var MAX_VIA=3;
+  var TRANSFER_MINUTE_OPTIONS=[0,3,5,10,15,20,25,30,60,90,120];
+  var carriersList=[];
 
+  // Ustawienia "dla tej stacji przez" dotyczą odcinka ODJEŻDŻAJĄCEGO z niej
+  // (ku kolejnej stacji/celowi) — spójne z sensem "czas na przesiadkę
+  // tutaj". Wykluczenia przewoźników na odcinku DOCHODZĄ do globalnych
+  // (nie zastępują ich).
+  function viaAdvancedHtml(row){
+    var transferOptions=TRANSFER_MINUTE_OPTIONS.map(function(m){
+      return '<option value="'+m+'"'+(row.transferMinutes===m?' selected':'')+'>'+m+' min</option>';
+    }).join('');
+    var carrierHtml=carriersList.length?carriersList.map(function(c){
+      var checked=row.excludeCarriers.indexOf(c.code)>=0?' checked':'';
+      return '<label class="carrier-chip"><input type="checkbox" data-code="'+escapeHtml(c.code)+'"'+checked+'> '+escapeHtml(c.name)+'</label>';
+    }).join(''):'<div class="muted-note">Ładowanie listy przewoźników...</div>';
+    return '<div class="via-advanced" data-key="'+row.key+'" style="display:none">'+
+      '<label>Czas na przesiadkę tutaj</label>'+
+      '<select class="via-transfer-select" data-key="'+row.key+'"><option value="">Jak domyślnie</option>'+transferOptions+'</select>'+
+      '<div class="adv-section-title" style="margin-top:12px">Dodatkowe wykluczenia na tym odcinku</div>'+
+      '<div class="carrier-grid" data-key="'+row.key+'">'+carrierHtml+'</div>'+
+    '</div>';
+  }
   function renderViaRows(){
     var container=$('viaContainer');
     container.innerHTML=viaRows.map(function(row){
@@ -375,10 +400,42 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
           '</div>'+
           '<div class="station-dropdown" data-key="'+row.key+'"></div>'+
         '</div>'+
+        '<button type="button" class="via-advanced-toggle" data-key="'+row.key+'" title="Ustawienia dla tej stacji">⚙️</button>'+
         '<button type="button" class="via-remove" data-key="'+row.key+'" title="Usuń">✕</button>'+
-      '</div>';
+      '</div>'+
+      viaAdvancedHtml(row);
     }).join('');
     $('addViaBtn').disabled=viaRows.length>=MAX_VIA;
+    container.querySelectorAll('.via-advanced-toggle').forEach(function(btn){
+      btn.addEventListener('click',function(){
+        var key=this.dataset.key;
+        var panel=container.querySelector('.via-advanced[data-key="'+key+'"]');
+        var open=panel.style.display==='none';
+        panel.style.display=open?'block':'none';
+        this.classList.toggle('open',open);
+      });
+    });
+    container.querySelectorAll('.via-transfer-select').forEach(function(sel){
+      var key=sel.dataset.key;
+      sel.addEventListener('change',function(){
+        var row=viaRows.filter(function(r){return r.key===key})[0];
+        if(row)row.transferMinutes=this.value===''?null:Number(this.value);
+        updateAdvDot();
+      });
+    });
+    container.querySelectorAll('.via-advanced .carrier-grid').forEach(function(grid){
+      var key=grid.dataset.key;
+      grid.querySelectorAll('input[type=checkbox]').forEach(function(cb){
+        cb.addEventListener('change',function(){
+          var row=viaRows.filter(function(r){return r.key===key})[0];
+          if(!row)return;
+          var code=this.dataset.code;
+          var idx=row.excludeCarriers.indexOf(code);
+          if(this.checked){if(idx<0)row.excludeCarriers.push(code)}else if(idx>=0)row.excludeCarriers.splice(idx,1);
+          updateAdvDot();
+        });
+      });
+    });
     container.querySelectorAll('.field-clear').forEach(function(btn){
       var key=btn.dataset.viaKey;
       updateClearVisibility(btn, container.querySelector('.via-input[data-key="'+key+'"]'));
@@ -434,7 +491,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
 
   function addViaStation(){
     if(viaRows.length>=MAX_VIA)return;
-    viaRows.push({key:'via'+(viaCounter++),id:'',name:''});
+    viaRows.push({key:'via'+(viaCounter++),id:'',name:'',transferMinutes:null,excludeCarriers:[]});
     renderViaRows();
   }
   window.addViaStation=addViaStation;
@@ -469,7 +526,11 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
   function loadCarriers(){
     fetch('/api/carriers',{headers:{Accept:'application/json'}})
       .then(function(r){return r.json()})
-      .then(function(data){renderCarrierCheckboxes(data.ok&&Array.isArray(data.carriers)?data.carriers:[])})
+      .then(function(data){
+        carriersList=data.ok&&Array.isArray(data.carriers)?data.carriers:[];
+        renderCarrierCheckboxes(carriersList);
+        if(viaRows.length)renderViaRows();
+      })
       .catch(function(){$('carrierGrid').innerHTML='<div class="muted-note">Lista przewoźników chwilowo niedostępna.</div>'});
   }
 
@@ -808,7 +869,10 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     $('toInput').value=q.to||'';
     $('dateInput').value=q.date||'';
     $('timeInput').value=q.time||'';
-    viaRows=(q.via||[]).map(function(name){return{key:'via'+(viaCounter++),id:'',name:name}});
+    viaRows=(q.via||[]).map(function(name,i){
+      var tm=(q.viaTransferMinutes||[])[i];
+      return{key:'via'+(viaCounter++),id:'',name:name,transferMinutes:(tm==null?null:Number(tm)),excludeCarriers:((q.viaExcludeCarriers||[])[i]||[]).slice()};
+    });
     renderViaRows();
     if(q.transferMinutes!=null)$('transferMinutesSelect').value=String(q.transferMinutes);
     $('directOnlyCheckbox').checked=(q.maxTransfers===0||q.maxTransfers==='0');
@@ -890,6 +954,8 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     if(viaFiltered.length){
       params.set('via',viaFiltered.map(function(r){return r.name.trim()}).join(','));
       params.set('viaIds',viaFiltered.map(function(r){return r.id||''}).join(','));
+      params.set('viaTransferMinutes',viaFiltered.map(function(r){return r.transferMinutes==null?'':r.transferMinutes}).join(','));
+      params.set('viaExcludeCarriers',viaFiltered.map(function(r){return(r.excludeCarriers||[]).join(',')}).join(';'));
     }
     if(excludedCarriers.size)params.set('excludeCarriers',[...excludedCarriers].join(','));
     if($('directOnlyCheckbox').checked)params.set('maxTransfers','0');
