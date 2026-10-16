@@ -215,7 +215,32 @@ function renderPlan(){
   if(!el)return;
   el.innerHTML=list.length?list.map(planEntryHtml).join(''):'<div class="empty">Brak zaplanowanych przejazdów. Na biegu pociągu, który jeszcze nie dotarł do stacji wysiadania, zaznacz 🚏/🏁 i dodaj „📋 Do planu”.</div>';
 }
+// Usunięcie z planu (potwierdzenie albo odrzucenie) wysyłamy przez
+// pushBeacon — bez potwierdzenia dotarcia na serwer. Jeśli zaraz potem
+// karta na chwilę zniknie z widoku (np. przełączenie aplikacji), odpala
+// się refreshFromProfile() i POTRAFI jeszcze zobaczyć STARY stan profilu
+// (beacon nie zdążył dotrzeć/zapisać się) — bez tej listy wpis wracał do
+// planu, bo merge nie odróżniał "jeszcze nie zsynchronizowane usunięcie"
+// od "inne urządzenie go dodało". Działa lustrzanie do ochrony DODAWANIA
+// (pendingLocal w refreshFromProfile), tylko dla USUWANIA.
+const PLAN_REMOVED_KEY='dziennikPlanUsunieteOstatnio';
+const PLAN_REMOVED_GRACE_MS=2*60*1000;
+function getRecentlyRemovedPlanKeys(){
+  let v;
+  try{v=JSON.parse(localStorage.getItem(PLAN_REMOVED_KEY))}catch(e){v=null}
+  if(!Array.isArray(v))return[];
+  const now=Date.now();
+  const fresh=v.filter(e=>now-e.at<PLAN_REMOVED_GRACE_MS);
+  if(fresh.length!==v.length){try{localStorage.setItem(PLAN_REMOVED_KEY,JSON.stringify(fresh))}catch(e){}}
+  return fresh;
+}
+function markPlanEntryRemoved(key){
+  const list=getRecentlyRemovedPlanKeys().filter(e=>e.key!==key);
+  list.push({key:key,at:Date.now()});
+  try{localStorage.setItem(PLAN_REMOVED_KEY,JSON.stringify(list))}catch(e){}
+}
 function rejectPlanEntry(key){
+  markPlanEntryRemoved(key);
   savePlannedTrips(getPlannedTrips().filter(e=>e._key!==key));
   renderPlan();
 }
@@ -271,6 +296,7 @@ async function confirmPlanEntry(key){
     const dupIdx=journal.findIndex(x=>x._key===journalEntry._key);
     if(dupIdx>=0)journal[dupIdx]=journalEntry;else journal.push(journalEntry);
     saveJournalEntries(journal);
+    markPlanEntryRemoved(key);
     savePlannedTrips(getPlannedTrips().filter(x=>x._key!==key));
     renderPlan();
     renderEntries();
@@ -810,9 +836,11 @@ async function refreshFromProfile(){
         const remoteAtP=Date.parse(profile.updatedAt||'')||0;
         const remoteKeysP=new Set(remoteP.map(e=>e._key));
         const pendingLocalP=getPlannedTrips().filter(e=>!remoteKeysP.has(e._key)&&Date.parse(e.createdAt||'')>remoteAtP);
-        const mergedP=pendingLocalP.length?[...remoteP,...pendingLocalP]:remoteP;
+        const removedKeysP=new Set(getRecentlyRemovedPlanKeys().map(e=>e.key));
+        const remoteFilteredP=remoteP.filter(e=>!removedKeysP.has(e._key));
+        const mergedP=pendingLocalP.length?[...remoteFilteredP,...pendingLocalP]:remoteFilteredP;
         localStorage.setItem(PLAN_KEY,JSON.stringify(mergedP));
-        if(pendingLocalP.length&&ProfileSync.pushBeacon)ProfileSync.pushBeacon({plannedTrips:mergedP});
+        if((pendingLocalP.length||remoteFilteredP.length!==remoteP.length)&&ProfileSync.pushBeacon)ProfileSync.pushBeacon({plannedTrips:mergedP});
       }else{
         const localPlan=getPlannedTrips();
         if(localPlan.length)ProfileSync.push({plannedTrips:localPlan});

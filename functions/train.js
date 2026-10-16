@@ -434,6 +434,27 @@ let lastTrainArgs=null;
 const JOURNAL_KEY='dziennikPodrozy';
 const PLAN_KEY='dziennikPlanPodrozy';
 const TYPICAL_TRIPS_KEY='dziennikTrasyTypowe';
+// Ten sam klucz co w /dziennik/ (localStorage jest wspólny dla całej
+// domeny) — jeśli usuniemy wpis planu TUTAJ, a chwilę potem użytkownik
+// przełączy się na kartę z dzienniczkiem, jego refreshFromProfile() musi
+// wiedzieć, że ten wpis został właśnie usunięty, a nie przywracać go ze
+// starego stanu profilu, który jeszcze nie dogonił tego usunięcia.
+const PLAN_REMOVED_KEY='dziennikPlanUsunieteOstatnio';
+const PLAN_REMOVED_GRACE_MS=2*60*1000;
+function getRecentlyRemovedPlanKeys(){
+  let v;
+  try{v=JSON.parse(localStorage.getItem(PLAN_REMOVED_KEY))}catch(e){v=null}
+  if(!Array.isArray(v))return[];
+  const now=Date.now();
+  const fresh=v.filter(e=>now-e.at<PLAN_REMOVED_GRACE_MS);
+  if(fresh.length!==v.length){try{localStorage.setItem(PLAN_REMOVED_KEY,JSON.stringify(fresh))}catch(e){}}
+  return fresh;
+}
+function markPlanEntryRemoved(key){
+  const list=getRecentlyRemovedPlanKeys().filter(e=>e.key!==key);
+  list.push({key:key,at:Date.now()});
+  try{localStorage.setItem(PLAN_REMOVED_KEY,JSON.stringify(list))}catch(e){}
+}
 let currentTrainData=null,currentStations=[];
 let markBoardIdx=null,markAlightIdx=null,markMode=null;
 
@@ -550,6 +571,7 @@ function savePlannedTrip(){
   renderJournalBar();
 }
 function removePlannedTrip(key){
+  markPlanEntryRemoved(key);
   savePlannedTrips(getPlannedTrips().filter(e=>e._key!==key));
   renderJournalBar();
 }
