@@ -57,6 +57,7 @@ const MAX_VIA_STATIONS = 3;
 // bierzemy pod uwagę na każdym kroku DFS — bez nowych zapytań, to tylko
 // porównania w pamięci, więc nawet pełne przeszukanie jest trywialne.
 const VIA_SCAN_WINDOW = 8;
+const DIRECT_SCAN_WINDOW = 40;
 
 export async function onRequestGet(context) {
   const { request, env } = context;
@@ -624,13 +625,28 @@ function stitchViaChain(segmentResults, waypoints, transferMinutes, timeFloor) {
   const n = segmentResults.length;
   const combos = [];
 
+  // Samo okienko "pierwsze VIA_SCAN_WINDOW wg godziny odjazdu" potrafi
+  // całkowicie wyciąć bezpośrednie połączenie: meet-in-the-middle dla
+  // jednego wczesnego pierwszego skoku generuje OSOBNĄ pozycję na każdą
+  // pasującą drugą nogę (ten sam odjazd, różne przesiadki) — kilkadziesiąt
+  // takich wariantów potrafi zapchać okno, zanim dojdzie do jednego,
+  // dużo lepszego bezpośredniego kursu odjeżdżającego kilkadziesiąt minut
+  // później. Złapane na żywo: Katowice→Gliwice, gdzie bezpośredni kurs o
+  // 15:35 (0 przesiadek) nie mieścił się w oknie zdominowanym przez
+  // kilkadziesiąt wariantów przesiadkowych odjeżdżających 14:40-15:28.
+  // Bezpośrednie trafienia są rzadkie i tanie do zachowania w całości — nie
+  // powinny w ogóle podlegać temu sufitowi. Osobny, dużo luźniejszy sufit
+  // (DIRECT_SCAN_WINDOW) tylko jako zabezpieczenie przed naprawdę skrajnym
+  // przypadkiem (korytarz z dziesiątkami bezpośrednich kursów dziennie),
+  // żeby DFS nie eksplodował — w praktyce prawie nigdy nie powinien zadziałać.
   function candidatesAt(segIdx, floor, ceil) {
-    return segmentResults[segIdx].itineraries
-      .filter((it) => {
-        const d = minutesFromTime(it.departureTime);
-        return d != null && d >= floor && d <= ceil;
-      })
-      .slice(0, VIA_SCAN_WINDOW);
+    const inWindow = segmentResults[segIdx].itineraries.filter((it) => {
+      const d = minutesFromTime(it.departureTime);
+      return d != null && d >= floor && d <= ceil;
+    });
+    const direct = inWindow.filter((it) => it.type === "direct").slice(0, DIRECT_SCAN_WINDOW);
+    const rest = inWindow.filter((it) => it.type !== "direct").slice(0, VIA_SCAN_WINDOW);
+    return [...direct, ...rest].sort((a, b) => a.departureTime.localeCompare(b.departureTime));
   }
 
   function dfs(segIdx, floor, ceil, chosen) {
