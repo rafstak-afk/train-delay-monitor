@@ -523,13 +523,38 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
       });
     });
   }
+  // Punktowa podmiana TYLKO siatki checkboxów w już istniejących panelach
+  // "przez" (nie cały renderViaRows) — inaczej dociągnięcie listy
+  // przewoźników w tle resetowałoby już otwarty panel albo przerywało
+  // pisanie nazwy stacji, gdyby użytkownik akurat wtedy pisał.
+  function fillViaCarrierGrids(){
+    var container=$('viaContainer');
+    if(!container)return;
+    container.querySelectorAll('.via-advanced .carrier-grid').forEach(function(grid){
+      var key=grid.dataset.key;
+      var row=viaRows.filter(function(r){return r.key===key})[0];
+      if(!row||!carriersList.length)return;
+      grid.innerHTML=carriersList.map(function(c){
+        var checked=row.excludeCarriers.indexOf(c.code)>=0?' checked':'';
+        return '<label class="carrier-chip"><input type="checkbox" data-code="'+escapeHtml(c.code)+'"'+checked+'> '+escapeHtml(c.name)+'</label>';
+      }).join('');
+      grid.querySelectorAll('input[type=checkbox]').forEach(function(cb){
+        cb.addEventListener('change',function(){
+          var code=this.dataset.code;
+          var idx=row.excludeCarriers.indexOf(code);
+          if(this.checked){if(idx<0)row.excludeCarriers.push(code)}else if(idx>=0)row.excludeCarriers.splice(idx,1);
+          updateAdvDot();
+        });
+      });
+    });
+  }
   function loadCarriers(){
     fetch('/api/carriers',{headers:{Accept:'application/json'}})
       .then(function(r){return r.json()})
       .then(function(data){
         carriersList=data.ok&&Array.isArray(data.carriers)?data.carriers:[];
         renderCarrierCheckboxes(carriersList);
-        if(viaRows.length)renderViaRows();
+        fillViaCarrierGrids();
       })
       .catch(function(){$('carrierGrid').innerHTML='<div class="muted-note">Lista przewoźników chwilowo niedostępna.</div>'});
   }
