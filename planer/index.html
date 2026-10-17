@@ -43,9 +43,9 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
 .adv-dot.show{display:inline-block}
 .trips-toggle-summary{font-size:12px;color:var(--muted)}
 .trips-chevron{display:inline-block;font-size:14px;line-height:1;transition:transform .3s ease}
-.trips-panel.open .trips-chevron{transform:rotate(180deg)}
+.trips-panel.open>.trips-toggle .trips-chevron{transform:rotate(180deg)}
 .trips-body{display:grid;grid-template-rows:0fr;transition:grid-template-rows .3s ease}
-.trips-panel.open .trips-body{grid-template-rows:1fr}
+.trips-panel.open>.trips-body{grid-template-rows:1fr}
 .trips-body-inner{overflow:hidden;min-height:0}
 .trips-content{padding:2px 14px 14px;border-top:1px solid var(--line)}
 .sub-panel{border-radius:9px;margin:12px 0 0}
