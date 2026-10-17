@@ -48,6 +48,12 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
 .trips-panel.open .trips-body{grid-template-rows:1fr}
 .trips-body-inner{overflow:hidden;min-height:0}
 .trips-content{padding:2px 14px 14px;border-top:1px solid var(--line)}
+.sub-panel{border-radius:9px;margin:12px 0 0}
+.sub-panel .trips-toggle{padding:9px 11px}
+.sub-panel .trips-toggle-icon{font-size:15px}
+.sub-panel .trips-toggle-title{font-size:13px}
+.sub-panel .trips-toggle-summary{font-size:11.5px}
+.sub-panel .trips-content{padding:2px 11px 11px}
 @media(prefers-reduced-motion:reduce){.trips-body,.trips-chevron{transition:none}}
 .btn{border:0;border-radius:10px;padding:13px 16px;background:var(--blue);color:#fff;font-weight:800;cursor:pointer;font-size:15px;width:100%}
 #searchBtn{box-shadow:0 4px 16px rgba(11,87,208,.45);font-size:16px}
@@ -169,15 +175,27 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
           <label class="carrier-chip"><input type="checkbox" id="directOnlyCheckbox"> Tylko połączenia bezpośrednie (bez przesiadek)</label>
         </div>
 
-        <div class="adv-section">
-          <div class="adv-section-title">Przez stację (opcjonalnie)</div>
-          <div id="viaContainer"></div>
-          <button type="button" class="btn-sm secondary" id="addViaBtn" onclick="addViaStation()">➕ Dodaj kolejną stację</button>
+        <div class="trips-panel sub-panel" id="viaPanel">
+          <button type="button" class="trips-toggle" id="viaToggle" aria-expanded="false" onclick="toggleViaPanel()">
+            <span class="trips-toggle-icon" aria-hidden="true">🔀</span>
+            <span class="trips-toggle-text"><span class="trips-toggle-title">Przez stację</span><span class="trips-toggle-summary" id="viaSummary">Opcjonalnie</span></span>
+            <span class="trips-chevron" aria-hidden="true">▾</span>
+          </button>
+          <div class="trips-body" id="viaBody"><div class="trips-body-inner"><div class="trips-content">
+            <div id="viaContainer"></div>
+            <button type="button" class="btn-sm secondary" id="addViaBtn" onclick="addViaStation()">➕ Dodaj stację</button>
+          </div></div></div>
         </div>
 
-        <div class="adv-section">
-          <div class="adv-section-title">Wyklucz przewoźników</div>
-          <div class="carrier-grid" id="carrierGrid"><div class="muted-note">Ładowanie listy przewoźników...</div></div>
+        <div class="trips-panel sub-panel" id="carrierPanel">
+          <button type="button" class="trips-toggle" id="carrierToggle" aria-expanded="false" onclick="toggleCarrierPanel()">
+            <span class="trips-toggle-icon" aria-hidden="true">🚫</span>
+            <span class="trips-toggle-text"><span class="trips-toggle-title">Wyklucz przewoźników</span><span class="trips-toggle-summary" id="carrierSummary">Żaden nie wykluczony</span></span>
+            <span class="trips-chevron" aria-hidden="true">▾</span>
+          </button>
+          <div class="trips-body" id="carrierBody"><div class="trips-body-inner"><div class="trips-content">
+            <div class="carrier-grid" id="carrierGrid"><div class="muted-note">Ładowanie listy przewoźników...</div></div>
+          </div></div></div>
         </div>
       </div></div></div>
     </div>
@@ -276,6 +294,36 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     $('historyToggle').setAttribute('aria-expanded',open?'true':'false');
   }
   window.toggleHistory=toggleHistory;
+
+  function toggleViaPanel(force){
+    var panel=$('viaPanel');
+    var open=typeof force==='boolean'?force:!panel.classList.contains('open');
+    panel.classList.toggle('open',open);
+    $('viaToggle').setAttribute('aria-expanded',open?'true':'false');
+  }
+  window.toggleViaPanel=toggleViaPanel;
+
+  function toggleCarrierPanel(force){
+    var panel=$('carrierPanel');
+    var open=typeof force==='boolean'?force:!panel.classList.contains('open');
+    panel.classList.toggle('open',open);
+    $('carrierToggle').setAttribute('aria-expanded',open?'true':'false');
+  }
+  window.toggleCarrierPanel=toggleCarrierPanel;
+
+  function updateViaSummary(){
+    var el=$('viaSummary');
+    if(!el)return;
+    var n=viaRows.filter(function(r){return r.name.trim()}).length;
+    el.textContent=n?(n+(n===1?' stacja dodana':' stacje dodane')):'Opcjonalnie';
+  }
+
+  function updateCarrierSummary(){
+    var el=$('carrierSummary');
+    if(!el)return;
+    var n=excludedCarriers.size;
+    el.textContent=n?(n+(n===1?' wykluczony':' wykluczonych')):'Żaden nie wykluczony';
+  }
 
   function updateAdvSummary(){
     $('advSummary').textContent='Min. czas na przesiadkę: '+$('transferMinutesSelect').value+' min';
@@ -406,6 +454,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
       viaAdvancedHtml(row);
     }).join('');
     $('addViaBtn').disabled=viaRows.length>=MAX_VIA;
+    updateViaSummary();
     container.querySelectorAll('.via-advanced-toggle').forEach(function(btn){
       btn.addEventListener('click',function(){
         var key=this.dataset.key;
@@ -520,6 +569,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
         if(this.checked)excludedCarriers.add(code);else excludedCarriers.delete(code);
         saveCarrierPrefs();
         updateAdvDot();
+        updateCarrierSummary();
       });
     });
   }
@@ -904,7 +954,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     excludedCarriers=new Set(q.excludeCarriers||[]);
     var grid=$('carrierGrid');
     if(grid)grid.querySelectorAll('input[type=checkbox]').forEach(function(cb){cb.checked=excludedCarriers.has(cb.dataset.code)});
-    updateAdvSummary();updateAdvDot();
+    updateAdvSummary();updateAdvDot();updateCarrierSummary();
     search();
   }
   $('historyList').addEventListener('click',function(e){
@@ -933,6 +983,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
           if(Array.isArray(profile.excludedCarriers)){
             excludedCarriers=new Set(profile.excludedCarriers);
             updateAdvDot();
+            updateCarrierSummary();
             var grid=$('carrierGrid');
             if(grid)grid.querySelectorAll('input[type=checkbox]').forEach(function(cb){cb.checked=excludedCarriers.has(cb.dataset.code)});
           }
@@ -1008,6 +1059,8 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
   updateAdvSummary();
   loadCarrierPrefs();
   updateAdvDot();
+  updateCarrierSummary();
+  updateViaSummary();
   loadCarriers();
   renderHistoryPanel();
   refreshFromProfile();
