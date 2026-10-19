@@ -529,7 +529,18 @@ function findExistingEntry(date,scheduleId,orderId,boardStation,alightStation){
 // taki przejazd trzymamy osobno, dopóki ktoś go ręcznie nie potwierdzi (albo
 // odrzuci) na /dziennik/. Pozwala to ocenić z wyprzedzeniem, czy planowana
 // trasa (z przesiadkami) w ogóle się spina.
-function getPlannedTrips(){try{const v=JSON.parse(localStorage.getItem(PLAN_KEY));return Array.isArray(v)?v:[]}catch{return[]}}
+// Starsze zapisy (sprzed poprawki w savePlannedTrip, która nie sprawdzała
+// _key przed dołożeniem wpisu) mogły zduplikować ten sam przejazd —
+// pokazujemy tylko ostatni wpis na klucz, bez zmiany kolejności pierwszego
+// wystąpienia. Samo się naprawia przy najbliższym zapisie listy.
+function getPlannedTrips(){
+  let v;
+  try{v=JSON.parse(localStorage.getItem(PLAN_KEY))}catch(e){v=null}
+  if(!Array.isArray(v))return[];
+  const seen=new Map();
+  v.forEach(function(e){if(e&&e._key)seen.set(e._key,e)});
+  return[...seen.values()];
+}
 function savePlannedTrips(list){
   try{localStorage.setItem(PLAN_KEY,JSON.stringify(list))}catch(e){return false}
   if(window.ProfileSync){
@@ -566,7 +577,11 @@ function savePlannedTrip(){
   const meta=typicalMetaForMarks();
   const entry=buildPlannedEntry(currentTrainData,currentStations,markBoardIdx,markAlightIdx,meta);
   const list=getPlannedTrips();
-  list.push(entry);
+  // Ten sam przejazd dodany dwa razy (np. kliknięcie "Dodaj" po powrocie z
+  // przypomnienia na tablicy, powtórzone przez pomyłkę) ma TEN SAM _key —
+  // nadpisujemy istniejący wpis zamiast dokładać duplikat.
+  const idx=list.findIndex(function(e){return e._key===entry._key});
+  if(idx>=0)list[idx]=entry;else list.push(entry);
   savePlannedTrips(list);
   renderJournalBar();
 }

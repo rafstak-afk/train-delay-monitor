@@ -184,7 +184,18 @@ const JOURNAL_KEY='dziennikPodrozy';
 const PLAN_KEY='dziennikPlanPodrozy';
 const TYPICAL_TRIPS_KEY='dziennikTrasyTypowe';
 
-function getPlannedTrips(){try{const v=JSON.parse(localStorage.getItem(PLAN_KEY));return Array.isArray(v)?v:[]}catch{return[]}}
+// Starsze zapisy (sprzed poprawki w savePlannedTrip, która nie sprawdzała
+// _key przed dołożeniem wpisu) mogły zduplikować ten sam przejazd —
+// pokazujemy tylko ostatni wpis na klucz, bez zmiany kolejności pierwszego
+// wystąpienia. Samo się naprawia przy najbliższym zapisie listy.
+function getPlannedTrips(){
+  let v;
+  try{v=JSON.parse(localStorage.getItem(PLAN_KEY))}catch{v=null}
+  if(!Array.isArray(v))return[];
+  const seen=new Map();
+  v.forEach(e=>{if(e&&e._key)seen.set(e._key,e)});
+  return[...seen.values()];
+}
 function savePlannedTrips(list){
   try{localStorage.setItem(PLAN_KEY,JSON.stringify(list))}catch(e){return false}
   if(window.ProfileSync){if(ProfileSync.pushBeacon)ProfileSync.pushBeacon({plannedTrips:list});else ProfileSync.push({plannedTrips:list})}
@@ -244,27 +255,23 @@ function rejectPlanEntry(key){
   savePlannedTrips(getPlannedTrips().filter(e=>e._key!==key));
   renderPlan();
 }
-async function confirmPlanEntry(key){
-  const list=getPlannedTrips();
-  const e=list.find(x=>x._key===key);
-  if(!e)return;
-  const statusEl=document.getElementById('planStatus_'+key);
-  if(statusEl){statusEl.textContent='Sprawdzam aktualny status…';statusEl.className='plan-status'}
+// Właściwa logika potwierdzenia JEDNEGO wpisu planu, bez dotykania UI —
+// używana zarówno przez ręczny przycisk "✅ Potwierdź", jak i przez ciche,
+// automatyczne potwierdzanie przy wejściu na stronę (autoConfirmReadyPlanEntries).
+// Zwraca {ok:true} po zapisaniu do dzienniczka, albo {ok:false, reason}.
+async function tryConfirmPlanEntry(e){
   try{
     const q=new URLSearchParams({scheduleId:e.scheduleId||'',orderId:e.orderId||'',operatingDate:e.date||''});
     const r=await fetch('/api/train-details?'+q.toString(),{headers:{Accept:'application/json'},cache:'no-store'});
     const data=await r.json().catch(()=>null);
-    if(!r.ok||!data||data.error||!Array.isArray(data.route))throw new Error('fetch-failed');
+    if(!r.ok||!data||data.error||!Array.isArray(data.route))return{ok:false,reason:'fetch-failed'};
     const norm=s=>String(s||'').trim().toLowerCase();
     const stations=data.route;
     const bi=stations.findIndex(s=>norm(s.stationName)===norm(e.boardStation));
     const ai=stations.findIndex(s=>norm(s.stationName)===norm(e.alightStation));
-    if(bi<0||ai<0||ai<=bi)throw new Error('route-mismatch');
+    if(bi<0||ai<0||ai<=bi)return{ok:false,reason:'route-mismatch'};
     const b=stations[bi],a=stations[ai];
-    if(a.status!=='confirmed'){
-      if(statusEl){statusEl.textContent='Pociąg jeszcze nie dotarł do stacji wysiadania — spróbuj ponownie później.';statusEl.className='plan-status warn'}
-      return;
-    }
+    if(a.status!=='confirmed')return{ok:false,reason:'not-arrived'};
     const plannedDep=b.plannedDeparture||b.plannedTime;
     const actualDep=(b.status==='confirmed'?(b.actualDeparture||b.actualTime):'')||plannedDep;
     const plannedArr=a.plannedArrival||a.plannedTime;
@@ -296,13 +303,44 @@ async function confirmPlanEntry(key){
     const dupIdx=journal.findIndex(x=>x._key===journalEntry._key);
     if(dupIdx>=0)journal[dupIdx]=journalEntry;else journal.push(journalEntry);
     saveJournalEntries(journal);
-    markPlanEntryRemoved(key);
-    savePlannedTrips(getPlannedTrips().filter(x=>x._key!==key));
+    markPlanEntryRemoved(e._key);
+    savePlannedTrips(getPlannedTrips().filter(x=>x._key!==e._key));
+    return{ok:true};
+  }catch(err){
+    return{ok:false,reason:'fetch-failed'};
+  }
+}
+async function confirmPlanEntry(key){
+  const list=getPlannedTrips();
+  const e=list.find(x=>x._key===key);
+  if(!e)return;
+  const statusEl=document.getElementById('planStatus_'+key);
+  if(statusEl){statusEl.textContent='Sprawdzam aktualny status…';statusEl.className='plan-status'}
+  const result=await tryConfirmPlanEntry(e);
+  if(result.ok){
     renderPlan();
     renderEntries();
-  }catch(err){
-    if(statusEl){statusEl.textContent='Nie udało się sprawdzić statusu. Spróbuj ponownie.';statusEl.className='plan-status warn'}
+    return;
   }
+  if(statusEl){
+    if(result.reason==='not-arrived'){statusEl.textContent='Pociąg jeszcze nie dotarł do stacji wysiadania — spróbuj ponownie później.';statusEl.className='plan-status warn'}
+    else{statusEl.textContent='Nie udało się sprawdzić statusu. Spróbuj ponownie.';statusEl.className='plan-status warn'}
+  }
+}
+// Ciche, automatyczne potwierdzanie wpisów planu, których pociąg JUŻ
+// dotarł do stacji wysiadania — bez tego użytkownik musiał pamiętać, żeby
+// wrócić i ręcznie kliknąć "✅ Potwierdź" dla każdego przejazdu osobno,
+// mimo że dane do potwierdzenia są już dostępne od razu po przyjeździe.
+// Celowo pomija wpisy, których pociąg jeszcze jedzie (not-arrived) — te
+// zostają w planie bez zmian, do kolejnej próby.
+async function autoConfirmReadyPlanEntries(){
+  const list=getPlannedTrips();
+  let changed=false;
+  for(const e of list){
+    const result=await tryConfirmPlanEntry(e);
+    if(result.ok)changed=true;
+  }
+  if(changed){renderPlan();renderEntries()}
 }
 
 function getJournalEntries(){try{const v=JSON.parse(localStorage.getItem(JOURNAL_KEY));return Array.isArray(v)?v:[]}catch{return[]}}
@@ -855,6 +893,7 @@ async function refreshFromProfile(){
       }
     }
   }
+  await autoConfirmReadyPlanEntries();
   renderTripsForm();
   // W trybie edycji NIE nadpisujemy tego, co użytkownik akurat poprawia —
   // podmiana listy pod ręką skasowałaby niezapisane zmiany.
