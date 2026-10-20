@@ -181,9 +181,18 @@ export async function onRequestGet(context) {
   const useTrains = !!profile.alarmEnabled && trains.length > 0;
   const useStations = watchedStations.length > 0;
   const items = [];
+  const rawFetches = [];
   if (useStations) {
     for (const station of watchedStations) {
-      try { items.push(...await checkStation(origin, station)); }
+      try {
+        items.push(...await checkStation(origin, station));
+        const { date, time } = warsawNow();
+        const params = new URLSearchParams({ station, limit: "20", date, time });
+        const path = `/api/departures?${params.toString()}`;
+        const r = await fetch(origin + path, { headers: { Accept: "application/json" }, cf: { cacheTtl: 0 } });
+        const bodyText = await r.text();
+        rawFetches.push({ path, status: r.status, bodyPreview: bodyText.slice(0, 400) });
+      }
       catch (e) { items.push({ error: String(e && e.message || e) }); }
     }
   }
@@ -193,7 +202,8 @@ export async function onRequestGet(context) {
     useTrains, useStations,
     alarmEnabled: !!profile.alarmEnabled,
     pushLastSignature: profile.pushLastSignature || null,
-    items
+    items,
+    rawFetches
   });
 }
 
