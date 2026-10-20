@@ -1,7 +1,9 @@
-// Cykliczne sprawdzanie opóźnień/odwołań dla pociągów z "Moich pociągów"
-// każdego profilu i wysyłka prawdziwego Web Push (dociera NAWET gdy
-// aplikacja/karta jest zamknięta — w odróżnieniu od alarmu w
-// moje-pociagi/index.html, który wymaga otwartej karty).
+// Cykliczne sprawdzanie opóźnień/odwołań dla każdego profilu — dwa niezależne
+// źródła: pociągi z "Moich pociągów" (profile.trains, gdy profile.alarmEnabled)
+// i osobno "obserwowane stacje" (profile.watchedStations, z index.html) —
+// i wysyłka prawdziwego Web Push (dociera NAWET gdy aplikacja/karta jest
+// zamknięta — w odróżnieniu od lokalnego alarmu w index.html/moje-pociagi,
+// który wymaga otwartej karty).
 //
 // Cloudflare Pages nie ma natywnych Cron Triggers (to funkcja samych
 // Workerów) — ten endpoint jest więc odpytywany z zewnątrz, cyklicznie,
@@ -17,6 +19,22 @@ import { buildPushHTTPRequest } from "../_pushforge/main.js";
 const TOKEN_RE = /^[A-Z0-9]{16}$/;
 const ADMIN_CONTACT = "mailto:rafstak@gmail.com";
 const PROFILE_TTL_SECONDS = 60 * 60 * 24 * 180;
+const MAX_WATCHED_STATIONS = 5;
+
+// Worker działa w UTC — bez tego "teraz" wypadałoby o 1-2h obok polskiego
+// czasu ściennego (CET/CEST), co przy stacjach (inaczej niż przy pociągach
+// z "Moich pociągów", gdzie czas bierzemy z zapisanego planTime) przesuwałoby
+// całe okno "nadchodzące odjazdy" na tablicy stacyjnej.
+function warsawNow() {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Europe/Warsaw",
+      year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", hour12: false
+    }).formatToParts(new Date()).map(p => [p.type, p.value])
+  );
+  return { date: `${parts.year}-${parts.month}-${parts.day}`, time: `${parts.hour}:${parts.minute}` };
+}
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -86,6 +104,45 @@ async function checkTrain(origin, item) {
   };
 }
 
+// Jedno zapytanie o tablicę stacji (/api/departures) zamiast dwóch
+// (smart-lookup+train-details) jak przy pojedynczym pociągu z "Moich
+// pociągów" — ten endpoint sam dołącza już delay/status/disruptionReason
+// dla każdego wiersza, dokładnie to, co renderuje index.html.
+async function checkStation(origin, stationName) {
+  const { date, time } = warsawNow();
+  const params = new URLSearchParams({ station: stationName, limit: "20", date, time });
+  const data = await fetchJson(origin, `/api/departures?${params.toString()}`);
+  if (!data || !Array.isArray(data.departures)) return [];
+
+  const items = [];
+  for (const d of data.departures) {
+    const cancelled = isCancelledStatus(d.status);
+    const delay = Number(d.delay || 0);
+    if (!cancelled && !(delay >= 5)) continue;
+
+    const trainNum = String(d.train || d.trainNumber || "").trim();
+    const label = [d.category, trainNum, d.name || d.carrier].filter(Boolean).join(" ");
+    const reason = d.disruptionReason || "";
+
+    const urlParams = new URLSearchParams({ train: trainNum, station: stationName });
+    if (d.category) urlParams.set("category", d.category);
+    if (d.name) urlParams.set("name", d.name);
+    if (d.scheduleId) { urlParams.set("scheduleId", d.scheduleId); urlParams.set("scheduledId", d.scheduleId); }
+    if (d.orderId) { urlParams.set("orderId", d.orderId); urlParams.set("trainOrderId", d.orderId); }
+
+    items.push({
+      label,
+      time: d.time || d.plannedTime || "--:--",
+      delay,
+      cancelled,
+      reason,
+      url: `/train?${urlParams.toString()}`,
+      sigPart: `ST-${stationName}-${label}-${d.time || d.plannedTime || ""}-${delay}-${cancelled ? "X" : ""}`
+    });
+  }
+  return items;
+}
+
 function plainText(x) {
   return x.cancelled ? `${x.time} ${x.label} ODWOŁANY` : `${x.time} ${x.label} +${x.delay} min`;
 }
@@ -117,7 +174,7 @@ export async function onRequestPost(context) {
   }
 
   const origin = new URL(request.url).origin;
-  const summary = { profilesChecked: 0, profilesNotified: 0, trainsChecked: 0, pushSent: 0, pushPruned: 0, errors: [] };
+  const summary = { profilesChecked: 0, profilesNotified: 0, trainsChecked: 0, stationsChecked: 0, pushSent: 0, pushPruned: 0, errors: [] };
 
   let cursor;
   do {
@@ -139,19 +196,36 @@ export async function onRequestPost(context) {
 
       const subs = Array.isArray(profile.pushSubscriptions) ? profile.pushSubscriptions : [];
       const trains = Array.isArray(profile.trains) ? profile.trains : [];
-      if (!profile.alarmEnabled || !subs.length || !trains.length) continue;
+      const watchedStations = (Array.isArray(profile.watchedStations) ? profile.watchedStations : [])
+        .filter(Boolean).slice(0, MAX_WATCHED_STATIONS);
+
+      const useTrains = !!profile.alarmEnabled && trains.length > 0;
+      const useStations = watchedStations.length > 0;
+      if (!subs.length || (!useTrains && !useStations)) continue;
 
       summary.profilesChecked++;
 
       const items = [];
-      for (const item of trains) {
-        if (!item || !item.station || !item.trainNum) continue;
-        summary.trainsChecked++;
-        try {
-          const result = await checkTrain(origin, item);
-          if (result) items.push(result);
-        } catch (e) {
-          summary.errors.push(`${token}:${item.trainNum}: ${e.message}`);
+      if (useTrains) {
+        for (const item of trains) {
+          if (!item || !item.station || !item.trainNum) continue;
+          summary.trainsChecked++;
+          try {
+            const result = await checkTrain(origin, item);
+            if (result) items.push(result);
+          } catch (e) {
+            summary.errors.push(`${token}:${item.trainNum}: ${e.message}`);
+          }
+        }
+      }
+      if (useStations) {
+        for (const station of watchedStations) {
+          summary.stationsChecked++;
+          try {
+            items.push(...await checkStation(origin, station));
+          } catch (e) {
+            summary.errors.push(`${token}:stacja ${station}: ${e.message}`);
+          }
         }
       }
 
