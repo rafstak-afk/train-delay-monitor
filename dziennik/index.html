@@ -323,7 +323,7 @@ async function confirmPlanEntry(key){
     return;
   }
   if(statusEl){
-    if(result.reason==='not-arrived'){statusEl.textContent='Pociąg jeszcze nie dotarł do stacji wysiadania — spróbuj ponownie później.';statusEl.className='plan-status warn'}
+    if(result.reason==='not-arrived'){statusEl.textContent='Dane PLK o przyjeździe jeszcze się nie potwierdziły — to normalne, czasem trwa to dłużej niż sam przejazd. Spróbujemy ponownie automatycznie w tle, nie musisz nic robić.';statusEl.className='plan-status warn'}
     else{statusEl.textContent='Nie udało się sprawdzić statusu. Spróbuj ponownie.';statusEl.className='plan-status warn'}
   }
 }
@@ -903,6 +903,13 @@ async function refreshFromProfile(){
 refreshFromProfile();
 window.addEventListener('pageshow',function(e){if(e.persisted)refreshFromProfile()});
 document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')refreshFromProfile()});
+// PLK potrafi potwierdzić przyjazd na stację wysiadania z dużym
+// opóźnieniem względem faktycznego czasu przejazdu (czasem dopiero po
+// kilku godzinach) — bez tego ponowienia wpis w Planie podróży zostawał
+// "zablokowany" aż użytkownik sam wróci na tę stronę albo ręcznie kliknie
+// "Potwierdź" jeszcze raz. Co 5 minut, tylko gdy karta jest faktycznie
+// widoczna (nie marnujemy zapytań w tle zamkniętej karty).
+setInterval(function(){if(document.visibilityState==='visible')autoConfirmReadyPlanEntries()},5*60*1000);
 
 // Delegacja na stałym kontenerze — przeżywa wymianę zawartości (kart tras /
 // wpisów w edycji) przy każdym renderze, więc nie trzeba podpinać jej na nowo.

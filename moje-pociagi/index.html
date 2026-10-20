@@ -207,6 +207,18 @@ h1{ margin:0; font-size:20px; }
 .status-line{grid-column:1/-1;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.1);font-size:12.5px;color:var(--muted)}
 .last-station{font-size:15px;font-weight:800;color:#fff}
 .last-time{font-size:15px;font-weight:800}
+
+/* === Alarm opóźnień/odwołań — te same reguły co na tablicy głównej
+   (index.html), żeby czerwony panel wyglądał i działał identycznie. === */
+.btn-alert{background:#dc3545;color:#fff;border-color:#dc3545}
+.alert-box{display:none;margin:0 0 12px;padding:10px 12px;border-radius:10px;background:#3b1d1d;border:1px solid #dc3545;color:#ffd6d6;text-align:left}
+.alert-title{font-weight:700;text-align:center;margin-bottom:6px}
+.alert-row{display:flex;align-items:center;gap:8px;padding:4px 2px;border-top:1px solid rgba(255,255,255,.12);text-decoration:none;cursor:pointer;border-radius:6px;flex-wrap:wrap}
+.alert-row:first-of-type{border-top:0}
+.alert-row:hover{background:rgba(255,255,255,.08)}
+.alert-time,.alert-train,.alert-badge{font-weight:700;white-space:nowrap}
+.alert-badge{margin-left:auto;padding-left:12px}
+.alert-cancelled{color:#ff4d4d}
 </style>
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "a3663c820f4e414ab15c7a64a8aa36ec"}'></script><!-- End Cloudflare Web Analytics -->
 </head>
@@ -222,10 +234,12 @@ h1{ margin:0; font-size:20px; }
     <a class="refresh" href="/dziennik/" style="text-decoration:none; display:inline-flex; align-items:center;" title="Dzienniczek podróży">📓</a>
     <a class="refresh" href="/profil/" style="text-decoration:none; display:inline-flex; align-items:center;">👤</a>
     <button class="refresh danger" id="clearBtn" title="Usuń wszystkie pociągi z listy">🗑️ Wyczyść</button>
+    <button class="refresh btn-alert" id="alertButton" onclick="toggleDelayAlerts()">Alarm: OFF</button>
     <button class="refresh" id="refreshBtn">↻ ODŚWIEŻ</button>
   </div>
 </header>
 
+<div id="delayAlertBox" class="alert-box"></div>
 <main id="list" class="list"></main>
 
 <section class="add-form">
@@ -258,6 +272,79 @@ function timeRowHtml(real,planned,delay,cancelled){if(!planned)return '';const r
 function delayRowHtml(real,planned,delay,cancelled){if(!planned)return '';const r=shortTime(real),p=shortTime(planned),d=Number(delay||0);if(cancelled||!(r&&r!==p&&d>0))return '<div class="trow"><div class="time-real" style="visibility:hidden">0</div></div>';return '<div class="trow"><div class="muted plan-small" style="visibility:hidden">00:00</div><div class="time-real delay-val '+getTimeDelayClass(d)+'">+'+d+'</div></div>'}
 function delayColHtml(d,cancelled){return '<div class="time-rows">'+delayRowHtml(d.arrivalTime,d.plannedArrivalTime,d.arrivalDelay,cancelled)+delayRowHtml(d.time,d.plannedTime,d.delay,cancelled)+'</div>'}
 function timeCellHtml(d,tc,delay,delayText,cancelled){return '<div class="time-rows">'+timeRowHtml(d.arrivalTime,d.plannedArrivalTime,d.arrivalDelay,cancelled)+timeRowHtml(d.time,d.plannedTime,delay,cancelled)+(cancelled?'<div class="train-delay-under delay-mid">'+escapeHtml(delayText)+'</div>':'')+'</div>'}
+
+// === Dokładnie ta sama logika alarmów (opóźnienia/odwołania) co na
+// tablicy głównej (index.html) — te same progi, ten sam mechanizm
+// powiadomień, żeby "Moje pociągi" działały spójnie z resztą apki. ===
+function trainStatusCode(d){
+  const vals=[
+    d.statusCode,d.status,d.trainStatus,d.operationStatus,d.operationalStatus,d.plkStatus,d.plkCode,
+    d.realizationStatus,d.runStatus,d.cancellationStatus,d.state,d.code
+  ];
+  for(const v of vals){
+    const s=String(v??'').trim().toUpperCase();
+    if(!s) continue;
+    if(s==='X' || s.includes('ODWO') || s.includes('CANCEL')) return 'X';
+  }
+  return '';
+}
+function isCancelledTrain(d){return trainStatusCode(d)==='X'}
+let delayAlertsEnabled=false,lastDelayedSignature='';
+function computeAlarmItems(){
+  const items=[];
+  currentTrains.forEach((item,idx)=>{
+    const row=lastRows[idx];
+    if(!row) return;
+    const cancelled=isCancelledTrain(row);
+    const delay=getDelay(row);
+    if(!cancelled && !(delay>=5)) return;
+    items.push({
+      time:item.planTime||'--:--',
+      label:[row.category,item.trainNum,row.name].filter(Boolean).join(' '),
+      delay,
+      cancelled,
+      url:buildDetailsUrl(item,row,row.destination||'')
+    });
+  });
+  return items;
+}
+function alertRowHtml(x){
+  if(x.cancelled)return `<a class="alert-row" href="${escapeHtml(x.url)}"><span class="alert-time alert-cancelled">${escapeHtml(x.time)}</span><span class="alert-train alert-cancelled">${escapeHtml(x.label)}</span><span class="alert-badge alert-cancelled">ODWOŁANY</span></a>`;
+  const cls=getDelayClass(x.delay);
+  return `<a class="alert-row" href="${escapeHtml(x.url)}"><span class="alert-time ${cls}">${escapeHtml(x.time)}</span><span class="alert-train ${cls}">${escapeHtml(x.label)}</span><span class="alert-badge ${cls}">+${x.delay}</span></a>`;
+}
+function alertPlainText(x){return x.cancelled?`${x.time} ${x.label} ODWOŁANY`:`${x.time} ${x.label} +${x.delay} min`}
+function handleDelayAlerts(){
+  const box=document.getElementById('delayAlertBox');
+  const items=computeAlarmItems().slice(0,5);
+  if(!items.length){box.style.display='none';box.innerHTML='';return}
+  box.style.display='block';
+  box.innerHTML='<div class="alert-title">🔔 Alarm: opóźnienia / odwołania</div>'+items.map(alertRowHtml).join('');
+  const msg=items.map(alertPlainText).join(' | ');
+  const sig=items.map(x=>`${x.label}-${x.time}-${x.delay}-${x.cancelled?'X':''}`).join('|');
+  if(!delayAlertsEnabled||sig===lastDelayedSignature)return;
+  lastDelayedSignature=sig;
+  const url=items.length===1?items[0].url:'/moje-pociagi/';
+  showAlarmNotification('Alarm pociągów',msg,url);
+}
+function showAlarmNotification(title,body,url){
+  const target=url||'/moje-pociagi/';
+  try{
+    if(!('Notification'in window)||Notification.permission!=='granted')return;
+    if(navigator.serviceWorker&&navigator.serviceWorker.controller){
+      navigator.serviceWorker.ready.then(function(reg){reg.showNotification(title,{body:body,data:{url:target}})}).catch(function(){});
+    }else{
+      const n=new Notification(title,{body:body});
+      n.onclick=function(){try{window.focus()}catch(e){}location.href=target;n.close()};
+    }
+  }catch(e){}
+}
+function toggleDelayAlerts(){
+  delayAlertsEnabled=!delayAlertsEnabled;
+  alertButton.textContent=delayAlertsEnabled?'Alarm: ON':'Alarm: OFF';
+  if(delayAlertsEnabled&&'Notification'in window&&Notification.permission==='default')Notification.requestPermission();
+  if(window.ProfileSync)ProfileSync.push({alarmEnabled:delayAlertsEnabled});
+}
 
 // UWAGA: dawniej brak zapisanej listy (pierwsza wizyta, pusty localStorage)
 // oznaczał pokazanie listy prywatnych pociągów autora jako "domyślnej" —
@@ -590,6 +677,40 @@ function goDetails(station, number, courseQuery) {
       return `${h}:${m}`;
     }
   
+// Budowanie linku /train — wydzielone z renderCard, bo tej samej logiki
+// potrzebuje też panel alarmów (link z powiadomienia/czerwonego wiersza
+// ma prowadzić dokładnie tam, gdzie kliknięcie karty).
+function buildDetailsUrl(item, row, destStation) {
+  const cleanTrainNo = String(item.trainNum || '').replace(/\D+/g, '');
+  const params = new URLSearchParams();
+  params.set('train', cleanTrainNo || item.trainNum);
+
+  if (row) {
+    if (row.category) params.set('category', row.category);
+    if (row.name) params.set('name', row.name);
+    if (destStation || row.destination) params.set('destination', destStation || row.destination);
+    if (row.date) params.set('date', row.date);
+
+    const schedId = row.scheduleId || row.scheduledId || row.id;
+    if (schedId) {
+      params.set('scheduleId', schedId);
+      params.set('scheduledId', schedId);
+    }
+
+    const ordId = row.orderId || row.trainOrderId || row.trainOrder;
+    if (ordId) {
+      params.set('orderId', ordId);
+      params.set('trainOrderId', ordId);
+    }
+
+    if (row.stationId) params.set('stationId', row.stationId);
+  }
+
+  params.set('station', item.station);
+
+  return `/train?${params.toString()}`;
+}
+
 function renderCard(item, index, row) {
   const isLoaded = Boolean(row);
 
@@ -625,7 +746,7 @@ function renderCard(item, index, row) {
   }
 
   const isDelayed = delay !== null && delay > 0;
-  const cancelled = !!(row && row.status === 'X');
+  const cancelled = !!row && isCancelledTrain(row);
   const isFinished = row && (row.isFinished || row.status === "FINISHED" || row.status === "COMPLETED");
   const lastLoc = extractLastStation(row);
 
@@ -668,35 +789,7 @@ function renderCard(item, index, row) {
   const platform = (row && row.platform) || '';
   const track = (row && row.track) || '';
 
-  // Budowanie linku /train
-  const cleanTrainNo = String(item.trainNum || '').replace(/\D+/g, '');
-  const params = new URLSearchParams();
-  params.set('train', cleanTrainNo || item.trainNum);
-
-  if (row) {
-    if (row.category) params.set('category', row.category);
-    if (row.name) params.set('name', row.name);
-    if (destStation || row.destination) params.set('destination', destStation || row.destination);
-    if (row.date) params.set('date', row.date);
-
-    const schedId = row.scheduleId || row.scheduledId || row.id;
-    if (schedId) {
-      params.set('scheduleId', schedId);
-      params.set('scheduledId', schedId);
-    }
-
-    const ordId = row.orderId || row.trainOrderId || row.trainOrder;
-    if (ordId) {
-      params.set('orderId', ordId);
-      params.set('trainOrderId', ordId);
-    }
-
-    if (row.stationId) params.set('stationId', row.stationId);
-  }
-
-  params.set('station', item.station);
-
-  const detailsUrl = `/train?${params.toString()}`;
+  const detailsUrl = buildDetailsUrl(item, row, destStation);
 
   return `
     <div id="card-${index}" class="row-clickable${cancelled ? ' train-cancelled' : ''}" onclick="window.location.href='${detailsUrl}'" style="background:#1c2833;border-radius:12px;margin-bottom:8px;padding:10px;border:1px solid var(--border);">
@@ -723,7 +816,10 @@ function renderCard(item, index, row) {
     </div>
   `;
 }
+let isRefreshing = false;
 async function init() {
+  if (isRefreshing) return;
+  isRefreshing = true;
   const container = document.getElementById('list');
   const refreshBtn = document.getElementById('refreshBtn');
   refreshBtn.disabled = true;
@@ -786,10 +882,12 @@ async function init() {
 
     await Promise.allSettled(cardTasks);
     lastLoadedAt = Date.now();
+    try { handleDelayAlerts(); } catch (e) { console.error('handleDelayAlerts', e); }
   } catch (e) {
     container.innerHTML = `<div style="padding:16px;color:#fb7185;">Błąd ładowania danych: ${String(e && e.message || e)}. Spróbuj odświeżyć.</div>`;
   } finally {
     refreshBtn.disabled = false;
+    isRefreshing = false;
   }
 }
 
@@ -824,6 +922,15 @@ window.addEventListener('pageshow', (event) => {
   }
 });
 
+// Dokładnie ten sam rytm co tablica główna (BOARD_AUTO_REFRESH_MS = 5 min)
+// — wcześniej ta strona odświeżała się TYLKO na ręczne kliknięcie
+// "ODŚWIEŻ" albo powrót z bfcache, więc opóźnienie/odwołanie, które
+// pojawiło się po załadowaniu strony, było widoczne dopiero po ręcznym
+// odświeżeniu. Pomijamy tick, gdy karta jest w tle (oszczędność zapytań) —
+// i tak odświeży się od razu przy powrocie (pageshow/widoczność powyżej).
+const BOARD_AUTO_REFRESH_MS = 5 * 60 * 1000;
+setInterval(() => { if (document.visibilityState === 'visible') init(); }, BOARD_AUTO_REFRESH_MS);
+
 // Jeśli na tym urządzeniu jest aktywny token profilu, dociągamy listę
 // pociągów z chmury przed pierwszym init() — nadpisuje domyślną/lokalną
 // listę tym, co zapisano na innym urządzeniu pod tym samym tokenem.
@@ -836,6 +943,10 @@ window.addEventListener('pageshow', (event) => {
     } else if (profile !== null && localStorage.getItem(STORAGE_KEY)) {
       // Profil w chmurze nie ma jeszcze listy — wysyłamy lokalną.
       ProfileSync.push({ trains: currentTrains });
+    }
+    if (profile && typeof profile.alarmEnabled === 'boolean') {
+      delayAlertsEnabled = profile.alarmEnabled;
+      alertButton.textContent = delayAlertsEnabled ? 'Alarm: ON' : 'Alarm: OFF';
     }
   }
   init();
