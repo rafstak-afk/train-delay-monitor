@@ -219,6 +219,9 @@ h1{ margin:0; font-size:20px; }
 .alert-time,.alert-train,.alert-badge{font-weight:700;white-space:nowrap}
 .alert-badge{margin-left:auto;padding-left:12px}
 .alert-cancelled{color:#ff4d4d}
+.alert-reason-toggle{flex:0 0 auto;width:19px;height:19px;padding:0;background:rgba(255,214,214,.12);border:1px solid rgba(255,214,214,.55);color:#ffd6d6;font-size:11px;font-weight:900;font-style:normal;border-radius:50%;cursor:pointer;line-height:1;display:inline-flex;align-items:center;justify-content:center}
+.alert-reason-toggle:hover{background:rgba(255,214,214,.25)}
+.alert-reason{flex-basis:100%;font-weight:600;font-size:12.5px;color:#ffe8e8;white-space:normal;padding:4px 2px 0;line-height:1.4}
 </style>
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "a3663c820f4e414ab15c7a64a8aa36ec"}'></script><!-- End Cloudflare Web Analytics -->
 </head>
@@ -303,15 +306,18 @@ function computeAlarmItems(){
       label:[row.category,item.trainNum,row.name].filter(Boolean).join(' '),
       delay,
       cancelled,
+      disruptionReason:row.disruptionReason||'',
       url:buildDetailsUrl(item,row,row.destination||'')
     });
   });
   return items;
 }
+function toggleAlertReason(btn){const box=btn.nextElementSibling;if(!box)return;const open=box.hasAttribute('hidden');if(open){box.removeAttribute('hidden');btn.setAttribute('aria-expanded','true')}else{box.setAttribute('hidden','');btn.setAttribute('aria-expanded','false')}}
 function alertRowHtml(x){
-  if(x.cancelled)return `<a class="alert-row" href="${escapeHtml(x.url)}"><span class="alert-time alert-cancelled">${escapeHtml(x.time)}</span><span class="alert-train alert-cancelled">${escapeHtml(x.label)}</span><span class="alert-badge alert-cancelled">ODWOŁANY</span></a>`;
+  const reasonHtml=x.disruptionReason?'<button type="button" class="alert-reason-toggle" title="Pokaż przyczynę opóźnienia" aria-label="Pokaż przyczynę opóźnienia" onclick="event.preventDefault();event.stopPropagation();toggleAlertReason(this)" aria-expanded="false">i</button><div class="alert-reason" hidden>'+escapeHtml(x.disruptionReason)+'</div>':'';
+  if(x.cancelled)return `<a class="alert-row" href="${escapeHtml(x.url)}"><span class="alert-time alert-cancelled">${escapeHtml(x.time)}</span><span class="alert-train alert-cancelled">${escapeHtml(x.label)}</span><span class="alert-badge alert-cancelled">ODWOŁANY</span>${reasonHtml}</a>`;
   const cls=getDelayClass(x.delay);
-  return `<a class="alert-row" href="${escapeHtml(x.url)}"><span class="alert-time ${cls}">${escapeHtml(x.time)}</span><span class="alert-train ${cls}">${escapeHtml(x.label)}</span><span class="alert-badge ${cls}">+${x.delay}</span></a>`;
+  return `<a class="alert-row" href="${escapeHtml(x.url)}"><span class="alert-time ${cls}">${escapeHtml(x.time)}</span><span class="alert-train ${cls}">${escapeHtml(x.label)}</span><span class="alert-badge ${cls}">+${x.delay}</span>${reasonHtml}</a>`;
 }
 function alertPlainText(x){return x.cancelled?`${x.time} ${x.label} ODWOŁANY`:`${x.time} ${x.label} +${x.delay} min`}
 function handleDelayAlerts(){
@@ -584,6 +590,15 @@ async function fetchTrainByNumber(trainNum, station, _isRetry) {
       // ponad ewentualny przyjazd, który matchedRow już miał z tablicy
       // odjazdów.
       ...(plannedArrivalTime ? { arrivalTime, plannedArrivalTime, arrivalDelay } : {}),
+      // train-details zna CAŁĄ trasę tego konkretnego kursu (dopasowaną po
+      // orderId), więc przyczyna opóźnienia jest tu pewniejsza niż ta z
+      // tablicy odjazdów (/api/departures), która zna tylko jedną stację —
+      // dlatego nadpisujemy, ale TYLKO gdy faktycznie coś znaleziono
+      // (inaczej scalanie zgasiłoby reason, który quick-render już pokazał
+      // z matchedRow).
+      ...((Array.isArray(data.disruptions) && data.disruptions.length)
+        ? { disruptionReason: data.disruptions.map(d => d.message).filter(Boolean).join(" / ") }
+        : {}),
       isFinished: data.isFinished ?? true
     };
   } catch (e) {
