@@ -230,7 +230,18 @@ export async function onRequestPost(context) {
       }
 
       const sig = items.map(x => x.sigPart).join("|");
-      if (!sig || sig === profile.pushLastSignature) continue;
+      if (!sig) continue;
+
+      // Deduplikacja PER SUBSKRYPCJA (nie per profil) — jeśli ten sam token
+      // jest zalogowany na dwóch urządzeniach, drugie urządzenie mogło
+      // dodać swoją subskrypcję PO TYM, jak pierwsze już dostało powiadomienie
+      // o tym samym, wciąż trwającym opóźnieniu. Globalny `pushLastSignature`
+      // (poprzednia wersja) wtedy błędnie pomijał całą wysyłkę — nowe
+      // urządzenie nigdy nie dostawało pierwszego powiadomienia, dopóki
+      // sygnatura się nie zmieniła. Każda subskrypcja pamięta WŁASNĄ ostatnio
+      // wysłaną sygnaturę.
+      const subsToNotify = subs.filter(s => s.lastSignature !== sig);
+      if (!subsToNotify.length) continue;
 
       const top = items.slice(0, 5);
       const payload = {
@@ -239,26 +250,25 @@ export async function onRequestPost(context) {
         url: top.length === 1 ? top[0].url : "/moje-pociagi/"
       };
 
-      let prunedAny = false;
       const keptSubs = [];
       for (const sub of subs) {
+        if (sub.lastSignature === sig) { keptSubs.push(sub); continue; }
         try {
           const status = await sendPush(env, sub, payload);
           if (status === 404 || status === 410) {
-            prunedAny = true;
             summary.pushPruned++;
           } else {
-            keptSubs.push(sub);
+            keptSubs.push({ ...sub, lastSignature: sig });
             if (status >= 200 && status < 300) summary.pushSent++;
           }
         } catch (e) {
-          keptSubs.push(sub); // błąd sieci/przejściowy — nie kasujemy subskrypcji
+          keptSubs.push(sub); // błąd sieci/przejściowy — nie kasujemy subskrypcji, spróbuje ponownie przy następnym ticku
           summary.errors.push(`${token} push: ${e.message}`);
         }
       }
 
-      profile.pushLastSignature = sig;
-      if (prunedAny) profile.pushSubscriptions = keptSubs;
+      profile.pushSubscriptions = keptSubs;
+      delete profile.pushLastSignature; // pole z poprzedniej, wadliwej logiki — już nieużywane
 
       await env.USER_PROFILES.put(token, JSON.stringify(profile), {
         expirationTtl: PROFILE_TTL_SECONDS,
