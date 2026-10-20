@@ -12,7 +12,7 @@
 // (moje-pociagi/index.html: smart-lookup + train-details) — żadnej
 // osobnej logiki dopasowania pociągu do kursu PLK.
 
-import { buildPushHTTPRequest } from "@pushforge/builder";
+import { buildPushHTTPRequest } from "../_pushforge/main.js";
 
 const TOKEN_RE = /^[A-Z0-9]{16}$/;
 const ADMIN_CONTACT = "mailto:rafstak@gmail.com";
