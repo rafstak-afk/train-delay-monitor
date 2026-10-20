@@ -966,6 +966,22 @@ setInterval(() => { if (document.visibilityState === 'visible') init(); }, BOARD
   }
   init();
 })();
+
+// Na Androidzie zwykłe `new Notification(...)` rzuca "Illegal constructor" —
+// pokazanie powiadomienia MUSI iść przez zarejestrowany Service Worker
+// (showAlarmNotification już to obsługuje, patrz warunek
+// navigator.serviceWorker.controller wyżej). Bez tej rejestracji działało
+// to tylko przypadkiem, jeśli ktoś wcześniej odwiedził stronę główną (tam
+// SW jest rejestrowany od dawna) — ktoś, kto trafia prosto na tę stronę
+// (np. zapisana zakładka/skrót), nie miał żadnego powiadomienia na
+// Androidzie, mimo włączonego alarmu.
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/service-worker.js").catch(err => {
+      console.warn("Service worker registration failed:", err);
+    });
+  });
+}
 </script>
 </body>
 </html>
