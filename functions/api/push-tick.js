@@ -161,6 +161,42 @@ async function sendPush(env, subscription, payload) {
   return res.status;
 }
 
+// Tymczasowa diagnostyka jednego profilu (bez zapisu) — do usunięcia po
+// zdiagnozowaniu, czemu testowy profil nie dostaje powiadomień mimo
+// poprawnych danych w KV. GET /api/push-tick?token=...&debugSecret=...
+export async function onRequestGet(context) {
+  const { request, env } = context;
+  const url = new URL(request.url);
+  if (url.searchParams.get("debugSecret") !== env.PUSH_TICK_SECRET) {
+    return json({ ok: false, error: "Nieautoryzowany" }, 401);
+  }
+  const token = (url.searchParams.get("token") || "").toUpperCase();
+  const raw = await env.USER_PROFILES.get(token);
+  if (!raw) return json({ ok: true, found: false });
+  const profile = JSON.parse(raw);
+  const origin = url.origin;
+  const subs = Array.isArray(profile.pushSubscriptions) ? profile.pushSubscriptions : [];
+  const trains = Array.isArray(profile.trains) ? profile.trains : [];
+  const watchedStations = (Array.isArray(profile.watchedStations) ? profile.watchedStations : []).filter(Boolean).slice(0, MAX_WATCHED_STATIONS);
+  const useTrains = !!profile.alarmEnabled && trains.length > 0;
+  const useStations = watchedStations.length > 0;
+  const items = [];
+  if (useStations) {
+    for (const station of watchedStations) {
+      try { items.push(...await checkStation(origin, station)); }
+      catch (e) { items.push({ error: String(e && e.message || e) }); }
+    }
+  }
+  return json({
+    ok: true, found: true,
+    subsCount: subs.length, trainsCount: trains.length, watchedStations,
+    useTrains, useStations,
+    alarmEnabled: !!profile.alarmEnabled,
+    pushLastSignature: profile.pushLastSignature || null,
+    items
+  });
+}
+
 export async function onRequestPost(context) {
   const { request, env } = context;
 
