@@ -34,6 +34,25 @@ self.addEventListener("fetch", event => {
   );
 });
 
+// Prawdziwy Web Push (push-tick.js na serwerze) — dochodzi NAWET gdy karta
+// z aplikacją jest zamknięta, bo to zdarzenie budzi sam Service Worker.
+// Bez event.waitUntil(showNotification(...)) przeglądarka uznałaby to za
+// "cichy push" i pokazałaby własne, generyczne powiadomienie zamiast
+// naszego — dlatego ZAWSZE wołamy showNotification, nawet przy błędzie
+// parsowania danych.
+self.addEventListener("push", event => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch (e) {}
+  const title = data.title || "Alarm pociągów";
+  const body = data.body || "Sprawdź aktualny status na Moich pociągach.";
+  const url = data.url || "/moje-pociagi/";
+  event.waitUntil(
+    self.registration.showNotification(title, { body, data: { url } })
+  );
+});
+
 // Bez tego kliknięcie powiadomienia o alarmie (showAlarmNotification w
 // index.html) nic nie robiło — przeglądarka samo z siebie nie wie, dokąd
 // ma zaprowadzić, trzeba to obsłużyć jawnie. Jeśli karta z aplikacją jest

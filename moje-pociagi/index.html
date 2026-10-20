@@ -345,11 +345,63 @@ function showAlarmNotification(title,body,url){
     }
   }catch(e){}
 }
-function toggleDelayAlerts(){
+// Klucz publiczny VAPID — bezpieczny do umieszczenia w kodzie klienta (to
+// jego przeznaczenie, w odróżnieniu od klucza prywatnego, który zna tylko
+// serwer jako sekret VAPID_PRIVATE_KEY). Służy do podpisania subskrypcji
+// push, żeby TYLKO nasz serwer mógł wysyłać powiadomienia do tej przeglądarki.
+const VAPID_PUBLIC_KEY='BOVJOSGUg7ftbz0Qni3Fo15a25c08pX-OJPavIGysDlyyzYt5FW46c2p3OKu46HJB08fuBB70z5dNk9G_xMAsSA';
+function urlBase64ToUint8Array(base64String){
+  const padding='='.repeat((4-base64String.length%4)%4);
+  const base64=(base64String+padding).replace(/-/g,'+').replace(/_/g,'/');
+  const rawData=atob(base64);
+  return Uint8Array.from([...rawData].map(c=>c.charCodeAt(0)));
+}
+// Prawdziwy Web Push dociera nawet przy zamkniętej aplikacji — ale wymaga
+// profilu (subskrypcja "mieszka" na serwerze pod tokenem profilu, patrz
+// push-subscribe.js), bo cykliczne sprawdzanie w tle (push-tick.js) nie ma
+// dostępu do localStorage tej przeglądarki.
+async function ensurePushSubscription(){
+  if(!(window.ProfileSync&&ProfileSync.getToken()))return{ok:false,reason:'no-profile'};
+  if(!('serviceWorker'in navigator)||!('PushManager'in window))return{ok:false,reason:'unsupported'};
+  try{
+    const reg=await navigator.serviceWorker.ready;
+    let sub=await reg.pushManager.getSubscription();
+    if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC_KEY)});
+    await fetch('/api/push-subscribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:ProfileSync.getToken(),subscription:sub.toJSON()})});
+    return{ok:true};
+  }catch(e){
+    return{ok:false,reason:'error',error:e};
+  }
+}
+async function removePushSubscription(){
+  try{
+    if(!('serviceWorker'in navigator))return;
+    const reg=await navigator.serviceWorker.ready;
+    const sub=await reg.pushManager.getSubscription();
+    if(!sub)return;
+    const endpoint=sub.endpoint;
+    await sub.unsubscribe();
+    if(window.ProfileSync&&ProfileSync.getToken()){
+      await fetch('/api/push-subscribe',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:ProfileSync.getToken(),endpoint})});
+    }
+  }catch(e){}
+}
+async function toggleDelayAlerts(){
   delayAlertsEnabled=!delayAlertsEnabled;
   alertButton.textContent=delayAlertsEnabled?'Alarm: ON':'Alarm: OFF';
-  if(delayAlertsEnabled&&'Notification'in window&&Notification.permission==='default')Notification.requestPermission();
+  if(delayAlertsEnabled&&'Notification'in window&&Notification.permission==='default')await Notification.requestPermission();
   if(window.ProfileSync)ProfileSync.push({alarmEnabled:delayAlertsEnabled});
+  if(delayAlertsEnabled){
+    if(Notification.permission!=='granted'){alertButton.textContent='Alarm: OFF';delayAlertsEnabled=false;if(window.ProfileSync)ProfileSync.push({alarmEnabled:false});return}
+    if(!(window.ProfileSync&&ProfileSync.getToken())){
+      const box=document.getElementById('delayAlertBox');
+      if(box){box.style.display='block';box.innerHTML='<div class="alert-title">ℹ️ Alarm działa, gdy ta karta jest otwarta.</div><div style="padding:4px 2px">Żeby powiadomienia dochodziły także przy zamkniętej aplikacji, <a href="/profil/" style="color:#ffd6d6">załóż profil</a> — zapamięta to urządzenie.</div>'}
+    }else{
+      await ensurePushSubscription();
+    }
+  }else{
+    await removePushSubscription();
+  }
 }
 
 // UWAGA: dawniej brak zapisanej listy (pierwsza wizyta, pusty localStorage)
@@ -962,6 +1014,13 @@ setInterval(() => { if (document.visibilityState === 'visible') init(); }, BOARD
     if (profile && typeof profile.alarmEnabled === 'boolean') {
       delayAlertsEnabled = profile.alarmEnabled;
       alertButton.textContent = delayAlertsEnabled ? 'Alarm: ON' : 'Alarm: OFF';
+      // To URZĄDZENIE mogło jeszcze nigdy nie wysłać swojej subskrypcji
+      // push (np. alarm włączono na innym urządzeniu pod tym samym
+      // profilem) — jeśli uprawnienie już jest przyznane, dogrywamy ją
+      // w tle, bez czekania na ręczne przełączenie przycisku.
+      if (delayAlertsEnabled && 'Notification' in window && Notification.permission === 'granted') {
+        ensurePushSubscription();
+      }
     }
   }
   init();

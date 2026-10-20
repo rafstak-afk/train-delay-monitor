@@ -1,0 +1,27 @@
+name: push-tick
+
+# Cloudflare Pages nie ma natywnych Cron Triggers (to funkcja samych
+# Workerów), więc cykliczne sprawdzanie opóźnień/odwołań dla Web Push
+# (functions/api/push-tick.js) odpytujemy z zewnątrz, stąd — z tego samego
+# repozytorium, zero dodatkowej infrastruktury.
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wywołaj /api/push-tick
+        env:
+          PUSH_TICK_SECRET: ${{ secrets.PUSH_TICK_SECRET }}
+        run: |
+          if [ -z "$PUSH_TICK_SECRET" ]; then
+            echo "PUSH_TICK_SECRET jeszcze nie ustawiony w sekretach repo — pomijam (ustaw w Settings > Secrets and variables > Actions)."
+            exit 0
+          fi
+          curl -sf -X POST "https://train-delay-monitor1.pages.dev/api/push-tick" \
+            -H "Authorization: Bearer $PUSH_TICK_SECRET" \
+            -H "Content-Type: application/json"
