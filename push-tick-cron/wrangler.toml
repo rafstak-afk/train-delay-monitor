@@ -1,0 +1,6 @@
+name = "push-tick-cron"
+main = "worker.js"
+compatibility_date = "2026-10-20"
+
+[triggers]
+crons = ["*/5 * * * *"]

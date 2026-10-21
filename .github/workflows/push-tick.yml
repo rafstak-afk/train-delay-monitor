@@ -1,13 +1,14 @@
 name: push-tick
 
-# Cloudflare Pages nie ma natywnych Cron Triggers (to funkcja samych
-# Workerów), więc cykliczne sprawdzanie opóźnień/odwołań dla Web Push
-# (functions/api/push-tick.js) odpytujemy z zewnątrz, stąd — z tego samego
-# repozytorium, zero dodatkowej infrastruktury.
+# Harmonogram "co 5 minut" w GitHub Actions okazal sie bardzo niemiarowy
+# (potrafil odpalic sie raz na ~20-30 minut zamiast co 5) i powodowal realnie
+# spoznione/pominiete powiadomienia Web Push. Cykliczne wywolywanie
+# /api/push-tick przejal osobny Cloudflare Worker z natywnym Cron Triggerem
+# (push-tick-cron/, patrz tamtejszy wrangler.toml) - duzo dokladniejszy.
+# Ten workflow zostaje tylko do recznego uruchamiania (workflow_dispatch),
+# np. do szybkiego testu bez czekania na najblizszy tick.
 
 on:
-  schedule:
-    - cron: "*/5 * * * *"
   workflow_dispatch: {}
 
 jobs:
