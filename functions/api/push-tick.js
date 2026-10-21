@@ -143,8 +143,22 @@ async function checkStation(origin, stationName) {
   return items;
 }
 
+// Krótka forma etykiety do treści push — samo "IC 34015", bez nazwy
+// własnej pociągu (CARPATIA/HUTNIK/...) i bez stacji/czasu, żeby zmieścić
+// się w jednej linijce powiadomienia systemowego.
+function shortLabel(x) {
+  return x.label.split(" ").slice(0, 2).join(" ");
+}
+
 function plainText(x) {
-  return x.cancelled ? `${x.time} ${x.label} ODWOŁANY` : `${x.time} ${x.label} +${x.delay} min`;
+  return x.cancelled ? `${shortLabel(x)} ODWOŁANY` : `${shortLabel(x)} +${x.delay} min`;
+}
+
+function pluralPL(n, [one, few, many]) {
+  if (n === 1) return one;
+  const mod10 = n % 10, mod100 = n % 100;
+  if (mod10 >= 2 && mod10 <= 4 && !(mod100 >= 12 && mod100 <= 14)) return few;
+  return many;
 }
 
 async function sendPush(env, subscription, payload) {
@@ -243,11 +257,13 @@ export async function onRequestPost(context) {
       const subsToNotify = subs.filter(s => s.lastSignature !== sig);
       if (!subsToNotify.length) continue;
 
-      const top = items.slice(0, 5);
+      const extra = items.length - 1;
       const payload = {
         title: "Alarm pociągów",
-        body: top.map(plainText).join(" | "),
-        url: top.length === 1 ? top[0].url : "/moje-pociagi/"
+        body: extra > 0
+          ? `${items.length} ${pluralPL(items.length, ["opóźnienie", "opóźnienia", "opóźnień"])}: ${plainText(items[0])} i ${extra} więcej — dotknij, by zobaczyć`
+          : `${plainText(items[0])} — dotknij, by zobaczyć`,
+        url: items.length === 1 ? items[0].url : "/moje-pociagi/"
       };
 
       const keptSubs = [];
