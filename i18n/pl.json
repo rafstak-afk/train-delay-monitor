@@ -1,0 +1,49 @@
+{
+  "common": {
+    "burger": {
+      "tgzm": "🚋 TGZM",
+      "qr": "▣ Generator QR PLK",
+      "tickets": "🎫 Dobierz bilet",
+      "apiHealth": "🩺 API",
+      "apiLimit": "📊 Limit",
+      "howItWorks": "📖 Jak działa aplikacja",
+      "contact": "💬 Uwagi i kontakt",
+      "rodo": "🔒 RODO i prywatność",
+      "language": "Język"
+    },
+    "bottomNav": {
+      "ks": "🚧 KŚ",
+      "profile": "👤 Profil",
+      "journal": "📓 Dziennik",
+      "menu": "☰ Menu"
+    }
+  },
+  "index": {
+    "stationInputPlaceholder": "Wpisz nazwę stacji...",
+    "stationDropdownAria": "Rozwiń listę stacji",
+    "myTrainsLink": "🚆 Moje pociągi",
+    "plannerLink": "🧭 Planer podróży",
+    "plannerBeta": "BETA",
+    "btnOfficial": "Otwórz PLK",
+    "btnApi": "Pokaż z API",
+    "alarmOn": "Alarm: ON",
+    "alarmOff": "Alarm: OFF",
+    "defaultStatus": "Wybierz stację albo wpisz nazwę.",
+    "apiPanelTitle": "Tablica z API PLK",
+    "apiMetaHint": "Kliknij „Pokaż z API”, żeby załadować 20 odjazdów od wybranej lub bieżącej godziny.",
+    "apiLimitsDefault": "Limit API: brak danych.",
+    "healthDetailsBtn": "Szczegóły techniczne",
+    "healthCopyBtn": "Kopiuj diagnostykę",
+    "table": {
+      "time": "Godz.",
+      "delay": "Opóźn.",
+      "train": "Pociąg",
+      "direction": "Kierunek / przez",
+      "platform": "Per.",
+      "track": "Tor",
+      "add": "Dodaj",
+      "addTitle": "Dodaj do kalendarza / Dodaj do Moich pociągów",
+      "noData": "Brak danych."
+    }
+  }
+}

@@ -86,7 +86,7 @@
 
   function render(reason) {
     injectStyle();
-    var what = reason === "train" ? "Twoje pociągi" : "Twoje ulubione stacje";
+    var what = reason === "train" ? "Twoje pociągi" : reason === "language" ? "Twój wybrany język" : "Twoje ulubione stacje";
     var card = document.createElement("div");
     card.id = "profilePromptCard";
     card.setAttribute("role", "dialog");
@@ -107,7 +107,8 @@
     document.body.appendChild(card);
   }
 
-  // reason: "favorite" (dodana ulubiona stacja) albo "train" (dodany pociąg)
+  // reason: "favorite" (dodana ulubiona stacja), "train" (dodany pociąg)
+  // albo "language" (zmiana języka interfejsu bez założonego profilu — patrz i18n.js)
   function ask(reason) {
     if (hasToken()) return;
     var s = load();

@@ -1,0 +1,49 @@
+{
+  "common": {
+    "burger": {
+      "tgzm": "🚋 Tram/bus delays",
+      "qr": "▣ PLK QR generator",
+      "tickets": "🎫 Find a ticket",
+      "apiHealth": "🩺 API status",
+      "apiLimit": "📊 Limit",
+      "howItWorks": "📖 How it works",
+      "contact": "💬 Feedback & contact",
+      "rodo": "🔒 Privacy policy",
+      "language": "Language"
+    },
+    "bottomNav": {
+      "ks": "🚧 KŚ",
+      "profile": "👤 Profile",
+      "journal": "📓 Journal",
+      "menu": "☰ Menu"
+    }
+  },
+  "index": {
+    "stationInputPlaceholder": "Enter a station name...",
+    "stationDropdownAria": "Expand station list",
+    "myTrainsLink": "🚆 My trains",
+    "plannerLink": "🧭 Journey planner",
+    "plannerBeta": "BETA",
+    "btnOfficial": "Open on PLK",
+    "btnApi": "Show live data",
+    "alarmOn": "Alarm: ON",
+    "alarmOff": "Alarm: OFF",
+    "defaultStatus": "Choose a station or type its name.",
+    "apiPanelTitle": "Live PLK departure board",
+    "apiMetaHint": "Click \"Show live data\" to load 20 departures from the chosen or current time.",
+    "apiLimitsDefault": "API limit: no data yet.",
+    "healthDetailsBtn": "Technical details",
+    "healthCopyBtn": "Copy diagnostics",
+    "table": {
+      "time": "Time",
+      "delay": "Delay",
+      "train": "Train",
+      "direction": "Direction / via",
+      "platform": "Plat.",
+      "track": "Track",
+      "add": "Add",
+      "addTitle": "Add to calendar / Add to My trains",
+      "noData": "No data."
+    }
+  }
+}
