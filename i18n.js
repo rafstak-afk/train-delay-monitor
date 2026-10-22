@@ -53,6 +53,39 @@
     });
   }
 
+  // Przyczyny opóźnień z PLK: nazwy stacji/pociągów/kategorie NIGDY się nie
+  // tłumaczą (dane zewnętrzne), ale sama treść przyczyny (np. "Awaria
+  // taboru") to informacja wyjaśniająca, nie nazwa własna — tłumaczymy ją,
+  // gdy rozpoznamy frazę w naszym (celowo niepełnym) słowniku. Kod PLK
+  // (`disruptionTypeCode`, np. "utr_40"), gdy znany serwerowi
+  // (functions/api/departures.js forwarduje go w disruptionReasonItems), ma
+  // pierwszeństwo nad dopasowaniem po samym tekście — stabilniejszy, gdy
+  // PLK lekko zmieni sformułowanie tej samej przyczyny. Nierozpoznana
+  // fraza (częste dla niestandardowych, lokalnych komunikatów PLK z nazwami
+  // stacji wplecionymi w zdanie) zostaje w oryginalnym polskim brzmieniu —
+  // świadomie, zamiast zgadywać tłumaczenie dowolnego wolnego tekstu.
+  function translateDisruption(text, code) {
+    if (code) {
+      var byCode = getByPath(dict, "disruption.codes." + code) || getByPath(fallbackDict, "disruption.codes." + code);
+      if (byCode) return byCode;
+    }
+    var byText = getByPath(dict, "disruption.texts." + text);
+    if (byText) return byText;
+    return text;
+  }
+
+  // Przyczyna bywa kilkoma frazami sklejonymi " / " (functions/api/*.js)
+  // — tłumaczymy każdą osobno, więc jedna nierozpoznana fraza (np.
+  // niestandardowy komunikat z nazwą stacji) nie blokuje tłumaczenia
+  // pozostałych, znanych fraz w tej samej liście.
+  function translateDisruptionReason(fullText, items) {
+    if (!fullText) return fullText;
+    if (Array.isArray(items) && items.length) {
+      return items.map(function (it) { return translateDisruption(it.text, it.code); }).join(" / ");
+    }
+    return String(fullText).split(" / ").map(function (part) { return translateDisruption(part, null); }).join(" / ");
+  }
+
   function t(key, params) {
     var val = getByPath(dict, key);
     if (val === undefined) val = getByPath(fallbackDict, key);
@@ -245,6 +278,8 @@
     DEFAULT_LANG: DEFAULT_LANG,
     getLang: function () { return currentLang; },
     t: t,
+    translateDisruption: translateDisruption,
+    translateDisruptionReason: translateDisruptionReason,
     applyDom: applyDom,
     setLang: setLang,
     setLangFromProfile: setLangFromProfile,

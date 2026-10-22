@@ -129,6 +129,19 @@
       "cancelledNoteShort": "Odwołany według API PLK"
     },
     "calendar": { "addTitle": "Dodaj do kalendarza" },
+    "disruption": {
+      "codes": {},
+      "texts": {
+        "Ograniczenie prędkości pociągu": "Ograniczenie prędkości pociągu",
+        "Awaria taboru": "Awaria taboru",
+        "Opóźnienie innego pociągu": "Opóźnienie innego pociągu",
+        "Trudne warunki atmosferyczne": "Trudne warunki atmosferyczne",
+        "Awaria urządzeń sterowania ruchem kolejowym": "Awaria urządzeń sterowania ruchem kolejowym",
+        "Wydłużone przygotowanie wagonów do drogi": "Wydłużone przygotowanie wagonów do drogi",
+        "Sprawdzenie stanu technicznego taboru": "Sprawdzenie stanu technicznego taboru",
+        "Awaria sieci trakcyjnej": "Awaria sieci trakcyjnej"
+      }
+    },
     "apiLimits": { "noHeaderInfo": "Limit API: brak informacji w nagłówkach odpowiedzi PLK.", "remaining": "pozostało: {value}", "pool": "pula: {value}", "reset": "reset: {value}", "prefix": "Limit API: ", "noDetails": "brak szczegółów." },
     "noDirection": "brak kierunku",
     "calendarStatus": { "missingData": "Brak danych do utworzenia wydarzenia w kalendarzu.", "buildFailed": "Nie udało się zbudować wydarzenia w kalendarzu.", "downloaded": "Pobrano zdarzenie .ics — otwórz plik, żeby dodać przejazd do kalendarza.", "departure": "Odjazd: {station} {time}", "arrivalApprox": "Przyjazd: {dest} (orientacyjnie, +30 min)", "arrival": "Przyjazd: {dest} {time}", "platformTrack": "Peron: {platform} / Tor: {track}", "fromStation": "z {station}" },

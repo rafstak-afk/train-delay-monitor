@@ -129,6 +129,19 @@
     "badge": { "cancelled": "CANCELLED" },
     "myTrains": { "addTitle": "Add to My trains", "removeTitle": "Remove from My trains", "added": "✓ Added “{train}” to My trains", "removed": "🗑️ Removed “{train}” from My trains", "addedStatus": "Added “{train}” (station: {station}) to My trains.", "removedStatus": "Removed “{train}” (station: {station}) from My trains.", "missingData": "Missing data to add this train to “My trains”.", "missingDataToast": "⚠️ Missing data to add the train." },
     "calendar": { "addTitle": "Add to calendar" },
+    "disruption": {
+      "codes": {},
+      "texts": {
+        "Ograniczenie prędkości pociągu": "Train speed restriction",
+        "Awaria taboru": "Rolling stock fault",
+        "Opóźnienie innego pociągu": "Delay caused by another train",
+        "Trudne warunki atmosferyczne": "Difficult weather conditions",
+        "Awaria urządzeń sterowania ruchem kolejowym": "Rail traffic control equipment fault",
+        "Wydłużone przygotowanie wagonów do drogi": "Extended carriage preparation time",
+        "Sprawdzenie stanu technicznego taboru": "Rolling stock technical inspection",
+        "Awaria sieci trakcyjnej": "Overhead line fault"
+      }
+    },
     "apiLimits": { "noHeaderInfo": "API limit: no info in the PLK response headers.", "remaining": "remaining: {value}", "pool": "quota: {value}", "reset": "reset: {value}", "prefix": "API limit: ", "noDetails": "no details." },
     "noDirection": "no direction",
     "calendarStatus": { "missingData": "Missing data to create a calendar event.", "buildFailed": "Couldn't build the calendar event.", "downloaded": "Downloaded the .ics file — open it to add the trip to your calendar.", "departure": "Departure: {station} {time}", "arrivalApprox": "Arrival: {dest} (approx., +30 min)", "arrival": "Arrival: {dest} {time}", "platformTrack": "Platform: {platform} / Track: {track}", "fromStation": "from {station}" },
