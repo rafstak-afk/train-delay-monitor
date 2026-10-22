@@ -596,6 +596,19 @@ function resolveDisruptionMessage(d, dict) {
   return (code && dict && dict[code]) || d.message || "";
 }
 
+// Kod PLK przyczyny (np. "utr_40") — niezależnie od tego, czy d.message był
+// już gotowym zdaniem, czy samym kodem. Przekazywany do klienta OBOK
+// gotowego polskiego tekstu, żeby i18n.js mógł podmienić znane kody na
+// tłumaczenie (i18n/*.json, namespace disruption.codes.*), z polskim
+// oryginałem jako fallback dla kodów spoza naszego (celowo niepełnego)
+// słownika — patrz plan "Wersje językowe serwisu".
+function resolveDisruptionCode(d) {
+  const isCode = v => /^utr_\d+$/.test(String(v || ""));
+  if (isCode(d.message)) return d.message;
+  if (isCode(d.disruptionTypeCode)) return d.disruptionTypeCode;
+  return null;
+}
+
 async function enrichWithDisruptions(departures, headers, stationId, date) {
   // _routeStationIds (ustawione przez enrichWithFullRoutes na WSZYSTKICH
   // wzbogaconych odjazdach, nie tylko alarmowanych) jest tylko wewnętrzną
@@ -634,18 +647,23 @@ async function enrichWithDisruptions(departures, headers, stationId, date) {
   for (const d of (data?.disruptions || [])) {
     const text = resolveDisruptionMessage(d, dict);
     if (!text) continue;
+    const code = resolveDisruptionCode(d);
 
     for (const ar of (d.affectedRoutes || [])) {
       if (ar.operatingDate && String(ar.operatingDate).slice(0, 10) !== date) continue;
       const oid = Number(ar.orderId);
       if (!byOrderId.has(oid)) byOrderId.set(oid, []);
-      if (!byOrderId.get(oid).includes(text)) byOrderId.get(oid).push(text);
+      const list = byOrderId.get(oid);
+      if (!list.some(item => item.text === text)) list.push({ text, code });
     }
   }
 
   for (const row of alarmRows) {
-    const texts = byOrderId.get(Number(row.orderId));
-    if (texts && texts.length) row.disruptionReason = texts.join(" / ");
+    const items = byOrderId.get(Number(row.orderId));
+    if (items && items.length) {
+      row.disruptionReason = items.map(item => item.text).join(" / ");
+      row.disruptionReasonItems = items;
+    }
   }
 
   cleanup();
