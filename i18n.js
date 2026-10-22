@@ -165,6 +165,81 @@
     applyDom(document);
   });
 
+  // Przełącznik języka — osobna ikonka 🌐 w rogu ekranu, obok przycisku
+  // samouczka (tutorial.js, top:10px;right:10px, 38x38px) — NIE w burgerze
+  // (pierwsza wersja miała przełącznik jako listę 6 pozycji w burgerze, ale
+  // to go nienaturalnie wydłużało; wydzielone, żeby burger został krótki).
+  var LANGS = [
+    { code: "pl", label: "Polski" },
+    { code: "en", label: "English" },
+    { code: "de", label: "Deutsch" },
+    { code: "cs", label: "Čeština" },
+    { code: "es", label: "Español" },
+    { code: "uk", label: "Українська" }
+  ];
+
+  function injectSwitcherStyle() {
+    var css =
+      ".lang-switch-btn{position:fixed;top:10px;right:56px;z-index:9997;width:38px;height:38px;border-radius:50%;border:1px solid #34495e;background:#1c2833;color:#fff;font-size:18px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;padding:0}" +
+      ".lang-switch-btn:hover{background:#253445}" +
+      ".lang-switch-menu{display:none;position:fixed;top:52px;right:10px;z-index:9997;background:#1c2833;border:1px solid #34495e;border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.5);overflow:hidden;min-width:150px;font-family:Arial,sans-serif}" +
+      ".lang-switch-menu.open{display:block}" +
+      ".lang-switch-menu button{display:block;width:100%;box-sizing:border-box;padding:11px 16px;background:transparent;border:0;border-top:1px solid #2e4155;color:#fff;font-size:14px;text-align:left;cursor:pointer}" +
+      ".lang-switch-menu button:first-child{border-top:0}" +
+      ".lang-switch-menu button:hover{background:#253445}" +
+      ".lang-switch-menu button.active{color:#ffd400;font-weight:800}";
+    var style = document.createElement("style");
+    style.textContent = css;
+    document.head.appendChild(style);
+  }
+
+  function markActiveLang() {
+    document.querySelectorAll(".lang-switch-menu button").forEach(function (btn) {
+      btn.classList.toggle("active", btn.getAttribute("data-lang") === currentLang);
+    });
+  }
+
+  function injectSwitcher() {
+    if (document.getElementById("langSwitchBtn")) return;
+    injectSwitcherStyle();
+
+    var btn = document.createElement("button");
+    btn.id = "langSwitchBtn";
+    btn.type = "button";
+    btn.className = "lang-switch-btn";
+    btn.title = "Język / Language";
+    btn.setAttribute("aria-label", "Język / Language");
+    btn.textContent = "🌐";
+    document.body.appendChild(btn);
+
+    var menu = document.createElement("div");
+    menu.id = "langSwitchMenu";
+    menu.className = "lang-switch-menu";
+    menu.innerHTML = LANGS.map(function (l) {
+      return '<button type="button" data-lang="' + l.code + '">' + l.label + "</button>";
+    }).join("");
+    document.body.appendChild(menu);
+
+    btn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      menu.classList.toggle("open");
+    });
+    menu.querySelectorAll("button").forEach(function (b) {
+      b.addEventListener("click", function () {
+        menu.classList.remove("open");
+        setLang(b.getAttribute("data-lang"));
+      });
+    });
+    window.addEventListener("click", function (e) {
+      if (!menu.contains(e.target) && e.target !== btn) menu.classList.remove("open");
+    });
+    window.addEventListener("langchange", markActiveLang);
+    markActiveLang();
+  }
+
+  if (document.body) injectSwitcher();
+  else document.addEventListener("DOMContentLoaded", injectSwitcher);
+
   window.I18n = {
     SUPPORTED: SUPPORTED,
     DEFAULT_LANG: DEFAULT_LANG,

@@ -19,11 +19,9 @@
     ".burger-btn{display:none!important}" +
     ".burger-menu{display:none;pointer-events:auto!important;margin:0 auto!important;max-width:420px!important;min-width:0!important;width:min(420px,calc(100vw - 16px))!important;background:#1c2833!important;border:1px solid #34495e!important;border-radius:14px!important;box-shadow:0 12px 32px rgba(0,0,0,.5)!important;overflow:hidden!important;text-align:left!important;font-family:Arial,sans-serif!important}" +
     ".burger-menu.open{display:block!important}" +
-    ".burger-menu a,.burger-menu .burger-lang-btn{display:block;width:100%;box-sizing:border-box;padding:14px 16px;color:#fff;text-decoration:none;border:0;border-top:1px solid #2e4155;font-size:15px;background:transparent;text-align:left;cursor:pointer;font-family:inherit}" +
+    ".burger-menu a{display:block;width:100%;box-sizing:border-box;padding:14px 16px;color:#fff;text-decoration:none;border:0;border-top:1px solid #2e4155;font-size:15px;background:transparent;text-align:left;cursor:pointer;font-family:inherit}" +
     ".burger-menu a:first-child{border-top:0}" +
-    ".burger-menu a:hover,.burger-menu .burger-lang-btn:hover{background:#253445}" +
-    ".burger-lang-label{padding:10px 16px 4px;font-size:12px;color:#8b95a1;font-weight:800;text-transform:uppercase;letter-spacing:.03em;border-top:1px solid #2e4155}" +
-    ".burger-lang-btn.active{color:#ffd400;font-weight:800}" +
+    ".burger-menu a:hover{background:#253445}" +
     "@media(max-width:700px){.burger-wrap{left:5px!important;right:5px!important;bottom:53px!important}.burger-menu{width:calc(100vw - 10px)!important;max-width:none!important}}";
 
   var LINKS = [
@@ -35,15 +33,6 @@
     { href: "/jak-dziala/", key: "common.burger.howItWorks", fallback: "📖 Jak działa aplikacja" },
     { href: "/kontakt/", key: "common.burger.contact", fallback: "💬 Uwagi i kontakt" },
     { href: "/kontakt/#rodo", key: "common.burger.rodo", fallback: "🔒 RODO i prywatność" }
-  ];
-
-  var LANGS = [
-    { code: "pl", label: "Polski" },
-    { code: "en", label: "English" },
-    { code: "de", label: "Deutsch" },
-    { code: "cs", label: "Čeština" },
-    { code: "es", label: "Español" },
-    { code: "uk", label: "Українська" }
   ];
 
   function escapeAttr(s) {
@@ -71,29 +60,9 @@
       '<button class="burger-btn" onclick="toggleBurgerMenu()">☰</button>' +
       '<div id="burgerMenu" class="burger-menu">' +
       LINKS.map(linkHtml).join("") +
-      '<div class="burger-lang-label" data-i18n="common.burger.language">Język</div>' +
-      LANGS.map(function (l) {
-        return '<button type="button" class="burger-lang-btn" data-lang="' + l.code + '">' + l.label + "</button>";
-      }).join("") +
       "</div>";
     document.body.appendChild(wrap);
-
-    wrap.querySelectorAll(".burger-lang-btn").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        closeBurgerMenu();
-        if (window.I18n) I18n.setLang(btn.getAttribute("data-lang"));
-      });
-    });
-    markActiveLang();
   }
-
-  function markActiveLang() {
-    var current = window.I18n ? I18n.getLang() : "pl";
-    document.querySelectorAll(".burger-lang-btn").forEach(function (btn) {
-      btn.classList.toggle("active", btn.getAttribute("data-lang") === current);
-    });
-  }
-  window.addEventListener("langchange", markActiveLang);
 
   window.toggleBurgerMenu = function () {
     var m = document.getElementById("burgerMenu");
