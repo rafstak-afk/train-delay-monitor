@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#0b1220">
-<title>Moje pociągi</title>
+<title data-i18n="mojePociagi.title">Moje pociągi</title>
 
 <style>
 :root{
@@ -231,14 +231,14 @@ h1{ margin:0; font-size:20px; }
 
 <header>
   <div>
-    <h1>🚆 Moje pociągi</h1>
+    <h1 data-i18n="mojePociagi.title">🚆 Moje pociągi</h1>
   </div>
   <div style="display:flex; gap:8px;">
-    <a class="refresh" href="/dziennik/" style="text-decoration:none; display:inline-flex; align-items:center;" title="Dzienniczek podróży">📓</a>
+    <a class="refresh" href="/dziennik/" style="text-decoration:none; display:inline-flex; align-items:center;" title="Dzienniczek podróży" data-i18n-attr="title:mojePociagi.journalLinkTitle">📓</a>
     <a class="refresh" href="/profil/" style="text-decoration:none; display:inline-flex; align-items:center;">👤</a>
-    <button class="refresh danger" id="clearBtn" title="Usuń wszystkie pociągi z listy">🗑️ Wyczyść</button>
+    <button class="refresh danger" id="clearBtn" title="Usuń wszystkie pociągi z listy" data-i18n-attr="title:mojePociagi.clearBtnTitle"><span data-i18n="mojePociagi.clearBtn">🗑️ Wyczyść</span></button>
     <button class="refresh btn-alert" id="alertButton" onclick="toggleDelayAlerts()">Alarm: OFF</button>
-    <button class="refresh" id="refreshBtn">↻ ODŚWIEŻ</button>
+    <button class="refresh" id="refreshBtn" data-i18n="mojePociagi.refreshBtn">↻ ODŚWIEŻ</button>
   </div>
 </header>
 
@@ -246,17 +246,19 @@ h1{ margin:0; font-size:20px; }
 <main id="list" class="list"></main>
 
 <section class="add-form">
-  <h3>➕ Dodaj pociąg do listy</h3>
+  <h3 data-i18n="mojePociagi.addFormTitle">➕ Dodaj pociąg do listy</h3>
   <form id="addTrainForm" class="form-grid">
-    <input type="text" id="addStation" placeholder="Stacja (np. Katowice)" required>
-    <input type="text" id="addTrainNum" placeholder="Nr pociągu (np. 3815)" required>
-    <input type="text" id="addPlanTime" placeholder="Godzina (np. 14:40)" required>
-    <button type="submit" class="btn-add">Dodaj</button>
+    <input type="text" id="addStation" placeholder="Stacja (np. Katowice)" data-i18n-attr="placeholder:mojePociagi.addStationPlaceholder" required>
+    <input type="text" id="addTrainNum" placeholder="Nr pociągu (np. 3815)" data-i18n-attr="placeholder:mojePociagi.addTrainNumPlaceholder" required>
+    <input type="text" id="addPlanTime" placeholder="Godzina (np. 14:40)" data-i18n-attr="placeholder:mojePociagi.addTimePlaceholder" required>
+    <button type="submit" class="btn-add" data-i18n="mojePociagi.addBtn">Dodaj</button>
   </form>
 </section>
 
 </div>
 
+<script src="/i18n.js"></script>
+<script src="/burger-menu.js"></script>
 <script src="/profile-sync.js"></script>
 <script src="/tutorial.js"></script>
 <script src="/survey.js"></script>
@@ -307,6 +309,7 @@ function computeAlarmItems(){
       delay,
       cancelled,
       disruptionReason:row.disruptionReason||'',
+      disruptionReasonItems:row.disruptionReasonItems||null,
       url:buildDetailsUrl(item,row,row.destination||'')
     });
   });
@@ -314,24 +317,26 @@ function computeAlarmItems(){
 }
 function toggleAlertReason(btn){const box=btn.nextElementSibling;if(!box)return;const open=box.hasAttribute('hidden');if(open){box.removeAttribute('hidden');btn.setAttribute('aria-expanded','true')}else{box.setAttribute('hidden','');btn.setAttribute('aria-expanded','false')}}
 function alertRowHtml(x){
-  const reasonHtml=x.disruptionReason?'<button type="button" class="alert-reason-toggle" title="Pokaż przyczynę opóźnienia" aria-label="Pokaż przyczynę opóźnienia" onclick="event.preventDefault();event.stopPropagation();toggleAlertReason(this)" aria-expanded="false">i</button><div class="alert-reason" hidden>'+escapeHtml(x.disruptionReason)+'</div>':'';
-  if(x.cancelled)return `<a class="alert-row" href="${escapeHtml(x.url)}"><span class="alert-time alert-cancelled">${escapeHtml(x.time)}</span><span class="alert-train alert-cancelled">${escapeHtml(x.label)}</span><span class="alert-badge alert-cancelled">ODWOŁANY</span>${reasonHtml}</a>`;
+  const reasonText=x.disruptionReason?I18n.translateDisruptionReason(x.disruptionReason,x.disruptionReasonItems):'';
+  const reasonTitle=escapeHtml(I18n.t('index.alert.reasonToggleTitle'));
+  const reasonHtml=reasonText?'<button type="button" class="alert-reason-toggle" title="'+reasonTitle+'" aria-label="'+reasonTitle+'" onclick="event.preventDefault();event.stopPropagation();toggleAlertReason(this)" aria-expanded="false">i</button><div class="alert-reason" hidden>'+escapeHtml(reasonText)+'</div>':'';
+  if(x.cancelled)return `<a class="alert-row" href="${escapeHtml(x.url)}"><span class="alert-time alert-cancelled">${escapeHtml(x.time)}</span><span class="alert-train alert-cancelled">${escapeHtml(x.label)}</span><span class="alert-badge alert-cancelled">${escapeHtml(I18n.t('index.badge.cancelled'))}</span>${reasonHtml}</a>`;
   const cls=getDelayClass(x.delay);
   return `<a class="alert-row" href="${escapeHtml(x.url)}"><span class="alert-time ${cls}">${escapeHtml(x.time)}</span><span class="alert-train ${cls}">${escapeHtml(x.label)}</span><span class="alert-badge ${cls}">+${x.delay}</span>${reasonHtml}</a>`;
 }
-function alertPlainText(x){return x.cancelled?`${x.time} ${x.label} ODWOŁANY`:`${x.time} ${x.label} +${x.delay} min`}
+function alertPlainText(x){return x.cancelled?I18n.t('index.alert.cancelledText',{time:x.time,label:x.label}):I18n.t('index.alert.delayedText',{time:x.time,label:x.label,delay:x.delay})}
 function handleDelayAlerts(){
   const box=document.getElementById('delayAlertBox');
   const items=computeAlarmItems().slice(0,5);
   if(!items.length){box.style.display='none';box.innerHTML='';return}
   box.style.display='block';
-  box.innerHTML='<div class="alert-title">🔔 Alarm: opóźnienia / odwołania</div>'+items.map(alertRowHtml).join('');
+  box.innerHTML='<div class="alert-title">'+escapeHtml(I18n.t('index.alert.boxTitle'))+'</div>'+items.map(alertRowHtml).join('');
   const msg=items.map(alertPlainText).join(' | ');
   const sig=items.map(x=>`${x.label}-${x.time}-${x.delay}-${x.cancelled?'X':''}`).join('|');
   if(!delayAlertsEnabled||sig===lastDelayedSignature)return;
   lastDelayedSignature=sig;
   const url=items.length===1?items[0].url:'/moje-pociagi/';
-  showAlarmNotification('Alarm pociągów',msg,url);
+  showAlarmNotification(I18n.t('index.alert.notificationTitle'),msg,url);
 }
 function showAlarmNotification(title,body,url){
   const target=url||'/moje-pociagi/';
@@ -388,14 +393,14 @@ async function removePushSubscription(){
 }
 async function toggleDelayAlerts(){
   delayAlertsEnabled=!delayAlertsEnabled;
-  alertButton.textContent=delayAlertsEnabled?'Alarm: ON':'Alarm: OFF';
+  alertButton.textContent=I18n.t(delayAlertsEnabled?'index.alarmOn':'index.alarmOff');
   if(delayAlertsEnabled&&'Notification'in window&&Notification.permission==='default')await Notification.requestPermission();
   if(window.ProfileSync)ProfileSync.push({alarmEnabled:delayAlertsEnabled});
   if(delayAlertsEnabled){
-    if(Notification.permission!=='granted'){alertButton.textContent='Alarm: OFF';delayAlertsEnabled=false;if(window.ProfileSync)ProfileSync.push({alarmEnabled:false});return}
+    if(Notification.permission!=='granted'){alertButton.textContent=I18n.t('index.alarmOff');delayAlertsEnabled=false;if(window.ProfileSync)ProfileSync.push({alarmEnabled:false});return}
     if(!(window.ProfileSync&&ProfileSync.getToken())){
       const box=document.getElementById('delayAlertBox');
-      if(box){box.style.display='block';box.innerHTML='<div class="alert-title">ℹ️ Alarm działa, gdy ta karta jest otwarta.</div><div style="padding:4px 2px">Żeby powiadomienia dochodziły także przy zamkniętej aplikacji, <a href="/profil/" style="color:#ffd6d6">załóż profil</a> — zapamięta to urządzenie.</div>'}
+      if(box){box.style.display='block';box.innerHTML='<div class="alert-title">'+escapeHtml(I18n.t('mojePociagi.alarmInfoTitle'))+'</div><div style="padding:4px 2px">'+I18n.t('mojePociagi.alarmInfoBody',{link:'<a href="/profil/" style="color:#ffd6d6">'+escapeHtml(I18n.t('mojePociagi.alarmInfoLinkText'))+'</a>'})+'</div>'}
     }else{
       await ensurePushSubscription();
     }
@@ -422,12 +427,12 @@ function saveTrains(list) {
 }
 
 function emptyListHtml() {
-  return '<div style="text-align:center;padding:28px 16px;color:#8b95a1;font-size:14px;">Nie masz jeszcze żadnych pociągów na liście.<br>Dodaj pierwszy w formularzu poniżej 👇</div>';
+  return '<div style="text-align:center;padding:28px 16px;color:#8b95a1;font-size:14px;">'+I18n.t('mojePociagi.emptyList')+'</div>';
 }
 
 function clearAllTrains() {
   if (!currentTrains.length) return;
-  if (!confirm('Usunąć wszystkie pociągi z listy? Tej operacji nie da się cofnąć.')) return;
+  if (!confirm(I18n.t('mojePociagi.confirmClearAll'))) return;
   currentTrains = [];
   lastRows = [];
   saveTrains(currentTrains);
@@ -909,19 +914,19 @@ function renderCard(item, index, row) {
   const isFinished = row && (row.isFinished || row.status === "FINISHED" || row.status === "COMPLETED");
   const lastLoc = extractLastStation(row);
 
-  let statusText = "⏳ Pobieranie danych...";
+  let statusText = I18n.t('mojePociagi.fetchingData');
   if (isLoaded) {
     if (isFinished) {
-      const destText = destStation ? ` w ${destStation}` : "";
-      const timeText = endFormattedTime ? ` o ${endFormattedTime}` : "";
-      statusText = `🏁 Pociąg skończył bieg${destText}${timeText}`;
+      const destText = destStation ? I18n.t('mojePociagi.finishedDest', {station: destStation}) : "";
+      const timeText = endFormattedTime ? I18n.t('mojePociagi.finishedTime', {time: endFormattedTime}) : "";
+      statusText = I18n.t('mojePociagi.finished', {dest: destText, time: timeText});
     } else if (lastLoc) {
-      const destText = destStation ? ` ➔ ${escapeHtml(destStation)}` : "";
+      const destText = destStation ? I18n.t('mojePociagi.lastSeenDest', {station: escapeHtml(destStation)}) : "";
       const timeClass = getTimeDelayClass(isDelayed ? delay : 0);
       const timeHtml = lastLoc.time ? ' <span class="last-time ' + timeClass + '">(' + escapeHtml(lastLoc.time) + ')</span>' : '';
-      statusText = `📍 Ostatnio: <span class="last-station">${escapeHtml(lastLoc.station)}</span>${timeHtml}${destText}`;
+      statusText = I18n.t('mojePociagi.lastSeen', {station: escapeHtml(lastLoc.station), timeHtml, dest: destText});
     } else {
-      statusText = `Planowany odjazd: ${item.planTime || "--:--"}`;
+      statusText = I18n.t('mojePociagi.plannedDeparture', {time: item.planTime || "--:--"});
     }
   }
 
@@ -939,8 +944,8 @@ function renderCard(item, index, row) {
     arrivalDelay: hasArrival ? row.arrivalDelay : null
   };
   const tc = getTimeDelayClass(isDelayed ? delay : 0);
-  const delayText = cancelled ? 'ODWOŁANY' : (isDelayed ? '+' + delay : '0');
-  const cancelBadge = cancelled ? '<span class="cancel-badge">ODWOŁANY</span>' : '';
+  const delayText = cancelled ? I18n.t('index.badge.cancelled') : (isDelayed ? '+' + delay : '0');
+  const cancelBadge = cancelled ? '<span class="cancel-badge">'+escapeHtml(I18n.t('index.badge.cancelled'))+'</span>' : '';
 
   const trainLabel = [row && row.category, item.trainNum].filter(Boolean).join(' ');
   const trainName = (row && row.name) || '';
@@ -959,16 +964,16 @@ function renderCard(item, index, row) {
         <div class="mobile-direction">
           <div class="direction-main">${escapeHtml(item.station)}</div>
           <div class="direction-via">${via ? escapeHtml(via) : (destStation ? '➔ ' + escapeHtml(destStation) : '')}</div>
-          ${cancelled ? '<span class="status-note">Pociąg odwołany według API PLK</span>' : ''}
+          ${cancelled ? '<span class="status-note">'+escapeHtml(I18n.t('index.status.cancelledNoteFull'))+'</span>' : ''}
         </div>
         <div class="mobile-side">
           <div class="mobile-platform">${escapeHtml(platform)}</div>
-          <div class="mobile-track">${track ? 'tor ' + escapeHtml(track) : ''}</div>
+          <div class="mobile-track">${track ? escapeHtml(I18n.t('index.table.trackWithPrefix',{track})) : ''}</div>
           <div class="reorder-row" onclick="event.stopPropagation();">
-            <button class="reorder-btn" title="Przesuń wyżej" onclick="moveTrain(${index}, -1)" ${index === 0 ? 'disabled' : ''}>▲</button>
-            <button class="reorder-btn" title="Przesuń niżej" onclick="moveTrain(${index}, 1)">▼</button>
+            <button class="reorder-btn" title="${escapeHtml(I18n.t('mojePociagi.moveUp'))}" onclick="moveTrain(${index}, -1)" ${index === 0 ? 'disabled' : ''}>▲</button>
+            <button class="reorder-btn" title="${escapeHtml(I18n.t('mojePociagi.moveDown'))}" onclick="moveTrain(${index}, 1)">▼</button>
           </div>
-          <button class="btn-cal mt-star star-filled" title="Usuń z Moich pociągów" onclick="event.stopPropagation();deleteTrain(${index})">★</button>
+          <button class="btn-cal mt-star star-filled" title="${escapeHtml(I18n.t('index.myTrains.removeTitle'))}" onclick="event.stopPropagation();deleteTrain(${index})">★</button>
         </div>
         <div class="status-line">${statusText}</div>
       </div>
@@ -1049,7 +1054,7 @@ async function init() {
     lastLoadedAt = Date.now();
     try { handleDelayAlerts(); } catch (e) { console.error('handleDelayAlerts', e); }
   } catch (e) {
-    container.innerHTML = `<div style="padding:16px;color:#fb7185;">Błąd ładowania danych: ${String(e && e.message || e)}. Spróbuj odświeżyć.</div>`;
+    container.innerHTML = `<div style="padding:16px;color:#fb7185;">${escapeHtml(I18n.t('mojePociagi.loadError',{message:String(e && e.message || e)}))}</div>`;
   } finally {
     refreshBtn.disabled = false;
     isRefreshing = false;
@@ -1073,6 +1078,14 @@ document.getElementById('addTrainForm').addEventListener('submit', (e) => {
 
 document.getElementById('refreshBtn').addEventListener('click', init);
 document.getElementById('clearBtn').addEventListener('click', clearAllTrains);
+
+// Przerysowanie z juz pobranych danych (bez zapytan sieciowych) przy
+// zmianie jezyka - statusText/odznaki w kartach sa budowane przez JS
+// (I18n.t), wiec sama zmiana jezyka nie odswieza ich automatycznie.
+window.addEventListener('langchange', () => {
+  if (window.alertButton) alertButton.textContent = I18n.t(delayAlertsEnabled ? 'index.alarmOn' : 'index.alarmOff');
+  if (typeof renderFromCache === 'function') renderFromCache();
+});
 
 // Powrót przyciskiem Wstecz ze szczegółów pociągu czasem przywraca tę
 // stronę z pamięci przeglądarki (bfcache) — wtedy skrypt się NIE
@@ -1109,9 +1122,10 @@ setInterval(() => { if (document.visibilityState === 'visible') init(); }, BOARD
       // Profil w chmurze nie ma jeszcze listy — wysyłamy lokalną.
       ProfileSync.push({ trains: currentTrains });
     }
+    if (profile && typeof profile.language === 'string' && window.I18n) I18n.setLangFromProfile(profile.language);
     if (profile && typeof profile.alarmEnabled === 'boolean') {
       delayAlertsEnabled = profile.alarmEnabled;
-      alertButton.textContent = delayAlertsEnabled ? 'Alarm: ON' : 'Alarm: OFF';
+      alertButton.textContent = I18n.t(delayAlertsEnabled ? 'index.alarmOn' : 'index.alarmOff');
       // To URZĄDZENIE mogło jeszcze nigdy nie wysłać swojej subskrypcji
       // push (np. alarm włączono na innym urządzeniu pod tym samym
       // profilem) — jeśli uprawnienie już jest przyznane, dogrywamy ją

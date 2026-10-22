@@ -18,6 +18,33 @@
       "menu": "☰ Menu"
     }
   },
+  "mojePociagi": {
+    "title": "🚆 Moje pociągi",
+    "journalLinkTitle": "Dzienniczek podróży",
+    "clearBtn": "🗑️ Wyczyść",
+    "clearBtnTitle": "Usuń wszystkie pociągi z listy",
+    "refreshBtn": "↻ ODŚWIEŻ",
+    "addFormTitle": "➕ Dodaj pociąg do listy",
+    "addStationPlaceholder": "Stacja (np. Katowice)",
+    "addTrainNumPlaceholder": "Nr pociągu (np. 3815)",
+    "addTimePlaceholder": "Godzina (np. 14:40)",
+    "addBtn": "Dodaj",
+    "alarmInfoTitle": "ℹ️ Alarm działa, gdy ta karta jest otwarta.",
+    "alarmInfoBody": "Żeby powiadomienia dochodziły także przy zamkniętej aplikacji, {link} — zapamięta to urządzenie.",
+    "alarmInfoLinkText": "załóż profil",
+    "fetchingData": "⏳ Pobieranie danych...",
+    "finished": "🏁 Pociąg skończył bieg{dest}{time}",
+    "finishedDest": " w {station}",
+    "finishedTime": " o {time}",
+    "lastSeen": "📍 Ostatnio: <span class=\"last-station\">{station}</span>{timeHtml}{dest}",
+    "lastSeenDest": " ➔ {station}",
+    "plannedDeparture": "Planowany odjazd: {time}",
+    "moveUp": "Przesuń wyżej",
+    "moveDown": "Przesuń niżej",
+    "emptyList": "Nie masz jeszcze żadnych pociągów na liście.<br>Dodaj pierwszy w formularzu poniżej 👇",
+    "loadError": "Błąd ładowania danych: {message}. Spróbuj odświeżyć.",
+    "confirmClearAll": "Usunąć wszystkie pociągi z listy? Tej operacji nie da się cofnąć."
+  },
   "index": {
     "trainWord": "pociąg",
     "lastTrain": "🚆 Ostatnio oglądany: {label} →",

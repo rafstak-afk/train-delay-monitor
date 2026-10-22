@@ -18,6 +18,33 @@
       "menu": "☰ Menu"
     }
   },
+  "mojePociagi": {
+    "title": "🚆 My trains",
+    "journalLinkTitle": "Travel journal",
+    "clearBtn": "🗑️ Clear",
+    "clearBtnTitle": "Remove all trains from the list",
+    "refreshBtn": "↻ REFRESH",
+    "addFormTitle": "➕ Add a train to the list",
+    "addStationPlaceholder": "Station (e.g. Katowice)",
+    "addTrainNumPlaceholder": "Train no. (e.g. 3815)",
+    "addTimePlaceholder": "Time (e.g. 14:40)",
+    "addBtn": "Add",
+    "alarmInfoTitle": "ℹ️ The alarm works while this tab stays open.",
+    "alarmInfoBody": "For notifications to arrive even with the app closed, {link} — it'll remember this device.",
+    "alarmInfoLinkText": "create a profile",
+    "fetchingData": "⏳ Fetching data...",
+    "finished": "🏁 Train finished its run{dest}{time}",
+    "finishedDest": " at {station}",
+    "finishedTime": " at {time}",
+    "lastSeen": "📍 Last seen: <span class=\"last-station\">{station}</span>{timeHtml}{dest}",
+    "lastSeenDest": " ➔ {station}",
+    "plannedDeparture": "Planned departure: {time}",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "emptyList": "You don't have any trains on your list yet.<br>Add your first one in the form below 👇",
+    "loadError": "Error loading data: {message}. Try refreshing.",
+    "confirmClearAll": "Remove all trains from the list? This can't be undone."
+  },
   "index": {
     "trainWord": "train",
     "lastTrain": "🚆 Last viewed: {label} →",
