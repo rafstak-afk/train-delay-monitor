@@ -175,6 +175,52 @@ async function sendPush(env, subscription, payload) {
   return res.status;
 }
 
+// Nagłówek powiadomienia różni się w zależności od ŹRÓDŁA alarmu — pociąg
+// z "Moich pociągów" czy obserwowana w tle stacja — żeby użytkownik od razu,
+// bez otwierania aplikacji, wiedział którego z dwóch alarmów to dotyczy.
+function buildPayload(items, kind) {
+  const extra = items.length - 1;
+  const title = kind === "station" ? "Alarm: stacja w tle" : "Alarm: Moje pociągi";
+  const body = extra > 0
+    ? `${items.length} ${pluralPL(items.length, ["opóźnienie", "opóźnienia", "opóźnień"])}: ${plainText(items[0])} i ${extra} więcej — dotknij, by zobaczyć`
+    : `${plainText(items[0])} — dotknij, by zobaczyć`;
+  const url = items.length === 1 ? items[0].url : (kind === "station" ? "/" : "/moje-pociagi/");
+  return { title, body, url };
+}
+
+// Wysyłka dla JEDNEGO źródła (pociągi ALBO stacje) — deduplikacja per
+// subskrypcja i per ŹRÓDŁO (osobne pole sygnatury, `sigField`), żeby zmiana
+// w jednym źródle nie "połykała" jeszcze niewysłanego powiadomienia z
+// drugiego i odwrotnie. Zwraca TĘ SAMĄ referencję `subs`, gdy nic się nie
+// zmieniło (sygnał dla wywołującego, że nie trzeba zapisywać profilu).
+async function notifyForSource(env, token, subs, items, sigField, kind, summary) {
+  const sig = items.map(x => x.sigPart).join("|");
+  if (!sig) return subs;
+
+  const subsToNotify = subs.filter(s => s[sigField] !== sig);
+  if (!subsToNotify.length) return subs;
+
+  const payload = buildPayload(items, kind);
+  const kept = [];
+  for (const sub of subs) {
+    if (sub[sigField] === sig) { kept.push(sub); continue; }
+    try {
+      const status = await sendPush(env, sub, payload);
+      if (status === 404 || status === 410) {
+        summary.pushPruned++;
+      } else {
+        kept.push({ ...sub, [sigField]: sig });
+        if (status >= 200 && status < 300) summary.pushSent++;
+      }
+    } catch (e) {
+      kept.push(sub); // błąd sieci/przejściowy — nie kasujemy subskrypcji, spróbuje ponownie przy następnym ticku
+      summary.errors.push(`${token} push (${kind}): ${e.message}`);
+    }
+  }
+  summary.profilesNotified++;
+  return kept;
+}
+
 export async function onRequestPost(context) {
   const { request, env } = context;
 
@@ -219,79 +265,49 @@ export async function onRequestPost(context) {
 
       summary.profilesChecked++;
 
-      const items = [];
+      // Dwa NIEZALEŻNE źródła alarmu — pociągi z "Moich pociągów" i
+      // obserwowane stacje w tle — trzymane osobno (nie w jednej wspólnej
+      // liście `items` jak poprzednio), żeby można było wysłać dwa różne,
+      // rozpoznawalne nagłówki powiadomienia zamiast jednego uniwersalnego
+      // "Alarm pociągów" dla obu przypadków naraz.
+      const trainItems = [];
       if (useTrains) {
         for (const item of trains) {
           if (!item || !item.station || !item.trainNum) continue;
           summary.trainsChecked++;
           try {
             const result = await checkTrain(origin, item);
-            if (result) items.push(result);
+            if (result) trainItems.push(result);
           } catch (e) {
             summary.errors.push(`${token}:${item.trainNum}: ${e.message}`);
           }
         }
       }
+      const stationItems = [];
       if (useStations) {
         for (const station of watchedStations) {
           summary.stationsChecked++;
           try {
-            items.push(...await checkStation(origin, station));
+            stationItems.push(...await checkStation(origin, station));
           } catch (e) {
             summary.errors.push(`${token}:stacja ${station}: ${e.message}`);
           }
         }
       }
 
-      const sig = items.map(x => x.sigPart).join("|");
-      if (!sig) continue;
+      let subsNow = subs;
+      subsNow = await notifyForSource(env, token, subsNow, trainItems, "lastSignatureTrain", "train", summary);
+      subsNow = await notifyForSource(env, token, subsNow, stationItems, "lastSignatureStation", "station", summary);
 
-      // Deduplikacja PER SUBSKRYPCJA (nie per profil) — jeśli ten sam token
-      // jest zalogowany na dwóch urządzeniach, drugie urządzenie mogło
-      // dodać swoją subskrypcję PO TYM, jak pierwsze już dostało powiadomienie
-      // o tym samym, wciąż trwającym opóźnieniu. Globalny `pushLastSignature`
-      // (poprzednia wersja) wtedy błędnie pomijał całą wysyłkę — nowe
-      // urządzenie nigdy nie dostawało pierwszego powiadomienia, dopóki
-      // sygnatura się nie zmieniła. Każda subskrypcja pamięta WŁASNĄ ostatnio
-      // wysłaną sygnaturę.
-      const subsToNotify = subs.filter(s => s.lastSignature !== sig);
-      if (!subsToNotify.length) continue;
+      if (subsNow !== subs) {
+        profile.pushSubscriptions = subsNow;
+        delete profile.pushLastSignature; // pole z poprzedniej, wadliwej logiki — już nieużywane
 
-      const extra = items.length - 1;
-      const payload = {
-        title: "Alarm pociągów",
-        body: extra > 0
-          ? `${items.length} ${pluralPL(items.length, ["opóźnienie", "opóźnienia", "opóźnień"])}: ${plainText(items[0])} i ${extra} więcej — dotknij, by zobaczyć`
-          : `${plainText(items[0])} — dotknij, by zobaczyć`,
-        url: items.length === 1 ? items[0].url : "/moje-pociagi/"
-      };
-
-      const keptSubs = [];
-      for (const sub of subs) {
-        if (sub.lastSignature === sig) { keptSubs.push(sub); continue; }
-        try {
-          const status = await sendPush(env, sub, payload);
-          if (status === 404 || status === 410) {
-            summary.pushPruned++;
-          } else {
-            keptSubs.push({ ...sub, lastSignature: sig });
-            if (status >= 200 && status < 300) summary.pushSent++;
-          }
-        } catch (e) {
-          keptSubs.push(sub); // błąd sieci/przejściowy — nie kasujemy subskrypcji, spróbuje ponownie przy następnym ticku
-          summary.errors.push(`${token} push: ${e.message}`);
-        }
+        await env.USER_PROFILES.put(token, JSON.stringify(profile), {
+          expirationTtl: PROFILE_TTL_SECONDS,
+          metadata: { createdAt: profile.createdAt, updatedAt: profile.updatedAt }
+        });
       }
-
-      profile.pushSubscriptions = keptSubs;
-      delete profile.pushLastSignature; // pole z poprzedniej, wadliwej logiki — już nieużywane
-
-      await env.USER_PROFILES.put(token, JSON.stringify(profile), {
-        expirationTtl: PROFILE_TTL_SECONDS,
-        metadata: { createdAt: profile.createdAt, updatedAt: profile.updatedAt }
-      });
-
-      summary.profilesNotified++;
     }
   } while (cursor);
 

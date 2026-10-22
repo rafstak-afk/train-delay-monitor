@@ -40,7 +40,8 @@
         { sel: "#stationButtons", title: "Ulubione stacje", text: "Twoje przypięte stacje. Dodaj własne gwiazdką ☆ przy tablicy poniżej." },
         { sel: 'a[href="/moje-pociagi/"]', title: "Ulubione pociągi", text: "⭐ Gwiazdka przy każdym odjeździe (i w szczegółach pociągu) dodaje go do „Moich pociągów” — stamtąd jednym rzutem oka, bez dodatkowych kliknięć, zobaczysz gdzie ostatnio potwierdził się na stacji i czy jedzie punktualnie. Dodaj ich kilka, żeby śledzić całą podróż — jednorazową wycieczkę albo codzienny dojazd do pracy." },
         { sel: ".action-head", title: "Więcej opcji w jednym miejscu", text: "Przytrzymaj palcem (albo kliknij prawym przyciskiem myszy) dowolny wiersz — otworzy się menu z wszystkimi akcjami: szczegóły, ulubione, kalendarz i dzienniczek naraz." },
-        { sel: "#alertButton", title: "Alarm opóźnień", text: "Włącz, żeby dostać powiadomienie o opóźnieniu lub odwołaniu na wybranej stacji. Jeśli PLK poda przyczynę (np. „Awaria taboru”), zobaczysz ją pod wpisem alarmu po kliknięciu małego ⓘ." },
+        { sel: "#alertButton", title: "Alarm opóźnień", text: "Włącz, żeby dostać powiadomienie o opóźnieniu lub odwołaniu na wybranej stacji — działa tylko dopóki ta karta jest otwarta. Jeśli PLK poda przyczynę (np. „Awaria taboru”), zobaczysz ją pod wpisem alarmu po kliknięciu małego ⓘ." },
+        { sel: "#watchStationBtn", title: "Alarm w tle dla tej stacji", text: "👁 Obserwuj w tle — w odróżnieniu od „Alarm opóźnień” powyżej, to działa NAWET przy zamkniętej karcie albo aplikacji: dostaniesz powiadomienie push o opóźnieniu lub odwołaniu na tej stacji, gdziekolwiek będziesz. Wymaga założonego profilu — powiadomienia push mieszkają na serwerze pod Twoim tokenem." },
         { sel: '.bottom-nav button[onclick="toggleBurgerMenu()"]', title: "Dzienniczek podróży", text: "W menu (☰) jest 📓 Dzienniczek — notuje Twoje przejazdy wraz z ewentualnym opóźnieniem." },
         { sel: '.bottom-nav a[href="/profil/"]', title: "Profil i synchronizacja", text: "Załóż tu token — 16 znaków, bez hasła i loginu — żeby zsynchronizować ulubione stacje, pociągi, alarmy i dzienniczek między urządzeniami." }
       ]
@@ -50,6 +51,7 @@
       steps: [
         { sel: "#list", title: "Twoje pociągi", text: "Tu widzisz status każdego śledzonego kursu: opóźnienie, peron/tor i ostatnią potwierdzoną stację. Kliknij kartę, żeby zobaczyć cały bieg." },
         { sel: ".mt-star", title: "Gwiazdka i kolejność", text: "Gwiazdka ★ usuwa pociąg z listy (bez potwierdzenia) — kliknij ponownie taki sam na tablicy, żeby dodać go z powrotem. Strzałkami ▲▼ zmienisz kolejność kart." },
+        { sel: "#alertButton", title: "Alarm w tle", text: "Włącz, żeby dostać powiadomienie push o opóźnieniu lub odwołaniu KTÓREGOKOLWIEK ze śledzonych tu pociągów — działa nawet przy zamkniętej aplikacji. Wymaga założonego profilu." },
         { sel: "#addTrainForm", title: "Dodaj pociąg", text: "Dodaj stację, numer i planową godzinę raz — od teraz zawsze zobaczysz go tu z aktualnym statusem." },
         { sel: "#refreshBtn", title: "Odśwież ręcznie", text: "Lista i tak sama się aktualizuje po powrocie po dłuższej przerwie, ale możesz też odświeżyć w każdej chwili." },
         { sel: 'a[href="/dziennik/"]', title: "Dzienniczek podróży", text: "Twoje przejazdy wraz z ewentualnym opóźnieniem — dodajesz je na stronie biegu pociągu." },
