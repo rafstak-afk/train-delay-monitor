@@ -442,6 +442,97 @@ let currentTrains = loadTrains();
 // wszystkie stacje i wszystkie pociągi tylko dlatego, że ktoś kliknął ▲.
 let lastRows = [];
 
+// Przyspieszone odświeżanie "utkniętych" kart — kiedy planowy czas karty
+// już minął o kilka minut, a mimo to nie mamy jeszcze żadnego potwierdzenia
+// przejazdu (lastConfirmedStation), zwykły rytm co 5 min (BOARD_AUTO_REFRESH_MS
+// niżej) bywał za rzadki: użytkownik musiał ręcznie, wielokrotnie odświeżać/
+// zamykać i otwierać aplikację, aż PLK opublikuje dane operacyjne dla danego
+// kursu (zdarza się to zwłaszcza wcześnie rano, 4:30-5:00, przy pierwszych
+// kursach dnia). Zamiast czekać na usera, dla takiej karty odpytujemy co
+// kilkadziesiąt sekund, dopóki się nie rozwiąże albo nie minie limit czasu.
+const STUCK_RETRY_MS = 35 * 1000;
+const STUCK_RETRY_MAX_MS = 15 * 60 * 1000;
+const stuckRetryTimers = new Map(); // idx -> setInterval id
+const stuckRetryStartedAt = new Map(); // idx -> Date.now() z pierwszego wykrycia
+
+function clearStuckTimer(idx) {
+  const id = stuckRetryTimers.get(idx);
+  if (id) clearInterval(id);
+  stuckRetryTimers.delete(idx);
+  stuckRetryStartedAt.delete(idx);
+}
+
+function clearAllStuckTimers() {
+  for (const idx of [...stuckRetryTimers.keys()]) clearStuckTimer(idx);
+}
+
+// Karta "utknięta": planowy odjazd/przyjazd już minął o >2 min, pociąg nie
+// jest odwołany/zakończony, a mimo to nie mamy żadnej potwierdzonej stacji
+// (dokładnie stan, w którym renderCard pokazuje fallback "Planowany odjazd").
+function isCardStuck(item, row) {
+  if (!row) return false; // brak danych w ogóle z tablicy odjazdów — to już pokrywa zwykły auto-refresh/zapytanie karty
+  if (isCancelledTrain(row)) return false;
+  if (row.isFinished || row.status === "FINISHED" || row.status === "COMPLETED") return false;
+  if (extractLastStation(row)) return false;
+  const m = String(item.planTime || "").match(/^(\d{1,2}):(\d{2})$/);
+  if (!m) return false;
+  const planMin = parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+  const now = new Date();
+  let diff = (now.getHours() * 60 + now.getMinutes()) - planMin;
+  if (diff < -600) diff += 1440; // np. planTime 23:50, teraz 00:05 — to wciąż "parę minut po", nie "za 23h"
+  return diff > 2 && diff < 360; // dawno przeszłe karty (>6h) to już nie "utknięcie", tylko coś innego
+}
+
+async function retryStuckCard(idx) {
+  const item = currentTrains[idx];
+  if (!item) { clearStuckTimer(idx); return; }
+  if (Date.now() - (stuckRetryStartedAt.get(idx) || Date.now()) > STUCK_RETRY_MAX_MS) {
+    clearStuckTimer(idx); // wraca do zwykłego rytmu 5 min zamiast dobijać się w nieskończoność
+    return;
+  }
+  try {
+    const departures = await fetchStationDepartures(item.station);
+    const matchedRow = (departures || []).find(d => {
+      const dNum = String(d.train || d.trainNumber || d.number || '').replace(/\D/g, '');
+      const targetNum = String(item.trainNum).replace(/\D/g, '');
+      return dNum && targetNum && dNum === targetNum;
+    });
+    const richRow = await fetchTrainByNumber(item.trainNum, item.station);
+    const finalRow = richRow ? { ...matchedRow, ...richRow } : matchedRow;
+    lastRows[idx] = finalRow || null;
+    const el = document.getElementById('card-' + idx);
+    if (el) el.outerHTML = renderCard(item, idx, finalRow);
+    if (!isCardStuck(item, finalRow)) clearStuckTimer(idx);
+  } catch (e) {
+    // Zostaw timer — spróbuje ponownie na kolejnym ticku.
+  }
+}
+
+function maybeStartStuckTimer(idx, item, row) {
+  if (isCardStuck(item, row)) {
+    if (!stuckRetryTimers.has(idx)) {
+      stuckRetryStartedAt.set(idx, Date.now());
+      stuckRetryTimers.set(idx, setInterval(() => retryStuckCard(idx), STUCK_RETRY_MS));
+    }
+  } else {
+    clearStuckTimer(idx);
+  }
+}
+
+// Przeliczenie wszystkich timerów od zera wg AKTUALNYCH indeksów —
+// potrzebne po zmianie kolejności/usunięciu (moveTrain/deleteTrain), bo
+// indeksy kart się wtedy przesuwają i stary timer wskazywałby już na inną kartę.
+function reconcileStuckTimers() {
+  const valid = new Set();
+  currentTrains.forEach((item, idx) => {
+    valid.add(idx);
+    maybeStartStuckTimer(idx, item, lastRows[idx]);
+  });
+  for (const idx of [...stuckRetryTimers.keys()]) {
+    if (!valid.has(idx)) clearStuckTimer(idx);
+  }
+}
+
 // Kiedy ostatnio init() faktycznie skończył pobieranie danych — używane
 // do decyzji "czy odświeżać po powrocie z bfcache" (patrz pageshow niżej).
 let lastLoadedAt = 0;
@@ -697,6 +788,7 @@ function getDelay(row) {
 function renderFromCache() {
   const container = document.getElementById('list');
   container.innerHTML = currentTrains.length ? currentTrains.map((item, idx) => renderCard(item, idx, lastRows[idx])).join('') : emptyListHtml();
+  reconcileStuckTimers();
 }
 
 // Wywoływane z przycisków wewnątrz karty; rodzic ma już
@@ -891,12 +983,18 @@ async function init() {
   const refreshBtn = document.getElementById('refreshBtn');
   refreshBtn.disabled = true;
 
+  // Pełne przeładowanie — indeksy kart zaraz dostaną świeże dane, więc
+  // wszelkie timery przyspieszonego odświeżania sprzed tego cyklu i tak
+  // zaraz zostaną ocenione na nowo (maybeStartStuckTimer niżej).
+  clearAllStuckTimers();
+
   container.innerHTML = currentTrains.length ? currentTrains.map((item, idx) => renderCard(item, idx, null)).join('') : emptyListHtml();
 
   function paintCard(idx, item, row) {
     lastRows[idx] = row || null;
     const el = document.getElementById('card-' + idx);
     if (el) el.outerHTML = renderCard(item, idx, row);
+    maybeStartStuckTimer(idx, item, row);
   }
 
   try {
