@@ -1113,6 +1113,11 @@ setInterval(() => { if (document.visibilityState === 'visible') init(); }, BOARD
 // pociągów z chmury przed pierwszym init() — nadpisuje domyślną/lokalną
 // listę tym, co zapisano na innym urządzeniu pod tym samym tokenem.
 (async function start() {
+  // Bez tego pierwszy renderCard() (karty z row=null, status "Pobieranie
+  // danych...") odpalal sie czesto PRZED zaladowaniem slownika w i18n.js
+  // (fetch jest async) - I18n.t() nie mial jeszcze co podac i zwracal
+  // sam klucz ("mojePociagi.fetchingData") jako widoczny tekst.
+  if (window.I18n) await I18n.ready;
   if (window.ProfileSync && ProfileSync.getToken()) {
     const profile = await ProfileSync.pull();
     if (profile && Array.isArray(profile.trains)) {
