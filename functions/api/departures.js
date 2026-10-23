@@ -818,22 +818,27 @@ function makeKey(x) {
   ].join("|");
 }
 
-function localDateYYYYMMDD() {
-  const now = new Date();
+// Worker działa w UTC — "teraz" liczymy w polskim czasie ściennym
+// (CET/CEST), inaczej domyślna tablica/wyszukiwanie przesuwa się o 1-2h,
+// a między 00:00 a 02:00 nawet na wczorajszą datę.
+function warsawParts() {
+  return Object.fromEntries(
+    new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Europe/Warsaw",
+      year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", hourCycle: "h23"
+    }).formatToParts(new Date()).map(p => [p.type, p.value])
+  );
+}
 
-  return String(now.getFullYear()).padStart(4, "0") +
-    "-" +
-    String(now.getMonth() + 1).padStart(2, "0") +
-    "-" +
-    String(now.getDate()).padStart(2, "0");
+function localDateYYYYMMDD() {
+  const p = warsawParts();
+  return `${p.year}-${p.month}-${p.day}`;
 }
 
 function currentTimeHHMM() {
-  const now = new Date();
-
-  return String(now.getHours()).padStart(2, "0") +
-    ":" +
-    String(now.getMinutes()).padStart(2, "0");
+  const p = warsawParts();
+  return `${p.hour}:${p.minute}`;
 }
 
 function timeOnly(value) {
