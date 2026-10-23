@@ -303,6 +303,9 @@ function computeAlarmItems(){
     const cancelled=isCancelledTrain(row);
     const delay=getDelay(row);
     if(!cancelled && !(delay>=5)) return;
+    // Pociąg minął naszą stację / skończył bieg albo jeszcze nie ruszył
+    // (wtedy tylko odwołanie) — patrz alarmPhase w fetchTrainByNumber.
+    if(row.alarmPhase==='done' || (row.alarmPhase==='notStarted' && !cancelled)) return;
     items.push({
       time:item.planTime||'--:--',
       label:[row.category,item.trainNum,row.name].filter(Boolean).join(' '),
@@ -695,9 +698,17 @@ async function fetchTrainByNumber(trainNum, station, _isRetry) {
     // tak samo jak robi to enrichWithFullRoutes() na tablicy głównej.
     let arrivalTime = "", plannedArrivalTime = "", arrivalDelay = null;
     let routeDestination = "", via = "", platform = "", track = "";
+    // Etap kursu względem stacji użytkownika — ta sama reguła co trainPhase()
+    // w functions/api/push-tick.js: alarm tylko dla pociągu w trasie, przed
+    // naszą stacją. Bez tego lokalny alarm pokazywał przez cały dzień
+    // poranny pociąg, który dawno minął stację albo skończył bieg.
+    let alarmPhase = "active";
     if (Array.isArray(data.route) && data.route.length) {
       const wanted = station.trim().toLowerCase();
       const stop = data.route.find(s => (s.stationName || "").trim().toLowerCase() === wanted);
+      const lastRouteStop = data.route[data.route.length - 1];
+      if (data.isFinished || lastRouteStop.status === "confirmed" || (stop && stop.status === "confirmed")) alarmPhase = "done";
+      else if (!data.route.some(s => s.status === "confirmed")) alarmPhase = "notStarted";
       if (stop && stop.plannedArrival) {
         plannedArrivalTime = stop.plannedArrival;
         arrivalTime = stop.actualArrival || stop.plannedArrival;
@@ -747,7 +758,8 @@ async function fetchTrainByNumber(trainNum, station, _isRetry) {
       ...((Array.isArray(data.disruptions) && data.disruptions.length)
         ? { disruptionReason: data.disruptions.map(d => d.message).filter(Boolean).join(" / ") }
         : {}),
-      isFinished: data.isFinished ?? true
+      isFinished: data.isFinished ?? true,
+      alarmPhase
     };
   } catch (e) {
     return null;
