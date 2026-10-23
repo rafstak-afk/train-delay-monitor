@@ -14,12 +14,19 @@ function todayWarsaw() {
   return new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Warsaw" });
 }
 
-async function plkGet(path, apiKey) {
+// Dane wolnozmienne (trasa, utrudnienia) cache'ujemy na brzegu Cloudflare
+// (cf.cacheTtl, jak trasy w departures.js) — push-tick pyta o każdy pociąg
+// co 5 min, a na żywo zmienia się tylko /operations.
+const ROUTE_CACHE_TTL = 21600;
+const DISRUPTIONS_CACHE_TTL = 600;
+
+async function plkGet(path, apiKey, cacheTtl = 0) {
   const res = await fetch(PLK_BASE + path, {
     headers: {
       "X-API-Key": apiKey,
       "Accept": "application/json"
-    }
+    },
+    ...(cacheTtl ? { cf: { cacheTtlByStatus: { "200-299": cacheTtl, "300-599": -1 }, cacheEverything: true } } : {})
   });
 
   if (!res.ok) {
@@ -240,7 +247,8 @@ export async function onRequestGet(context) {
     const [routeData, operationData, stationNames] = await Promise.all([
       plkGet(
         `/schedules/route/${encodeURIComponent(scheduleId)}/${encodeURIComponent(orderId)}`,
-        apiKey
+        apiKey,
+        ROUTE_CACHE_TTL
       ),
       plkGet(
         `/operations/train/${encodeURIComponent(scheduleId)}/${encodeURIComponent(orderId)}/${encodeURIComponent(operatingDate)}`,
@@ -267,7 +275,8 @@ export async function onRequestGet(context) {
       try {
         disruptionsRaw = await plkGet(
           `/disruptions?dateFrom=${encodeURIComponent(operatingDate)}&dateTo=${encodeURIComponent(operatingDate)}&stations=${routeStationIds.join(",")}`,
-          apiKey
+          apiKey,
+          DISRUPTIONS_CACHE_TTL
         );
       } catch (e) {
         disruptionsRaw = null;

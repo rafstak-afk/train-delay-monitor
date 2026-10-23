@@ -483,7 +483,7 @@ async function getRouteJson(url, headers) {
     const res = await fetch(url, {
       headers,
       signal: controller.signal,
-      cf: { cacheTtl: ROUTE_CACHE_TTL, cacheEverything: true }
+      cf: { cacheTtlByStatus: { "200-299": ROUTE_CACHE_TTL, "300-599": -1 }, cacheEverything: true }
     });
 
     if (!res.ok) {

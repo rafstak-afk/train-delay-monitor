@@ -18,10 +18,17 @@ function todayIso() {
   return new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Warsaw" });
 }
 
-async function plkFetch(path, key) {
+// Wyszukanie stacji i rozkład stacji na dany dzień to dane wolnozmienne —
+// cache na brzegu Cloudflare. Data jest w URL rozkładu, więc każdy dzień
+// (także weekend/święto z innym rozkładem) ma osobny wpis.
+const STATION_SEARCH_CACHE_TTL = 86400;
+const SCHEDULES_CACHE_TTL = 21600;
+
+async function plkFetch(path, key, cacheTtl = 0) {
   try {
     const res = await fetch(BASE + path, {
-      headers: { "X-API-Key": key, "Accept": "application/json, text/plain, */*" }
+      headers: { "X-API-Key": key, "Accept": "application/json, text/plain, */*" },
+      ...(cacheTtl ? { cf: { cacheTtlByStatus: { "200-299": cacheTtl, "300-599": -1 }, cacheEverything: true } } : {})
     });
     if (!res.ok) return { _error: true, status: res.status };
     return await res.json();
@@ -51,7 +58,7 @@ function routeMatchesTrain(route, wantedNormalized) {
 
 async function resolveStationId(stationName, key) {
   const path = "/dictionaries/stations?search=" + encodeURIComponent(stationName) + "&pageSize=20";
-  const data = await plkFetch(path, key);
+  const data = await plkFetch(path, key, STATION_SEARCH_CACHE_TTL);
   if (!data || data._error) return null;
 
   const list = Array.isArray(data) ? data : (data.stations || data.items || data.results || data.data || []);
@@ -111,7 +118,7 @@ export async function onRequest(context) {
       "/schedules?stations=" + encodeURIComponent(stationId) +
       "&dateFrom=" + date + "&dateTo=" + date + "&pageSize=500";
 
-    const schedData = await plkFetch(schedulesPath, key);
+    const schedData = await plkFetch(schedulesPath, key, SCHEDULES_CACHE_TTL);
 
     if (!schedData || schedData._error) {
       return json({

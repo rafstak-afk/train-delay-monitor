@@ -114,37 +114,54 @@ function isInCheckWindow(item, nowMinutes) {
   return diff >= -TRAIN_LOOKAHEAD_MIN && diff <= TRAIN_MAX_AFTER_MIN;
 }
 
-// Pociągi, które dziś już minęły stację użytkownika albo skończyły bieg —
-// osobny klucz KV (nie pole profilu), żeby zapis z push-tick nie nadpisywał
+// Dzienny stan pociągów profilu: `done` — klucze pociągów, które dziś już
+// minęły stację użytkownika albo skończyły bieg; `lookups` — wynik
+// smart-lookup (scheduleId/orderId), wolnozmienny, więc szukany raz na dzień
+// (nowa data = nowe wyszukanie, także w weekend/święto z innym rozkładem).
+// Osobny klucz KV (nie pole profilu), żeby zapis z push-tick nie nadpisywał
 // równoległych zmian profilu robionych przez klienta. Inne listy kluczy
 // (push-tick, stats) i tak pomijają wszystko, co nie jest samym tokenem.
 const STATE_PREFIX = "pushstate:";
 const STATE_TTL_SECONDS = 60 * 60 * 48;
 
-async function readDoneToday(env, token, today) {
+async function readTrainState(env, token, today) {
   try {
     const raw = await env.USER_PROFILES.get(STATE_PREFIX + token);
     const state = raw ? JSON.parse(raw) : null;
-    return new Set(state && state.date === today && Array.isArray(state.done) ? state.done : []);
-  } catch (e) {
-    return new Set();
-  }
+    if (state && state.date === today) {
+      return {
+        done: new Set(Array.isArray(state.done) ? state.done : []),
+        lookups: state.lookups && typeof state.lookups === "object" ? state.lookups : {}
+      };
+    }
+  } catch (e) {}
+  return { done: new Set(), lookups: {} };
 }
 
-async function writeDoneToday(env, token, today, done) {
-  await env.USER_PROFILES.put(STATE_PREFIX + token, JSON.stringify({ date: today, done: [...done] }), {
+async function writeTrainState(env, token, today, state) {
+  await env.USER_PROFILES.put(STATE_PREFIX + token, JSON.stringify({ date: today, done: [...state.done], lookups: state.lookups }), {
     expirationTtl: STATE_TTL_SECONDS
   });
 }
 
 // Dokładnie te same dwa kroki co fetchTrainByNumber w moje-pociagi/index.html
 // (bez warstwy cache w localStorage — ta ma sens tylko po stronie klienta).
-async function checkTrain(origin, item) {
-  const lookup = await fetchJson(
-    origin,
-    `/api/v2/smart-lookup?train=${encodeURIComponent(item.trainNum)}&station=${encodeURIComponent(item.station)}${item.planTime ? `&time=${encodeURIComponent(item.planTime)}` : ""}`
-  );
-  if (!lookup || !lookup.ok || !lookup.scheduleId || !lookup.orderId) return null;
+// `cachedLookup` — wynik smart-lookup zapamiętany wcześniej tego dnia.
+// Zwraca { lookup, done, alert }: `lookup` — świeży wynik smart-lookup do
+// zapisania (null, gdy użyto zapamiętanego), `done` — pociąg minął stację
+// użytkownika / skończył bieg, `alert` — pozycja do powiadomienia albo null.
+async function checkTrain(origin, item, cachedLookup) {
+  let lookup = cachedLookup;
+  let freshLookup = null;
+  if (!lookup) {
+    const res = await fetchJson(
+      origin,
+      `/api/v2/smart-lookup?train=${encodeURIComponent(item.trainNum)}&station=${encodeURIComponent(item.station)}${item.planTime ? `&time=${encodeURIComponent(item.planTime)}` : ""}`
+    );
+    if (!res || !res.ok || !res.scheduleId || !res.orderId) return { lookup: null, done: false, alert: null };
+    lookup = freshLookup = { scheduleId: res.scheduleId, orderId: res.orderId, trainOrderId: res.trainOrderId || "" };
+  }
+  const outcome = (done, alert) => ({ lookup: freshLookup, done, alert });
 
   const params = new URLSearchParams({
     train: item.trainNum,
@@ -155,13 +172,13 @@ async function checkTrain(origin, item) {
   if (lookup.trainOrderId) params.set("trainOrderId", String(lookup.trainOrderId));
 
   const data = await fetchJson(origin, `/api/train-details?${params.toString()}`);
-  if (!data || data.error) return null;
-  if (trainPhase(data, item.station) === "done") return { done: true };
-  if (!isRelevantForUser(data, item.station)) return null;
+  if (!data || data.error) return outcome(false, null);
+  if (trainPhase(data, item.station) === "done") return outcome(true, null);
+  if (!isRelevantForUser(data, item.station)) return outcome(false, null);
 
   const cancelled = isCancelledStatus(data.status);
   const delay = Number(data.delay || 0);
-  if (!cancelled && !(delay >= 5)) return null;
+  if (!cancelled && !(delay >= 5)) return outcome(false, null);
 
   const label = [data.category, item.trainNum, data.name].filter(Boolean).join(" ");
   const reason = Array.isArray(data.disruptions) && data.disruptions.length
@@ -174,7 +191,7 @@ async function checkTrain(origin, item) {
   if (data.scheduleId) { urlParams.set("scheduleId", data.scheduleId); urlParams.set("scheduledId", data.scheduleId); }
   if (data.orderId) { urlParams.set("orderId", data.orderId); urlParams.set("trainOrderId", data.orderId); }
 
-  return {
+  return outcome(false, {
     label,
     time: item.planTime || "--:--",
     delay,
@@ -182,7 +199,7 @@ async function checkTrain(origin, item) {
     reason,
     url: `/train?${urlParams.toString()}`,
     sigPart: `${label}-${item.planTime || ""}-${delay}-${cancelled ? "X" : ""}`
-  };
+  });
 }
 
 // Jedno zapytanie o tablicę stacji (/api/departures) zamiast dwóch
@@ -369,25 +386,26 @@ export async function onRequestPost(context) {
       // "Alarm pociągów" dla obu przypadków naraz.
       const trainItems = [];
       if (useTrains) {
-        const doneToday = await readDoneToday(env, token, now.date);
-        const doneBefore = doneToday.size;
+        const state = await readTrainState(env, token, now.date);
+        let stateChanged = false;
         for (const item of trains) {
           if (!item || !item.station || !item.trainNum) continue;
           const key = trainKey(item);
-          if (doneToday.has(key) || !isInCheckWindow(item, nowMinutes)) {
+          if (state.done.has(key) || !isInCheckWindow(item, nowMinutes)) {
             summary.trainsSkipped++;
             continue;
           }
           summary.trainsChecked++;
           try {
-            const result = await checkTrain(origin, item);
-            if (result && result.done) doneToday.add(key);
-            else if (result) trainItems.push(result);
+            const { lookup, done, alert } = await checkTrain(origin, item, state.lookups[key]);
+            if (lookup) { state.lookups[key] = lookup; stateChanged = true; }
+            if (done) { state.done.add(key); stateChanged = true; }
+            if (alert) trainItems.push(alert);
           } catch (e) {
             summary.errors.push(`${token}:${item.trainNum}: ${e.message}`);
           }
         }
-        if (doneToday.size !== doneBefore) await writeDoneToday(env, token, now.date, doneToday);
+        if (stateChanged) await writeTrainState(env, token, now.date, state);
       }
       const stationItems = [];
       if (useStations) {
