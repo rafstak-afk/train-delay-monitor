@@ -198,7 +198,7 @@ async function checkTrain(origin, item, cachedLookup) {
     cancelled,
     reason,
     url: `/train?${urlParams.toString()}`,
-    sigPart: `${label}-${item.planTime || ""}-${delay}-${cancelled ? "X" : ""}`
+    key: `${item.trainNum}|${normalizeStationText(item.station)}|${item.planTime || ""}`
   });
 }
 
@@ -239,7 +239,8 @@ async function checkStation(origin, stationName) {
       cancelled,
       reason,
       url: `/train?${urlParams.toString()}`,
-      sigPart: `ST-${stationName}-${label}-${d.time || d.plannedTime || ""}-${delay}-${cancelled ? "X" : ""}`
+      // planowa (nie bieżąca) godzina — d.time przesuwa się razem z opóźnieniem
+      key: `ST|${normalizeStationText(stationName)}|${trainNum}|${d.plannedTime || d.time || ""}`
     });
   }
   return items;
@@ -290,38 +291,80 @@ function buildPayload(items, kind) {
   return { title, body, url };
 }
 
-// Wysyłka dla JEDNEGO źródła (pociągi ALBO stacje) — deduplikacja per
-// subskrypcja i per ŹRÓDŁO (osobne pole sygnatury, `sigField`), żeby zmiana
-// w jednym źródle nie "połykała" jeszcze niewysłanego powiadomienia z
-// drugiego i odwrotnie. Zwraca TĘ SAMĄ referencję `subs`, gdy nic się nie
-// zmieniło (sygnał dla wywołującego, że nie trzeba zapisywać profilu).
-async function notifyForSource(env, token, subs, items, sigField, kind, summary) {
-  const sig = items.map(x => x.sigPart).join("|");
-  if (!sig) return subs;
+// Ponowny push o tym samym pociągu dopiero, gdy opóźnienie wzrosło o co
+// najmniej tyle minut od OSTATNIEGO powiadomienia — bez tego każda zmiana
+// +6 → +7 → +8 min wysyłała osobny alarm.
+const RENOTIFY_DELAY_STEP = 5;
 
-  // Push tylko, gdy pojawiło się coś NOWEGO (nowy pociąg albo zmiana jego
-  // opóźnienia/odwołania). Samo zniknięcie pozycji z listy (np. pociąg minął
-  // stację użytkownika) tylko aktualizuje sygnaturę — bez tego pozostałe,
-  // niezmienione opóźnienia przychodziły ponownie.
-  const hasNew = sub => {
-    const seen = new Set(String(sub[sigField] || "").split("|"));
-    return items.some(x => !seen.has(x.sigPart));
-  };
+const NOTIFIED_STATE_MAX = 60;
 
-  const subsToNotify = subs.filter(s => s[sigField] !== sig);
-  if (!subsToNotify.length) return subs;
+function sameState(a, b) {
+  const ka = Object.keys(a), kb = Object.keys(b);
+  return ka.length === kb.length && ka.every(k => k in b && b[k] === a[k]);
+}
 
-  const payload = buildPayload(items, kind);
+function alertLevel(x) {
+  return x.cancelled ? "X" : x.delay;
+}
+
+// Czy pozycja to NOWOŚĆ względem tego, o czym subskrypcja już wie:
+// nowy pociąg, odwołanie albo wzrost opóźnienia o RENOTIFY_DELAY_STEP+.
+function isNews(x, notifiedLevel) {
+  if (notifiedLevel === undefined) return true;
+  if (notifiedLevel === "X") return false;
+  if (x.cancelled) return true;
+  return x.delay >= Number(notifiedLevel) + RENOTIFY_DELAY_STEP;
+}
+
+// Wysyłka dla JEDNEGO źródła (pociągi ALBO stacje) — stan per subskrypcja
+// i per ŹRÓDŁO (`stateField`: { klucz pociągu: zgłoszony poziom }), żeby
+// zmiana w jednym źródle nie "połykała" jeszcze niewysłanego powiadomienia
+// z drugiego. Push idzie tylko, gdy jest choć jedna NOWOŚĆ (isNews); samo
+// zniknięcie pozycji z listy (np. pociąg minął stację użytkownika) tylko
+// czyści stan. Zwraca TĘ SAMĄ referencję `subs`, gdy nic się nie zmieniło
+// (sygnał dla wywołującego, że nie trzeba zapisywać profilu).
+//
+// `legacyField` — pole sygnatury z poprzedniej wersji: subskrypcja, która ma
+// tylko je, dostaje stan "po cichu" (bez pushu), żeby wdrożenie nie wysłało
+// wszystkim jeszcze raz wszystkich trwających opóźnień.
+async function notifyForSource(env, token, subs, items, stateField, legacyField, kind, summary) {
   const kept = [];
+  let changed = false;
+  let notified = false;
   for (const sub of subs) {
-    if (sub[sigField] === sig) { kept.push(sub); continue; }
-    if (!hasNew(sub)) { kept.push({ ...sub, [sigField]: sig }); continue; }
+    const hasState = sub[stateField] && typeof sub[stateField] === "object";
+    const prev = hasState ? sub[stateField] : {};
+    const migrating = !hasState && typeof sub[legacyField] === "string";
+    const news = migrating ? [] : items.filter(x => isNews(x, prev[x.key]));
+
+    // Pozycje, które chwilowo zniknęły (np. opóźnienie spadło z 5 na 4 min),
+    // zostają w stanie — inaczej powrót do 5 min liczyłby się jako nowość.
+    // Limit, żeby stan w profilu nie rósł bez końca.
+    const next = {};
+    for (const x of items) next[x.key] = news.length || migrating ? alertLevel(x) : prev[x.key];
+    for (const [k, v] of Object.entries(prev)) {
+      if (Object.keys(next).length >= NOTIFIED_STATE_MAX) break;
+      if (!(k in next)) next[k] = v;
+    }
+    const { [legacyField]: _legacy, ...rest } = sub;
+    const updated = { ...rest, [stateField]: next };
+
+    if (!news.length) {
+      if (migrating || !sameState(next, prev)) { kept.push(updated); changed = true; }
+      else kept.push(sub);
+      continue;
+    }
+
+    // Nowości na początek listy — to je widać w jednej linijce powiadomienia.
+    const ordered = [...news, ...items.filter(x => !news.includes(x))];
+    changed = true;
+    notified = true;
     try {
-      const status = await sendPush(env, sub, payload);
+      const status = await sendPush(env, sub, buildPayload(ordered, kind));
       if (status === 404 || status === 410) {
         summary.pushPruned++;
       } else {
-        kept.push({ ...sub, [sigField]: sig });
+        kept.push(updated);
         if (status >= 200 && status < 300) summary.pushSent++;
       }
     } catch (e) {
@@ -329,8 +372,8 @@ async function notifyForSource(env, token, subs, items, sigField, kind, summary)
       summary.errors.push(`${token} push (${kind}): ${e.message}`);
     }
   }
-  summary.profilesNotified++;
-  return kept;
+  if (notified) summary.profilesNotified++;
+  return changed ? kept : subs;
 }
 
 export async function onRequestPost(context) {
@@ -420,8 +463,8 @@ export async function onRequestPost(context) {
       }
 
       let subsNow = subs;
-      subsNow = await notifyForSource(env, token, subsNow, trainItems, "lastSignatureTrain", "train", summary);
-      subsNow = await notifyForSource(env, token, subsNow, stationItems, "lastSignatureStation", "station", summary);
+      subsNow = await notifyForSource(env, token, subsNow, trainItems, "notifiedTrain", "lastSignatureTrain", "train", summary);
+      subsNow = await notifyForSource(env, token, subsNow, stationItems, "notifiedStation", "lastSignatureStation", "station", summary);
 
       if (subsNow !== subs) {
         profile.pushSubscriptions = subsNow;
