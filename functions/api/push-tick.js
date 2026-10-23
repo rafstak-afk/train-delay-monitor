@@ -62,26 +62,79 @@ function normalizeStationText(value) {
   return String(value || "").trim().toLowerCase();
 }
 
+function minutesOf(hhmm) {
+  const m = String(hhmm || "").match(/^(\d{1,2}):(\d{2})/);
+  return m ? Number(m[1]) * 60 + Number(m[2]) : null;
+}
+
+// Etap kursu względem stacji użytkownika:
+//  - "done": kurs zakończony (ostatnia stacja potwierdzona) albo stacja
+//    użytkownika już potwierdzona (pociąg ją minął),
+//  - "notStarted": brak jakiejkolwiek potwierdzonej stacji,
+//  - "active": w trasie, przed stacją użytkownika.
+function trainPhase(data, userStation) {
+  const route = Array.isArray(data.route) ? data.route : [];
+  if (!route.length) return "active"; // brak trasy — nie mamy podstaw, by filtrować
+
+  const lastStop = route[route.length - 1];
+  if (data.isFinished || lastStop.status === "confirmed") return "done";
+
+  const target = route.find(s => normalizeStationText(s.stationName) === normalizeStationText(userStation));
+  if (target && target.status === "confirmed") return "done";
+
+  return route.some(s => s.status === "confirmed") ? "active" : "notStarted";
+}
+
 // Alarm ma sens tylko dla pociągu, który JEST w trasie i jeszcze NIE minął
 // stacji użytkownika. Bez tego filtra train-details zwracał przez resztę
 // dnia końcowe opóźnienie zakończonego kursu (journeyDone → lastStop.delay),
 // a każda zmiana w innym pociągu wysyłała je ponownie w zbiorczym pushu.
-//  - kurs zakończony (ostatnia stacja potwierdzona) → nie,
-//  - stacja użytkownika już potwierdzona (pociąg ją minął) → nie,
-//  - kurs jeszcze nie ruszył (brak potwierdzonej stacji) → tylko odwołanie
-//    (to jedyny moment, w którym jest jeszcze użyteczne); opóźnienia przed
-//    startem to prognozy PLK, a nie fakt.
+// Przed startem kursu przechodzi tylko odwołanie (to jedyny moment, w którym
+// jest jeszcze użyteczne); opóźnienia przed startem to prognozy PLK.
 function isRelevantForUser(data, userStation) {
-  const route = Array.isArray(data.route) ? data.route : [];
-  if (!route.length) return true; // brak trasy — nie mamy podstaw, by filtrować
+  const phase = trainPhase(data, userStation);
+  return phase === "active" || (phase === "notStarted" && isCancelledStatus(data.status));
+}
 
-  const lastStop = route[route.length - 1];
-  if (data.isFinished || lastStop.status === "confirmed") return false;
+// Okno czasowe wokół planowego czasu na stacji użytkownika (item.planTime),
+// poza którym w ogóle nie pytamy PLK — każdy pociąg to ~5 zapytań na tick,
+// a tick jest co 5 min, więc sprawdzanie przez całą dobę zjadało ~1440
+// zapytań dziennie na KAŻDY pociąg z "Moich pociągów".
+const TRAIN_LOOKAHEAD_MIN = 180; // wcześniej i tak tylko ewentualne odwołanie
+const TRAIN_MAX_AFTER_MIN = 240; // twardy limit, gdyby "done" nigdy nie przyszło (luki w danych PLK)
 
-  const target = route.find(s => normalizeStationText(s.stationName) === normalizeStationText(userStation));
-  if (target && target.status === "confirmed") return false;
+function trainKey(item) {
+  return `${item.trainNum}|${normalizeStationText(item.station)}|${item.planTime || ""}`;
+}
 
-  return route.some(s => s.status === "confirmed") || isCancelledStatus(data.status);
+function isInCheckWindow(item, nowMinutes) {
+  const plan = minutesOf(item.planTime);
+  if (plan === null || nowMinutes === null) return true;
+  const diff = nowMinutes - plan;
+  return diff >= -TRAIN_LOOKAHEAD_MIN && diff <= TRAIN_MAX_AFTER_MIN;
+}
+
+// Pociągi, które dziś już minęły stację użytkownika albo skończyły bieg —
+// osobny klucz KV (nie pole profilu), żeby zapis z push-tick nie nadpisywał
+// równoległych zmian profilu robionych przez klienta. Inne listy kluczy
+// (push-tick, stats) i tak pomijają wszystko, co nie jest samym tokenem.
+const STATE_PREFIX = "pushstate:";
+const STATE_TTL_SECONDS = 60 * 60 * 48;
+
+async function readDoneToday(env, token, today) {
+  try {
+    const raw = await env.USER_PROFILES.get(STATE_PREFIX + token);
+    const state = raw ? JSON.parse(raw) : null;
+    return new Set(state && state.date === today && Array.isArray(state.done) ? state.done : []);
+  } catch (e) {
+    return new Set();
+  }
+}
+
+async function writeDoneToday(env, token, today, done) {
+  await env.USER_PROFILES.put(STATE_PREFIX + token, JSON.stringify({ date: today, done: [...done] }), {
+    expirationTtl: STATE_TTL_SECONDS
+  });
 }
 
 // Dokładnie te same dwa kroki co fetchTrainByNumber w moje-pociagi/index.html
@@ -103,6 +156,7 @@ async function checkTrain(origin, item) {
 
   const data = await fetchJson(origin, `/api/train-details?${params.toString()}`);
   if (!data || data.error) return null;
+  if (trainPhase(data, item.station) === "done") return { done: true };
   if (!isRelevantForUser(data, item.station)) return null;
 
   const cancelled = isCancelledStatus(data.status);
@@ -228,6 +282,15 @@ async function notifyForSource(env, token, subs, items, sigField, kind, summary)
   const sig = items.map(x => x.sigPart).join("|");
   if (!sig) return subs;
 
+  // Push tylko, gdy pojawiło się coś NOWEGO (nowy pociąg albo zmiana jego
+  // opóźnienia/odwołania). Samo zniknięcie pozycji z listy (np. pociąg minął
+  // stację użytkownika) tylko aktualizuje sygnaturę — bez tego pozostałe,
+  // niezmienione opóźnienia przychodziły ponownie.
+  const hasNew = sub => {
+    const seen = new Set(String(sub[sigField] || "").split("|"));
+    return items.some(x => !seen.has(x.sigPart));
+  };
+
   const subsToNotify = subs.filter(s => s[sigField] !== sig);
   if (!subsToNotify.length) return subs;
 
@@ -235,6 +298,7 @@ async function notifyForSource(env, token, subs, items, sigField, kind, summary)
   const kept = [];
   for (const sub of subs) {
     if (sub[sigField] === sig) { kept.push(sub); continue; }
+    if (!hasNew(sub)) { kept.push({ ...sub, [sigField]: sig }); continue; }
     try {
       const status = await sendPush(env, sub, payload);
       if (status === 404 || status === 410) {
@@ -265,7 +329,9 @@ export async function onRequestPost(context) {
   }
 
   const origin = new URL(request.url).origin;
-  const summary = { profilesChecked: 0, profilesNotified: 0, trainsChecked: 0, stationsChecked: 0, pushSent: 0, pushPruned: 0, errors: [] };
+  const summary = { profilesChecked: 0, profilesNotified: 0, trainsChecked: 0, trainsSkipped: 0, stationsChecked: 0, pushSent: 0, pushPruned: 0, errors: [] };
+  const now = warsawNow();
+  const nowMinutes = minutesOf(now.time);
 
   let cursor;
   do {
@@ -303,16 +369,25 @@ export async function onRequestPost(context) {
       // "Alarm pociągów" dla obu przypadków naraz.
       const trainItems = [];
       if (useTrains) {
+        const doneToday = await readDoneToday(env, token, now.date);
+        const doneBefore = doneToday.size;
         for (const item of trains) {
           if (!item || !item.station || !item.trainNum) continue;
+          const key = trainKey(item);
+          if (doneToday.has(key) || !isInCheckWindow(item, nowMinutes)) {
+            summary.trainsSkipped++;
+            continue;
+          }
           summary.trainsChecked++;
           try {
             const result = await checkTrain(origin, item);
-            if (result) trainItems.push(result);
+            if (result && result.done) doneToday.add(key);
+            else if (result) trainItems.push(result);
           } catch (e) {
             summary.errors.push(`${token}:${item.trainNum}: ${e.message}`);
           }
         }
+        if (doneToday.size !== doneBefore) await writeDoneToday(env, token, now.date, doneToday);
       }
       const stationItems = [];
       if (useStations) {
