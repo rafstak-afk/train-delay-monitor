@@ -93,18 +93,17 @@
     return typeof val === "string" ? interpolate(val, params) : val;
   }
 
+  // Żadnego sessionStorage/force-cache tutaj — serwer i tak wysyła
+  // Cache-Control: max-age=0, must-revalidate na /i18n/*.json, więc zwykły
+  // fetch i tak najwyżej robi tani, warunkowy request (304, jeśli słownik
+  // się nie zmienił). Wcześniejsza wersja cache'owała w sessionStorage na
+  // całą kartę przeglądarki — po dopisaniu nowych kluczy w trakcie tej
+  // samej sesji testowej, strona nadal pokazywała STARY, niepełny słownik
+  // nawet po Ctrl+F5 (które czyści tylko cache sieciowy, nie sessionStorage).
   function fetchJson(lang) {
-    var cacheKey = "i18nCache:" + lang;
-    try {
-      var cached = sessionStorage.getItem(cacheKey);
-      if (cached) return Promise.resolve(JSON.parse(cached));
-    } catch (e) {}
-    return fetch("/i18n/" + lang + ".json", { cache: "force-cache" }).then(function (res) {
+    return fetch("/i18n/" + lang + ".json").then(function (res) {
       if (!res.ok) throw new Error("i18n fetch " + lang + ": " + res.status);
       return res.json();
-    }).then(function (data) {
-      try { sessionStorage.setItem(cacheKey, JSON.stringify(data)); } catch (e) {}
-      return data;
     });
   }
 
