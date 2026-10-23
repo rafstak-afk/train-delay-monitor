@@ -58,6 +58,32 @@ async function fetchJson(origin, path) {
   }
 }
 
+function normalizeStationText(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+// Alarm ma sens tylko dla pociągu, który JEST w trasie i jeszcze NIE minął
+// stacji użytkownika. Bez tego filtra train-details zwracał przez resztę
+// dnia końcowe opóźnienie zakończonego kursu (journeyDone → lastStop.delay),
+// a każda zmiana w innym pociągu wysyłała je ponownie w zbiorczym pushu.
+//  - kurs zakończony (ostatnia stacja potwierdzona) → nie,
+//  - stacja użytkownika już potwierdzona (pociąg ją minął) → nie,
+//  - kurs jeszcze nie ruszył (brak potwierdzonej stacji) → tylko odwołanie
+//    (to jedyny moment, w którym jest jeszcze użyteczne); opóźnienia przed
+//    startem to prognozy PLK, a nie fakt.
+function isRelevantForUser(data, userStation) {
+  const route = Array.isArray(data.route) ? data.route : [];
+  if (!route.length) return true; // brak trasy — nie mamy podstaw, by filtrować
+
+  const lastStop = route[route.length - 1];
+  if (data.isFinished || lastStop.status === "confirmed") return false;
+
+  const target = route.find(s => normalizeStationText(s.stationName) === normalizeStationText(userStation));
+  if (target && target.status === "confirmed") return false;
+
+  return route.some(s => s.status === "confirmed") || isCancelledStatus(data.status);
+}
+
 // Dokładnie te same dwa kroki co fetchTrainByNumber w moje-pociagi/index.html
 // (bez warstwy cache w localStorage — ta ma sens tylko po stronie klienta).
 async function checkTrain(origin, item) {
@@ -77,6 +103,7 @@ async function checkTrain(origin, item) {
 
   const data = await fetchJson(origin, `/api/train-details?${params.toString()}`);
   if (!data || data.error) return null;
+  if (!isRelevantForUser(data, item.station)) return null;
 
   const cancelled = isCancelledStatus(data.status);
   const delay = Number(data.delay || 0);
@@ -116,6 +143,10 @@ async function checkStation(origin, stationName) {
 
   const items = [];
   for (const d of data.departures) {
+    // departures.js pobiera operacje tylko dla TEJ stacji, więc niepusty
+    // lastConfirmedStation oznacza, że pociąg już tu był — alarm spóźniony.
+    if (d.lastConfirmedStation) continue;
+
     const cancelled = isCancelledStatus(d.status);
     const delay = Number(d.delay || 0);
     if (!cancelled && !(delay >= 5)) continue;
