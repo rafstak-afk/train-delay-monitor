@@ -80,6 +80,13 @@
     }
   });
 
-  if (document.body) ensureDom();
-  else document.addEventListener("DOMContentLoaded", ensureDom);
+  // UWAGA: samo "document.body istnieje" NIE znaczy, że cała strona jest
+  // już sparsowana — ten skrypt jest dołączony blisko początku <body>,
+  // więc w momencie jego wykonania elementy zdefiniowane NIŻEJ w HTML
+  // (np. #healthBox na index.html) jeszcze nie istnieją. Bez czekania na
+  // DOMContentLoaded sprawdzenie requiresHealthBox zawsze wypadało
+  // negatywnie, po cichu chowając "🩺 API"/"📊 Limit" nawet na stronie,
+  // która je ma.
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", ensureDom);
+  else ensureDom();
 })();
