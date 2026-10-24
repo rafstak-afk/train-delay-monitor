@@ -65,6 +65,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
 .btn-sm.secondary:hover{background:#5b6472}
 .btn-sm:disabled{opacity:.5;cursor:default}
 .status{text-align:center;color:var(--muted);min-height:20px;margin:10px 0;font-size:13.5px}
+#resultsStatus{scroll-margin-top:8px}
 .status.err{color:var(--red)}
 .empty{text-align:center;padding:28px 16px;color:var(--muted);font-size:14px;line-height:1.6}
 .muted-note{font-size:12.5px;color:var(--muted);margin:0 0 10px;text-align:center}
@@ -1007,6 +1008,16 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     renderHistoryPanel();
   }
 
+  // Linia statusu ("Szukam połączeń...", potem "Znaleziono: ...") na samą
+  // górę ekranu — żeby po wyszukaniu nie przewijać ręcznie przez formularz
+  // z kryteriami. requestAnimationFrame: po wyrenderowaniu wyników, gdy
+  // wysokość strony jest już ostateczna.
+  function scrollToResults(){
+    requestAnimationFrame(function(){
+      $('resultsStatus').scrollIntoView({behavior:'smooth',block:'start'});
+    });
+  }
+
   // === Szukaj ===
   function search(){
     var from=selected.from.name||$('fromInput').value.trim();
@@ -1021,6 +1032,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     $('resultsStatus').className='status';
     $('resultsStatus').textContent='Szukam połączeń...';
     $('resultsList').innerHTML='';
+    scrollToResults();
 
     var params=new URLSearchParams({from:from,to:to,date:$('dateInput').value,time:$('timeInput').value,transferMinutes:$('transferMinutesSelect').value});
     if(selected.from.id)params.set('fromId',selected.from.id);
@@ -1043,14 +1055,17 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
         if(!res.ok||!res.data.ok){
           $('resultsStatus').className='status err';
           $('resultsStatus').textContent=res.data.error||'Błąd wyszukiwania połączeń.';
+          scrollToResults();
           return;
         }
         renderResults(res.data);
+        scrollToResults();
       })
       .catch(function(){
         btn.disabled=false;
         $('resultsStatus').className='status err';
         $('resultsStatus').textContent='Nie udało się połączyć z API.';
+        scrollToResults();
       });
   }
   window.search=search;
