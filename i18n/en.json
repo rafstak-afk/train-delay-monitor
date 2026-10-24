@@ -62,7 +62,8 @@
       "maxReached": "You can watch at most {max} stations at once.",
       "noPermission": "No notification permission — can't watch stations in the background.",
       "subscribeFailed": "Couldn't enable background notifications.",
-      "started": "Now watching this station in the background — notifications will arrive even with the app closed."
+      "started": "Now watching this station in the background — notifications will arrive even with the app closed.",
+      "badgeTitle": "Watched in background — push notifications about delays"
     },
     "stationInputPlaceholder": "Enter a station name...",
     "stationDropdownAria": "Expand station list",

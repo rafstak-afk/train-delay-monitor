@@ -62,7 +62,8 @@
       "maxReached": "Można obserwować maks. {max} stacji naraz.",
       "noPermission": "Brak zgody na powiadomienia — nie można obserwować stacji w tle.",
       "subscribeFailed": "Nie udało się włączyć powiadomień w tle.",
-      "started": "Obserwujesz tę stację w tle — powiadomienia przyjdą nawet przy zamkniętej aplikacji."
+      "started": "Obserwujesz tę stację w tle — powiadomienia przyjdą nawet przy zamkniętej aplikacji.",
+      "badgeTitle": "Obserwowana w tle — powiadomienia push o opóźnieniach"
     },
     "stationInputPlaceholder": "Wpisz nazwę stacji...",
     "stationDropdownAria": "Rozwiń listę stacji",
