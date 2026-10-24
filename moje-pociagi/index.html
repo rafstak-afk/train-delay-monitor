@@ -338,6 +338,10 @@ function handleDelayAlerts(){
   const sig=items.map(x=>`${x.label}-${x.time}-${x.delay}-${x.cancelled?'X':''}`).join('|');
   if(!delayAlertsEnabled||sig===lastDelayedSignature)return;
   lastDelayedSignature=sig;
+  // To urządzenie dostaje te same alarmy pushem z serwera (push-tick, z
+  // deduplikacją) — lokalne powiadomienie systemowe byłoby drugą kopią.
+  // Ramka alarmu na stronie (wyżej) zostaje.
+  if(window.ProfileSync&&ProfileSync.hasDevicePush&&ProfileSync.hasDevicePush())return;
   const url=items.length===1?items[0].url:'/moje-pociagi/';
   showAlarmNotification(I18n.t('index.alert.notificationTitle'),msg,url);
 }
@@ -375,7 +379,8 @@ async function ensurePushSubscription(){
     const reg=await navigator.serviceWorker.ready;
     let sub=await reg.pushManager.getSubscription();
     if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC_KEY)});
-    await fetch('/api/push-subscribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:ProfileSync.getToken(),subscription:sub.toJSON()})});
+    if(ProfileSync.registerPush)await ProfileSync.registerPush(sub);
+    else await fetch('/api/push-subscribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:ProfileSync.getToken(),subscription:sub.toJSON()})});
     return{ok:true};
   }catch(e){
     return{ok:false,reason:'error',error:e};
@@ -389,6 +394,7 @@ async function removePushSubscription(){
     if(!sub)return;
     const endpoint=sub.endpoint;
     await sub.unsubscribe();
+    if(window.ProfileSync&&ProfileSync.forgetPush)ProfileSync.forgetPush();
     if(window.ProfileSync&&ProfileSync.getToken()){
       await fetch('/api/push-subscribe',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:ProfileSync.getToken(),endpoint})});
     }

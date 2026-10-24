@@ -180,7 +180,8 @@ async function ensurePushSubscription(){
     const reg=await navigator.serviceWorker.ready;
     let sub=await reg.pushManager.getSubscription();
     if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC_KEY)});
-    await fetch('/api/push-subscribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:ProfileSync.getToken(),subscription:sub.toJSON()})});
+    if(ProfileSync.registerPush)await ProfileSync.registerPush(sub);
+    else await fetch('/api/push-subscribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:ProfileSync.getToken(),subscription:sub.toJSON()})});
     return{ok:true};
   }catch(e){
     return{ok:false,reason:'error',error:e};

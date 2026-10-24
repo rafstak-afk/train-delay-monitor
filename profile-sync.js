@@ -211,6 +211,41 @@
     return profile;
   }
 
+  // Subskrypcja push TEGO urządzenia — zapamiętana, żeby gdy przeglądarka
+  // wyda nową, serwer zastąpił nią poprzednią (inaczej obie zostają w
+  // profilu i urządzenie dostaje każde powiadomienie dwa razy). Jej obecność
+  // mówi też stronom, że to urządzenie dostaje alarmy pushem z serwera.
+  const PUSH_ENDPOINT_KEY = "pushEndpointThisDevice";
+
+  async function registerPush(subscription) {
+    const token = getToken();
+    if (!token) return false;
+    const json = subscription.toJSON ? subscription.toJSON() : subscription;
+    let previousEndpoint = "";
+    try { previousEndpoint = localStorage.getItem(PUSH_ENDPOINT_KEY) || ""; } catch (e) {}
+    const res = await fetch("/api/push-subscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        token,
+        subscription: json,
+        previousEndpoint: previousEndpoint && previousEndpoint !== json.endpoint ? previousEndpoint : undefined
+      })
+    });
+    if (res.ok) {
+      try { localStorage.setItem(PUSH_ENDPOINT_KEY, json.endpoint); } catch (e) {}
+    }
+    return res.ok;
+  }
+
+  function forgetPush() {
+    try { localStorage.removeItem(PUSH_ENDPOINT_KEY); } catch (e) {}
+  }
+
+  function hasDevicePush() {
+    try { return !!(getToken() && localStorage.getItem(PUSH_ENDPOINT_KEY)); } catch (e) { return false; }
+  }
+
   window.ProfileSync = {
     generateToken,
     getToken,
@@ -223,6 +258,9 @@
     push,
     pushBeacon,
     refreshMyTrains,
+    registerPush,
+    forgetPush,
+    hasDevicePush,
     check,
     markVerified,
     isVerified,

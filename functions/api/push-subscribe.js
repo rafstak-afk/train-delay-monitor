@@ -77,10 +77,23 @@ export async function onRequest(context) {
     if (!isValidSubscription(sub)) {
       return json({ ok: false, error: "Nieprawidłowa subskrypcja push" }, 400);
     }
-    const withoutThis = current.filter(s => s.endpoint !== sub.endpoint);
+    // Ta sama subskrypcja przychodzi ponownie przy każdym otwarciu strony z
+    // włączonym alarmem — zachowujemy istniejący wpis (addedAt i stan
+    // deduplikacji z push-tick: notifiedTrain/notifiedStation), podmieniając
+    // tylko klucze. Wcześniej wpis tworzony od nowa gubił ten stan i każde
+    // otwarcie aplikacji kończyło się ponownym pushem wszystkich opóźnień.
+    //
+    // `previousEndpoint` — poprzednia subskrypcja TEGO urządzenia (gdy
+    // przeglądarka wydała nową): usuwamy ją, żeby urządzenie nie dostawało
+    // każdego powiadomienia dwa razy.
+    const previous = typeof body?.previousEndpoint === "string" ? body.previousEndpoint : "";
+    const existing = current.find(s => s.endpoint === sub.endpoint);
+    const others = current.filter(s => s.endpoint !== sub.endpoint && (!previous || s.endpoint !== previous));
     profile.pushSubscriptions = [
-      ...withoutThis,
-      { endpoint: sub.endpoint, keys: { p256dh: sub.keys.p256dh, auth: sub.keys.auth }, addedAt: new Date().toISOString() }
+      ...others,
+      existing
+        ? { ...existing, keys: { p256dh: sub.keys.p256dh, auth: sub.keys.auth } }
+        : { endpoint: sub.endpoint, keys: { p256dh: sub.keys.p256dh, auth: sub.keys.auth }, addedAt: new Date().toISOString() }
     ];
   } else {
     const endpoint = String(body?.endpoint || "");
