@@ -326,25 +326,34 @@ function isNews(x, notifiedLevel) {
 //
 // `legacyField` — pole sygnatury z poprzedniej wersji: subskrypcja, która ma
 // tylko je, dostaje stan "po cichu" (bez pushu), żeby wdrożenie nie wysłało
-// wszystkim jeszcze raz wszystkich trwających opóźnień.
-async function notifyForSource(env, token, subs, items, stateField, legacyField, kind, summary) {
+// wszystkim jeszcze raz wszystkich trwających opóźnień. To samo dla stanu
+// sprzed dodania daty do kluczy (v4.23).
+//
+// Klucze stanu mają z przodu DZISIEJSZĄ datę (`today`): ten sam pociąg
+// jeździ codziennie o tej samej godzinie, więc bez daty wczorajsze "+37"
+// blokowało dzisiejszy alarm "+20" (20 < 37 + 5). Wpisy z innych dni
+// są przy okazji usuwane.
+async function notifyForSource(env, token, subs, items, stateField, legacyField, kind, summary, today) {
+  const dayPrefix = `${today}|`;
+  const dayKey = x => dayPrefix + x.key;
   const kept = [];
   let changed = false;
   let notified = false;
   for (const sub of subs) {
     const hasState = sub[stateField] && typeof sub[stateField] === "object";
     const prev = hasState ? sub[stateField] : {};
-    const migrating = !hasState && typeof sub[legacyField] === "string";
-    const news = migrating ? [] : items.filter(x => isNews(x, prev[x.key]));
+    const undated = hasState && Object.keys(prev).length > 0 && !Object.keys(prev).some(k => /^\d{4}-\d{2}-\d{2}\|/.test(k));
+    const migrating = (!hasState && typeof sub[legacyField] === "string") || undated;
+    const news = migrating ? [] : items.filter(x => isNews(x, prev[dayKey(x)]));
 
     // Pozycje, które chwilowo zniknęły (np. opóźnienie spadło z 5 na 4 min),
     // zostają w stanie — inaczej powrót do 5 min liczyłby się jako nowość.
-    // Limit, żeby stan w profilu nie rósł bez końca.
+    // Tylko z dzisiaj, z limitem, żeby stan w profilu nie rósł bez końca.
     const next = {};
-    for (const x of items) next[x.key] = news.length || migrating ? alertLevel(x) : prev[x.key];
+    for (const x of items) next[dayKey(x)] = news.length || migrating ? alertLevel(x) : prev[dayKey(x)];
     for (const [k, v] of Object.entries(prev)) {
       if (Object.keys(next).length >= NOTIFIED_STATE_MAX) break;
-      if (!(k in next)) next[k] = v;
+      if (k.startsWith(dayPrefix) && !(k in next)) next[k] = v;
     }
     const { [legacyField]: _legacy, ...rest } = sub;
     const updated = { ...rest, [stateField]: next };
@@ -463,8 +472,8 @@ export async function onRequestPost(context) {
       }
 
       let subsNow = subs;
-      subsNow = await notifyForSource(env, token, subsNow, trainItems, "notifiedTrain", "lastSignatureTrain", "train", summary);
-      subsNow = await notifyForSource(env, token, subsNow, stationItems, "notifiedStation", "lastSignatureStation", "station", summary);
+      subsNow = await notifyForSource(env, token, subsNow, trainItems, "notifiedTrain", "lastSignatureTrain", "train", summary, now.date);
+      subsNow = await notifyForSource(env, token, subsNow, stationItems, "notifiedStation", "lastSignatureStation", "station", summary, now.date);
 
       if (subsNow !== subs) {
         profile.pushSubscriptions = subsNow;
