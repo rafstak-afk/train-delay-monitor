@@ -195,6 +195,22 @@
     return true;
   }
 
+  // Lista "Moich pociągów" należy do PROFILU — strona główna i strona
+  // pociągu (gwiazdki ☆/★) czytają i zapisują ją z lokalnej kopii pod tym
+  // samym kluczem co moje-pociagi/index.html. Bez odświeżania ta kopia
+  // potrafiła być nieaktualna (lista zmieniona na innym urządzeniu), a
+  // gwiazdka zapisywała ją CAŁĄ z powrotem do profilu, kasując tamte zmiany.
+  // Odświeżamy ją przy otwarciu strony i przy każdym powrocie do aplikacji.
+  const MY_TRAINS_KEY = "rafstakMojePociagiV4";
+
+  async function refreshMyTrains() {
+    const profile = await pull();
+    if (profile && Array.isArray(profile.trains)) {
+      try { localStorage.setItem(MY_TRAINS_KEY, JSON.stringify(profile.trains)); } catch (e) {}
+    }
+    return profile;
+  }
+
   window.ProfileSync = {
     generateToken,
     getToken,
@@ -206,6 +222,7 @@
     pull,
     push,
     pushBeacon,
+    refreshMyTrains,
     check,
     markVerified,
     isVerified,

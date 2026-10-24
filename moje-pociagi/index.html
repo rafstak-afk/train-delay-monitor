@@ -424,6 +424,53 @@ function loadTrains() {
   return [];
 }
 
+// Lista należy do PROFILU (wspólna dla wszystkich urządzeń z tym tokenem).
+// Wcześniej czytana tylko przy otwarciu strony, a każda zmiana zapisywała
+// CAŁĄ listę z pamięci karty — karta otwarta od wczoraj kasowała zmiany
+// zrobione w międzyczasie na innym urządzeniu. Teraz: świeży odczyt przy
+// powrocie do aplikacji i tuż przed każdą zmianą, a zmiana dotyczy jednej
+// pozycji (szukanej po tożsamości, nie po indeksie z ekranu).
+function trainIdentity(t) {
+  return [String(t.station || '').trim().toLowerCase(), String(t.trainNum || '').replace(/\D/g, ''), t.planTime || ''].join('|');
+}
+
+// Podmienia listę na tę z profilu, zachowując już pobrane wiersze (lastRows)
+// dla pociągów, które się nie zmieniły. Zwraca true, gdy lista się zmieniła.
+async function syncTrainsFromProfile() {
+  if (!(window.ProfileSync && ProfileSync.getToken())) return false;
+  const profile = await ProfileSync.pull();
+  if (!profile) return false;
+  if (typeof profile.alarmEnabled === 'boolean' && profile.alarmEnabled !== delayAlertsEnabled) {
+    delayAlertsEnabled = profile.alarmEnabled;
+    alertButton.textContent = I18n.t(delayAlertsEnabled ? 'index.alarmOn' : 'index.alarmOff');
+  }
+  if (!Array.isArray(profile.trains)) return false;
+  if (JSON.stringify(profile.trains) === JSON.stringify(currentTrains)) return false;
+  const rowsById = new Map(currentTrains.map((t, i) => [trainIdentity(t), lastRows[i]]));
+  currentTrains = profile.trains;
+  lastRows = currentTrains.map(t => rowsById.get(trainIdentity(t)) || null);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(currentTrains));
+  return true;
+}
+
+// Zmiana listy na ŚWIEŻEJ kopii z profilu. `mutate` dostaje kopię listy
+// i zwraca nową; wiersze (lastRows) idą za pociągami po tożsamości.
+async function mutateTrains(mutate) {
+  await syncTrainsFromProfile();
+  const rowsById = new Map(currentTrains.map((t, i) => [trainIdentity(t), lastRows[i]]));
+  currentTrains = mutate(currentTrains.slice());
+  lastRows = currentTrains.map(t => rowsById.get(trainIdentity(t)) || null);
+  saveTrains(currentTrains);
+}
+
+let profileSyncedAt = 0;
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState !== 'visible' || Date.now() - profileSyncedAt < 30000) return;
+  profileSyncedAt = Date.now();
+  if (await syncTrainsFromProfile()) init();
+  else if (Date.now() - lastLoadedAt > STALE_AFTER_MS) init();
+});
+
 function saveTrains(list) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
   if (window.ProfileSync) ProfileSync.push({ trains: list });
@@ -813,23 +860,27 @@ function renderFromCache() {
 // potrzebują) obiektu zdarzenia — wcześniej sygnatura zakładała `e` jako
 // pierwszy argument, mimo że HTML przekazywał tylko (index, direction) /
 // (index), co przy kliknięciu rzucało błędem i przycisk nic nie robił.
-function moveTrain(index, direction) {
-  const newIndex = index + direction;
-  if (newIndex < 0 || newIndex >= currentTrains.length) return;
-  const item = currentTrains.splice(index, 1)[0];
-  currentTrains.splice(newIndex, 0, item);
-  const row = lastRows.splice(index, 1)[0];
-  lastRows.splice(newIndex, 0, row);
-  saveTrains(currentTrains);
+async function moveTrain(index, direction) {
+  const target = currentTrains[index];
+  if (!target) return;
+  const id = trainIdentity(target);
+  await mutateTrains(list => {
+    const i = list.findIndex(t => trainIdentity(t) === id);
+    const j = i + direction;
+    if (i < 0 || j < 0 || j >= list.length) return list;
+    list.splice(j, 0, list.splice(i, 1)[0]);
+    return list;
+  });
   renderFromCache();
 }
 
 // Bez potwierdzenia — ta sama, od razu działająca logika co gwiazdka
 // (odznaczenie ulubionego) na tablicy głównej.
-function deleteTrain(index) {
-  currentTrains.splice(index, 1);
-  lastRows.splice(index, 1);
-  saveTrains(currentTrains);
+async function deleteTrain(index) {
+  const target = currentTrains[index];
+  if (!target) return;
+  const id = trainIdentity(target);
+  await mutateTrains(list => list.filter(t => trainIdentity(t) !== id));
   renderFromCache();
 }
 
@@ -1073,16 +1124,16 @@ async function init() {
   }
 }
 
-document.getElementById('addTrainForm').addEventListener('submit', (e) => {
+document.getElementById('addTrainForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const st = document.getElementById('addStation').value.trim();
   const num = document.getElementById('addTrainNum').value.trim();
   const tm = document.getElementById('addPlanTime').value.trim();
 
   if (st && num) {
-    currentTrains.push({ station: st, trainNum: num, planTime: tm || '--:--' });
-    saveTrains(currentTrains);
+    const added = { station: st, trainNum: num, planTime: tm || '--:--' };
     document.getElementById('addTrainForm').reset();
+    await mutateTrains(list => list.some(t => trainIdentity(t) === trainIdentity(added)) ? list : [...list, added]);
     init();
     if (window.ProfilePrompt) ProfilePrompt.ask('train');
   }

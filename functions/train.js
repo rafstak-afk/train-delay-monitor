@@ -1081,6 +1081,7 @@ function renderTrain(train,data){
   const mtStation=stations[mtIdx].stationName;
   const mtTrainNum=String(data.trainNumber||train||'').trim();
   const mtFilled=isInMyTrains(mtStation,mtTrainNum);
+  mtCtx={station:mtStation,trainNum:mtTrainNum};
   let html='<div class="panel"><div class="card"><div class="label">Pociąg</div><div class="big">'+esc(title||('Pociąg '+train))+' <button type="button" id="mtStarBtn" class="mt-star'+(mtFilled?' star-filled':'')+'" title="'+(mtFilled?'Usuń z Moich pociągów':'Dodaj do Moich pociągów')+'" onclick="addToMyTrains(this)">'+(mtFilled?'★':'☆')+'</button></div><div class="hint'+(isCancelledTrain?' hint-cancelled':'')+'">Status: '+esc(st[0])+(st[1]?' <span class="station-meta">('+esc(st[1])+')</span>':'')+'</div><div class="last-station"><div class="label">Ostatnia potwierdzona stacja</div><div class="last-line"><span class="big">'+esc(lastStationText)+'</span><span class="hint">'+esc(lastTimeText)+'</span></div></div></div>';
   if(Array.isArray(data.disruptions)&&data.disruptions.length){
     html+='<div class="panel disruption-note"><div class="disruption-title">⚠️ Przyczyna opóźnienia / odwołania</div>'+data.disruptions.map(function(d){
@@ -1119,6 +1120,15 @@ function renderTrain(train,data){
 // przyszedł na ten bieg (qs('station') — z tablicy albo z listy Moich
 // pociągów), a w braku takiego kontekstu pierwsza stacja trasy.
 const MY_TRAINS_KEY='rafstakMojePociagiV4';
+// Kontekst gwiazdki z ostatniego renderu — do poprawienia jej stanu po
+// świeżym odczycie listy z profilu (ProfileSync.refreshMyTrains).
+var mtCtx=null;
+function refreshMyTrainsStar(){
+  if(!(window.ProfileSync&&ProfileSync.getToken()&&ProfileSync.refreshMyTrains))return;
+  ProfileSync.refreshMyTrains().then(function(){if(mtCtx)markStarState(isInMyTrains(mtCtx.station,mtCtx.trainNum))}).catch(function(){});
+}
+refreshMyTrainsStar();
+document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')refreshMyTrainsStar()});
 function isInMyTrains(station,trainNum){
   let list=[];
   try{list=JSON.parse(localStorage.getItem(MY_TRAINS_KEY));if(!Array.isArray(list))list=[]}catch(e){list=[]}
