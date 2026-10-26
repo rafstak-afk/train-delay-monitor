@@ -206,12 +206,52 @@ async function checkTrain(origin, item, cachedLookup) {
 // (smart-lookup+train-details) jak przy pojedynczym pociągu z "Moich
 // pociągów" — ten endpoint sam dołącza już delay/status/disruptionReason
 // dla każdego wiersza, dokładnie to, co renderuje index.html.
-async function checkStation(origin, stationName) {
+// Pociąg, o którego opóźnieniu już powiadomiliśmy, śledzimy jeszcze przez
+// tyle minut po jego (opóźnionej) godzinie odjazdu — PLK potrafi ogłosić
+// odwołanie dopiero PO tej godzinie (np. IC 4206/4207 26.10: +44 min, a
+// odwołanie ~17:40-17:57), a zwykłe okno tablicy już go wtedy nie zawiera.
+const STATION_FOLLOW_UP_MIN = 60;
+
+// Klucze stacyjne (bez prefiksu daty) dzisiejszych pociągów zgłoszonych jako
+// opóźnione, wciąż w oknie śledzenia: klucz -> { planned, level }.
+function stationFollowUps(subs, date, nowMinutes) {
+  const out = new Map();
+  if (nowMinutes === null) return out;
+  const prefix = `${date}|`;
+  for (const sub of subs) {
+    const state = sub && typeof sub.notifiedStation === "object" ? sub.notifiedStation : {};
+    for (const [datedKey, level] of Object.entries(state || {})) {
+      if (!datedKey.startsWith(prefix) || level === "X") continue;
+      const key = datedKey.slice(prefix.length);
+      const planned = minutesOf(key.split("|")[3]);
+      if (planned === null || planned > nowMinutes) continue;
+      if (planned + Number(level || 0) + STATION_FOLLOW_UP_MIN < nowMinutes) continue;
+      out.set(key, { planned, level });
+    }
+  }
+  return out;
+}
+
+async function checkStation(origin, stationName, followUps = new Map()) {
   const { date, time } = warsawNow();
-  const params = new URLSearchParams({ station: stationName, limit: "20", date, time });
+  const nowMinutes = minutesOf(time);
+  const stationPrefix = `ST|${normalizeStationText(stationName)}|`;
+  const followed = [...followUps.entries()].filter(([key]) => key.startsWith(stationPrefix));
+
+  // Bez śledzonych pociągów — zwykłe okno "od teraz". Ze śledzonymi —
+  // tablica od najwcześniejszej planowej godziny śledzonego pociągu
+  // (odwołany może mieć opóźnienie 0, więc liczy się godzina planowa),
+  // a nadmiarowe przeszłe wiersze odsiewamy niżej.
+  let fromTime = time;
+  if (followed.length) {
+    const earliest = Math.min(...followed.map(([, f]) => f.planned));
+    fromTime = `${String(Math.floor(earliest / 60)).padStart(2, "0")}:${String(earliest % 60).padStart(2, "0")}`;
+  }
+  const params = new URLSearchParams({ station: stationName, limit: followed.length ? "60" : "20", date, time: fromTime });
   const data = await fetchJson(origin, `/api/departures?${params.toString()}`);
   if (!data || !Array.isArray(data.departures)) return [];
 
+  const followedKeys = new Set(followed.map(([key]) => key));
   const items = [];
   for (const d of data.departures) {
     // departures.js pobiera operacje tylko dla TEJ stacji, więc niepusty
@@ -223,6 +263,12 @@ async function checkStation(origin, stationName) {
     if (!cancelled && !(delay >= 5)) continue;
 
     const trainNum = String(d.train || d.trainNumber || "").trim();
+    const key = `${stationPrefix}${trainNum}|${d.plannedTime || d.time || ""}`;
+    // Wiersz sprzed zwykłego okna (now-5) przepuszczamy tylko dla
+    // śledzonego pociągu.
+    const planned = minutesOf(d.plannedTime || d.time);
+    if (fromTime !== time && !followedKeys.has(key) && planned !== null && nowMinutes !== null &&
+        planned + Math.max(delay, 0) < nowMinutes - 5) continue;
     const label = [d.category, trainNum, d.name || d.carrier].filter(Boolean).join(" ");
     const reason = d.disruptionReason || "";
 
@@ -240,7 +286,7 @@ async function checkStation(origin, stationName) {
       reason,
       url: `/train?${urlParams.toString()}`,
       // planowa (nie bieżąca) godzina — d.time przesuwa się razem z opóźnieniem
-      key: `ST|${normalizeStationText(stationName)}|${trainNum}|${d.plannedTime || d.time || ""}`
+      key
     });
   }
   return items;
@@ -461,10 +507,11 @@ export async function onRequestPost(context) {
       }
       const stationItems = [];
       if (useStations) {
+        const followUps = stationFollowUps(subs, now.date, nowMinutes);
         for (const station of watchedStations) {
           summary.stationsChecked++;
           try {
-            stationItems.push(...await checkStation(origin, station));
+            stationItems.push(...await checkStation(origin, station, followUps));
           } catch (e) {
             summary.errors.push(`${token}:stacja ${station}: ${e.message}`);
           }
