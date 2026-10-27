@@ -3,7 +3,16 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Jak działa Czy zdążę?</title>
+<title data-i18n="jak.pageTitle">Jak działa Czy zdążę?</title>
+<link rel="canonical" href="https://train-delay-monitor1.pages.dev/jak-dziala/" />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Czy zdążę?" />
+<meta property="og:title" content="Jak działa Czy zdążę?" />
+<meta property="og:description" content="Jak korzystać z aplikacji Czy zdążę? — tablica odjazdów, alarmy opóźnień, Moje pociągi, bieg pociągu, planer podróży i dzienniczek podróży na podstawie danych PLK." />
+<meta property="og:url" content="https://train-delay-monitor1.pages.dev/jak-dziala/" />
+<meta property="og:image" content="https://train-delay-monitor1.pages.dev/og-image.png" />
+<meta property="og:locale" content="pl_PL" />
+<meta name="twitter:card" content="summary_large_image" />
 <meta name="description" content="Jak korzystać z aplikacji Czy zdążę? — tablica odjazdów, alarmy opóźnień, Moje pociągi, bieg pociągu, planer podróży i dzienniczek podróży na podstawie danych PLK." />
 <style>
 :root{--bg:#101820;--panel:#1c2833;--card:#223244;--line:#34495e;--text:#fff;--muted:#b8c3cf;--blue:#0b57d0;--green:#5dd39e;--yellow:#ffcc00;--red:#ff4d4d;--cyan:#22d3ee;--purple:#c084fc}
@@ -25,6 +34,7 @@ h1{text-align:center;font-size:27px;margin:6px 0 4px}
 .section ul{margin:8px 0;padding-left:20px}
 .section li{font-size:14.5px;line-height:1.6;color:#d8e2ee;margin:6px 0}
 .section li b{color:#fff}
+.section a,.lede a{color:var(--cyan)}
 .pill{display:inline-block;background:var(--card);border:1px solid var(--line);border-radius:7px;padding:1px 7px;font-size:12.5px;font-weight:700;color:#fff;white-space:nowrap}
 .sample{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 13px;font-size:13.5px;color:var(--muted);margin-top:10px;line-height:1.5}
 .sample b{color:#fff}
@@ -44,27 +54,27 @@ h1{text-align:center;font-size:27px;margin:6px 0 4px}
 </head>
 <body>
 <div class="wrap">
-  <a class="back" href="/">← Tablica</a>
-  <h1>📖 Czy zdążę?</h1>
-  <div class="subtitle">Darmowa tablica odjazdów i monitoring opóźnień na podstawie danych PLK —<br>bez reklam, bez logowania, bez aplikacji do instalowania.</div>
+  <a class="back" href="/" data-i18n="jak.back">← Tablica</a>
+  <h1 data-i18n="jak.title">📖 Czy zdążę?</h1>
+  <div class="subtitle" data-i18n-html="jak.subtitle">Darmowa tablica odjazdów i monitoring opóźnień na podstawie danych PLK —<br>bez reklam, bez logowania, bez aplikacji do instalowania.</div>
 
-  <div class="lede">
+  <div class="lede" data-i18n-html="jak.lede">
     <b>Czy zdążę?</b> pokazuje realny rozkład jazdy pociągów: godziny, opóźnienia, perony i tory wprost z danych PLK, a do tego alarmuje o opóźnieniach, pilnuje Twoich ulubionych kursów, pomaga zaplanować podróż z przesiadkami i prowadzi dzienniczek przejazdów. Działa w przeglądarce — na telefonie i komputerze — bez instalowania czegokolwiek.
   </div>
 
   <div class="toc">
-    <a href="#tablica">🚉 Tablica</a>
-    <a href="#alarm">🔔 Alarm i przyczyny</a>
-    <a href="#menu">👆 Menu kontekstowe</a>
-    <a href="#moje-pociagi">⭐ Moje pociągi</a>
-    <a href="#bieg">🛤️ Bieg pociągu</a>
-    <a href="#planer">🧭 Planer (beta)</a>
-    <a href="#dziennik">📓 Dzienniczek</a>
-    <a href="#profil">👤 Profil</a>
-    <a href="#prywatnosc">🔒 Prywatność</a>
+    <a href="#tablica" data-i18n="jak.toc_tablica">🚉 Tablica</a>
+    <a href="#alarm" data-i18n="jak.toc_alarm">🔔 Alarm i przyczyny</a>
+    <a href="#menu" data-i18n="jak.toc_menu">👆 Menu kontekstowe</a>
+    <a href="#moje-pociagi" data-i18n="jak.toc_moje_pociagi">⭐ Moje pociągi</a>
+    <a href="#bieg" data-i18n="jak.toc_bieg">🛤️ Bieg pociągu</a>
+    <a href="#planer" data-i18n="jak.toc_planer">🧭 Planer (beta)</a>
+    <a href="#dziennik" data-i18n="jak.toc_dziennik">📓 Dzienniczek</a>
+    <a href="#profil" data-i18n="jak.toc_profil">👤 Profil</a>
+    <a href="#prywatnosc" data-i18n="jak.toc_prywatnosc">🔒 Prywatność</a>
   </div>
 
-  <div class="section" id="tablica">
+  <div class="section" id="tablica" data-i18n-html="jak.sec_tablica">
     <h2>🚉 Tablica odjazdów</h2>
     <p>Wpisz nazwę stacji (albo kliknij jeden z szybkich przycisków) i zobacz <b>żywą</b> tablicę odjazdów: godzinę planowaną i rzeczywistą, opóźnienie, numer i kategorię pociągu, kierunek z przystankami „przez”, peron i tor.</p>
     <ul>
@@ -75,7 +85,7 @@ h1{text-align:center;font-size:27px;margin:6px 0 4px}
     </ul>
   </div>
 
-  <div class="section" id="alarm">
+  <div class="section" id="alarm" data-i18n-html="jak.sec_alarm">
     <h2>🔔 Alarm i przyczyny opóźnień</h2>
     <p>Przycisk <span class="pill">Alarm: OFF/ON</span> nad tablicą włącza podsumowanie: lista kursów ze statusem „opóźniony” albo „odwołany” pojawia się w jednym miejscu nad odjazdami, więc nie trzeba przeglądać całej tablicy.</p>
     <ul>
@@ -85,7 +95,7 @@ h1{text-align:center;font-size:27px;margin:6px 0 4px}
     </ul>
   </div>
 
-  <div class="section" id="menu">
+  <div class="section" id="menu" data-i18n-html="jak.sec_menu">
     <h2>👆 Menu kontekstowe wiersza</h2>
     <p>Przytrzymaj palcem dowolny wiersz na tablicy (albo kliknij go prawym przyciskiem myszy na komputerze) — otworzy się menu ze wszystkimi akcjami naraz:</p>
     <ul>
@@ -97,7 +107,7 @@ h1{text-align:center;font-size:27px;margin:6px 0 4px}
     </ul>
   </div>
 
-  <div class="section" id="moje-pociagi">
+  <div class="section" id="moje-pociagi" data-i18n-html="jak.sec_moje_pociagi">
     <h2>⭐ Moje pociągi</h2>
     <p>Lista kursów, które śledzisz na stałe — np. codzienny dojazd do pracy albo kilka pociągów jednej, dłuższej podróży. Każda karta wygląda jak wiersz na tablicy (te same kolory i układ), a dodatkowo pokazuje ostatnią potwierdzoną stację pociągu.</p>
     <ul>
@@ -107,7 +117,7 @@ h1{text-align:center;font-size:27px;margin:6px 0 4px}
     </ul>
   </div>
 
-  <div class="section" id="bieg">
+  <div class="section" id="bieg" data-i18n-html="jak.sec_bieg">
     <h2>🛤️ Bieg pociągu</h2>
     <p>Pełna trasa wybranego kursu: wszystkie stacje po kolei, planowany i rzeczywisty czas na każdej z nich, bieżące opóźnienie oraz — jeśli PLK je podaje — przyczyna zakłócenia w czerwonej ramce na górze strony.</p>
     <ul>
@@ -118,7 +128,7 @@ h1{text-align:center;font-size:27px;margin:6px 0 4px}
     </ul>
   </div>
 
-  <div class="section" id="planer">
+  <div class="section" id="planer" data-i18n-html="jak.sec_planer">
     <h2>🧭 Planer podróży<span class="tag">beta</span></h2>
     <p>Szuka połączeń między dwiema dowolnymi stacjami w całej sieci PLK — nie tylko Twoimi ulubionymi — łącznie z przesiadkami (nawet kilkoma), na podstawie tego samego rozkładu co tablica. To wciąż testowany moduł, więc mogą się zdarzać niedoskonałości.</p>
     <ul>
@@ -129,7 +139,7 @@ h1{text-align:center;font-size:27px;margin:6px 0 4px}
     </ul>
   </div>
 
-  <div class="section" id="dziennik">
+  <div class="section" id="dziennik" data-i18n-html="jak.sec_dziennik">
     <h2>📓 Dzienniczek podróży</h2>
     <p>Historia Twoich przejazdów — z faktyczną godziną i opóźnieniem na stacji wsiadania i wysiadania, nie tylko planem.</p>
     <ul>
@@ -140,7 +150,7 @@ h1{text-align:center;font-size:27px;margin:6px 0 4px}
     </ul>
   </div>
 
-  <div class="section" id="profil">
+  <div class="section" id="profil" data-i18n-html="jak.sec_profil">
     <h2>👤 Profil — synchronizacja między urządzeniami</h2>
     <p>Bez zakładania profilu wszystko (ulubione stacje i pociągi, dzienniczek) zapisuje się tylko w tej jednej przeglądarce. Profil pozwala mieć to samo na kilku urządzeniach — bez loginu, hasła i e-maila.</p>
     <ul>
@@ -150,17 +160,19 @@ h1{text-align:center;font-size:27px;margin:6px 0 4px}
     </ul>
   </div>
 
-  <div class="section" id="prywatnosc">
+  <div class="section" id="prywatnosc" data-i18n-html="jak.sec_prywatnosc">
     <h2>🔒 Prywatność</h2>
     <p>Nie zapisujemy adresów IP ani żadnych danych osobowych. Profil (jeśli go założysz) przechowuje wyłącznie Twoje własne ustawienia: ulubione stacje, pociągi i trasy w dzienniczku — nic więcej. Pełny opis, wraz z jedynym technicznym wyjątkiem (chwilowy, nieodwracalny skrót IP przy zakładaniu profilu), znajdziesz w <a href="/kontakt/#rodo" style="color:var(--cyan)">sekcji RODO i prywatność</a>.</p>
   </div>
 
   <div class="cta">
-    <a class="btn" href="/">🚉 Otwórz tablicę</a>
-    <a class="btn secondary" href="/kontakt/">💬 Uwagi i kontakt</a>
+    <a class="btn" href="/" data-i18n="jak.ctaBoard">🚉 Otwórz tablicę</a>
+    <a class="btn secondary" href="/kontakt/" data-i18n="jak.ctaContact">💬 Uwagi i kontakt</a>
   </div>
 
-  <div class="footnote">Dane rozkładowe i o opóźnieniach pochodzą z publicznego API PLK. Aplikacja nie jest oficjalnym serwisem PKP ani PLK.<br>Masz pytanie, którego tu nie ma? <a href="/kontakt/">Napisz</a>.</div>
+  <div class="footnote" data-i18n-html="jak.footnote">Dane rozkładowe i o opóźnieniach pochodzą z publicznego API PLK. Aplikacja nie jest oficjalnym serwisem PKP ani PLK.<br>Masz pytanie, którego tu nie ma? <a href="/kontakt/">Napisz</a>.</div>
 </div>
+<script src="/i18n.js"></script>
+<script src="/burger-menu.js"></script>
 </body>
 </html>

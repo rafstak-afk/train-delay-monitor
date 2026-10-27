@@ -3,7 +3,17 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Mój profil</title>
+<title data-i18n="profil.pageTitle">Mój profil</title>
+<meta name="description" content="Profil Czy zdążę? – synchronizacja ulubionych stacji, pociągów, alarmów i dzienniczka między urządzeniami, bez logowania i hasła." />
+<link rel="canonical" href="https://train-delay-monitor1.pages.dev/profil/" />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Czy zdążę?" />
+<meta property="og:title" content="Mój profil" />
+<meta property="og:description" content="Profil Czy zdążę? – synchronizacja ulubionych stacji, pociągów, alarmów i dzienniczka między urządzeniami, bez logowania i hasła." />
+<meta property="og:url" content="https://train-delay-monitor1.pages.dev/profil/" />
+<meta property="og:image" content="https://train-delay-monitor1.pages.dev/og-image.png" />
+<meta property="og:locale" content="pl_PL" />
+<meta name="twitter:card" content="summary_large_image" />
 <style>
 :root{--bg:#101820;--panel:#1c2833;--card:#223244;--line:#34495e;--text:#fff;--muted:#b8c3cf;--blue:#0b57d0;--green:#5dd39e;--red:#ff4d4d}
 *{box-sizing:border-box}
@@ -22,51 +32,58 @@ input[type=text]{width:100%;padding:12px;border-radius:10px;border:1px solid var
 .status.ok{color:var(--green)}
 .status.err{color:var(--red)}
 a.back{display:inline-block;margin-bottom:10px;color:var(--muted);text-decoration:none;font-size:14px}
+.top-links{display:flex;flex-wrap:wrap;gap:4px 16px;padding-right:96px}
 </style>
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "a3663c820f4e414ab15c7a64a8aa36ec"}'></script><!-- End Cloudflare Web Analytics -->
 </head>
 <body>
 <div class="wrap">
-  <a class="back" href="/">← Tablica</a>
-  <a class="back" href="/dziennik/" style="float:right;">📓 Dzienniczek podróży</a>
-  <a class="back" href="/kontakt/" style="float:right;margin-right:14px;">💬 Uwagi</a>
-  <h1>👤 Mój profil</h1>
+  <!-- Rząd linków omija ikony 🌐/🎓 w prawym górnym rogu (padding-right) i zawija się przy dłuższych tłumaczeniach. -->
+  <div class="top-links">
+    <a class="back" href="/" data-i18n="profil.back">← Tablica</a>
+    <a class="back" href="/kontakt/" data-i18n="profil.contactLink">💬 Uwagi</a>
+    <a class="back" href="/dziennik/" data-i18n="profil.journalLink">📓 Dzienniczek podróży</a>
+  </div>
+  <h1 data-i18n="profil.title">👤 Mój profil</h1>
 
   <div class="panel" id="activePanel" style="display:none">
-    <h2>Aktywny profil na tym urządzeniu</h2>
+    <h2 data-i18n="profil.activeTitle">Aktywny profil na tym urządzeniu</h2>
     <div class="token-box" id="activeToken"></div>
-    <button class="btn" id="copyBtn">📋 Kopiuj token</button>
-    <button class="btn danger" id="unlinkBtn">Odepnij to urządzenie</button>
-    <div class="hint">Dane (ulubione stacje, listy pociągów, alarm) synchronizują się automatycznie na tym urządzeniu, dopóki token jest aktywny. Odpięcie NIE kasuje danych w chmurze — tylko przestaje je stąd synchronizować.</div>
+    <button class="btn" id="copyBtn" data-i18n="profil.copy">📋 Kopiuj token</button>
+    <button class="btn danger" id="unlinkBtn" data-i18n="profil.unlink">Odepnij to urządzenie</button>
+    <div class="hint" data-i18n="profil.activeHint">Dane (ulubione stacje, listy pociągów, alarm) synchronizują się automatycznie na tym urządzeniu, dopóki token jest aktywny. Odpięcie NIE kasuje danych w chmurze — tylko przestaje je stąd synchronizować.</div>
   </div>
 
   <div class="panel" id="createPanel">
-    <h2>Nowy profil</h2>
-    <div class="hint">Utwórz token i zapisz swoje ulubione stacje/pociągi w chmurze, żeby mieć je na każdym urządzeniu.</div>
-    <button class="btn" id="createBtn">Utwórz nowy profil</button>
+    <h2 data-i18n="profil.newTitle">Nowy profil</h2>
+    <div class="hint" data-i18n="profil.newHint">Utwórz token i zapisz swoje ulubione stacje/pociągi w chmurze, żeby mieć je na każdym urządzeniu.</div>
+    <button class="btn" id="createBtn" data-i18n="profil.create">Utwórz nowy profil</button>
   </div>
 
   <div class="panel">
-    <h2>Wczytaj profil z innego urządzenia</h2>
+    <h2 data-i18n="profil.loadTitle">Wczytaj profil z innego urządzenia</h2>
     <input type="text" id="tokenInput" placeholder="XXXX-XXXX-XXXX-XXXX" autocomplete="off" autocapitalize="characters">
-    <button class="btn secondary" id="loadBtn">Wczytaj profil</button>
-    <div class="hint">Wpisz token zapisany na innym urządzeniu — podmieni dane na TYM urządzeniu na te z profilu.</div>
+    <button class="btn secondary" id="loadBtn" data-i18n="profil.load">Wczytaj profil</button>
+    <div class="hint" data-i18n="profil.loadHint">Wpisz token zapisany na innym urządzeniu — podmieni dane na TYM urządzeniu na te z profilu.</div>
   </div>
 
   <div class="status" id="status"></div>
 
   <div class="panel">
-    <h2>Jak to działa</h2>
-    <div class="hint">
+    <h2 data-i18n="profil.howTitle">Jak to działa</h2>
+    <div class="hint" data-i18n-html="profil.howText">
       Token to jedyny "klucz" do Twojego profilu — kto go zna, ten ma dostęp do zapisanych danych (bez hasła/e-maila). Nie udostępniaj go nikomu.<br><br>
       Synchronizowane: lista pociągów z sekcji Moje pociągi, ulubione i ostatnio przeglądane stacje na tablicy głównej, ostatnio oglądany bieg pociągu, stan przełącznika Alarm, dzienniczek podróży i Moje trasy.
     </div>
   </div>
 </div>
 
+<script src="/i18n.js"></script>
+<script src="/burger-menu.js"></script>
 <script src="/profile-sync.js"></script>
 <script src="/tutorial.js"></script>
 <script>
+function T(k,p){return window.I18n?I18n.t(k,p):k}
 function setStatus(text, cls) {
   const el = document.getElementById('status');
   el.textContent = text;
@@ -93,7 +110,7 @@ document.getElementById('createBtn').addEventListener('click', async () => {
   createBtn.disabled = true;
   const token = ProfileSync.generateToken();
   ProfileSync.setToken(token);
-  setStatus('Tworzę profil...', '');
+  setStatus(T('profil.creating'), '');
   // Zamiast pustego profilu wysyłamy to, co to urządzenie już ma —
   // inaczej dane trafiałyby do chmury dopiero przy pierwszej zmianie.
   const snap = {};
@@ -111,12 +128,12 @@ document.getElementById('createBtn').addEventListener('click', async () => {
     const code = ProfileSync.lastError;
     ProfileSync.clearToken();
     setStatus(code === 'create_limit'
-      ? 'Dziś utworzono już zbyt wiele profili z tego adresu. Spróbuj jutro.'
-      : 'Nie udało się utworzyć profilu. Sprawdź połączenie i spróbuj ponownie.', 'err');
+      ? T('profil.createLimit')
+      : T('profil.createFailed'), 'err');
     renderActive();
     return;
   }
-  setStatus('Nowy profil utworzony. Zapisz token, żeby wczytać go na innym urządzeniu.', 'ok');
+  setStatus(T('profil.created'), 'ok');
   renderActive();
 });
 
@@ -124,14 +141,14 @@ document.getElementById('copyBtn').addEventListener('click', () => {
   const token = ProfileSync.getToken();
   if (!token) return;
   navigator.clipboard && navigator.clipboard.writeText(ProfileSync.format(token))
-    .then(() => setStatus('Skopiowano token do schowka.', 'ok'))
-    .catch(() => setStatus('Nie udało się skopiować — zaznacz i skopiuj ręcznie.', 'err'));
+    .then(() => setStatus(T('profil.copied'), 'ok'))
+    .catch(() => setStatus(T('profil.copyFailed'), 'err'));
 });
 
 document.getElementById('unlinkBtn').addEventListener('click', () => {
-  if (!confirm('Odpiąć to urządzenie od profilu? Dane w chmurze zostają, przestaną się tylko tutaj synchronizować.')) return;
+  if (!confirm(T('profil.confirmUnlink'))) return;
   ProfileSync.clearToken();
-  setStatus('Odpięto to urządzenie.', 'ok');
+  setStatus(T('profil.unlinked'), 'ok');
   renderActive();
 });
 
@@ -139,37 +156,37 @@ document.getElementById('loadBtn').addEventListener('click', async () => {
   const input = document.getElementById('tokenInput').value;
 
   if (!ProfileSync.isValid(input)) {
-    setStatus('Nieprawidłowy token — sprawdź, czy wpisałeś go poprawnie.', 'err');
+    setStatus(T('profil.invalid'), 'err');
     return;
   }
 
-  setStatus('Sprawdzam profil...', '');
+  setStatus(T('profil.checking'), '');
   // Najpierw pytamy serwer, czy taki profil istnieje — token, którego nie ma,
   // nie zostaje zapisany na urządzeniu (inaczej pierwsza zmiana założyłaby
   // "profil-widmo" pod literówką).
   const found = await ProfileSync.check(input);
   if (found === 'error') {
-    setStatus('Nie udało się połączyć z serwerem. Spróbuj ponownie.', 'err');
+    setStatus(T('profil.serverError'), 'err');
     return;
   }
   if (found === 'missing') {
-    setStatus('Nie ma profilu o tym tokenie. Sprawdź, czy wpisałeś go dobrze. Jeśli profil powstał przed chwilą, odczekaj minutę i spróbuj ponownie.', 'err');
+    setStatus(T('profil.missing'), 'err');
     return;
   }
 
-  setStatus('Wczytuję profil...', '');
+  setStatus(T('profil.loading'), '');
   ProfileSync.setToken(input);
   ProfileSync.markVerified();
   const data = await ProfileSync.pull();
 
   if (!data) {
-    setStatus('Nie udało się pobrać danych profilu. Spróbuj ponownie.', 'err');
+    setStatus(T('profil.loadFailed'), 'err');
     ProfileSync.clearToken();
     renderActive();
     return;
   }
 
-  setStatus('Profil wczytany. Otwórz Tablicę albo Moje pociągi, żeby zobaczyć zsynchronizowane dane.', 'ok');
+  setStatus(T('profil.loaded'), 'ok');
   document.getElementById('tokenInput').value = '';
   renderActive();
 });

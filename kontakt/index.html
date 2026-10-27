@@ -3,7 +3,17 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Uwagi i kontakt</title>
+<title data-i18n="kontakt.pageTitle">Uwagi i kontakt</title>
+<meta name="description" content="Zgłoś błąd, pomysł albo pytanie dotyczące aplikacji Czy zdążę? oraz informacje o prywatności (RODO)." />
+<link rel="canonical" href="https://train-delay-monitor1.pages.dev/kontakt/" />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Czy zdążę?" />
+<meta property="og:title" content="Uwagi i kontakt" />
+<meta property="og:description" content="Zgłoś błąd, pomysł albo pytanie dotyczące aplikacji Czy zdążę? oraz informacje o prywatności (RODO)." />
+<meta property="og:url" content="https://train-delay-monitor1.pages.dev/kontakt/" />
+<meta property="og:image" content="https://train-delay-monitor1.pages.dev/og-image.png" />
+<meta property="og:locale" content="pl_PL" />
+<meta name="twitter:card" content="summary_large_image" />
 <style>
 :root{--bg:#101820;--panel:#1c2833;--card:#223244;--line:#34495e;--text:#fff;--muted:#b8c3cf;--blue:#0b57d0;--green:#5dd39e;--yellow:#ffcc00;--red:#ff4d4d;--cyan:#22d3ee}
 *{box-sizing:border-box}
@@ -44,44 +54,49 @@ textarea{min-height:140px;resize:vertical;line-height:1.4}
 </head>
 <body>
 <div class="wrap">
-  <a class="back" href="/">← Tablica</a>
-  <h1>💬 Uwagi i kontakt</h1>
-  <div class="subtitle">Znalazłeś błąd albo masz pomysł? Napisz — otworzę Ci gotową wiadomość e-mail.</div>
+  <a class="back" href="/" data-i18n="kontakt.back">← Tablica</a>
+  <h1 data-i18n="kontakt.title">💬 Uwagi i kontakt</h1>
+  <div class="subtitle" data-i18n="kontakt.subtitle">Znalazłeś błąd albo masz pomysł? Napisz — otworzę Ci gotową wiadomość e-mail.</div>
 
   <div class="panel">
-    <label for="kind">Rodzaj uwagi</label>
+    <label for="kind" data-i18n="kontakt.kind">Rodzaj uwagi</label>
     <select id="kind">
-      <option value="Błąd">🐞 Błąd / coś nie działa</option>
-      <option value="Pomysł">💡 Pomysł / propozycja</option>
-      <option value="Pytanie">❓ Pytanie</option>
-      <option value="Inne">✉️ Inne</option>
+      <option value="Błąd" data-i18n="kontakt.kindBug">🐞 Błąd / coś nie działa</option>
+      <option value="Pomysł" data-i18n="kontakt.kindIdea">💡 Pomysł / propozycja</option>
+      <option value="Pytanie" data-i18n="kontakt.kindQuestion">❓ Pytanie</option>
+      <option value="Inne" data-i18n="kontakt.kindOther">✉️ Inne</option>
     </select>
 
-    <label for="msg">Treść</label>
-    <textarea id="msg" maxlength="700" placeholder="Co się stało? Co miałoby działać inaczej?"></textarea>
+    <label for="msg" data-i18n="kontakt.msg">Treść</label>
+    <textarea id="msg" maxlength="700" placeholder="Co się stało? Co miałoby działać inaczej?" data-i18n-attr="placeholder:kontakt.msgPh"></textarea>
     <div class="counter"><span id="cnt">0</span> / 700</div>
 
-    <label class="check"><input type="checkbox" id="withInfo" checked><span>Dołącz dane techniczne (pomagają odtworzyć problem). Nie ma tu imienia, adresu ani tokenu profilu.</span></label>
+    <label class="check"><input type="checkbox" id="withInfo" checked><span data-i18n="kontakt.withInfo">Dołącz dane techniczne (pomagają odtworzyć problem). Nie ma tu imienia, adresu ani tokenu profilu.</span></label>
     <div class="info" id="infoBox"></div>
 
     <div class="btns">
-      <a class="btn" id="mailBtn" href="#" role="button">✉️ Napisz e-mail</a>
-      <button type="button" class="btn secondary" id="copyBtn">📋 Kopiuj treść</button>
+      <a class="btn" id="mailBtn" href="#" role="button" data-i18n="kontakt.mail">✉️ Napisz e-mail</a>
+      <button type="button" class="btn secondary" id="copyBtn" data-i18n="kontakt.copy">📋 Kopiuj treść</button>
     </div>
     <div class="status" id="status"></div>
-    <div class="hint">Wiadomość otworzy się w Twoim programie pocztowym (wysyłasz ją sam, z własnego adresu). Jeśli nic się nie otworzy, użyj „Kopiuj treść” i wklej ją do maila.</div>
+    <div class="hint" data-i18n="kontakt.hint">Wiadomość otworzy się w Twoim programie pocztowym (wysyłasz ją sam, z własnego adresu). Jeśli nic się nie otworzy, użyj „Kopiuj treść” i wklej ją do maila.</div>
   </div>
 
   <div class="panel" id="rodo">
-    <h2 class="rodo-title">🔒 RODO i prywatność</h2>
-    <div class="rodo-text">Nie zapisujemy adresów IP ani żadnych danych osobowych. Jedyny wyjątek: przy zakładaniu nowego profilu adres IP jest na chwilę zamieniany na nieodwracalny skrót (hash), wyłącznie po to, by ograniczyć liczbę profili zakładanych z jednego miejsca w ciągu doby — sam skrót nie pozwala odtworzyć adresu i znika automatycznie po 2 dniach.</div>
-    <div class="rodo-text">Jeśli założysz <a href="/profil/">profil</a> — dobrowolnie, bez logowania, bez podawania e-maila — pod jego tokenem przechowujemy wyłącznie Twoje własne ustawienia: ulubione stacje, ulubione pociągi oraz ulubione trasy w dzienniczku podróży. Nic poza tym: żadnego imienia, adresu ani historii przeglądania.</div>
+    <h2 class="rodo-title" data-i18n="kontakt.rodoTitle">🔒 RODO i prywatność</h2>
+    <div class="rodo-text" data-i18n-html="kontakt.rodo1">Nie zapisujemy adresów IP ani żadnych danych osobowych. Jedyny wyjątek: przy zakładaniu nowego profilu adres IP jest na chwilę zamieniany na nieodwracalny skrót (hash), wyłącznie po to, by ograniczyć liczbę profili zakładanych z jednego miejsca w ciągu doby — sam skrót nie pozwala odtworzyć adresu i znika automatycznie po 2 dniach.</div>
+    <div class="rodo-text" data-i18n-html="kontakt.rodo2">Jeśli założysz <a href="/profil/">profil</a> — dobrowolnie, bez logowania, bez podawania e-maila — pod jego tokenem przechowujemy wyłącznie Twoje własne ustawienia: ulubione stacje, ulubione pociągi oraz ulubione trasy w dzienniczku podróży. Nic poza tym: żadnego imienia, adresu ani historii przeglądania.</div>
   </div>
 </div>
 
+<script src="/i18n.js"></script>
+<script src="/burger-menu.js"></script>
 <script src="/profile-sync.js"></script>
 <script>
 (function(){
+  // Treść e-maila (temat, dane techniczne) idzie do autora — zostaje po
+  // polsku; tłumaczone jest tylko to, co widzi użytkownik.
+  function T(k,p){return window.I18n?I18n.t(k,p):k}
   var TO=null,VERSION='nieznana';
   var $=function(id){return document.getElementById(id)};
 
@@ -96,11 +111,11 @@ textarea{min-height:140px;resize:vertical;line-height:1.4}
   function techLines(){
     var ua=String(navigator.userAgent||'').slice(0,140);
     return [
-      ['Wersja aplikacji',VERSION],
-      ['Strona, z której piszesz',referrerPath()],
-      ['Urządzenie',ua],
-      ['Ekran',window.innerWidth+'×'+window.innerHeight],
-      ['Profil (token)',hasProfile()?'tak, używam profilu (sam token NIE jest dołączany)':'nie, bez profilu']
+      ['Wersja aplikacji',VERSION,'infoVersion'],
+      ['Strona, z której piszesz',referrerPath(),'infoPage'],
+      ['Urządzenie',ua,'infoDevice'],
+      ['Ekran',window.innerWidth+'×'+window.innerHeight,'infoScreen'],
+      ['Profil (token)',hasProfile()?'tak, używam profilu (sam token NIE jest dołączany)':'nie, bez profilu','infoProfile']
     ];
   }
   function renderInfo(){
@@ -108,8 +123,9 @@ textarea{min-height:140px;resize:vertical;line-height:1.4}
     var prof=hasProfile();
     $('infoBox').innerHTML=lines.map(function(l){
       var v=String(l[1]).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]});
-      if(l[0]==='Profil (token)')return '<div><b>'+l[0]+':</b><span class="chip '+(prof?'on':'off')+'">'+(prof?'używasz profilu':'bez profilu')+'</span></div>';
-      return '<div><b>'+l[0]+':</b> '+v+'</div>';
+      var label=T('kontakt.'+l[2]);
+      if(l[2]==='infoProfile')return '<div><b>'+label+':</b><span class="chip '+(prof?'on':'off')+'">'+T(prof?'kontakt.usesProfile':'kontakt.noProfile')+'</span></div>';
+      return '<div><b>'+label+':</b> '+v+'</div>';
     }).join('');
     $('infoBox').style.display=$('withInfo').checked?'block':'none';
   }
@@ -141,22 +157,22 @@ textarea{min-height:140px;resize:vertical;line-height:1.4}
     btn.style.opacity=empty?'.6':'1';
     btn.setAttribute('href',mailHref());
     $('copyBtn').disabled=false;
-    if(mailHref().length>1900)setStatus('Wiadomość jest długa — jeśli poczta się nie otworzy, użyj „Kopiuj treść”.','warn');
+    if(mailHref().length>1900)setStatus(T('kontakt.long'),'warn');
     else if($('status').className.indexOf('warn')>=0)setStatus('');
   }
 
   $('mailBtn').addEventListener('click',function(e){
     if(!TO){e.preventDefault();return}
-    if(!$('msg').value.trim()){e.preventDefault();setStatus('Najpierw wpisz treść uwagi.','err');$('msg').focus();return}
-    setStatus('Otwieram program pocztowy…','ok');
+    if(!$('msg').value.trim()){e.preventDefault();setStatus(T('kontakt.empty'),'err');$('msg').focus();return}
+    setStatus(T('kontakt.opening'),'ok');
   });
   $('copyBtn').addEventListener('click',function(){
-    if(!$('msg').value.trim()){setStatus('Najpierw wpisz treść uwagi.','err');$('msg').focus();return}
+    if(!$('msg').value.trim()){setStatus(T('kontakt.empty'),'err');$('msg').focus();return}
     var full='Do: '+TO+'\r\nTemat: '+subject()+'\r\n\r\n'+buildBody();
-    var done=function(){setStatus('Skopiowano. Wklej do nowej wiadomości e-mail.','ok')};
+    var done=function(){setStatus(T('kontakt.copied'),'ok')};
     var fail=function(){
       var ta=document.createElement('textarea');ta.value=full;document.body.appendChild(ta);ta.select();
-      try{document.execCommand('copy');done()}catch(e){setStatus('Nie udało się skopiować. Zaznacz i skopiuj treść ręcznie.','err')}
+      try{document.execCommand('copy');done()}catch(e){setStatus(T('kontakt.copyFailed'),'err')}
       document.body.removeChild(ta);
     };
     if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(full).then(done,fail);else fail();
@@ -168,9 +184,10 @@ textarea{min-height:140px;resize:vertical;line-height:1.4}
   });
 
   // Adres pochodzi z ustawień serwera (patrz functions/api/contact.js).
-  fetch('/api/contact',{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){
-    if(j&&j.ok&&j.to){TO=j.to}else{setStatus('Adres kontaktowy nie jest jeszcze skonfigurowany — formularz jest chwilowo nieaktywny.','warn')}
-  }).catch(function(){setStatus('Nie udało się pobrać adresu kontaktowego. Spróbuj ponownie później.','err')}).then(refresh);
+  // Po wczytaniu słownika — inaczej komunikat o błędzie mógłby się pokazać po polsku.
+  (window.I18n?I18n.ready:Promise.resolve()).then(function(){return fetch('/api/contact',{cache:'no-store'})}).then(function(r){return r.json()}).then(function(j){
+    if(j&&j.ok&&j.to){TO=j.to}else{setStatus(T('kontakt.notConfigured'),'warn')}
+  }).catch(function(){setStatus(T('kontakt.fetchFailed'),'err')}).then(refresh);
 
   // Numer wersji bierzemy z plakietki na tablicy głównej.
   fetch('/',{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){
@@ -178,6 +195,8 @@ textarea{min-height:140px;resize:vertical;line-height:1.4}
   }).catch(function(){}).then(refresh);
 
   refresh();
+  if(window.I18n)I18n.ready.then(refresh);
+  window.addEventListener('langchange',refresh);
 })();
 </script>
 </body>
