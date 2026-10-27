@@ -45,8 +45,18 @@ self.addEventListener("push", event => {
   try {
     data = event.data ? event.data.json() : {};
   } catch (e) {}
-  const title = data.title || "Alarm pociągów";
-  const body = data.body || "Sprawdź aktualny status na Moich pociągach.";
+  // Zapas na wypadek pustej treści — service worker nie widzi ustawień
+  // strony, więc język bierzemy z przeglądarki.
+  const fb = {
+    pl: ["Alarm pociągów", "Sprawdź aktualny status na Moich pociągach."],
+    en: ["Train alarm", "Check the current status in My trains."],
+    de: ["Zugalarm", "Prüfe den aktuellen Status in Meine Züge."],
+    cs: ["Vlakový alarm", "Zkontrolujte aktuální stav v Mých vlacích."],
+    es: ["Alarma de trenes", "Consulta el estado actual en Mis trenes."],
+    uk: ["Тривога про поїзди", "Перевірте поточний стан у Моїх поїздах."]
+  }[String((self.navigator && self.navigator.language) || "pl").slice(0, 2)] || ["Alarm pociągów", "Sprawdź aktualny status na Moich pociągach."];
+  const title = data.title || fb[0];
+  const body = data.body || fb[1];
   const url = data.url || "/moje-pociagi/";
   event.waitUntil(
     // Wibracja w rytmie "ta-dam ta-dam" (stukot kół) — dźwięku powiadomienia

@@ -332,7 +332,15 @@
     "serverError": "Błąd wyszukiwania połączeń (serwer: {status}). Spróbuj ponownie za chwilę.",
     "apiFail": "Nie udało się połączyć z API.",
     "partialRefining": "Wyniki są niepełne — wyszukuję ponownie, żeby je uzupełnić…",
-    "partialWarn": "Wyniki mogą być niepełne — kliknij „🔎 Szukaj połączeń” jeszcze raz, żeby je uzupełnić."
+    "partialWarn": "Wyniki mogą być niepełne — kliknij „🔎 Szukaj połączeń” jeszcze raz, żeby je uzupełnić.",
+    "err": {
+      "missing_params": "Brak parametru from/to",
+      "too_many_via": "Maksymalnie {max} stacje „przez”",
+      "no_key": "Brak klucza API PLK na serwerze",
+      "station_not_found": "Nie znaleziono stacji „{name}”",
+      "same_stations": "Dwie sąsiednie stacje trasy są takie same",
+      "plk_error": "Błąd API PLK"
+    }
   },
   "tutorial": {
     "ui": {
@@ -777,5 +785,38 @@
     "noIdsHint": "Kliknij numer pociągu bezpośrednio z naszej tablicy odjazdów. Sam numer może oznaczać więcej niż jeden kurs.",
     "portalBtn": "Otwórz wyszukiwarkę w Portal Pasażera",
     "loadingNote": "Czekam na dane PLK. Spokojnie, to nie cisza, to informatyka."
+  },
+  "survey": {
+    "aria": "Ankieta zadowolenia",
+    "close": "Zamknij, zapytaj później",
+    "later": "Później",
+    "question": "Jak oceniasz tę aplikację?",
+    "starsAria": "Ocena w gwiazdkach",
+    "starOf": "{n} z 5",
+    "sending": "Wysyłam…",
+    "thanks": "Dziękuję za ocenę!",
+    "improve": "Napisz, co poprawić →",
+    "failed": "Nie udało się wysłać. Spróbuj jeszcze raz."
+  },
+  "tgzm": {
+    "pageTitle": "Rozkłady TGZM",
+    "title": "Rozkłady TGZM",
+    "back": "← Powrót",
+    "refresh": "Odśwież",
+    "searchPh": "Szukaj przystanku…",
+    "loading": "Pobieram dane…",
+    "departing": "odjeżdża",
+    "now": "już!",
+    "allStands": "Wszystkie stanowiska przystanku na jednej stronie",
+    "stand": "Stanowisko {st}",
+    "standError": "Błąd pobierania stanowiska: {msg}",
+    "noLocalData": "Brak danych w lokalnym źródle.",
+    "openSdip": "Otwórz rozkład w SDIP / GZM",
+    "planned": "plan {time}",
+    "error": "Błąd: {msg}",
+    "timetable": "rozkład",
+    "noDepartures": "⚠ Brak danych / brak nadchodzących odjazdów",
+    "updated": "ostatnia aktualizacja: {time}",
+    "gtfs": " · dane GTFS-RT: {value}"
   }
 }

@@ -332,7 +332,15 @@
     "serverError": "Fehler bei der Verbindungssuche (Server: {status}). Versuche es gleich noch einmal.",
     "apiFail": "Verbindung zur API fehlgeschlagen.",
     "partialRefining": "Die Ergebnisse sind unvollständig — ich suche erneut, um sie zu ergänzen…",
-    "partialWarn": "Die Ergebnisse sind möglicherweise unvollständig — klicke noch einmal auf „🔎 Verbindungen suchen“, um sie zu ergänzen."
+    "partialWarn": "Die Ergebnisse sind möglicherweise unvollständig — klicke noch einmal auf „🔎 Verbindungen suchen“, um sie zu ergänzen.",
+    "err": {
+      "missing_params": "Parameter from/to fehlt",
+      "too_many_via": "Höchstens {max} „Über“-Bahnhöfe",
+      "no_key": "Der PLK-API-Schlüssel fehlt auf dem Server",
+      "station_not_found": "Bahnhof „{name}“ nicht gefunden",
+      "same_stations": "Zwei aufeinanderfolgende Bahnhöfe der Strecke sind gleich",
+      "plk_error": "PLK-API-Fehler"
+    }
   },
   "tutorial": {
     "ui": {
@@ -777,5 +785,38 @@
     "noIdsHint": "Klicke die Zugnummer direkt auf unserer Abfahrtstafel an. Die Nummer allein kann mehr als einen Zug bedeuten.",
     "portalBtn": "Suche im Portal Pasażera öffnen",
     "loadingNote": "Warte auf PLK-Daten. Keine Sorge, das ist keine Stille, das ist Informatik."
+  },
+  "survey": {
+    "aria": "Zufriedenheitsumfrage",
+    "close": "Schließen, später fragen",
+    "later": "Später",
+    "question": "Wie bewertest du diese App?",
+    "starsAria": "Sternebewertung",
+    "starOf": "{n} von 5",
+    "sending": "Wird gesendet…",
+    "thanks": "Danke für deine Bewertung!",
+    "improve": "Schreib, was besser werden soll →",
+    "failed": "Senden fehlgeschlagen. Bitte erneut versuchen."
+  },
+  "tgzm": {
+    "pageTitle": "TGZM-Fahrpläne",
+    "title": "TGZM-Fahrpläne",
+    "back": "← Zurück",
+    "refresh": "Aktualisieren",
+    "searchPh": "Haltestelle suchen…",
+    "loading": "Daten werden geladen…",
+    "departing": "fährt ab",
+    "now": "jetzt!",
+    "allStands": "Alle Steige der Haltestelle auf einer Seite",
+    "stand": "Steig {st}",
+    "standError": "Fehler beim Laden des Steigs: {msg}",
+    "noLocalData": "Keine Daten in der lokalen Quelle.",
+    "openSdip": "Fahrplan in SDIP / GZM öffnen",
+    "planned": "plan. {time}",
+    "error": "Fehler: {msg}",
+    "timetable": "Fahrplan",
+    "noDepartures": "⚠ Keine Daten / keine anstehenden Abfahrten",
+    "updated": "zuletzt aktualisiert: {time}",
+    "gtfs": " · GTFS-RT-Daten: {value}"
   }
 }

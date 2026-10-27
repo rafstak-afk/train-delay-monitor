@@ -332,7 +332,15 @@
     "serverError": "Chyba při hledání spojení (server: {status}). Zkuste to za chvíli znovu.",
     "apiFail": "Nepodařilo se připojit k API.",
     "partialRefining": "Výsledky jsou neúplné — hledám znovu, abych je doplnil…",
-    "partialWarn": "Výsledky mohou být neúplné — klikněte znovu na „🔎 Hledat spojení“ a doplňte je."
+    "partialWarn": "Výsledky mohou být neúplné — klikněte znovu na „🔎 Hledat spojení“ a doplňte je.",
+    "err": {
+      "missing_params": "Chybí parametr from/to",
+      "too_many_via": "Nejvýše {max} stanice „přes“",
+      "no_key": "Na serveru chybí klíč API PLK",
+      "station_not_found": "Stanice „{name}“ nebyla nalezena",
+      "same_stations": "Dvě po sobě jdoucí stanice trasy jsou stejné",
+      "plk_error": "Chyba API PLK"
+    }
   },
   "tutorial": {
     "ui": {
@@ -777,5 +785,38 @@
     "noIdsHint": "Klikněte na číslo vlaku přímo na naší odjezdové tabuli. Samotné číslo může znamenat více než jeden spoj.",
     "portalBtn": "Otevřít vyhledávání na Portal Pasażera",
     "loadingNote": "Čekám na data PLK. Klid, to není ticho, to je informatika."
+  },
+  "survey": {
+    "aria": "Anketa spokojenosti",
+    "close": "Zavřít, zeptat se později",
+    "later": "Později",
+    "question": "Jak hodnotíte tuto aplikaci?",
+    "starsAria": "Hodnocení hvězdičkami",
+    "starOf": "{n} z 5",
+    "sending": "Odesílám…",
+    "thanks": "Děkuji za hodnocení!",
+    "improve": "Napište, co zlepšit →",
+    "failed": "Odeslání se nezdařilo. Zkuste to znovu."
+  },
+  "tgzm": {
+    "pageTitle": "Jízdní řády TGZM",
+    "title": "Jízdní řády TGZM",
+    "back": "← Zpět",
+    "refresh": "Obnovit",
+    "searchPh": "Hledat zastávku…",
+    "loading": "Načítám data…",
+    "departing": "odjíždí",
+    "now": "teď!",
+    "allStands": "Všechna stanoviště zastávky na jedné stránce",
+    "stand": "Stanoviště {st}",
+    "standError": "Chyba při načítání stanoviště: {msg}",
+    "noLocalData": "V místním zdroji nejsou data.",
+    "openSdip": "Otevřít jízdní řád v SDIP / GZM",
+    "planned": "plán {time}",
+    "error": "Chyba: {msg}",
+    "timetable": "jízdní řád",
+    "noDepartures": "⚠ Žádná data / žádné nadcházející odjezdy",
+    "updated": "poslední aktualizace: {time}",
+    "gtfs": " · data GTFS-RT: {value}"
   }
 }

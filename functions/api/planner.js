@@ -102,15 +102,15 @@ export async function onRequestGet(context) {
   const excludeCarrierSet = parseCarrierSet(url.searchParams.get("excludeCarriers"));
 
   if (!fromName || !toName) {
-    return json({ ok: false, error: "Brak parametru from/to" }, 400);
+    return json({ ok: false, code: "missing_params", error: "Brak parametru from/to" }, 400);
   }
   if (viaNames.length > MAX_VIA_STATIONS) {
-    return json({ ok: false, error: `Maksymalnie ${MAX_VIA_STATIONS} stacje „przez”` }, 400);
+    return json({ ok: false, code: "too_many_via", params: { max: MAX_VIA_STATIONS }, error: `Maksymalnie ${MAX_VIA_STATIONS} stacje „przez”` }, 400);
   }
 
   const apiKey = env.PLK_API_KEY || env.PDP_API_KEY || "";
   if (!apiKey) {
-    return json({ ok: false, error: "Brak klucza PLK_API_KEY/PDP_API_KEY" }, 500);
+    return json({ ok: false, code: "no_key", error: "Brak klucza PLK_API_KEY/PDP_API_KEY" }, 500);
   }
 
   const headers = { "X-API-Key": apiKey, Accept: "application/json" };
@@ -154,12 +154,12 @@ export async function onRequestGet(context) {
 
     for (let i = 0; i < resolvedWaypoints.length; i++) {
       if (!resolvedWaypoints[i].id) {
-        return json({ ok: false, error: `Nie znaleziono stacji „${waypointDefs[i].name}”` }, 404);
+        return json({ ok: false, code: "station_not_found", params: { name: waypointDefs[i].name }, error: `Nie znaleziono stacji „${waypointDefs[i].name}”` }, 404);
       }
     }
     for (let i = 0; i < resolvedWaypoints.length - 1; i++) {
       if (String(resolvedWaypoints[i].id) === String(resolvedWaypoints[i + 1].id)) {
-        return json({ ok: false, error: "Dwie sąsiednie stacje trasy są takie same" }, 400);
+        return json({ ok: false, code: "same_stations", error: "Dwie sąsiednie stacje trasy są takie same" }, 400);
       }
     }
 
@@ -339,7 +339,7 @@ export async function onRequestGet(context) {
 
     return json(responsePayload);
   } catch (error) {
-    return json({ ok: false, error: "Błąd API PLK", details: error.message }, 502);
+    return json({ ok: false, code: "plk_error", error: "Błąd API PLK", details: error.message }, 502);
   }
 }
 

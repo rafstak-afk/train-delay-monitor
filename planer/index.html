@@ -1231,7 +1231,8 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
             }
             btn.disabled=false;
             $('resultsStatus').className='status err';
-            $('resultsStatus').textContent=res.data.error||T('planer.serverError',{status:res.status});
+            // Błąd z kodem z serwera — tłumaczony; bez kodu: tekst serwera albo ogólny.
+            $('resultsStatus').textContent=res.data.code?T('planer.err.'+res.data.code,res.data.params||{}):(res.data.error||T('planer.serverError',{status:res.status}));
             scrollToResults();
             return;
           }

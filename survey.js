@@ -157,16 +157,18 @@
 
   function render() {
     injectStyle();
+    // Tłumaczenia (i18n.js) z polskim zapasem — strony bez i18n.js zostają po polsku.
+    var tr = function (k, fb, p) { if (!window.I18n) return fb; var v = I18n.t("survey." + k, p); return v === "survey." + k ? fb : v; };
     var card = document.createElement("div");
     card.id = "surveyCard";
     card.setAttribute("role", "dialog");
-    card.setAttribute("aria-label", "Ankieta zadowolenia");
+    card.setAttribute("aria-label", tr("aria", "Ankieta zadowolenia"));
     card.innerHTML =
-      '<button type="button" class="sv-x" aria-label="Zamknij, zapytaj później" title="Później">✕</button>' +
-      '<div class="sv-q">Jak oceniasz tę aplikację?</div>' +
-      '<div class="sv-stars" role="radiogroup" aria-label="Ocena w gwiazdkach"></div>' +
+      '<button type="button" class="sv-x" aria-label="' + tr("close", "Zamknij, zapytaj później") + '" title="' + tr("later", "Później") + '">✕</button>' +
+      '<div class="sv-q">' + tr("question", "Jak oceniasz tę aplikację?") + '</div>' +
+      '<div class="sv-stars" role="radiogroup" aria-label="' + tr("starsAria", "Ocena w gwiazdkach") + '"></div>' +
       '<div class="sv-msg" id="svMsg"></div>' +
-      '<button type="button" class="sv-later">Później</button>';
+      '<button type="button" class="sv-later">' + tr("later", "Później") + '</button>';
     var starsBox = card.querySelector(".sv-stars");
     var stars = [];
     for (var i = 1; i <= 5; i++) {
@@ -176,7 +178,7 @@
         b.className = "sv-star";
         b.textContent = "★";
         b.setAttribute("role", "radio");
-        b.setAttribute("aria-label", n + " z 5");
+        b.setAttribute("aria-label", tr("starOf", n + " z 5", { n: n }));
         b.addEventListener("mouseenter", function () { paint(n); });
         b.addEventListener("focus", function () { paint(n); });
         b.addEventListener("click", function () { submit(n); });
@@ -201,7 +203,7 @@
       paint(n);
       var msg = card.querySelector("#svMsg");
       msg.className = "sv-msg";
-      msg.textContent = "Wysyłam…";
+      msg.textContent = tr("sending", "Wysyłam…");
       getVersion().then(function (version) {
         return fetch("/api/survey", {
           method: "POST",
@@ -220,12 +222,12 @@
         var low = n <= 3;
         card.querySelector(".sv-stars").style.pointerEvents = "none";
         card.querySelector(".sv-later").style.display = "none";
-        msg.innerHTML = "Dziękuję za ocenę! " + (low ? '<br><a href="/kontakt/">Napisz, co poprawić →</a>' : "");
+        msg.innerHTML = tr("thanks", "Dziękuję za ocenę!") + " " + (low ? '<br><a href="/kontakt/">' + tr("improve", "Napisz, co poprawić →") + '</a>' : "");
         setTimeout(removeCard, low ? 12000 : 3500);
       }).catch(function () {
         busy = false;
         msg.className = "sv-msg sv-err";
-        msg.textContent = "Nie udało się wysłać. Spróbuj jeszcze raz.";
+        msg.textContent = tr("failed", "Nie udało się wysłać. Spróbuj jeszcze raz.");
       });
     }
   }

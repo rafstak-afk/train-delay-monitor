@@ -332,7 +332,15 @@
     "serverError": "Error al buscar conexiones (servidor: {status}). Inténtalo de nuevo en un momento.",
     "apiFail": "No se pudo conectar con la API.",
     "partialRefining": "Los resultados están incompletos: busco de nuevo para completarlos…",
-    "partialWarn": "Los resultados pueden estar incompletos: pulsa otra vez «🔎 Buscar conexiones» para completarlos."
+    "partialWarn": "Los resultados pueden estar incompletos: pulsa otra vez «🔎 Buscar conexiones» para completarlos.",
+    "err": {
+      "missing_params": "Falta el parámetro from/to",
+      "too_many_via": "Como máximo {max} estaciones «por»",
+      "no_key": "Falta la clave de la API de PLK en el servidor",
+      "station_not_found": "No se encontró la estación «{name}»",
+      "same_stations": "Dos estaciones consecutivas de la ruta son iguales",
+      "plk_error": "Error de la API de PLK"
+    }
   },
   "tutorial": {
     "ui": {
@@ -777,5 +785,38 @@
     "noIdsHint": "Pulsa el número del tren directamente en nuestro panel de salidas. El número solo puede corresponder a más de un servicio.",
     "portalBtn": "Abrir el buscador de Portal Pasażera",
     "loadingNote": "Esperando los datos de PLK. Tranquilo, no es silencio, es informática."
+  },
+  "survey": {
+    "aria": "Encuesta de satisfacción",
+    "close": "Cerrar, preguntar más tarde",
+    "later": "Más tarde",
+    "question": "¿Cómo valoras esta aplicación?",
+    "starsAria": "Valoración con estrellas",
+    "starOf": "{n} de 5",
+    "sending": "Enviando…",
+    "thanks": "¡Gracias por tu valoración!",
+    "improve": "Escribe qué mejorar →",
+    "failed": "No se pudo enviar. Inténtalo de nuevo."
+  },
+  "tgzm": {
+    "pageTitle": "Horarios TGZM",
+    "title": "Horarios TGZM",
+    "back": "← Volver",
+    "refresh": "Actualizar",
+    "searchPh": "Buscar una parada…",
+    "loading": "Cargando datos…",
+    "departing": "saliendo",
+    "now": "¡ya!",
+    "allStands": "Todos los andenes de la parada en una sola página",
+    "stand": "Andén {st}",
+    "standError": "Error al cargar el andén: {msg}",
+    "noLocalData": "No hay datos en la fuente local.",
+    "openSdip": "Abrir el horario en SDIP / GZM",
+    "planned": "prev. {time}",
+    "error": "Error: {msg}",
+    "timetable": "horario",
+    "noDepartures": "⚠ Sin datos / sin próximas salidas",
+    "updated": "última actualización: {time}",
+    "gtfs": " · datos GTFS-RT: {value}"
   }
 }

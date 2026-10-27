@@ -332,7 +332,15 @@
     "serverError": "Connection search error (server: {status}). Please try again in a moment.",
     "apiFail": "Couldn't connect to the API.",
     "partialRefining": "Results are incomplete — searching again to complete them…",
-    "partialWarn": "Results may be incomplete — click “🔎 Find connections” again to complete them."
+    "partialWarn": "Results may be incomplete — click “🔎 Find connections” again to complete them.",
+    "err": {
+      "missing_params": "Missing from/to parameter",
+      "too_many_via": "At most {max} “via” stations",
+      "no_key": "The PLK API key is missing on the server",
+      "station_not_found": "Station “{name}” not found",
+      "same_stations": "Two consecutive stations of the route are the same",
+      "plk_error": "PLK API error"
+    }
   },
   "tutorial": {
     "ui": {
@@ -777,5 +785,38 @@
     "noIdsHint": "Click the train number directly on our departure board. The number alone can mean more than one service.",
     "portalBtn": "Open the search on Portal Pasażera",
     "loadingNote": "Waiting for PLK data. Don't worry, it's not silence, it's computing."
+  },
+  "survey": {
+    "aria": "Satisfaction survey",
+    "close": "Close, ask me later",
+    "later": "Later",
+    "question": "How do you rate this app?",
+    "starsAria": "Star rating",
+    "starOf": "{n} of 5",
+    "sending": "Sending…",
+    "thanks": "Thank you for rating!",
+    "improve": "Tell me what to improve →",
+    "failed": "Couldn't send. Please try again."
+  },
+  "tgzm": {
+    "pageTitle": "TGZM timetables",
+    "title": "TGZM timetables",
+    "back": "← Back",
+    "refresh": "Refresh",
+    "searchPh": "Search for a stop…",
+    "loading": "Loading data…",
+    "departing": "departing",
+    "now": "now!",
+    "allStands": "All stands of the stop on one page",
+    "stand": "Stand {st}",
+    "standError": "Error loading the stand: {msg}",
+    "noLocalData": "No data in the local source.",
+    "openSdip": "Open the timetable in SDIP / GZM",
+    "planned": "plan {time}",
+    "error": "Error: {msg}",
+    "timetable": "timetable",
+    "noDepartures": "⚠ No data / no upcoming departures",
+    "updated": "last updated: {time}",
+    "gtfs": " · GTFS-RT data: {value}"
   }
 }

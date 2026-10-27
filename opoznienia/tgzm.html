@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Transport GZM">
-  <title>Rozkłady TGZM</title>
+  <title data-i18n="tgzm.pageTitle">Rozkłady TGZM</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -199,33 +199,38 @@
 <body>
 <header>
   <div class="header-left">
-    <h1>Rozkłady TGZM</h1>
+    <h1 data-i18n="tgzm.title">Rozkłady TGZM</h1>
   </div>
   <div style="display:flex;gap:8px;flex-shrink:0;">
-    <button class="btn" onclick="location.href='/'">← Powrót</button>
-    <button class="btn" id="rbtn" onclick="load()"><span class="spin">↻</span> Odśwież</button>
+    <button class="btn" onclick="location.href='/'" data-i18n="tgzm.back">← Powrót</button>
+    <button class="btn" id="rbtn" onclick="load()"><span class="spin">↻</span> <span data-i18n="tgzm.refresh">Odśwież</span></button>
   </div>
 </header>
 <div class="container">
   <div class="search-box">
-    <input type="text" id="stopSearch" placeholder="Szukaj przystanku…" autocomplete="off" oninput="searchStop(this.value)">
+    <input type="text" id="stopSearch" placeholder="Szukaj przystanku…" data-i18n-attr="placeholder:tgzm.searchPh" autocomplete="off" oninput="searchStop(this.value)">
     <div class="search-results" id="searchResults" style="display:none;"></div>
   </div>
   <div style="padding:0.5rem 0 0; font-size:12px; font-family:var(--mono); color:#555;">
     <a href="https://sdip.transportgzm.pl/main" target="_blank" style="color:#ff9500;">SDIP Transport GZM</a>
   </div>
-  <div id="spinner">Pobieram dane…</div>
+  <div id="spinner" data-i18n="tgzm.loading">Pobieram dane…</div>
   <div id="content"></div>
   <div class="updated" id="upd"></div>
 </div>
+<script src="/i18n.js"></script>
+<script src="/burger-menu.js"></script>
 <script>
+  // Tłumaczenia (i18n.js); nazwy przystanków i linii zostają oryginalne.
+  function T(k,p){return window.I18n?I18n.t(k,p):k}
+  function timeLocale(){var l=window.I18n?I18n.getLang():'pl';return {pl:'pl-PL',en:'en-GB',de:'de-DE',cs:'cs-CZ',es:'es-ES',uk:'uk-UA'}[l]||'pl-PL'}
   const GROUP_ORDER = [
     'TG_POWSTANCOW', 'TG_SIENKIEWICZA', 'TG_BYTOMSKA',
     'TG_DWORZEC', 'SWIERKLANIEC_PARK', 'KT_KOPERNIKA'
   ];
 
   function fmtDiff(diff) {
-    if (diff <= 0) return '<span class="dep-soon">odjeżdża</span>';
+    if (diff <= 0) return '<span class="dep-soon">' + escapeHtml(T('tgzm.departing')) + '</span>';
     if (diff <= 5) return `<span class="dep-soon">${diff} min</span>`;
     return `<span class="dep-ok">${diff} min</span>`;
   }
@@ -296,7 +301,7 @@
       title.className = 'selected-stop-title';
       title.innerHTML = `
         ${escapeHtml(stop.name)}
-        <div class="selected-stop-subtitle">Wszystkie stanowiska przystanku na jednej stronie</div>
+        <div class="selected-stop-subtitle">${escapeHtml(T('tgzm.allStands'))}</div>
       `;
       content.appendChild(title);
 
@@ -320,13 +325,13 @@
         block.className = 'stop-block';
         block.innerHTML = `
           <div class="stop-header">
-            <span class="stop-name">Stanowisko ${escapeHtml(result.st.st)}</span>
+            <span class="stop-name">${escapeHtml(T('tgzm.stand',{st:result.st.st}))}</span>
             <div class="stop-meta">ID ${escapeHtml(result.st.id)}</div>
           </div>
         `;
 
         if (!result.ok) {
-          block.innerHTML += `<div class="dep-error">Błąd pobierania stanowiska: ${escapeHtml(result.error)}</div>`;
+          block.innerHTML += `<div class="dep-error">${escapeHtml(T('tgzm.standError',{msg:result.error}))}</div>`;
           grid.appendChild(block);
           return;
         }
@@ -335,12 +340,12 @@
 
         if (!departures.length) {
           const gzmUrl = 'https://rj.transportgzm.pl/v2/rozklady/przystanek/stop/' + encodeURIComponent(result.st.id) + '/c/';
-          const errorText = result.data && result.data.error ? result.data.error : 'Brak danych w lokalnym źródle.';
+          const errorText = result.data && result.data.error ? result.data.error : T('tgzm.noLocalData');
           block.innerHTML += `
             <div class="empty-stop">
               ⚠ Brak danych w naszej tablicy dla tego stanowiska.
               <span class="empty-note">${escapeHtml(errorText)}</span>
-              <a class="fallback-link" href="${gzmUrl}" target="_blank" rel="noopener">Otwórz rozkład w SDIP / GZM</a>
+              <a class="fallback-link" href="${gzmUrl}" target="_blank" rel="noopener">${escapeHtml(T('tgzm.openSdip'))}</a>
             </div>
           `;
           grid.appendChild(block);
@@ -351,7 +356,7 @@
           const row = document.createElement('div');
           row.className = 'dep-row';
           const ti = timeInfo(d);
-          const diffStr = d.minutes || (Number(d.diffMin) <= 0 ? 'już!' : d.diffMin + ' min');
+          const diffStr = d.minutes || (Number(d.diffMin) <= 0 ? T('tgzm.now') : d.diffMin + ' min');
           const diffCls = Number(d.diffMin) <= 2 ? 'dep-soon' : Number(d.diffMin) <= 5 ? 'dep-warn' : 'dep-ok';
 
           row.innerHTML = `
@@ -361,7 +366,7 @@
               <div class="time-main">
                 ${escapeHtml(ti.main)}<span class="time-kind ${ti.labelClass}">${ti.label}</span>
               </div>
-              ${ti.showPlanned ? `<div class="time-sub">plan ${escapeHtml(ti.planned)}</div>` : ''}
+              ${ti.showPlanned ? `<div class="time-sub">${escapeHtml(T('tgzm.planned',{time:ti.planned}))}</div>` : ''}
               <div class="${diffCls}">${escapeHtml(diffStr)}</div>
             </div>
           `;
@@ -375,12 +380,11 @@
         .filter(r => r.ok && r.data && r.data.updated)
         .map(r => r.data.updated);
 
-      upd.textContent = 'ostatnia aktualizacja: ' +
-        new Date().toLocaleTimeString('pl-PL', { hour:'2-digit', minute:'2-digit', second:'2-digit' }) +
+      upd.textContent = T('tgzm.updated', { time: new Date().toLocaleTimeString(timeLocale(), { hour:'2-digit', minute:'2-digit', second:'2-digit' }) }) +
         (updatedValues.length ? ' · SDIP: ' + updatedValues[0] : '');
 
     } catch (error) {
-      content.innerHTML = `<div class="err">Błąd: ${escapeHtml(error.message)}</div>`;
+      content.innerHTML = `<div class="err">${escapeHtml(T('tgzm.error',{msg:error.message}))}</div>`;
     }
 
     spinner.style.display = 'none';
@@ -480,16 +484,16 @@
         block.innerHTML = `
           <div class="stop-header">
             <span class="stop-name">${group.name}</span>
-            <div class="stop-meta">rozkład</div>
+            <div class="stop-meta">${escapeHtml(T('tgzm.timetable'))}</div>
           </div>`;
 
         if (!deps.length) {
-          block.innerHTML += `<div class="empty-stop">⚠ Brak danych / brak nadchodzących odjazdów</div>`;
+          block.innerHTML += `<div class="empty-stop">${escapeHtml(T('tgzm.noDepartures'))}</div>`;
         } else {
           deps.forEach(d => {
             const row = document.createElement('div');
             row.className = 'dep-row';
-            const diffStr = d.minutes || (d.diffMin <= 0 ? 'już!' : d.diffMin + ' min');
+            const diffStr = d.minutes || (d.diffMin <= 0 ? T('tgzm.now') : d.diffMin + ' min');
             const diffCls = d.diffMin <= 2 ? 'dep-soon' : d.diffMin <= 5 ? 'dep-warn' : 'dep-ok';
             const ti = timeInfo(d);
             row.innerHTML = `
@@ -499,7 +503,7 @@
                 <div class="time-main">
                   ${escapeHtml(ti.main)}<span class="time-kind ${ti.labelClass}">${ti.label}</span>
                 </div>
-                ${ti.showPlanned ? `<div class="time-sub">plan ${escapeHtml(ti.planned)}</div>` : ''}
+                ${ti.showPlanned ? `<div class="time-sub">${escapeHtml(T('tgzm.planned',{time:ti.planned}))}</div>` : ''}
                 <div class="${diffCls}">${escapeHtml(diffStr)}</div>
               </div>`;
             block.appendChild(row);
@@ -509,19 +513,20 @@
       });
 
       document.getElementById('upd').textContent =
-        'ostatnia aktualizacja: ' + new Date().toLocaleTimeString('pl-PL', {hour:'2-digit', minute:'2-digit', second:'2-digit'})
-        + (data.updated ? ' · dane GTFS-RT: ' + data.updated : '');
+        T('tgzm.updated', { time: new Date().toLocaleTimeString(timeLocale(), {hour:'2-digit', minute:'2-digit', second:'2-digit'}) })
+        + (data.updated ? T('tgzm.gtfs', { value: data.updated }) : '');
 
     } catch(e) {
       document.getElementById('spinner').style.display = 'none';
-      document.getElementById('content').innerHTML = `<div class="err">Błąd: ${e.message}</div>`;
+      document.getElementById('content').innerHTML = `<div class="err">${escapeHtml(T('tgzm.error',{msg:e.message}))}</div>`;
     }
 
     btn.classList.remove('loading');
   }
 
-  load();
-  setInterval(load, 30000);
+  // Start po wczytaniu słownika — inaczej pierwsze napisy byłyby kluczami.
+  (window.I18n ? I18n.ready : Promise.resolve()).then(function () { load(); setInterval(load, 30000); });
+  window.addEventListener('langchange', function () { load(); });
 </script>
 </body>
 </html>
