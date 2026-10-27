@@ -755,7 +755,8 @@
     "yes": "Ja, führ mich",
     "no": "Nicht jetzt",
     "close": "Schließen",
-    "aria": "Vorschlag, ein Profil zu erstellen"
+    "aria": "Vorschlag, ein Profil zu erstellen",
+    "bodyChat": "Dein Gespräch mit dem Assistenten und deine letzte Strecke sind gerade nur in diesem Browser gespeichert."
   },
   "train": {
     "pageTitle": "Zuglauf",
@@ -879,6 +880,12 @@
     "send": "Senden",
     "greeting": "Hallo! Vorerst verstehe ich nur Polnisch. Schreib oder sag, wohin du fahren willst, z. B. „z Tarnowskich Gór do Krakowa jutro o 7”.",
     "notUnderstood": "Ich verstehe deine Sprache nicht.",
-    "cta": "Frag, wie du hinkommst"
+    "cta": "Frag, wie du hinkommst",
+    "clear": "Verlauf löschen",
+    "clearConfirm": "Den gesamten Gesprächsverlauf wirklich löschen? Er verschwindet auf diesem Gerät und im Profil — das lässt sich nicht rückgängig machen.",
+    "clearYes": "Ja, löschen",
+    "clearNo": "Nein, behalten",
+    "clearKept": "OK, der Verlauf bleibt.",
+    "cleared": "Der Gesprächsverlauf wurde gelöscht."
   }
 }

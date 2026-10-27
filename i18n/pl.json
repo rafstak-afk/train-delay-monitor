@@ -755,7 +755,8 @@
     "yes": "Tak, poprowadź mnie",
     "no": "Nie teraz",
     "close": "Zamknij",
-    "aria": "Propozycja założenia profilu"
+    "aria": "Propozycja założenia profilu",
+    "bodyChat": "Twoja rozmowa z asystentem i ostatnia trasa są teraz tylko w tej przeglądarce."
   },
   "train": {
     "pageTitle": "Bieg pociągu",
@@ -879,6 +880,12 @@
     "send": "Wyślij",
     "greeting": "Cześć! Napisz albo powiedz (🎤), skąd i dokąd chcesz jechać, np. „z Tarnowskich Gór do Krakowa jutro o 7 bez Intercity”. Możesz też dodać stację „przez”, czas na przesiadkę albo „tylko bezpośrednie”.",
     "notUnderstood": "Nie rozumiem w Twoim języku.",
-    "cta": "Zapytaj, jak dojechać"
+    "cta": "Zapytaj, jak dojechać",
+    "clear": "Czyść historię",
+    "clearConfirm": "Na pewno wyczyścić całą historię rozmowy? Zniknie na tym urządzeniu i w profilu — tego nie da się cofnąć.",
+    "clearYes": "Tak, wyczyść",
+    "clearNo": "Nie, zostaw",
+    "clearKept": "OK, historia zostaje.",
+    "cleared": "Historia rozmowy została wyczyszczona."
   }
 }

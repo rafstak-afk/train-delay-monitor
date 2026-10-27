@@ -41,7 +41,8 @@
   function blocked() {
     return !!(tourOpen() ||
       document.getElementById("profilePromptCard") ||
-      document.getElementById("surveyCard"));
+      document.getElementById("surveyCard") ||
+      document.querySelector(".ca-panel.open")); // otwarty czat asystenta
   }
 
   function injectStyle() {
@@ -89,8 +90,8 @@
     // Tłumaczenia (i18n.js) z polskim zapasem. Osobne zdanie na każdy powód —
     // wcześniej sklejane „{co} są teraz…” dawało błąd gramatyczny dla języka.
     var tr = function (k, fb) { if (!window.I18n) return fb; var v = I18n.t("profilePrompt." + k); return v === "profilePrompt." + k ? fb : v; };
-    var bodyKey = reason === "train" ? "bodyTrain" : reason === "language" ? "bodyLanguage" : "bodyFavorite";
-    var bodyFb = reason === "train" ? "Twoje pociągi są teraz tylko w tej przeglądarce." : reason === "language" ? "Twój wybrany język jest teraz zapamiętany tylko w tej przeglądarce." : "Twoje ulubione stacje są teraz tylko w tej przeglądarce.";
+    var bodyKey = reason === "train" ? "bodyTrain" : reason === "language" ? "bodyLanguage" : reason === "chat" ? "bodyChat" : "bodyFavorite";
+    var bodyFb = reason === "train" ? "Twoje pociągi są teraz tylko w tej przeglądarce." : reason === "language" ? "Twój wybrany język jest teraz zapamiętany tylko w tej przeglądarce." : reason === "chat" ? "Twoja rozmowa z asystentem i ostatnia trasa są teraz tylko w tej przeglądarce." : "Twoje ulubione stacje są teraz tylko w tej przeglądarce.";
     var card = document.createElement("div");
     card.id = "profilePromptCard";
     card.setAttribute("role", "dialog");

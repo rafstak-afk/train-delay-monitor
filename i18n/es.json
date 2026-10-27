@@ -755,7 +755,8 @@
     "yes": "Sí, guíame",
     "no": "Ahora no",
     "close": "Cerrar",
-    "aria": "Propuesta para crear un perfil"
+    "aria": "Propuesta para crear un perfil",
+    "bodyChat": "Tu conversación con el asistente y tu última ruta solo están ahora en este navegador."
   },
   "train": {
     "pageTitle": "Recorrido del tren",
@@ -879,6 +880,12 @@
     "send": "Enviar",
     "greeting": "¡Hola! Por ahora solo entiendo polaco. Escribe o di adónde quieres ir, p. ej. «z Tarnowskich Gór do Krakowa jutro o 7».",
     "notUnderstood": "No entiendo tu idioma.",
-    "cta": "Pregunta cómo llegar"
+    "cta": "Pregunta cómo llegar",
+    "clear": "Borrar historial",
+    "clearConfirm": "¿Seguro que quieres borrar toda la conversación? Se eliminará en este dispositivo y en tu perfil, y no se puede deshacer.",
+    "clearYes": "Sí, borrar",
+    "clearNo": "No, mantener",
+    "clearKept": "De acuerdo, el historial se mantiene.",
+    "cleared": "Se ha borrado el historial de la conversación."
   }
 }

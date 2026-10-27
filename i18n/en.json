@@ -755,7 +755,8 @@
     "yes": "Yes, guide me",
     "no": "Not now",
     "close": "Close",
-    "aria": "Suggestion to create a profile"
+    "aria": "Suggestion to create a profile",
+    "bodyChat": "Your conversation with the assistant and your last route are only in this browser right now."
   },
   "train": {
     "pageTitle": "Train run",
@@ -879,6 +880,12 @@
     "send": "Send",
     "greeting": "Hi! For now I only understand Polish. Write or say where you want to go, e.g. „z Tarnowskich Gór do Krakowa jutro o 7”.",
     "notUnderstood": "I don't understand your language.",
-    "cta": "Ask how to get there"
+    "cta": "Ask how to get there",
+    "clear": "Clear history",
+    "clearConfirm": "Are you sure you want to clear the whole conversation? It will be deleted on this device and in your profile — this can't be undone.",
+    "clearYes": "Yes, clear it",
+    "clearNo": "No, keep it",
+    "clearKept": "OK, the history stays.",
+    "cleared": "The conversation history has been cleared."
   }
 }

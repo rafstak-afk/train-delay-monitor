@@ -755,7 +755,8 @@
     "yes": "Ano, proveďte mě",
     "no": "Teď ne",
     "close": "Zavřít",
-    "aria": "Návrh na vytvoření profilu"
+    "aria": "Návrh na vytvoření profilu",
+    "bodyChat": "Vaše konverzace s asistentem a poslední trasa jsou teď jen v tomto prohlížeči."
   },
   "train": {
     "pageTitle": "Jízda vlaku",
@@ -879,6 +880,12 @@
     "send": "Odeslat",
     "greeting": "Ahoj! Zatím rozumím jen polsky. Napište nebo řekněte, kam chcete jet, např. „z Tarnowskich Gór do Krakowa jutro o 7”.",
     "notUnderstood": "Nerozumím vašemu jazyku.",
-    "cta": "Zeptej se, jak dojet"
+    "cta": "Zeptej se, jak dojet",
+    "clear": "Vymazat historii",
+    "clearConfirm": "Opravdu vymazat celou historii konverzace? Zmizí na tomto zařízení i v profilu — nelze to vrátit.",
+    "clearYes": "Ano, vymazat",
+    "clearNo": "Ne, ponechat",
+    "clearKept": "Dobře, historie zůstává.",
+    "cleared": "Historie konverzace byla vymazána."
   }
 }
