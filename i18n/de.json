@@ -330,7 +330,8 @@
     "searching": "Suche Verbindungen...",
     "retrying": "Suche Verbindungen... (neuer Versuch, der Server brauchte mehr Zeit)",
     "serverError": "Fehler bei der Verbindungssuche (Server: {status}). Versuche es gleich noch einmal.",
-    "apiFail": "Verbindung zur API fehlgeschlagen."
+    "apiFail": "Verbindung zur API fehlgeschlagen.",
+    "refining": "(Ergebnisse werden ergänzt…)"
   },
   "tutorial": {
     "ui": {

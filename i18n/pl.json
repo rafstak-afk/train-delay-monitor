@@ -330,7 +330,8 @@
     "searching": "Szukam połączeń...",
     "retrying": "Szukam połączeń... (ponawiam, serwer potrzebował więcej czasu)",
     "serverError": "Błąd wyszukiwania połączeń (serwer: {status}). Spróbuj ponownie za chwilę.",
-    "apiFail": "Nie udało się połączyć z API."
+    "apiFail": "Nie udało się połączyć z API.",
+    "refining": "(uzupełniam wyniki…)"
   },
   "tutorial": {
     "ui": {

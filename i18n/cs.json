@@ -330,7 +330,8 @@
     "searching": "Hledám spojení...",
     "retrying": "Hledám spojení... (zkouším znovu, server potřeboval více času)",
     "serverError": "Chyba při hledání spojení (server: {status}). Zkuste to za chvíli znovu.",
-    "apiFail": "Nepodařilo se připojit k API."
+    "apiFail": "Nepodařilo se připojit k API.",
+    "refining": "(doplňuji výsledky…)"
   },
   "tutorial": {
     "ui": {

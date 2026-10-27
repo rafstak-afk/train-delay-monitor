@@ -1207,10 +1207,16 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     // Cloudflare przy pierwszym, nieskeszowanym wyszukiwaniu długiej trasy)
     // ponawiamy raz automatycznie — druga próba korzysta z rozkładów, które
     // pierwsza zdążyła już pobrać do cache, więc zwykle przechodzi.
+    // Wynik oznaczony przez serwer jako niepełny (odkrywanie przesiadek
+    // przerwał limit zapytań przy zimnym cache) pokazujemy od razu, a w tle
+    // raz dociągamy pełny — drugi przebieg ma już rozkłady w cache. Bez tego
+    // te same parametry dawały różne wyniki zależnie od stanu cache.
+    var refining=false;
     function attempt(retry){
       fetch('/api/planner?'+params.toString(),{headers:{Accept:'application/json'}})
         .then(function(r){return r.json().catch(function(){return {}}).then(function(data){return {ok:r.ok,status:r.status,data:data}}) })
         .then(function(res){
+          if(refining&&(!res.ok||!res.data.ok)){refining=false;renderFoundStatus();return}
           if(!res.ok||!res.data.ok){
             if(!res.data.error&&!retry){
               $('resultsStatus').textContent=T('planer.retrying');
@@ -1225,9 +1231,16 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
           }
           btn.disabled=false;
           renderResults(res.data);
+          if(refining){refining=false;return}
           scrollToResults();
+          if(res.data.partial){
+            refining=true;
+            $('resultsStatus').textContent+=' '+T('planer.refining');
+            setTimeout(function(){attempt(true)},400);
+          }
         })
         .catch(function(){
+          if(refining){refining=false;renderFoundStatus();return}
           if(!retry){setTimeout(function(){attempt(true)},1500);return}
           btn.disabled=false;
           $('resultsStatus').className='status err';

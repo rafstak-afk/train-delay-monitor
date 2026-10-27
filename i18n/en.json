@@ -330,7 +330,8 @@
     "searching": "Searching for connections...",
     "retrying": "Searching for connections... (retrying, the server needed more time)",
     "serverError": "Connection search error (server: {status}). Please try again in a moment.",
-    "apiFail": "Couldn't connect to the API."
+    "apiFail": "Couldn't connect to the API.",
+    "refining": "(completing results…)"
   },
   "tutorial": {
     "ui": {

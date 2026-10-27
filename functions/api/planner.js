@@ -176,6 +176,7 @@ export async function onRequestGet(context) {
 
     let itineraries = [];
     let noConnectionFound = false;
+    let partial = false;
     let viaFailedAt = null;
     let lastDepartureToday = null;
     let cacheInfo = { stationsDictionary: stationsDictionaryResult.cache };
@@ -237,6 +238,7 @@ export async function onRequestGet(context) {
       });
       apiLimitsList.push(...csa.apiLimitsList);
       requestBudgetUsed += csa.fetchedCount * 3;
+      partial = !!csa.budgetExhausted;
 
       const combined = pruneDominated(dedupItineraries(csa.itineraries));
       itineraries = combined.sort((a, b) => a.departureTime.localeCompare(b.departureTime)).slice(0, maxResults);
@@ -310,6 +312,7 @@ export async function onRequestGet(context) {
       generatedAt: new Date().toISOString(),
       counts,
       noConnectionFound,
+      partial,
       viaFailedAt,
       lastDepartureToday,
       itineraries,
@@ -318,7 +321,10 @@ export async function onRequestGet(context) {
       cache: { ...cacheInfo, composed: "MISS" }
     };
 
-    const composedTtl = noConnectionFound ? COMPOSED_CACHE_TTL_EMPTY : COMPOSED_CACHE_TTL;
+    // Niepełny wynik nie może na 30 min zostać "tym" wynikiem dla tych
+    // parametrów — krótki cache, kolejne zapytanie policzy go od nowa już na
+    // rozgrzanym cache rozkładów.
+    const composedTtl = (noConnectionFound || partial) ? COMPOSED_CACHE_TTL_EMPTY : COMPOSED_CACHE_TTL;
     context.waitUntil(
       caches.default.put(
         composedKey,
@@ -1049,6 +1055,11 @@ async function searchWithCSA({
   let totalRoutesVolume = 0;
   let fetchedCount = 0;
   let subrequestsUsed = budgetUsedSoFar;
+  // Odkrywanie przerwane limitem subrequestów (a nie dlatego, że nie było już
+  // czego szukać) — przy zimnym cache (pudło = 3 subrequesty zamiast 1) dzieje
+  // się to wcześniej, więc to samo zapytanie potrafiło dać różne wyniki
+  // zależnie od tego, co akurat było w cache. Wynik oznaczamy jako niepełny.
+  let budgetExhausted = false;
 
   async function fetchAndAdd(ids) {
     const toFetch = ids.filter((id) => !fetchedIds.has(id));
@@ -1099,7 +1110,7 @@ async function searchWithCSA({
     // CSA_CANDIDATES_PER_ROUND stacji naraz), więc koszt tury jest stały
     // (3 przy pudle cache'a, 1 przy trafieniu), niezależny od tego, ile
     // stacji się w niej mieści.
-    if (CSA_SUBREQUEST_CEILING - subrequestsUsed < 3) break;
+    if (CSA_SUBREQUEST_CEILING - subrequestsUsed < 3) { budgetExhausted = true; break; }
 
     round++;
     const sorted = allConnections.slice().sort((a, b) => a.depMin - b.depMin);
@@ -1148,7 +1159,7 @@ async function searchWithCSA({
   const directLegs = findAllDirectLegs(sortedFinal, String(from.id), String(to.id), floorMin);
   const itineraries = rawLegs.concat(directLegs).map((legs) => csaLegsToItinerary(legs, from, to, stationNames, date));
 
-  return { itineraries, apiLimitsList, fetchedCount };
+  return { itineraries, apiLimitsList, fetchedCount, budgetExhausted };
 }
 
 function findAllDirectLegs(sortedConnections, sourceId, destId, floorMin) {
