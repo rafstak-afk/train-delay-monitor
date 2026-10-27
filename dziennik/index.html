@@ -277,18 +277,63 @@ function rejectPlanEntry(key){
 // używana zarówno przez ręczny przycisk "✅ Potwierdź", jak i przez ciche,
 // automatyczne potwierdzanie przy wejściu na stronę (autoConfirmReadyPlanEntries).
 // Zwraca {ok:true} po zapisaniu do dzienniczka, albo {ok:false, reason}.
+async function fetchPlanRoute(scheduleId,orderId,date){
+  const q=new URLSearchParams({scheduleId:scheduleId||'',orderId:orderId||'',operatingDate:date||''});
+  const r=await fetch('/api/train-details?'+q.toString(),{headers:{Accept:'application/json'},cache:'no-store'});
+  const data=await r.json().catch(()=>null);
+  return r.ok&&data&&!data.error&&Array.isArray(data.route)?data:null;
+}
+// Planowy przyjazd minął co najmniej 15 min temu? (Tylko wtedy szukamy
+// kursu pod nowym numerem — przed przyjazdem „niepotwierdzony” jest normalny.)
+function planArrivalPassed(e){
+  const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(e.date||''),t=/^(\d{1,2}):(\d{2})/.exec(e.plannedArrival||'');
+  if(!m||!t)return false;
+  const arr=new Date(+m[1],+m[2]-1,+m[3],+t[1],+t[2]);
+  if(e.plannedDeparture&&toMinutesJ(e.plannedArrival)<toMinutesJ(e.plannedDeparture))arr.setDate(arr.getDate()+1);
+  return Date.now()-arr.getTime()>15*60*1000;
+}
+// PLK potrafi w ciągu dnia przenumerować zlecenie kursu (orderId) — wpis
+// zapisany wcześniej wskazuje wtedy na trasę bez danych bieżących i wygląda
+// jak „jeszcze nie przyjechał”, choć pociąg dawno dojechał. Szukamy tego
+// samego pociągu (numer + planowy odjazd) na tablicy stacji wsiadania.
+async function findCurrentRunIds(e){
+  try{
+    const dep=toMinutesJ(e.plannedDeparture);
+    if(dep==null)return null;
+    const from=Math.max(0,dep-30);
+    const q=new URLSearchParams({station:e.boardStation||'',date:e.date||'',time:String(Math.floor(from/60)).padStart(2,'0')+':'+String(from%60).padStart(2,'0'),limit:'80'});
+    const r=await fetch('/api/departures?'+q.toString(),{headers:{Accept:'application/json'}});
+    const d=await r.json().catch(()=>null);
+    const rows=(d&&Array.isArray(d.departures))?d.departures:[];
+    const num=String(e.trainNumber||'').replace(/\D/g,'');
+    const row=rows.find(x=>String(x.train||'').replace(/\D/g,'')===num&&(!e.plannedDeparture||x.plannedTime===e.plannedDeparture))||rows.find(x=>String(x.train||'').replace(/\D/g,'')===num);
+    if(!row||!row.scheduleId||!row.orderId)return null;
+    if(String(row.scheduleId)===String(e.scheduleId)&&String(row.orderId)===String(e.orderId))return null;
+    return{scheduleId:String(row.scheduleId),orderId:String(row.orderId)};
+  }catch(err){return null}
+}
 async function tryConfirmPlanEntry(e){
   try{
-    const q=new URLSearchParams({scheduleId:e.scheduleId||'',orderId:e.orderId||'',operatingDate:e.date||''});
-    const r=await fetch('/api/train-details?'+q.toString(),{headers:{Accept:'application/json'},cache:'no-store'});
-    const data=await r.json().catch(()=>null);
-    if(!r.ok||!data||data.error||!Array.isArray(data.route))return{ok:false,reason:'fetch-failed'};
+    let data=await fetchPlanRoute(e.scheduleId,e.orderId,e.date);
     const norm=s=>String(s||'').trim().toLowerCase();
-    const stations=data.route;
-    const bi=stations.findIndex(s=>norm(s.stationName)===norm(e.boardStation));
-    const ai=stations.findIndex(s=>norm(s.stationName)===norm(e.alightStation));
-    if(bi<0||ai<0||ai<=bi)return{ok:false,reason:'route-mismatch'};
-    const b=stations[bi],a=stations[ai];
+    const locate=d=>{
+      const st=d?d.route:[];
+      const bi=st.findIndex(s=>norm(s.stationName)===norm(e.boardStation));
+      const ai=st.findIndex(s=>norm(s.stationName)===norm(e.alightStation));
+      return bi<0||ai<0||ai<=bi?null:{b:st[bi],a:st[ai]};
+    };
+    let hit=locate(data);
+    if((!hit||hit.a.status!=='confirmed')&&planArrivalPassed(e)){
+      const ids=await findCurrentRunIds(e);
+      if(ids){
+        const d2=await fetchPlanRoute(ids.scheduleId,ids.orderId,e.date);
+        const h2=locate(d2);
+        if(h2){data=d2;hit=h2}
+      }
+    }
+    if(!data)return{ok:false,reason:'fetch-failed'};
+    if(!hit)return{ok:false,reason:'route-mismatch'};
+    const b=hit.b,a=hit.a;
     if(a.status!=='confirmed')return{ok:false,reason:'not-arrived'};
     const plannedDep=b.plannedDeparture||b.plannedTime;
     const actualDep=(b.status==='confirmed'?(b.actualDeparture||b.actualTime):'')||plannedDep;
