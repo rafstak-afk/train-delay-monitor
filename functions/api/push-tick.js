@@ -285,6 +285,7 @@ async function checkStation(origin, stationName, followUps = new Map()) {
       cancelled,
       reason,
       url: `/train?${urlParams.toString()}`,
+      station: stationName,
       // planowa (nie bieżąca) godzina — d.time przesuwa się razem z opóźnieniem
       key
     });
@@ -356,7 +357,12 @@ function buildPayload(items, kind, lang) {
   const body = extra > 0
     ? `${items.length} ${pluralWord(t.delays, items.length, t.lang)}: ${plainText(items[0], t)} ${t.more.replace("{n}", extra)} — ${t.tap}`
     : `${plainText(items[0], t)} — ${t.tap}`;
-  const url = items.length === 1 ? items[0].url : (kind === "station" ? "/" : "/moje-pociagi/");
+  // Alarm ze stacji otwiera TABLICĘ tej stacji (tablica wczytuje ?station=
+  // przy starcie); przy kilku stacjach naraz — stację pierwszego pociągu.
+  // Alarm z „Moich pociągów” otwiera bieg pociągu (jeden) albo listę.
+  const url = kind === "station" && items[0].station
+    ? "/?station=" + encodeURIComponent(items[0].station)
+    : items.length === 1 ? items[0].url : (kind === "station" ? "/" : "/moje-pociagi/");
   return { title, body, url };
 }
 

@@ -80,8 +80,10 @@ self.addEventListener("notificationclick", event => {
       for (const client of list) {
         if ("focus" in client) {
           client.focus();
-          if ("navigate" in client) return client.navigate(targetUrl);
-          return;
+          // navigate() działa tylko dla kart kontrolowanych przez ten SW —
+          // inaczej odrzuca obietnicę; wtedy otwieramy nowe okno z celem.
+          if ("navigate" in client) return client.navigate(targetUrl).catch(() => clients.openWindow(targetUrl));
+          return clients.openWindow(targetUrl);
         }
       }
       return clients.openWindow(targetUrl);
