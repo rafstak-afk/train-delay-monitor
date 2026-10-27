@@ -73,7 +73,39 @@
     }
     var byText = getByPath(dict, "index.disruption.texts." + text);
     if (byText) return byText;
+    var byTemplate = translateDisruptionTemplate(text);
+    if (byTemplate) return byTemplate;
     return text;
+  }
+
+  // Komunikaty PLK z polami (np. „Na odcinku od stacji {stacja_poczatkowa} do
+  // stacji {stacja_koncowa} pociąg został odwołany…”) przychodzą już
+  // wypełnione nazwami stacji — polski szablon zamieniamy na wzorzec,
+  // wyciągamy z tekstu wartości pól i wstawiamy je do szablonu w bieżącym
+  // języku. Nazwy stacji zostają oryginalne.
+  function translateDisruptionTemplate(text) {
+    var plTemplates = getByPath(fallbackDict, "index.disruption.templates");
+    if (!plTemplates || typeof text !== "string") return null;
+    var clean = text.trim().replace(/\.$/, "");
+    for (var code in plTemplates) {
+      var tpl = String(plTemplates[code]).trim().replace(/\.$/, "");
+      var names = [];
+      var pattern = "^" + tpl.replace(/[.*+?^$()|[\]\\]/g, "\\$&").replace(/\\?\{(\w+)\\?\}|\{(\w+)\}/g, function (m, a, b) {
+        var name = a || b;
+        if (names.indexOf(name) >= 0) return "(?:.+?)";
+        names.push(name);
+        return "(.+?)";
+      }) + "$";
+      var m;
+      try { m = clean.match(new RegExp(pattern)); } catch (e) { m = null; }
+      if (!m) continue;
+      var target = getByPath(dict, "index.disruption.templates." + code);
+      if (!target) return null;
+      var values = {};
+      names.forEach(function (n, i) { values[n] = m[i + 1]; });
+      return interpolate(target, values);
+    }
+    return null;
   }
 
   // Przyczyna bywa kilkoma frazami sklejonymi " / " (functions/api/*.js)
