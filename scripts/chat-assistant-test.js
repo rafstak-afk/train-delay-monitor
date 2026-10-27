@@ -259,10 +259,93 @@ test("jedna stacja bez z/do → pytanie o kierunek", async () => {
   const c = await session();
   await c.say("bytom jutro o 7");
   expectEmpty(c.state(), "from"); expectEmpty(c.state(), "to");
-  await c.click("Tam jadę");
+  await c.click("to mój cel podróży");
   expectStation(c.state(), "to", "Bytom");
   expectSaid(c, "Skąd jedziesz?");
   expect(c.state().time === "07:00", "godzina " + c.state().time);
+});
+
+test("kreator klikany: Bytom → Tak, stąd jadę → … → podsumowanie", async () => {
+  const c = await session();
+  await c.say("Bytom");
+  expectSaid(c, "czy stąd jedziesz?");
+  await c.click("Tak, stąd jadę");
+  expectStation(c.state(), "from", "Bytom");
+  expectSaid(c, "Dokąd jedziesz?");
+  await c.say("Gliwice");
+  expectSaid(c, "Kiedy jedziesz?");
+  await c.click("Jutro");
+  expectSaid(c, "Od której");
+  await c.click("07:00");
+  expectSaid(c, "przez");
+  await c.click("Nie, bez stacji pośredniej");
+  expectSaid(c, "przewoźnika");
+  await c.click("Nie, wszyscy przewoźnicy");
+  expectSaid(c, "bezpośrednie");
+  await c.click("Nie, mogą być przesiadki");
+  expectSaid(c, "przesiadkę");
+  await c.click("10 min");
+  expectSaid(c, "Szukać?");
+  const st = c.state();
+  expectStation(st, "to", "Gliwice");
+  expect(st.date === TOMORROW && st.time === "07:00" && st.transfer === 10 && !st.direct && !st.via && !st.exclude.length, "stan: " + JSON.stringify({ d: st.date, t: st.time, tr: st.transfer, dir: st.direct }));
+});
+
+test("kreator pisany: tak / jutro / o 8 / nie / nie / tak", async () => {
+  const c = await session();
+  await c.say("Katowice");
+  await c.say("tak");
+  expectStation(c.state(), "from", "Katowice");
+  await c.say("Gliwice");
+  await c.say("jutro");
+  await c.say("o 8");
+  await c.say("nie");
+  await c.say("nie");
+  await c.say("tak");
+  expectSaid(c, "Szukać?");
+  const st = c.state();
+  expectStation(st, "to", "Gliwice");
+  expect(st.date === TOMORROW && st.time === "08:00" && st.direct, "stan: " + JSON.stringify({ d: st.date, t: st.time, dir: st.direct }));
+});
+
+test("kreator: przez stację i wykluczenie przewoźnika", async () => {
+  const c = await session();
+  await c.say("Tarnowskie Góry");
+  await c.click("Tak, stąd jadę");
+  await c.say("Katowice");
+  await c.click("Dziś");
+  await c.click("Teraz");
+  await c.click("Tak, wybiorę stację");
+  await c.say("Bytom");
+  expectStation(c.state(), "via", "Bytom");
+  await c.click("Tak, wybiorę");
+  await c.click("PKP Intercity");
+  expect(c.state().exclude.some(x => x.code === "IC"), "IC nie wykluczony");
+  expectSaid(c, "bezpośrednie");
+});
+
+test("kreator od przycisku „Krok po kroku” w powitaniu", async () => {
+  const c = await session();
+  await c.click("Krok po kroku");
+  expectSaid(c, "Skąd jedziesz?");
+  await c.say("Bytom");
+  expectStation(c.state(), "from", "Bytom");
+  expectSaid(c, "Dokąd jedziesz?");
+});
+
+test("sama stacja → „Pokaż tablicę odjazdów” otwiera tablicę tej stacji", async () => {
+  const c = await session();
+  await c.say("Katowice");
+  await c.click("Pokaż tablicę odjazdów");
+  expect(c.env.location.href === "/?station=Katowice", "adres: " + c.env.location.href);
+});
+
+test("tablica dla niejednoznacznej stacji → wybór stacji", async () => {
+  const c = await session();
+  await c.say("Kraków");
+  await c.click("Pokaż tablicę odjazdów");
+  await c.click("Kraków Główny");
+  expect(c.env.location.href === "/?station=" + encodeURIComponent("Kraków Główny"), "adres: " + c.env.location.href);
 });
 
 test("myślnik: Katowice - Gliwice", async () => {

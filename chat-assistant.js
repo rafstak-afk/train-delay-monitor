@@ -353,7 +353,7 @@
   var st = null;
   function resetState() {
     st = { from: null, to: null, via: null, date: null, time: null, transfer: null, direct: false, exclude: [],
-      pending: null }; // pending: {kind:'from'|'to'|'via', options:[stations]} | {kind:'time'} | {kind:'transfer'} | {kind:'carrier'} | {kind:'viaAsk'}
+      pending: null, wizard: false, wdone: {} }; // pending: {kind:'from'|'to'|'via', options:[stations]} | {kind:'time'} | {kind:'transfer'} | {kind:'carrier'} | {kind:'viaAsk'}
   }
 
   // ---------- pamięć rozmowy (to urządzenie + profil) ----------
@@ -485,6 +485,7 @@
     resetState();
     addMsg(T("chat.cleared"), "bot", true);
     addMsg(T("chat.greeting"), "bot", true);
+    offerWizard();
   }
 
   // Zachęta do założenia profilu po skorzystaniu z czatu (rozmowa jest wtedy
@@ -548,6 +549,14 @@
     resetState();
     memLog = [];
     addMsg(T("chat.greeting"), "bot");
+    offerWizard();
+  }
+  // Kreator od zera — dla tych, którzy wolą klikać niż pisać zdania.
+  function offerWizard() {
+    addOptions([{ label: "🧭 Krok po kroku", onClick: function () {
+      addMsg("Krok po kroku", "user");
+      startNewRoute(); st.wizard = true; next();
+    } }]);
   }
   function restoreOrGreet() {
     resetState();
@@ -594,8 +603,25 @@
   function handle(text) {
     var f = fold(text);
     if (RETURN_RE.test(" " + f + " ")) return returnTrip(text);
+    // odpowiedź pisana na pytanie z przyciskami („tak”, „nie, to mój cel”…)
+    if (st.pending && st.pending.kind === "choice") {
+      var cw = fold(text);
+      var ch = st.pending.opts.filter(function (o) { return (o.words || []).some(function (x) { return cw === x || cw.indexOf(x + " ") === 0; }); })[0];
+      st.pending = null;
+      if (ch) return ch.onClick();
+      // inna odpowiedź — traktujemy jak zwykłą wiadomość (poniżej)
+    }
+    if (st.pending && st.pending.kind === "date") {
+      var pd = parse(text);
+      if (pd.date) {
+        st.date = pd.date; st.wdone.date = true; st.pending = null;
+        if (pd.time) { st.time = pd.time; st.wdone.time = true; }
+        return next();
+      }
+    }
     // odpowiedź na pytanie o godzinę
     if (st.pending && st.pending.kind === "time") {
+      if (st.wizard && / (teraz|zaraz|juz) /.test(" " + f + " ")) { st.time = null; st.wdone.time = true; st.pending = null; return next(); }
       var pt = parse(" o " + text);
       if (pt.date) st.date = pt.date;
       if (pt.time) { st.time = pt.time; st.pending = null; return next(); }
@@ -646,8 +672,10 @@
       delete p.bare;
     }
     if (p.bare && !p.from && !p.to) {
-      var sp = splitTwoStations(p.bare);
-      if (sp) { p.from = sp.from; p.to = sp.to; }
+      // Najpierw: czy cała fraza to JEDNA stacja („Tarnowskie Góry”)?
+      var whole1 = matchStation(p.bare);
+      var sp = whole1.exact ? null : splitTwoStations(p.bare);
+      if (sp && sp.score >= 3) { p.from = sp.from; p.to = sp.to; }
       else {
         var one = matchStation(p.bare);
         if (one.exact || one.options) return askDirection(p, p.bare);
@@ -703,6 +731,7 @@
     st.prevFrom = st.from || st.prevFrom || null;
     st.from = null; st.to = null; st.via = null; st.date = null; st.time = null;
     st.direct = false; st.exclude = []; st.transfer = null;
+    st.wizard = false; st.wdone = {};
   }
   // Jedna stacja bez „z/do” — nie zgadujemy kierunku.
   function askDirection(p, phrase) {
@@ -710,12 +739,125 @@
     st.direct = !!p.direct; st.date = p.date || null; st.time = p.time || null;
     p.exclude.forEach(addExclude);
     if (p.transfer != null && TRANSFER_OPTIONS.indexOf(p.transfer) >= 0) st.transfer = p.transfer;
-    addMsg("„" + phrase + "” — to stacja, z której jedziesz, czy do której?", "bot");
-    addOptions([
-      { label: "🚩 Stąd jadę", onClick: function () { addMsg("Stąd jadę", "user"); if (resolveStation("from", phrase)) next(); } },
-      { label: "🏁 Tam jadę", onClick: function () { addMsg("Tam jadę", "user"); if (resolveStation("to", phrase)) next(); } },
-      { label: "✏️ Wpiszę jeszcze raz", onClick: function () { addMsg("Wpiszę jeszcze raz", "user"); addMsg("Napisz np. „z Bytomia do Gliwic jutro o 7”.", "bot"); if (inputEl) inputEl.focus(); } }
+    // Od samej stacji prowadzimy krok po kroku (kreator) — o to, co już
+    // padło w wiadomości (np. „jutro o 7”), nie pytamy drugi raz.
+    st.wizard = true;
+    if (st.exclude.length) st.wdone.carrier = true;
+    askChoice("„" + phrase + "” — czy stąd jedziesz?", [
+      { label: "✅ Tak, stąd jadę", primary: true, words: ["tak", "stad", "z tad"], onClick: function () { if (resolveStation("from", phrase)) next(); } },
+      { label: "🏁 Nie, to mój cel podróży", words: ["nie", "cel", "tam"], onClick: function () { if (resolveStation("to", phrase)) next(); } },
+      { label: "🚉 Pokaż tablicę odjazdów", words: ["tablica", "tablice", "tablicy", "odjazdy", "pokaz tablice"], onClick: function () { openBoard(phrase); } },
+      { label: "✏️ Wpiszę jeszcze raz", words: [], onClick: function () { st.wizard = false; addMsg("Napisz np. „z Bytomia do Gliwic jutro o 7”.", "bot"); if (inputEl) inputEl.focus(); } }
     ]);
+  }
+
+  // Pytanie z przyciskami, na które można też ODPISAĆ („tak”, „nie”…) —
+  // words: początki odpowiedzi pasujące do danej opcji.
+  function askChoice(question, opts) {
+    addMsg(question, "bot");
+    st.pending = { kind: "choice", opts: opts };
+    addOptions(opts.map(function (o) {
+      return { label: o.label, primary: o.primary, onClick: function () {
+        addMsg(o.label.replace(/^[^\s\wąćęłńóśźżĄĆĘŁŃÓŚŹŻ]+\s*/, ""), "user");
+        st.pending = null; o.onClick();
+      } };
+    }));
+  }
+
+  // Tablica odjazdów stacji (tablica wczytuje ?station= przy starcie).
+  function openBoard(phrase) {
+    var goBoard = function (s) {
+      addMsg("Otwieram tablicę odjazdów: " + s.name + "…", "bot");
+      location.href = "/?station=" + encodeURIComponent(s.name);
+    };
+    var m = matchStation(phrase);
+    if (m.exact) return goBoard(m.exact);
+    if (m.options) {
+      addMsg("Którą stację pokazać?", "bot");
+      addOptions(m.options.map(function (s) { return { label: s.name, onClick: function () { addMsg(s.name, "user"); goBoard(s); } }; }));
+      return;
+    }
+    addMsg("Nie znalazłem stacji „" + phrase + "”.", "bot");
+  }
+
+  // ---------- kreator krok po kroku ----------
+  // Po ustaleniu skąd/dokąd pytamy po kolei o resztę formularza planera:
+  // data → godzina → przez → przewoźnicy → tylko bezpośrednie → przesiadka.
+  // Zwraca true, gdy zadał pytanie (czekamy na odpowiedź).
+  function wizardStep() {
+    var d = st.wdone;
+    if (!d.date) { if (st.date) d.date = true; else { askDate(); return true; } }
+    if (!d.time) { if (st.time) d.time = true; else { askWizardTime(); return true; } }
+    if (!d.via) {
+      if (st.via) d.via = true;
+      else {
+        askChoice("Czy jedziesz przez konkretną stację?", [
+          { label: "Nie, bez stacji pośredniej", words: ["nie", "bez"], onClick: function () { d.via = true; next(); } },
+          { label: "Tak, wybiorę stację", words: ["tak"], onClick: function () { d.via = true; askStation("via", "Przez którą stację? Kliknij albo wpisz nazwę."); } }
+        ]);
+        return true;
+      }
+    }
+    if (!d.carrier) {
+      if (st.exclude.length) d.carrier = true;
+      else {
+        askChoice("Czy wykluczyć jakiegoś przewoźnika?", [
+          { label: "Nie, wszyscy przewoźnicy", words: ["nie", "wszyscy"], onClick: function () { d.carrier = true; next(); } },
+          { label: "Tak, wybiorę", words: ["tak"], onClick: function () { d.carrier = true; askCarrier(); } }
+        ]);
+        return true;
+      }
+    }
+    if (!d.direct) {
+      if (st.direct) { d.direct = true; d.transfer = true; }
+      else {
+        askChoice("Tylko połączenia bezpośrednie (bez przesiadek)?", [
+          { label: "Nie, mogą być przesiadki", words: ["nie", "moga"], onClick: function () { d.direct = true; next(); } },
+          { label: "Tak, tylko bezpośrednie", words: ["tak", "tylko"], onClick: function () { st.direct = true; d.direct = true; d.transfer = true; next(); } }
+        ]);
+        return true;
+      }
+    }
+    if (!d.transfer) {
+      if (st.transfer != null) d.transfer = true;
+      else {
+        st.pending = { kind: "transfer" };
+        addMsg("Ile minut potrzebujesz na przesiadkę?", "bot");
+        var opts = [{ label: "Jak w planerze (domyślnie)", onClick: function () { addMsg("Jak w planerze", "user"); d.transfer = true; st.pending = null; next(); } }];
+        TRANSFER_OPTIONS.filter(function (n) { return n > 0 && n <= 30; }).forEach(function (n) {
+          opts.push({ label: n + " min", onClick: function () { addMsg(n + " min", "user"); st.transfer = n; d.transfer = true; st.pending = null; next(); } });
+        });
+        addOptions(opts);
+        return true;
+      }
+    }
+    st.wizard = false;
+    return false;
+  }
+  function askDate() {
+    st.pending = { kind: "date" };
+    addMsg("Kiedy jedziesz? Kliknij albo napisz, np. „15.11”, „w piątek”.", "bot");
+    var names = ["Dziś", "Jutro", "Pojutrze"], opts = [];
+    for (var i = 0; i < 7; i++) {
+      (function (i) {
+        var d = today(); d.setDate(d.getDate() + i);
+        var label = i < 3 ? names[i] : plDate(iso(d));
+        opts.push({ label: label, onClick: function () { addMsg(label, "user"); st.date = iso(d); st.wdone.date = true; st.pending = null; next(); } });
+      })(i);
+    }
+    opts.push({ label: "✏️ Inna data", onClick: function () { addMsg("Inna data", "user"); addMsg("Napisz datę, np. „15.11” albo „15 listopada”.", "bot"); if (inputEl) inputEl.focus(); } });
+    addOptions(opts);
+  }
+  function askWizardTime() {
+    st.pending = { kind: "time" };
+    addMsg("Od której godziny szukać? Kliknij albo napisz, np. „7:45”, „po siedemnastej”.", "bot");
+    var opts = [];
+    var setT = function (label, t) { return { label: label, onClick: function () { addMsg(label, "user"); st.time = t; st.wdone.time = true; st.pending = null; next(); } }; };
+    if (!st.date || st.date === iso(today())) opts.push(setT("Teraz", null));
+    opts.push(setT("Od pierwszego pociągu", "00:00"));
+    ["05:00", "06:00", "07:00", "08:00", "10:00", "12:00", "14:00", "15:00", "16:00", "17:00", "18:00", "20:00"].forEach(function (t) { opts.push(setT(t, t)); });
+    opts.push({ label: "✏️ Inna godzina", onClick: function () { addMsg("Inna godzina", "user"); addMsg("Wpisz godzinę, np. „7:45”.", "bot"); if (inputEl) inputEl.focus(); } });
+    addOptions(opts);
   }
 
   // Przewoźnicy do kliknięcia (zamiast wpisywania nazwy).
@@ -781,6 +923,7 @@
     if (!st.from) { askStation("from", "Skąd jedziesz? Kliknij albo wpisz nazwę stacji."); return; }
     if (!st.to) { askStation("to", "Dokąd jedziesz? Kliknij albo wpisz nazwę stacji."); return; }
     if (st.from.id === st.to.id) { st.to = null; askStation("to", "Stacja docelowa jest taka sama jak początkowa. Dokąd jedziesz?"); return; }
+    if (st.wizard && wizardStep()) return;
     summary();
   }
 
