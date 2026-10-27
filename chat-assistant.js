@@ -145,6 +145,7 @@
     st.pending = { kind: kind };
     addMsg(question, "bot");
     var mine = myStations().filter(function (s) { return !(st.from && kind === "to" && s.id === st.from.id); });
+    if (kind === "from" && st.prevFrom) mine = [st.prevFrom].concat(mine.filter(function (s) { return s.id !== st.prevFrom.id; })).slice(0, 6);
     if (mine.length) stationChips(kind, mine);
   }
   function askTime(question, withTomorrow) {
@@ -272,6 +273,16 @@
     r.from = phraseAfter(function (w) { return w === "z" || w === "ze" || w === "od"; });
     r.to = phraseAfter(function (w) { return w === "do"; });
     r.via = phraseAfter(function (w) { return w === "przez"; });
+    if (!r.from && r.to) {
+      for (var di = 0; di < tokens.length; di++) if (fold(tokens[di]) === "do") break;
+      var before = [];
+      for (var bk = di - 1; bk >= 0 && before.length < 5; bk--) {
+        var bw = fold(tokens[bk]);
+        if (!bw || MARKERS.test(bw) || /^d/.test(bw) || /^(poniedzial|wtor|srod|czwart|piat|sobot|niedziel)/.test(bw)) break;
+        before.unshift(tokens[bk]);
+      }
+      if (before.length) r.from = before.join(" ");
+    }
     // „Tarnowskie Góry - Katowice” bez przyimków
     if (!r.from && !r.to) {
       var m = raw.split(/\s+-\s+|\s*->\s*/);
@@ -556,6 +567,10 @@
       addMsg("Nie zrozumiałem. Napisz np. „z Tarnowskich Gór do Katowic jutro o 7” albo — po wyszukaniu — „powrót o 16”.", "bot");
       if (!st.from) askStation("from", "Albo zacznijmy po kolei: skąd jedziesz?");
       return;
+    }
+    if (p.from || p.to) {
+      st.prevFrom = st.from;
+      st.from = null; st.to = null; st.via = null; st.date = null; st.time = null; st.direct = false;
     }
     if (p.date) st.date = p.date;
     if (p.time) st.time = p.time;
