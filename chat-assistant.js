@@ -205,7 +205,7 @@
   // ---------- parser jednej wypowiedzi ----------
   // Zwraca {from, to, via, date, time, transfer, direct, exclude[], vague[]}
   // — tylko to, co faktycznie padło. Frazy stacji jako surowy tekst (do dopasowania).
-  var MARKERS = /^(z|ze|od|do|przez|bez|o|około|okolo|ok|po|w|we|jutro|dzis|dzisiaj|pojutrze|rano|wieczorem|wieczor|poludniu|popoludniu|i|oraz|a|tylko|minut|minuty|min|przesiadk\w*|na|jak|chce|chcialbym|chcialabym|jechac|pojechac|dojechac|dostac|sie|pociagiem|prosze|szukam|polaczenia|polaczenie|teraz|zaraz|najblizszym|najblizszy)$/;
+  var MARKERS = /^(z|ze|od|do|przez|bez|o|około|okolo|ok|po|w|we|jutro|dzis|dzisiaj|pojutrze|rano|wieczorem|wieczor|poludniu|popoludniu|i|oraz|a|tylko|minut|minuty|min|przesiadk\w*|na|jak|chce|chcialbym|chcialabym|jechac|pojechac|dojechac|dostac|sie|pociagiem|prosze|szukam|polaczenia|polaczenie|teraz|zaraz|najblizszym|najblizszy|pierwsz\w*|ostatni\w*|najwczesniej\w*|najpozniej\w*|polaczen\w*|bezposredn\w*|kurs\w*|pociag\w*|godz\w*|potem|jakie|jaki|mam|mozna|czy)$/;
   function parse(raw) {
     var r = { exclude: [], vague: [] };
     var text = " " + raw.replace(/[→–—]/g, " - ") + " ";
@@ -252,7 +252,8 @@
     // godzina: „o 7”, „o 7:30”, „od 16”, „po 16”, „7:30”
     var t1 = f.match(/ (?:o|od|po|okolo|ok) (?:godz\w* )?(\d{1,2})(?: (\d{2}))? /) || raw.match(/\b(\d{1,2}):(\d{2})\b/);
     if (t1 && +t1[1] <= 23 && (!t1[2] || +t1[2] <= 59)) r.time = pad(+t1[1]) + ":" + pad(t1[2] ? +t1[2] : 0);
-    else if (/ (rano|wieczorem|wieczor|po poludniu|popoludniu|w nocy|przed poludniem) /.test(f)) r.vague.push({ kind: "time" });
+    else if (/ (pierwsz\w*|najwczesniej\w*) /.test(f)) r.time = "00:00";
+    else if (/ (rano|wieczorem|wieczor|po poludniu|popoludniu|w nocy|przed poludniem|ostatni\w*|najpozniej\w*) /.test(f)) r.vague.push({ kind: "time" });
 
     // stacje — frazy po „z/ze/od”, „do”, „przez”
     var tokens = text.replace(/[,;!?]/g, " ").split(/\s+/).filter(Boolean);
@@ -278,15 +279,26 @@
       var before = [];
       for (var bk = di - 1; bk >= 0 && before.length < 5; bk--) {
         var bw = fold(tokens[bk]);
-        if (!bw || MARKERS.test(bw) || /^d/.test(bw) || /^(poniedzial|wtor|srod|czwart|piat|sobot|niedziel)/.test(bw)) break;
+        if (!bw || MARKERS.test(bw) || /^\d/.test(bw) || /^(poniedzial|wtor|srod|czwart|piat|sobot|niedziel)/.test(bw)) break;
         before.unshift(tokens[bk]);
       }
       if (before.length) r.from = before.join(" ");
     }
+    // „Bytom Szklarska Poręba Górna jutro …” — same nazwy, bez „z/do”:
+    // zwracamy ten ciąg jako „bare”, a podział na dwie stacje robi handle().
+    if (!r.from && !r.to && !r.via) {
+      var bare = [];
+      for (var bi2 = 0; bi2 < tokens.length && bare.length < 8; bi2++) {
+        var w2 = fold(tokens[bi2]);
+        if (!w2 || w2 === "-" || MARKERS.test(w2) || /^\d/.test(w2) || /^(poniedzial|wtor|srod|czwart|piat|sobot|niedziel)/.test(w2)) { if (bare.length) break; else continue; }
+        bare.push(tokens[bi2]);
+      }
+      if (bare.length) r.bare = bare.join(" ");
+    }
     // „Tarnowskie Góry - Katowice” bez przyimków
     if (!r.from && !r.to) {
       var m = raw.split(/\s+-\s+|\s*->\s*/);
-      if (m.length === 2 && m[0].trim() && m[1].trim()) { r.from = m[0].trim(); r.to = m[1].trim(); }
+      if (m.length === 2 && m[0].trim() && m[1].trim()) { r.from = m[0].trim(); r.to = m[1].trim(); delete r.bare; }
     }
     return r;
   }
@@ -399,7 +411,6 @@
 
   function openPanel() {
     injectStyles();
-    try { sessionStorage.setItem("chatFabQuietV2", "1"); } catch (e) {}
     var fab = document.getElementById("chatAssistantFab"); if (fab) fab.className = "ca-fab";
     if (!panel) buildPanel();
     panel.classList.add("open");
@@ -561,6 +572,21 @@
     }
 
     var p = parse(text);
+    if (p.bare && !p.from && !p.to) {
+      var sp = splitTwoStations(p.bare);
+      if (sp) { p.from = sp.from; p.to = sp.to; }
+      else {
+        var one = matchStation(p.bare);
+        if (one.exact || one.options) return askDirection(p, p.bare);
+        // nie wiemy, co to jest — nie zmieniamy niczego po cichu
+        st.from = null; st.to = null; st.via = null;
+        if (p.date) st.date = p.date; else st.date = null;
+        st.time = p.time || null;
+        addMsg("Nie rozpoznałem stacji w „" + p.bare + "”.", "bot");
+        askStation("from", "Skąd jedziesz? Kliknij albo wpisz nazwę stacji, np. „z Bytomia do Gliwic”.");
+        return;
+      }
+    }
     var any = p.from || p.to || p.via || p.date || p.time || p.transfer != null || p.direct || p.exclude.length || p.vague.length;
     if (!any) {
       if (looksForeign(text) || (window.I18n && I18n.getLang() !== "pl")) { addMsg(T("chat.notUnderstood"), "bot"); return; }
@@ -584,6 +610,31 @@
     if (p.to && !resolveStation("to", p.to)) return;
     if (p.via && !resolveStation("via", p.via)) return;
     next();
+  }
+
+  // „bytom szklarska poręba górna” → szukamy podziału, w którym OBIE części
+  // są stacjami (najlepiej dokładnie). Brak pewnego podziału = null (pytamy).
+  function splitTwoStations(phrase) {
+    var w = phrase.split(/\s+/).filter(Boolean);
+    var best = null;
+    for (var k = 1; k < w.length; k++) {
+      var a = matchStation(w.slice(0, k).join(" ")), b = matchStation(w.slice(k).join(" "));
+      var sa = a.exact ? 2 : a.options ? 1 : 0, sb = b.exact ? 2 : b.options ? 1 : 0;
+      if (!sa || !sb) continue;
+      if (!best || sa + sb > best.score) best = { score: sa + sb, from: w.slice(0, k).join(" "), to: w.slice(k).join(" ") };
+    }
+    return best;
+  }
+  // Jedna stacja bez „z/do” — nie zgadujemy kierunku.
+  function askDirection(p, phrase) {
+    st.from = null; st.to = null; st.via = null; st.direct = !!p.direct;
+    st.date = p.date || null; st.time = p.time || null;
+    addMsg("„" + phrase + "” — to stacja, z której jedziesz, czy do której?", "bot");
+    addOptions([
+      { label: "🚩 Stąd jadę", onClick: function () { addMsg("Stąd jadę", "user"); if (resolveStation("from", phrase)) next(); } },
+      { label: "🏁 Tam jadę", onClick: function () { addMsg("Tam jadę", "user"); if (resolveStation("to", phrase)) next(); } },
+      { label: "✏️ Wpiszę jeszcze raz", onClick: function () { addMsg("Wpiszę jeszcze raz", "user"); addMsg("Napisz np. „z Bytomia do Gliwic jutro o 7”.", "bot"); if (inputEl) inputEl.focus(); } }
+    ]);
   }
 
   // Przewoźnicy do kliknięcia (zamiast wpisywania nazwy).
@@ -697,10 +748,10 @@
     b.id = "chatAssistantFab";
     var label = function () { return T("chat.open"); };
     // Na wejściu wyróżniona chmurka z zachętą; gdy pasażer sam zacznie
-    // klikać po serwisie — zwijamy do zwykłej ikony (do końca tej wizyty).
-    var QUIET_KEY = "chatFabQuietV2";
+    // klikać po stronie — zwijamy do zwykłej ikony (do przejścia na inną stronę).
+    // Wyróżnienie wraca przy każdym wejściu na stronę (bez zapamiętywania w sesji).
     var quiet = false;
-    try { quiet = sessionStorage.getItem(QUIET_KEY) === "1"; } catch (e) {}
+
     // Zawartość budujemy raz, a wygaszenie to tylko zmiana klasy — podmiana
     // innerHTML w trakcie kliknięcia gubiła cel i czat się nie otwierał.
     b.innerHTML = '<span class="ca-fab-ico">💬</span><span class="ca-fab-txt"></span>';
@@ -717,7 +768,7 @@
       if (e && e.target && e.target.closest && e.target.closest(".spot-tooltip,.spot-highlight")) return;
       if (e && e.type === "keydown" && (e.key === "Tab" || e.key === "Shift" || e.key === "Escape")) return;
       quiet = true;
-      try { sessionStorage.setItem(QUIET_KEY, "1"); } catch (e) {}
+
       render();
       document.removeEventListener("click", goQuiet, true);
       document.removeEventListener("keydown", goQuiet, true);
