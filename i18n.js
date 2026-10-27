@@ -138,6 +138,11 @@
     root.querySelectorAll("[data-i18n]").forEach(function (el) {
       el.textContent = t(el.getAttribute("data-i18n"));
     });
+    // Teksty z linkiem (np. „załóż <a>profil</a>”) — słownik jest nasz,
+    // więc innerHTML jest tu bezpieczne.
+    root.querySelectorAll("[data-i18n-html]").forEach(function (el) {
+      el.innerHTML = t(el.getAttribute("data-i18n-html"));
+    });
     // Format: data-i18n-attr="placeholder:key,title:key2"
     root.querySelectorAll("[data-i18n-attr]").forEach(function (el) {
       el.getAttribute("data-i18n-attr").split(",").forEach(function (pair) {

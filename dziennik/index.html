@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Dzienniczek podróży</title>
+<title data-i18n="dziennik.pageTitle">Dzienniczek podróży</title>
 <style>
 :root{--bg:#101820;--panel:#1c2833;--card:#223244;--line:#34495e;--text:#fff;--muted:#b8c3cf;--blue:#0b57d0;--green:#5dd39e;--yellow:#ffcc00;--red:#ff4d4d;--violet:#c084fc;--grey:#4b5563;--cyan:#22d3ee}
 *{box-sizing:border-box}
@@ -31,8 +31,11 @@ h2{margin:0 0 10px;font-size:17px}
 .trips-panel.open .trips-body-inner{visibility:visible;transition-delay:0s}
 .trips-content{padding:0 16px 16px;border-top:1px solid var(--line)}
 @media(prefers-reduced-motion:reduce){.trips-body,.trips-chevron,.trips-body-inner{transition:none}}
-.trip-panel{display:grid;gap:16px}
-@media(min-width:620px){.trip-panel{grid-template-columns:1fr 1fr}}
+/* minmax(0,1fr): karta może się zwęzić poniżej szerokości swojej zawartości —
+   bez tego dłuższe napisy (np. DE) wypychały przyciski poza ekran telefonu. */
+.trip-panel{display:grid;gap:16px;grid-template-columns:minmax(0,1fr)}
+@media(min-width:620px){.trip-panel{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+.trip-card{min-width:0}
 .trip-card h3{margin:0 0 8px;font-size:15px}
 .trip-card input{width:100%;padding:9px 10px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:#fff;font-size:13.5px;margin-bottom:7px}
 .trip-card .row2{display:flex;gap:7px}
@@ -111,7 +114,7 @@ h2{margin:0 0 10px;font-size:17px}
 .trip-remove{background:transparent;border:0;color:#8b95a1;cursor:pointer;font-size:13px;padding:4px 6px;border-radius:7px;white-space:nowrap}
 .trip-remove:hover{color:var(--red);background:rgba(255,77,77,.1)}
 .trip-reverse-row{display:flex;gap:7px;margin-bottom:8px}
-.reverse-select{flex:1;padding:9px 8px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:#fff;font-size:12.5px}
+.reverse-select{flex:1;min-width:0;padding:9px 8px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:#fff;font-size:12.5px}
 .trip-reverse-row .btn.secondary{width:auto;margin-bottom:0;white-space:nowrap}
 .plan-entry{background:var(--card);border:1px dashed var(--cyan);border-radius:12px;padding:12px 14px;margin-bottom:10px}
 .plan-entry-route{font-size:15px;font-weight:700;margin:6px 0}
@@ -123,42 +126,42 @@ h2{margin:0 0 10px;font-size:17px}
 </head>
 <body>
 <div class="wrap">
-  <a class="back" href="/">← Tablica</a>
-  <h1>📓 Dzienniczek podróży <button type="button" class="info-dot" title="Co to jest i jak wypełniać" onclick="toggleInfo('journal')">ⓘ</button></h1>
-  <div class="info-pop" id="info-journal">Zapisz tu swoje stałe, powtarzalne trasy (np. codzienny dojazd) — wystarczy raz uzupełnić stacje wsiadania i wysiadania. Dzienniczek sam rozpozna, że jedziesz jedną z zapisanych tras, i przy pasującym kursie zaproponuje szybki zapis z właściwą nazwą. Jeśli trasa ma przesiadkę, uzupełnij też „Odcinek 2” — każdy odcinek zapisze się jako osobny wpis. Pole „Odjazd od–do” to okno godzinowe, w którym przejazd uznajemy za typowy; poza nim dostaniesz pytanie, czy zapisać mimo to. Przyciskiem „➕ Dodaj kolejną trasę” możesz dodać ich dowolnie wiele — przydatne np. przy różnych godzinach w różne dni albo przy innych, też powtarzalnych przejazdach. Wszystko to (trasy, wpisy, ulubione stacje, Moje pociągi) widać tylko w tej przeglądarce, chyba że założysz <a href="/profil/">profil</a> — wtedy to samo zobaczysz też na innych urządzeniach. Bez profilu (np. w oknie incognito) dane znikają razem z zamknięciem przeglądarki.</div>
-  <div class="subtitle">Zapisane przejazdy z zaznaczoną stacją wsiadania i wysiadania — dodajesz je na stronie biegu pociągu.</div>
+  <a class="back" href="/" data-i18n="dziennik.back">← Tablica</a>
+  <h1><span data-i18n="dziennik.title">📓 Dzienniczek podróży</span> <button type="button" class="info-dot" title="Co to jest i jak wypełniać" data-i18n-attr="title:dziennik.infoTitle" onclick="toggleInfo('journal')">ⓘ</button></h1>
+  <div class="info-pop" id="info-journal" data-i18n-html="dziennik.infoJournal">Zapisz tu swoje stałe, powtarzalne trasy (np. codzienny dojazd) — wystarczy raz uzupełnić stacje wsiadania i wysiadania. Dzienniczek sam rozpozna, że jedziesz jedną z zapisanych tras, i przy pasującym kursie zaproponuje szybki zapis z właściwą nazwą. Jeśli trasa ma przesiadkę, uzupełnij też „Odcinek 2” — każdy odcinek zapisze się jako osobny wpis. Pole „Odjazd od–do” to okno godzinowe, w którym przejazd uznajemy za typowy; poza nim dostaniesz pytanie, czy zapisać mimo to. Przyciskiem „➕ Dodaj kolejną trasę” możesz dodać ich dowolnie wiele — przydatne np. przy różnych godzinach w różne dni albo przy innych, też powtarzalnych przejazdach. Wszystko to (trasy, wpisy, ulubione stacje, Moje pociągi) widać tylko w tej przeglądarce, chyba że założysz <a href="/profil/">profil</a> — wtedy to samo zobaczysz też na innych urządzeniach. Bez profilu (np. w oknie incognito) dane znikają razem z zamknięciem przeglądarki.</div>
+  <div class="subtitle" data-i18n="dziennik.subtitle">Zapisane przejazdy z zaznaczoną stacją wsiadania i wysiadania — dodajesz je na stronie biegu pociągu.</div>
   <div class="profile-hint" id="profileHint">
-    <div>💾 Zmiany zapisują się automatycznie w tej przeglądarce. Nie masz założonego profilu — bez niego nic z tego nie zobaczysz na innym urządzeniu, a np. w oknie incognito zniknie razem z jego zamknięciem. <a href="/profil/">Załóż profil</a> — to chwila.</div>
-    <button type="button" class="profile-hint-close" title="Zamknij" onclick="dismissProfileHint()">✕</button>
+    <div data-i18n-html="dziennik.profileHint">💾 Zmiany zapisują się automatycznie w tej przeglądarce. Nie masz założonego profilu — bez niego nic z tego nie zobaczysz na innym urządzeniu, a np. w oknie incognito zniknie razem z jego zamknięciem. <a href="/profil/">Załóż profil</a> — to chwila.</div>
+    <button type="button" class="profile-hint-close" title="Zamknij" data-i18n-attr="title:dziennik.close" onclick="dismissProfileHint()">✕</button>
   </div>
 
   <div class="panel trips-panel" id="tripsPanel">
     <button type="button" class="trips-toggle" id="tripsToggle" aria-expanded="false" aria-controls="tripsBody" onclick="toggleTrips()">
       <span class="trips-toggle-icon" aria-hidden="true">🛤️</span>
-      <span class="trips-toggle-text"><span class="trips-toggle-title">Ulubione trasy</span><span class="trips-toggle-summary" id="tripsSummary"></span></span>
-      <span class="trips-toggle-action"><span id="tripsToggleLabel">Rozwiń</span><span class="trips-chevron" aria-hidden="true">▾</span></span>
+      <span class="trips-toggle-text"><span class="trips-toggle-title" data-i18n="dziennik.trips">Ulubione trasy</span><span class="trips-toggle-summary" id="tripsSummary"></span></span>
+      <span class="trips-toggle-action"><span id="tripsToggleLabel" data-i18n="dziennik.expand">Rozwiń</span><span class="trips-chevron" aria-hidden="true">▾</span></span>
     </button>
     <div class="trips-body" id="tripsBody"><div class="trips-body-inner"><div class="trips-content">
     <div class="status" id="tripStatus"></div>
     <div class="trip-panel" id="tripCards"></div>
-    <button type="button" class="btn secondary" id="addTripBtn" onclick="addNewTrip()" style="margin-top:4px">➕ Dodaj kolejną trasę</button>
+    <button type="button" class="btn secondary" id="addTripBtn" onclick="addNewTrip()" style="margin-top:4px" data-i18n="dziennik.addTrip">➕ Dodaj kolejną trasę</button>
     </div></div></div>
   </div>
 
   <div class="panel" id="planPanel">
     <div class="entries-head">
-      <h2>📋 Plan podróży (<span id="planCount">0</span>) <button type="button" class="info-dot" title="Co to jest" onclick="toggleInfo('plan')">ⓘ</button></h2>
+      <h2><span data-i18n="dziennik.plan">📋 Plan podróży</span> (<span id="planCount">0</span>) <button type="button" class="info-dot" title="Co to jest" data-i18n-attr="title:dziennik.planInfoTitle" onclick="toggleInfo('plan')">ⓘ</button></h2>
     </div>
-    <div class="info-pop" id="info-plan">Tu trafiają przejazdy, które dopiero planujesz — zaznaczone (🚏/🏁) na biegu pociągu, który jeszcze nie dotarł do stacji wysiadania. Zobaczysz tu wszystkie zaplanowane odcinki razem, więc łatwiej ocenić, czy cała trasa (nawet z przesiadkami) w ogóle się spina. Gdy pociąg faktycznie dojedzie, wróć tu i kliknij „✅ Potwierdź” — wpis przeniesie się do dzienniczka poniżej z prawdziwym czasem i opóźnieniem. „❌ Odrzuć” po prostu usuwa plan.</div>
+    <div class="info-pop" id="info-plan" data-i18n="dziennik.infoPlan">Tu trafiają przejazdy, które dopiero planujesz — zaznaczone (🚏/🏁) na biegu pociągu, który jeszcze nie dotarł do stacji wysiadania. Zobaczysz tu wszystkie zaplanowane odcinki razem, więc łatwiej ocenić, czy cała trasa (nawet z przesiadkami) w ogóle się spina. Gdy pociąg faktycznie dojedzie, wróć tu i kliknij „✅ Potwierdź” — wpis przeniesie się do dzienniczka poniżej z prawdziwym czasem i opóźnieniem. „❌ Odrzuć” po prostu usuwa plan.</div>
     <div id="planList"></div>
   </div>
 
   <div class="panel">
     <div class="entries-head">
-      <h2>Wpisy (<span id="entryCount">0</span>)</h2>
+      <h2><span data-i18n="dziennik.entries">Wpisy</span> (<span id="entryCount">0</span>)</h2>
       <div class="entries-actions" id="entriesActions">
         <button type="button" class="btn-sm" id="exportBtn" onclick="exportToXlsx()">⬇️ XLSX</button>
-        <button type="button" class="btn-sm" id="unlockBtn" onclick="unlockEdit()">🔓 Odblokuj</button>
+        <button type="button" class="btn-sm" id="unlockBtn" onclick="unlockEdit()" data-i18n="dziennik.unlock">🔓 Odblokuj</button>
       </div>
     </div>
     <div id="entryList"></div>
@@ -169,18 +172,23 @@ h2{margin:0 0 10px;font-size:17px}
   <div class="confirm-box">
     <div class="confirm-msg" id="confirmMsg"></div>
     <div class="confirm-actions">
-      <button type="button" class="btn-sm secondary" id="confirmCancelBtn">Rezygnuj</button>
-      <button type="button" class="btn-sm" id="confirmOkBtn">Potwierdź</button>
+      <button type="button" class="btn-sm secondary" id="confirmCancelBtn" data-i18n="dziennik.cancel">Rezygnuj</button>
+      <button type="button" class="btn-sm" id="confirmOkBtn" data-i18n="dziennik.ok">Potwierdź</button>
     </div>
   </div>
 </div>
 
+<script src="/i18n.js"></script>
+<script src="/burger-menu.js"></script>
 <script src="/profile-sync.js"></script>
 <script src="/tutorial.js"></script>
 <script src="/survey.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 const JOURNAL_KEY='dziennikPodrozy';
+// Tłumaczenia (i18n.js). Wartości ZAPISYWANE (nazwa trasy, tripType) zostają
+// po polsku — T() tylko w tym, co trafia na ekran / do eksportu.
+function T(k,p){return window.I18n?I18n.t(k,p):k}
 const PLAN_KEY='dziennikPlanPodrozy';
 const TYPICAL_TRIPS_KEY='dziennikTrasyTypowe';
 
@@ -208,12 +216,12 @@ function planEntryHtml(e){
     <div class="entry-top"><span class="entry-date">${escapeHtml(dateFmt)}</span><span class="entry-train">${escapeHtml(trainLabel)}</span></div>
     <div class="plan-entry-route">${escapeHtml(e.boardStation)} → ${escapeHtml(e.alightStation)}</div>
     <div class="entry-times">
-      <span>Odjazd: <b>${escapeHtml(e.plannedDeparture||'—')}</b></span>
-      <span>Przyjazd: <b>${escapeHtml(e.plannedArrival||'—')}</b></span>
+      <span>${escapeHtml(T('dziennik.departure'))}: <b>${escapeHtml(e.plannedDeparture||'—')}</b></span>
+      <span>${escapeHtml(T('dziennik.arrival'))}: <b>${escapeHtml(e.plannedArrival||'—')}</b></span>
     </div>
     <div class="plan-actions">
-      <button type="button" class="btn-sm" onclick="confirmPlanEntry('${e._key}')">✅ Potwierdź</button>
-      <button type="button" class="btn-sm secondary" onclick="rejectPlanEntry('${e._key}')">❌ Odrzuć</button>
+      <button type="button" class="btn-sm" onclick="confirmPlanEntry('${e._key}')">${escapeHtml(T('dziennik.confirm'))}</button>
+      <button type="button" class="btn-sm secondary" onclick="rejectPlanEntry('${e._key}')">${escapeHtml(T('dziennik.reject'))}</button>
     </div>
     <div class="plan-status" id="planStatus_${escapeHtml(e._key)}"></div>
   </div>`;
@@ -224,7 +232,7 @@ function renderPlan(){
   if(countEl)countEl.textContent=list.length;
   const el=document.getElementById('planList');
   if(!el)return;
-  el.innerHTML=list.length?list.map(planEntryHtml).join(''):'<div class="empty">Brak zaplanowanych przejazdów. Na biegu pociągu, który jeszcze nie dotarł do stacji wysiadania, zaznacz 🚏/🏁 i dodaj „📋 Do planu”.</div>';
+  el.innerHTML=list.length?list.map(planEntryHtml).join(''):'<div class="empty">'+escapeHtml(T('dziennik.planEmpty'))+'</div>';
 }
 // Usunięcie z planu (potwierdzenie albo odrzucenie) wysyłamy przez
 // pushBeacon — bez potwierdzenia dotarcia na serwer. Jeśli zaraz potem
@@ -318,7 +326,7 @@ async function confirmPlanEntry(key){
   const e=list.find(x=>x._key===key);
   if(!e)return;
   const statusEl=document.getElementById('planStatus_'+key);
-  if(statusEl){statusEl.textContent='Sprawdzam aktualny status…';statusEl.className='plan-status'}
+  if(statusEl){statusEl.textContent=T('dziennik.checking');statusEl.className='plan-status'}
   const result=await tryConfirmPlanEntry(e);
   if(result.ok){
     renderPlan();
@@ -326,8 +334,8 @@ async function confirmPlanEntry(key){
     return;
   }
   if(statusEl){
-    if(result.reason==='not-arrived'){statusEl.textContent='Dane PLK o przyjeździe jeszcze się nie potwierdziły — to normalne, czasem trwa to dłużej niż sam przejazd. Spróbujemy ponownie automatycznie w tle, nie musisz nic robić.';statusEl.className='plan-status warn'}
-    else{statusEl.textContent='Nie udało się sprawdzić statusu. Spróbuj ponownie.';statusEl.className='plan-status warn'}
+    if(result.reason==='not-arrived'){statusEl.textContent=T('dziennik.notArrived');statusEl.className='plan-status warn'}
+    else{statusEl.textContent=T('dziennik.checkFailed');statusEl.className='plan-status warn'}
   }
 }
 // Ciche, automatyczne potwierdzanie wpisów planu, których pociąg JUŻ
@@ -367,7 +375,7 @@ function scheduleJournalSyncVerification(expectedList){
       const missing=expectedList.filter(function(e){return !remoteKeys.has(e._key)});
       if(!missing.length)return;
       const ok=await ProfileSync.push({journalEntries:getJournalEntries()});
-      if(!ok)alert('⚠️ Zmiana zapisała się tylko lokalnie w tej przeglądarce — synchronizacja z profilem nie powiodła się. Sprawdź połączenie i spróbuj ponownie (np. odśwież stronę).');
+      if(!ok)alert(T('dziennik.syncFailed'));
     }catch(e){}
   },4000);
 }
@@ -417,7 +425,7 @@ function escapeHtml(v){return String(v??'').replaceAll('&','&amp;').replaceAll('
 
 function delayClass(d){d=Number(d||0);return d>=20?'delay-high':d>10?'delay-mid':d>0?'delay-low':'delay-zero'}
 function fmtDelay(d){d=Number(d||0);return d>0?('+'+d):'0'}
-function fmtDur(min){if(min==null)return '—';const h=Math.floor(min/60),m=min%60;return h>0?(h+'h '+m+'min'):(m+' min')}
+function fmtDur(min){if(min==null)return '—';const h=Math.floor(min/60),m=min%60;return h>0?T('dziennik.durHM',{h,m}):T('dziennik.durM',{m})}
 
 // Trasa typowa ma dwa (opcjonalne) odcinki — dla dojazdu z przesiadką.
 // Wcześniejsze wersje zapisywały płaskie board/alight (jeden odcinek) —
@@ -436,7 +444,11 @@ function parseKm(v){
   return isFinite(n)&&n>=0?n:null;
 }
 function fmtKm(n){return String(n).replace('.',',')}
+// Domyślna nazwa trasy: do ZAPISU zawsze po polsku (dane nie zależą od języka
+// interfejsu), na ekranie — w bieżącym języku.
 function tripHeading(idx){return 'Ulubiona trasa '+(idx+1)}
+function tripHeadingUi(idx){return T('dziennik.tripHeading',{n:idx+1})}
+function tripDisplayName(name,idx){return (!name||/^Ulubiona trasa \d+$/.test(name))?tripHeadingUi(idx):name}
 function tripFields(id,idx){
   const g=k=>document.getElementById('trip_'+id+'_'+k);
   const leg1={board:g('leg1board').value.trim(),alight:g('leg1alight').value.trim(),distanceKm:parseKm(g('leg1km').value)};
@@ -458,7 +470,8 @@ function fillTripForm(id,tripRaw){
   const legacyKm=(!trip.leg2&&trip.distanceKm!=null)?trip.distanceKm:null;
   const km1=trip.leg1&&trip.leg1.distanceKm!=null?trip.leg1.distanceKm:legacyKm;
   const km2=trip.leg2&&trip.leg2.distanceKm!=null?trip.leg2.distanceKm:null;
-  g('name').value=trip.name||'';
+  // Domyślna nazwa (zapisana po polsku) — w polu pusto, podpowiedź w języku interfejsu.
+  g('name').value=/^Ulubiona trasa \d+$/.test(trip.name||'')?'':(trip.name||'');
   g('leg1board').value=trip.leg1?trip.leg1.board||'':'';
   g('leg1alight').value=trip.leg1?trip.leg1.alight||'':'';
   g('leg1km').value=km1!=null?fmtKm(km1):'';
@@ -475,10 +488,10 @@ function fillTripForm(id,tripRaw){
 function fillReverseTrip(targetId){
   const srcId=document.getElementById('trip_'+targetId+'_reverseSrc').value;
   const st=document.getElementById('tripStatus');
-  if(!srcId){st.textContent='Wybierz trasę, z której skopiować odcinki odwrotnie.';st.className='status';return}
+  if(!srcId){st.textContent=T('dziennik.reverseNeedSource');st.className='status';return}
   const g=(id,k)=>document.getElementById('trip_'+id+'_'+k);
   const legs=[1,2].map(n=>({board:g(srcId,'leg'+n+'board').value.trim(),alight:g(srcId,'leg'+n+'alight').value.trim(),km:g(srcId,'leg'+n+'km').value.trim()})).filter(l=>l.board&&l.alight);
-  if(!legs.length){st.textContent='Wybrana trasa nie ma jeszcze uzupełnionych odcinków.';st.className='status';return}
+  if(!legs.length){st.textContent=T('dziennik.reverseNoLegs');st.className='status';return}
   const rev=legs.reverse().map(l=>({board:l.alight,alight:l.board,km:l.km}));
   [1,2].forEach(n=>{
     const l=rev[n-1]||{board:'',alight:'',km:''};
@@ -486,7 +499,7 @@ function fillReverseTrip(targetId){
     g(targetId,'leg'+n+'alight').value=l.alight;
     g(targetId,'leg'+n+'km').value=l.km;
   });
-  st.textContent='Uzupełniono odwrotnie.';
+  st.textContent=T('dziennik.reverseDone');
   st.className='status ok';
   // Pola wypełnione programowo (nie prawdziwym wpisywaniem), więc delegacja
   // na zdarzeniu "input" się nie uruchomi — zapisujemy od razu, to jawna,
@@ -509,7 +522,7 @@ function nextTripId(){return't'+Date.now().toString(36)+Math.floor(Math.random()
 function reverseSelectOptions(excludeId){
   return tripsState.filter(t=>t.id!==excludeId).map((t,i)=>{
     const idx=tripsState.findIndex(x=>x.id===t.id);
-    const label=tripHeading(idx)+(t.name?(' ('+t.name+')'):'');
+    const label=tripHeadingUi(idx)+(t.name&&!/^Ulubiona trasa \d+$/.test(t.name)?(' ('+t.name+')'):'');
     return '<option value="'+escapeHtml(t.id)+'">'+escapeHtml(label)+'</option>';
   }).join('');
 }
@@ -522,7 +535,7 @@ function startRenameTrip(id){
   const head=document.getElementById('tripHead_'+id);
   if(!head)return;
   const current=(document.getElementById('trip_'+id+'_name').value||'').trim();
-  head.innerHTML='<input type="text" class="trip-rename-input" id="tripRenameInput_'+id+'" value="'+escapeHtml(current)+'" placeholder="'+escapeHtml(tripHeading(idx<0?0:idx))+'"><button type="button" class="trip-rename-btn" title="Zapisz nazwę" onclick="confirmRenameTrip(\''+id+'\')">✓</button>';
+  head.innerHTML='<input type="text" class="trip-rename-input" id="tripRenameInput_'+id+'" value="'+escapeHtml(current)+'" placeholder="'+escapeHtml(tripHeadingUi(idx<0?0:idx))+'"><button type="button" class="trip-rename-btn" title="'+escapeHtml(T('dziennik.saveName'))+'" onclick="confirmRenameTrip(\''+id+'\')">✓</button>';
   const inp=document.getElementById('tripRenameInput_'+id);
   inp.focus();inp.select();
   inp.addEventListener('keydown',e=>{
@@ -540,36 +553,37 @@ function confirmRenameTrip(id){
   // karty (pełny renderTripCards() zresetowałby focus/kursor w innych polach).
   const idx=tripsState.findIndex(t=>t.id===id);
   const head=document.getElementById('tripHead_'+id);
-  if(head)head.innerHTML='<span class="trip-heading-text">'+escapeHtml(val||tripHeading(idx<0?0:idx))+'</span><button type="button" class="trip-rename-btn" title="Zmień nazwę trasy" onclick="startRenameTrip(\''+id+'\')">✏️</button>';
+  if(head)head.innerHTML='<span class="trip-heading-text">'+escapeHtml(tripDisplayName(val,idx<0?0:idx))+'</span><button type="button" class="trip-rename-btn" title="'+escapeHtml(T('dziennik.renameTitle'))+'" onclick="startRenameTrip(\''+id+'\')">✏️</button>';
 }
 function tripCardHtml(trip,idx){
   const id=trip.id;
+  const L=k=>escapeHtml(T('dziennik.'+k));
   return `<div class="trip-card" data-trip-id="${id}">
-    <div class="trip-card-head"><h3 id="tripHead_${id}"><span class="trip-heading-text">${escapeHtml(trip.name||tripHeading(idx))}</span><button type="button" class="trip-rename-btn" title="Zmień nazwę trasy" onclick="startRenameTrip('${id}')">✏️</button></h3><button type="button" class="trip-remove" title="Usuń tę trasę" onclick="removeTrip('${id}')">🗑 Usuń</button></div>
-    <label>Nazwa przejazdu (dla każdego odcinka)</label>
-    <input type="text" id="trip_${id}_name" placeholder="np. do pracy, zakupy, wizyta">
-    <div class="leg-label">Odcinek 1<span class="leg-optional"> (przed przesiadką, jeśli jest)</span></div>
-    <label>Stacja wsiadania</label>
-    <input type="text" id="trip_${id}_leg1board" placeholder="nazwa stacji">
-    <label>Stacja wysiadania</label>
-    <input type="text" id="trip_${id}_leg1alight" placeholder="nazwa stacji">
-    <label>Kilometraż odcinka 1 (km) <button type="button" class="info-dot" title="Dlaczego trzeba wpisać ręcznie" onclick="toggleInfo('km_${id}')">ⓘ</button></label>
-    <div class="info-pop" id="info-km_${id}">PLK w swoich danych podaje rozkład jazdy i opóźnienia, ale nie podaje odległości między stacjami — stąd nie da się tego uzupełnić automatycznie. Wpisz km raz ręcznie (np. z biletu, rozkładu PKP albo taryfikatora przewoźnika) — dzienniczek zapamięta tę wartość i będzie ją sam podstawiał przy każdym kolejnym przejeździe tą samą trasą.</div>
-    <input type="text" inputmode="decimal" id="trip_${id}_leg1km" placeholder="np. 12,0">
-    <div class="leg-label">Odcinek 2<span class="leg-optional"> (po przesiadce — zostaw puste, jeśli jedziesz bez przesiadki)</span></div>
-    <label>Stacja wsiadania</label>
-    <input type="text" id="trip_${id}_leg2board" placeholder="nazwa stacji">
-    <label>Stacja wysiadania</label>
-    <input type="text" id="trip_${id}_leg2alight" placeholder="nazwa stacji">
-    <label>Kilometraż odcinka 2 (km)</label>
-    <input type="text" inputmode="decimal" id="trip_${id}_leg2km" placeholder="np. 8,0">
+    <div class="trip-card-head"><h3 id="tripHead_${id}"><span class="trip-heading-text">${escapeHtml(tripDisplayName(trip.name,idx))}</span><button type="button" class="trip-rename-btn" title="${L('renameTitle')}" onclick="startRenameTrip('${id}')">✏️</button></h3><button type="button" class="trip-remove" title="${L('removeTripTitle')}" onclick="removeTrip('${id}')">${L('removeTrip')}</button></div>
+    <label>${L('tripName')}</label>
+    <input type="text" id="trip_${id}_name" placeholder="${L('tripNamePh')}">
+    <div class="leg-label">${L('leg1')}<span class="leg-optional">${L('leg1Hint')}</span></div>
+    <label>${L('board')}</label>
+    <input type="text" id="trip_${id}_leg1board" placeholder="${L('stationPh')}">
+    <label>${L('alight')}</label>
+    <input type="text" id="trip_${id}_leg1alight" placeholder="${L('stationPh')}">
+    <label>${L('km1')} <button type="button" class="info-dot" title="${L('kmInfoTitle')}" onclick="toggleInfo('km_${id}')">ⓘ</button></label>
+    <div class="info-pop" id="info-km_${id}">${L('kmInfo')}</div>
+    <input type="text" inputmode="decimal" id="trip_${id}_leg1km" placeholder="${L('km1Ph')}">
+    <div class="leg-label">${L('leg2')}<span class="leg-optional">${L('leg2Hint')}</span></div>
+    <label>${L('board')}</label>
+    <input type="text" id="trip_${id}_leg2board" placeholder="${L('stationPh')}">
+    <label>${L('alight')}</label>
+    <input type="text" id="trip_${id}_leg2alight" placeholder="${L('stationPh')}">
+    <label>${L('km2')}</label>
+    <input type="text" inputmode="decimal" id="trip_${id}_leg2km" placeholder="${L('km2Ph')}">
     <div class="row2">
-      <div><label>Odjazd od</label><input type="time" id="trip_${id}_from"></div>
-      <div><label>Odjazd do</label><input type="time" id="trip_${id}_to"></div>
+      <div><label>${L('depFrom')}</label><input type="time" id="trip_${id}_from"></div>
+      <div><label>${L('depTo')}</label><input type="time" id="trip_${id}_to"></div>
     </div>
     <div class="trip-reverse-row">
-      <select id="trip_${id}_reverseSrc" class="reverse-select"><option value="">↩ Uzupełnij odwrotnie z…</option>${reverseSelectOptions(id)}</select>
-      <button type="button" class="btn secondary" onclick="fillReverseTrip('${id}')">Uzupełnij</button>
+      <select id="trip_${id}_reverseSrc" class="reverse-select"><option value="">${L('reverseFrom')}</option>${reverseSelectOptions(id)}</select>
+      <button type="button" class="btn secondary" onclick="fillReverseTrip('${id}')">${L('reverseBtn')}</button>
     </div>
     <div class="trip-save-status" id="tripSaveStatus_${id}"></div>
   </div>`;
@@ -594,7 +608,7 @@ function setTripSaveStatus(id,state){
   const el=document.getElementById('tripSaveStatus_'+id);
   if(!el)return;
   el.className='trip-save-status'+(state?' '+state:'');
-  el.textContent=state==='saving'?'Zapisywanie…':state==='saved'?'✓ Zapisano':state==='incomplete'?'Uzupełnij stację wsiadania i wysiadania (odcinek 1), żeby zapisać':'';
+  el.textContent=state==='saving'?T('dziennik.saving'):state==='saved'?T('dziennik.saved'):state==='incomplete'?T('dziennik.incomplete'):'';
 }
 // Zapis automatyczny — wywoływany z debounce po wpisywaniu (patrz delegacja
 // "input" niżej) oraz od razu po jawnych akcjach (odwrócenie trasy, zmiana
@@ -638,14 +652,14 @@ function addNewTrip(){
   document.getElementById('trip_'+t.id+'_leg1board')?.scrollIntoView({behavior:'smooth',block:'center'});
 }
 function removeTrip(id){
-  if(!confirm('Usunąć tę trasę? Wpisy już zapisane w dzienniczku zostaną — usuwamy tylko ten szablon.'))return;
+  if(!confirm(T('dziennik.confirmRemoveTrip')))return;
   if(tripAutosaveTimers[id]){clearTimeout(tripAutosaveTimers[id]);delete tripAutosaveTimers[id]}
   tripsState=tripsState.filter(t=>t.id!==id);
   saveTypicalTrips(getTypicalTrips().filter(t=>t.id!==id));
   renderTripCards();
   updateTripsSummary();
   const st=document.getElementById('tripStatus');
-  st.textContent='Usunięto trasę.';st.className='status ok';
+  st.textContent=T('dziennik.tripRemoved');st.className='status ok';
 }
 function renderTripsForm(){
   const raw=localStorage.getItem(TYPICAL_TRIPS_KEY);
@@ -661,13 +675,13 @@ function toggleTrips(force){
   const open=typeof force==='boolean'?force:!panel.classList.contains('open');
   panel.classList.toggle('open',open);
   document.getElementById('tripsToggle').setAttribute('aria-expanded',open?'true':'false');
-  document.getElementById('tripsToggleLabel').textContent=open?'Zwiń':'Rozwiń';
+  document.getElementById('tripsToggleLabel').textContent=open?T('dziennik.collapse'):T('dziennik.expand');
 }
 function updateTripsSummary(){
   const saved=getTypicalTrips();
-  const names=saved.map((t,i)=>{const x=normalizeTrip(t);return x&&x.leg1?(t.name||tripHeading(i)):null}).filter(Boolean);
+  const names=saved.map((t,i)=>{const x=normalizeTrip(t);return x&&x.leg1?tripDisplayName(t.name,i):null}).filter(Boolean);
   const el=document.getElementById('tripsSummary');
-  if(el)el.textContent=names.length?names.join(' · '):'Nie zdefiniowano — rozwiń, aby ustawić';
+  if(el)el.textContent=names.length?names.join(' · '):T('dziennik.tripsNone');
 }
 
 function entryCardHtml(e){
@@ -677,20 +691,20 @@ function entryCardHtml(e){
   const arrReal=e.actualArrival&&e.actualArrival!==e.plannedArrival;
   const depHtml=depReal?('<span class="entry-strike">'+escapeHtml(e.plannedDeparture)+'</span>('+escapeHtml(e.actualDeparture)+')'):escapeHtml(e.plannedDeparture||'—');
   const arrHtml=arrReal?('<span class="entry-strike">'+escapeHtml(e.plannedArrival)+'</span>('+escapeHtml(e.actualArrival)+')'):escapeHtml(e.plannedArrival||'—');
-  const tripBadge=e.tripLabel?('<span class="entry-badge">'+escapeHtml(e.tripLabel)+(e.legNumber?(' · odc. '+e.legNumber+'/2'):'')+'</span>'):'<span class="entry-missing" title="Dodaj nazwę trasy w edycji (🔓 Odblokuj)">⚠️ Brak nazwy</span>';
+  const tripBadge=e.tripLabel?('<span class="entry-badge">'+escapeHtml(e.tripLabel)+(e.legNumber?escapeHtml(T('dziennik.legBadge',{n:e.legNumber})):'')+'</span>'):'<span class="entry-missing" title="'+escapeHtml(T('dziennik.noNameTitle'))+'">'+escapeHtml(T('dziennik.noName'))+'</span>';
   const km=e.distanceKm!=null?(fmtKm(e.distanceKm)+' km'):'';
-  const kmBadge=km?('<span>'+escapeHtml(km)+'</span>'):'<span class="entry-missing" title="Dodaj km w edycji (🔓 Odblokuj)">⚠️ Brak km</span>';
+  const kmBadge=km?('<span>'+escapeHtml(km)+'</span>'):'<span class="entry-missing" title="'+escapeHtml(T('dziennik.noKmTitle'))+'">'+escapeHtml(T('dziennik.noKm'))+'</span>';
   return `<div class="entry">
-    <button type="button" class="entry-del" title="Usuń wpis" onclick="deleteEntry('${e._key}')">✕</button>
+    <button type="button" class="entry-del" title="${escapeHtml(T('dziennik.deleteTitle'))}" onclick="deleteEntry('${e._key}')">✕</button>
     <div class="entry-top"><span class="entry-date">${escapeHtml(dateFmt)}</span><span class="entry-train">${escapeHtml(trainLabel)}</span></div>
     <div class="entry-route">${escapeHtml(e.boardStation)} → ${escapeHtml(e.alightStation)}</div>
     <div class="entry-times">
-      <span>Odjazd: <b>${depHtml}</b></span>
-      <span>Przyjazd: <b>${arrHtml}</b></span>
+      <span>${escapeHtml(T('dziennik.departure'))}: <b>${depHtml}</b></span>
+      <span>${escapeHtml(T('dziennik.arrival'))}: <b>${arrHtml}</b></span>
     </div>
     <div class="entry-bottom">
-      <span class="entry-delay ${delayClass(e.delayMinutes)}">Opóźnienie: ${fmtDelay(e.delayMinutes)} min</span>
-      <span>Czas: ${fmtDur(e.plannedDurationMin)} → ${fmtDur(e.actualDurationMin)}</span>
+      <span class="entry-delay ${delayClass(e.delayMinutes)}">${escapeHtml(T('dziennik.delay',{delay:fmtDelay(e.delayMinutes)}))}</span>
+      <span>${escapeHtml(T('dziennik.duration',{planned:fmtDur(e.plannedDurationMin),actual:fmtDur(e.actualDurationMin)}))}</span>
       ${tripBadge}
       ${kmBadge}
     </div>
@@ -700,16 +714,16 @@ function entryCardHtml(e){
 function entryEditHtml(e){
   const g=(cls,val,type)=>`<input type="${type||'text'}" class="${cls}" value="${escapeHtml(val==null?'':val)}">`;
   return `<div class="entry editing" data-key="${escapeHtml(e._key)}">
-    <button type="button" class="entry-del" title="Usuń wpis" onclick="deleteEntry('${e._key}')">✕</button>
-    <div class="edit-row"><label>Data</label>${g('ef-date',e.date,'date')}</div>
-    <div class="edit-row"><label>Pociąg</label>${g('ef-train',e.trainNumber)}<input type="text" class="ef-category narrow" value="${escapeHtml(e.category||'')}" placeholder="kat."></div>
-    <div class="edit-row"><label>Skąd</label>${g('ef-board',e.boardStation)}</div>
-    <div class="edit-row"><label>Dokąd</label>${g('ef-alight',e.alightStation)}</div>
-    <div class="edit-row"><label>Odjazd pl.</label>${g('ef-depP',e.plannedDeparture,'time')}<label>rz.</label>${g('ef-depA',e.actualDeparture,'time')}</div>
-    <div class="edit-row"><label>Przyj. pl.</label>${g('ef-arrP',e.plannedArrival,'time')}<label>rz.</label>${g('ef-arrA',e.actualArrival,'time')}</div>
-    <div class="edit-row"><label>Opóźn. (min)</label><input type="number" class="ef-delay narrow" value="${e.delayMinutes||0}"></div>
-    <div class="edit-row"><label>Km</label><input type="number" step="any" class="ef-km narrow${e.distanceKm==null?' field-missing':''}" value="${e.distanceKm!=null?e.distanceKm:''}" oninput="this.classList.toggle('field-missing',!this.value.trim())"></div>
-    <div class="edit-row"><label>Nazwa</label><input type="text" class="ef-label${e.tripLabel?'':' field-missing'}" value="${escapeHtml(e.tripLabel==null?'':e.tripLabel)}" oninput="this.classList.toggle('field-missing',!this.value.trim())"></div>
+    <button type="button" class="entry-del" title="${escapeHtml(T('dziennik.deleteTitle'))}" onclick="deleteEntry('${e._key}')">✕</button>
+    <div class="edit-row"><label>${escapeHtml(T('dziennik.eDate'))}</label>${g('ef-date',e.date,'date')}</div>
+    <div class="edit-row"><label>${escapeHtml(T('dziennik.eTrain'))}</label>${g('ef-train',e.trainNumber)}<input type="text" class="ef-category narrow" value="${escapeHtml(e.category||'')}" placeholder="${escapeHtml(T('dziennik.eCatPh'))}"></div>
+    <div class="edit-row"><label>${escapeHtml(T('dziennik.eFrom'))}</label>${g('ef-board',e.boardStation)}</div>
+    <div class="edit-row"><label>${escapeHtml(T('dziennik.eTo'))}</label>${g('ef-alight',e.alightStation)}</div>
+    <div class="edit-row"><label>${escapeHtml(T('dziennik.eDepPl'))}</label>${g('ef-depP',e.plannedDeparture,'time')}<label>${escapeHtml(T('dziennik.eAct'))}</label>${g('ef-depA',e.actualDeparture,'time')}</div>
+    <div class="edit-row"><label>${escapeHtml(T('dziennik.eArrPl'))}</label>${g('ef-arrP',e.plannedArrival,'time')}<label>${escapeHtml(T('dziennik.eAct'))}</label>${g('ef-arrA',e.actualArrival,'time')}</div>
+    <div class="edit-row"><label>${escapeHtml(T('dziennik.eDelay'))}</label><input type="number" class="ef-delay narrow" value="${e.delayMinutes||0}"></div>
+    <div class="edit-row"><label>${escapeHtml(T('dziennik.eKm'))}</label><input type="number" step="any" class="ef-km narrow${e.distanceKm==null?' field-missing':''}" value="${e.distanceKm!=null?e.distanceKm:''}" oninput="this.classList.toggle('field-missing',!this.value.trim())"></div>
+    <div class="edit-row"><label>${escapeHtml(T('dziennik.eName'))}</label><input type="text" class="ef-label${e.tripLabel?'':' field-missing'}" value="${escapeHtml(e.tripLabel==null?'':e.tripLabel)}" oninput="this.classList.toggle('field-missing',!this.value.trim())"></div>
     <div class="entry-save-status" id="entrySaveStatus_${escapeHtml(e._key)}"></div>
   </div>`;
 }
@@ -720,7 +734,7 @@ function renderEntries(){
   const raw=getJournalEntries();
   document.getElementById('entryCount').textContent=raw.length;
   const list=document.getElementById('entryList');
-  if(!raw.length){list.innerHTML='<div class="empty">Brak wpisów. Otwórz bieg pociągu (z tablicy albo z Moich pociągów), zaznacz stację wsiadania 🚏 i wysiadania 🏁, i zapisz przejazd.</div>';return}
+  if(!raw.length){list.innerHTML='<div class="empty">'+escapeHtml(T('dziennik.entriesEmpty'))+'</div>';return}
   const displayOrder=[...raw].sort((a,b)=>(b.date+String(b.plannedDeparture||'')).localeCompare(a.date+String(a.plannedDeparture||'')));
   list.innerHTML=displayOrder.map(e=>editMode?entryEditHtml(e):entryCardHtml(e)).join('');
 }
@@ -730,14 +744,14 @@ function unlockEdit(){
   editMode=true;
   document.getElementById('entriesActions').innerHTML=
     '<button type="button" class="btn-sm" id="exportBtn" onclick="exportToXlsx()">⬇️ XLSX</button>'+
-    '<button type="button" class="btn-sm" onclick="exitEditMode()">✓ Gotowe</button>';
+    '<button type="button" class="btn-sm" onclick="exitEditMode()">'+escapeHtml(T('dziennik.done'))+'</button>';
   renderEntries();
 }
 function exitEditMode(){
   editMode=false;
   document.getElementById('entriesActions').innerHTML=
     '<button type="button" class="btn-sm" id="exportBtn" onclick="exportToXlsx()">⬇️ XLSX</button>'+
-    '<button type="button" class="btn-sm" id="unlockBtn" onclick="unlockEdit()">🔓 Odblokuj</button>';
+    '<button type="button" class="btn-sm" id="unlockBtn" onclick="unlockEdit()">'+escapeHtml(T('dziennik.unlock'))+'</button>';
   renderEntries();
 }
 function toMinutesJ(t){const m=String(t||'').match(/(\d{1,2}):(\d{2})/);return m?Number(m[1])*60+Number(m[2]):null}
@@ -756,7 +770,7 @@ function setEntrySaveStatus(key,state){
   const el=document.getElementById('entrySaveStatus_'+key);
   if(!el)return;
   el.className='entry-save-status'+(state?' '+state:'');
-  el.textContent=state==='saving'?'Zapisywanie…':state==='saved'?'✓ Zapisano':'';
+  el.textContent=state==='saving'?T('dziennik.saving'):state==='saved'?T('dziennik.saved'):'';
 }
 function autosaveJournalEntry(key){
   delete journalAutosaveTimers[key];
@@ -811,35 +825,38 @@ function showConfirm(message,onConfirm){
 function durationOrEmpty(a,b){const d=durationMinJ(a,b);return d!=null?d:''}
 function exportToXlsx(){
   const raw=[...getJournalEntries()].sort((a,b)=>(a.date+String(a.plannedDeparture||'')).localeCompare(b.date+String(b.plannedDeparture||'')));
-  if(!raw.length){showConfirm('Dzienniczek jest pusty — nie ma czego eksportować.',()=>{});return}
+  if(!raw.length){showConfirm(T('dziennik.exportEmpty'),()=>{});return}
+  // Nagłówki kolumn w języku interfejsu (po polsku — dokładnie te nazwy,
+  // o które prosił użytkownik).
+  const X=k=>T('dziennik.xlsx.'+k);
   const rows=raw.map(e=>({
-    'Data':e.date||'',
-    'Pociąg':e.trainNumber||'',
-    'Kategoria':e.category||'',
-    'Stacja wsiadania':e.boardStation||'',
-    'Stacja wysiadania':e.alightStation||'',
-    'Odjazd planowy':e.plannedDeparture||'',
-    'Odjazd rzeczywisty':e.actualDeparture||'',
-    'Przyjazd planowy':e.plannedArrival||'',
-    'Przyjazd rzeczywisty':e.actualArrival||'',
-    'Opóźnienie (min)':e.delayMinutes||0,
-    'Czas przejazdu planowany w min':e.plannedDurationMin!=null?e.plannedDurationMin:durationOrEmpty(e.plannedDeparture,e.plannedArrival),
-    'Czas przejazdu rzeczywisty w min':e.actualDurationMin!=null?e.actualDurationMin:durationOrEmpty(e.actualDeparture,e.actualArrival),
-    'Trasa':e.tripLabel||'inna',
-    'Odcinek':e.legNumber||'',
-    'Km':e.distanceKm!=null?e.distanceKm:''
+    [X('date')]:e.date||'',
+    [X('train')]:e.trainNumber||'',
+    [X('category')]:e.category||'',
+    [X('board')]:e.boardStation||'',
+    [X('alight')]:e.alightStation||'',
+    [X('depPlanned')]:e.plannedDeparture||'',
+    [X('depActual')]:e.actualDeparture||'',
+    [X('arrPlanned')]:e.plannedArrival||'',
+    [X('arrActual')]:e.actualArrival||'',
+    [X('delay')]:e.delayMinutes||0,
+    [X('durPlanned')]:e.plannedDurationMin!=null?e.plannedDurationMin:durationOrEmpty(e.plannedDeparture,e.plannedArrival),
+    [X('durActual')]:e.actualDurationMin!=null?e.actualDurationMin:durationOrEmpty(e.actualDeparture,e.actualArrival),
+    [X('trip')]:e.tripLabel||X('otherTrip'),
+    [X('leg')]:e.legNumber||'',
+    [X('km')]:e.distanceKm!=null?e.distanceKm:''
   }));
   const ws=XLSX.utils.json_to_sheet(rows);
   const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,'Dzienniczek');
+  XLSX.utils.book_append_sheet(wb,ws,X('sheet'));
   const n=new Date();
   const pad=v=>String(v).padStart(2,'0');
   const stamp=n.getFullYear()+'_'+pad(n.getMonth()+1)+'_'+pad(n.getDate())+'_'+pad(n.getHours())+'_'+pad(n.getMinutes())+'_'+pad(n.getSeconds());
-  XLSX.writeFile(wb,'dzienniczek-podrozy_'+stamp+'.xlsx');
+  XLSX.writeFile(wb,X('file')+'_'+stamp+'.xlsx');
 }
 
 function deleteEntry(key){
-  if(!confirm('Usunąć ten wpis z dzienniczka?'))return;
+  if(!confirm(T('dziennik.confirmDelete')))return;
   if(journalAutosaveTimers[key]){clearTimeout(journalAutosaveTimers[key]);delete journalAutosaveTimers[key]}
   saveJournalEntries(getJournalEntries().filter(e=>e._key!==key));
   renderEntries();
@@ -904,7 +921,18 @@ async function refreshFromProfile(){
   if(!editMode)renderEntries();
   renderPlan();
 }
-refreshFromProfile();
+(window.I18n?I18n.ready:Promise.resolve()).then(refreshFromProfile);
+// Zmiana języka: przerysowujemy wszystko, co zbudował JS (karty tras
+// przebudowujemy tylko poza edycją pola, żeby nie zgubić wpisywanego tekstu).
+window.addEventListener('langchange',function(){
+  renderPlan();
+  if(!editMode)renderEntries();else unlockEdit();
+  const active=document.activeElement;
+  if(!(active&&active.closest&&active.closest('#tripCards')))renderTripCards();
+  updateTripsSummary();
+  const panel=document.getElementById('tripsPanel');
+  document.getElementById('tripsToggleLabel').textContent=panel.classList.contains('open')?T('dziennik.collapse'):T('dziennik.expand');
+});
 window.addEventListener('pageshow',function(e){if(e.persisted)refreshFromProfile()});
 document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')refreshFromProfile()});
 // PLK potrafi potwierdzić przyjazd na stację wysiadania z dużym
