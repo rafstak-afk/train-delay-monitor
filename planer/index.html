@@ -256,6 +256,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
 <script src="/burger-menu.js"></script>
 <script src="/profile-sync.js"></script>
 <script src="/tutorial.js"></script>
+<script src="/chat-assistant.js"></script>
 <script>
 (function(){
   var $=function(id){return document.getElementById(id)};
@@ -1270,11 +1271,42 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     renderHistoryPanel();
     renderSavedPanel();
   }
+  // Ustawienia przekazane w adresie (asystent 💬 /chat-assistant.js):
+  // ?from=&fromId=&to=&toId=&date=&time=&via=&viaId=&exclude=IC,KS&transfer=&direct=1&auto=1.
+  // Wykluczenia z asystenta DOCHODZĄ do zapisanych (nie są zapisywane na stałe).
+  // Po zastosowaniu czyścimy adres, żeby odświeżenie strony nie szukało znowu.
+  function applyUrlParams(){
+    var q=new URLSearchParams(location.search);
+    if(!q.get('from')||!q.get('to'))return;
+    selected.from={id:q.get('fromId')||'',name:q.get('from')};
+    selected.to={id:q.get('toId')||'',name:q.get('to')};
+    $('fromInput').value=selected.from.name;
+    $('toInput').value=selected.to.name;
+    ['from','to'].forEach(function(side){updateClearVisibility(document.querySelector('.field-clear[data-side="'+side+'"]'),$(side+'Input'))});
+    if(q.get('date'))$('dateInput').value=q.get('date');
+    if(q.get('time'))$('timeInput').value=q.get('time');
+    else if(q.get('date')&&q.get('date')!==todayYYYYMMDD())$('timeInput').value='00:00';
+    if(q.get('transfer')&&TRANSFER_MINUTE_OPTIONS.indexOf(Number(q.get('transfer')))>=0)$('transferMinutesSelect').value=q.get('transfer');
+    $('directOnlyCheckbox').checked=q.get('direct')==='1';
+    if(q.get('via')){
+      viaRows=[{key:'via'+(viaCounter++),id:q.get('viaId')||'',name:q.get('via'),transferMinutes:null,excludeCarriers:[]}];
+      renderViaRows();
+    }
+    if(q.get('exclude')){
+      q.get('exclude').split(',').filter(Boolean).forEach(function(c){excludedCarriers.add(c)});
+      var grid=$('carrierGrid');
+      if(grid)grid.querySelectorAll('input[type=checkbox]').forEach(function(cb){cb.checked=excludedCarriers.has(cb.dataset.code)});
+    }
+    updateAdvSummary();updateAdvDot();updateCarrierSummary();updateViaSummary();
+    var auto=q.get('auto')==='1';
+    try{history.replaceState(null,'',location.pathname)}catch(e){}
+    if(auto)search();
+  }
   (window.I18n?I18n.ready:Promise.resolve()).then(function(){
     renderTexts();
     loadCarriers();
-    refreshFromProfile();
-  });
+    return refreshFromProfile();
+  }).then(applyUrlParams);
   // Zmiana języka: przerysowujemy wszystko, co budował JS (statyczne
   // napisy z data-i18n przełącza samo i18n.js).
   window.addEventListener('langchange',function(){

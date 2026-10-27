@@ -869,5 +869,15 @@
     "noDepartures": "⚠ Keine Daten / keine anstehenden Abfahrten",
     "updated": "zuletzt aktualisiert: {time}",
     "gtfs": " · GTFS-RT-Daten: {value}"
+  },
+  "chat": {
+    "open": "Verbindungsassistent fragen",
+    "title": "Verbindungsassistent",
+    "close": "Schließen",
+    "placeholder": "Z. B. z Tarnowskich Gór do Katowic jutro o 7",
+    "mic": "Diktieren",
+    "send": "Senden",
+    "greeting": "Hallo! Vorerst verstehe ich nur Polnisch. Schreib oder sag, wohin du fahren willst, z. B. „z Tarnowskich Gór do Krakowa jutro o 7”.",
+    "notUnderstood": "Ich verstehe deine Sprache nicht."
   }
 }

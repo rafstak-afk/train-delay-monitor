@@ -869,5 +869,15 @@
     "noDepartures": "⚠ Žádná data / žádné nadcházející odjezdy",
     "updated": "poslední aktualizace: {time}",
     "gtfs": " · data GTFS-RT: {value}"
+  },
+  "chat": {
+    "open": "Zeptat se asistenta spojení",
+    "title": "Asistent spojení",
+    "close": "Zavřít",
+    "placeholder": "Např. z Tarnowskich Gór do Katowic jutro o 7",
+    "mic": "Diktovat",
+    "send": "Odeslat",
+    "greeting": "Ahoj! Zatím rozumím jen polsky. Napište nebo řekněte, kam chcete jet, např. „z Tarnowskich Gór do Krakowa jutro o 7”.",
+    "notUnderstood": "Nerozumím vašemu jazyku."
   }
 }

@@ -869,5 +869,15 @@
     "noDepartures": "⚠ Немає даних / немає найближчих відправлень",
     "updated": "останнє оновлення: {time}",
     "gtfs": " · дані GTFS-RT: {value}"
+  },
+  "chat": {
+    "open": "Запитати помічника зі сполучень",
+    "title": "Помічник зі сполучень",
+    "close": "Закрити",
+    "placeholder": "Напр. z Tarnowskich Gór do Katowic jutro o 7",
+    "mic": "Диктувати",
+    "send": "Надіслати",
+    "greeting": "Привіт! Поки що я розумію лише польську. Напишіть або скажіть, куди хочете поїхати, напр. «z Tarnowskich Gór do Krakowa jutro o 7».",
+    "notUnderstood": "Я не розумію вашої мови."
   }
 }

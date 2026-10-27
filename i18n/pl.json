@@ -869,5 +869,15 @@
     "noDepartures": "⚠ Brak danych / brak nadchodzących odjazdów",
     "updated": "ostatnia aktualizacja: {time}",
     "gtfs": " · dane GTFS-RT: {value}"
+  },
+  "chat": {
+    "open": "Zapytaj asystenta połączeń",
+    "title": "Asystent połączeń",
+    "close": "Zamknij",
+    "placeholder": "Np. z Tarnowskich Gór do Katowic jutro o 7",
+    "mic": "Dyktuj (mów)",
+    "send": "Wyślij",
+    "greeting": "Cześć! Napisz albo powiedz (🎤), skąd i dokąd chcesz jechać, np. „z Tarnowskich Gór do Krakowa jutro o 7 bez Intercity”. Możesz też dodać stację „przez”, czas na przesiadkę albo „tylko bezpośrednie”.",
+    "notUnderstood": "Nie rozumiem w Twoim języku."
   }
 }

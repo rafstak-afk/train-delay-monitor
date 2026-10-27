@@ -869,5 +869,15 @@
     "noDepartures": "⚠ Sin datos / sin próximas salidas",
     "updated": "última actualización: {time}",
     "gtfs": " · datos GTFS-RT: {value}"
+  },
+  "chat": {
+    "open": "Preguntar al asistente de conexiones",
+    "title": "Asistente de conexiones",
+    "close": "Cerrar",
+    "placeholder": "P. ej. z Tarnowskich Gór do Katowic jutro o 7",
+    "mic": "Dictar",
+    "send": "Enviar",
+    "greeting": "¡Hola! Por ahora solo entiendo polaco. Escribe o di adónde quieres ir, p. ej. «z Tarnowskich Gór do Krakowa jutro o 7».",
+    "notUnderstood": "No entiendo tu idioma."
   }
 }
