@@ -44,6 +44,11 @@
         { sel: "#alertButton", title: "Alarm opóźnień", text: "Włącz, żeby dostać powiadomienie o opóźnieniu lub odwołaniu na wybranej stacji — działa tylko dopóki ta karta jest otwarta. Jeśli PLK poda przyczynę (np. „Awaria taboru”), zobaczysz ją pod wpisem alarmu po kliknięciu małego ⓘ." },
         { sel: "#watchStationBtn", title: "Alarm w tle dla tej stacji", text: "👁 Obserwuj w tle — w odróżnieniu od „Alarm opóźnień” powyżej, to działa NAWET przy zamkniętej karcie albo aplikacji: dostaniesz powiadomienie push o opóźnieniu lub odwołaniu na tej stacji, gdziekolwiek będziesz. Wymaga założonego profilu — powiadomienia push mieszkają na serwerze pod Twoim tokenem." },
         { sel: '.bottom-nav button[onclick="toggleBurgerMenu()"]', title: "Dzienniczek podróży", text: "W menu (☰) jest 📓 Dzienniczek — notuje Twoje przejazdy wraz z ewentualnym opóźnieniem." },
+        { id: "chat", sel: "#chatAssistantFab", news: "2026-10-27", highlight: true, title: "💬 Zapytaj, jak dojechać (BETA)", text: "Napisz albo powiedz 🎤, skąd i dokąd jedziesz, np. „z Katowic do Gliwic jutro po siedemnastej”. Wolisz klikać? Wybierz „🧭 Krok po kroku” albo wpisz samą stację — zapytam, czy stąd jedziesz, i poprowadzę dalej. Gdy czegoś nie zrozumiem, dopytam, a wyniki otworzę w planerze." },
+        { id: "sound", sel: "#alarmSoundButton", news: "2026-10-27", highlight: true, title: "🔊 Prawdziwe Rp1 z Tarnowskich Gór", text: "Alarm brzmi jak syrena lokomotywy — to oryginalny sygnał Rp1 nagrany w Tarnowskich Górach przy ostatnim pociągu do Opola (grudzień 2011). Tym przyciskiem wyłączysz dźwięk; wibracje zostaną." },
+        { id: "lang", sel: "#langSwitchBtn", news: "2026-10-27", highlight: true, title: "🌐 6 języków", text: "Aplikacja mówi po polsku, angielsku, niemiecku, czesku, hiszpańsku i ukraińsku. Wybierz język tutaj — zapamiętam go, a z profilem: na wszystkich Twoich urządzeniach." },
+        { id: "districts", sel: ".search-box", news: "2026-10-27", newsOnly: true, title: "Szukaj też po dzielnicy", text: "Wpisz samo „Załęże”, „Ligota” albo „Płaszów” — podpowiem pełną nazwę stacji (Katowice Załęże, Kraków Płaszów). Stacje z Twoich miast pokażę najpierw." },
+        { id: "watchBoard", sel: "#watchStationBtn", news: "2026-10-27", newsOnly: true, title: "Powiadomienie prowadzi do tablicy", text: "Kliknięcie powiadomienia o opóźnieniu na obserwowanej stacji otwiera od razu tablicę tej stacji." },
         { sel: '.bottom-nav a[href="/profil/"]', title: "Profil i synchronizacja", text: "Załóż tu token — 16 znaków, bez hasła i loginu — żeby zsynchronizować ulubione stacje, pociągi, alarmy i dzienniczek między urządzeniami." }
       ]
     },
@@ -57,6 +62,7 @@
         { sel: "#addTrainForm", title: "Dodaj pociąg", text: "Dodaj stację, numer i planową godzinę raz — od teraz zawsze zobaczysz go tu z aktualnym statusem." },
         { sel: "#refreshBtn", title: "Odśwież ręcznie", text: "Lista i tak sama się aktualizuje po powrocie po dłuższej przerwie, ale możesz też odświeżyć w każdej chwili." },
         { sel: 'a[href="/dziennik/"]', title: "Dzienniczek podróży", text: "Twoje przejazdy wraz z ewentualnym opóźnieniem — dodajesz je na stronie biegu pociągu." },
+        { id: "sound", sel: "#alarmSoundButton", news: "2026-10-27", highlight: true, title: "🔊 Prawdziwe Rp1 z Tarnowskich Gór", text: "Alarm brzmi jak syrena lokomotywy — to oryginalny sygnał Rp1 nagrany w Tarnowskich Górach przy ostatnim pociągu do Opola (grudzień 2011). Tym przyciskiem wyłączysz dźwięk; wibracje zostaną." },
         { sel: 'a[href="/profil/"]', title: "Profil i synchronizacja", text: "Token z profilu zabierze tę listę, alarmy i dzienniczek na każde Twoje urządzenie." }
       ]
     },
@@ -84,6 +90,7 @@
       steps: [
         { sel: "#tripsToggle", title: "Ulubione trasy", text: "Ustaw raz swoją powtarzalną trasę (np. dom→praca) — wszystko zapisuje się samo w trakcie wpisywania. Potem aplikacja sama zapyta na biegu pociągu, czy zapisać pasujący kurs. Przyciskiem „➕ Dodaj kolejną trasę” dodasz ich dowolnie wiele." },
         { sel: "#planPanel", title: "Plan podróży", text: "Planujesz trasę (np. z przesiadką) i chcesz sprawdzić, czy się spina, zanim wyjedziesz? Zaznacz stacje na biegu każdego pociągu i dodaj „📋 Do planu” — zobaczysz tu wszystkie odcinki naraz. Gdy pociąg faktycznie dojedzie, wróć i kliknij „✅ Potwierdź” (przejazd trafi do wpisów poniżej) albo „❌ Odrzuć”." },
+        { id: "autoConfirm", sel: "#planPanel", news: "2026-10-27", newsOnly: true, title: "Plan potwierdza się sam", text: "Po przyjeździe pociągu wpis z planu sam trafia do zapisanych przejazdów — nawet gdy PLK w międzyczasie zmieni numer kursu." },
         { sel: "#entryList", title: "Zapisane przejazdy", text: "Twoje zapisane, potwierdzone przejazdy, od najnowszych. Możesz je poprawić (🔓) — zmiany też zapisują się same — albo pobrać wszystko jako XLSX." }
       ]
     },
@@ -92,6 +99,9 @@
       match: function (p) { return p.indexOf("/planer") === 0; },
       steps: [
         { sel: ".station-stack", title: "Planer podróży (beta)", text: "Wpisz skąd i dokąd — znajdzie połączenia bezpośrednie i z przesiadkami (nawet kilkoma) na podstawie rozkładu PLK, dla całej sieci, nie tylko wybranych stacji. Jeszcze testujemy, więc zdarzają się niedoskonałości." },
+        { id: "districts", sel: ".station-stack", news: "2026-10-27", newsOnly: true, title: "Szukaj też po dzielnicy", text: "Wpisz samo „Załęże”, „Ligota” albo „Płaszów” — podpowiem pełną nazwę stacji. ↑/↓ i Enter wybierają stację, a Enter w polu od razu szuka połączeń." },
+        { id: "badges", sel: ".faster-hint", news: "2026-10-27", title: "⚡ i 🔁 — można szybciej", text: "Migająca plakietka ⚡ przy wyniku znaczy, że inny pociąg bezpośredni dojedzie szybciej, a 🔁 — że szybciej będzie z przesiadką. Kliknij plakietkę, żeby zobaczyć to połączenie." },
+        { id: "chat", sel: "#chatAssistantFab", news: "2026-10-27", highlight: true, title: "💬 Zapytaj, jak dojechać (BETA)", text: "Wolisz napisać albo powiedzieć 🎤 całe zdanie? Asystent wypełni ten formularz za Ciebie i od razu pokaże wyniki — albo poprowadzi krok po kroku." },
         { sel: "#advPanel", title: "Zaawansowane", text: "Minimalny czas na przesiadkę (domyślnie 3 min), opcja „Tylko bezpośrednie” (bez przesiadek), wymuszenie konkretnej stacji „przez” oraz wykluczanie wybranych przewoźników z wyników." },
         { sel: "#savedPanel", title: "Zapisz albo dodaj do dziennika", text: "Każdy wynik możesz 💾 zapisać do późniejszego przejrzenia albo 📋 dodać do planu podróży w dzienniczku — każda noga osobno. Gdy faktycznie pojedziesz, w dzienniczku potwierdzisz rzeczywisty przejazd jednym kliknięciem." }
       ]
@@ -102,7 +112,18 @@
   // ({title, text}); polski tekst w definicji kroku zostaje jako zapas,
   // gdy słownika brak (np. strona bez i18n.js).
   GUIDED_PROFILE_STEPS.forEach(function (s, i) { s.k = "tutorial.guide.s" + i; });
-  STEPS_BY_PAGE.forEach(function (p) { p.steps.forEach(function (s, i) { s.k = "tutorial." + p.id + ".s" + i; }); });
+  STEPS_BY_PAGE.forEach(function (p) { var n = 0; p.steps.forEach(function (s) { s.k = "tutorial." + p.id + "." + (s.id || ("s" + n++)); }); });
+
+  // „Co nowego”: kroki z news === NEWS_ID pokazują się SAME raz na wydanie
+  // (także osobom z profilem i tym, które samouczek już widziały) —
+  // wyróżnione (highlight) na początku, z ⭐. Nowe wydanie: zmień NEWS_ID
+  // (najwyżej raz w tygodniu; przy znaczących zmianach — po zgodzie autora).
+  const NEWS_ID = "2026-10-27";
+  const NEWS_KEY = "tutorialNews:";
+  let mode = "full";
+  function pageDef() { return STEPS_BY_PAGE.find(function (p) { return p.match(location.pathname); }) || null; }
+  function newsSeen() { const p = pageDef(); try { return !p || localStorage.getItem(NEWS_KEY + p.id) === NEWS_ID; } catch (e) { return true; } }
+  function markNewsSeen() { const p = pageDef(); if (!p) return; try { localStorage.setItem(NEWS_KEY + p.id, NEWS_ID); } catch (e) {} }
   function tr(key, fallback, params) {
     if (!window.I18n) return fallback;
     const v = I18n.t(key, params);
@@ -125,10 +146,14 @@
     return cs.visibility !== "hidden" && cs.display !== "none";
   }
 
-  function getSteps() {
-    const page = STEPS_BY_PAGE.find(function (p) { return p.match(location.pathname); });
+  function getSteps(m) {
+    const page = pageDef();
     if (!page) return [];
-    return page.steps
+    const defs = m === "news"
+      ? page.steps.filter(function (s) { return s.news === NEWS_ID; })
+          .sort(function (a, b) { return (b.highlight ? 1 : 0) - (a.highlight ? 1 : 0); })
+      : page.steps.filter(function (s) { return !s.newsOnly; });
+    return defs
       .map(function (s) { return { def: s, el: document.querySelector(s.sel) }; })
       .filter(function (s) { return isVisible(s.el); });
   }
@@ -242,8 +267,9 @@
     if (!step.el || !isVisible(step.el)) step.el = document.querySelector(step.def.sel);
     if (step.el) step.el.scrollIntoView({ behavior: "smooth", block: "center" });
 
-    tooltipEl.querySelector("#spotProgress").textContent = tr("tutorial.ui.progress", "Krok " + (index + 1) + " z " + currentSteps.length, { n: index + 1, total: currentSteps.length });
-    tooltipEl.querySelector("#spotTitle").textContent = tr(step.def.k + ".title", step.def.title);
+    const prog = tr("tutorial.ui.progress", "Krok " + (index + 1) + " z " + currentSteps.length, { n: index + 1, total: currentSteps.length });
+    tooltipEl.querySelector("#spotProgress").textContent = mode === "news" ? tr("tutorial.ui.whatsNew", "Co nowego") + " · " + prog : prog;
+    tooltipEl.querySelector("#spotTitle").textContent = (mode === "news" && step.def.highlight ? "⭐ " : "") + tr(step.def.k + ".title", step.def.title);
     tooltipEl.querySelector("#spotText").textContent = tr(step.def.k + ".text", step.def.text);
     tooltipEl.querySelector("#spotSkip").textContent = tr("tutorial.ui.skip", "Pomiń");
     tooltipEl.querySelector("#spotBack").textContent = tr("tutorial.ui.back", "Wstecz");
@@ -295,9 +321,10 @@
     goToStep(0);
   }
 
-  function startTour() {
+  function startTour(m) {
     guided = false;
-    const steps = getSteps();
+    mode = m === "news" ? "news" : "full";
+    const steps = getSteps(mode);
     if (!steps.length) return;
     ensureTourUI();
     currentSteps = steps;
@@ -315,6 +342,8 @@
     }
     if (highlightEl) highlightEl.style.display = "none";
     if (tooltipEl) tooltipEl.style.display = "none";
+    // Pełny samouczek też pokazał nowości — nie powtarzamy ich jako „Co nowego”.
+    markNewsSeen();
     try {
       localStorage.setItem(SEEN_KEY, "1");
     } catch (e) {}
@@ -334,7 +363,7 @@
     btn.title = label;
     btn.setAttribute("aria-label", label);
     btn.textContent = "🎓";
-    btn.addEventListener("click", function () { startTour(); });
+    btn.addEventListener("click", function () { startTour("full"); });
     document.body.appendChild(btn);
   }
 
@@ -342,15 +371,16 @@
     // "pokazuj go tylko na stronie bez profilu" — sama obecność aktywnego
     // tokenu wyłącza automatyczne pokazywanie, niezależnie od tego, czy
     // pole tutorialSeen jest ustawione.
-    if (hasToken()) return false;
-    try {
-      if (localStorage.getItem(SEEN_KEY)) return false;
-    } catch (e) {}
-    startTour();
-    return true;
+    let seen = false;
+    try { seen = !!localStorage.getItem(SEEN_KEY); } catch (e) {}
+    if (!hasToken() && !seen) { startTour("full"); return true; }
+    // Już znasz aplikację (albo masz profil) — pokażemy tylko „Co nowego”.
+    if (!newsSeen() && getSteps("news").length) { startTour("news"); return true; }
+    return false;
   }
 
-  window.showTutorial = startTour;
+  window.showTutorial = function () { startTour("full"); };
+  window.showWhatsNew = function () { startTour("news"); };
 
   // Start dopiero po wczytaniu słownika — inaczej pierwszy dymek pokazałby
   // się po polsku nawet przy innym wybranym języku.
@@ -383,6 +413,10 @@
     // by nie było. Czekamy chwilę (z sensownym limitem), zanim policzymy kroki.
     if (location.pathname.indexOf("/train") === 0) {
       waitForVisible("#mtStarBtn", 4000, proceed);
+    } else if (document.querySelector('script[src="/chat-assistant.js"]')) {
+      waitForVisible("#chatAssistantFab", 3000, function () { setTimeout(proceed, 300); });
+    } else if (document.querySelector('script[src="/alarm-sound.js"]')) {
+      waitForVisible("#alarmSoundButton", 3000, proceed);
     } else {
       proceed();
     }

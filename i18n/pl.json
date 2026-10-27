@@ -401,7 +401,8 @@
       "back": "Wstecz",
       "next": "Dalej",
       "finish": "Zakończ",
-      "show": "Pokaż samouczek"
+      "show": "Pokaż samouczek",
+      "whatsNew": "Co nowego"
     },
     "guide": {
       "s0": {
@@ -420,7 +421,7 @@
     "index": {
       "s0": {
         "title": "Zacznij tutaj",
-        "text": "Wpisz nazwę dowolnej stacji, żeby sprawdzić jej odjazdy."
+        "text": "Wpisz nazwę dowolnej stacji, żeby sprawdzić jej odjazdy. Wystarczy też sama dzielnica, np. „Załęże” — podpowiem pełną nazwę."
       },
       "s1": {
         "title": "Żywa tablica",
@@ -444,7 +445,7 @@
       },
       "s6": {
         "title": "Alarm w tle dla tej stacji",
-        "text": "👁 Obserwuj w tle — w odróżnieniu od „Alarm opóźnień” powyżej, to działa NAWET przy zamkniętej karcie albo aplikacji: dostaniesz powiadomienie push o opóźnieniu lub odwołaniu na tej stacji, gdziekolwiek będziesz. Wymaga założonego profilu — powiadomienia push mieszkają na serwerze pod Twoim tokenem."
+        "text": "👁 Obserwuj w tle — w odróżnieniu od „Alarm opóźnień” powyżej, to działa NAWET przy zamkniętej karcie albo aplikacji: dostaniesz powiadomienie push o opóźnieniu lub odwołaniu na tej stacji, gdziekolwiek będziesz. Wymaga założonego profilu — powiadomienia push mieszkają na serwerze pod Twoim tokenem. Kliknięcie takiego powiadomienia otwiera tablicę tej stacji."
       },
       "s7": {
         "title": "Dzienniczek podróży",
@@ -453,6 +454,26 @@
       "s8": {
         "title": "Profil i synchronizacja",
         "text": "Załóż tu token — 16 znaków, bez hasła i loginu — żeby zsynchronizować ulubione stacje, pociągi, alarmy i dzienniczek między urządzeniami."
+      },
+      "chat": {
+        "title": "💬 Zapytaj, jak dojechać (BETA)",
+        "text": "Napisz albo powiedz 🎤, skąd i dokąd jedziesz, np. „z Katowic do Gliwic jutro po siedemnastej”. Wolisz klikać? Wybierz „🧭 Krok po kroku” albo wpisz samą stację — zapytam, czy stąd jedziesz, i poprowadzę dalej. Gdy czegoś nie zrozumiem, dopytam, a wyniki otworzę w planerze."
+      },
+      "sound": {
+        "title": "🔊 Prawdziwe Rp1 z Tarnowskich Gór",
+        "text": "Alarm brzmi jak syrena lokomotywy — to oryginalny sygnał Rp1 nagrany w Tarnowskich Górach przy ostatnim pociągu do Opola (grudzień 2011). Tym przyciskiem wyłączysz dźwięk; wibracje zostaną."
+      },
+      "lang": {
+        "title": "🌐 6 języków",
+        "text": "Aplikacja mówi po polsku, angielsku, niemiecku, czesku, hiszpańsku i ukraińsku. Wybierz język tutaj — zapamiętam go, a z profilem: na wszystkich Twoich urządzeniach."
+      },
+      "districts": {
+        "title": "Szukaj też po dzielnicy",
+        "text": "Wpisz samo „Załęże”, „Ligota” albo „Płaszów” — podpowiem pełną nazwę stacji (Katowice Załęże, Kraków Płaszów). Stacje z Twoich miast pokażę najpierw."
+      },
+      "watchBoard": {
+        "title": "Powiadomienie prowadzi do tablicy",
+        "text": "Kliknięcie powiadomienia o opóźnieniu na obserwowanej stacji otwiera od razu tablicę tej stacji."
       }
     },
     "mojePociagi": {
@@ -483,6 +504,10 @@
       "s6": {
         "title": "Profil i synchronizacja",
         "text": "Token z profilu zabierze tę listę, alarmy i dzienniczek na każde Twoje urządzenie."
+      },
+      "sound": {
+        "title": "🔊 Prawdziwe Rp1 z Tarnowskich Gór",
+        "text": "Alarm brzmi jak syrena lokomotywy — to oryginalny sygnał Rp1 nagrany w Tarnowskich Górach przy ostatnim pociągu do Opola (grudzień 2011). Tym przyciskiem wyłączysz dźwięk; wibracje zostaną."
       }
     },
     "train": {
@@ -520,17 +545,21 @@
       },
       "s1": {
         "title": "Plan podróży",
-        "text": "Planujesz trasę (np. z przesiadką) i chcesz sprawdzić, czy się spina, zanim wyjedziesz? Zaznacz stacje na biegu każdego pociągu i dodaj „📋 Do planu” — zobaczysz tu wszystkie odcinki naraz. Gdy pociąg faktycznie dojedzie, wróć i kliknij „✅ Potwierdź” (przejazd trafi do wpisów poniżej) albo „❌ Odrzuć”."
+        "text": "Planujesz trasę (np. z przesiadką) i chcesz sprawdzić, czy się spina, zanim wyjedziesz? Zaznacz stacje na biegu każdego pociągu i dodaj „📋 Do planu” — zobaczysz tu wszystkie odcinki naraz. Gdy pociąg dojedzie, wpis sam przejdzie do zapisanych przejazdów (możesz też kliknąć „✅ Potwierdź”); „❌ Odrzuć” usuwa go z planu."
       },
       "s2": {
         "title": "Zapisane przejazdy",
         "text": "Twoje zapisane, potwierdzone przejazdy, od najnowszych. Możesz je poprawić (🔓) — zmiany też zapisują się same — albo pobrać wszystko jako XLSX."
+      },
+      "autoConfirm": {
+        "title": "Plan potwierdza się sam",
+        "text": "Po przyjeździe pociągu wpis z planu sam trafia do zapisanych przejazdów — nawet gdy PLK w międzyczasie zmieni numer kursu."
       }
     },
     "planer": {
       "s0": {
         "title": "Planer podróży (beta)",
-        "text": "Wpisz skąd i dokąd — znajdzie połączenia bezpośrednie i z przesiadkami (nawet kilkoma) na podstawie rozkładu PLK, dla całej sieci, nie tylko wybranych stacji. Jeszcze testujemy, więc zdarzają się niedoskonałości."
+        "text": "Wpisz skąd i dokąd — znajdzie połączenia bezpośrednie i z przesiadkami (nawet kilkoma) na podstawie rozkładu PLK, dla całej sieci, nie tylko wybranych stacji. Jeszcze testujemy, więc zdarzają się niedoskonałości. Podpowiedzi rozumieją dzielnice i odmianę („Załęże”, „z Płaszowa”)."
       },
       "s1": {
         "title": "Zaawansowane",
@@ -539,6 +568,18 @@
       "s2": {
         "title": "Zapisz albo dodaj do dziennika",
         "text": "Każdy wynik możesz 💾 zapisać do późniejszego przejrzenia albo 📋 dodać do planu podróży w dzienniczku — każda noga osobno. Gdy faktycznie pojedziesz, w dzienniczku potwierdzisz rzeczywisty przejazd jednym kliknięciem."
+      },
+      "districts": {
+        "title": "Szukaj też po dzielnicy",
+        "text": "Wpisz samo „Załęże”, „Ligota” albo „Płaszów” — podpowiem pełną nazwę stacji. ↑/↓ i Enter wybierają stację, a Enter w polu od razu szuka połączeń."
+      },
+      "badges": {
+        "title": "⚡ i 🔁 — można szybciej",
+        "text": "Migająca plakietka ⚡ przy wyniku znaczy, że inny pociąg bezpośredni dojedzie szybciej, a 🔁 — że szybciej będzie z przesiadką. Kliknij plakietkę, żeby zobaczyć to połączenie."
+      },
+      "chat": {
+        "title": "💬 Zapytaj, jak dojechać (BETA)",
+        "text": "Wolisz napisać albo powiedzieć 🎤 całe zdanie? Asystent wypełni ten formularz za Ciebie i od razu pokaże wyniki — albo poprowadzi krok po kroku."
       }
     }
   },

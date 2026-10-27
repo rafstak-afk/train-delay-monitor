@@ -401,7 +401,8 @@
       "back": "Back",
       "next": "Next",
       "finish": "Finish",
-      "show": "Show the tutorial"
+      "show": "Show the tutorial",
+      "whatsNew": "What's new"
     },
     "guide": {
       "s0": {
@@ -420,7 +421,7 @@
     "index": {
       "s0": {
         "title": "Start here",
-        "text": "Type the name of any station to check its departures."
+        "text": "Type the name of any station to check its departures. A district alone works too, e.g. „Załęże” — I'll suggest the full name."
       },
       "s1": {
         "title": "Live board",
@@ -444,7 +445,7 @@
       },
       "s6": {
         "title": "Background alarm for this station",
-        "text": "👁 Watch in background — unlike the “Delay alarm” above, this works EVEN with the tab or app closed: you'll get a push notification about a delay or cancellation at this station wherever you are. Requires a profile — push notifications live on the server under your token."
+        "text": "👁 Watch in background — unlike the “Delay alarm” above, this works EVEN with the tab or app closed: you'll get a push notification about a delay or cancellation at this station wherever you are. Requires a profile — push notifications live on the server under your token. Tapping such a notification opens this station's board."
       },
       "s7": {
         "title": "Travel journal",
@@ -453,6 +454,26 @@
       "s8": {
         "title": "Profile and sync",
         "text": "Create a token here — 16 characters, no password or login — to sync favorite stations, trains, alarms and the journal across devices."
+      },
+      "chat": {
+        "title": "💬 Ask how to get there (BETA)",
+        "text": "Write or say 🎤 where you're going, e.g. „z Katowic do Gliwic jutro po siedemnastej” (Polish only for now). Prefer clicking? Choose „🧭 Krok po kroku” (step by step) or type just a station — I'll ask whether you start there and guide you. If I don't understand, I'll ask, and I'll open the results in the planner."
+      },
+      "sound": {
+        "title": "🔊 A real Rp1 from Tarnowskie Góry",
+        "text": "The alarm sounds like a locomotive horn — it's the original Rp1 signal recorded in Tarnowskie Góry at the last train to Opole (December 2011). Use this button to mute it; vibration stays."
+      },
+      "lang": {
+        "title": "🌐 6 languages",
+        "text": "The app speaks Polish, English, German, Czech, Spanish and Ukrainian. Pick your language here — I'll remember it, and with a profile on all your devices."
+      },
+      "districts": {
+        "title": "Search by district too",
+        "text": "Type just „Załęże”, „Ligota” or „Płaszów” — I'll suggest the full station name (Katowice Załęże, Kraków Płaszów). Stations in your cities come first."
+      },
+      "watchBoard": {
+        "title": "The notification opens the board",
+        "text": "Tapping a delay notification for a watched station now opens that station's departure board straight away."
       }
     },
     "mojePociagi": {
@@ -483,6 +504,10 @@
       "s6": {
         "title": "Profile and sync",
         "text": "The profile token takes this list, alarms and journal to every one of your devices."
+      },
+      "sound": {
+        "title": "🔊 A real Rp1 from Tarnowskie Góry",
+        "text": "The alarm sounds like a locomotive horn — it's the original Rp1 signal recorded in Tarnowskie Góry at the last train to Opole (December 2011). Use this button to mute it; vibration stays."
       }
     },
     "train": {
@@ -520,17 +545,21 @@
       },
       "s1": {
         "title": "Travel plan",
-        "text": "Planning a route (e.g. with a change) and want to check it works before you leave? Mark the stations on each train's run and add “📋 To plan” — you'll see all legs here at once. When the train actually arrives, come back and click “✅ Confirm” (the trip goes to the entries below) or “❌ Reject”."
+        "text": "Planning a route (e.g. with a change) and want to check it works before you leave? Mark the stations on each train's run and add “📋 To plan” — you'll see all legs here at once. When the train arrives, the entry moves to your saved trips by itself (you can also click “✅ Confirm”); “❌ Reject” removes it from the plan."
       },
       "s2": {
         "title": "Saved trips",
         "text": "Your saved, confirmed trips, newest first. You can edit them (🔓) — changes save themselves too — or download everything as XLSX."
+      },
+      "autoConfirm": {
+        "title": "The plan confirms itself",
+        "text": "Once the train arrives, the plan entry moves to your saved trips by itself — even if PLK changes the service number in the meantime."
       }
     },
     "planer": {
       "s0": {
         "title": "Journey planner (beta)",
-        "text": "Enter where from and where to — it finds direct connections and ones with changes (even several) based on the PLK timetable, for the whole network, not just selected stations. We're still testing, so imperfections happen."
+        "text": "Enter where from and where to — it finds direct connections and ones with changes (even several) based on the PLK timetable, for the whole network, not just selected stations. We're still testing, so imperfections happen. Suggestions understand districts and inflected forms („Załęże”, „z Płaszowa”)."
       },
       "s1": {
         "title": "Advanced",
@@ -539,6 +568,18 @@
       "s2": {
         "title": "Save or add to the journal",
         "text": "You can 💾 save any result to review later or 📋 add it to the travel plan in your journal — each leg separately. When you actually travel, you'll confirm the real trip in the journal with one click."
+      },
+      "districts": {
+        "title": "Search by district too",
+        "text": "Type just „Załęże”, „Ligota” or „Płaszów” — I'll suggest the full station name. ↑/↓ and Enter pick a station, and Enter in the field searches right away."
+      },
+      "badges": {
+        "title": "⚡ and 🔁 — there's a faster way",
+        "text": "A blinking ⚡ badge on a result means another direct train arrives sooner, and 🔁 means a connection with a change is faster. Tap the badge to see that connection."
+      },
+      "chat": {
+        "title": "💬 Ask how to get there (BETA)",
+        "text": "Prefer to write or say 🎤 a whole sentence (in Polish)? The assistant fills in this form for you and shows the results right away — or guides you step by step."
       }
     }
   },

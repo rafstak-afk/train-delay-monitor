@@ -401,7 +401,8 @@
       "back": "Zpět",
       "next": "Další",
       "finish": "Dokončit",
-      "show": "Zobrazit průvodce"
+      "show": "Zobrazit průvodce",
+      "whatsNew": "Co je nového"
     },
     "guide": {
       "s0": {
@@ -420,7 +421,7 @@
     "index": {
       "s0": {
         "title": "Začněte tady",
-        "text": "Zadejte název libovolné stanice a podívejte se na její odjezdy."
+        "text": "Zadejte název libovolné stanice a podívejte se na její odjezdy. Stačí i samotná čtvrť, např. „Załęże“ — nabídnu celý název."
       },
       "s1": {
         "title": "Živá tabule",
@@ -444,7 +445,7 @@
       },
       "s6": {
         "title": "Alarm na pozadí pro tuto stanici",
-        "text": "👁 Sledovat na pozadí — na rozdíl od „Alarmu zpoždění“ výše funguje I při zavřené kartě nebo aplikaci: dostanete push oznámení o zpoždění nebo zrušení v této stanici, ať jste kdekoli. Vyžaduje profil — push oznámení jsou uložena na serveru pod vaším tokenem."
+        "text": "👁 Sledovat na pozadí — na rozdíl od „Alarmu zpoždění“ výše funguje I při zavřené kartě nebo aplikaci: dostanete push oznámení o zpoždění nebo zrušení v této stanici, ať jste kdekoli. Vyžaduje profil — push oznámení jsou uložena na serveru pod vaším tokenem. Klepnutí na takové oznámení otevře tabuli této stanice."
       },
       "s7": {
         "title": "Cestovní deník",
@@ -453,6 +454,26 @@
       "s8": {
         "title": "Profil a synchronizace",
         "text": "Vytvořte si zde token — 16 znaků, bez hesla a přihlašování — a synchronizujte oblíbené stanice, vlaky, alarmy i deník mezi zařízeními."
+      },
+      "chat": {
+        "title": "💬 Zeptej se, jak dojet (BETA)",
+        "text": "Napiš nebo řekni 🎤, odkud a kam jedeš, např. „z Katowic do Gliwic jutro po siedemnastej“ (zatím jen polsky). Raději klikáš? Zvol „🧭 Krok po kroku“ nebo napiš jen stanici — zeptám se, jestli odtud jedeš, a provedu tě dál. Když něčemu nerozumím, doptám se; výsledky otevřu v plánovači."
+      },
+      "sound": {
+        "title": "🔊 Pravé Rp1 z Tarnowskich Gór",
+        "text": "Alarm zní jako houkačka lokomotivy — je to originální signál Rp1 nahraný v Tarnowskich Górach u posledního vlaku do Opole (prosinec 2011). Tímto tlačítkem zvuk vypneš; vibrace zůstanou."
+      },
+      "lang": {
+        "title": "🌐 6 jazyků",
+        "text": "Aplikace mluví polsky, anglicky, německy, česky, španělsky a ukrajinsky. Jazyk vyber tady — zapamatuji si ho, s profilem na všech tvých zařízeních."
+      },
+      "districts": {
+        "title": "Hledej i podle čtvrti",
+        "text": "Napiš jen „Załęże“, „Ligota“ nebo „Płaszów“ — nabídnu celý název stanice (Katowice Załęże, Kraków Płaszów). Stanice z tvých měst ukážu nejdřív."
+      },
+      "watchBoard": {
+        "title": "Oznámení otevře tabuli",
+        "text": "Klepnutí na oznámení o zpoždění ze sledované stanice teď rovnou otevře odjezdovou tabuli té stanice."
       }
     },
     "mojePociagi": {
@@ -483,6 +504,10 @@
       "s6": {
         "title": "Profil a synchronizace",
         "text": "Token z profilu přenese tento seznam, alarmy i deník na každé vaše zařízení."
+      },
+      "sound": {
+        "title": "🔊 Pravé Rp1 z Tarnowskich Gór",
+        "text": "Alarm zní jako houkačka lokomotivy — je to originální signál Rp1 nahraný v Tarnowskich Górach u posledního vlaku do Opole (prosinec 2011). Tímto tlačítkem zvuk vypneš; vibrace zůstanou."
       }
     },
     "train": {
@@ -520,17 +545,21 @@
       },
       "s1": {
         "title": "Plán cest",
-        "text": "Plánujete trasu (např. s přestupem) a chcete před odjezdem ověřit, že vyjde? Označte stanice na jízdě každého vlaku a přidejte „📋 Do plánu“ — uvidíte tu všechny úseky najednou. Až vlak skutečně dojede, vraťte se a klikněte na „✅ Potvrdit“ (jízda se přesune do záznamů níže) nebo „❌ Odmítnout“."
+        "text": "Plánuješ trasu (např. s přestupem) a chceš ověřit, že vyjde, než vyrazíš? Označ stanice na trase každého vlaku a přidej „📋 Do plánu“ — uvidíš tu všechny úseky najednou. Když vlak dojede, záznam se sám přesune do uložených jízd (můžeš i kliknout „✅ Potvrdit“); „❌ Odmítnout“ ho z plánu odstraní."
       },
       "s2": {
         "title": "Uložené jízdy",
         "text": "Vaše uložené a potvrzené jízdy, od nejnovějších. Můžete je upravit (🔓) — změny se také ukládají samy — nebo vše stáhnout jako XLSX."
+      },
+      "autoConfirm": {
+        "title": "Plán se potvrdí sám",
+        "text": "Po příjezdu vlaku se záznam z plánu sám přesune do uložených jízd — i když PLK mezitím změní číslo spoje."
       }
     },
     "planer": {
       "s0": {
         "title": "Plánovač cest (beta)",
-        "text": "Zadejte odkud a kam — najde přímá spojení i spojení s přestupy (i několika) podle jízdního řádu PLK, pro celou síť, nejen pro vybrané stanice. Stále testujeme, takže se mohou objevit nedokonalosti."
+        "text": "Zadejte odkud a kam — najde přímá spojení i spojení s přestupy (i několika) podle jízdního řádu PLK, pro celou síť, nejen pro vybrané stanice. Stále testujeme, takže se mohou objevit nedokonalosti. Návrhy rozumí čtvrtím i skloňování („Załęże“, „z Płaszowa“)."
       },
       "s1": {
         "title": "Pokročilé",
@@ -539,6 +568,18 @@
       "s2": {
         "title": "Uložit nebo přidat do deníku",
         "text": "Každý výsledek můžete 💾 uložit k pozdějšímu prohlédnutí nebo 📋 přidat do plánu cest v deníku — každý úsek zvlášť. Až skutečně pojedete, potvrdíte skutečnou jízdu v deníku jedním kliknutím."
+      },
+      "districts": {
+        "title": "Hledej i podle čtvrti",
+        "text": "Napiš jen „Załęże“, „Ligota“ nebo „Płaszów“ — nabídnu celý název stanice. ↑/↓ a Enter vybírají stanici, Enter v poli hned hledá spojení."
+      },
+      "badges": {
+        "title": "⚡ a 🔁 — jde to rychleji",
+        "text": "Blikající ⚡ u výsledku znamená, že jiný přímý vlak přijede dřív, a 🔁 — že s přestupem to bude rychlejší. Klepni na štítek a uvidíš to spojení."
+      },
+      "chat": {
+        "title": "💬 Zeptej se, jak dojet (BETA)",
+        "text": "Raději napíšeš nebo řekneš 🎤 celou větu (polsky)? Asistent za tebe vyplní tento formulář a hned ukáže výsledky — nebo tě provede krok po kroku."
       }
     }
   },

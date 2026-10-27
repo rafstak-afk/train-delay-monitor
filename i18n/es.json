@@ -401,7 +401,8 @@
       "back": "Atrás",
       "next": "Siguiente",
       "finish": "Terminar",
-      "show": "Ver el tutorial"
+      "show": "Ver el tutorial",
+      "whatsNew": "Novedades"
     },
     "guide": {
       "s0": {
@@ -420,7 +421,7 @@
     "index": {
       "s0": {
         "title": "Empieza aquí",
-        "text": "Escribe el nombre de cualquier estación para ver sus salidas."
+        "text": "Escribe el nombre de cualquier estación para ver sus salidas. También basta con el barrio, p. ej. «Załęże»: te sugeriré el nombre completo."
       },
       "s1": {
         "title": "Panel en directo",
@@ -444,7 +445,7 @@
       },
       "s6": {
         "title": "Alarma en segundo plano para esta estación",
-        "text": "👁 Vigilar en segundo plano: a diferencia de la «Alarma de retrasos» de arriba, funciona INCLUSO con la pestaña o la aplicación cerradas: recibirás una notificación push de retraso o cancelación en esta estación estés donde estés. Requiere un perfil: las notificaciones push se guardan en el servidor con tu token."
+        "text": "👁 Vigilar en segundo plano: a diferencia de la «Alarma de retrasos» de arriba, funciona INCLUSO con la pestaña o la aplicación cerradas: recibirás una notificación push de retraso o cancelación en esta estación estés donde estés. Requiere un perfil: las notificaciones push se guardan en el servidor con tu token. Al tocar esa notificación se abre el panel de esta estación."
       },
       "s7": {
         "title": "Diario de viajes",
@@ -453,6 +454,26 @@
       "s8": {
         "title": "Perfil y sincronización",
         "text": "Crea aquí un token (16 caracteres, sin contraseña ni inicio de sesión) para sincronizar estaciones favoritas, trenes, alarmas y el diario entre dispositivos."
+      },
+      "chat": {
+        "title": "💬 Pregunta cómo llegar (BETA)",
+        "text": "Escribe o di 🎤 de dónde a dónde vas, p. ej. «z Katowic do Gliwic jutro po siedemnastej» (de momento solo en polaco). ¿Prefieres hacer clic? Elige «🧭 Krok po kroku» (paso a paso) o escribe solo una estación: te preguntaré si sales de ahí y te guiaré. Si no entiendo algo, preguntaré; los resultados los abriré en el planificador."
+      },
+      "sound": {
+        "title": "🔊 Un Rp1 auténtico de Tarnowskie Góry",
+        "text": "La alarma suena como la bocina de una locomotora: es la señal Rp1 original grabada en Tarnowskie Góry en el último tren a Opole (diciembre de 2011). Con este botón la silencias; la vibración se mantiene."
+      },
+      "lang": {
+        "title": "🌐 6 idiomas",
+        "text": "La app habla polaco, inglés, alemán, checo, español y ucraniano. Elige tu idioma aquí: lo recordaré y, con perfil, en todos tus dispositivos."
+      },
+      "districts": {
+        "title": "Busca también por barrio",
+        "text": "Escribe solo «Załęże», «Ligota» o «Płaszów» y te sugeriré el nombre completo de la estación (Katowice Załęże, Kraków Płaszów). Primero, las estaciones de tus ciudades."
+      },
+      "watchBoard": {
+        "title": "La notificación abre el panel",
+        "text": "Al tocar una notificación de retraso de una estación vigilada se abre directamente su panel de salidas."
       }
     },
     "mojePociagi": {
@@ -483,6 +504,10 @@
       "s6": {
         "title": "Perfil y sincronización",
         "text": "El token del perfil lleva esta lista, las alarmas y el diario a todos tus dispositivos."
+      },
+      "sound": {
+        "title": "🔊 Un Rp1 auténtico de Tarnowskie Góry",
+        "text": "La alarma suena como la bocina de una locomotora: es la señal Rp1 original grabada en Tarnowskie Góry en el último tren a Opole (diciembre de 2011). Con este botón la silencias; la vibración se mantiene."
       }
     },
     "train": {
@@ -520,17 +545,21 @@
       },
       "s1": {
         "title": "Plan de viaje",
-        "text": "¿Planeas una ruta (p. ej. con transbordo) y quieres comprobar que encaja antes de salir? Marca las estaciones en el recorrido de cada tren y añade «📋 Al plan»: aquí verás todos los tramos a la vez. Cuando el tren llegue de verdad, vuelve y pulsa «✅ Confirmar» (el viaje pasa a las entradas de abajo) o «❌ Rechazar»."
+        "text": "¿Planeas una ruta (p. ej. con transbordo) y quieres comprobar que encaja antes de salir? Marca las estaciones en el recorrido de cada tren y añade «📋 Al plan»: aquí verás todos los tramos a la vez. Cuando el tren llegue, la entrada pasará sola a tus viajes guardados (también puedes pulsar «✅ Confirmar»); «❌ Rechazar» la quita del plan."
       },
       "s2": {
         "title": "Viajes guardados",
         "text": "Tus viajes guardados y confirmados, los más recientes primero. Puedes editarlos (🔓) —los cambios también se guardan solos— o descargarlo todo en XLSX."
+      },
+      "autoConfirm": {
+        "title": "El plan se confirma solo",
+        "text": "Cuando llega el tren, la entrada del plan pasa sola a tus viajes guardados, incluso si PLK cambia mientras tanto el número del servicio."
       }
     },
     "planer": {
       "s0": {
         "title": "Planificador de viajes (beta)",
-        "text": "Indica el origen y el destino: encontrará conexiones directas y con transbordos (incluso varios) según el horario de PLK, para toda la red, no solo para estaciones seleccionadas. Aún lo estamos probando, así que puede haber imperfecciones."
+        "text": "Indica el origen y el destino: encontrará conexiones directas y con transbordos (incluso varios) según el horario de PLK, para toda la red, no solo para estaciones seleccionadas. Aún lo estamos probando, así que puede haber imperfecciones. Las sugerencias entienden barrios y formas declinadas («Załęże», «z Płaszowa»)."
       },
       "s1": {
         "title": "Avanzado",
@@ -539,6 +568,18 @@
       "s2": {
         "title": "Guardar o añadir al diario",
         "text": "Puedes 💾 guardar cualquier resultado para revisarlo más tarde o 📋 añadirlo al plan de viaje del diario, cada tramo por separado. Cuando viajes de verdad, confirmarás el viaje real en el diario con un clic."
+      },
+      "districts": {
+        "title": "Busca también por barrio",
+        "text": "Escribe solo «Załęże», «Ligota» o «Płaszów» y te sugeriré el nombre completo. ↑/↓ y Enter eligen la estación; Enter en el campo busca al instante."
+      },
+      "badges": {
+        "title": "⚡ y 🔁: hay una opción más rápida",
+        "text": "Una insignia ⚡ parpadeante en un resultado indica que otro tren directo llega antes, y 🔁 que con transbordo será más rápido. Tócala para ver esa conexión."
+      },
+      "chat": {
+        "title": "💬 Pregunta cómo llegar (BETA)",
+        "text": "¿Prefieres escribir o decir 🎤 una frase entera (en polaco)? El asistente rellena este formulario por ti y muestra los resultados al momento, o te guía paso a paso."
       }
     }
   },

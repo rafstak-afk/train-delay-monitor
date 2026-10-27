@@ -401,7 +401,8 @@
       "back": "Zurück",
       "next": "Weiter",
       "finish": "Fertig",
-      "show": "Anleitung anzeigen"
+      "show": "Anleitung anzeigen",
+      "whatsNew": "Was ist neu"
     },
     "guide": {
       "s0": {
@@ -420,7 +421,7 @@
     "index": {
       "s0": {
         "title": "Hier anfangen",
-        "text": "Gib den Namen eines beliebigen Bahnhofs ein, um seine Abfahrten zu sehen."
+        "text": "Gib den Namen eines beliebigen Bahnhofs ein, um seine Abfahrten zu sehen. Auch nur ein Stadtteil genügt, z. B. „Załęże“ — ich schlage den vollen Namen vor."
       },
       "s1": {
         "title": "Live-Tafel",
@@ -444,7 +445,7 @@
       },
       "s6": {
         "title": "Hintergrundalarm für diesen Bahnhof",
-        "text": "👁 Im Hintergrund beobachten — anders als der „Verspätungsalarm“ oben funktioniert das AUCH bei geschlossenem Tab oder geschlossener App: Du bekommst eine Push-Benachrichtigung über Verspätung oder Ausfall an diesem Bahnhof, wo immer du bist. Erfordert ein Profil — Push-Benachrichtigungen liegen auf dem Server unter deinem Token."
+        "text": "👁 Im Hintergrund beobachten — anders als der „Verspätungsalarm“ oben funktioniert das AUCH bei geschlossenem Tab oder geschlossener App: Du bekommst eine Push-Benachrichtigung über Verspätung oder Ausfall an diesem Bahnhof, wo immer du bist. Erfordert ein Profil — Push-Benachrichtigungen liegen auf dem Server unter deinem Token. Ein Tipp auf so eine Benachrichtigung öffnet die Tafel dieses Bahnhofs."
       },
       "s7": {
         "title": "Reisetagebuch",
@@ -453,6 +454,26 @@
       "s8": {
         "title": "Profil und Synchronisierung",
         "text": "Erstelle hier einen Token — 16 Zeichen, ohne Passwort und Login —, um Lieblingsbahnhöfe, Züge, Alarme und das Tagebuch zwischen Geräten zu synchronisieren."
+      },
+      "chat": {
+        "title": "💬 Frag, wie du hinkommst (BETA)",
+        "text": "Schreib oder sag 🎤, wohin du fährst, z. B. „z Katowic do Gliwic jutro po siedemnastej“ (vorerst nur Polnisch). Lieber klicken? Wähle „🧭 Krok po kroku“ (Schritt für Schritt) oder tippe nur einen Bahnhof — ich frage, ob du dort startest, und führe dich weiter. Verstehe ich etwas nicht, frage ich nach; die Ergebnisse öffne ich im Planer."
+      },
+      "sound": {
+        "title": "🔊 Echtes Rp1 aus Tarnowskie Góry",
+        "text": "Der Alarm klingt wie ein Lokomotivsignal — das originale Rp1, aufgenommen in Tarnowskie Góry beim letzten Zug nach Opole (Dezember 2011). Mit diesem Knopf schaltest du den Ton aus; die Vibration bleibt."
+      },
+      "lang": {
+        "title": "🌐 6 Sprachen",
+        "text": "Die App spricht Polnisch, Englisch, Deutsch, Tschechisch, Spanisch und Ukrainisch. Wähle hier deine Sprache — ich merke sie mir, mit Profil auf allen deinen Geräten."
+      },
+      "districts": {
+        "title": "Auch nach Stadtteil suchen",
+        "text": "Tippe nur „Załęże“, „Ligota“ oder „Płaszów“ — ich schlage den vollen Bahnhofsnamen vor (Katowice Załęże, Kraków Płaszów). Bahnhöfe in deinen Städten zuerst."
+      },
+      "watchBoard": {
+        "title": "Die Benachrichtigung öffnet die Tafel",
+        "text": "Ein Tipp auf eine Verspätungsbenachrichtigung eines beobachteten Bahnhofs öffnet jetzt direkt dessen Abfahrtstafel."
       }
     },
     "mojePociagi": {
@@ -483,6 +504,10 @@
       "s6": {
         "title": "Profil und Synchronisierung",
         "text": "Der Profil-Token nimmt diese Liste, Alarme und das Tagebuch auf jedes deiner Geräte mit."
+      },
+      "sound": {
+        "title": "🔊 Echtes Rp1 aus Tarnowskie Góry",
+        "text": "Der Alarm klingt wie ein Lokomotivsignal — das originale Rp1, aufgenommen in Tarnowskie Góry beim letzten Zug nach Opole (Dezember 2011). Mit diesem Knopf schaltest du den Ton aus; die Vibration bleibt."
       }
     },
     "train": {
@@ -520,17 +545,21 @@
       },
       "s1": {
         "title": "Reiseplan",
-        "text": "Du planst eine Strecke (z. B. mit Umstieg) und willst vor der Abfahrt prüfen, ob sie passt? Markiere die Bahnhöfe im Lauf jedes Zuges und füge „📋 Zum Plan“ hinzu — hier siehst du alle Abschnitte auf einmal. Wenn der Zug tatsächlich ankommt, komm zurück und klicke „✅ Bestätigen“ (die Fahrt landet in den Einträgen unten) oder „❌ Ablehnen“."
+        "text": "Du planst eine Route (z. B. mit Umstieg) und willst vor der Abfahrt prüfen, ob sie klappt? Markiere die Bahnhöfe im Laufweg jedes Zuges und füge „📋 Zum Plan“ hinzu — hier siehst du alle Abschnitte auf einmal. Kommt der Zug an, wandert der Eintrag von selbst zu den gespeicherten Fahrten (du kannst auch „✅ Bestätigen“ klicken); „❌ Ablehnen“ entfernt ihn aus dem Plan."
       },
       "s2": {
         "title": "Gespeicherte Fahrten",
         "text": "Deine gespeicherten, bestätigten Fahrten, die neuesten zuerst. Du kannst sie bearbeiten (🔓) — Änderungen speichern sich ebenfalls selbst — oder alles als XLSX herunterladen."
+      },
+      "autoConfirm": {
+        "title": "Der Plan bestätigt sich selbst",
+        "text": "Nach Ankunft des Zuges wandert der Planeintrag von selbst zu deinen gespeicherten Fahrten — auch wenn PLK inzwischen die Zugnummer ändert."
       }
     },
     "planer": {
       "s0": {
         "title": "Reiseplaner (Beta)",
-        "text": "Gib Start und Ziel ein — er findet Direktverbindungen und Verbindungen mit Umstieg (auch mehreren) anhand des PLK-Fahrplans, für das ganze Netz, nicht nur ausgewählte Bahnhöfe. Wir testen noch, daher kann nicht alles perfekt sein."
+        "text": "Gib Start und Ziel ein — er findet Direktverbindungen und Verbindungen mit Umstieg (auch mehreren) anhand des PLK-Fahrplans, für das ganze Netz, nicht nur ausgewählte Bahnhöfe. Wir testen noch, daher kann nicht alles perfekt sein. Die Vorschläge verstehen Stadtteile und gebeugte Formen („Załęże“, „z Płaszowa“)."
       },
       "s1": {
         "title": "Erweitert",
@@ -539,6 +568,18 @@
       "s2": {
         "title": "Speichern oder ins Tagebuch",
         "text": "Jedes Ergebnis kannst du 💾 zum späteren Ansehen speichern oder 📋 zum Reiseplan im Tagebuch hinzufügen — jeden Abschnitt einzeln. Wenn du tatsächlich fährst, bestätigst du die echte Fahrt im Tagebuch mit einem Klick."
+      },
+      "districts": {
+        "title": "Auch nach Stadtteil suchen",
+        "text": "Tippe nur „Załęże“, „Ligota“ oder „Płaszów“ — ich schlage den vollen Bahnhofsnamen vor. ↑/↓ und Enter wählen einen Bahnhof, Enter im Feld sucht sofort."
+      },
+      "badges": {
+        "title": "⚡ und 🔁 — es geht schneller",
+        "text": "Ein blinkendes ⚡ an einem Ergebnis heißt: Ein anderer Direktzug ist früher da; 🔁 heißt: Mit Umstieg geht es schneller. Tippe darauf, um diese Verbindung zu sehen."
+      },
+      "chat": {
+        "title": "💬 Frag, wie du hinkommst (BETA)",
+        "text": "Lieber einen ganzen Satz schreiben oder sagen 🎤 (auf Polnisch)? Der Assistent füllt dieses Formular für dich aus und zeigt sofort die Ergebnisse — oder führt dich Schritt für Schritt."
       }
     }
   },
