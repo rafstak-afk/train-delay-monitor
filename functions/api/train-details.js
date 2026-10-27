@@ -376,7 +376,10 @@ export async function onRequestGet(context) {
       lastConfirmedTime: confirmed?.time || "",
       route: stops,
       connections: Array.isArray(route.connections) ? route.connections : [],
-      disruptions
+      disruptions,
+      // Pełny słownik typów utrudnień PLK (kod → polski tekst) — tylko na
+      // żądanie (?withDisruptionTypes=1), do budowy tłumaczeń w i18n/*.json.
+      ...(url.searchParams.get("withDisruptionTypes") === "1" ? { disruptionTypes: disruptionDict } : {})
     });
   } catch (err) {
     return json({ error: err.message, route: [] }, 502);
