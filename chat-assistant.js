@@ -205,7 +205,39 @@
   // ---------- parser jednej wypowiedzi ----------
   // Zwraca {from, to, via, date, time, transfer, direct, exclude[], vague[]}
   // — tylko to, co faktycznie padło. Frazy stacji jako surowy tekst (do dopasowania).
-  var MARKERS = /^(z|ze|od|do|przez|bez|o|około|okolo|ok|po|w|we|jutro|dzis|dzisiaj|pojutrze|rano|wieczorem|wieczor|poludniu|popoludniu|i|oraz|a|tylko|minut|minuty|min|przesiadk\w*|na|jak|chce|chcialbym|chcialabym|jechac|pojechac|dojechac|dostac|sie|pociagiem|prosze|szukam|polaczenia|polaczenie|teraz|zaraz|najblizszym|najblizszy|pierwsz\w*|ostatni\w*|najwczesniej\w*|najpozniej\w*|polaczen\w*|bezposredn\w*|kurs\w*|pociag\w*|godz\w*|potem|jakie|jaki|mam|mozna|czy)$/;
+  var MARKERS = /^(z|ze|od|do|przez|bez|o|około|okolo|ok|po|w|we|jutro|dzis|dzisiaj|pojutrze|rano|wieczorem|wieczor|poludniu|popoludniu|i|oraz|a|tylko|minut|minuty|min|przesiadk\w*|na|jak|chce|chcialbym|chcialabym|jechac|pojechac|dojechac|dostac|sie|pociagiem|prosze|szukam|polaczenia|polaczenie|teraz|zaraz|najblizszym|najblizszy|pierwsz\w*|ostatni\w*|wpol|pol|polnocy|kolacji|obiedzie|sniadaniu|pracy|szkole|najwczesniej\w*|najpozniej\w*|polaczen\w*|bezposredn\w*|kurs\w*|pociag\w*|godz\w*|potem|jakie|jaki|mam|mozna|czy)$/;
+  // Godzina słowami (forma po „o/po/od/około”): „siedemnastej”, „wpół do
+  // ósmej”, „dwudziestej pierwszej trzydzieści”, „północy”. Bez znacznika
+  // („pierwsze połączenie”) to NIE jest godzina.
+  var HOUR_WORDS = [
+    ["dwudziest\\w* pierwsz", 21], ["dwudziest\\w* drug", 22], ["dwudziest\\w* trzec", 23], ["dwudziest\\w* czwart", 0],
+    ["dwudziest", 20], ["dziewietnast", 19], ["osiemnast", 18], ["siedemnast", 17], ["szesnast", 16], ["pietnast", 15],
+    ["czternast", 14], ["trzynast", 13], ["dwunast", 12], ["jedenast", 11], ["dziesiat", 10], ["dziewiat", 9],
+    ["osm", 8], ["siodm", 7], ["szost", 6], ["piat", 5], ["czwart", 4], ["trzec", 3], ["drug", 2], ["pierwsz", 1],
+    ["polnoc", 0], ["zerow", 0]
+  ];
+  var MIN_WORDS = [["czterdziesci piec", 45], ["piecdziesiat", 50], ["czterdziesci", 40], ["trzydziesci", 30],
+    ["dwadziescia", 20], ["pietnascie", 15], ["dziesiec", 10], ["piec", 5], ["zero zero", 0]];
+  function wordTime(f) {
+    var MARK = " (?:o|po|od|okolo|ok|kolo)(?: godz\\w*)? ";
+    var half = f.match(new RegExp(MARK + "w ?pol do (\\w+)"));
+    if (half) {
+      for (var j = 0; j < HOUR_WORDS.length; j++) {
+        if (new RegExp("^" + HOUR_WORDS[j][0]).test(half[1])) return pad((HOUR_WORDS[j][1] + 23) % 24) + ":30";
+      }
+    }
+    for (var i = 0; i < HOUR_WORDS.length; i++) {
+      var m = f.match(new RegExp(MARK + HOUR_WORDS[i][0] + "\\w*(?: (\\w+(?: \\w+)?))?"));
+      if (!m) continue;
+      var min = 0, rest = (m[1] || "") + " ";
+      for (var k = 0; k < MIN_WORDS.length; k++) {
+        if (rest.indexOf(MIN_WORDS[k][0] + " ") === 0) { min = MIN_WORDS[k][1]; break; }
+      }
+      if (/^\d{2} /.test(rest) && +rest.slice(0, 2) <= 59) min = +rest.slice(0, 2);
+      return pad(HOUR_WORDS[i][1]) + ":" + pad(min);
+    }
+    return null;
+  }
   function parse(raw) {
     var r = { exclude: [], vague: [] };
     var text = " " + raw.replace(/[→–—]/g, " - ") + " ";
@@ -251,8 +283,12 @@
     }
     // godzina: „o 7”, „o 7:30”, „od 16”, „po 16”, „7:30”
     var t1 = f.match(/ (?:o|od|po|okolo|ok) (?:godz\w* )?(\d{1,2})(?: (\d{2}))? /) || raw.match(/\b(\d{1,2}):(\d{2})\b/);
+    var tw = wordTime(f);
     if (t1 && +t1[1] <= 23 && (!t1[2] || +t1[2] <= 59)) r.time = pad(+t1[1]) + ":" + pad(t1[2] ? +t1[2] : 0);
+    else if (tw) r.time = tw;
     else if (/ (pierwsz\w*|najwczesniej\w*) /.test(f)) r.time = "00:00";
+    // „po kolacji”, „o jakiejś” — wygląda na porę, ale jej nie rozumiemy: pytamy.
+    else if (/ (?:o|po|okolo|ok|przed) (?!poludniu)[a-z]+(?:ej|ji|u) /.test(f) && !/ (?:o|po|od) (?:przesiad|bezposredn|tylko|jutr|dzis|pojutrz)/.test(f)) r.vague.push({ kind: "time" });
     else if (/ (rano|wieczorem|wieczor|po poludniu|popoludniu|w nocy|przed poludniem|ostatni\w*|najpozniej\w*) /.test(f)) r.vague.push({ kind: "time" });
 
     // stacje — frazy po „z/ze/od”, „do”, „przez”

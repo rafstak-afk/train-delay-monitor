@@ -239,6 +239,40 @@ test("Dąbrowa Górnicza do Katowic (stacja na „d”)", async () => {
   expectStation(c.state(), "from", "Dąbrowa Górnicza"); expectStation(c.state(), "to", "Katowice");
 });
 
+test("godzina słowami: Częstochowa Tarnowskie Góry bezpośredni dzisiaj po siedemnastej", async () => {
+  const c = await session();
+  await c.say("Częstochowa Tarnowskie Góry bezpośredni dzisiaj po siedemnastej");
+  const st = c.state();
+  expectStation(st, "from", "Częstochowa"); expectStation(st, "to", "Tarnowskie Góry");
+  expect(st.time === "17:00", "godzina " + st.time); expect(st.direct, "tylko bezpośrednie"); expect(st.date === TODAY, "data " + st.date);
+  expect(!c.last.includes("od teraz"), "nie może być „od teraz”");
+});
+
+test("godziny słowami — różne formy", async () => {
+  const cases = [
+    ["z Bytomia do Gliwic o piątej", "05:00"],
+    ["z Bytomia do Gliwic o wpół do ósmej", "07:30"],
+    ["z Bytomia do Gliwic około dwudziestej pierwszej trzydzieści", "21:30"],
+    ["z Bytomia do Gliwic po dziewiętnastej piętnaście", "19:15"],
+    ["z Bytomia do Gliwic o dwunastej", "12:00"],
+    ["z Bytomia do Gliwic od szesnastej", "16:00"],
+    ["z Bytomia do Gliwic o północy", "00:00"],
+    ["z Bytomia do Gliwic o 7 30", "07:30"]
+  ];
+  for (const [txt, want] of cases) {
+    const c = await session();
+    await c.say(txt);
+    expect(c.state().time === want, "„" + txt + "”: oczekiwano " + want + ", jest " + c.state().time);
+  }
+});
+
+test("niezrozumiała godzina → pytanie, nie „od teraz”", async () => {
+  const c = await session();
+  await c.say("z Bytomia do Gliwic po kolacji");
+  expect(!c.state().time, "godzina nie powinna być ustawiona: " + c.state().time);
+  expectSaid(c, "O której");
+});
+
 test("„rano” → przyciski z godzinami", async () => {
   const c = await session();
   await c.say("z Gliwic do Katowic rano");
