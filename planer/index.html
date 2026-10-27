@@ -94,6 +94,11 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
 .risk-tight{color:var(--yellow);font-weight:800}
 .risk-missed{color:var(--red);font-weight:900}
 .ambiguous-note{font-size:12.5px;color:var(--yellow);margin:0 0 10px;text-align:center}
+.faster-hint{display:block;width:100%;margin-top:8px;text-align:left;background:rgba(255,212,0,.12);border:1px solid #ffd400;color:#ffd400;border-radius:10px;padding:8px 10px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;animation:fasterPulse 1.2s ease-in-out 4}
+@keyframes fasterPulse{50%{box-shadow:0 0 0 4px rgba(255,212,0,.35)}}
+.entry.flash{animation:entryFlash 1.8s ease-out}
+@keyframes entryFlash{0%{box-shadow:0 0 0 3px #ffd400}100%{box-shadow:0 0 0 0 rgba(255,212,0,0)}}
+@media (prefers-reduced-motion:reduce){.faster-hint,.entry.flash{animation:none}}
 .itin-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:8px}
 .saved-at{font-size:11.5px;color:var(--muted);margin-top:6px;font-style:italic}
 .history-entry{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px}
@@ -680,6 +685,40 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     return '';
   }
 
+  // Szybszy pociąg BEZPOŚREDNI w tych samych wynikach: odjeżdża później,
+  // a dojeżdża wcześniej (np. Os 40678 15:01→16:57 vs OsP 40122 15:28→16:43).
+  // Wolniejszego nie ukrywamy — to tylko podpowiedź. Spośród szybszych
+  // wybieramy ten z najwcześniejszym przyjazdem.
+  function itinMinutes(t,nextDay){var m=String(t||'').match(/(\d{1,2}):(\d{2})/);return m?Number(m[1])*60+Number(m[2])+(nextDay?1440:0):null}
+  function fasterDirectFor(idx){
+    var it=lastItineraries[idx];
+    if(!it||it.type!=='direct')return null;
+    var dep=itinMinutes(it.departureTime),arr=itinMinutes(it.arrivalTime,it.arrivalNextDay);
+    if(dep==null||arr==null)return null;
+    var best=null;
+    lastItineraries.forEach(function(o,j){
+      if(j===idx||o.type!=='direct')return;
+      var oDep=itinMinutes(o.departureTime),oArr=itinMinutes(o.arrivalTime,o.arrivalNextDay);
+      if(oDep==null||oArr==null||oDep<=dep||oArr>=arr)return;
+      if(!best||oArr<best.arr)best={idx:j,it:o,arr:oArr,gain:arr-oArr};
+    });
+    return best;
+  }
+  function fasterHintHtml(idx){
+    var f=fasterDirectFor(idx);
+    if(!f)return '';
+    var leg=f.it.legs[0]||{train:{}};
+    var tr=[leg.train.category,leg.train.number].filter(Boolean).join(' ');
+    return '<button type="button" class="faster-hint" data-target="'+f.idx+'">⚡ Szybciej: '+escapeHtml(tr)+' odj. '+escapeHtml(f.it.departureTime)+' → przyj. '+escapeHtml(f.it.arrivalTime)+' ('+f.gain+' min wcześniej) ›</button>';
+  }
+  function showItinerary(idx){
+    if(idx>=visibleCount){visibleCount=Math.ceil((idx+1)/RESULTS_PAGE_SIZE)*RESULTS_PAGE_SIZE;renderVisibleItineraries()}
+    var el=document.getElementById('itin-'+idx);
+    if(!el)return;
+    el.scrollIntoView({behavior:'smooth',block:'center'});
+    el.classList.remove('flash');void el.offsetWidth;el.classList.add('flash');
+  }
+
   function itineraryHtml(it,opts){
     opts=opts||{};
     var transfers=it.transfers||[];
@@ -701,7 +740,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
         '<button type="button" class="btn-sm secondary itin-addplan" data-idx="'+opts.index+'"'+planTitle+'>📋 Do dziennika</button>';
     }
     var savedLine=opts.savedAt?'<div class="saved-at">zapisano '+escapeHtml(new Date(opts.savedAt).toLocaleString('pl-PL'))+'</div>':'';
-    return '<div class="entry">'+
+    return '<div class="entry"'+(opts.index!=null?' id="itin-'+opts.index+'"':'')+'>'+
       '<div class="itin-head">'+
         '<span class="itin-time">'+escapeHtml(it.departureTime)+'</span><span class="itin-arrow">→</span><span class="itin-time">'+escapeHtml(it.arrivalTime)+'</span>'+
         (it.arrivalNextDay?'<span class="itin-nextday">+1 dzień</span>':'')+
@@ -709,6 +748,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
         badgeHtml(it)+
       '</div>'+
       legsHtml+
+      (opts.index!=null?fasterHintHtml(opts.index):'')+
       savedLine+
       (actionHtml?'<div class="itin-actions">'+actionHtml+'</div>':'')+
       '</div>';
@@ -770,6 +810,8 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
   }
 
   $('resultsList').addEventListener('click',function(e){
+    var hint=e.target.closest('.faster-hint');
+    if(hint){showItinerary(Number(hint.dataset.target));return}
     if(e.target.closest('#loadMoreBtn')){
       visibleCount+=RESULTS_PAGE_SIZE;
       renderVisibleItineraries();
