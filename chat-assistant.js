@@ -363,6 +363,12 @@
       ".ca-fab.cta{width:auto;height:auto;padding:12px 18px 12px 14px;border-radius:999px;font-size:15px;font-weight:800;display:flex;align-items:center;gap:8px;background:linear-gradient(135deg,#0b57d0,#0ea5e9);animation:caPulse 1.8s ease-in-out infinite}" +
       ".ca-fab.cta .ca-fab-ico{font-size:22px;line-height:1}" +
       ".ca-fab .ca-fab-txt{display:none}.ca-fab.cta .ca-fab-txt{display:inline}" +
+      // BETA (świeża funkcja) — jak plakietka przy „Planer podróży”: w chmurce obok napisu, na zwiniętej ikonie w rogu.
+      ".ca-beta{background:#ff4d4d;color:#fff;font-size:10px;font-weight:900;letter-spacing:.03em;padding:2px 6px;border-radius:999px;line-height:1.4}" +
+      ".ca-fab{overflow:visible}.ca-fab:not(.cta) .ca-beta{position:absolute;top:-6px;right:-8px;font-size:9px;padding:1px 5px;box-shadow:0 2px 6px rgba(0,0,0,.4)}" +
+      ".ca-head .ca-beta{margin-left:2px;flex:none}" +
+      ".ca-head>span:first-of-type{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}.ca-head .ca-clear{white-space:nowrap;flex:none}" +
+      "@media(max-width:480px){.ca-clear-txt{display:none}}" +
       "@keyframes caPulse{0%,100%{box-shadow:0 8px 22px rgba(0,0,0,.45),0 0 0 0 rgba(34,211,238,.55)}50%{box-shadow:0 8px 22px rgba(0,0,0,.45),0 0 0 10px rgba(34,211,238,0)}}" +
       "@media(prefers-reduced-motion:reduce){.ca-fab.cta{animation:none}}" +
       ".ca-panel{position:fixed;right:12px;bottom:12px;z-index:100001;width:min(420px,calc(100vw - 24px));height:min(600px,calc(100vh - 24px));background:#1c2833;color:#fff;border:1px solid #0b57d0;border-radius:16px;box-shadow:0 20px 50px rgba(0,0,0,.6);display:none;flex-direction:column;font-family:Arial,sans-serif;overflow:hidden}" +
@@ -459,7 +465,7 @@
     panel.setAttribute("role", "dialog");
     panel.setAttribute("aria-label", T("chat.title"));
     panel.innerHTML =
-      '<div class="ca-head">💬 <span>' + esc(T("chat.title")) + '</span><button type="button" class="ca-clear" title="' + esc(T("chat.clear")) + '">🗑️ ' + esc(T("chat.clear")) + '</button><button type="button" class="ca-x" aria-label="' + esc(T("chat.close")) + '">✕</button></div>' +
+      '<div class="ca-head">💬 <span>' + esc(T("chat.title")) + '</span><span class="ca-beta">BETA</span><button type="button" class="ca-clear" title="' + esc(T("chat.clear")) + '" aria-label="' + esc(T("chat.clear")) + '">🗑️<span class="ca-clear-txt"> ' + esc(T("chat.clear")) + '</span></button><button type="button" class="ca-x" aria-label="' + esc(T("chat.close")) + '">✕</button></div>' +
       '<div class="ca-log" aria-live="polite"></div>' +
       '<form class="ca-form"><input type="text" autocomplete="off" placeholder="' + esc(T("chat.placeholder")) + '">' +
       '<button type="button" class="ca-mic" title="' + esc(T("chat.mic")) + '" aria-label="' + esc(T("chat.mic")) + '">🎤</button>' +
@@ -757,7 +763,7 @@
 
     // Zawartość budujemy raz, a wygaszenie to tylko zmiana klasy — podmiana
     // innerHTML w trakcie kliknięcia gubiła cel i czat się nie otwierał.
-    b.innerHTML = '<span class="ca-fab-ico">💬</span><span class="ca-fab-txt"></span>';
+    b.innerHTML = '<span class="ca-fab-ico">💬</span><span class="ca-fab-txt"></span><span class="ca-beta">BETA</span>';
     function render() {
       b.className = quiet ? "ca-fab" : "ca-fab cta";
       b.querySelector(".ca-fab-txt").textContent = T("chat.cta");
