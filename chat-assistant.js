@@ -388,7 +388,7 @@
 
   function openPanel() {
     injectStyles();
-    try { sessionStorage.setItem("chatFabQuiet", "1"); } catch (e) {}
+    try { sessionStorage.setItem("chatFabQuietV2", "1"); } catch (e) {}
     var fab = document.getElementById("chatAssistantFab"); if (fab) fab.className = "ca-fab";
     if (!panel) buildPanel();
     panel.classList.add("open");
@@ -683,7 +683,7 @@
     var label = function () { return T("chat.open"); };
     // Na wejściu wyróżniona chmurka z zachętą; gdy pasażer sam zacznie
     // klikać po serwisie — zwijamy do zwykłej ikony (do końca tej wizyty).
-    var QUIET_KEY = "chatFabQuiet";
+    var QUIET_KEY = "chatFabQuietV2";
     var quiet = false;
     try { quiet = sessionStorage.getItem(QUIET_KEY) === "1"; } catch (e) {}
     // Zawartość budujemy raz, a wygaszenie to tylko zmiana klasy — podmiana
@@ -698,14 +698,17 @@
       if (quiet) return;
       // Kliknięcie w samą chmurkę otwiera czat — to nie jest „samodzielne klikanie po serwisie”.
       if (e && e.target && b.contains(e.target)) return;
+      // Samouczek (spot-*) i pomocnicze klawisze (Tab, Shift…) to jeszcze nie „samodzielne klikanie”.
+      if (e && e.target && e.target.closest && e.target.closest(".spot-tooltip,.spot-highlight")) return;
+      if (e && e.type === "keydown" && (e.key === "Tab" || e.key === "Shift" || e.key === "Escape")) return;
       quiet = true;
       try { sessionStorage.setItem(QUIET_KEY, "1"); } catch (e) {}
       render();
-      document.removeEventListener("pointerdown", goQuiet, true);
+      document.removeEventListener("click", goQuiet, true);
       document.removeEventListener("keydown", goQuiet, true);
     }
     if (!quiet) {
-      document.addEventListener("pointerdown", goQuiet, true);
+      document.addEventListener("click", goQuiet, true);
       document.addEventListener("keydown", goQuiet, true);
     }
     render();
