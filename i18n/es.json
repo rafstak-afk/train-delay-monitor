@@ -331,7 +331,8 @@
     "retrying": "Buscando conexiones... (reintentando, el servidor necesitó más tiempo)",
     "serverError": "Error al buscar conexiones (servidor: {status}). Inténtalo de nuevo en un momento.",
     "apiFail": "No se pudo conectar con la API.",
-    "refining": "(completando resultados…)"
+    "partialRefining": "Los resultados están incompletos: busco de nuevo para completarlos…",
+    "partialWarn": "Los resultados pueden estar incompletos: pulsa otra vez «🔎 Buscar conexiones» para completarlos."
   },
   "tutorial": {
     "ui": {

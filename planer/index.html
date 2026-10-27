@@ -78,7 +78,10 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
 .status.searching{color:#ffd400;font-weight:700;font-size:15px;animation:searchingBlink 1s ease-in-out infinite}
 .status.searching::before{content:"🔎 "}
 @keyframes searchingBlink{50%{opacity:.35}}
-@media (prefers-reduced-motion:reduce){.status.searching{animation:none}}
+/* Niepełny wynik: mrugające ostrzeżenie (w trakcie dociągania i gdy się nie udało) */
+.status.partial{color:#ffd400;font-weight:700;font-size:14.5px;animation:searchingBlink 1s ease-in-out infinite}
+.status.partial::before{content:"⚠️ "}
+@media (prefers-reduced-motion:reduce){.status.searching,.status.partial{animation:none}}
 #resultsStatus{scroll-margin-top:8px}
 .status.err{color:var(--red)}
 .empty{text-align:center;padding:28px 16px;color:var(--muted);font-size:14px;line-height:1.6}
@@ -1212,11 +1215,14 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     // raz dociągamy pełny — drugi przebieg ma już rozkłady w cache. Bez tego
     // te same parametry dawały różne wyniki zależnie od stanu cache.
     var refining=false;
+    // Dociągnięcie też się nie udało — wyniki zostają, ale zostaje też
+    // mrugające ostrzeżenie z prośbą o ponowne wyszukiwanie.
+    function showPartialWarn(){$('resultsStatus').className='status partial';$('resultsStatus').textContent=T('planer.partialWarn')}
     function attempt(retry){
       fetch('/api/planner?'+params.toString(),{headers:{Accept:'application/json'}})
         .then(function(r){return r.json().catch(function(){return {}}).then(function(data){return {ok:r.ok,status:r.status,data:data}}) })
         .then(function(res){
-          if(refining&&(!res.ok||!res.data.ok)){refining=false;renderFoundStatus();return}
+          if(refining&&(!res.ok||!res.data.ok)){refining=false;showPartialWarn();return}
           if(!res.ok||!res.data.ok){
             if(!res.data.error&&!retry){
               $('resultsStatus').textContent=T('planer.retrying');
@@ -1231,16 +1237,17 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
           }
           btn.disabled=false;
           renderResults(res.data);
-          if(refining){refining=false;return}
+          if(refining){refining=false;if(res.data.partial)showPartialWarn();return}
           scrollToResults();
           if(res.data.partial){
             refining=true;
-            $('resultsStatus').textContent+=' '+T('planer.refining');
+            $('resultsStatus').className='status partial';
+            $('resultsStatus').textContent=T('planer.partialRefining');
             setTimeout(function(){attempt(true)},400);
           }
         })
         .catch(function(){
-          if(refining){refining=false;renderFoundStatus();return}
+          if(refining){refining=false;showPartialWarn();return}
           if(!retry){setTimeout(function(){attempt(true)},1500);return}
           btn.disabled=false;
           $('resultsStatus').className='status err';
@@ -1275,6 +1282,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     if(viaRows.length)renderViaRows();
     var st=$('resultsStatus');
     if(st.classList.contains('searching'))st.textContent=T('planer.searching');
+    else if(st.classList.contains('partial'))st.textContent=T('planer.partialWarn');
     else if(lastCounts)renderFoundStatus();
     if(lastItineraries.length)renderVisibleItineraries();
   });

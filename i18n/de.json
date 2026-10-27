@@ -331,7 +331,8 @@
     "retrying": "Suche Verbindungen... (neuer Versuch, der Server brauchte mehr Zeit)",
     "serverError": "Fehler bei der Verbindungssuche (Server: {status}). Versuche es gleich noch einmal.",
     "apiFail": "Verbindung zur API fehlgeschlagen.",
-    "refining": "(Ergebnisse werden ergänzt…)"
+    "partialRefining": "Die Ergebnisse sind unvollständig — ich suche erneut, um sie zu ergänzen…",
+    "partialWarn": "Die Ergebnisse sind möglicherweise unvollständig — klicke noch einmal auf „🔎 Verbindungen suchen“, um sie zu ergänzen."
   },
   "tutorial": {
     "ui": {
