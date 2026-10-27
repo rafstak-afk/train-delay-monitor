@@ -95,6 +95,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
 .risk-missed{color:var(--red);font-weight:900}
 .ambiguous-note{font-size:12.5px;color:var(--yellow);margin:0 0 10px;text-align:center}
 .faster-hint{display:block;width:100%;margin-top:8px;text-align:left;background:rgba(255,212,0,.12);border:1px solid #ffd400;color:#ffd400;border-radius:10px;padding:8px 10px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;animation:fasterPulse 1.2s ease-in-out 4}
+.faster-hint.transfer{background:rgba(192,132,252,.12);border-color:var(--violet);color:var(--violet);font-weight:500;animation:none}
 @keyframes fasterPulse{50%{box-shadow:0 0 0 4px rgba(255,212,0,.35)}}
 .entry.flash{animation:entryFlash 1.8s ease-out}
 @keyframes entryFlash{0%{box-shadow:0 0 0 3px #ffd400}100%{box-shadow:0 0 0 0 rgba(255,212,0,0)}}
@@ -711,6 +712,39 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     var tr=[leg.train.category,leg.train.number].filter(Boolean).join(' ');
     return '<button type="button" class="faster-hint" data-target="'+f.idx+'">⚡ Szybciej: '+escapeHtml(tr)+' odj. '+escapeHtml(f.it.departureTime)+' → przyj. '+escapeHtml(f.it.arrivalTime)+' ('+f.gain+' min wcześniej) ›</button>';
   }
+  // Szybszy wariant Z PRZESIADKĄ (≥10 min wcześniej, odjazd nie wcześniej).
+  // Słabsza podpowiedź niż ⚡ — przesiadka to opcja dla chętnych. Pomijamy
+  // wariant, którego przesiadka na żywo jest oznaczona jako "nie zdążysz".
+  var TRANSFER_HINT_MIN_GAIN=10;
+  function fasterTransferFor(idx){
+    var it=lastItineraries[idx];
+    if(!it)return null;
+    var dep=itinMinutes(it.departureTime),arr=itinMinutes(it.arrivalTime,it.arrivalNextDay);
+    if(dep==null||arr==null)return null;
+    var best=null;
+    lastItineraries.forEach(function(o,j){
+      if(j===idx||o.type!=='transfer')return;
+      var t=(o.transfers||[])[0];
+      if(t&&t.liveRisk==='missed')return;
+      var oDep=itinMinutes(o.departureTime),oArr=itinMinutes(o.arrivalTime,o.arrivalNextDay);
+      if(oDep==null||oArr==null||oDep<dep||arr-oArr<TRANSFER_HINT_MIN_GAIN)return;
+      if(!best||oArr<best.arr)best={idx:j,it:o,arr:oArr,gain:arr-oArr};
+    });
+    return best;
+  }
+  function transferHintHtml(idx){
+    var f=fasterTransferFor(idx);
+    if(!f)return '';
+    var it=lastItineraries[idx],o=f.it,t=(o.transfers||[])[0]||{};
+    var trainOf=function(leg){return [leg.train.category,leg.train.number].filter(Boolean).join(' ')};
+    var first=it.legs[0],oFirst=o.legs[0],oSecond=o.legs[1]||oFirst;
+    var sameFirst=first&&oFirst&&first.scheduleId===oFirst.scheduleId&&first.orderId===oFirst.orderId;
+    var text=sameFirst
+      ?'🔁 Z przesiadką: na stacji '+escapeHtml(t.stationName||'')+' przesiądź się na '+escapeHtml(trainOf(oSecond))+' → przyj. '+escapeHtml(o.arrivalTime)
+      :'🔁 Z przesiadką na stacji '+escapeHtml(t.stationName||'')+': odj. '+escapeHtml(o.departureTime)+' → przyj. '+escapeHtml(o.arrivalTime);
+    var tight=t.liveRisk==='tight'?' ⚠️ ciasna przesiadka: '+t.realBufferMinutes+' min':'';
+    return '<button type="button" class="faster-hint transfer" data-target="'+f.idx+'">'+text+' ('+f.gain+' min wcześniej)'+tight+' ›</button>';
+  }
   function showItinerary(idx){
     if(idx>=visibleCount){visibleCount=Math.ceil((idx+1)/RESULTS_PAGE_SIZE)*RESULTS_PAGE_SIZE;renderVisibleItineraries()}
     var el=document.getElementById('itin-'+idx);
@@ -748,7 +782,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
         badgeHtml(it)+
       '</div>'+
       legsHtml+
-      (opts.index!=null?fasterHintHtml(opts.index):'')+
+      (opts.index!=null?fasterHintHtml(opts.index)+transferHintHtml(opts.index):'')+
       savedLine+
       (actionHtml?'<div class="itin-actions">'+actionHtml+'</div>':'')+
       '</div>';
