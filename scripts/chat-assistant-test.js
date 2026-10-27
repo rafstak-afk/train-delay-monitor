@@ -474,6 +474,9 @@ test("pola stacji na tablicy i w planerze (StationSuggest): dzielnice i odmiana"
   expect(names("Krak")[0] === "Kraków Główny", "Krak: " + names("Krak").join(" | "));
   expect(names("Nowa Huta").includes("Kraków Nowa Huta"), "Nowa Huta: " + names("Nowa Huta").join(" | "));
   expect(SS.suggest("Krak")[0].id, "brak id stacji");
+  // jak na portalu PKP (screeny/płąsz.png): „płąsz” — z literówką ą — daje Kraków Płaszów
+  expect(names("płąsz")[0] === "Kraków Płaszów", "płąsz: " + names("płąsz").join(" | "));
+  expect(names("plasz")[0] === "Kraków Płaszów", "plasz: " + names("plasz").join(" | "));
 });
 
 test("myślnik: Katowice - Gliwice", async () => {
