@@ -66,10 +66,12 @@
   // świadomie, zamiast zgadywać tłumaczenie dowolnego wolnego tekstu.
   function translateDisruption(text, code) {
     if (code) {
-      var byCode = getByPath(dict, "disruption.codes." + code) || getByPath(fallbackDict, "disruption.codes." + code);
+      // Słownik przyczyn leży w index.disruption.* (wcześniej szukaliśmy pod
+      // disruption.* — tłumaczenie przyczyn po cichu nigdy nie działało).
+      var byCode = getByPath(dict, "index.disruption.codes." + code) || getByPath(fallbackDict, "index.disruption.codes." + code);
       if (byCode) return byCode;
     }
-    var byText = getByPath(dict, "disruption.texts." + text);
+    var byText = getByPath(dict, "index.disruption.texts." + text);
     if (byText) return byText;
     return text;
   }

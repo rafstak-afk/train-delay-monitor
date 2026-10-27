@@ -86,18 +86,22 @@
 
   function render(reason) {
     injectStyle();
-    var what = reason === "train" ? "Twoje pociągi" : reason === "language" ? "Twój wybrany język" : "Twoje ulubione stacje";
+    // Tłumaczenia (i18n.js) z polskim zapasem. Osobne zdanie na każdy powód —
+    // wcześniej sklejane „{co} są teraz…” dawało błąd gramatyczny dla języka.
+    var tr = function (k, fb) { if (!window.I18n) return fb; var v = I18n.t("profilePrompt." + k); return v === "profilePrompt." + k ? fb : v; };
+    var bodyKey = reason === "train" ? "bodyTrain" : reason === "language" ? "bodyLanguage" : "bodyFavorite";
+    var bodyFb = reason === "train" ? "Twoje pociągi są teraz tylko w tej przeglądarce." : reason === "language" ? "Twój wybrany język jest teraz zapamiętany tylko w tej przeglądarce." : "Twoje ulubione stacje są teraz tylko w tej przeglądarce.";
     var card = document.createElement("div");
     card.id = "profilePromptCard";
     card.setAttribute("role", "dialog");
-    card.setAttribute("aria-label", "Propozycja założenia profilu");
+    card.setAttribute("aria-label", tr("aria", "Propozycja założenia profilu"));
     card.innerHTML =
-      '<button type="button" class="pp-x" aria-label="Zamknij" title="Nie teraz">✕</button>' +
-      '<div class="pp-t">Zachować to na każdym urządzeniu?</div>' +
-      '<p class="pp-p">' + what + ' są teraz tylko w tej przeglądarce. Załóż profil — bez hasła i e-maila, zajmie kilkanaście sekund — a wszystko będzie dostępne także na innych urządzeniach. Poprowadzę Cię krok po kroku.</p>' +
+      '<button type="button" class="pp-x" aria-label="' + tr("close", "Zamknij") + '" title="' + tr("no", "Nie teraz") + '">✕</button>' +
+      '<div class="pp-t">' + tr("title", "Zachować to na każdym urządzeniu?") + '</div>' +
+      '<p class="pp-p">' + tr(bodyKey, bodyFb) + ' ' + tr("bodyRest", "Załóż profil — bez hasła i e-maila, zajmie kilkanaście sekund — a wszystko będzie dostępne także na innych urządzeniach. Poprowadzę Cię krok po kroku.") + '</p>' +
       '<div class="pp-row">' +
-      '<button type="button" class="pp-b pp-yes">Tak, poprowadź mnie</button>' +
-      '<button type="button" class="pp-b pp-no">Nie teraz</button>' +
+      '<button type="button" class="pp-b pp-yes">' + tr("yes", "Tak, poprowadź mnie") + '</button>' +
+      '<button type="button" class="pp-b pp-no">' + tr("no", "Nie teraz") + '</button>' +
       '</div>';
     // Dolny pasek nawigacji (KŚ / Profil / Menu) jest na wierzchu — unosimy kartę nad niego.
     if (document.querySelector(".bottom-nav")) card.classList.add("pp-lift");

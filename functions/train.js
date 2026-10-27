@@ -185,7 +185,7 @@ const HTML = String.raw`<!DOCTYPE html>
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Bieg pociągu</title>
+<title data-i18n="train.pageTitle">Bieg pociągu</title>
 <!-- app-version: 2026-06-01.1 status-human-confirmed-only -->
 <style>
 :root{--bg:#101820;--panel:#1c2833;--card:#223244;--line:#34495e;--text:#fff;--muted:#b8c3cf;--blue:#0b57d0;--green:#5dd39e;--yellow:#ffcc00;--red:#ff4d4d;--violet:#c084fc;--grey:#4b5563;--cyan:#22d3ee}
@@ -193,6 +193,8 @@ const HTML = String.raw`<!DOCTYPE html>
 .rrow{display:grid;grid-template-columns:92px 60px 1fr 76px;gap:10px;align-items:center;padding:8px 8px;border-bottom:1px solid rgba(255,255,255,.10)}
 .rrow-head{display:grid;grid-template-columns:92px 60px 1fr 76px;gap:10px;padding:2px 8px 8px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);border-bottom:1px solid rgba(255,255,255,.18)}
 .rrow-head div:last-child,.rrow-head div:nth-child(2){text-align:center}
+/* Nagłówki kolumn w dłuższych językach nie mogą nachodzić na sąsiednią kolumnę */
+.rrow-head div{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rrow:last-child{border-bottom:0}
 /* Kolumna stacji dopasowuje się do najdłuższej nazwy (a nie rozciąga na całą szerokość),
    więc Per./Tor stoi tuż za nazwą. Wiersze są subgridami jednej siatki, żeby kolumny
@@ -282,27 +284,32 @@ button.mt-star{background:transparent;border:0;color:#8fa6bf;cursor:pointer;padd
 </head>
 <body>
 <div class="wrap">
-  <div id="status" class="status">Kliknij numer pociągu na tablicy albo na liście Moje pociągi.</div>
+  <div id="status" class="status" data-i18n="train.statusIdle">Kliknij numer pociągu na tablicy albo na liście Moje pociągi.</div>
   <div id="content"></div>
 </div>
 <button type="button" id="floatSaveBtn" class="float-save-btn" style="display:none"></button>
 <div class="manual-save-overlay" id="manualSaveOverlay">
   <div class="manual-save-box">
-    <h3>Zapisz przejazd</h3>
-    <label for="manualTripName">Nazwa trasy (opcjonalnie)</label>
-    <input type="text" id="manualTripName" placeholder="np. Wycieczka do Krakowa">
-    <label for="manualTripKm">Kilometraż (opcjonalnie)</label>
-    <input type="text" inputmode="decimal" id="manualTripKm" placeholder="np. 45">
+    <h3 data-i18n="train.saveTitle">Zapisz przejazd</h3>
+    <label for="manualTripName" data-i18n="train.tripNameLabel">Nazwa trasy (opcjonalnie)</label>
+    <input type="text" id="manualTripName" placeholder="np. Wycieczka do Krakowa" data-i18n-attr="placeholder:train.tripNamePh">
+    <label for="manualTripKm" data-i18n="train.kmLabel">Kilometraż (opcjonalnie)</label>
+    <input type="text" inputmode="decimal" id="manualTripKm" placeholder="np. 45" data-i18n-attr="placeholder:train.kmPh">
     <div class="manual-save-actions">
-      <button type="button" class="btn small secondary" onclick="closeManualSaveForm()">Anuluj</button>
-      <button type="button" class="btn small" onclick="confirmManualSave()">Zapisz</button>
+      <button type="button" class="btn small secondary" onclick="closeManualSaveForm()" data-i18n="train.cancel">Anuluj</button>
+      <button type="button" class="btn small" onclick="confirmManualSave()" data-i18n="train.save">Zapisz</button>
     </div>
   </div>
 </div>
+<script src="/i18n.js"></script>
+<script src="/burger-menu.js"></script>
 <script src="/profile-sync.js"></script>
 <script src="/tutorial.js"></script>
 <script src="/survey.js"></script>
 <script>
+// Tłumaczenia (i18n.js). Wartości ZAPISYWANE (nazwa trasy, tripType, etykieta
+// ostatniego pociągu) zostają po polsku — T() tylko w tym, co na ekranie.
+function T(k,p){return window.I18n?I18n.t(k,p):k}
 function qs(name){return new URLSearchParams(location.search).get(name)||''}
 function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}
 function shortTime(v){if(!v)return'';const m=String(v).match(/(\d{2}:\d{2})/);return m?m[1]:String(v)}
@@ -335,17 +342,9 @@ function toMin(t){const s=shortTime(t);const m=s.match(/^(\d{2}):(\d{2})$/);retu
 function delayClass(d){if(d>=20)return'high';if(d>10)return'mid';if(d>0)return'low';return'zero'}
 function statusHuman(code){
   const c=String(code||'').trim().toUpperCase();
-  const map={
-    P:['W ruchu / potwierdzony','Kod PLK: P'],
-    S:['Rozkładowy / brak potwierdzeń','Kod PLK: S'],
-    C:['Zrealizowany / zakończony','Kod PLK: C'],
-    X:['Odwołany','Kod PLK: X'],
-    O:['Opóźniony','Kod PLK: O'],
-    R:['W ruchu','Kod PLK: R'],
-    Z:['Zakończony','Kod PLK: Z']
-  };
-  if(!c) return ['brak statusu',''];
-  return map[c] || ['Nieznany status PLK','Kod PLK: '+c];
+  if(!c) return [T('train.stNone'),''];
+  if('PSCXORZ'.indexOf(c)>=0&&c.length===1) return [T('train.st'+c),T('train.stCode',{code:c})];
+  return [T('train.stUnknown'),T('train.stCode',{code:c})];
 }
 function detailsParams(){const p=new URLSearchParams();['date','scheduleId','scheduledId','orderId','trainOrderId','stationId','station','category','name','destination'].forEach(k=>{const v=qs(k);if(v)p.set(k,v)});return p}
 function portalUrl(train){return 'https://portalpasazera.pl/ZnajdzPociag'}
@@ -402,7 +401,7 @@ function renderDelayCol(s){
   }
   return '<div class="time-rows">'+delayCell(conf?s.delay:0)+'</div>';
 }
-function loading(train){document.getElementById('content').innerHTML='<div class="panel"><div class="loader"><div class="train-loader"><div class="track"></div><div class="train-dot">🚆</div></div><strong>Pobieram bieg pociągu '+esc(train)+'...</strong></div><div class="copy-note">Czekam na dane PLK. Spokojnie, to nie cisza, to informatyka.</div></div>'}
+function loading(train){document.getElementById('content').innerHTML='<div class="panel"><div class="loader"><div class="train-loader"><div class="track"></div><div class="train-dot">🚆</div></div><strong>'+esc(T('train.loading',{train:train}))+'</strong></div><div class="copy-note">'+esc(T('train.loadingNote'))+'</div></div>'}
 
 async function findCourseFromOpenedContext(train,idp){
   const station=idp.get('station')||qs('station')||'';
@@ -410,7 +409,7 @@ async function findCourseFromOpenedContext(train,idp){
   const date=idp.get('date')||qs('date')||todayIso();
   if(!station&&!stationId)return null;
   const params=new URLSearchParams({station:station||stationId,date:date,time:'00:00',limit:'300'});
-  setStatus('Szukam kursu '+train+' w tablicy z dnia '+date+'...');
+  setStatus(T('train.searchingCourse',{train:train,date:date}));
   const r=await fetch('/api/departures?'+params.toString(),{headers:{Accept:'application/json'}});
   const data=await r.json();
   if(!r.ok)throw new Error(data.error||data.details||'HTTP '+r.status);
@@ -499,7 +498,7 @@ function scheduleJournalSyncVerification(expectedList){
       if(!missing.length)return;
       const ok=await ProfileSync.push({journalEntries:getJournalEntries()});
       if(!ok){
-        showJournalSaveError('Wpis zapisał się tylko lokalnie w tej przeglądarce — synchronizacja z profilem nie powiodła się. Sprawdź połączenie i spróbuj ponownie (np. odśwież stronę).');
+        showJournalSaveError(T('train.syncFailed'));
       }
     }catch(e){}
   },4000);
@@ -801,48 +800,48 @@ function renderJournalBar(){
     const bS=stations[markBoardIdx].stationName,aS=stations[markAlightIdx].stationName;
     const existing=findExistingEntry(data.operatingDate,data.scheduleId,data.orderId,bS,aS);
     if(existing){
-      html='<div class="journal-note ok">✓ Ten przejazd jest już w dzienniczku. <button type="button" class="link-btn" onclick="removeJournalEntry(\''+existing._key+'\')">Usuń wpis</button></div>';
+      html='<div class="journal-note ok">'+esc(T('train.alreadyInJournal'))+' <button type="button" class="link-btn" onclick="removeJournalEntry(\''+existing._key+'\')">'+esc(T('train.removeEntry'))+'</button></div>';
     }else{
       const canSave=canSaveJourney(stations,markAlightIdx);
       const meta=typicalMetaForMarks();
       const direct=!!meta&&markMode!=='edit';
-      const metaTxt=meta?(' · trasa „'+esc(tripMetaName(meta))+'”'+(meta.trip.leg2?(' · odcinek '+meta.legNumber+'/2'):'')+(markMode==='edit'?' · do modyfikacji':'')):'';
+      const metaTxt=meta?(esc(T('train.metaTrip',{name:tripMetaName(meta)}))+(meta.trip.leg2?esc(T('train.metaLeg',{n:meta.legNumber})):'')+(markMode==='edit'?esc(T('train.metaEdit')):'')):'';
       let actionHtml;
       if(canSave){
-        actionHtml='<button type="button" class="btn small" onclick="saveManualJourney()">'+(direct?'📓 Dodaj do dzienniczka':'💾 Zapisz do dzienniczka')+'</button>';
+        actionHtml='<button type="button" class="btn small" onclick="saveManualJourney()">'+esc(direct?T('train.addToJournal'):T('train.saveToJournal'))+'</button>';
       }else{
         const existingPlan=findExistingPlan(data.operatingDate,data.scheduleId,data.orderId,bS,aS);
         actionHtml=existingPlan
-          ?'<span class="hint">📋 Już w <a href="/dziennik/">planie podróży</a>.</span> <button type="button" class="link-btn" onclick="removePlannedTrip(\''+existingPlan._key+'\')">Usuń z planu</button>'
-          :'<span class="hint">Pociąg jeszcze nie dotarł do stacji wysiadania.</span> <button type="button" class="btn small" onclick="savePlannedTrip()">📋 Dodaj do planu</button>';
+          ?'<span class="hint">'+T('train.inPlan')+'</span> <button type="button" class="link-btn" onclick="removePlannedTrip(\''+existingPlan._key+'\')">'+esc(T('train.removeFromPlan'))+'</button>'
+          :'<span class="hint">'+esc(T('train.notArrived'))+'</span> <button type="button" class="btn small" onclick="savePlannedTrip()">'+esc(T('train.addToPlan'))+'</button>';
       }
       html='<div class="journal-note">🚏 '+esc(bS)+' → 🏁 '+esc(aS)+metaTxt+'. '+actionHtml+'</div>';
     }
   }else if(hasManualMark){
-    html='<div class="journal-note warn">Stacja wysiadania musi być dalej na trasie niż wsiadania.</div>';
+    html='<div class="journal-note warn">'+esc(T('train.alightAfterBoard'))+'</div>';
   }else if(tripMatch){
     const bS=stations[tripMatch.boardIdx].stationName,aS=stations[tripMatch.alightIdx].stationName;
     const existing=findExistingEntry(data.operatingDate,data.scheduleId,data.orderId,bS,aS);
-    const legTxt=tripMatch.trip.leg2?(' · odcinek '+tripMatch.legNumber+'/2'):'';
+    const legTxt=tripMatch.trip.leg2?T('train.metaLeg',{n:tripMatch.legNumber}):'';
     const name=tripMetaName(tripMatch);
     const depT=stations[tripMatch.boardIdx].plannedDeparture||stations[tripMatch.boardIdx].plannedTime||'';
     const typicalTime=isTypicalTime(tripMatch.trip,depT);
     const canSave=canSaveJourney(stations,tripMatch.alightIdx);
     if(existing){
-      html='<div class="journal-note ok">✓ Zapisano w dzienniczku jako „'+esc(name)+legTxt+'”. <button type="button" class="link-btn" onclick="removeJournalEntry(\''+existing._key+'\')">Usuń wpis</button></div>';
+      html='<div class="journal-note ok">'+esc(T('train.savedAs',{name:name+legTxt}))+' <button type="button" class="link-btn" onclick="removeJournalEntry(\''+existing._key+'\')">'+esc(T('train.removeEntry'))+'</button></div>';
     }else if(isPromptDismissed()){
-      html='<div class="journal-note hint">🚏🏁 Zaznacz przy stacjach, gdzie wsiadasz i wysiadasz — zapiszę przejazd w <a href="/dziennik/">dzienniczku</a>.</div>';
+      html='<div class="journal-note hint">'+T('train.markHint')+'</div>';
     }else if(typicalTime){
       if(canSave){
-        html='<div class="journal-note">Ten kurs pasuje do trasy „'+esc(name)+legTxt+'” ('+esc(bS)+' → '+esc(aS)+'). <button type="button" class="btn small" onclick="saveTypicalJourney()">📓 Dodaj do dzienniczka</button></div>';
+        html='<div class="journal-note">'+esc(T('train.matchesTrip',{name:name+legTxt,from:bS,to:aS}))+' <button type="button" class="btn small" onclick="saveTypicalJourney()">'+esc(T('train.addToJournal'))+'</button></div>';
       }else{
-        html='<div class="journal-note">🛤️ Kurs pasuje do trasy „'+esc(name)+legTxt+'” ('+esc(bS)+' → '+esc(aS)+') i mieści się w typowych godzinach. Zaznaczyć typowe przystanki? <button type="button" class="btn small" onclick="markTypicalNormal()">🚏🏁 Zaznacz</button><button type="button" class="link-btn" onclick="dismissTypicalPrompt()">Nie</button></div>';
+        html='<div class="journal-note">'+esc(T('train.matchesTripTypical',{name:name+legTxt,from:bS,to:aS}))+' <button type="button" class="btn small" onclick="markTypicalNormal()">'+esc(T('train.markBtn'))+'</button><button type="button" class="link-btn" onclick="dismissTypicalPrompt()">'+esc(T('train.no'))+'</button></div>';
       }
     }else{
-      html='<div class="journal-note warn">🛤️ Moja trasa „'+esc(name)+legTxt+'” ('+esc(bS)+' → '+esc(aS)+'), ale godzina odjazdu ('+esc(depT||'?')+') jest poza typową ('+esc(tripMatch.trip.timeFrom||'?')+'–'+esc(tripMatch.trip.timeTo||'?')+'). Zapisać typowo czy zmodyfikować? <button type="button" class="btn small" onclick="saveTypicalNow()">💾 Zapisz typowo</button><button type="button" class="btn small" onclick="editTypicalNow()">✏️ Zmodyfikuj</button><button type="button" class="link-btn" onclick="dismissTypicalPrompt()">Pomiń</button></div>';
+      html='<div class="journal-note warn">'+esc(T('train.outsideTypical',{name:name+legTxt,from:bS,to:aS,time:depT||'?',tFrom:tripMatch.trip.timeFrom||'?',tTo:tripMatch.trip.timeTo||'?'}))+' <button type="button" class="btn small" onclick="saveTypicalNow()">'+esc(T('train.saveTypical'))+'</button><button type="button" class="btn small" onclick="editTypicalNow()">'+esc(T('train.modify'))+'</button><button type="button" class="link-btn" onclick="dismissTypicalPrompt()">'+esc(T('train.skip'))+'</button></div>';
     }
   }else{
-    html='<div class="journal-note hint">🚏🏁 Zaznacz przy stacjach, gdzie wsiadasz i wysiadasz — zapiszę przejazd w <a href="/dziennik/">dzienniczku</a>.</div>';
+    html='<div class="journal-note hint">'+T('train.markHint')+'</div>';
   }
   bar.innerHTML=html;
   updateFloatSaveBtn(tripMatch);
@@ -864,16 +863,16 @@ function updateFloatSaveBtn(tripMatch){
     // po realnym zapisie w formularzu.
     if(!existing&&canSaveJourney(stations,markAlightIdx)){
       const direct=!!typicalMetaForMarks()&&markMode!=='edit';
-      show=true;label=direct?'📓 Dodaj do dzienniczka':'💾 Zapisz do dzienniczka';handler=saveManualJourney;immediate=direct;
+      show=true;label=direct?T('train.addToJournal'):T('train.saveToJournal');handler=saveManualJourney;immediate=direct;
     }else if(!existing&&!findExistingPlan(data.operatingDate,data.scheduleId,data.orderId,bS,aS)){
-      show=true;label='📋 Dodaj do planu';handler=savePlannedTrip;immediate=true;
+      show=true;label=T('train.addToPlan');handler=savePlannedTrip;immediate=true;
     }
   }else if(tripMatch&&!isPromptDismissed()){
     const bS=stations[tripMatch.boardIdx].stationName,aS=stations[tripMatch.alightIdx].stationName;
     const existing=findExistingEntry(data.operatingDate,data.scheduleId,data.orderId,bS,aS);
     const b=stations[tripMatch.boardIdx];
     const typicalTime=isTypicalTime(tripMatch.trip,b.plannedDeparture||b.plannedTime||'');
-    if(!existing&&typicalTime&&canSaveJourney(stations,tripMatch.alightIdx)){show=true;label='📓 Dodaj do dzienniczka';handler=saveTypicalJourney;immediate=true}
+    if(!existing&&typicalTime&&canSaveJourney(stations,tripMatch.alightIdx)){show=true;label=T('train.addToJournal');handler=saveTypicalJourney;immediate=true}
   }
   if(!show){btn.style.display='none';return}
   btn.style.display='block';
@@ -882,7 +881,7 @@ function updateFloatSaveBtn(tripMatch){
   btn.onclick=function(){
     handler();
     if(immediate){
-      btn.textContent='✓ Zapisano';
+      btn.textContent=T('train.saved');
       btn.classList.add('done');
       setTimeout(function(){btn.style.display='none'},1400);
     }else{
@@ -901,7 +900,7 @@ function saveTypicalJourney(){
     const ok=saveJournalEntries(list)&&getJournalEntries().some(e=>e._key===entry._key);
     if(!ok)throw new Error('not persisted');
   }catch(e){
-    const msg='Nie udało się zapisać przejazdu w tej przeglądarce. Spróbuj ponownie albo odśwież stronę.';
+    const msg=T('train.saveFailed');
     showJournalSaveError(msg);
     // Mały czerwony tekst pod paskiem łatwo przeoczyć — alert() jest
     // niemożliwy do pominięcia, a to jedyny sygnał, że coś nie wyszło.
@@ -970,7 +969,7 @@ function confirmManualSave(){
     // szukania i zaznaczania tych samych dwóch stacji.
     clearMarksAfterSave();
   }catch(e){
-    const msg='Nie udało się zapisać przejazdu w tej przeglądarce. Spróbuj ponownie albo odśwież stronę.';
+    const msg=T('train.saveFailed');
     showJournalSaveError(msg);
     alert('⚠️ '+msg);
     renderJournalBar();
@@ -1020,7 +1019,7 @@ async function fetchAndRenderTrain(train,opts){
 
   for(let attempt=0;attempt<delays.length;attempt++){
     if(delays[attempt]){
-      setStatus('Pierwsza próba nie powiodła się. Ponawiam pobieranie...');
+      setStatus(T('train.retrying'));
       await new Promise(resolve=>setTimeout(resolve,delays[attempt]));
     }
 
@@ -1064,7 +1063,7 @@ async function fetchAndRenderTrain(train,opts){
   }
 }
 
-async function loadTrain(){const train=qs('train');if(!train){setStatus('Otwórz bieg pociągu, klikając jego numer na tablicy albo na liście Moje pociągi.');return}setStatus('Pobieram bieg pociągu...');loading(train);const idp=detailsParams();let schedule=idp.get('scheduleId')||idp.get('scheduledId');let order=idp.get('orderId');try{if(!schedule||!order){const found=await findCourseFromOpenedContext(train,idp);if(found){await fetchAndRenderTrain(train,found);return}renderFallback(train,'Do pełnego biegu potrzebny jest link z tablicy odjazdów z identyfikatorami kursu. Kliknij numer pociągu bezpośrednio z tablicy albo z listy Moje pociągi.');return}await fetchAndRenderTrain(train,{schedule,order,trainOrderId:idp.get('trainOrderId'),station:idp.get('station'),date:idp.get('date')||todayIso()})}catch(e){document.getElementById('content').innerHTML='<div class="panel err">Nie udało się pobrać biegu pociągu: '+esc(e.message)+'</div>';setStatus('Błąd pobierania biegu pociągu.')}}
+async function loadTrain(){const train=qs('train');if(!train){setStatus(T('train.openHint'));return}setStatus(T('train.fetching'));loading(train);const idp=detailsParams();let schedule=idp.get('scheduleId')||idp.get('scheduledId');let order=idp.get('orderId');try{if(!schedule||!order){const found=await findCourseFromOpenedContext(train,idp);if(found){await fetchAndRenderTrain(train,found);return}renderFallback(train,T('train.needLink'));return}await fetchAndRenderTrain(train,{schedule,order,trainOrderId:idp.get('trainOrderId'),station:idp.get('station'),date:idp.get('date')||todayIso()})}catch(e){document.getElementById('content').innerHTML='<div class="panel err">'+esc(T('train.fetchFailed',{msg:e.message}))+'</div>';setStatus(T('train.fetchFailedStatus'))}}
 function renderTrain(train,data){
   const stations=Array.isArray(data.route)?data.route:[];
   // Zaznaczenia wsiadania/wysiadania resetujemy tylko przy faktycznie
@@ -1082,8 +1081,8 @@ function renderTrain(train,data){
   const st=statusHuman(data.status);
   const isCancelledTrain=String(data.status||'').trim().toUpperCase()==='X';
   setStatus('');
-  const lastStationText=data.lastConfirmedStation||'brak potwierdzonej stacji';
-  const lastTimeText=data.lastConfirmedStation?(data.lastConfirmedTime||''):'Brak twardego potwierdzenia realizacji z API PLK.';
+  const lastStationText=data.lastConfirmedStation||T('train.noLastStation');
+  const lastTimeText=data.lastConfirmedStation?(data.lastConfirmedTime||''):T('train.noHardConfirm');
 
   const mtCtxStation=qs('station');
   let mtIdx=mtCtxStation?stations.findIndex(s=>normStation(s.stationName)===normStation(mtCtxStation)):-1;
@@ -1092,25 +1091,25 @@ function renderTrain(train,data){
   const mtTrainNum=String(data.trainNumber||train||'').trim();
   const mtFilled=isInMyTrains(mtStation,mtTrainNum);
   mtCtx={station:mtStation,trainNum:mtTrainNum};
-  let html='<div class="panel"><div class="card"><div class="label">Pociąg</div><div class="big">'+esc(title||('Pociąg '+train))+' <button type="button" id="mtStarBtn" class="mt-star'+(mtFilled?' star-filled':'')+'" title="'+(mtFilled?'Usuń z Moich pociągów':'Dodaj do Moich pociągów')+'" onclick="addToMyTrains(this)">'+(mtFilled?'★':'☆')+'</button></div><div class="hint'+(isCancelledTrain?' hint-cancelled':'')+'">Status: '+esc(st[0])+(st[1]?' <span class="station-meta">('+esc(st[1])+')</span>':'')+'</div><div class="last-station"><div class="label">Ostatnia potwierdzona stacja</div><div class="last-line"><span class="big">'+esc(lastStationText)+'</span><span class="hint">'+esc(lastTimeText)+'</span></div></div></div>';
+  let html='<div class="panel"><div class="card"><div class="label">'+esc(T('train.trainLabel'))+'</div><div class="big">'+esc(title||T('train.trainN',{train:train}))+' <button type="button" id="mtStarBtn" class="mt-star'+(mtFilled?' star-filled':'')+'" title="'+esc(mtFilled?T('index.myTrains.removeTitle'):T('index.myTrains.addTitle'))+'" onclick="addToMyTrains(this)">'+(mtFilled?'★':'☆')+'</button></div><div class="hint'+(isCancelledTrain?' hint-cancelled':'')+'">'+esc(T('train.statusLabel'))+': '+esc(st[0])+(st[1]?' <span class="station-meta">('+esc(st[1])+')</span>':'')+'</div><div class="last-station"><div class="label">'+esc(T('train.lastConfirmed'))+'</div><div class="last-line"><span class="big">'+esc(lastStationText)+'</span><span class="hint">'+esc(lastTimeText)+'</span></div></div></div>';
   if(Array.isArray(data.disruptions)&&data.disruptions.length){
-    html+='<div class="panel disruption-note"><div class="disruption-title">⚠️ Przyczyna opóźnienia / odwołania</div>'+data.disruptions.map(function(d){
+    html+='<div class="panel disruption-note"><div class="disruption-title">'+esc(T('train.disruptionTitle'))+'</div>'+data.disruptions.map(function(d){
       const stTxt=(d.stations&&d.stations.length)?d.stations.join(', '):'';
-      return '<div class="disruption-row">'+esc(d.message)+(stTxt?' <span class="disruption-station">('+esc(stTxt)+')</span>':'')+'</div>';
+      return '<div class="disruption-row">'+esc(window.I18n?I18n.translateDisruption(d.message,d.code||null):d.message)+(stTxt?' <span class="disruption-station">('+esc(stTxt)+')</span>':'')+'</div>';
     }).join('')+'</div>';
   }
-  html+='<details class="legend"><summary>ⓘ Jak czytać statusy stacji</summary><div class="hint">„Zaliczona” tylko przy potwierdzeniu API. Gdy czas już minął, a API nie potwierdza stacji, pokazujemy „BRAK INFO Z API”.</div></details><div id="journalBar" class="journal-bar"></div><div id="journalSaveError" class="journal-note warn" style="display:none"></div><div class="route-table"><div class="rrow-head"><div>Godz.</div><div>Opóźn.</div><div>Stacja</div><div>Per./Tor</div></div>';
+  html+='<details class="legend"><summary>'+esc(T('train.legendSummary'))+'</summary><div class="hint">'+esc(T('train.legendText'))+'</div></details><div id="journalBar" class="journal-bar"></div><div id="journalSaveError" class="journal-note warn" style="display:none"></div><div class="route-table"><div class="rrow-head"><div>'+esc(T('train.colTime'))+'</div><div>'+esc(T('train.colDelay'))+'</div><div>'+esc(T('train.colStation'))+'</div><div>'+esc(T('train.colPlatform'))+'</div></div>';
 
   stations.forEach((s,i)=>{
-    let state='future',txt='przed',badge='future';
+    let state='future',txt=T('train.bBefore'),badge='future';
     if(s.status==='confirmed'){
-      state=(i===passedIdx?'current':'passed');txt=(i===passedIdx?'ostatnia':'zaliczona');badge=state;
+      state=(i===passedIdx?'current':'passed');txt=(i===passedIdx?T('train.bLast'):T('train.bPassed'));badge=state;
     }else{
       const t=toMin(s.actualTime||s.plannedTime);
       if(t!=null&&t>=nm){
-        if(i===passedIdx+1||(passedIdx<0&&i===focusIdx)){state='next';txt='następna';badge='next'}
+        if(i===passedIdx+1||(passedIdx<0&&i===focusIdx)){state='next';txt=T('train.bNext');badge='next'}
       }else{
-        state='info';txt='BRAK INFO Z API';badge='info';
+        state='info';txt=T('train.bNoInfo');badge='info';
       }
     }
     const hasPlatform=s.platform&&s.platform!=='-';
@@ -1118,8 +1117,8 @@ function renderTrain(train,data){
     html+='<div id="station-'+i+'" class="rrow '+state+'">'
       +'<div class="time-cell">'+renderTime(s,state==='future'||state==='next'?'future':state)+'</div>'
       +'<div class="delay-cell">'+renderDelayCol(s)+'</div>'
-      +'<div class="station-cell"><span class="badge '+badge+'">'+esc(txt)+'</span><div class="station-name">'+esc(s.stationName)+'</div><div class="mark-btns"><button type="button" class="mark-btn board" data-idx="'+i+'" title="Tu wsiadam" onclick="markBoard('+i+')">🚏</button><button type="button" class="mark-btn alight" data-idx="'+i+'" title="Tu wysiadam" onclick="markAlight('+i+')">🏁</button></div></div>'
-      +'<div class="platform-cell"><div class="plat-num">'+(hasPlatform?esc(s.platform):'—')+'</div>'+(hasTrack?'<div class="plat-track">tor '+esc(s.track)+'</div>':'')+'</div>'
+      +'<div class="station-cell"><span class="badge '+badge+'">'+esc(txt)+'</span><div class="station-name">'+esc(s.stationName)+'</div><div class="mark-btns"><button type="button" class="mark-btn board" data-idx="'+i+'" title="'+esc(T('train.boardHere'))+'" onclick="markBoard('+i+')">🚏</button><button type="button" class="mark-btn alight" data-idx="'+i+'" title="'+esc(T('train.alightHere'))+'" onclick="markAlight('+i+')">🏁</button></div></div>'
+      +'<div class="platform-cell"><div class="plat-num">'+(hasPlatform?esc(s.platform):'—')+'</div>'+(hasTrack?'<div class="plat-track">'+esc(T('train.track',{track:s.track}))+'</div>':'')+'</div>'
     +'</div>';
   });
 
@@ -1148,8 +1147,8 @@ function isInMyTrains(station,trainNum){
 function markStarState(filled){
   const btn=document.getElementById('mtStarBtn');
   if(!btn)return;
-  if(filled){btn.classList.add('star-filled');btn.textContent='★';btn.title='Usuń z Moich pociągów'}
-  else{btn.classList.remove('star-filled');btn.textContent='☆';btn.title='Dodaj do Moich pociągów'}
+  if(filled){btn.classList.add('star-filled');btn.textContent='★';btn.title=T('index.myTrains.removeTitle')}
+  else{btn.classList.remove('star-filled');btn.textContent='☆';btn.title=T('index.myTrains.addTitle')}
 }
 function addToMyTrains(btnEl){
   if(!currentTrainData||!currentStations.length)return;
@@ -1161,7 +1160,7 @@ function addToMyTrains(btnEl){
   const station=anchor.stationName;
   const trainNum=String(data.trainNumber||qs('train')||'').trim();
   const planTime=(String(anchor.plannedDeparture||anchor.plannedTime||'').match(/\d{1,2}:\d{2}/)||[])[0]||'';
-  if(!station||!trainNum){setStatus('Brak danych, żeby dodać ten pociąg do Moich pociągów.');showToastNear(btnEl,'⚠️ Brak danych do dodania pociągu.');return}
+  if(!station||!trainNum){setStatus(T('index.myTrains.missingData'));showToastNear(btnEl,T('index.myTrains.missingDataToast'));return}
   let list=[];
   try{list=JSON.parse(localStorage.getItem(MY_TRAINS_KEY));if(!Array.isArray(list))list=[]}catch(e){list=[]}
   const norm=s=>String(s).replace(/\D/g,'');
@@ -1173,9 +1172,9 @@ function addToMyTrains(btnEl){
       if(ProfileSync.pushBeacon)ProfileSync.pushBeacon({trains:list});
       else ProfileSync.push({trains:list});
     }
-    setStatus('Usunięto „'+trainNum+'” (stacja: '+station+') z Moich pociągów.');
+    setStatus(T('index.myTrains.removedStatus',{train:trainNum,station:station}));
     markStarState(false);
-    showToastNear(btnEl,'🗑️ Usunięto „'+trainNum+'” z Moich pociągów');
+    showToastNear(btnEl,T('index.myTrains.removed',{train:trainNum}));
     return;
   }
   list.push({station,trainNum,planTime:planTime||'--:--'});
@@ -1184,9 +1183,9 @@ function addToMyTrains(btnEl){
     if(ProfileSync.pushBeacon)ProfileSync.pushBeacon({trains:list});
     else ProfileSync.push({trains:list});
   }
-  setStatus('Dodano „'+trainNum+'” (stacja: '+station+') do Moich pociągów.');
+  setStatus(T('index.myTrains.addedStatus',{train:trainNum,station:station}));
   markStarState(true);
-  showToastNear(btnEl,'✓ Dodano „'+trainNum+'” do Moich pociągów');
+  showToastNear(btnEl,T('index.myTrains.added',{train:trainNum}));
 }
 function saveLastTrainContext(train,data){
   try{
@@ -1200,11 +1199,12 @@ function saveLastTrainContext(train,data){
     if(window.ProfileSync&&ProfileSync.getToken())ProfileSync.push({lastTrain:ctx});
   }catch(e){}
 }
-function renderFallback(train,msg){setStatus('Nie mam identyfikatorów kursu z tablicy.');document.getElementById('content').innerHTML='<div class="panel"><h2>Pociąg '+esc(train)+'</h2><div class="err">'+esc(msg||'Brak pełnych identyfikatorów kursu.')+'</div><p class="hint">Kliknij numer pociągu bezpośrednio z naszej tablicy odjazdów. Sam numer może oznaczać więcej niż jeden kurs.</p><a class="btn green" target="_blank" rel="noopener" href="'+esc(portalUrl(train))+'">Otwórz wyszukiwarkę w Portal Pasażera</a></div>'}
+function renderFallback(train,msg){setStatus(T('train.noIds'));document.getElementById('content').innerHTML='<div class="panel"><h2>'+esc(T('train.trainN',{train:train}))+'</h2><div class="err">'+esc(msg||T('train.noIdsErr'))+'</div><p class="hint">'+esc(T('train.noIdsHint'))+'</p><a class="btn green" target="_blank" rel="noopener" href="'+esc(portalUrl(train))+'">'+esc(T('train.portalBtn'))+'</a></div>'}
 document.addEventListener('DOMContentLoaded',function(){
   syncTypicalTripsFromProfile();
   syncMarksFromProfile();
-  if(qs('train'))loadTrain();
+  // Start po wczytaniu słownika — inaczej pierwszy render byłby po polsku.
+  (window.I18n?I18n.ready:Promise.resolve()).then(function(){if(qs('train'))loadTrain()});
   const overlay=document.getElementById('manualSaveOverlay');
   if(overlay){
     overlay.addEventListener('click',function(e){if(e.target===overlay)closeManualSaveForm()});
@@ -1214,6 +1214,8 @@ document.addEventListener('DOMContentLoaded',function(){
 // Timery (scheduleAutoRefresh) bywają wstrzymywane, gdy strona trafia do
 // bfcache — po powrocie wznawiają się, ale mogły przespać kawałek 5-minutowego
 // okna. Gdy dane są starsze niż AUTO_REFRESH_MS, dociągamy je od razu.
+// Zmiana języka: przerysowujemy bieg z już pobranych danych (bez zapytania do PLK).
+window.addEventListener('langchange',function(){if(currentTrainData&&lastTrainArgs){renderTrain(lastTrainArgs[0],currentTrainData)}});
 window.addEventListener('pageshow',function(e){if(e.persisted&&lastTrainArgs&&Date.now()-lastTrainFetchAt>AUTO_REFRESH_MS){fetchAndRenderTrain(...lastTrainArgs).catch(()=>{})}});
 </script>
 </body>
