@@ -878,6 +878,7 @@
     "mic": "Diktovat",
     "send": "Odeslat",
     "greeting": "Ahoj! Zatím rozumím jen polsky. Napište nebo řekněte, kam chcete jet, např. „z Tarnowskich Gór do Krakowa jutro o 7”.",
-    "notUnderstood": "Nerozumím vašemu jazyku."
+    "notUnderstood": "Nerozumím vašemu jazyku.",
+    "cta": "Zeptej se, jak dojet"
   }
 }

@@ -878,6 +878,7 @@
     "mic": "Dictar",
     "send": "Enviar",
     "greeting": "¡Hola! Por ahora solo entiendo polaco. Escribe o di adónde quieres ir, p. ej. «z Tarnowskich Gór do Krakowa jutro o 7».",
-    "notUnderstood": "No entiendo tu idioma."
+    "notUnderstood": "No entiendo tu idioma.",
+    "cta": "Pregunta cómo llegar"
   }
 }

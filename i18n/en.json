@@ -878,6 +878,7 @@
     "mic": "Dictate",
     "send": "Send",
     "greeting": "Hi! For now I only understand Polish. Write or say where you want to go, e.g. „z Tarnowskich Gór do Krakowa jutro o 7”.",
-    "notUnderstood": "I don't understand your language."
+    "notUnderstood": "I don't understand your language.",
+    "cta": "Ask how to get there"
   }
 }

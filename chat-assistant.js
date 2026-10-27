@@ -161,7 +161,7 @@
       if (/^przesiad/.test(chunk)) return;
       var c = matchCarrier(chunk.split(/ (?:przez|do|z|ze|o|i|oraz|jutro|dzis|dzisiaj)( |$)/)[0]);
       if (c) r.exclude.push(c);
-      else r.vague.push({ kind: "carrier", text: chunk.split(" ").slice(0, 3).join(" ") });
+      else r.vague.push({ kind: "carrier", text: chunk.trim().split(" ").slice(0, 3).join(" ") });
     });
     // data
     if (/ (dzis|dzisiaj|teraz|zaraz) /.test(f)) r.date = iso(today());
@@ -236,6 +236,37 @@
       pending: null }; // pending: {kind:'from'|'to'|'via', options:[stations]} | {kind:'time'} | {kind:'transfer'} | {kind:'carrier'} | {kind:'viaAsk'}
   }
 
+  // ---------- pamięć rozmowy (to urządzenie + profil) ----------
+  // Ustalona trasa/ustawienia i ostatnie wiadomości — po otwarciu asystenta
+  // na dowolnym urządzeniu z tym samym profilem rozmowa toczy się dalej
+  // (np. „powrót” po wyszukaniu trasy w tamtą stronę).
+  var CTX_KEY = "chatContextV1", LOG_MAX = 40, memLog = [], saveTimer = null;
+  function slim(stn) { return stn ? { id: stn.id, name: stn.name } : null; }
+  function ctxNow() {
+    return { savedAt: new Date().toISOString(), log: memLog.slice(-LOG_MAX),
+      st: { from: slim(st.from), to: slim(st.to), via: slim(st.via), date: st.date, time: st.time, transfer: st.transfer, direct: st.direct, exclude: st.exclude } };
+  }
+  function saveCtxSoon() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(function () {
+      var c = ctxNow();
+      try { localStorage.setItem(CTX_KEY, JSON.stringify(c)); } catch (e) {}
+      if (window.ProfileSync && ProfileSync.getToken()) ProfileSync.push({ chatContext: c });
+    }, 700);
+  }
+  function readLocalCtx() { try { return JSON.parse(localStorage.getItem(CTX_KEY)); } catch (e) { return null; } }
+  // Nowszy z dwóch: lokalny albo z profilu (inne urządzenie).
+  function loadCtx() {
+    var local = readLocalCtx();
+    if (!(window.ProfileSync && ProfileSync.getToken())) return Promise.resolve(local);
+    return ProfileSync.pull().then(function (p) {
+      var remote = p && p.chatContext;
+      if (!remote) return local;
+      if (!local) return remote;
+      return (Date.parse(remote.savedAt) || 0) > (Date.parse(local.savedAt) || 0) ? remote : local;
+    }).catch(function () { return local; });
+  }
+
   // ---------- UI ----------
   var panel, logEl, inputEl, micBtn, recog = null;
   function injectStyles() {
@@ -245,6 +276,11 @@
     s.textContent =
       ".ca-fab{position:fixed;right:14px;bottom:84px;z-index:9990;width:54px;height:54px;border-radius:50%;border:0;background:#0b57d0;color:#fff;font-size:24px;cursor:pointer;box-shadow:0 8px 22px rgba(0,0,0,.45)}" +
       ".ca-fab:hover{background:#084298}" +
+      // Wyróżnienie przy wejściu: szeroka, pulsująca chmurka z zachętą.
+      ".ca-fab.cta{width:auto;height:auto;padding:12px 18px 12px 14px;border-radius:999px;font-size:15px;font-weight:800;display:flex;align-items:center;gap:8px;background:linear-gradient(135deg,#0b57d0,#0ea5e9);animation:caPulse 1.8s ease-in-out infinite}" +
+      ".ca-fab.cta .ca-fab-ico{font-size:22px;line-height:1}" +
+      "@keyframes caPulse{0%,100%{box-shadow:0 8px 22px rgba(0,0,0,.45),0 0 0 0 rgba(34,211,238,.55)}50%{box-shadow:0 8px 22px rgba(0,0,0,.45),0 0 0 10px rgba(34,211,238,0)}}" +
+      "@media(prefers-reduced-motion:reduce){.ca-fab.cta{animation:none}}" +
       ".ca-panel{position:fixed;right:12px;bottom:12px;z-index:100001;width:min(420px,calc(100vw - 24px));height:min(600px,calc(100vh - 24px));background:#1c2833;color:#fff;border:1px solid #0b57d0;border-radius:16px;box-shadow:0 20px 50px rgba(0,0,0,.6);display:none;flex-direction:column;font-family:Arial,sans-serif;overflow:hidden}" +
       ".ca-panel.open{display:flex}" +
       ".ca-head{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid #34495e;font-weight:800}" +
@@ -264,7 +300,8 @@
     document.head.appendChild(s);
   }
 
-  function addMsg(text, who) {
+  function addMsg(text, who, noSave) {
+    if (!noSave) { memLog.push({ w: who === "user" ? "u" : "b", t: text }); saveCtxSoon(); }
     var d = document.createElement("div");
     d.className = "ca-msg " + (who === "user" ? "ca-user" : "ca-bot");
     d.textContent = text;
@@ -290,7 +327,7 @@
     injectStyles();
     if (!panel) buildPanel();
     panel.classList.add("open");
-    if (!logEl.childNodes.length) greet();
+    if (!logEl.childNodes.length) restoreOrGreet();
     setTimeout(function () { inputEl.focus(); }, 50);
     loadStations().catch(function () {});
   }
@@ -342,7 +379,28 @@
 
   function greet() {
     resetState();
+    memLog = [];
     addMsg(T("chat.greeting"), "bot");
+  }
+  function restoreOrGreet() {
+    resetState();
+    loadCtx().then(function (c) {
+      if (!c || !c.st || !Array.isArray(c.log) || !c.log.length) return greet();
+      memLog = c.log.slice(-LOG_MAX);
+      memLog.forEach(function (m) { addMsg(m.t, m.w === "u" ? "user" : "bot", true); });
+      var cs = c.st;
+      st.from = cs.from; st.to = cs.to; st.via = cs.via; st.time = cs.time; st.transfer = cs.transfer;
+      st.direct = !!cs.direct; st.exclude = Array.isArray(cs.exclude) ? cs.exclude : [];
+      st.date = cs.date && cs.date >= iso(today()) ? cs.date : null; // przeszła data nie ma sensu
+      if (st.from && st.to) {
+        addMsg("Kontynuujemy. Ostatnia trasa: " + st.from.name + " → " + st.to.name + ".", "bot", true);
+        addOptions([
+          { label: "🔁 Podróż powrotna", primary: true, onClick: function () { addMsg("Podróż powrotna", "user"); returnTrip(null); } },
+          { label: "🔎 Szukaj ponownie", onClick: function () { addMsg("Szukaj ponownie", "user"); summary(); } },
+          { label: "↺ Nowe wyszukiwanie", onClick: function () { logEl.innerHTML = ""; greet(); } }
+        ]);
+      }
+    });
   }
 
   // ---------- logika rozmowy ----------
@@ -353,10 +411,27 @@
     loadStations().then(function () { handle(text); }).catch(function () { addMsg("Nie udało się wczytać listy stacji. Spróbuj ponownie za chwilę.", "bot"); });
   }
 
+  // „Powrót” — ta sama trasa w drugą stronę; termin z wypowiedzi albo pytamy.
+  var RETURN_RE = / (powrot\w*|z powrotem|wracam|wracamy|wrocic|wroce|wrocimy|droga powrotna) /;
+  function returnTrip(text) {
+    if (!st.from || !st.to) { addMsg("Najpierw napisz, skąd i dokąd jedziesz — wtedy znajdę też powrót.", "bot"); return; }
+    var a = st.from; st.from = st.to; st.to = a;
+    var p = text ? parse(text) : { exclude: [], vague: [] };
+    if (p.date) st.date = p.date;
+    st.time = p.time || null;
+    addMsg("Podróż powrotna: " + st.from.name + " → " + st.to.name + ".", "bot");
+    if (!st.time) { st.pending = { kind: "time" }; addMsg("Kiedy wracasz? Napisz np. „dziś o 16” albo „jutro o 8”.", "bot"); return; }
+    next();
+  }
+
   function handle(text) {
     var f = fold(text);
+    if (RETURN_RE.test(" " + f + " ")) return returnTrip(text);
     // odpowiedź na pytanie o godzinę
     if (st.pending && st.pending.kind === "time") {
+      var pt = parse(" o " + text);
+      if (pt.date) st.date = pt.date;
+      if (pt.time) { st.time = pt.time; st.pending = null; return next(); }
       var tt = text.match(/(\d{1,2})(?:[:. ](\d{2}))?/);
       if (tt && +tt[1] <= 23) { st.time = pad(+tt[1]) + ":" + pad(tt[2] ? +tt[2] : 0); st.pending = null; return next(); }
     }
@@ -371,7 +446,7 @@
     if (st.pending && st.pending.kind === "carrier") {
       var c0 = matchCarrier(text);
       if (c0) { addExclude(c0); st.pending = null; return next(); }
-      addMsg("Nie rozpoznałem przewoźnika „" + text + "”. Napisz np. „Intercity”, „Koleje Śląskie”, „Polregio”, „RegioJet”.", "bot");
+      askCarrier("Nie rozpoznałem przewoźnika „" + text + "”. Wybierz z listy albo wpisz inaczej.");
       return;
     }
 
@@ -379,7 +454,7 @@
     var any = p.from || p.to || p.via || p.date || p.time || p.transfer != null || p.direct || p.exclude.length || p.vague.length;
     if (!any) {
       if (looksForeign(text) || (window.I18n && I18n.getLang() !== "pl")) { addMsg(T("chat.notUnderstood"), "bot"); return; }
-      addMsg("Nie zrozumiałem. Napisz np. „z Tarnowskich Gór do Katowic jutro o 7”.", "bot");
+      addMsg("Nie zrozumiałem. Napisz np. „z Tarnowskich Gór do Katowic jutro o 7” albo — po wyszukaniu — „powrót o 16”.", "bot");
       return;
     }
     if (p.date) st.date = p.date;
@@ -388,12 +463,28 @@
     if (p.transfer != null && !applyTransfer(p.transfer)) return;
     p.exclude.forEach(addExclude);
     var vagueCarrier = p.vague.filter(function (v) { return v.kind === "carrier"; })[0];
-    if (vagueCarrier) { addMsg("Nie rozpoznałem przewoźnika „" + vagueCarrier.text + "”. Którego wykluczyć? Np. „Intercity”, „Koleje Śląskie”, „Polregio”.", "bot"); st.pending = { kind: "carrier" }; return; }
+    if (vagueCarrier) { askCarrier("Nie rozpoznałem przewoźnika „" + vagueCarrier.text + "”. Którego wykluczyć?"); return; }
     if (p.vague.some(function (v) { return v.kind === "time"; }) && !st.time) { st.pending = { kind: "time" }; addMsg("O której godzinie mniej więcej? Napisz np. „7:30” albo „o 17”.", "bot"); return; }
     if (p.from && !resolveStation("from", p.from)) return;
     if (p.to && !resolveStation("to", p.to)) return;
     if (p.via && !resolveStation("via", p.via)) return;
     next();
+  }
+
+  // Przewoźnicy do kliknięcia (zamiast wpisywania nazwy).
+  function askCarrier(msg) {
+    st.pending = { kind: "carrier" };
+    addMsg(msg || "Którego przewoźnika wykluczyć? Kliknij albo wpisz nazwę.", "bot");
+    var seen = {};
+    var opts = CARRIER_ALIASES.filter(function (a) {
+      if (seen[a[1]] || st.exclude.some(function (x) { return x.code === a[1]; })) return false;
+      seen[a[1]] = true; return true;
+    }).map(function (a) {
+      var c = { code: a[1], name: a[2] };
+      return { label: c.name, onClick: function () { addMsg(c.name, "user"); addExclude(c); st.pending = null; next(); } };
+    });
+    opts.push({ label: "✏️ Inny — wpiszę", onClick: function () { addMsg("Inny", "user"); addMsg("Wpisz nazwę przewoźnika.", "bot"); if (inputEl) inputEl.focus(); } });
+    addOptions(opts);
   }
 
   function applyTransfer(n) {
@@ -450,13 +541,14 @@
     if (st.direct) lines.push("🚫 tylko bezpośrednie");
     if (st.exclude.length) lines.push("🚫 bez: " + st.exclude.map(function (c) { return c.name; }).join(", "));
     if (st.transfer != null) lines.push("⏱️ " + st.transfer + " min na przesiadkę");
-    addMsg(lines.join("\n") + "\n\nSzukać? Możesz też coś dodać, np. „bez Intercity”, „przez Bytom”, „10 minut na przesiadkę”, „o 8”.", "bot");
+    addMsg(lines.join("\n") + "\n\nSzukać? Możesz też coś dodać, np. „przez Bytom”, „10 minut na przesiadkę”, „o 8” albo kliknąć poniżej.", "bot");
     addOptions([
       { label: "🔎 Szukaj", primary: true, onClick: go },
       { label: "🔀 Przez stację", onClick: function () { st.pending = { kind: "via" }; addMsg("Przez którą stację?", "bot"); } },
-      { label: "🚫 Wyklucz przewoźnika", onClick: function () { st.pending = { kind: "carrier" }; addMsg("Którego przewoźnika wykluczyć? Np. „Intercity”, „Koleje Śląskie”, „Polregio”.", "bot"); } },
+      { label: "🚫 Wyklucz przewoźnika", onClick: function () { askCarrier(); } },
       { label: "⏱️ Czas na przesiadkę", onClick: function () { st.pending = { kind: "transfer" }; addMsg("Ile minut na przesiadkę? Do wyboru: " + TRANSFER_OPTIONS.join(", ") + ".", "bot"); } },
-      { label: "↺ Od nowa", onClick: function () { addMsg("Zaczynamy od nowa.", "bot"); greet(); } }
+      { label: "🔁 Podróż powrotna", onClick: function () { addMsg("Podróż powrotna", "user"); returnTrip(null); } },
+      { label: "↺ Od nowa", onClick: function () { logEl.innerHTML = ""; greet(); } }
     ]);
   }
 
@@ -482,16 +574,36 @@
     var b = document.createElement("button");
     b.type = "button";
     b.id = "chatAssistantFab";
-    b.className = "ca-fab";
-    b.textContent = "💬";
     var label = function () { return T("chat.open"); };
-    b.title = label(); b.setAttribute("aria-label", label());
+    // Na wejściu wyróżniona chmurka z zachętą; gdy pasażer sam zacznie
+    // klikać po serwisie — zwijamy do zwykłej ikony (do końca tej wizyty).
+    var QUIET_KEY = "chatFabQuiet";
+    var quiet = false;
+    try { quiet = sessionStorage.getItem(QUIET_KEY) === "1"; } catch (e) {}
+    function render() {
+      if (quiet) { b.className = "ca-fab"; b.textContent = "💬"; }
+      else { b.className = "ca-fab cta"; b.innerHTML = '<span class="ca-fab-ico">💬</span><span>' + esc(T("chat.cta")) + "</span>"; }
+      b.title = label(); b.setAttribute("aria-label", label());
+    }
+    function goQuiet() {
+      if (quiet) return;
+      quiet = true;
+      try { sessionStorage.setItem(QUIET_KEY, "1"); } catch (e) {}
+      render();
+      document.removeEventListener("pointerdown", goQuiet, true);
+      document.removeEventListener("keydown", goQuiet, true);
+    }
+    if (!quiet) {
+      document.addEventListener("pointerdown", goQuiet, true);
+      document.addEventListener("keydown", goQuiet, true);
+    }
+    render();
     b.addEventListener("click", openPanel);
-    window.addEventListener("langchange", function () { b.title = label(); b.setAttribute("aria-label", label()); if (panel) { panel.remove(); panel = null; } });
+    window.addEventListener("langchange", function () { render(); if (panel) { panel.remove(); panel = null; } });
     document.body.appendChild(b);
   }
   function start() { (window.I18n ? I18n.ready : Promise.resolve()).then(injectButton); }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
 
-  window.ChatAssistant = { open: openPanel, _parse: parse, _matchStation: matchStation, _loadStations: loadStations };
+  window.ChatAssistant = { open: openPanel, _state: function () { return st; }, _parse: parse, _matchStation: matchStation, _loadStations: loadStations };
 })();

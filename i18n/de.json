@@ -878,6 +878,7 @@
     "mic": "Diktieren",
     "send": "Senden",
     "greeting": "Hallo! Vorerst verstehe ich nur Polnisch. Schreib oder sag, wohin du fahren willst, z. B. „z Tarnowskich Gór do Krakowa jutro o 7”.",
-    "notUnderstood": "Ich verstehe deine Sprache nicht."
+    "notUnderstood": "Ich verstehe deine Sprache nicht.",
+    "cta": "Frag, wie du hinkommst"
   }
 }
