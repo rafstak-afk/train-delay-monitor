@@ -74,6 +74,7 @@
     try {
       localStorage.removeItem(STORAGE_KEY);
       localStorage.removeItem(VERIFIED_KEY);
+      localStorage.removeItem("showVersionBadge");
     } catch (e) {}
   }
 
@@ -89,6 +90,15 @@
       const body = await res.json();
       const data = body && body.ok ? (body.data || null) : null;
       if (data) markVerified();
+      // Numer wersji w nagłówku tylko dla profilu z flagą showVersion
+      // (ustawianą ręcznie w KV — profil autora), dla reszty ukryty.
+      if (data) {
+        try {
+          if (data.showVersion === true) localStorage.setItem("showVersionBadge", "1");
+          else localStorage.removeItem("showVersionBadge");
+          document.documentElement.classList.toggle("show-version", data.showVersion === true);
+        } catch (e) {}
+      }
       // Ustawienie dźwięku alarmu (alarm-sound.js) jest wspólne dla profilu.
       if (data && typeof data.alarmSound === "boolean") {
         try { localStorage.setItem("alarmSoundEnabled", data.alarmSound ? "1" : "0"); } catch (e) {}
@@ -250,6 +260,22 @@
   function hasDevicePush() {
     try { return !!(getToken() && localStorage.getItem(PUSH_ENDPOINT_KEY)); } catch (e) { return false; }
   }
+
+  // Ukryty przełącznik numeru wersji w nagłówku: otwarcie dowolnej strony z
+  // ?wersja=1 (albo ?wersja=0) zapisuje flagę showVersion w profilu — działa
+  // wtedy na każdym urządzeniu z tym profilem. Nieszkodliwe dla innych:
+  // zmienia tylko to, czy TEN profil widzi numer wersji.
+  try {
+    const flag = new URLSearchParams(location.search).get("wersja");
+    if ((flag === "1" || flag === "0") && getToken()) {
+      const on = flag === "1";
+      try {
+        if (on) localStorage.setItem("showVersionBadge", "1"); else localStorage.removeItem("showVersionBadge");
+        document.documentElement.classList.toggle("show-version", on);
+      } catch (e) {}
+      push({ showVersion: on });
+    }
+  } catch (e) {}
 
   window.ProfileSync = {
     generateToken,

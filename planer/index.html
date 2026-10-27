@@ -65,6 +65,10 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
 .btn-sm.secondary:hover{background:#5b6472}
 .btn-sm:disabled{opacity:.5;cursor:default}
 .status{text-align:center;color:var(--muted);min-height:20px;margin:10px 0;font-size:13.5px}
+.status.searching{color:#ffd400;font-weight:700;font-size:15px;animation:searchingBlink 1s ease-in-out infinite}
+.status.searching::before{content:"🔎 "}
+@keyframes searchingBlink{50%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){.status.searching{animation:none}}
 #resultsStatus{scroll-margin-top:8px}
 .status.err{color:var(--red)}
 .empty{text-align:center;padding:28px 16px;color:var(--muted);font-size:14px;line-height:1.6}
@@ -1152,7 +1156,8 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
 
     var btn=$('searchBtn');
     btn.disabled=true;
-    $('resultsStatus').className='status';
+    // Mrugający, żółty napis — zwykły szary tekst łatwo przeoczyć na ekranie.
+    $('resultsStatus').className='status searching';
     $('resultsStatus').textContent='Szukam połączeń...';
     $('resultsList').innerHTML='';
     scrollToResults();
