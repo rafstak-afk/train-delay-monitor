@@ -10,6 +10,14 @@ test -f functions/api.js && echo "OK: functions/api.js" || echo "BRAK: functions
 test -f moje-pociagi/index.html && echo "OK: moje-pociagi/index.html" || echo "BRAK: moje-pociagi/index.html"
 
 echo ""
+echo "Sprawdzam tłumaczenia..."
+node scripts/i18n-check.js
+
+echo ""
+echo "Testy rozmów asystenta 💬..."
+node scripts/chat-assistant-test.js
+
+echo ""
 echo "Sprawdzam status Git..."
 
 git status --short

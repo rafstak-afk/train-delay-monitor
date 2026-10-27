@@ -572,6 +572,9 @@
     }
 
     var p = parse(text);
+    // Obcy język sprawdzamy, zanim spróbujemy czytać same nazwy stacji
+    // („from Katowice to Gliwice” to nie jest trasa z polskiego zdania).
+    if (looksForeign(text) && !p.from && !p.to) { addMsg(T("chat.notUnderstood"), "bot"); return; }
     if (p.bare && !p.from && !p.to) {
       var sp = splitTwoStations(p.bare);
       if (sp) { p.from = sp.from; p.to = sp.to; }
