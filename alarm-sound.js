@@ -58,7 +58,7 @@
     btn.type = "button";
     btn.id = "alarmSoundButton";
     btn.className = "alarm-sound-btn";
-    btn.style.cssText = "min-width:44px;padding:10px 12px;border-radius:10px;border:1px solid #48627c;background:#172433;color:#fff;font-size:18px;cursor:pointer;line-height:1";
+    btn.style.cssText = "min-width:40px;width:auto;padding:6px 10px;border-radius:8px;border:1px solid #48627c;background:#172433;color:#fff;font-size:16px;cursor:pointer;line-height:1;align-self:stretch";
     btn.addEventListener("click", function () {
       const on = !isEnabled();
       setEnabled(on, false);
