@@ -1195,8 +1195,13 @@ function saveLastTrainContext(train,data){
       label:label||('Pociąg '+train),
       savedAt:Date.now()
     };
+    // Do profilu (KV — dzienny limit zapisów) tylko przy ZMIANIE pociągu:
+    // ta funkcja leci też przy każdym auto-odświeżeniu co 5 min, a otwarta
+    // cały dzień karta dawała 12 zapisów na godzinę z tym samym pociągiem.
+    let prevUrl='';
+    try{prevUrl=(JSON.parse(localStorage.getItem('plkLastTrain')||'null')||{}).url||''}catch(e){}
     localStorage.setItem('plkLastTrain',JSON.stringify(ctx));
-    if(window.ProfileSync&&ProfileSync.getToken())ProfileSync.push({lastTrain:ctx});
+    if(prevUrl!==ctx.url&&window.ProfileSync&&ProfileSync.getToken())ProfileSync.push({lastTrain:ctx});
   }catch(e){}
 }
 function renderFallback(train,msg){setStatus(T('train.noIds'));document.getElementById('content').innerHTML='<div class="panel"><h2>'+esc(T('train.trainN',{train:train}))+'</h2><div class="err">'+esc(msg||T('train.noIdsErr'))+'</div><p class="hint">'+esc(T('train.noIdsHint'))+'</p><a class="btn green" target="_blank" rel="noopener" href="'+esc(portalUrl(train))+'">'+esc(T('train.portalBtn'))+'</a></div>'}

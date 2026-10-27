@@ -33,6 +33,19 @@ async function ipHash(request) {
     .join("");
 }
 
+// Porównanie treści profilu niezależne od kolejności kluczy (bez updatedAt).
+function stableStringify(v) {
+  if (Array.isArray(v)) return "[" + v.map(stableStringify).join(",") + "]";
+  if (v && typeof v === "object") {
+    return "{" + Object.keys(v).filter(k => k !== "updatedAt" && v[k] !== undefined).sort()
+      .map(k => JSON.stringify(k) + ":" + stableStringify(v[k])).join(",") + "}";
+  }
+  return JSON.stringify(v);
+}
+// Co najmniej raz na tydzień zapisujemy mimo braku zmian — każdy zapis
+// odnawia 180-dniowy termin ważności profilu (expirationTtl).
+const UNCHANGED_REFRESH_MS = 7 * 24 * 60 * 60 * 1000;
+
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: CORS_JSON });
 }
@@ -144,6 +157,13 @@ export async function onRequest(context) {
       createdAt: existing.createdAt || nowIso,
       updatedAt: nowIso
     };
+
+    // Nic się nie zmieniło (ta sama lista wysłana ponownie po synchronizacji,
+    // to samo ustawienie) — nie zużywamy zapisu KV (darmowy limit: 1000/dobę).
+    if (existingRaw && stableStringify(existing) === stableStringify(merged) &&
+        Date.now() - (Date.parse(existing.updatedAt || "") || 0) < UNCHANGED_REFRESH_MS) {
+      return json({ ok: true, data: existing, unchanged: true });
+    }
 
     await env.USER_PROFILES.put(token, JSON.stringify(merged), {
       expirationTtl: PROFILE_TTL_SECONDS,
