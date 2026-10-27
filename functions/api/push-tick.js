@@ -299,15 +299,37 @@ function shortLabel(x) {
   return x.label.split(" ").slice(0, 2).join(" ");
 }
 
-function plainText(x) {
-  return x.cancelled ? `${shortLabel(x)} ODWOŁANY` : `${shortLabel(x)} +${x.delay} min`;
+// Teksty powiadomień w języku z profilu (profile.language, ustawiany
+// przełącznikiem 🌐) — push budujemy na serwerze, więc słownik jest tutaj,
+// nie w i18n/*.json. Liczba mnoga wg reguł danego języka (Intl.PluralRules).
+function pushText(lang) {
+  const T = {
+    pl: { station: "Alarm: stacja w tle", train: "Alarm: Moje pociągi", cancelled: "ODWOŁANY", tap: "dotknij, by zobaczyć", more: "i {n} więcej",
+      delays: { one: "opóźnienie", few: "opóźnienia", many: "opóźnień", other: "opóźnienia" } },
+    en: { station: "Alarm: watched station", train: "Alarm: My trains", cancelled: "CANCELLED", tap: "tap to see", more: "and {n} more",
+      delays: { one: "delay", other: "delays" } },
+    de: { station: "Alarm: beobachteter Bahnhof", train: "Alarm: Meine Züge", cancelled: "AUSGEFALLEN", tap: "tippen zum Ansehen", more: "und {n} weitere",
+      delays: { one: "Verspätung", other: "Verspätungen" } },
+    cs: { station: "Alarm: stanice na pozadí", train: "Alarm: Moje vlaky", cancelled: "ZRUŠEN", tap: "klepněte pro zobrazení", more: "a {n} další",
+      delays: { one: "zpoždění", few: "zpoždění", many: "zpoždění", other: "zpoždění" } },
+    es: { station: "Alarma: estación vigilada", train: "Alarma: Mis trenes", cancelled: "CANCELADO", tap: "toca para ver", more: "y {n} más",
+      delays: { one: "retraso", other: "retrasos" } },
+    uk: { station: "Тривога: станція у фоні", train: "Тривога: Мої поїзди", cancelled: "СКАСОВАНО", tap: "натисніть, щоб переглянути", more: "і ще {n}",
+      delays: { one: "затримка", few: "затримки", many: "затримок", other: "затримки" } }
+  };
+  const code = T[lang] ? lang : "pl";
+  return Object.assign({ lang: code }, T[code]);
 }
 
-function pluralPL(n, [one, few, many]) {
-  if (n === 1) return one;
-  const mod10 = n % 10, mod100 = n % 100;
-  if (mod10 >= 2 && mod10 <= 4 && !(mod100 >= 12 && mod100 <= 14)) return few;
-  return many;
+function pluralWord(forms, n, lang) {
+  let cat = "other";
+  try { cat = new Intl.PluralRules(lang).select(n); } catch (e) {}
+  return forms[cat] || forms.other || forms.many || forms.one;
+}
+
+function plainText(x, t) {
+  t = t || pushText("pl");
+  return x.cancelled ? `${shortLabel(x)} ${t.cancelled}` : `${shortLabel(x)} +${x.delay} min`;
 }
 
 async function sendPush(env, subscription, payload) {
@@ -327,12 +349,13 @@ async function sendPush(env, subscription, payload) {
 // Nagłówek powiadomienia różni się w zależności od ŹRÓDŁA alarmu — pociąg
 // z "Moich pociągów" czy obserwowana w tle stacja — żeby użytkownik od razu,
 // bez otwierania aplikacji, wiedział którego z dwóch alarmów to dotyczy.
-function buildPayload(items, kind) {
+function buildPayload(items, kind, lang) {
+  const t = pushText(lang);
   const extra = items.length - 1;
-  const title = kind === "station" ? "Alarm: stacja w tle" : "Alarm: Moje pociągi";
+  const title = kind === "station" ? t.station : t.train;
   const body = extra > 0
-    ? `${items.length} ${pluralPL(items.length, ["opóźnienie", "opóźnienia", "opóźnień"])}: ${plainText(items[0])} i ${extra} więcej — dotknij, by zobaczyć`
-    : `${plainText(items[0])} — dotknij, by zobaczyć`;
+    ? `${items.length} ${pluralWord(t.delays, items.length, t.lang)}: ${plainText(items[0], t)} ${t.more.replace("{n}", extra)} — ${t.tap}`
+    : `${plainText(items[0], t)} — ${t.tap}`;
   const url = items.length === 1 ? items[0].url : (kind === "station" ? "/" : "/moje-pociagi/");
   return { title, body, url };
 }
@@ -379,7 +402,7 @@ function isNews(x, notifiedLevel) {
 // jeździ codziennie o tej samej godzinie, więc bez daty wczorajsze "+37"
 // blokowało dzisiejszy alarm "+20" (20 < 37 + 5). Wpisy z innych dni
 // są przy okazji usuwane.
-async function notifyForSource(env, token, subs, items, stateField, legacyField, kind, summary, today) {
+async function notifyForSource(env, token, subs, items, stateField, legacyField, kind, summary, today, lang) {
   const dayPrefix = `${today}|`;
   const dayKey = x => dayPrefix + x.key;
   const kept = [];
@@ -415,7 +438,7 @@ async function notifyForSource(env, token, subs, items, stateField, legacyField,
     changed = true;
     notified = true;
     try {
-      const status = await sendPush(env, sub, buildPayload(ordered, kind));
+      const status = await sendPush(env, sub, buildPayload(ordered, kind, lang));
       if (status === 404 || status === 410) {
         summary.pushPruned++;
       } else {
@@ -519,8 +542,9 @@ export async function onRequestPost(context) {
       }
 
       let subsNow = subs;
-      subsNow = await notifyForSource(env, token, subsNow, trainItems, "notifiedTrain", "lastSignatureTrain", "train", summary, now.date);
-      subsNow = await notifyForSource(env, token, subsNow, stationItems, "notifiedStation", "lastSignatureStation", "station", summary, now.date);
+      const lang = typeof profile.language === "string" ? profile.language : "pl";
+      subsNow = await notifyForSource(env, token, subsNow, trainItems, "notifiedTrain", "lastSignatureTrain", "train", summary, now.date, lang);
+      subsNow = await notifyForSource(env, token, subsNow, stationItems, "notifiedStation", "lastSignatureStation", "station", summary, now.date, lang);
 
       if (subsNow !== subs) {
         profile.pushSubscriptions = subsNow;
