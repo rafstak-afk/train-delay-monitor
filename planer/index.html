@@ -380,6 +380,9 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     var el=$(side+'Dropdown')||document.querySelector('.station-dropdown[data-key="'+side+'"]');
     if(!el)return;
     if(!stations.length){el.classList.remove('open');el.innerHTML='';return}
+    // Stacja główna zawsze na początku (Główny/Główna/Centralna, potem sama nazwa miasta).
+    var tier=function(n){return /(^|\s)(g[łl][óo]wn\w*|centraln\w*)(\s|$)/i.test(n)?0:(String(n).trim().indexOf(' ')<0?1:2)};
+    stations=stations.map(function(s,i){return{s:s,i:i,t:tier(s.name||'')}}).sort(function(a,b){return a.t-b.t||a.i-b.i}).map(function(x){return x.s});
     el.innerHTML=stations.map(function(s){
       return '<button type="button" class="station-dd-item" data-id="'+escapeHtml(s.id)+'" data-name="'+escapeHtml(s.name)+'"><span class="station-dd-name">'+escapeHtml(s.name)+'</span><span class="station-dd-id">'+escapeHtml(s.id)+'</span></button>';
     }).join('');
