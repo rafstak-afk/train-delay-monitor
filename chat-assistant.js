@@ -588,9 +588,8 @@
         var one = matchStation(p.bare);
         if (one.exact || one.options) return askDirection(p, p.bare);
         // nie wiemy, co to jest — nie zmieniamy niczego po cichu
-        st.from = null; st.to = null; st.via = null;
-        if (p.date) st.date = p.date; else st.date = null;
-        st.time = p.time || null;
+        startNewRoute();
+        st.date = p.date || null; st.time = p.time || null;
         addMsg("Nie rozpoznałem stacji w „" + p.bare + "”.", "bot");
         askStation("from", "Skąd jedziesz? Kliknij albo wpisz nazwę stacji, np. „z Bytomia do Gliwic”.");
         return;
@@ -603,10 +602,7 @@
       if (!st.from) askStation("from", "Albo zacznijmy po kolei: skąd jedziesz?");
       return;
     }
-    if (p.from || p.to) {
-      st.prevFrom = st.from;
-      st.from = null; st.to = null; st.via = null; st.date = null; st.time = null; st.direct = false;
-    }
+    if (p.from || p.to) startNewRoute();
     if (p.date) st.date = p.date;
     if (p.time) st.time = p.time;
     if (p.direct) st.direct = true;
@@ -634,10 +630,21 @@
     }
     return best;
   }
+  // Nowa trasa = nowe wyszukiwanie od zera: nic z poprzedniej rozmowy (stacje,
+  // termin, „tylko bezpośrednie”, wykluczeni przewoźnicy, czas przesiadki) nie
+  // przechodzi po cichu. Poprzednia stacja początkowa jest tylko PROPOZYCJĄ
+  // do kliknięcia, gdy trzeba o nią zapytać.
+  function startNewRoute() {
+    st.prevFrom = st.from || st.prevFrom || null;
+    st.from = null; st.to = null; st.via = null; st.date = null; st.time = null;
+    st.direct = false; st.exclude = []; st.transfer = null;
+  }
   // Jedna stacja bez „z/do” — nie zgadujemy kierunku.
   function askDirection(p, phrase) {
-    st.from = null; st.to = null; st.via = null; st.direct = !!p.direct;
-    st.date = p.date || null; st.time = p.time || null;
+    startNewRoute();
+    st.direct = !!p.direct; st.date = p.date || null; st.time = p.time || null;
+    p.exclude.forEach(addExclude);
+    if (p.transfer != null && TRANSFER_OPTIONS.indexOf(p.transfer) >= 0) st.transfer = p.transfer;
     addMsg("„" + phrase + "” — to stacja, z której jedziesz, czy do której?", "bot");
     addOptions([
       { label: "🚩 Stąd jadę", onClick: function () { addMsg("Stąd jadę", "user"); if (resolveStation("from", phrase)) next(); } },

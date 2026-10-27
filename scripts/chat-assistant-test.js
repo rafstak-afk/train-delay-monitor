@@ -163,6 +163,16 @@ test("nowa trasa NIE dziedziczy stacji z poprzedniej rozmowy", async () => {
   expect(!st.time, "godzina z poprzedniej trasy nie powinna zostać: " + st.time);
 });
 
+test("nowa trasa NIE dziedziczy wykluczonych przewoźników ani czasu przesiadki", async () => {
+  const c = await session();
+  await c.say("z Katowic do Gliwic bez Intercity 10 minut na przesiadkę");
+  expect(c.state().exclude.length === 1 && c.state().transfer === 10, "pierwsza trasa nie ustawiła IC/10 min");
+  await c.say("bytom szklarska poręba górna jutro pierwsze połączenie");
+  expect(!c.state().exclude.length, "zostało wykluczenie: " + c.state().exclude.map(x => x.name).join(", "));
+  expect(c.state().transfer == null, "został czas przesiadki: " + c.state().transfer);
+  expect(!c.last.includes("bez:"), "podsumowanie pokazuje „bez:”");
+});
+
 test("brak stacji początkowej → pytanie, poprzednia tylko jako propozycja", async () => {
   const c = await session();
   await c.say("z Katowic do Gliwic");
