@@ -157,6 +157,12 @@ h1{ margin:0; font-size:20px; }
 
 @media(max-width:600px){
   .form-grid{ grid-template-columns:1fr; }
+  /* Dłuższe napisy w innych językach (DE/UK) nie mieszczą się w jednym
+     rzędzie z tytułem — tytuł nad przyciskami, przyciski się zawijają,
+     a tytuł omija ikony 🌐/🎓 w prawym górnym rogu. */
+  header{ flex-direction:column; align-items:stretch; gap:10px; }
+  header h1{ padding-right:92px; }
+  header > div:last-child{ flex-wrap:wrap; }
 }
 
 /* === Poniżej: dokładnie te same reguły (i te same wartości kolorów) co
@@ -1191,6 +1197,8 @@ setInterval(() => { if (document.visibilityState === 'visible') init(); }, BOARD
   // (fetch jest async) - I18n.t() nie mial jeszcze co podac i zwracal
   // sam klucz ("mojePociagi.fetchingData") jako widoczny tekst.
   if (window.I18n) await I18n.ready;
+  // Statyczne "Alarm: OFF" z HTML — bez profilu nic go potem nie tłumaczyło.
+  if (window.I18n) alertButton.textContent = I18n.t(delayAlertsEnabled ? 'index.alarmOn' : 'index.alarmOff');
   if (window.ProfileSync && ProfileSync.getToken()) {
     const profile = await ProfileSync.pull();
     if (profile && Array.isArray(profile.trains)) {
