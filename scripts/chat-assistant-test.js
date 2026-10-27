@@ -348,6 +348,17 @@ test("tablica dla niejednoznacznej stacji → wybór stacji", async () => {
   expect(c.env.location.href === "/?station=" + encodeURIComponent("Kraków Główny"), "adres: " + c.env.location.href);
 });
 
+test("stacja dwuczłonowa wpisana sama to JEDNA stacja (nie dwie)", async () => {
+  for (const [txt, want] of [["lublin główny", "Lublin Główny"], ["Tarnowskie Góry", "Tarnowskie Góry"], ["katowice zawodzie", "Katowice Zawodzie"], ["gliwice łabędy", "Gliwice Łabędy"], ["kraków główny", "Kraków Główny"]]) {
+    const c = await session();
+    await c.say(txt);
+    expect(c.last.includes("czy stąd jedziesz?"), "„" + txt + "”: zamiast pytania o kierunek: " + c.last);
+    await c.click("Tak, stąd jadę");
+    expectStation(c.state(), "from", want);
+    expectEmpty(c.state(), "to");
+  }
+});
+
 test("myślnik: Katowice - Gliwice", async () => {
   const c = await session();
   await c.say("Katowice - Gliwice");
