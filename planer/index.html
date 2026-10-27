@@ -1223,15 +1223,22 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     // Dociągnięcie też się nie udało — wyniki zostają, ale zostaje też
     // mrugające ostrzeżenie z prośbą o ponowne wyszukiwanie.
     function showPartialWarn(){$('resultsStatus').className='status partial';$('resultsStatus').textContent=T('planer.partialWarn')}
-    function attempt(retry){
+    // Do 3 automatycznych ponowień z rosnącą przerwą: 503 od Cloudflare przy
+    // zimnym cache długiej trasy (np. z „przez”) zwykle mija po 1–2 próbach,
+    // bo każda kolejna korzysta z rozkładów pobranych przez poprzednią.
+    var RETRY_DELAYS=[1500,4000,8000];
+    function attempt(n){
+      n=n||0;
+      var canRetry=n<RETRY_DELAYS.length;
       fetch('/api/planner?'+params.toString(),{headers:{Accept:'application/json'}})
         .then(function(r){return r.json().catch(function(){return {}}).then(function(data){return {ok:r.ok,status:r.status,data:data}}) })
         .then(function(res){
           if(refining&&(!res.ok||!res.data.ok)){refining=false;showPartialWarn();return}
           if(!res.ok||!res.data.ok){
-            if(!res.data.error&&!retry){
+            if(!res.data.error&&canRetry){
+              $('resultsStatus').className='status searching';
               $('resultsStatus').textContent=T('planer.retrying');
-              setTimeout(function(){attempt(true)},1500);
+              setTimeout(function(){attempt(n+1)},RETRY_DELAYS[n]);
               return;
             }
             btn.disabled=false;
@@ -1249,19 +1256,19 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
             refining=true;
             $('resultsStatus').className='status partial';
             $('resultsStatus').textContent=T('planer.partialRefining');
-            setTimeout(function(){attempt(true)},400);
+            setTimeout(function(){attempt(RETRY_DELAYS.length)},400);
           }
         })
         .catch(function(){
           if(refining){refining=false;showPartialWarn();return}
-          if(!retry){setTimeout(function(){attempt(true)},1500);return}
+          if(canRetry){$('resultsStatus').className='status searching';$('resultsStatus').textContent=T('planer.retrying');setTimeout(function(){attempt(n+1)},RETRY_DELAYS[n]);return}
           btn.disabled=false;
           $('resultsStatus').className='status err';
           $('resultsStatus').textContent=T('planer.apiFail');
           scrollToResults();
         });
     }
-    attempt(false);
+    attempt(0);
   }
   window.search=search;
 
