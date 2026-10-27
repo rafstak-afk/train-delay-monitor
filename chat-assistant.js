@@ -416,6 +416,8 @@
       ".ca-log{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px}" +
       ".ca-msg{max-width:88%;padding:9px 12px;border-radius:12px;font-size:14px;line-height:1.45;white-space:pre-wrap}" +
       ".ca-bot{background:#223244;align-self:flex-start;border-top-left-radius:4px}" +
+      ".ca-bot.ca-wait{color:#ffd400;font-weight:700;animation:caWaitBlink 1s ease-in-out infinite}@keyframes caWaitBlink{50%{opacity:.35}}" +
+      "@media(prefers-reduced-motion:reduce){.ca-bot.ca-wait{animation:none}}" +
       ".ca-user{background:#0b57d0;align-self:flex-end;border-top-right-radius:4px}" +
       ".ca-opts{display:flex;flex-wrap:wrap;gap:6px;align-self:flex-start;max-width:100%}" +
       ".ca-opt{border:1px solid #48627c;background:#172433;color:#fff;border-radius:999px;padding:7px 12px;font-size:13px;cursor:pointer}" +
@@ -435,6 +437,7 @@
     d.textContent = text;
     logEl.appendChild(d);
     logEl.scrollTop = logEl.scrollHeight;
+    return d;
   }
   function addOptions(list) {
     var box = document.createElement("div");
@@ -786,7 +789,10 @@
     if (st.transfer != null) q.set("transfer", String(st.transfer));
     if (st.direct) q.set("direct", "1");
     q.set("auto", "1");
-    addMsg("Otwieram planer z wynikami…", "bot");
+    var opening = addMsg("Otwieram planer z wynikami…", "bot");
+    // Zwykle planer otwiera się od razu; gdy trwa to dłużej (wolna sieć),
+    // komunikat zaczyna migać — jak „Szukam połączeń…” w planerze.
+    setTimeout(function () { if (opening && opening.classList) opening.classList.add("ca-wait"); }, 1500);
     if (!(window.ProfileSync && ProfileSync.getToken())) { try { sessionStorage.setItem(ASK_FLAG, "1"); } catch (e) {} }
     location.href = "/planer/?" + q.toString();
   }

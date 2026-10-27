@@ -105,7 +105,7 @@ async function session() {
   const botText = nodes => nodes.filter(n => n.classList.contains("ca-bot")).map(n => n.textContent).join("\n");
   const options = () => log.querySelectorAll(".ca-opt").map(b => b.textContent);
   const api = {
-    env, CA,
+    env, CA, log,
     state: () => CA._state(),
     async say(text) { input.value = text; form.dispatch("submit"); await flush(); api.last = botText(fresh()); return api.last; },
     async click(label) {
@@ -330,6 +330,10 @@ test("„Szukaj” otwiera planer z parametrami", async () => {
   const href = c.env.location.href;
   ["/planer/?", "from=Tarnowskie", "to=Katowice", "time=07%3A00", "date=" + TOMORROW, "exclude=IC", "auto=1"].forEach(p =>
     expect(href.includes(p), "w adresie brak „" + p + "”: " + href));
+  // Gdy przejście trwa dłużej niż zwykle (tu: strona się nie przeładowuje), komunikat miga.
+  await new Promise(r => setTimeout(r, 1700));
+  const msg = c.log.children.find(n => n.classList.contains("ca-bot") && n.textContent.includes("Otwieram planer"));
+  expect(msg && msg.classList.contains("ca-wait"), "„Otwieram planer…” nie miga po 1,5 s");
 });
 
 test("czyść historię pyta o potwierdzenie", async () => {
