@@ -322,15 +322,16 @@
     }
     // „Bytom Szklarska Poręba Górna jutro …” — same nazwy, bez „z/do”:
     // zwracamy ten ciąg jako „bare”, a podział na dwie stacje robi handle().
-    if (!r.from && !r.to && !r.via) {
-      var bare = [];
-      for (var bi2 = 0; bi2 < tokens.length && bare.length < 8; bi2++) {
-        var w2 = fold(tokens[bi2]);
-        if (!w2 || w2 === "-" || MARKERS.test(w2) || /^\d/.test(w2) || /^(poniedzial|wtor|srod|czwart|piat|sobot|niedziel)/.test(w2)) { if (bare.length) break; else continue; }
-        bare.push(tokens[bi2]);
-      }
-      if (bare.length) r.bare = bare.join(" ");
+    var bare = [];
+    for (var bi2 = 0; bi2 < tokens.length && bare.length < 8; bi2++) {
+      var w2 = fold(tokens[bi2]);
+      if (!w2 || w2 === "-" || MARKERS.test(w2) || /^\d/.test(w2) || /^(poniedzial|wtor|srod|czwart|piat|sobot|niedziel)/.test(w2)) { if (bare.length) break; else continue; }
+      bare.push(tokens[bi2]);
     }
+    // „lead” — nazwy na początku wiadomości, zanim padło „przez/jutro/o…”;
+    // przydaje się, gdy to odpowiedź na pytanie „Skąd/Dokąd jedziesz?”.
+    if (bare.length && fold(tokens[0]) === fold(bare[0])) r.lead = bare.join(" ");
+    if (!r.from && !r.to && !r.via && bare.length) r.bare = bare.join(" ");
     // „Tarnowskie Góry - Katowice” bez przyimków
     if (!r.from && !r.to) {
       var m = raw.split(/\s+-\s+|\s*->\s*/);
@@ -606,8 +607,24 @@
       if (tn) { return applyTransfer(+tn[1]) && next(); }
     }
     if (st.pending && (st.pending.kind === "from" || st.pending.kind === "to" || st.pending.kind === "via") && !/ (z|ze|od|do|przez) /.test(" " + f + " ")) {
-      // użytkownik dopisał samą nazwę stacji w odpowiedzi na pytanie
-      return resolveStation(st.pending.kind, text, true) && next();
+      // Odpowiedź na pytanie o stację. Sama nazwa → tam, o co pytaliśmy.
+      // Dwie stacje („tarnowskie góry lublin główny”) → cała trasa.
+      // Nazwa z dodatkami („Bytom jutro o 7”) → niżej, przez parse (answerKind).
+      var pa = parse(text);
+      var extras = pa.date || pa.time || pa.direct || pa.transfer != null || pa.exclude.length || pa.vague.length;
+      if (!extras) {
+        var pickedOption = st.pending.options && st.pending.options.some(function (o) { return fold(o.name) === fold(text); });
+        if (!pickedOption && st.pending.kind !== "via" && !matchStation(text).exact) {
+          var sp2 = splitTwoStations(text);
+          if (sp2 && sp2.score === 4) {
+            startNewRoute();
+            if (!resolveStation("from", sp2.from)) return;
+            if (!resolveStation("to", sp2.to)) return;
+            return next();
+          }
+        }
+        return resolveStation(st.pending.kind, text, true) && next();
+      }
     }
     if (st.pending && st.pending.kind === "carrier") {
       var c0 = matchCarrier(text);
@@ -620,6 +637,14 @@
     // Obcy język sprawdzamy, zanim spróbujemy czytać same nazwy stacji
     // („from Katowice to Gliwice” to nie jest trasa z polskiego zdania).
     if (looksForeign(text) && !p.from && !p.to) { addMsg(T("chat.notUnderstood"), "bot"); return; }
+    // Odpowiedź na „Skąd/Dokąd jedziesz?” z dodatkami („Lublin Główny przez
+    // Kielce”, „Bytom jutro o 7”) — to uzupełnienie bieżącej trasy, a nie
+    // nowe wyszukiwanie: nazwa z początku trafia tam, o co pytaliśmy.
+    var answerKind = null;
+    if (st.pending && (st.pending.kind === "from" || st.pending.kind === "to") && !p.from && !p.to && p.lead) {
+      answerKind = st.pending.kind;
+      delete p.bare;
+    }
     if (p.bare && !p.from && !p.to) {
       var sp = splitTwoStations(p.bare);
       if (sp) { p.from = sp.from; p.to = sp.to; }
@@ -650,6 +675,7 @@
     var vagueCarrier = p.vague.filter(function (v) { return v.kind === "carrier"; })[0];
     if (vagueCarrier) { askCarrier("Nie rozpoznałem przewoźnika „" + vagueCarrier.text + "”. Którego wykluczyć?"); return; }
     if (p.vague.some(function (v) { return v.kind === "time"; }) && !st.time) { askTime("O której godzinie mniej więcej? Kliknij albo napisz np. „7:30”."); return; }
+    if (answerKind && !resolveStation(answerKind, p.lead)) return;
     if (p.from && !resolveStation("from", p.from)) return;
     if (p.to && !resolveStation("to", p.to)) return;
     if (p.via && !resolveStation("via", p.via)) return;

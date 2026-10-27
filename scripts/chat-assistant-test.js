@@ -191,6 +191,44 @@ test("sama nowa data nie zmienia po cichu trasy z nierozpoznanymi słowami", asy
   expectSaid(c, "Nie rozpoznałem stacji");
 });
 
+test("odpowiedź na „Dokąd?” z dodatkiem: „Lublin Główny przez Kielce”", async () => {
+  const c = await session();
+  await c.say("chcę jechać z Tarnowskich Gór");
+  expectSaid(c, "Dokąd jedziesz?");
+  await c.say("Lublin Główny przez Kielce");
+  expectStation(c.state(), "from", "Tarnowskie Góry");
+  expectStation(c.state(), "to", "Lublin Główny");
+  if (!c.state().via) await c.click("Kielce Główne");
+  expectStation(c.state(), "via", "Kielce Główne");
+  expectSaid(c, "Szukać?");
+});
+
+test("odpowiedź na „Skąd?” z terminem: „Bytom jutro o 7”", async () => {
+  const c = await session();
+  await c.say("chcę jechać do Gliwic");
+  expectSaid(c, "Skąd jedziesz?");
+  await c.say("Bytom jutro o 7");
+  const st = c.state();
+  expectStation(st, "from", "Bytom"); expectStation(st, "to", "Gliwice");
+  expect(st.time === "07:00" && st.date === TOMORROW, "termin " + st.date + " " + st.time);
+});
+
+test("odpowiedź na „Skąd?” dwiema stacjami: „tarnowskie góry lublin główny”", async () => {
+  const c = await session();
+  await c.say("chcę jechać do Gliwic");
+  expectSaid(c, "Skąd jedziesz?");
+  await c.say("tarnowskie góry lublin główny");
+  expectStation(c.state(), "from", "Tarnowskie Góry");
+  expectStation(c.state(), "to", "Lublin Główny");
+});
+
+test("odpowiedź na „Skąd?” samą nazwą w odmianie: „z Bytomia”/„Bytomia”", async () => {
+  const c = await session();
+  await c.say("chcę jechać do Gliwic");
+  await c.say("Bytomia");
+  expectStation(c.state(), "from", "Bytom"); expectStation(c.state(), "to", "Gliwice");
+});
+
 test("literówka → podpowiedzi do kliknięcia, bez zgadywania", async () => {
   const c = await session();
   await c.say("z Tarnogór do Katowic");
