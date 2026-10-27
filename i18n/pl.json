@@ -18,6 +18,10 @@
       "menu": "☰ Menu"
     }
   },
+  "alarmSound": {
+    "onTitle": "Dźwięk alarmu (Rp1): włączony — kliknij, aby wyłączyć",
+    "offTitle": "Dźwięk alarmu (Rp1): wyłączony — kliknij, aby włączyć"
+  },
   "mojePociagi": {
     "title": "🚆 Moje pociągi",
     "journalLinkTitle": "Dzienniczek podróży",

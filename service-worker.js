@@ -49,7 +49,9 @@ self.addEventListener("push", event => {
   const body = data.body || "Sprawdź aktualny status na Moich pociągach.";
   const url = data.url || "/moje-pociagi/";
   event.waitUntil(
-    self.registration.showNotification(title, { body, data: { url } })
+    // Wibracja w rytmie "ta-dam ta-dam" (stukot kół) — dźwięku powiadomienia
+    // przeglądarka nie pozwala zmienić, wibrację na Androidzie tak.
+    self.registration.showNotification(title, { body, vibrate: [120,80,120,400,120,80,120], data: { url } })
   );
 });
 

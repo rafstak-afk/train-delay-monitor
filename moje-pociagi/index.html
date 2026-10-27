@@ -260,6 +260,7 @@ h1{ margin:0; font-size:20px; }
 <script src="/i18n.js"></script>
 <script src="/burger-menu.js"></script>
 <script src="/profile-sync.js"></script>
+<script src="/alarm-sound.js"></script>
 <script src="/tutorial.js"></script>
 <script src="/survey.js"></script>
 <script src="/profile-prompt.js"></script>
@@ -338,6 +339,9 @@ function handleDelayAlerts(){
   const sig=items.map(x=>`${x.label}-${x.time}-${x.delay}-${x.cancelled?'X':''}`).join('|');
   if(!delayAlertsEnabled||sig===lastDelayedSignature)return;
   lastDelayedSignature=sig;
+  // Dźwięk gra zawsze przy nowym alarmie na otwartej stronie — to nie jest
+  // druga kopia powiadomienia push, tylko sygnał tu i teraz.
+  if(window.AlarmSound)AlarmSound.play();
   // To urządzenie dostaje te same alarmy pushem z serwera (push-tick, z
   // deduplikacją) — lokalne powiadomienie systemowe byłoby drugą kopią.
   // Ramka alarmu na stronie (wyżej) zostaje.
@@ -350,9 +354,9 @@ function showAlarmNotification(title,body,url){
   try{
     if(!('Notification'in window)||Notification.permission!=='granted')return;
     if(navigator.serviceWorker&&navigator.serviceWorker.controller){
-      navigator.serviceWorker.ready.then(function(reg){reg.showNotification(title,{body:body,data:{url:target}})}).catch(function(){});
+      navigator.serviceWorker.ready.then(function(reg){reg.showNotification(title,{body:body,vibrate:[120,80,120,400,120,80,120],data:{url:target}})}).catch(function(){});
     }else{
-      const n=new Notification(title,{body:body});
+      const n=new Notification(title,{body:body,vibrate:[120,80,120,400,120,80,120]});
       n.onclick=function(){try{window.focus()}catch(e){}location.href=target;n.close()};
     }
   }catch(e){}

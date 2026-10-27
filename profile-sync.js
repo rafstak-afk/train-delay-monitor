@@ -89,6 +89,11 @@
       const body = await res.json();
       const data = body && body.ok ? (body.data || null) : null;
       if (data) markVerified();
+      // Ustawienie dźwięku alarmu (alarm-sound.js) jest wspólne dla profilu.
+      if (data && typeof data.alarmSound === "boolean") {
+        try { localStorage.setItem("alarmSoundEnabled", data.alarmSound ? "1" : "0"); } catch (e) {}
+        try { window.dispatchEvent(new Event("alarmsoundchange")); } catch (e) {}
+      }
       return data;
     } catch (e) {
       return null;

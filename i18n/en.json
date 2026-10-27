@@ -18,6 +18,10 @@
       "menu": "☰ Menu"
     }
   },
+  "alarmSound": {
+    "onTitle": "Alarm sound (Rp1 horn): on — click to turn off",
+    "offTitle": "Alarm sound (Rp1 horn): off — click to turn on"
+  },
   "mojePociagi": {
     "title": "🚆 My trains",
     "journalLinkTitle": "Travel journal",
