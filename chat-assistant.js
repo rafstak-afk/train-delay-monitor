@@ -388,14 +388,29 @@
     return { savedAt: new Date().toISOString(), log: memLog.slice(-LOG_MAX),
       st: { from: slim(st.from), to: slim(st.to), via: slim(st.via), date: st.date, time: st.time, transfer: st.transfer, direct: st.direct, exclude: st.exclude } };
   }
+  // Lokalnie zapisujemy od razu (po krótkiej przerwie), ale do PROFILU (KV —
+  // dzienny limit zapisów!) tylko przy zamknięciu czatu, przejściu do planera
+  // lub tablicy i przy wyjściu ze strony — 1–2 zapisy na rozmowę zamiast
+  // jednego po każdej wiadomości.
+  var ctxDirty = false;
   function saveCtxSoon() {
     clearTimeout(saveTimer);
+    ctxDirty = true;
     saveTimer = setTimeout(function () {
-      var c = ctxNow();
-      try { localStorage.setItem(CTX_KEY, JSON.stringify(c)); } catch (e) {}
-      if (window.ProfileSync && ProfileSync.getToken()) ProfileSync.push({ chatContext: c });
+      try { localStorage.setItem(CTX_KEY, JSON.stringify(ctxNow())); } catch (e) {}
     }, 700);
   }
+  function flushCtxToProfile(beacon) {
+    if (!ctxDirty || !st) return;
+    var c = ctxNow();
+    try { localStorage.setItem(CTX_KEY, JSON.stringify(c)); } catch (e) {}
+    ctxDirty = false;
+    if (!(window.ProfileSync && ProfileSync.getToken())) return;
+    if (beacon && ProfileSync.pushBeacon) ProfileSync.pushBeacon({ chatContext: c });
+    else ProfileSync.push({ chatContext: c });
+  }
+  window.addEventListener("pagehide", function () { flushCtxToProfile(true); });
+  document.addEventListener("visibilitychange", function () { if (document.visibilityState === "hidden") flushCtxToProfile(true); });
   function readLocalCtx() { try { return JSON.parse(localStorage.getItem(CTX_KEY)); } catch (e) { return null; } }
   // Nowszy z dwóch: lokalny albo z profilu (inne urządzenie).
   function loadCtx() {
@@ -489,7 +504,7 @@
     setTimeout(function () { inputEl.focus(); }, 50);
     loadStations().catch(function () {});
   }
-  function closePanel() { if (panel) panel.classList.remove("open"); stopMic(); maybeAskProfile(); }
+  function closePanel() { if (panel) panel.classList.remove("open"); stopMic(); flushCtxToProfile(false); maybeAskProfile(); }
 
   // Czyszczenie historii — zawsze z potwierdzeniem. Kasuje rozmowę na tym
   // urządzeniu i w profilu.
@@ -505,6 +520,7 @@
     clearTimeout(saveTimer);
     memLog = [];
     try { localStorage.removeItem(CTX_KEY); } catch (e) {}
+    ctxDirty = false;
     if (window.ProfileSync && ProfileSync.getToken()) ProfileSync.push({ chatContext: null });
     logEl.innerHTML = "";
     resetState();
@@ -895,6 +911,7 @@
   function openBoard(phrase) {
     var goBoard = function (s) {
       addMsg("Otwieram tablicę odjazdów: " + s.name + "…", "bot");
+      flushCtxToProfile(true);
       location.href = "/?station=" + encodeURIComponent(s.name);
     };
     var m = matchStation(phrase);
@@ -1090,6 +1107,7 @@
     // komunikat zaczyna migać — jak „Szukam połączeń…” w planerze.
     setTimeout(function () { if (opening && opening.classList) opening.classList.add("ca-wait"); }, 1500);
     if (!(window.ProfileSync && ProfileSync.getToken())) { try { sessionStorage.setItem(ASK_FLAG, "1"); } catch (e) {} }
+    flushCtxToProfile(true);
     location.href = "/planer/?" + q.toString();
   }
 

@@ -585,6 +585,23 @@ test("„Szukaj” otwiera planer z parametrami", async () => {
   expect(msg && msg.classList.contains("ca-wait"), "„Otwieram planer…” nie miga po 1,5 s");
 });
 
+test("pamięć rozmowy: do profilu (KV) dopiero przy zamknięciu, nie po każdej wiadomości", async () => {
+  const c = await session();
+  const pushes = [];
+  const PS = { getToken: () => "tok", push: p => { pushes.push(p); return Promise.resolve(); }, pushBeacon: p => { pushes.push(p); return true; }, pull: () => Promise.resolve({}) };
+  c.env.window.ProfileSync = PS; c.env.ProfileSync = PS;
+  await c.say("z Bytomia do Gliwic");
+  await c.say("jutro o 7");
+  await c.say("bez Intercity");
+  await new Promise(r => setTimeout(r, 900));
+  const chatPushes = () => pushes.filter(p => "chatContext" in p).length;
+  expect(chatPushes() === 0, "zapisy do profilu w trakcie rozmowy: " + chatPushes());
+  await c.clickHeader(".ca-x");
+  expect(chatPushes() === 1, "po zamknięciu oczekiwano 1 zapisu, jest " + chatPushes());
+  await c.clickHeader(".ca-x");
+  expect(chatPushes() === 1, "drugie zamknięcie bez zmian nie powinno zapisywać: " + chatPushes());
+});
+
 test("czyść historię pyta o potwierdzenie", async () => {
   const c = await session();
   await c.say("z Bytomia do Gliwic");
