@@ -533,6 +533,36 @@ test("„rano” → przyciski z godzinami", async () => {
   expect(c.state().time === "07:00", "godzina " + c.state().time);
 });
 
+test("pytanie o porę nie gubi stacji: „Opole Groszowice do Tarnowskie Góry jutro ostatnie połączenie”", async () => {
+  const c = await session();
+  await c.say("Opole Groszowice do Tarnowskie Góry jutro ostatnie poąłczenie");
+  expectSaid(c, "O której");
+  await c.click("18:00");
+  const st = c.state();
+  expectStation(st, "from", "Opole Groszowice"); expectStation(st, "to", "Tarnowskie Góry");
+  expect(st.date === TOMORROW && st.time === "18:00", "termin " + st.date + " " + st.time);
+  expectSaid(c, "Szukać?");
+});
+
+test("wybór jednej stacji z listy nie gubi drugiej: „z Krakowa do Gliwic”", async () => {
+  const c = await session();
+  await c.say("z Krakowa do Gliwic jutro o 7");
+  await c.click("Kraków Główny");
+  expectStation(c.state(), "from", "Kraków Główny"); expectStation(c.state(), "to", "Gliwice");
+  expectSaid(c, "Szukać?");
+});
+
+test("nieznany przewoźnik i zły czas przesiadki nie gubią stacji", async () => {
+  const c = await session();
+  await c.say("z Bytomia do Gliwic bez kogoś 7 minut na przesiadkę rano");
+  await c.click("Koleje Śląskie");
+  await c.click("10 min");
+  await c.click("07:00");
+  const st = c.state();
+  expectStation(st, "from", "Bytom"); expectStation(st, "to", "Gliwice");
+  expect(st.exclude.some(x => x.code === "KS") && st.transfer === 10 && st.time === "07:00", "stan: " + JSON.stringify({ ex: st.exclude.map(x => x.code), tr: st.transfer, t: st.time }));
+});
+
 test("przez stację", async () => {
   const c = await session();
   await c.say("jutro z Tarnowskich Gór do Katowic przez Chorzów Batory");

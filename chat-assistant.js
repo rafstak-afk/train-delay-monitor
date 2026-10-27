@@ -841,15 +841,20 @@
     if (p.date) st.date = p.date;
     if (p.time) st.time = p.time;
     if (p.direct) st.direct = true;
-    if (p.transfer != null && !applyTransfer(p.transfer)) return;
     p.exclude.forEach(addExclude);
+    // Wszystko, co padło w wiadomości, idzie do KOLEJKI rozpatrywanej po
+    // kolei w next(): stacje (z ewentualnym dopytaniem), potem przewoźnik,
+    // przesiadka i pora. Wcześniej pytanie o porę („ostatnie połączenie”)
+    // albo o jedną ze stacji kończyło obsługę i reszta wiadomości przepadała.
+    st.queue = [];
+    if (answerKind) st.queue.push({ kind: answerKind, phrase: p.lead });
+    if (p.from) st.queue.push({ kind: "from", phrase: p.from });
+    if (p.to) st.queue.push({ kind: "to", phrase: p.to });
+    if (p.via) st.queue.push({ kind: "via", phrase: p.via });
     var vagueCarrier = p.vague.filter(function (v) { return v.kind === "carrier"; })[0];
-    if (vagueCarrier) { askCarrier("Nie rozpoznałem przewoźnika „" + vagueCarrier.text + "”. Którego wykluczyć?"); return; }
-    if (p.vague.some(function (v) { return v.kind === "time"; }) && !st.time) { askTime("O której godzinie mniej więcej? Kliknij albo napisz np. „7:30”."); return; }
-    if (answerKind && !resolveStation(answerKind, p.lead)) return;
-    if (p.from && !resolveStation("from", p.from)) return;
-    if (p.to && !resolveStation("to", p.to)) return;
-    if (p.via && !resolveStation("via", p.via)) return;
+    if (vagueCarrier) st.askCarrierText = vagueCarrier.text;
+    if (p.transfer != null) { if (TRANSFER_OPTIONS.indexOf(p.transfer) >= 0) st.transfer = p.transfer; else st.badTransfer = true; }
+    if (p.vague.some(function (v) { return v.kind === "time"; }) && !p.time) { st.time = null; st.needTime = true; }
     next();
   }
 
@@ -875,6 +880,7 @@
     st.from = null; st.to = null; st.via = null; st.date = null; st.time = null;
     st.direct = false; st.exclude = []; st.transfer = null;
     st.wizard = false; st.wdone = {};
+    st.queue = []; st.askCarrierText = null; st.badTransfer = false; st.needTime = false;
   }
   // Jedna stacja bez „z/do” — nie zgadujemy kierunku.
   function askDirection(p, phrase) {
@@ -1064,9 +1070,16 @@
   }
 
   function next() {
+    while (st.queue && st.queue.length) {
+      var q = st.queue.shift();
+      if (!resolveStation(q.kind, q.phrase)) return; // dopytanie — po wyborze next() wraca tutaj
+    }
     if (!st.from) { askStation("from", "Skąd jedziesz? Kliknij albo wpisz nazwę stacji."); return; }
     if (!st.to) { askStation("to", "Dokąd jedziesz? Kliknij albo wpisz nazwę stacji."); return; }
     if (st.from.id === st.to.id) { st.to = null; askStation("to", "Stacja docelowa jest taka sama jak początkowa. Dokąd jedziesz?"); return; }
+    if (st.askCarrierText) { var ct = st.askCarrierText; st.askCarrierText = null; askCarrier("Nie rozpoznałem przewoźnika „" + ct + "”. Którego wykluczyć?"); return; }
+    if (st.badTransfer) { st.badTransfer = false; askTransfer("Czas na przesiadkę mogę ustawić tylko na jedną z tych wartości — wybierz:"); return; }
+    if (st.needTime) { st.needTime = false; if (!st.time) { askTime("O której godzinie mniej więcej? Kliknij albo napisz np. „7:30”."); return; } }
     if (st.wizard && wizardStep()) return;
     summary();
   }
