@@ -114,6 +114,15 @@ async function session() {
       b.click(); await flush(); api.last = botText(fresh()); return api.last;
     },
     options,
+    // pisanie (bez wysyłania) — zwraca podpowiedzi stacji nad polem
+    type(text) { input.value = text; input.dispatch("input"); return panel.querySelector(".ca-suggest").children.map(n => n.textContent); },
+    pickSuggestion(name) {
+      const b = panel.querySelector(".ca-suggest").children.find(n => n.textContent === name);
+      if (!b) throw new Error("brak podpowiedzi „" + name + "”");
+      b.dispatch("mousedown"); b.click(); return input.value;
+    },
+    key(k) { input.dispatch("keydown", { key: k }); return input.value; },
+    inputValue: () => input.value,
     clickHeader(cls) { panel.querySelector(cls).click(); return flush().then(() => { api.last = botText(fresh()); return api.last; }); },
     last: ""
   };
@@ -357,6 +366,45 @@ test("stacja dwuczłonowa wpisana sama to JEDNA stacja (nie dwie)", async () => 
     expectStation(c.state(), "from", want);
     expectEmpty(c.state(), "to");
   }
+});
+
+test("podpowiedzi stacji przy pisaniu (jak w planerze)", async () => {
+  const c = await session();
+  const cases = [
+    ["z Tarnowskich G", "Tarnowskie Góry"],
+    ["jutro do Krak", "Kraków Główny"],
+    ["Byt", "Bytom"]
+  ];
+  // większe miasto (więcej stacji) przed małą miejscowością
+  const ch = c.type("z Bytomia do Gliwic przez Chorz");
+  expect(ch[0].indexOf("Chorzów") === 0 && ch.slice(0, 3).includes("Chorzów Batory"), "Chorz: " + ch.join(" | "));
+  for (const [txt, first] of cases) {
+    const s = c.type(txt);
+    expect(s[0] === first, "„" + txt + "”: pierwsza podpowiedź „" + s[0] + "”, oczekiwano „" + first + "” (" + s.join(" | ") + ")");
+    expect(s.length <= 6, "za dużo podpowiedzi: " + s.length);
+  }
+  // bez ulubionych obie „Tarnowsk…” są na liście; z ulubionymi — Twoja pierwsza
+  const tw = c.type("z Tarnowsk");
+  expect(tw.includes("Tarnowskie Góry") && tw.includes("Tarnowska Wola"), "z Tarnowsk: " + tw.join(" | "));
+  c.env.localStorage.setItem("plkFavoriteStations", JSON.stringify(["Tarnowskie Góry"]));
+  expect(c.type("z Tarnowsk")[0] === "Tarnowskie Góry", "ulubiona nie jest pierwsza: " + c.type("z Tarnowsk").join(" | "));
+  for (const txt of ["z Bytomia do Gliwic jutro", "jutro o 7", "z Bytomia do Gliwic ", "tak", "a"]) {
+    const s = c.type(txt);
+    expect(!s.length, "„" + txt + "” nie powinno mieć podpowiedzi: " + s.join(" | "));
+  }
+});
+
+test("wybór podpowiedzi wstawia pełną nazwę; strzałki + Enter też", async () => {
+  const c = await session();
+  c.type("z Krak");
+  const v = c.pickSuggestion("Kraków Główny");
+  expect(v === "z Kraków Główny ", "pole: „" + v + "”");
+  c.type("z Kraków Główny do Gliw");
+  c.key("ArrowDown");
+  const v2 = c.key("Enter");
+  expect(v2 === "z Kraków Główny do Gliwice ", "pole po Enter: „" + v2 + "”");
+  await c.say(c.inputValue());
+  expectStation(c.state(), "from", "Kraków Główny"); expectStation(c.state(), "to", "Gliwice");
 });
 
 test("myślnik: Katowice - Gliwice", async () => {

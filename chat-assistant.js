@@ -423,6 +423,9 @@
       ".ca-opts{display:flex;flex-wrap:wrap;gap:6px;align-self:flex-start;max-width:100%}" +
       ".ca-opt{border:1px solid #48627c;background:#172433;color:#fff;border-radius:999px;padding:7px 12px;font-size:13px;cursor:pointer}" +
       ".ca-opt:hover{border-color:#22d3ee}.ca-opt.primary{background:#0b57d0;border-color:#0b57d0;font-weight:800}" +
+      ".ca-suggest{display:none;flex-direction:column;border-top:1px solid #34495e;background:#172433;max-height:40vh;overflow-y:auto}.ca-suggest.open{display:flex}" +
+      ".ca-sug{border:0;border-bottom:1px solid #22303f;background:transparent;color:#fff;text-align:left;padding:10px 14px;font-size:14px;cursor:pointer}" +
+      ".ca-sug:hover,.ca-sug.active{background:#0b57d0}" +
       ".ca-form{display:flex;gap:6px;padding:10px;border-top:1px solid #34495e;align-items:stretch}" +
       ".ca-form input{flex:1;min-width:0;padding:10px 12px;border-radius:10px;border:1px solid #48627c;background:#223244;color:#fff;font-size:15px}" +
       ".ca-form button{border:0;border-radius:10px;padding:0 12px;background:#0b57d0;color:#fff;font-size:16px;cursor:pointer}" +
@@ -508,6 +511,7 @@
     panel.innerHTML =
       '<div class="ca-head">💬 <span>' + esc(T("chat.title")) + '</span><span class="ca-beta">BETA</span><button type="button" class="ca-clear" title="' + esc(T("chat.clear")) + '" aria-label="' + esc(T("chat.clear")) + '">🗑️<span class="ca-clear-txt"> ' + esc(T("chat.clear")) + '</span></button><button type="button" class="ca-x" aria-label="' + esc(T("chat.close")) + '">✕</button></div>' +
       '<div class="ca-log" aria-live="polite"></div>' +
+      '<div class="ca-suggest" role="listbox"></div>' +
       '<form class="ca-form"><input type="text" autocomplete="off" placeholder="' + esc(T("chat.placeholder")) + '">' +
       '<button type="button" class="ca-mic" title="' + esc(T("chat.mic")) + '" aria-label="' + esc(T("chat.mic")) + '">🎤</button>' +
       '<button type="submit" title="' + esc(T("chat.send")) + '" aria-label="' + esc(T("chat.send")) + '">➤</button></form>';
@@ -522,13 +526,101 @@
       var v = inputEl.value.trim();
       if (!v) return;
       inputEl.value = "";
+      closeSuggest();
       onUser(v);
+    });
+    sugEl = panel.querySelector(".ca-suggest");
+    inputEl.addEventListener("input", function () { loadStations().then(renderSuggest).catch(function () {}); renderSuggest(); });
+    inputEl.addEventListener("keydown", function (e) {
+      var items = sugEl.children || sugEl.childNodes;
+      if (!sugList.length) return;
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        if (e.preventDefault) e.preventDefault();
+        sugIdx = e.key === "ArrowDown" ? (sugIdx + 1) % sugList.length : (sugIdx <= 0 ? sugList.length - 1 : sugIdx - 1);
+        for (var i = 0; i < items.length; i++) items[i].classList[i === sugIdx ? "add" : "remove"]("active");
+      } else if (e.key === "Enter" && sugIdx >= 0) {
+        if (e.preventDefault) e.preventDefault();
+        if (e.stopPropagation) e.stopPropagation();
+        pickSuggest(sugList[sugIdx]);
+      } else if (e.key === "Escape") {
+        if (e.stopPropagation) e.stopPropagation();
+        closeSuggest();
+      }
     });
     var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) micBtn.style.display = "none";
     else micBtn.addEventListener("click", function () { recog ? stopMic() : startMic(SR); });
     document.addEventListener("keydown", function (e) { if (e.key === "Escape" && panel.classList.contains("open")) closePanel(); });
   }
+
+  // ---------- podpowiedzi stacji przy pisaniu ----------
+  // Jak pole „Skąd” w planerze: piszesz „z Tarnowsk…” → lista stacji, główna
+  // pierwsza; klik albo ↑/↓ + Enter wstawia pełną nazwę. Lista jest lokalna
+  // (data/stations-pl.json), bez zapytań do PLK.
+  var sugEl = null, sugList = [], sugIdx = -1, sugFrag = null;
+  var SUG_MARK = /^(z|ze|od|do|przez)$/;
+  // Przybliżenie wielkości miasta: ile stacji ma tę samą pierwszą część nazwy
+  // (Chorzów: Batory/Miasto/Stary → 3, Chorzele → 1). Liczone raz.
+  var cityCount = null;
+  function cityN(s) {
+    if (!cityCount) { cityCount = {}; stations.forEach(function (x) { var k = x.words[0] || ""; cityCount[k] = (cityCount[k] || 0) + 1; }); }
+    return cityCount[s.words[0] || ""] || 0;
+  }
+  function sugTier(s) { var n = fold(s.name); return /(^| )(glown\w*|centraln\w*)( |$)/.test(n) ? 0 : (s.words.length === 1 ? 1 : 2); }
+  function suggestFor(text) {
+    if (!stations) return null;
+    var raw = String(text || "");
+    var toks = raw.trim().split(/\s+/).filter(Boolean);
+    if (!toks.length) return null;
+    var last = -1;
+    for (var i = 0; i < toks.length; i++) if (SUG_MARK.test(fold(toks[i]))) last = i;
+    var frag = toks.slice(last + 1);
+    if (!frag.length || frag.length > 4) return null;
+    var fw = frag.map(fold).join(" ").split(" ").filter(Boolean);
+    if (!fw.length || fw.join("").length < 2) return null;
+    // w końcówce są słowa pomocnicze/godziny/daty — to już nie nazwa stacji
+    if (fw.some(function (w) { return MARKERS.test(w) || /^\d/.test(w) || /^(tak|nie|teraz)$/.test(w); })) return null;
+    var pre = function (q, w) { if (w.indexOf(q) === 0) return true; var sq = stem(q); return sq.length >= 3 && sq !== q && w.indexOf(sq) === 0; };
+    var list = stations.filter(function (s) {
+      if (!pre(fw[0], s.words[0] || "")) return false;
+      return fw.slice(1).every(function (q) { return s.words.slice(1).some(function (w) { return pre(q, w); }); });
+    });
+    var fragFold = fw.join(" ");
+    // nazwa już kompletna (np. po wybraniu podpowiedzi i spacji) — nic nie pokazujemy
+    if (/\s$/.test(raw) && (list.some(function (s) { return fold(s.name) === fragFold; }) || matchStation(frag.join(" ")).exact)) return null;
+    // Twoje stacje (ulubione + ostatnio szukane z tablicy) zaraz po głównych.
+    var mine = {};
+    myStations().forEach(function (m) { mine[m.id] = true; });
+    var own = function (x) { return mine[x.id] ? 0 : 1; };
+    list.sort(function (a, b) {
+      return (sugTier(a) === 0 ? 0 : 1) - (sugTier(b) === 0 ? 0 : 1) || own(a) - own(b) || cityN(b) - cityN(a) || (a.words[0] < b.words[0] ? -1 : a.words[0] > b.words[0] ? 1 : 0) || sugTier(a) - sugTier(b) || (fold(a.name).indexOf(fragFold) === 0 ? 0 : 1) - (fold(b.name).indexOf(fragFold) === 0 ? 0 : 1) || a.name.length - b.name.length || (a.name < b.name ? -1 : 1);
+    });
+    return { list: list.slice(0, 6), start: raw.length - raw.replace(/^\s+/, "").length, keep: toks.slice(0, last + 1).join(" ") };
+  }
+  function renderSuggest() {
+    if (!sugEl) return;
+    var r = suggestFor(inputEl.value);
+    sugEl.innerHTML = "";
+    sugList = r ? r.list : []; sugIdx = -1; sugFrag = r;
+    if (!sugList.length) { sugEl.classList.remove("open"); return; }
+    sugList.forEach(function (st0) {
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "ca-sug"; b.textContent = st0.name;
+      b.setAttribute("role", "option");
+      // mousedown: nie zabieramy fokusu polu (klawiatura na telefonie zostaje)
+      b.addEventListener("mousedown", function (e) { if (e.preventDefault) e.preventDefault(); });
+      b.addEventListener("click", function () { pickSuggest(st0); });
+      sugEl.appendChild(b);
+    });
+    sugEl.classList.add("open");
+  }
+  function pickSuggest(st0) {
+    var keep = sugFrag && sugFrag.keep ? sugFrag.keep + " " : "";
+    inputEl.value = keep + st0.name + " ";
+    closeSuggest();
+    if (inputEl.focus) inputEl.focus();
+  }
+  function closeSuggest() { sugList = []; sugIdx = -1; if (sugEl) { sugEl.innerHTML = ""; sugEl.classList.remove("open"); } }
 
   function startMic(SR) {
     try {
@@ -1019,5 +1111,5 @@
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
 
-  window.ChatAssistant = { open: openPanel, _state: function () { return st; }, _parse: parse, _matchStation: matchStation, _loadStations: loadStations };
+  window.ChatAssistant = { open: openPanel, _suggest: suggestFor, _state: function () { return st; }, _parse: parse, _matchStation: matchStation, _loadStations: loadStations };
 })();
