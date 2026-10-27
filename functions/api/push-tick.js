@@ -454,6 +454,38 @@ async function notifyForSource(env, token, subs, items, stateField, legacyField,
   return changed ? kept : subs;
 }
 
+// Raz w miesiącu (dane wolnozmienne): czy PLK nie dodało/zmieniło typów utrudnień (kod utr_NN →
+// tekst). Nowy typ = brak tłumaczenia w i18n/*.json, więc autor dostaje
+// push (profile z flagą showVersion — patrz profile-sync.js ?wersja=1).
+// Pierwsze uruchomienie tylko zapisuje stan wyjściowy, bez powiadomienia.
+const DT_KNOWN_KEY = "disruptionTypes:known";
+const DT_CHECKED_PREFIX = "disruptionTypes:checked:";
+async function checkDisruptionTypes(env, origin, today, summary) {
+  const month = String(today).slice(0, 7); // YYYY-MM — jedno sprawdzenie na miesiąc
+  if (await env.USER_PROFILES.get(DT_CHECKED_PREFIX + month)) return null;
+  const data = await fetchJson(origin, "/api/disruption-types");
+  await env.USER_PROFILES.put(DT_CHECKED_PREFIX + month, "1", { expirationTtl: 60 * 60 * 24 * 40 });
+  if (!data || !data.ok || !data.count) { summary.errors.push("disruption-types: brak danych"); return null; }
+  const current = data.types;
+  const knownRaw = await env.USER_PROFILES.get(DT_KNOWN_KEY);
+  await env.USER_PROFILES.put(DT_KNOWN_KEY, JSON.stringify(current));
+  if (!knownRaw) return null;
+  let known = {};
+  try { known = JSON.parse(knownRaw) || {}; } catch (e) {}
+  const changes = Object.keys(current).filter(k => known[k] !== current[k]).map(k => `${k}: ${current[k]}`);
+  if (!changes.length) return null;
+  summary.disruptionTypeChanges = changes;
+  return changes;
+}
+
+function disruptionTypesPayload(changes) {
+  return {
+    title: "🆕 Nowe typy utrudnień PLK",
+    body: `${changes.length} do przetłumaczenia: ${changes.slice(0, 3).join(" · ")}${changes.length > 3 ? " …" : ""}`,
+    url: "/"
+  };
+}
+
 export async function onRequestPost(context) {
   const { request, env } = context;
 
@@ -470,6 +502,10 @@ export async function onRequestPost(context) {
   const summary = { profilesChecked: 0, profilesNotified: 0, trainsChecked: 0, trainsSkipped: 0, stationsChecked: 0, pushSent: 0, pushPruned: 0, errors: [] };
   const now = warsawNow();
   const nowMinutes = minutesOf(now.time);
+
+  let dtChanges = null;
+  try { dtChanges = await checkDisruptionTypes(env, origin, warsawNow().date, summary); }
+  catch (e) { summary.errors.push(`disruption-types: ${e.message}`); }
 
   let cursor;
   do {
@@ -490,6 +526,12 @@ export async function onRequestPost(context) {
       if (!profile) continue;
 
       const subs = Array.isArray(profile.pushSubscriptions) ? profile.pushSubscriptions : [];
+      if (dtChanges && profile.showVersion === true) {
+        for (const sub of subs) {
+          try { await sendPush(env, sub, disruptionTypesPayload(dtChanges)); summary.pushSent++; }
+          catch (e) { summary.errors.push(`${token} push (disruption-types): ${e.message}`); }
+        }
+      }
       const trains = Array.isArray(profile.trains) ? profile.trains : [];
       const watchedStations = (Array.isArray(profile.watchedStations) ? profile.watchedStations : [])
         .filter(Boolean).slice(0, MAX_WATCHED_STATIONS);
