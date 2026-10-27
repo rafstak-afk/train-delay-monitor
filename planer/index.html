@@ -28,7 +28,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
 .station-dropdown{display:none;position:absolute;z-index:10000;top:calc(100% + 4px);left:0;right:0;background:#172433;border:1px solid #48627c;border-radius:12px;box-shadow:0 14px 35px rgba(0,0,0,.45);max-height:280px;overflow:auto;text-align:left}
 .station-dropdown.open{display:block}
 .station-dd-item{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;width:100%;border:0;border-bottom:1px solid rgba(255,255,255,.07);background:transparent;color:#fff;padding:10px 12px;text-align:left;cursor:pointer;font-family:inherit}
-.station-dd-item:hover{background:#223244}
+.station-dd-item:hover,.station-dd-item.active{background:#223244}
 .station-dd-name{font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .station-dd-id{opacity:.65;font-size:12px}
 .date-time-row{display:flex;gap:8px;margin-bottom:12px}
@@ -361,6 +361,29 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     if(el)el.classList.remove('open');
   }
 
+  // Klawiatura na liście podpowiedzi: ↓/↑ przesuwa zaznaczenie, Enter
+  // wybiera zaznaczoną (albo pierwszą) stację, Esc zamyka listę.
+  // `afterPick` — co dalej po Enterze (np. start wyszukiwania).
+  function handleDropdownKey(e,side,afterPick){
+    var el=$(side+'Dropdown')||document.querySelector('.station-dropdown[data-key="'+side+'"]');
+    var items=el&&el.classList.contains('open')?[].slice.call(el.querySelectorAll('.station-dd-item')):[];
+    var cur=items.findIndex(function(b){return b.classList.contains('active')});
+    if(e.key==='ArrowDown'||e.key==='ArrowUp'){
+      if(!items.length)return;
+      e.preventDefault();
+      var next=e.key==='ArrowDown'?Math.min(cur+1,items.length-1):Math.max(cur-1,0);
+      items.forEach(function(b,i){b.classList.toggle('active',i===next)});
+      items[next].scrollIntoView({block:'nearest'});
+    }else if(e.key==='Enter'){
+      e.preventDefault();
+      clearTimeout(searchTimers[side]);
+      if(items.length)items[cur>=0?cur:0].click();
+      if(afterPick)afterPick();
+    }else if(e.key==='Escape'){
+      hideDropdown(side);
+    }
+  }
+
   function fetchStations(side,query){
     if(!query||query.length<2){hideDropdown(side);return}
     fetch('/api/dictionaries/stations?search='+encodeURIComponent(query)+'&pageSize=12',{headers:{Accept:'application/json'}})
@@ -381,6 +404,14 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     $(side+'Input').addEventListener('focus',function(){
       var q=this.value.trim();
       if(q.length>=2)fetchStations(side,q);
+    });
+    // Enter: zatwierdza stację i od razu szuka (z bieżącymi ustawieniami);
+    // w "Skąd" przy pustym "Dokąd" najpierw przechodzi do "Dokąd".
+    $(side+'Input').addEventListener('keydown',function(e){
+      handleDropdownKey(e,side,function(){
+        if(side==='from'&&!$('toInput').value.trim()){$('toInput').focus();return}
+        search();
+      });
     });
     $(side+'Dropdown').addEventListener('click',function(e){
       var btn=e.target.closest('.station-dd-item');
@@ -516,6 +547,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
         var q=this.value.trim();
         if(q.length>=2)fetchStations(key,q);
       });
+      inp.addEventListener('keydown',function(e){handleDropdownKey(e,key,null)});
     });
     container.querySelectorAll('.station-dropdown').forEach(function(dd){
       var key=dd.dataset.key;
@@ -753,8 +785,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
       var pIdx=Number(planBtn.dataset.idx);
       var pIt=lastItineraries[pIdx];
       if(pIt&&lastQuery){
-        addItineraryToJournalPlan(pIt,lastQuery);
-        planBtn.textContent='✅ Dodano do dziennika';
+        planBtn.textContent=planAddedLabel(addItineraryToJournalPlan(pIt,lastQuery));
         planBtn.disabled=true;
       }
       return;
@@ -829,11 +860,25 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     }
     return null;
   }
+  // Ten sam przejazd = ta sama data, numer pociągu i para stacji (albo ten
+  // sam _key). Klucz w formacie strony biegu pociągu (journeyKey w
+  // functions/train.js) — wcześniej planer używał krótszego klucza bez
+  // stacji, więc potwierdzony z planu wpis nie rozpoznawał już istniejącego
+  // w dzienniczku i powstawał duplikat.
+  function sameJourneyPlan(a,b){
+    return a._key===b._key||(a.date===b.date&&String(a.trainNumber||'')===String(b.trainNumber||'')&&
+      normStationPlan(a.boardStation)===normStationPlan(b.boardStation)&&normStationPlan(a.alightStation)===normStationPlan(b.alightStation));
+  }
+  function getJournalEntriesPlan(){try{var v=JSON.parse(localStorage.getItem('dziennikPodrozy'));return Array.isArray(v)?v:[]}catch(e){return[]}}
+  // Zwraca liczbę faktycznie dodanych nóg — nogi, które już są w
+  // dzienniczku, pomijamy (nie trafiają drugi raz do planu).
   function addItineraryToJournalPlan(it,query){
     var list=getJournalPlan();
+    var journal=getJournalEntriesPlan();
     var genericLabel=(query.from||'')+' → '+(query.to||'');
+    var added=0;
     it.legs.forEach(function(leg,idx){
-      var key=[query.date,leg.scheduleId,leg.orderId].join('|');
+      var key=[query.date,leg.scheduleId,leg.orderId,normStationPlan(leg.board.stationName),normStationPlan(leg.alight.stationName)].join('|');
       var typical=matchTypicalLegPlan(leg.board.stationName,leg.alight.stationName);
       var entry={
         _key:key,date:query.date,scheduleId:leg.scheduleId,orderId:leg.orderId,
@@ -845,13 +890,16 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
         distanceKm:typical?typical.distanceKm:null,
         createdAt:new Date().toISOString()
       };
+      if(journal.some(function(j){return sameJourneyPlan(j,entry)}))return;
       var dupIdx=-1;
-      for(var i=0;i<list.length;i++){if(list[i]._key===key){dupIdx=i;break}}
+      for(var i=0;i<list.length;i++){if(sameJourneyPlan(list[i],entry)){dupIdx=i;break}}
       if(dupIdx>=0)list[dupIdx]=entry;else list.push(entry);
+      added++;
     });
     saveJournalPlan(list);
-    return it.legs.length;
+    return added;
   }
+  function planAddedLabel(n){return n?'✅ Dodano do dziennika':'ℹ️ Już jest w dzienniczku'}
 
   function removeSavedResult(key){
     saveSavedResultsList(getSavedResults().filter(function(e){return e._key!==key}));
@@ -876,8 +924,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     if(planBtn){
       var saved=getSavedResults().find(function(x){return x._key===planBtn.dataset.savedKey});
       if(saved){
-        addItineraryToJournalPlan(saved.snapshot,saved.query);
-        planBtn.textContent='✅ Dodano do dziennika';
+        planBtn.textContent=planAddedLabel(addItineraryToJournalPlan(saved.snapshot,saved.query));
         planBtn.disabled=true;
       }
       return;
@@ -1048,25 +1095,39 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     if(excludedCarriers.size)params.set('excludeCarriers',[...excludedCarriers].join(','));
     if($('directOnlyCheckbox').checked)params.set('maxTransfers','0');
 
-    fetch('/api/planner?'+params.toString(),{headers:{Accept:'application/json'}})
-      .then(function(r){return r.json().then(function(data){return {ok:r.ok,data:data}}) })
-      .then(function(res){
-        btn.disabled=false;
-        if(!res.ok||!res.data.ok){
-          $('resultsStatus').className='status err';
-          $('resultsStatus').textContent=res.data.error||'Błąd wyszukiwania połączeń.';
+    // Błąd bez komunikatu z naszego API (np. przekroczony limit czasu
+    // Cloudflare przy pierwszym, nieskeszowanym wyszukiwaniu długiej trasy)
+    // ponawiamy raz automatycznie — druga próba korzysta z rozkładów, które
+    // pierwsza zdążyła już pobrać do cache, więc zwykle przechodzi.
+    function attempt(retry){
+      fetch('/api/planner?'+params.toString(),{headers:{Accept:'application/json'}})
+        .then(function(r){return r.json().catch(function(){return {}}).then(function(data){return {ok:r.ok,status:r.status,data:data}}) })
+        .then(function(res){
+          if(!res.ok||!res.data.ok){
+            if(!res.data.error&&!retry){
+              $('resultsStatus').textContent='Szukam połączeń... (ponawiam, serwer potrzebował więcej czasu)';
+              setTimeout(function(){attempt(true)},1500);
+              return;
+            }
+            btn.disabled=false;
+            $('resultsStatus').className='status err';
+            $('resultsStatus').textContent=res.data.error||('Błąd wyszukiwania połączeń (serwer: '+res.status+'). Spróbuj ponownie za chwilę.');
+            scrollToResults();
+            return;
+          }
+          btn.disabled=false;
+          renderResults(res.data);
           scrollToResults();
-          return;
-        }
-        renderResults(res.data);
-        scrollToResults();
-      })
-      .catch(function(){
-        btn.disabled=false;
-        $('resultsStatus').className='status err';
-        $('resultsStatus').textContent='Nie udało się połączyć z API.';
-        scrollToResults();
-      });
+        })
+        .catch(function(){
+          if(!retry){setTimeout(function(){attempt(true)},1500);return}
+          btn.disabled=false;
+          $('resultsStatus').className='status err';
+          $('resultsStatus').textContent='Nie udało się połączyć z API.';
+          scrollToResults();
+        });
+    }
+    attempt(false);
   }
   window.search=search;
 

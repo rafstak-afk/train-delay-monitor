@@ -520,6 +520,19 @@ function normStation(s){return String(s||'').trim().toLowerCase()}
 function toMinutesJ(t){const m=String(t||'').match(/(\d{1,2}):(\d{2})/);return m?Number(m[1])*60+Number(m[2]):null}
 function durationMinJ(fromT,toT){const a=toMinutesJ(fromT),b=toMinutesJ(toT);if(a==null||b==null)return null;let d=b-a;if(d<0)d+=1440;return d}
 function journeyKey(date,scheduleId,orderId,boardStation,alightStation){return[date,scheduleId||'',orderId||'',normStation(boardStation),normStation(alightStation)].join('|')}
+// Ten sam przejazd = ten sam _key ALBO ta sama data, numer pociągu i para
+// stacji — klucze z różnych dróg dodawania (bieg pociągu, planer) bywały
+// różne i ten sam przejazd lądował w dzienniczku dwa razy. Przy powtórce
+// podmieniamy istniejący wpis (zachowując jego _key) zamiast dokładać nowy.
+function sameJourney(a,b){
+  return a._key===b._key||(a.date===b.date&&String(a.trainNumber||'')===String(b.trainNumber||'')&&
+    normStation(a.boardStation)===normStation(b.boardStation)&&normStation(a.alightStation)===normStation(b.alightStation));
+}
+function upsertJournalEntry(list,entry){
+  const i=list.findIndex(e=>sameJourney(e,entry));
+  if(i>=0){entry._key=list[i]._key;list[i]=entry}else list.push(entry);
+  return list;
+}
 function findExistingEntry(date,scheduleId,orderId,boardStation,alightStation){
   const key=journeyKey(date,scheduleId,orderId,boardStation,alightStation);
   return getJournalEntries().find(e=>e._key===key)||null;
@@ -884,8 +897,7 @@ function saveTypicalJourney(){
   showJournalSaveError(null);
   try{
     const entry=buildJournalEntry(currentTrainData,currentStations,tripMatch.boardIdx,tripMatch.alightIdx,tripMatch);
-    const list=getJournalEntries();
-    list.push(entry);
+    const list=upsertJournalEntry(getJournalEntries(),entry);
     const ok=saveJournalEntries(list)&&getJournalEntries().some(e=>e._key===entry._key);
     if(!ok)throw new Error('not persisted');
   }catch(e){
@@ -910,8 +922,7 @@ function saveManualJourney(){
   const meta=typicalMetaForMarks();
   if(meta&&markMode!=='edit'){
     const entry=buildJournalEntry(currentTrainData,currentStations,markBoardIdx,markAlightIdx,meta);
-    const list=getJournalEntries();
-    list.push(entry);
+    const list=upsertJournalEntry(getJournalEntries(),entry);
     saveJournalEntries(list);
     clearMarksAfterSave();
     return;
@@ -951,8 +962,7 @@ function confirmManualSave(){
     const entry=buildJournalEntry(currentTrainData,currentStations,markBoardIdx,markAlightIdx,meta);
     entry.distanceKm=km;
     if(name)entry.tripLabel=name;
-    const list=getJournalEntries();
-    list.push(entry);
+    const list=upsertJournalEntry(getJournalEntries(),entry);
     const ok=saveJournalEntries(list)&&getJournalEntries().some(e=>e._key===entry._key);
     if(!ok)throw new Error('not persisted');
     // Zaznaczenie czyścimy TYLKO po potwierdzonym sukcesie — przy błędzie

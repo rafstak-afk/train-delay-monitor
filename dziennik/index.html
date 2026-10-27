@@ -300,8 +300,11 @@ async function tryConfirmPlanEntry(e){
       createdAt:new Date().toISOString()
     };
     const journal=getJournalEntries();
-    const dupIdx=journal.findIndex(x=>x._key===journalEntry._key);
-    if(dupIdx>=0)journal[dupIdx]=journalEntry;else journal.push(journalEntry);
+    // Ten sam przejazd mógł już trafić do dzienniczka inną drogą (bieg
+    // pociągu) pod innym kluczem — porównujemy też datę, pociąg i stacje.
+    const ns=s=>String(s||'').trim().toLowerCase();
+    const dupIdx=journal.findIndex(x=>x._key===journalEntry._key||(x.date===journalEntry.date&&String(x.trainNumber||'')===String(journalEntry.trainNumber||'')&&ns(x.boardStation)===ns(journalEntry.boardStation)&&ns(x.alightStation)===ns(journalEntry.alightStation)));
+    if(dupIdx>=0){journalEntry._key=journal[dupIdx]._key;journal[dupIdx]=journalEntry}else journal.push(journalEntry);
     saveJournalEntries(journal);
     markPlanEntryRemoved(e._key);
     savePlannedTrips(getPlannedTrips().filter(x=>x._key!==e._key));
@@ -805,6 +808,7 @@ function showConfirm(message,onConfirm){
 }
 
 // === Eksport do XLSX ===
+function durationOrEmpty(a,b){const d=durationMinJ(a,b);return d!=null?d:''}
 function exportToXlsx(){
   const raw=[...getJournalEntries()].sort((a,b)=>(a.date+String(a.plannedDeparture||'')).localeCompare(b.date+String(b.plannedDeparture||'')));
   if(!raw.length){showConfirm('Dzienniczek jest pusty — nie ma czego eksportować.',()=>{});return}
@@ -819,8 +823,8 @@ function exportToXlsx(){
     'Przyjazd planowy':e.plannedArrival||'',
     'Przyjazd rzeczywisty':e.actualArrival||'',
     'Opóźnienie (min)':e.delayMinutes||0,
-    'Czas planowy (min)':e.plannedDurationMin!=null?e.plannedDurationMin:'',
-    'Czas rzeczywisty (min)':e.actualDurationMin!=null?e.actualDurationMin:'',
+    'Czas przejazdu planowany w min':e.plannedDurationMin!=null?e.plannedDurationMin:durationOrEmpty(e.plannedDeparture,e.plannedArrival),
+    'Czas przejazdu rzeczywisty w min':e.actualDurationMin!=null?e.actualDurationMin:durationOrEmpty(e.actualDeparture,e.actualArrival),
     'Trasa':e.tripLabel||'inna',
     'Odcinek':e.legNumber||'',
     'Km':e.distanceKm!=null?e.distanceKm:''

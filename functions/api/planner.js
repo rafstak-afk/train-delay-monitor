@@ -1139,9 +1139,33 @@ async function searchWithCSA({
     transferMinutes,
     maxResults
   );
-  const itineraries = rawLegs.map((legs) => csaLegsToItinerary(legs, from, to, stationNames, date));
+  // CSA zwraca dla każdego progu godzinowego tylko NAJWCZEŚNIEJSZY przyjazd,
+  // więc wolniejszy pociąg bezpośredni, który wyprzedza szybszy (albo
+  // wariant z przesiadką), w ogóle nie trafiał do wyników — zgłoszone na
+  // żywo: Os 40678 Katowice 15:01 → Częstochowa 16:57 (Portal Pasażera go
+  // pokazuje). Wszystkie bezpośrednie kursy A→B od zadanej godziny
+  // dokładamy osobno; dedupItineraries usuwa te, które CSA już znalazło.
+  const directLegs = findAllDirectLegs(sortedFinal, String(from.id), String(to.id), floorMin);
+  const itineraries = rawLegs.concat(directLegs).map((legs) => csaLegsToItinerary(legs, from, to, stationNames, date));
 
   return { itineraries, apiLimitsList, fetchedCount };
+}
+
+function findAllDirectLegs(sortedConnections, sourceId, destId, floorMin) {
+  const boards = new Map();
+  for (const c of sortedConnections) {
+    if (c.depStop === sourceId && c.depMin >= floorMin && !boards.has(c.tripId)) boards.set(c.tripId, c);
+  }
+  const results = [];
+  const done = new Set();
+  for (const c of sortedConnections) {
+    if (c.arrStop !== destId || done.has(c.tripId)) continue;
+    const b = boards.get(c.tripId);
+    if (!b || c.arrMin < b.depMin) continue;
+    done.add(c.tripId);
+    results.push([{ tripId: c.tripId, route: c.route, boardStop: sourceId, boardMin: b.depMin, boardLevel: 0, alightStop: destId, alightMin: c.arrMin }]);
+  }
+  return results;
 }
 
 // ============ Deduplikacja ============
@@ -1184,6 +1208,10 @@ function pruneDominated(itineraries) {
   const transferCount = (it) => (it.transfers || []).length;
 
   return itineraries.filter((it) => {
+    // Połączenie bezpośrednie zostaje zawsze, nawet "zdominowane" przez
+    // szybszy, późniejszy pociąg — wsiadasz w to, co odjeżdża, bez
+    // przesiadek (tak samo pokazuje je Portal Pasażera).
+    if (it.type === "direct") return true;
     const itDep = dep(it);
     const itArr = arr(it);
     const itTransfers = transferCount(it);
