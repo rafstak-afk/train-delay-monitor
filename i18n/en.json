@@ -330,5 +330,153 @@
     "retrying": "Searching for connections... (retrying, the server needed more time)",
     "serverError": "Connection search error (server: {status}). Please try again in a moment.",
     "apiFail": "Couldn't connect to the API."
+  },
+  "tutorial": {
+    "ui": {
+      "progress": "Step {n} of {total}",
+      "skip": "Skip",
+      "back": "Back",
+      "next": "Next",
+      "finish": "Finish",
+      "show": "Show the tutorial"
+    },
+    "guide": {
+      "s0": {
+        "title": "Create a profile",
+        "text": "Click this button. There's no password or sign-up — you only get a code (token) that is the key to your data."
+      },
+      "s1": {
+        "title": "This is your token",
+        "text": "16 characters. Whoever knows it has access to your data — so don't share it with anyone."
+      },
+      "s2": {
+        "title": "Save it",
+        "text": "Copy the token and keep it somewhere safe, e.g. in your notes. On another device, enter it under “Load profile” and everything will appear. From now on your favorites and trains are saved to your profile automatically."
+      }
+    },
+    "index": {
+      "s0": {
+        "title": "Start here",
+        "text": "Type the name of any station to check its departures."
+      },
+      "s1": {
+        "title": "Live board",
+        "text": "Click “Show live data” to see departures with real delays, not just the timetable."
+      },
+      "s2": {
+        "title": "Favorite stations",
+        "text": "Your pinned stations. Add your own with the ☆ star next to the board below."
+      },
+      "s3": {
+        "title": "Favorite trains",
+        "text": "⭐ The star next to every departure (and in the train details) adds it to “My trains” — from there, at a glance and without extra clicks, you'll see where it was last confirmed at a station and whether it's on time. Add several to follow a whole journey — a one-off trip or your daily commute."
+      },
+      "s4": {
+        "title": "More options in one place",
+        "text": "Press and hold (or right-click) any row — a menu opens with all the actions: details, favorites, calendar and journal at once."
+      },
+      "s5": {
+        "title": "Delay alarm",
+        "text": "Turn it on to get a notification about a delay or cancellation at the chosen station — it only works while this tab is open. If PLK gives a reason (e.g. “Rolling stock fault”), you'll see it under the alarm entry after clicking the small ⓘ."
+      },
+      "s6": {
+        "title": "Background alarm for this station",
+        "text": "👁 Watch in background — unlike the “Delay alarm” above, this works EVEN with the tab or app closed: you'll get a push notification about a delay or cancellation at this station wherever you are. Requires a profile — push notifications live on the server under your token."
+      },
+      "s7": {
+        "title": "Travel journal",
+        "text": "The menu (☰) has the 📓 Journal — it records your trips along with any delay."
+      },
+      "s8": {
+        "title": "Profile and sync",
+        "text": "Create a token here — 16 characters, no password or login — to sync favorite stations, trains, alarms and the journal across devices."
+      }
+    },
+    "mojePociagi": {
+      "s0": {
+        "title": "Your trains",
+        "text": "Here you see the status of every tracked service: delay, platform/track and the last confirmed station. Click a card to see the whole run."
+      },
+      "s1": {
+        "title": "Star and order",
+        "text": "The ★ star removes the train from the list (without confirmation) — click the same star on the board again to add it back. Use the ▲▼ arrows to change the order of the cards."
+      },
+      "s2": {
+        "title": "Background alarm",
+        "text": "Turn it on to get a push notification about a delay or cancellation of ANY of the trains tracked here — it works even with the app closed. Requires a profile."
+      },
+      "s3": {
+        "title": "Add a train",
+        "text": "Enter the station, number and planned time once — from then on you'll always see it here with its current status."
+      },
+      "s4": {
+        "title": "Refresh manually",
+        "text": "The list updates by itself when you come back after a longer break, but you can also refresh at any time."
+      },
+      "s5": {
+        "title": "Travel journal",
+        "text": "Your trips along with any delay — you add them on the train's run page."
+      },
+      "s6": {
+        "title": "Profile and sync",
+        "text": "The profile token takes this list, alarms and journal to every one of your devices."
+      }
+    },
+    "train": {
+      "s0": {
+        "title": "Add to My trains",
+        "text": "Click the star to keep this service at hand in My trains — with its current status, without searching again. A second click removes it from the list."
+      },
+      "s1": {
+        "title": "The whole run",
+        "text": "The train's entire route station by station: planned and actual times, delay, platform and track. If PLK gives a reason for the delay (e.g. “Rolling stock fault”), you'll see it in the red note under the header."
+      },
+      "s2": {
+        "title": "Travel journal",
+        "text": "Riding this train? Mark 🚏 where you board and 🏁 where you get off — we'll work out the rest. A floating save button appears at the bottom of the screen wherever you scroll. For a service that hasn't reached your exit station yet, instead of saving you'll see “📋 Add to plan” — an entry in the journal's travel plan, not a real trip yet."
+      }
+    },
+    "profil": {
+      "s0": {
+        "title": "New profile",
+        "text": "If you don't have a profile yet, create a new token here with one click."
+      },
+      "s1": {
+        "title": "Already have a token?",
+        "text": "Paste a token from another device here to load your favorite stations, trains, alarms, journal and favorite routes."
+      },
+      "s2": {
+        "title": "Unlink device",
+        "text": "Removes the token ONLY from this device — the data in the cloud stays and can still be loaded with the same token anywhere else."
+      }
+    },
+    "dziennik": {
+      "s0": {
+        "title": "Favorite routes",
+        "text": "Set up your recurring route once (e.g. home→work) — everything saves itself as you type. Then the app will ask on the train's run page whether to save a matching service. Use “➕ Add another route” to add as many as you like."
+      },
+      "s1": {
+        "title": "Travel plan",
+        "text": "Planning a route (e.g. with a change) and want to check it works before you leave? Mark the stations on each train's run and add “📋 To plan” — you'll see all legs here at once. When the train actually arrives, come back and click “✅ Confirm” (the trip goes to the entries below) or “❌ Reject”."
+      },
+      "s2": {
+        "title": "Saved trips",
+        "text": "Your saved, confirmed trips, newest first. You can edit them (🔓) — changes save themselves too — or download everything as XLSX."
+      }
+    },
+    "planer": {
+      "s0": {
+        "title": "Journey planner (beta)",
+        "text": "Enter where from and where to — it finds direct connections and ones with changes (even several) based on the PLK timetable, for the whole network, not just selected stations. We're still testing, so imperfections happen."
+      },
+      "s1": {
+        "title": "Advanced",
+        "text": "Minimum change time (3 min by default), the “Direct only” option (no changes), forcing a specific “via” station and excluding chosen operators from the results."
+      },
+      "s2": {
+        "title": "Save or add to the journal",
+        "text": "You can 💾 save any result to review later or 📋 add it to the travel plan in your journal — each leg separately. When you actually travel, you'll confirm the real trip in the journal with one click."
+      }
+    }
   }
 }

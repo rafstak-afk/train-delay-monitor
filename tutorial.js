@@ -33,6 +33,7 @@
   // profil jest już aktywny).
   const STEPS_BY_PAGE = [
     {
+      id: "index",
       match: function (p) { return p === "/" || p === "/index.html"; },
       steps: [
         { sel: ".search-box", title: "Zacznij tutaj", text: "Wpisz nazwę dowolnej stacji, żeby sprawdzić jej odjazdy." },
@@ -47,6 +48,7 @@
       ]
     },
     {
+      id: "mojePociagi",
       match: function (p) { return p.indexOf("/moje-pociagi") === 0; },
       steps: [
         { sel: "#list", title: "Twoje pociągi", text: "Tu widzisz status każdego śledzonego kursu: opóźnienie, peron/tor i ostatnią potwierdzoną stację. Kliknij kartę, żeby zobaczyć cały bieg." },
@@ -59,6 +61,7 @@
       ]
     },
     {
+      id: "train",
       match: function (p) { return p.indexOf("/train") === 0; },
       steps: [
         { sel: "#mtStarBtn", title: "Dodaj do Moich pociągów", text: "Kliknij gwiazdkę, żeby mieć ten kurs zawsze pod ręką na liście Moich pociągów — z aktualnym statusem, bez ponownego wyszukiwania. Drugie kliknięcie usuwa go z listy." },
@@ -67,6 +70,7 @@
       ]
     },
     {
+      id: "profil",
       match: function (p) { return p.indexOf("/profil") === 0; },
       steps: [
         { sel: "#createPanel", title: "Nowy profil", text: "Jeśli nie masz jeszcze profilu, tu jednym kliknięciem tworzysz nowy token." },
@@ -75,6 +79,7 @@
       ]
     },
     {
+      id: "dziennik",
       match: function (p) { return p.indexOf("/dziennik") === 0; },
       steps: [
         { sel: "#tripsToggle", title: "Ulubione trasy", text: "Ustaw raz swoją powtarzalną trasę (np. dom→praca) — wszystko zapisuje się samo w trakcie wpisywania. Potem aplikacja sama zapyta na biegu pociągu, czy zapisać pasujący kurs. Przyciskiem „➕ Dodaj kolejną trasę” dodasz ich dowolnie wiele." },
@@ -83,6 +88,7 @@
       ]
     },
     {
+      id: "planer",
       match: function (p) { return p.indexOf("/planer") === 0; },
       steps: [
         { sel: ".station-stack", title: "Planer podróży (beta)", text: "Wpisz skąd i dokąd — znajdzie połączenia bezpośrednie i z przesiadkami (nawet kilkoma) na podstawie rozkładu PLK, dla całej sieci, nie tylko wybranych stacji. Jeszcze testujemy, więc zdarzają się niedoskonałości." },
@@ -91,6 +97,17 @@
       ]
     }
   ];
+
+  // Tłumaczenia (i18n.js): każdy krok dostaje klucz tutorial.<strona>.s<nr>
+  // ({title, text}); polski tekst w definicji kroku zostaje jako zapas,
+  // gdy słownika brak (np. strona bez i18n.js).
+  GUIDED_PROFILE_STEPS.forEach(function (s, i) { s.k = "tutorial.guide.s" + i; });
+  STEPS_BY_PAGE.forEach(function (p) { p.steps.forEach(function (s, i) { s.k = "tutorial." + p.id + ".s" + i; }); });
+  function tr(key, fallback, params) {
+    if (!window.I18n) return fallback;
+    const v = I18n.t(key, params);
+    return v === key ? fallback : v;
+  }
 
   function hasToken() {
     try {
@@ -165,10 +182,10 @@
       "<h4 id=\"spotTitle\"></h4>" +
       "<p id=\"spotText\"></p>" +
       '<div class="spot-actions">' +
-      '<button type="button" class="spot-skip" id="spotSkip">Pomiń</button>' +
+      '<button type="button" class="spot-skip" id="spotSkip"></button>' +
       '<div class="spot-nav">' +
-      '<button type="button" class="spot-btn spot-btn-back" id="spotBack">Wstecz</button>' +
-      '<button type="button" class="spot-btn spot-btn-next" id="spotNext">Dalej</button>' +
+      '<button type="button" class="spot-btn spot-btn-back" id="spotBack"></button>' +
+      '<button type="button" class="spot-btn spot-btn-next" id="spotNext"></button>' +
       "</div></div>";
     document.body.appendChild(tooltipEl);
 
@@ -225,11 +242,13 @@
     if (!step.el || !isVisible(step.el)) step.el = document.querySelector(step.def.sel);
     if (step.el) step.el.scrollIntoView({ behavior: "smooth", block: "center" });
 
-    tooltipEl.querySelector("#spotProgress").textContent = "Krok " + (index + 1) + " z " + currentSteps.length;
-    tooltipEl.querySelector("#spotTitle").textContent = step.def.title;
-    tooltipEl.querySelector("#spotText").textContent = step.def.text;
+    tooltipEl.querySelector("#spotProgress").textContent = tr("tutorial.ui.progress", "Krok " + (index + 1) + " z " + currentSteps.length, { n: index + 1, total: currentSteps.length });
+    tooltipEl.querySelector("#spotTitle").textContent = tr(step.def.k + ".title", step.def.title);
+    tooltipEl.querySelector("#spotText").textContent = tr(step.def.k + ".text", step.def.text);
+    tooltipEl.querySelector("#spotSkip").textContent = tr("tutorial.ui.skip", "Pomiń");
+    tooltipEl.querySelector("#spotBack").textContent = tr("tutorial.ui.back", "Wstecz");
     tooltipEl.querySelector("#spotBack").disabled = index === 0;
-    tooltipEl.querySelector("#spotNext").textContent = index === currentSteps.length - 1 ? "Zakończ" : "Dalej";
+    tooltipEl.querySelector("#spotNext").textContent = index === currentSteps.length - 1 ? tr("tutorial.ui.finish", "Zakończ") : tr("tutorial.ui.next", "Dalej");
     tooltipEl.querySelector("#spotBack").style.display = guided ? "none" : "";
     tooltipEl.querySelector("#spotNext").style.display = step.def.waitClick ? "none" : "";
     if (step.def.waitClick) armWaitClick(step, index);
@@ -311,8 +330,9 @@
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "tutorial-demo-btn" + (pulse ? " pulse" : "");
-    btn.title = "Pokaż samouczek";
-    btn.setAttribute("aria-label", "Pokaż samouczek");
+    const label = tr("tutorial.ui.show", "Pokaż samouczek");
+    btn.title = label;
+    btn.setAttribute("aria-label", label);
     btn.textContent = "🎓";
     btn.addEventListener("click", function () { startTour(); });
     document.body.appendChild(btn);
@@ -332,7 +352,13 @@
 
   window.showTutorial = startTour;
 
+  // Start dopiero po wczytaniu słownika — inaczej pierwszy dymek pokazałby
+  // się po polsku nawet przy innym wybranym języku.
   document.addEventListener("DOMContentLoaded", function () {
+    (window.I18n ? I18n.ready.catch(function () {}) : Promise.resolve()).then(init);
+  });
+
+  function init() {
     injectStyles();
     // Przewodnik po zgodzie na założenie profilu ma pierwszeństwo przed
     // zwykłym samouczkiem.
@@ -360,5 +386,5 @@
     } else {
       proceed();
     }
-  });
+  }
 })();

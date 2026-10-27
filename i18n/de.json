@@ -330,5 +330,153 @@
     "retrying": "Suche Verbindungen... (neuer Versuch, der Server brauchte mehr Zeit)",
     "serverError": "Fehler bei der Verbindungssuche (Server: {status}). Versuche es gleich noch einmal.",
     "apiFail": "Verbindung zur API fehlgeschlagen."
+  },
+  "tutorial": {
+    "ui": {
+      "progress": "Schritt {n} von {total}",
+      "skip": "Überspringen",
+      "back": "Zurück",
+      "next": "Weiter",
+      "finish": "Fertig",
+      "show": "Anleitung anzeigen"
+    },
+    "guide": {
+      "s0": {
+        "title": "Profil erstellen",
+        "text": "Klicke auf diese Schaltfläche. Es gibt kein Passwort und keine Registrierung — du bekommst nur einen Code (Token), der der Schlüssel zu deinen Daten ist."
+      },
+      "s1": {
+        "title": "Das ist dein Token",
+        "text": "16 Zeichen. Wer ihn kennt, hat Zugriff auf deine Daten — gib ihn also niemandem weiter."
+      },
+      "s2": {
+        "title": "Speichere ihn",
+        "text": "Kopiere den Token und bewahre ihn sicher auf, z. B. in deinen Notizen. Auf einem anderen Gerät gibst du ihn unter „Profil laden“ ein und alles erscheint. Ab jetzt werden deine Favoriten und Züge automatisch im Profil gespeichert."
+      }
+    },
+    "index": {
+      "s0": {
+        "title": "Hier anfangen",
+        "text": "Gib den Namen eines beliebigen Bahnhofs ein, um seine Abfahrten zu sehen."
+      },
+      "s1": {
+        "title": "Live-Tafel",
+        "text": "Klicke auf „Live-Daten anzeigen“, um Abfahrten mit echten Verspätungen zu sehen, nicht nur den Fahrplan."
+      },
+      "s2": {
+        "title": "Lieblingsbahnhöfe",
+        "text": "Deine angehefteten Bahnhöfe. Füge eigene mit dem Stern ☆ neben der Tafel unten hinzu."
+      },
+      "s3": {
+        "title": "Lieblingszüge",
+        "text": "⭐ Der Stern bei jeder Abfahrt (und in den Zugdetails) fügt sie zu „Meine Züge“ hinzu — dort siehst du auf einen Blick und ohne weitere Klicks, wo der Zug zuletzt an einem Bahnhof bestätigt wurde und ob er pünktlich ist. Füge mehrere hinzu, um eine ganze Reise zu verfolgen — einen Ausflug oder den täglichen Weg zur Arbeit."
+      },
+      "s4": {
+        "title": "Mehr Optionen an einem Ort",
+        "text": "Halte eine beliebige Zeile gedrückt (oder Rechtsklick) — es öffnet sich ein Menü mit allen Aktionen: Details, Favoriten, Kalender und Tagebuch auf einmal."
+      },
+      "s5": {
+        "title": "Verspätungsalarm",
+        "text": "Schalte ihn ein, um bei Verspätung oder Ausfall am gewählten Bahnhof benachrichtigt zu werden — er funktioniert nur, solange dieser Tab geöffnet ist. Wenn PLK einen Grund angibt (z. B. „Fahrzeugstörung“), siehst du ihn nach einem Klick auf das kleine ⓘ unter dem Alarmeintrag."
+      },
+      "s6": {
+        "title": "Hintergrundalarm für diesen Bahnhof",
+        "text": "👁 Im Hintergrund beobachten — anders als der „Verspätungsalarm“ oben funktioniert das AUCH bei geschlossenem Tab oder geschlossener App: Du bekommst eine Push-Benachrichtigung über Verspätung oder Ausfall an diesem Bahnhof, wo immer du bist. Erfordert ein Profil — Push-Benachrichtigungen liegen auf dem Server unter deinem Token."
+      },
+      "s7": {
+        "title": "Reisetagebuch",
+        "text": "Im Menü (☰) gibt es das 📓 Tagebuch — es notiert deine Fahrten samt eventueller Verspätung."
+      },
+      "s8": {
+        "title": "Profil und Synchronisierung",
+        "text": "Erstelle hier einen Token — 16 Zeichen, ohne Passwort und Login —, um Lieblingsbahnhöfe, Züge, Alarme und das Tagebuch zwischen Geräten zu synchronisieren."
+      }
+    },
+    "mojePociagi": {
+      "s0": {
+        "title": "Deine Züge",
+        "text": "Hier siehst du den Status jedes verfolgten Zuges: Verspätung, Bahnsteig/Gleis und den zuletzt bestätigten Bahnhof. Klicke auf eine Karte, um den ganzen Zuglauf zu sehen."
+      },
+      "s1": {
+        "title": "Stern und Reihenfolge",
+        "text": "Der Stern ★ entfernt den Zug von der Liste (ohne Rückfrage) — klicke denselben Stern auf der Tafel erneut, um ihn wieder hinzuzufügen. Mit den Pfeilen ▲▼ änderst du die Reihenfolge der Karten."
+      },
+      "s2": {
+        "title": "Hintergrundalarm",
+        "text": "Schalte ihn ein, um eine Push-Benachrichtigung über Verspätung oder Ausfall IRGENDEINES der hier verfolgten Züge zu bekommen — funktioniert auch bei geschlossener App. Erfordert ein Profil."
+      },
+      "s3": {
+        "title": "Zug hinzufügen",
+        "text": "Gib Bahnhof, Nummer und planmäßige Uhrzeit einmal ein — ab dann siehst du ihn hier immer mit aktuellem Status."
+      },
+      "s4": {
+        "title": "Manuell aktualisieren",
+        "text": "Die Liste aktualisiert sich nach einer längeren Pause von selbst, du kannst aber jederzeit auch selbst aktualisieren."
+      },
+      "s5": {
+        "title": "Reisetagebuch",
+        "text": "Deine Fahrten samt eventueller Verspätung — du fügst sie auf der Seite des Zuglaufs hinzu."
+      },
+      "s6": {
+        "title": "Profil und Synchronisierung",
+        "text": "Der Profil-Token nimmt diese Liste, Alarme und das Tagebuch auf jedes deiner Geräte mit."
+      }
+    },
+    "train": {
+      "s0": {
+        "title": "Zu Meine Züge hinzufügen",
+        "text": "Klicke auf den Stern, um diesen Zug immer griffbereit in Meine Züge zu haben — mit aktuellem Status, ohne erneute Suche. Ein zweiter Klick entfernt ihn von der Liste."
+      },
+      "s1": {
+        "title": "Der ganze Zuglauf",
+        "text": "Die ganze Strecke des Zuges Bahnhof für Bahnhof: planmäßige und tatsächliche Zeiten, Verspätung, Bahnsteig und Gleis. Wenn PLK einen Verspätungsgrund angibt (z. B. „Fahrzeugstörung“), siehst du ihn im roten Hinweis unter der Überschrift."
+      },
+      "s2": {
+        "title": "Reisetagebuch",
+        "text": "Fährst du mit diesem Zug? Markiere 🚏, wo du einsteigst, und 🏁, wo du aussteigst — den Rest rechnen wir aus. Unten am Bildschirm erscheint ein schwebender Speichern-Knopf, egal wohin du scrollst. Bei einem Zug, der deinen Ausstiegsbahnhof noch nicht erreicht hat, siehst du statt Speichern „📋 Zum Plan hinzufügen“ — einen Eintrag im Reiseplan des Tagebuchs, noch keine echte Fahrt."
+      }
+    },
+    "profil": {
+      "s0": {
+        "title": "Neues Profil",
+        "text": "Wenn du noch kein Profil hast, erstellst du hier mit einem Klick einen neuen Token."
+      },
+      "s1": {
+        "title": "Schon einen Token?",
+        "text": "Füge hier einen Token von einem anderen Gerät ein, um deine Lieblingsbahnhöfe, Züge, Alarme, das Tagebuch und Lieblingsstrecken zu laden."
+      },
+      "s2": {
+        "title": "Gerät trennen",
+        "text": "Entfernt den Token NUR von diesem Gerät — die Daten in der Cloud bleiben und können mit demselben Token überall wieder geladen werden."
+      }
+    },
+    "dziennik": {
+      "s0": {
+        "title": "Lieblingsstrecken",
+        "text": "Lege deine wiederkehrende Strecke einmal fest (z. B. Zuhause→Arbeit) — alles speichert sich beim Tippen von selbst. Danach fragt die App auf der Seite des Zuglaufs, ob ein passender Zug gespeichert werden soll. Mit „➕ Weitere Strecke hinzufügen“ fügst du beliebig viele hinzu."
+      },
+      "s1": {
+        "title": "Reiseplan",
+        "text": "Du planst eine Strecke (z. B. mit Umstieg) und willst vor der Abfahrt prüfen, ob sie passt? Markiere die Bahnhöfe im Lauf jedes Zuges und füge „📋 Zum Plan“ hinzu — hier siehst du alle Abschnitte auf einmal. Wenn der Zug tatsächlich ankommt, komm zurück und klicke „✅ Bestätigen“ (die Fahrt landet in den Einträgen unten) oder „❌ Ablehnen“."
+      },
+      "s2": {
+        "title": "Gespeicherte Fahrten",
+        "text": "Deine gespeicherten, bestätigten Fahrten, die neuesten zuerst. Du kannst sie bearbeiten (🔓) — Änderungen speichern sich ebenfalls selbst — oder alles als XLSX herunterladen."
+      }
+    },
+    "planer": {
+      "s0": {
+        "title": "Reiseplaner (Beta)",
+        "text": "Gib Start und Ziel ein — er findet Direktverbindungen und Verbindungen mit Umstieg (auch mehreren) anhand des PLK-Fahrplans, für das ganze Netz, nicht nur ausgewählte Bahnhöfe. Wir testen noch, daher kann nicht alles perfekt sein."
+      },
+      "s1": {
+        "title": "Erweitert",
+        "text": "Minimale Umstiegszeit (standardmäßig 3 Min.), die Option „Nur direkt“ (ohne Umstieg), ein bestimmter „Über“-Bahnhof und der Ausschluss ausgewählter Verkehrsunternehmen."
+      },
+      "s2": {
+        "title": "Speichern oder ins Tagebuch",
+        "text": "Jedes Ergebnis kannst du 💾 zum späteren Ansehen speichern oder 📋 zum Reiseplan im Tagebuch hinzufügen — jeden Abschnitt einzeln. Wenn du tatsächlich fährst, bestätigst du die echte Fahrt im Tagebuch mit einem Klick."
+      }
+    }
   }
 }

@@ -330,5 +330,153 @@
     "retrying": "Szukam połączeń... (ponawiam, serwer potrzebował więcej czasu)",
     "serverError": "Błąd wyszukiwania połączeń (serwer: {status}). Spróbuj ponownie za chwilę.",
     "apiFail": "Nie udało się połączyć z API."
+  },
+  "tutorial": {
+    "ui": {
+      "progress": "Krok {n} z {total}",
+      "skip": "Pomiń",
+      "back": "Wstecz",
+      "next": "Dalej",
+      "finish": "Zakończ",
+      "show": "Pokaż samouczek"
+    },
+    "guide": {
+      "s0": {
+        "title": "Utwórz profil",
+        "text": "Kliknij ten przycisk. Nie ma hasła ani rejestracji — dostaniesz tylko kod (token), który jest kluczem do Twoich danych."
+      },
+      "s1": {
+        "title": "To Twój token",
+        "text": "16 znaków. Kto go zna, ma dostęp do Twoich danych — dlatego nie udostępniaj go nikomu."
+      },
+      "s2": {
+        "title": "Zapisz go",
+        "text": "Skopiuj token i schowaj w bezpiecznym miejscu, np. w notatkach. Na innym urządzeniu wpiszesz go w „Wczytaj profil” i wszystko się pojawi. Od teraz Twoje ulubione i pociągi zapisują się w profilu same."
+      }
+    },
+    "index": {
+      "s0": {
+        "title": "Zacznij tutaj",
+        "text": "Wpisz nazwę dowolnej stacji, żeby sprawdzić jej odjazdy."
+      },
+      "s1": {
+        "title": "Żywa tablica",
+        "text": "Kliknij „Pokaż z API”, żeby zobaczyć odjazdy z realnymi opóźnieniami, nie tylko planem."
+      },
+      "s2": {
+        "title": "Ulubione stacje",
+        "text": "Twoje przypięte stacje. Dodaj własne gwiazdką ☆ przy tablicy poniżej."
+      },
+      "s3": {
+        "title": "Ulubione pociągi",
+        "text": "⭐ Gwiazdka przy każdym odjeździe (i w szczegółach pociągu) dodaje go do „Moich pociągów” — stamtąd jednym rzutem oka, bez dodatkowych kliknięć, zobaczysz gdzie ostatnio potwierdził się na stacji i czy jedzie punktualnie. Dodaj ich kilka, żeby śledzić całą podróż — jednorazową wycieczkę albo codzienny dojazd do pracy."
+      },
+      "s4": {
+        "title": "Więcej opcji w jednym miejscu",
+        "text": "Przytrzymaj palcem (albo kliknij prawym przyciskiem myszy) dowolny wiersz — otworzy się menu z wszystkimi akcjami: szczegóły, ulubione, kalendarz i dzienniczek naraz."
+      },
+      "s5": {
+        "title": "Alarm opóźnień",
+        "text": "Włącz, żeby dostać powiadomienie o opóźnieniu lub odwołaniu na wybranej stacji — działa tylko dopóki ta karta jest otwarta. Jeśli PLK poda przyczynę (np. „Awaria taboru”), zobaczysz ją pod wpisem alarmu po kliknięciu małego ⓘ."
+      },
+      "s6": {
+        "title": "Alarm w tle dla tej stacji",
+        "text": "👁 Obserwuj w tle — w odróżnieniu od „Alarm opóźnień” powyżej, to działa NAWET przy zamkniętej karcie albo aplikacji: dostaniesz powiadomienie push o opóźnieniu lub odwołaniu na tej stacji, gdziekolwiek będziesz. Wymaga założonego profilu — powiadomienia push mieszkają na serwerze pod Twoim tokenem."
+      },
+      "s7": {
+        "title": "Dzienniczek podróży",
+        "text": "W menu (☰) jest 📓 Dzienniczek — notuje Twoje przejazdy wraz z ewentualnym opóźnieniem."
+      },
+      "s8": {
+        "title": "Profil i synchronizacja",
+        "text": "Załóż tu token — 16 znaków, bez hasła i loginu — żeby zsynchronizować ulubione stacje, pociągi, alarmy i dzienniczek między urządzeniami."
+      }
+    },
+    "mojePociagi": {
+      "s0": {
+        "title": "Twoje pociągi",
+        "text": "Tu widzisz status każdego śledzonego kursu: opóźnienie, peron/tor i ostatnią potwierdzoną stację. Kliknij kartę, żeby zobaczyć cały bieg."
+      },
+      "s1": {
+        "title": "Gwiazdka i kolejność",
+        "text": "Gwiazdka ★ usuwa pociąg z listy (bez potwierdzenia) — kliknij ponownie taki sam na tablicy, żeby dodać go z powrotem. Strzałkami ▲▼ zmienisz kolejność kart."
+      },
+      "s2": {
+        "title": "Alarm w tle",
+        "text": "Włącz, żeby dostać powiadomienie push o opóźnieniu lub odwołaniu KTÓREGOKOLWIEK ze śledzonych tu pociągów — działa nawet przy zamkniętej aplikacji. Wymaga założonego profilu."
+      },
+      "s3": {
+        "title": "Dodaj pociąg",
+        "text": "Dodaj stację, numer i planową godzinę raz — od teraz zawsze zobaczysz go tu z aktualnym statusem."
+      },
+      "s4": {
+        "title": "Odśwież ręcznie",
+        "text": "Lista i tak sama się aktualizuje po powrocie po dłuższej przerwie, ale możesz też odświeżyć w każdej chwili."
+      },
+      "s5": {
+        "title": "Dzienniczek podróży",
+        "text": "Twoje przejazdy wraz z ewentualnym opóźnieniem — dodajesz je na stronie biegu pociągu."
+      },
+      "s6": {
+        "title": "Profil i synchronizacja",
+        "text": "Token z profilu zabierze tę listę, alarmy i dzienniczek na każde Twoje urządzenie."
+      }
+    },
+    "train": {
+      "s0": {
+        "title": "Dodaj do Moich pociągów",
+        "text": "Kliknij gwiazdkę, żeby mieć ten kurs zawsze pod ręką na liście Moich pociągów — z aktualnym statusem, bez ponownego wyszukiwania. Drugie kliknięcie usuwa go z listy."
+      },
+      "s1": {
+        "title": "Cały bieg pociągu",
+        "text": "Cała trasa pociągu stacja po stacji: godziny planowe i rzeczywiste, opóźnienie, peron i tor. Jeśli PLK poda przyczynę opóźnienia (np. „Awaria taboru”), zobaczysz ją w czerwonej notce pod nagłówkiem."
+      },
+      "s2": {
+        "title": "Dzienniczek podróży",
+        "text": "Jedziesz tym pociągiem? Zaznacz 🚏 gdzie wsiadasz i 🏁 gdzie wysiadasz — resztę policzymy. Pływający przycisk zapisu pojawi się u dołu ekranu, gdziekolwiek przewiniesz stronę. Dla kursu, który jeszcze nie dotarł do stacji wysiadania, zamiast zapisu zobaczysz „📋 Dodaj do planu” — to wpis do planu podróży w dzienniczku, nie od razu realny przejazd."
+      }
+    },
+    "profil": {
+      "s0": {
+        "title": "Nowy profil",
+        "text": "Jeśli nie masz jeszcze profilu, tu jednym kliknięciem tworzysz nowy token."
+      },
+      "s1": {
+        "title": "Masz już token?",
+        "text": "Wklej tu token z innego urządzenia, żeby wczytać swoje ulubione stacje, pociągi, alarmy, dzienniczek i ulubione trasy."
+      },
+      "s2": {
+        "title": "Odepnij urządzenie",
+        "text": "Usuwa token TYLKO z tego urządzenia — dane w chmurze zostają i nadal można je wczytać tym samym tokenem gdziekolwiek indziej."
+      }
+    },
+    "dziennik": {
+      "s0": {
+        "title": "Ulubione trasy",
+        "text": "Ustaw raz swoją powtarzalną trasę (np. dom→praca) — wszystko zapisuje się samo w trakcie wpisywania. Potem aplikacja sama zapyta na biegu pociągu, czy zapisać pasujący kurs. Przyciskiem „➕ Dodaj kolejną trasę” dodasz ich dowolnie wiele."
+      },
+      "s1": {
+        "title": "Plan podróży",
+        "text": "Planujesz trasę (np. z przesiadką) i chcesz sprawdzić, czy się spina, zanim wyjedziesz? Zaznacz stacje na biegu każdego pociągu i dodaj „📋 Do planu” — zobaczysz tu wszystkie odcinki naraz. Gdy pociąg faktycznie dojedzie, wróć i kliknij „✅ Potwierdź” (przejazd trafi do wpisów poniżej) albo „❌ Odrzuć”."
+      },
+      "s2": {
+        "title": "Zapisane przejazdy",
+        "text": "Twoje zapisane, potwierdzone przejazdy, od najnowszych. Możesz je poprawić (🔓) — zmiany też zapisują się same — albo pobrać wszystko jako XLSX."
+      }
+    },
+    "planer": {
+      "s0": {
+        "title": "Planer podróży (beta)",
+        "text": "Wpisz skąd i dokąd — znajdzie połączenia bezpośrednie i z przesiadkami (nawet kilkoma) na podstawie rozkładu PLK, dla całej sieci, nie tylko wybranych stacji. Jeszcze testujemy, więc zdarzają się niedoskonałości."
+      },
+      "s1": {
+        "title": "Zaawansowane",
+        "text": "Minimalny czas na przesiadkę (domyślnie 3 min), opcja „Tylko bezpośrednie” (bez przesiadek), wymuszenie konkretnej stacji „przez” oraz wykluczanie wybranych przewoźników z wyników."
+      },
+      "s2": {
+        "title": "Zapisz albo dodaj do dziennika",
+        "text": "Każdy wynik możesz 💾 zapisać do późniejszego przejrzenia albo 📋 dodać do planu podróży w dzienniczku — każda noga osobno. Gdy faktycznie pojedziesz, w dzienniczku potwierdzisz rzeczywisty przejazd jednym kliknięciem."
+      }
+    }
   }
 }

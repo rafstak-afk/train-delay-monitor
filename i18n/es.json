@@ -330,5 +330,153 @@
     "retrying": "Buscando conexiones... (reintentando, el servidor necesitó más tiempo)",
     "serverError": "Error al buscar conexiones (servidor: {status}). Inténtalo de nuevo en un momento.",
     "apiFail": "No se pudo conectar con la API."
+  },
+  "tutorial": {
+    "ui": {
+      "progress": "Paso {n} de {total}",
+      "skip": "Omitir",
+      "back": "Atrás",
+      "next": "Siguiente",
+      "finish": "Terminar",
+      "show": "Ver el tutorial"
+    },
+    "guide": {
+      "s0": {
+        "title": "Crear un perfil",
+        "text": "Pulsa este botón. No hay contraseña ni registro: solo recibes un código (token), que es la llave de tus datos."
+      },
+      "s1": {
+        "title": "Este es tu token",
+        "text": "16 caracteres. Quien lo conozca tiene acceso a tus datos, así que no se lo des a nadie."
+      },
+      "s2": {
+        "title": "Guárdalo",
+        "text": "Copia el token y guárdalo en un lugar seguro, p. ej. en tus notas. En otro dispositivo lo introduces en «Cargar perfil» y todo aparecerá. A partir de ahora tus favoritos y trenes se guardan solos en el perfil."
+      }
+    },
+    "index": {
+      "s0": {
+        "title": "Empieza aquí",
+        "text": "Escribe el nombre de cualquier estación para ver sus salidas."
+      },
+      "s1": {
+        "title": "Panel en directo",
+        "text": "Pulsa «Ver datos en directo» para ver las salidas con los retrasos reales, no solo el horario."
+      },
+      "s2": {
+        "title": "Estaciones favoritas",
+        "text": "Tus estaciones fijadas. Añade las tuyas con la estrella ☆ junto al panel de abajo."
+      },
+      "s3": {
+        "title": "Trenes favoritos",
+        "text": "⭐ La estrella junto a cada salida (y en los detalles del tren) la añade a «Mis trenes»: allí verás de un vistazo, sin clics extra, dónde se confirmó por última vez en una estación y si va puntual. Añade varios para seguir todo un viaje: una excursión o tu trayecto diario al trabajo."
+      },
+      "s4": {
+        "title": "Más opciones en un solo lugar",
+        "text": "Mantén pulsada (o haz clic derecho en) cualquier fila: se abre un menú con todas las acciones a la vez: detalles, favoritos, calendario y diario."
+      },
+      "s5": {
+        "title": "Alarma de retrasos",
+        "text": "Actívala para recibir un aviso de retraso o cancelación en la estación elegida; solo funciona mientras esta pestaña esté abierta. Si PLK indica el motivo (p. ej. «Avería del material rodante»), lo verás bajo la entrada de la alarma al pulsar la pequeña ⓘ."
+      },
+      "s6": {
+        "title": "Alarma en segundo plano para esta estación",
+        "text": "👁 Vigilar en segundo plano: a diferencia de la «Alarma de retrasos» de arriba, funciona INCLUSO con la pestaña o la aplicación cerradas: recibirás una notificación push de retraso o cancelación en esta estación estés donde estés. Requiere un perfil: las notificaciones push se guardan en el servidor con tu token."
+      },
+      "s7": {
+        "title": "Diario de viajes",
+        "text": "En el menú (☰) está el 📓 Diario: registra tus viajes junto con cualquier retraso."
+      },
+      "s8": {
+        "title": "Perfil y sincronización",
+        "text": "Crea aquí un token (16 caracteres, sin contraseña ni inicio de sesión) para sincronizar estaciones favoritas, trenes, alarmas y el diario entre dispositivos."
+      }
+    },
+    "mojePociagi": {
+      "s0": {
+        "title": "Tus trenes",
+        "text": "Aquí ves el estado de cada servicio que sigues: retraso, andén/vía y la última estación confirmada. Pulsa una tarjeta para ver todo el recorrido."
+      },
+      "s1": {
+        "title": "Estrella y orden",
+        "text": "La estrella ★ quita el tren de la lista (sin confirmación); vuelve a pulsar la misma estrella en el panel para añadirlo de nuevo. Con las flechas ▲▼ cambias el orden de las tarjetas."
+      },
+      "s2": {
+        "title": "Alarma en segundo plano",
+        "text": "Actívala para recibir una notificación push de retraso o cancelación de CUALQUIERA de los trenes que sigues aquí; funciona incluso con la aplicación cerrada. Requiere un perfil."
+      },
+      "s3": {
+        "title": "Añadir un tren",
+        "text": "Introduce la estación, el número y la hora prevista una vez: a partir de entonces siempre lo verás aquí con su estado actual."
+      },
+      "s4": {
+        "title": "Actualizar a mano",
+        "text": "La lista se actualiza sola al volver tras una pausa larga, pero también puedes actualizarla cuando quieras."
+      },
+      "s5": {
+        "title": "Diario de viajes",
+        "text": "Tus viajes junto con cualquier retraso; los añades en la página del recorrido del tren."
+      },
+      "s6": {
+        "title": "Perfil y sincronización",
+        "text": "El token del perfil lleva esta lista, las alarmas y el diario a todos tus dispositivos."
+      }
+    },
+    "train": {
+      "s0": {
+        "title": "Añadir a Mis trenes",
+        "text": "Pulsa la estrella para tener este servicio siempre a mano en Mis trenes, con su estado actual y sin volver a buscarlo. Un segundo clic lo quita de la lista."
+      },
+      "s1": {
+        "title": "Todo el recorrido",
+        "text": "Toda la ruta del tren estación por estación: horas previstas y reales, retraso, andén y vía. Si PLK indica el motivo del retraso (p. ej. «Avería del material rodante»), lo verás en la nota roja bajo el encabezado."
+      },
+      "s2": {
+        "title": "Diario de viajes",
+        "text": "¿Vas en este tren? Marca 🚏 donde subes y 🏁 donde bajas; nosotros calculamos el resto. Aparecerá un botón flotante para guardar abajo en la pantalla, te desplaces donde te desplaces. Para un servicio que aún no ha llegado a tu estación de bajada, en lugar de guardar verás «📋 Añadir al plan»: una entrada en el plan de viaje del diario, todavía no un viaje real."
+      }
+    },
+    "profil": {
+      "s0": {
+        "title": "Perfil nuevo",
+        "text": "Si aún no tienes perfil, aquí creas un token nuevo con un solo clic."
+      },
+      "s1": {
+        "title": "¿Ya tienes un token?",
+        "text": "Pega aquí un token de otro dispositivo para cargar tus estaciones favoritas, trenes, alarmas, diario y rutas favoritas."
+      },
+      "s2": {
+        "title": "Desvincular el dispositivo",
+        "text": "Elimina el token SOLO de este dispositivo: los datos en la nube se conservan y pueden volver a cargarse con el mismo token en cualquier otro lugar."
+      }
+    },
+    "dziennik": {
+      "s0": {
+        "title": "Rutas favoritas",
+        "text": "Configura una vez tu ruta habitual (p. ej. casa→trabajo): todo se guarda solo mientras escribes. Después la aplicación te preguntará en la página del recorrido del tren si quieres guardar un servicio que coincida. Con «➕ Añadir otra ruta» puedes añadir tantas como quieras."
+      },
+      "s1": {
+        "title": "Plan de viaje",
+        "text": "¿Planeas una ruta (p. ej. con transbordo) y quieres comprobar que encaja antes de salir? Marca las estaciones en el recorrido de cada tren y añade «📋 Al plan»: aquí verás todos los tramos a la vez. Cuando el tren llegue de verdad, vuelve y pulsa «✅ Confirmar» (el viaje pasa a las entradas de abajo) o «❌ Rechazar»."
+      },
+      "s2": {
+        "title": "Viajes guardados",
+        "text": "Tus viajes guardados y confirmados, los más recientes primero. Puedes editarlos (🔓) —los cambios también se guardan solos— o descargarlo todo en XLSX."
+      }
+    },
+    "planer": {
+      "s0": {
+        "title": "Planificador de viajes (beta)",
+        "text": "Indica el origen y el destino: encontrará conexiones directas y con transbordos (incluso varios) según el horario de PLK, para toda la red, no solo para estaciones seleccionadas. Aún lo estamos probando, así que puede haber imperfecciones."
+      },
+      "s1": {
+        "title": "Avanzado",
+        "text": "Tiempo mínimo de transbordo (3 min por defecto), la opción «Solo directos» (sin transbordos), forzar una estación «por» concreta y excluir operadores de los resultados."
+      },
+      "s2": {
+        "title": "Guardar o añadir al diario",
+        "text": "Puedes 💾 guardar cualquier resultado para revisarlo más tarde o 📋 añadirlo al plan de viaje del diario, cada tramo por separado. Cuando viajes de verdad, confirmarás el viaje real en el diario con un clic."
+      }
+    }
   }
 }

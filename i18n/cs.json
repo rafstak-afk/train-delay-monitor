@@ -330,5 +330,153 @@
     "retrying": "Hledám spojení... (zkouším znovu, server potřeboval více času)",
     "serverError": "Chyba při hledání spojení (server: {status}). Zkuste to za chvíli znovu.",
     "apiFail": "Nepodařilo se připojit k API."
+  },
+  "tutorial": {
+    "ui": {
+      "progress": "Krok {n} z {total}",
+      "skip": "Přeskočit",
+      "back": "Zpět",
+      "next": "Další",
+      "finish": "Dokončit",
+      "show": "Zobrazit průvodce"
+    },
+    "guide": {
+      "s0": {
+        "title": "Vytvořit profil",
+        "text": "Klikněte na toto tlačítko. Není tu žádné heslo ani registrace — dostanete jen kód (token), který je klíčem k vašim datům."
+      },
+      "s1": {
+        "title": "Toto je váš token",
+        "text": "16 znaků. Kdo ho zná, má přístup k vašim datům — proto ho nikomu nesdělujte."
+      },
+      "s2": {
+        "title": "Uložte si ho",
+        "text": "Zkopírujte token a uschovejte ho na bezpečném místě, např. v poznámkách. Na jiném zařízení ho zadáte v „Načíst profil“ a vše se objeví. Od teď se vaše oblíbené a vlaky ukládají do profilu samy."
+      }
+    },
+    "index": {
+      "s0": {
+        "title": "Začněte tady",
+        "text": "Zadejte název libovolné stanice a podívejte se na její odjezdy."
+      },
+      "s1": {
+        "title": "Živá tabule",
+        "text": "Klikněte na „Zobrazit živá data“ a uvidíte odjezdy se skutečným zpožděním, ne jen jízdní řád."
+      },
+      "s2": {
+        "title": "Oblíbené stanice",
+        "text": "Vaše připnuté stanice. Vlastní přidáte hvězdičkou ☆ u tabule níže."
+      },
+      "s3": {
+        "title": "Oblíbené vlaky",
+        "text": "⭐ Hvězdička u každého odjezdu (i v podrobnostech vlaku) ho přidá do „Mých vlaků“ — tam na první pohled a bez dalšího klikání uvidíte, kde byl naposledy potvrzen ve stanici a zda jede včas. Přidejte jich víc a sledujte celou cestu — jednorázový výlet i každodenní dojíždění do práce."
+      },
+      "s4": {
+        "title": "Více možností na jednom místě",
+        "text": "Podržte prst (nebo klikněte pravým tlačítkem) na libovolném řádku — otevře se nabídka se všemi akcemi: podrobnosti, oblíbené, kalendář a deník najednou."
+      },
+      "s5": {
+        "title": "Alarm zpoždění",
+        "text": "Zapněte ho a dostanete oznámení o zpoždění nebo zrušení ve zvolené stanici — funguje jen, dokud je tato karta otevřená. Pokud PLK uvede důvod (např. „Porucha vozidla“), uvidíte ho pod záznamem alarmu po kliknutí na malé ⓘ."
+      },
+      "s6": {
+        "title": "Alarm na pozadí pro tuto stanici",
+        "text": "👁 Sledovat na pozadí — na rozdíl od „Alarmu zpoždění“ výše funguje I při zavřené kartě nebo aplikaci: dostanete push oznámení o zpoždění nebo zrušení v této stanici, ať jste kdekoli. Vyžaduje profil — push oznámení jsou uložena na serveru pod vaším tokenem."
+      },
+      "s7": {
+        "title": "Cestovní deník",
+        "text": "V nabídce (☰) je 📓 Deník — zaznamenává vaše jízdy včetně případného zpoždění."
+      },
+      "s8": {
+        "title": "Profil a synchronizace",
+        "text": "Vytvořte si zde token — 16 znaků, bez hesla a přihlašování — a synchronizujte oblíbené stanice, vlaky, alarmy i deník mezi zařízeními."
+      }
+    },
+    "mojePociagi": {
+      "s0": {
+        "title": "Vaše vlaky",
+        "text": "Zde vidíte stav každého sledovaného spoje: zpoždění, nástupiště/kolej a poslední potvrzenou stanici. Kliknutím na kartu zobrazíte celou jízdu."
+      },
+      "s1": {
+        "title": "Hvězdička a pořadí",
+        "text": "Hvězdička ★ odebere vlak ze seznamu (bez potvrzení) — dalším kliknutím na stejnou hvězdičku na tabuli ho přidáte zpět. Šipkami ▲▼ změníte pořadí karet."
+      },
+      "s2": {
+        "title": "Alarm na pozadí",
+        "text": "Zapněte ho a dostanete push oznámení o zpoždění nebo zrušení KTERÉHOKOLI ze zde sledovaných vlaků — funguje i při zavřené aplikaci. Vyžaduje profil."
+      },
+      "s3": {
+        "title": "Přidat vlak",
+        "text": "Zadejte jednou stanici, číslo a plánovaný čas — od té doby ho tu vždy uvidíte s aktuálním stavem."
+      },
+      "s4": {
+        "title": "Obnovit ručně",
+        "text": "Seznam se po návratu po delší přestávce aktualizuje sám, ale obnovit ho můžete kdykoli."
+      },
+      "s5": {
+        "title": "Cestovní deník",
+        "text": "Vaše jízdy včetně případného zpoždění — přidáváte je na stránce jízdy vlaku."
+      },
+      "s6": {
+        "title": "Profil a synchronizace",
+        "text": "Token z profilu přenese tento seznam, alarmy i deník na každé vaše zařízení."
+      }
+    },
+    "train": {
+      "s0": {
+        "title": "Přidat do Mých vlaků",
+        "text": "Klikněte na hvězdičku a mějte tento spoj vždy po ruce v Mých vlacích — s aktuálním stavem, bez nového hledání. Druhé kliknutí ho ze seznamu odebere."
+      },
+      "s1": {
+        "title": "Celá jízda vlaku",
+        "text": "Celá trasa vlaku stanici po stanici: plánované a skutečné časy, zpoždění, nástupiště a kolej. Pokud PLK uvede důvod zpoždění (např. „Porucha vozidla“), uvidíte ho v červené poznámce pod záhlavím."
+      },
+      "s2": {
+        "title": "Cestovní deník",
+        "text": "Jedete tímto vlakem? Označte 🚏, kde nastupujete, a 🏁, kde vystupujete — zbytek spočítáme. Plovoucí tlačítko uložení se objeví dole na obrazovce, ať posunete stránku kamkoli. U spoje, který ještě nedojel do vaší výstupní stanice, uvidíte místo uložení „📋 Přidat do plánu“ — záznam v plánu cest v deníku, zatím ne skutečnou jízdu."
+      }
+    },
+    "profil": {
+      "s0": {
+        "title": "Nový profil",
+        "text": "Pokud ještě nemáte profil, zde jedním kliknutím vytvoříte nový token."
+      },
+      "s1": {
+        "title": "Už máte token?",
+        "text": "Vložte sem token z jiného zařízení a načtěte své oblíbené stanice, vlaky, alarmy, deník a oblíbené trasy."
+      },
+      "s2": {
+        "title": "Odpojit zařízení",
+        "text": "Odstraní token JEN z tohoto zařízení — data v cloudu zůstanou a stejným tokenem je lze načíst kdekoli jinde."
+      }
+    },
+    "dziennik": {
+      "s0": {
+        "title": "Oblíbené trasy",
+        "text": "Nastavte jednou svou opakovanou trasu (např. domov→práce) — vše se ukládá samo během psaní. Aplikace se pak na stránce jízdy vlaku sama zeptá, zda uložit odpovídající spoj. Tlačítkem „➕ Přidat další trasu“ jich přidáte libovolně mnoho."
+      },
+      "s1": {
+        "title": "Plán cest",
+        "text": "Plánujete trasu (např. s přestupem) a chcete před odjezdem ověřit, že vyjde? Označte stanice na jízdě každého vlaku a přidejte „📋 Do plánu“ — uvidíte tu všechny úseky najednou. Až vlak skutečně dojede, vraťte se a klikněte na „✅ Potvrdit“ (jízda se přesune do záznamů níže) nebo „❌ Odmítnout“."
+      },
+      "s2": {
+        "title": "Uložené jízdy",
+        "text": "Vaše uložené a potvrzené jízdy, od nejnovějších. Můžete je upravit (🔓) — změny se také ukládají samy — nebo vše stáhnout jako XLSX."
+      }
+    },
+    "planer": {
+      "s0": {
+        "title": "Plánovač cest (beta)",
+        "text": "Zadejte odkud a kam — najde přímá spojení i spojení s přestupy (i několika) podle jízdního řádu PLK, pro celou síť, nejen pro vybrané stanice. Stále testujeme, takže se mohou objevit nedokonalosti."
+      },
+      "s1": {
+        "title": "Pokročilé",
+        "text": "Minimální čas na přestup (výchozí 3 min), volba „Pouze přímá“ (bez přestupů), vynucení konkrétní stanice „přes“ a vyloučení vybraných dopravců z výsledků."
+      },
+      "s2": {
+        "title": "Uložit nebo přidat do deníku",
+        "text": "Každý výsledek můžete 💾 uložit k pozdějšímu prohlédnutí nebo 📋 přidat do plánu cest v deníku — každý úsek zvlášť. Až skutečně pojedete, potvrdíte skutečnou jízdu v deníku jedním kliknutím."
+      }
+    }
   }
 }
