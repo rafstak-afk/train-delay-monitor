@@ -407,6 +407,75 @@ test("wybór podpowiedzi wstawia pełną nazwę; strzałki + Enter też", async 
   expectStation(c.state(), "from", "Kraków Główny"); expectStation(c.state(), "to", "Gliwice");
 });
 
+test("dzielnica bez miasta: Załęże, Ligoty, Płaszowa, Gołonóg", async () => {
+  const c = await session();
+  const CA = c.CA;
+  const opts = r => (r.exact ? [r.exact.name] : (r.options || []).map(s => s.name));
+  let r = CA._matchStation("Załęże");
+  expect(!r.exact && opts(r).includes("Katowice Załęże") && opts(r).includes("Rzeszów Załęże"), "Załęże: " + opts(r).join(" | "));
+  // jeździsz po Katowicach → Katowice Załęże pierwsze
+  c.env.localStorage.setItem("plkStationHistory", JSON.stringify(["Katowice"]));
+  r = CA._matchStation("Załęże");
+  expect(opts(r)[0] === "Katowice Załęże", "Załęże z historią Katowic: " + opts(r).join(" | "));
+  r = CA._matchStation("Ligoty");
+  expect(opts(r).includes("Katowice Ligota"), "Ligoty: " + opts(r).join(" | "));
+  r = CA._matchStation("Płaszowa");
+  expect(r.exact && r.exact.name === "Kraków Płaszów", "Płaszowa: " + opts(r).join(" | "));
+  r = CA._matchStation("Gołonóg");
+  expect(r.exact && r.exact.name === "Dąbrowa Górnicza Gołonóg", "Gołonóg: " + opts(r).join(" | "));
+  // pełna nazwa miasta nadal działa jak dawniej
+  r = CA._matchStation("Ligota Toszecka");
+  expect(r.exact && r.exact.name === "Ligota Toszecka", "Ligota Toszecka: " + opts(r).join(" | "));
+});
+
+test("dzielnica w zdaniu: z Płaszowa do Załęża", async () => {
+  const c = await session();
+  c.env.localStorage.setItem("plkStationHistory", JSON.stringify(["Katowice"]));
+  await c.say("z Płaszowa do Załęża jutro o 7");
+  expectStation(c.state(), "from", "Kraków Płaszów");
+  expect(c.options()[0] === "Katowice Załęże", "pierwsza opcja: " + c.options().join(" | "));
+  await c.click("Katowice Załęże");
+  expectStation(c.state(), "to", "Katowice Załęże");
+});
+
+test("„jadę na Zawodzie” — „na” jako cel podróży", async () => {
+  const c = await session();
+  await c.say("z Bytomia jadę na Zawodzie jutro o 8");
+  expectStation(c.state(), "from", "Bytom"); expectStation(c.state(), "to", "Katowice Zawodzie");
+  const c2 = await session();
+  await c2.say("z Bytomia do Gliwic 10 minut na przesiadkę");
+  expectStation(c2.state(), "to", "Gliwice");
+  expect(c2.state().transfer === 10, "przesiadka " + c2.state().transfer);
+});
+
+test("podpowiedzi po nazwie dzielnicy", async () => {
+  const c = await session();
+  c.env.localStorage.setItem("plkFavoriteStations", JSON.stringify(["Katowice"]));
+  let s = c.type("do Załę");
+  expect(s[0] === "Katowice Załęże", "Załę: " + s.join(" | "));
+  s = c.type("z Płasz");
+  expect(s.includes("Kraków Płaszów"), "Płasz: " + s.join(" | "));
+  s = c.type("Gołon");
+  expect(s.includes("Dąbrowa Górnicza Gołonóg"), "Gołon: " + s.join(" | "));
+  // miasto z Twoich stacji przed innymi
+  c.env.localStorage.setItem("plkStationHistory", JSON.stringify(["Rzeszów Główny"]));
+  s = c.type("do Załę");
+  expect(s[0] === "Rzeszów Załęże", "z historią Rzeszowa: " + s.join(" | "));
+});
+
+test("pola stacji na tablicy i w planerze (StationSuggest): dzielnice i odmiana", async () => {
+  const c = await session();
+  const SS = c.env.window.StationSuggest;
+  await SS.ready();
+  const names = q => SS.suggest(q).map(s => s.name);
+  expect(names("Załęże").includes("Katowice Załęże"), "Załęże: " + names("Załęże").join(" | "));
+  expect(names("Płaszów")[0] === "Kraków Płaszów", "Płaszów: " + names("Płaszów").join(" | "));
+  expect(names("Ligota").includes("Katowice Ligota") && names("Ligota").includes("Ligota Toszecka"), "Ligota: " + names("Ligota").join(" | "));
+  expect(names("Krak")[0] === "Kraków Główny", "Krak: " + names("Krak").join(" | "));
+  expect(names("Nowa Huta").includes("Kraków Nowa Huta"), "Nowa Huta: " + names("Nowa Huta").join(" | "));
+  expect(SS.suggest("Krak")[0].id, "brak id stacji");
+});
+
 test("myślnik: Katowice - Gliwice", async () => {
   const c = await session();
   await c.say("Katowice - Gliwice");

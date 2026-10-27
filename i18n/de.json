@@ -271,7 +271,8 @@
       "delayedText": "{time} {label} +{delay} min",
       "notificationTitle": "Zugalarm"
     },
-    "header": "Czy zdążę? Claude Code und RafStaK"
+    "header": "Czy zdążę? Claude Code und RafStaK",
+    "stationDropdownAll": "Alle Bahnhöfe"
   },
   "planer": {
     "pageTitle": "Reiseplaner",

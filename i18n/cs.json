@@ -271,7 +271,8 @@
       "delayedText": "{time} {label} +{delay} min",
       "notificationTitle": "Vlakový alarm"
     },
-    "header": "Czy zdążę? Claude Code a RafStaK"
+    "header": "Czy zdążę? Claude Code a RafStaK",
+    "stationDropdownAll": "Všechny stanice"
   },
   "planer": {
     "pageTitle": "Plánovač cest",

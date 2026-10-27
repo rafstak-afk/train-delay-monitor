@@ -89,19 +89,35 @@
       var eqCovered = s.forms.filter(function (fs) { return q.some(function (qs) { return fs.some(function (x) { return eq(qs, x); }); }); }).length;
       var anyCovered = s.forms.filter(function (fs) { return q.some(function (qs) { return fs.some(function (x) { return pre(qs, x); }); }); }).length;
       var first = q.some(function (qs) { return s.forms[0].some(function (x) { return pre(qs, x); }); });
-      hits.push({ s: s, fullEq: eqCovered === s.forms.length, eq: eqCovered, extra: s.forms.length - anyCovered, first: first });
+      // Dzielnica bez miasta („Załęże”, „Płaszowa”): fraza pokrywa DOKŁADNIE
+      // wszystkie człony nazwy poza pierwszym (miastem) i nie dotyka miasta.
+      // (Miasto może mieć kilka członów: „Dąbrowa Górnicza Gołonóg”.)
+      var district = false;
+      for (var dk = 1; dk < s.forms.length && !district; dk++) {
+        var rest = s.forms.slice(dk), head = s.forms.slice(0, dk);
+        district = q.length === rest.length &&
+          rest.every(function (fs) { return q.some(function (qs) { return fs.some(function (x) { return eq(qs, x); }); }); }) &&
+          !head.some(function (fs) { return q.some(function (qs) { return fs.some(function (x) { return pre(qs, x); }); }); });
+      }
+      hits.push({ s: s, fullEq: eqCovered === s.forms.length, eq: eqCovered, extra: s.forms.length - anyCovered, first: first, district: district });
     });
     if (!hits.length) return { none: true };
     var exact = hits.filter(function (h) { return h.fullEq; });
     if (exact.length === 1) return { exact: exact[0].s };
+    // Jedna jedyna stacja z tą dzielnicą i żadna stacja nie zaczyna się tym
+    // słowem („Płaszów” → Kraków Płaszów) — to jest pewne.
+    var districts = hits.filter(function (h) { return h.district; });
+    if (!exact.length && districts.length === 1 && !hits.some(function (h) { return h.first; })) return { exact: districts[0].s };
     var pool = hits.slice();
     // Nazwa miasta na początku nazwy stacji („Warszawa Centralna”) ma
     // pierwszeństwo — przymiotnikowe odmiany („Łódź Warszawska”) odpadają,
     // jeśli są takie stacje.
-    if (pool.some(function (h) { return h.first; })) pool = pool.filter(function (h) { return h.first; });
+    // Dzielnice zostają obok (np. „Ligoty” → Ligota Toszecka i Katowice Ligota).
+    if (pool.some(function (h) { return h.first; })) pool = pool.filter(function (h) { return h.first || h.district; });
+    var mineRank = stationRank();
     pool.sort(function (a, b) {
       var ma = /glown|centraln/.test(a.s.words.join(" ")) ? 0 : 1, mb = /glown|centraln/.test(b.s.words.join(" ")) ? 0 : 1;
-      return (b.fullEq - a.fullEq) || (b.eq - a.eq) || ma - mb || a.extra - b.extra || a.s.name.localeCompare(b.s.name, "pl");
+      return (b.fullEq - a.fullEq) || (b.district - a.district) || (b.eq - a.eq) || ma - mb || mineRank(a.s) - mineRank(b.s) || cityN(b.s) - cityN(a.s) || a.extra - b.extra || a.s.name.localeCompare(b.s.name, "pl");
     });
     return { options: pool.slice(0, 6).map(function (h) { return h.s; }), more: pool.length > 6 };
   }
@@ -205,7 +221,7 @@
   // ---------- parser jednej wypowiedzi ----------
   // Zwraca {from, to, via, date, time, transfer, direct, exclude[], vague[]}
   // — tylko to, co faktycznie padło. Frazy stacji jako surowy tekst (do dopasowania).
-  var MARKERS = /^(z|ze|od|do|przez|bez|o|około|okolo|ok|po|w|we|jutro|dzis|dzisiaj|pojutrze|rano|wieczorem|wieczor|poludniu|popoludniu|i|oraz|a|tylko|minut|minuty|min|przesiadk\w*|na|jak|chce|chcialbym|chcialabym|jechac|pojechac|dojechac|dostac|sie|pociagiem|prosze|szukam|polaczenia|polaczenie|teraz|zaraz|najblizszym|najblizszy|pierwsz\w*|ostatni\w*|wpol|pol|polnocy|kolacji|obiedzie|sniadaniu|pracy|szkole|najwczesniej\w*|najpozniej\w*|polaczen\w*|bezposredn\w*|kurs\w*|pociag\w*|godz\w*|potem|jakie|jaki|mam|mozna|czy)$/;
+  var MARKERS = /^(z|ze|od|do|przez|bez|o|około|okolo|ok|po|w|we|jutro|dzis|dzisiaj|pojutrze|rano|wieczorem|wieczor|poludniu|popoludniu|i|oraz|a|tylko|minut|minuty|min|przesiadk\w*|na|jak|chce|chcialbym|chcialabym|jechac|pojechac|dojechac|dostac|sie|pociagiem|prosze|szukam|polaczenia|polaczenie|teraz|zaraz|najblizszym|najblizszy|pierwsz\w*|ostatni\w*|wpol|pol|polnocy|jade|jedziemy|jedzie|jedziesz|wracam|wracamy|kolacji|obiedzie|sniadaniu|pracy|szkole|najwczesniej\w*|najpozniej\w*|polaczen\w*|bezposredn\w*|kurs\w*|pociag\w*|godz\w*|potem|jakie|jaki|mam|mozna|czy)$/;
   // Godzina słowami (forma po „o/po/od/około”): „siedemnastej”, „wpół do
   // ósmej”, „dwudziestej pierwszej trzydzieści”, „północy”. Bez znacznika
   // („pierwsze połączenie”) to NIE jest godzina.
@@ -310,6 +326,12 @@
     r.from = phraseAfter(function (w) { return w === "z" || w === "ze" || w === "od"; });
     r.to = phraseAfter(function (w) { return w === "do"; });
     r.via = phraseAfter(function (w) { return w === "przez"; });
+    // „jadę na Zawodzie / na Szombierki” — potocznie cel podróży. Tylko gdy
+    // dalej stoi stacja (nie „na przesiadkę”, „na 8”).
+    if (!r.to && stations) {
+      var naPh = phraseAfter(function (w) { return w === "na"; });
+      if (naPh && !/^przesiad/.test(fold(naPh)) && !matchStation(naPh).none) r.to = naPh;
+    }
     if (!r.from && r.to) {
       for (var di = 0; di < tokens.length; di++) if (fold(tokens[di]) === "do") break;
       var before = [];
@@ -558,7 +580,7 @@
   // pierwsza; klik albo ↑/↓ + Enter wstawia pełną nazwę. Lista jest lokalna
   // (data/stations-pl.json), bez zapytań do PLK.
   var sugEl = null, sugList = [], sugIdx = -1, sugFrag = null;
-  var SUG_MARK = /^(z|ze|od|do|przez)$/;
+  var SUG_MARK = /^(z|ze|od|do|przez|na)$/;
   // Przybliżenie wielkości miasta: ile stacji ma tę samą pierwszą część nazwy
   // (Chorzów: Batory/Miasto/Stary → 3, Chorzele → 1). Liczone raz.
   var cityCount = null;
@@ -566,36 +588,49 @@
     if (!cityCount) { cityCount = {}; stations.forEach(function (x) { var k = x.words[0] || ""; cityCount[k] = (cityCount[k] || 0) + 1; }); }
     return cityCount[s.words[0] || ""] || 0;
   }
+  // 0 — Twoja stacja (ulubiona/ostatnio szukana), 1 — stacja w mieście, w
+  // którym masz swoje stacje (Załęże → Katowice, gdy jeździsz po Katowicach),
+  // 2 — pozostałe.
+  function stationRank() {
+    var mine = {}, cities = {};
+    myStations().forEach(function (m) { mine[m.id] = true; cities[m.words[0]] = true; });
+    return function (x) { return mine[x.id] ? 0 : cities[x.words[0]] ? 1 : 2; };
+  }
   function sugTier(s) { var n = fold(s.name); return /(^| )(glown\w*|centraln\w*)( |$)/.test(n) ? 0 : (s.words.length === 1 ? 1 : 2); }
-  function suggestFor(text) {
+  // plain = samo pole stacji (tablica, planer): cały tekst to nazwa, bez
+  // szukania „z/do/przez” i słów pomocniczych.
+  function suggestFor(text, plain, limit) {
     if (!stations) return null;
     var raw = String(text || "");
     var toks = raw.trim().split(/\s+/).filter(Boolean);
     if (!toks.length) return null;
     var last = -1;
-    for (var i = 0; i < toks.length; i++) if (SUG_MARK.test(fold(toks[i]))) last = i;
+    if (!plain) for (var i = 0; i < toks.length; i++) if (SUG_MARK.test(fold(toks[i]))) last = i;
     var frag = toks.slice(last + 1);
     if (!frag.length || frag.length > 4) return null;
     var fw = frag.map(fold).join(" ").split(" ").filter(Boolean);
+    if (last >= 0 && fold(toks[last]) === "na" && fw.length && /^prze/.test(fw[0])) return null;
     if (!fw.length || fw.join("").length < 2) return null;
     // w końcówce są słowa pomocnicze/godziny/daty — to już nie nazwa stacji
-    if (fw.some(function (w) { return MARKERS.test(w) || /^\d/.test(w) || /^(tak|nie|teraz)$/.test(w); })) return null;
-    var pre = function (q, w) { if (w.indexOf(q) === 0) return true; var sq = stem(q); return sq.length >= 3 && sq !== q && w.indexOf(sq) === 0; };
+    if (!plain && fw.some(function (w) { return MARKERS.test(w) || /^\d/.test(w) || /^(tak|nie|teraz)$/.test(w); })) return null;
+    var pre = function (q, w) { if (w.indexOf(q) === 0) return true; var sq = stem(q); return q.length >= 5 && sq.length >= 3 && sq !== q && w.indexOf(sq) === 0; };
     var list = stations.filter(function (s) {
-      if (!pre(fw[0], s.words[0] || "")) return false;
-      return fw.slice(1).every(function (q) { return s.words.slice(1).some(function (w) { return pre(q, w); }); });
+      for (var k = 0; k < s.words.length; k++) {
+        if (!pre(fw[0], s.words[k])) continue;
+        var after = s.words.slice(k + 1);
+        if (fw.slice(1).every(function (q) { return after.some(function (w) { return pre(q, w); }); })) return true;
+      }
+      return false;
     });
     var fragFold = fw.join(" ");
     // nazwa już kompletna (np. po wybraniu podpowiedzi i spacji) — nic nie pokazujemy
     if (/\s$/.test(raw) && (list.some(function (s) { return fold(s.name) === fragFold; }) || matchStation(frag.join(" ")).exact)) return null;
-    // Twoje stacje (ulubione + ostatnio szukane z tablicy) zaraz po głównych.
-    var mine = {};
-    myStations().forEach(function (m) { mine[m.id] = true; });
-    var own = function (x) { return mine[x.id] ? 0 : 1; };
+    // Twoje stacje i stacje w Twoich miastach zaraz po głównych.
+    var own = stationRank();
     list.sort(function (a, b) {
       return (sugTier(a) === 0 ? 0 : 1) - (sugTier(b) === 0 ? 0 : 1) || own(a) - own(b) || cityN(b) - cityN(a) || (a.words[0] < b.words[0] ? -1 : a.words[0] > b.words[0] ? 1 : 0) || sugTier(a) - sugTier(b) || (fold(a.name).indexOf(fragFold) === 0 ? 0 : 1) - (fold(b.name).indexOf(fragFold) === 0 ? 0 : 1) || a.name.length - b.name.length || (a.name < b.name ? -1 : 1);
     });
-    return { list: list.slice(0, 6), start: raw.length - raw.replace(/^\s+/, "").length, keep: toks.slice(0, last + 1).join(" ") };
+    return { list: list.slice(0, limit || 6), start: raw.length - raw.replace(/^\s+/, "").length, keep: toks.slice(0, last + 1).join(" ") };
   }
   function renderSuggest() {
     if (!sugEl) return;
@@ -1111,5 +1146,16 @@
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
 
+  // Ta sama wyszukiwarka stacji dla pól stacji na tablicy i w planerze —
+  // dzielnice („Załęże” → Katowice Załęże), odmiana, główna i Twoje miasta
+  // na początku. Lokalnie (data/stations-pl.json), bez zapytań do PLK.
+  window.StationSuggest = {
+    ready: loadStations,
+    loaded: function () { return !!stations; },
+    suggest: function (q, limit) {
+      var r = suggestFor(q, true, limit || 12);
+      return r ? r.list.map(function (s) { return { id: s.id, name: s.name }; }) : [];
+    }
+  };
   window.ChatAssistant = { open: openPanel, _suggest: suggestFor, _state: function () { return st; }, _parse: parse, _matchStation: matchStation, _loadStations: loadStations };
 })();

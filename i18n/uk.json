@@ -271,7 +271,8 @@
       "delayedText": "{time} {label} +{delay} хв",
       "notificationTitle": "Тривога про поїзди"
     },
-    "header": "Czy zdążę? Claude Code і RafStaK"
+    "header": "Czy zdążę? Claude Code і RafStaK",
+    "stationDropdownAll": "Усі станції"
   },
   "planer": {
     "pageTitle": "Планувальник подорожей",

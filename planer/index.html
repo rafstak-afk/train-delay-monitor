@@ -377,13 +377,14 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
   }
 
   // === Skąd/Dokąd: autouzupełnianie stacji ===
-  function renderDropdown(side,stations,onPick){
+  function renderDropdown(side,stations,onPick,keepOrder){
     var el=$(side+'Dropdown')||document.querySelector('.station-dropdown[data-key="'+side+'"]');
     if(!el)return;
     if(!stations.length){el.classList.remove('open');el.innerHTML='';return}
     // Stacja główna zawsze na początku (Główny/Główna/Centralna, potem sama nazwa miasta).
     var tier=function(n){return /(^|\s)(g[łl][óo]wn\w*|centraln\w*)(\s|$)/i.test(n)?0:(String(n).trim().indexOf(' ')<0?1:2)};
-    stations=stations.map(function(s,i){return{s:s,i:i,t:tier(s.name||'')}}).sort(function(a,b){return a.t-b.t||a.i-b.i}).map(function(x){return x.s});
+    // Lista z lokalnej wyszukiwarki (StationSuggest) ma już własną kolejność.
+    if(!keepOrder)stations=stations.map(function(s,i){return{s:s,i:i,t:tier(s.name||'')}}).sort(function(a,b){return a.t-b.t||a.i-b.i}).map(function(x){return x.s});
     el.innerHTML=stations.map(function(s){
       return '<button type="button" class="station-dd-item" data-id="'+escapeHtml(s.id)+'" data-name="'+escapeHtml(s.name)+'"><span class="station-dd-name">'+escapeHtml(s.name)+'</span><span class="station-dd-id">'+escapeHtml(s.id)+'</span></button>';
     }).join('');
@@ -418,8 +419,23 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     }
   }
 
+  // Najpierw lokalna wyszukiwarka stacji (chat-assistant.js → StationSuggest):
+  // rozumie dzielnice („Załęże” → Katowice Załęże) i odmianę, czego
+  // wyszukiwarka PLK (tylko początek pełnej nazwy) nie umie. Gdy lokalnie
+  // nic nie ma (np. nowa stacja spoza słownika) — pytamy PLK jak dotąd.
   function fetchStations(side,query){
     if(!query||query.length<2){hideDropdown(side);return}
+    if(window.StationSuggest){
+      StationSuggest.ready().then(function(){
+        if(($(side+'Input')||{}).value!==undefined&&String($(side+'Input').value).trim()!==query)return;
+        var loc=StationSuggest.suggest(query,12);
+        if(loc.length)renderDropdown(side,loc,null,true);else fetchStationsPlk(side,query);
+      }).catch(function(){fetchStationsPlk(side,query)});
+      return;
+    }
+    fetchStationsPlk(side,query);
+  }
+  function fetchStationsPlk(side,query){
     fetch('/api/dictionaries/stations?search='+encodeURIComponent(query)+'&pageSize=12',{headers:{Accept:'application/json'}})
       .then(function(r){return r.json()})
       .then(function(data){renderDropdown(side,Array.isArray(data.stations)?data.stations:[])})

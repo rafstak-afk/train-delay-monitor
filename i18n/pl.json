@@ -271,7 +271,8 @@
       "delayedText": "{time} {label} +{delay} min",
       "notificationTitle": "Alarm pociągów"
     },
-    "header": "Czy zdążę? Claude Code i RafStaK"
+    "header": "Czy zdążę? Claude Code i RafStaK",
+    "stationDropdownAll": "Wszystkie stacje"
   },
   "planer": {
     "pageTitle": "Planer podróży",
