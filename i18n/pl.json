@@ -52,7 +52,12 @@
   "index": {
     "trainWord": "pociąg",
     "lastTrain": "🚆 Ostatnio oglądany: {label} →",
-    "favStar": { "on": "★ W ulubionych", "off": "☆ Dodaj do ulubionych", "titleOn": "Usuń ze stacji ulubionych", "titleOff": "Dodaj do stacji ulubionych" },
+    "favStar": {
+      "on": "★ W ulubionych",
+      "off": "☆ Dodaj do ulubionych",
+      "titleOn": "Usuń ze stacji ulubionych",
+      "titleOff": "Dodaj do stacji ulubionych"
+    },
     "addFavoriteTitle": "Dodaj ulubioną stację",
     "noFavorites": "Brak ulubionych stacji — dodaj przez ☆ po wczytaniu tablicy niżej.",
     "focusFavoriteHint": "Wpisz nazwę stacji, kliknij „Pokaż z API”, a potem ☆ obok tytułu tablicy, żeby dodać ją do ulubionych.",
@@ -147,8 +152,19 @@
       "noDeparturesForTime": "Brak odjazdów dla wybranej daty i godziny.",
       "trackWithPrefix": "tor {track}"
     },
-    "badge": { "cancelled": "ODWOŁANY" },
-    "myTrains": { "addTitle": "Dodaj do Moich pociągów", "removeTitle": "Usuń z Moich pociągów", "added": "✓ Dodano „{train}” do Moich pociągów", "removed": "🗑️ Usunięto „{train}” z Moich pociągów", "addedStatus": "Dodano „{train}” (stacja: {station}) do Moich pociągów.", "removedStatus": "Usunięto „{train}” (stacja: {station}) z Moich pociągów.", "missingData": "Brak danych, żeby dodać ten pociąg do „Moje pociągi”.", "missingDataToast": "⚠️ Brak danych do dodania pociągu." },
+    "badge": {
+      "cancelled": "ODWOŁANY"
+    },
+    "myTrains": {
+      "addTitle": "Dodaj do Moich pociągów",
+      "removeTitle": "Usuń z Moich pociągów",
+      "added": "✓ Dodano „{train}” do Moich pociągów",
+      "removed": "🗑️ Usunięto „{train}” z Moich pociągów",
+      "addedStatus": "Dodano „{train}” (stacja: {station}) do Moich pociągów.",
+      "removedStatus": "Usunięto „{train}” (stacja: {station}) z Moich pociągów.",
+      "missingData": "Brak danych, żeby dodać ten pociąg do „Moje pociągi”.",
+      "missingDataToast": "⚠️ Brak danych do dodania pociągu."
+    },
     "status": {
       "enterStationName": "Wpisz nazwę stacji.",
       "searchingBoard": "Szukam tablicy PLK dla stacji: {station}...",
@@ -160,7 +176,9 @@
       "cancelledNoteFull": "Pociąg odwołany według API PLK",
       "cancelledNoteShort": "Odwołany według API PLK"
     },
-    "calendar": { "addTitle": "Dodaj do kalendarza" },
+    "calendar": {
+      "addTitle": "Dodaj do kalendarza"
+    },
     "disruption": {
       "codes": {},
       "texts": {
@@ -174,9 +192,25 @@
         "Awaria sieci trakcyjnej": "Awaria sieci trakcyjnej"
       }
     },
-    "apiLimits": { "noHeaderInfo": "Limit API: brak informacji w nagłówkach odpowiedzi PLK.", "remaining": "pozostało: {value}", "pool": "pula: {value}", "reset": "reset: {value}", "prefix": "Limit API: ", "noDetails": "brak szczegółów." },
+    "apiLimits": {
+      "noHeaderInfo": "Limit API: brak informacji w nagłówkach odpowiedzi PLK.",
+      "remaining": "pozostało: {value}",
+      "pool": "pula: {value}",
+      "reset": "reset: {value}",
+      "prefix": "Limit API: ",
+      "noDetails": "brak szczegółów."
+    },
     "noDirection": "brak kierunku",
-    "calendarStatus": { "missingData": "Brak danych do utworzenia wydarzenia w kalendarzu.", "buildFailed": "Nie udało się zbudować wydarzenia w kalendarzu.", "downloaded": "Pobrano zdarzenie .ics — otwórz plik, żeby dodać przejazd do kalendarza.", "departure": "Odjazd: {station} {time}", "arrivalApprox": "Przyjazd: {dest} (orientacyjnie, +30 min)", "arrival": "Przyjazd: {dest} {time}", "platformTrack": "Peron: {platform} / Tor: {track}", "fromStation": "z {station}" },
+    "calendarStatus": {
+      "missingData": "Brak danych do utworzenia wydarzenia w kalendarzu.",
+      "buildFailed": "Nie udało się zbudować wydarzenia w kalendarzu.",
+      "downloaded": "Pobrano zdarzenie .ics — otwórz plik, żeby dodać przejazd do kalendarza.",
+      "departure": "Odjazd: {station} {time}",
+      "arrivalApprox": "Przyjazd: {dest} (orientacyjnie, +30 min)",
+      "arrival": "Przyjazd: {dest} {time}",
+      "platformTrack": "Peron: {platform} / Tor: {track}",
+      "fromStation": "z {station}"
+    },
     "alert": {
       "reasonToggleTitle": "Pokaż przyczynę opóźnienia",
       "boxTitle": "🔔 Alarm: opóźnienia / odwołania",
@@ -186,5 +220,115 @@
       "delayedText": "{time} {label} +{delay} min",
       "notificationTitle": "Alarm pociągów"
     }
+  },
+  "planer": {
+    "pageTitle": "Planer podróży",
+    "back": "← Tablica",
+    "title": "🧭 Planer podróży",
+    "subtitle": "Szuka połączeń bezpośrednich i z przesiadką(ami) na podstawie rozkładu PLK, z czasem rzeczywistym tam, gdzie już jest znany.",
+    "from": "Skąd",
+    "to": "Dokąd",
+    "stationPlaceholder": "Nazwa stacji...",
+    "clear": "Wyczyść",
+    "swap": "Zamień miejscami",
+    "date": "Data",
+    "fromTime": "Od godziny",
+    "adv": "Zaawansowane",
+    "advDotTitle": "Aktywne ustawienie niedomyślne",
+    "advSummary": "Min. czas na przesiadkę: {min} min",
+    "minTransfer": "Minimalny czas na przesiadkę",
+    "directOnly": "Tylko połączenia bezpośrednie (bez przesiadek)",
+    "via": "Przez stację",
+    "viaOptional": "Opcjonalnie",
+    "viaAdded": {
+      "one": "{n} stacja dodana",
+      "few": "{n} stacje dodane",
+      "many": "{n} stacji dodanych",
+      "other": "{n} stacji dodanych"
+    },
+    "addVia": "➕ Dodaj stację",
+    "viaSettings": "Ustawienia dla tej stacji",
+    "remove": "Usuń",
+    "viaTransferHere": "Czas na przesiadkę tutaj",
+    "viaDefault": "Jak domyślnie",
+    "viaExtraExclusions": "Dodatkowe wykluczenia na tym odcinku",
+    "carriers": "Wyklucz przewoźników",
+    "carriersNone": "Żaden nie wykluczony",
+    "carriersExcluded": {
+      "one": "{n} wykluczony",
+      "few": "{n} wykluczonych",
+      "many": "{n} wykluczonych",
+      "other": "{n} wykluczonych"
+    },
+    "carriersLoading": "Ładowanie listy przewoźników...",
+    "carriersUnavailable": "Lista przewoźników chwilowo niedostępna.",
+    "searchBtn": "🔎 Szukaj połączeń",
+    "history": "Ostatnie wyszukiwania",
+    "historySummary": "Szybki powrót do wcześniejszych tras",
+    "historyEmpty": "Brak wcześniejszych wyszukiwań.",
+    "historyWhen": "{date}, od {time}",
+    "historyBuffer": "bufor {min} min",
+    "historyDirectOnly": "tylko bezpośrednie",
+    "historyVia": "przez {list}",
+    "historyExcluded": {
+      "one": "{n} wykl. przewoźnik",
+      "few": "{n} wykl. przewoźników",
+      "many": "{n} wykl. przewoźników",
+      "other": "{n} wykl. przewoźników"
+    },
+    "rerun": "🔎 Szukaj ponownie",
+    "saved": "Zapisane wyniki",
+    "savedSummary": "Do późniejszego przejrzenia",
+    "savedEmpty": "Brak zapisanych wyników. Kliknij „💾 Zapisz” przy dowolnym wyniku wyszukiwania.",
+    "savedAt": "zapisano {date}",
+    "legTitle": "Pokaż szczegóły pociągu",
+    "badgeDirect": "BEZPOŚREDNIO",
+    "badgeTransfer": "1 PRZESIADKA",
+    "badgeMulti": {
+      "one": "{n} PRZESIADKA",
+      "few": "{n} PRZESIADKI",
+      "many": "{n} PRZESIADEK",
+      "other": "{n} PRZESIADKI"
+    },
+    "badgeVia": "TRASA PRZEZ {n} ST.",
+    "riskSafe": "🟢 na czas",
+    "riskTight": "🟡 ciasno: {min} min",
+    "riskMissed": "🔴 prawdopodobnie nie zdążysz",
+    "hintFaster": "⚡ Szybciej: {train} odj. {dep} → przyj. {arr} ({gain} min wcześniej) ›",
+    "hintTransferSame": "🔁 Z przesiadką: na stacji {station} przesiądź się na {train} → przyj. {arr}",
+    "hintTransferOther": "🔁 Z przesiadką na stacji {station}: odj. {dep} → przyj. {arr}",
+    "hintGain": " ({gain} min wcześniej)",
+    "hintTight": " ⚠️ ciasna przesiadka: {min} min",
+    "transferLine": "🔁 Przesiadka w {station}: {min} min",
+    "planTitle": "Dodaj do planu podróży w dzienniczku — potem potwierdzisz każdy odcinek osobno",
+    "removeBtn": "🗑️ Usuń",
+    "addPlan": "📋 Do dziennika",
+    "save": "💾 Zapisz",
+    "nextDay": "+1 dzień",
+    "planAdded": "✅ Dodano do dziennika",
+    "planAlready": "ℹ️ Już jest w dzienniczku",
+    "durHM": "{h}h {m}min",
+    "durM": "{m} min",
+    "ambiguous": "Znaleziono więcej niż jedną stację o nazwie „{name}” — pokazano wyniki dla najbardziej prawdopodobnej. Wybierz dokładną stację z podpowiedzi, jeśli to nie ta.",
+    "ambiguousVia": "Znaleziono więcej niż jedną stację o nazwie „{name}” dla punktu „przez” — pokazano wyniki dla najbardziej prawdopodobnej.",
+    "noConnVia": "Nie znaleziono połączenia przez „{station}” — spróbuj innej daty/godziny albo usuń ten punkt.",
+    "noConnLastToday": "Dziś między „{from}” a „{to}” (przy tych ustawieniach) ostatnie pasujące połączenie odjechało już o {time}. Wybierz jutrzejszą datę albo zmień ustawienia w „Zaawansowane”.",
+    "noConn": "Nie znaleziono dziś połączenia między „{from}” a „{to}”. Spróbuj innej daty, godziny albo zmień ustawienia w „Zaawansowane”.",
+    "found": "Znaleziono: {list}.",
+    "countDirect": {
+      "one": "{n} bezpośrednie",
+      "few": "{n} bezpośrednie",
+      "many": "{n} bezpośrednich",
+      "other": "{n} bezpośrednich"
+    },
+    "countTransfer": "{n} z 1 przesiadką",
+    "countMulti": "{n} z 2 przesiadkami",
+    "countVia": "{n} przez wskazane stacje",
+    "loadMore": "⬇️ Pobierz kolejne {count} ({remaining} więcej)",
+    "enterStations": "Wpisz stację początkową i docelową.",
+    "searching": "Szukam połączeń...",
+    "retrying": "Szukam połączeń... (ponawiam, serwer potrzebował więcej czasu)",
+    "serverError": "Błąd wyszukiwania połączeń (serwer: {status}). Spróbuj ponownie za chwilę.",
+    "apiFail": "Nie udało się połączyć z API."
   }
 }

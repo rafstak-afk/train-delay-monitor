@@ -52,7 +52,12 @@
   "index": {
     "trainWord": "Zug",
     "lastTrain": "🚆 Zuletzt angesehen: {label} →",
-    "favStar": { "on": "★ In Favoriten", "off": "☆ Zu Favoriten hinzufügen", "titleOn": "Aus Lieblingsbahnhöfen entfernen", "titleOff": "Zu Lieblingsbahnhöfen hinzufügen" },
+    "favStar": {
+      "on": "★ In Favoriten",
+      "off": "☆ Zu Favoriten hinzufügen",
+      "titleOn": "Aus Lieblingsbahnhöfen entfernen",
+      "titleOff": "Zu Lieblingsbahnhöfen hinzufügen"
+    },
     "addFavoriteTitle": "Lieblingsbahnhof hinzufügen",
     "noFavorites": "Noch keine Lieblingsbahnhöfe — füge einen mit ☆ hinzu, nachdem du unten eine Anzeigetafel geladen hast.",
     "focusFavoriteHint": "Gib einen Bahnhofsnamen ein, klicke auf „Live-Daten anzeigen“ und dann auf ☆ neben dem Tafeltitel, um ihn zu den Favoriten hinzuzufügen.",
@@ -158,9 +163,22 @@
       "noDeparturesForTime": "Keine Abfahrten für das gewählte Datum und die Uhrzeit.",
       "trackWithPrefix": "Gleis {track}"
     },
-    "badge": { "cancelled": "AUSGEFALLEN" },
-    "myTrains": { "addTitle": "Zu Meine Züge hinzufügen", "removeTitle": "Aus Meine Züge entfernen", "added": "✓ „{train}“ zu Meine Züge hinzugefügt", "removed": "🗑️ „{train}“ aus Meine Züge entfernt", "addedStatus": "„{train}“ (Bahnhof: {station}) zu Meine Züge hinzugefügt.", "removedStatus": "„{train}“ (Bahnhof: {station}) aus Meine Züge entfernt.", "missingData": "Es fehlen Daten, um diesen Zug zu „Meine Züge“ hinzuzufügen.", "missingDataToast": "⚠️ Es fehlen Daten zum Hinzufügen des Zuges." },
-    "calendar": { "addTitle": "Zum Kalender hinzufügen" },
+    "badge": {
+      "cancelled": "AUSGEFALLEN"
+    },
+    "myTrains": {
+      "addTitle": "Zu Meine Züge hinzufügen",
+      "removeTitle": "Aus Meine Züge entfernen",
+      "added": "✓ „{train}“ zu Meine Züge hinzugefügt",
+      "removed": "🗑️ „{train}“ aus Meine Züge entfernt",
+      "addedStatus": "„{train}“ (Bahnhof: {station}) zu Meine Züge hinzugefügt.",
+      "removedStatus": "„{train}“ (Bahnhof: {station}) aus Meine Züge entfernt.",
+      "missingData": "Es fehlen Daten, um diesen Zug zu „Meine Züge“ hinzuzufügen.",
+      "missingDataToast": "⚠️ Es fehlen Daten zum Hinzufügen des Zuges."
+    },
+    "calendar": {
+      "addTitle": "Zum Kalender hinzufügen"
+    },
     "disruption": {
       "codes": {},
       "texts": {
@@ -174,9 +192,25 @@
         "Awaria sieci trakcyjnej": "Oberleitungsstörung"
       }
     },
-    "apiLimits": { "noHeaderInfo": "API-Limit: keine Angaben in den Antwort-Headern von PLK.", "remaining": "verbleibend: {value}", "pool": "Kontingent: {value}", "reset": "Zurücksetzung: {value}", "prefix": "API-Limit: ", "noDetails": "keine Details." },
+    "apiLimits": {
+      "noHeaderInfo": "API-Limit: keine Angaben in den Antwort-Headern von PLK.",
+      "remaining": "verbleibend: {value}",
+      "pool": "Kontingent: {value}",
+      "reset": "Zurücksetzung: {value}",
+      "prefix": "API-Limit: ",
+      "noDetails": "keine Details."
+    },
     "noDirection": "keine Richtung",
-    "calendarStatus": { "missingData": "Es fehlen Daten, um einen Kalendertermin zu erstellen.", "buildFailed": "Der Kalendertermin konnte nicht erstellt werden.", "downloaded": ".ics-Datei heruntergeladen — öffne sie, um die Fahrt zum Kalender hinzuzufügen.", "departure": "Abfahrt: {station} {time}", "arrivalApprox": "Ankunft: {dest} (ca., +30 min)", "arrival": "Ankunft: {dest} {time}", "platformTrack": "Bahnsteig: {platform} / Gleis: {track}", "fromStation": "ab {station}" },
+    "calendarStatus": {
+      "missingData": "Es fehlen Daten, um einen Kalendertermin zu erstellen.",
+      "buildFailed": "Der Kalendertermin konnte nicht erstellt werden.",
+      "downloaded": ".ics-Datei heruntergeladen — öffne sie, um die Fahrt zum Kalender hinzuzufügen.",
+      "departure": "Abfahrt: {station} {time}",
+      "arrivalApprox": "Ankunft: {dest} (ca., +30 min)",
+      "arrival": "Ankunft: {dest} {time}",
+      "platformTrack": "Bahnsteig: {platform} / Gleis: {track}",
+      "fromStation": "ab {station}"
+    },
     "alert": {
       "reasonToggleTitle": "Verspätungsgrund anzeigen",
       "boxTitle": "🔔 Alarm: Verspätungen / Ausfälle",
@@ -186,5 +220,115 @@
       "delayedText": "{time} {label} +{delay} min",
       "notificationTitle": "Zugalarm"
     }
+  },
+  "planer": {
+    "pageTitle": "Reiseplaner",
+    "back": "← Tafel",
+    "title": "🧭 Reiseplaner",
+    "subtitle": "Sucht Direktverbindungen und Verbindungen mit Umstieg anhand des PLK-Fahrplans, mit Echtzeitdaten, wo sie bereits bekannt sind.",
+    "from": "Von",
+    "to": "Nach",
+    "stationPlaceholder": "Bahnhofsname...",
+    "clear": "Leeren",
+    "swap": "Tauschen",
+    "date": "Datum",
+    "fromTime": "Ab Uhrzeit",
+    "adv": "Erweitert",
+    "advDotTitle": "Eine nicht standardmäßige Einstellung ist aktiv",
+    "advSummary": "Min. Umstiegszeit: {min} min",
+    "minTransfer": "Minimale Umstiegszeit",
+    "directOnly": "Nur Direktverbindungen (ohne Umstieg)",
+    "via": "Über Bahnhof",
+    "viaOptional": "Optional",
+    "viaAdded": {
+      "one": "{n} Bahnhof hinzugefügt",
+      "few": "{n} Bahnhöfe hinzugefügt",
+      "many": "{n} Bahnhöfe hinzugefügt",
+      "other": "{n} Bahnhöfe hinzugefügt"
+    },
+    "addVia": "➕ Bahnhof hinzufügen",
+    "viaSettings": "Einstellungen für diesen Bahnhof",
+    "remove": "Entfernen",
+    "viaTransferHere": "Umstiegszeit hier",
+    "viaDefault": "Standard",
+    "viaExtraExclusions": "Zusätzliche Ausschlüsse auf diesem Abschnitt",
+    "carriers": "Verkehrsunternehmen ausschließen",
+    "carriersNone": "Keines ausgeschlossen",
+    "carriersExcluded": {
+      "one": "{n} ausgeschlossen",
+      "few": "{n} ausgeschlossen",
+      "many": "{n} ausgeschlossen",
+      "other": "{n} ausgeschlossen"
+    },
+    "carriersLoading": "Liste der Verkehrsunternehmen wird geladen...",
+    "carriersUnavailable": "Liste der Verkehrsunternehmen vorübergehend nicht verfügbar.",
+    "searchBtn": "🔎 Verbindungen suchen",
+    "history": "Letzte Suchen",
+    "historySummary": "Schnell zu früheren Strecken zurück",
+    "historyEmpty": "Keine früheren Suchen.",
+    "historyWhen": "{date}, ab {time}",
+    "historyBuffer": "Puffer {min} min",
+    "historyDirectOnly": "nur direkt",
+    "historyVia": "über {list}",
+    "historyExcluded": {
+      "one": "{n} Untern. ausgeschl.",
+      "few": "{n} Untern. ausgeschl.",
+      "many": "{n} Untern. ausgeschl.",
+      "other": "{n} Untern. ausgeschl."
+    },
+    "rerun": "🔎 Erneut suchen",
+    "saved": "Gespeicherte Ergebnisse",
+    "savedSummary": "Zum späteren Ansehen",
+    "savedEmpty": "Keine gespeicherten Ergebnisse. Klicke bei einem Suchergebnis auf „💾 Speichern“.",
+    "savedAt": "gespeichert {date}",
+    "legTitle": "Zugdetails anzeigen",
+    "badgeDirect": "DIREKT",
+    "badgeTransfer": "1 UMSTIEG",
+    "badgeMulti": {
+      "one": "{n} UMSTIEG",
+      "few": "{n} UMSTIEGE",
+      "many": "{n} UMSTIEGE",
+      "other": "{n} UMSTIEGE"
+    },
+    "badgeVia": "ROUTE ÜBER {n} BF.",
+    "riskSafe": "🟢 pünktlich",
+    "riskTight": "🟡 knapp: {min} min",
+    "riskMissed": "🔴 wahrscheinlich nicht erreichbar",
+    "hintFaster": "⚡ Schneller: {train} ab {dep} → an {arr} ({gain} min früher) ›",
+    "hintTransferSame": "🔁 Mit Umstieg: in {station} in den {train} umsteigen → an {arr}",
+    "hintTransferOther": "🔁 Mit Umstieg in {station}: ab {dep} → an {arr}",
+    "hintGain": " ({gain} min früher)",
+    "hintTight": " ⚠️ knapper Umstieg: {min} min",
+    "transferLine": "🔁 Umstieg in {station}: {min} min",
+    "planTitle": "Zum Reiseplan im Tagebuch hinzufügen — jeden Abschnitt bestätigst du später einzeln",
+    "removeBtn": "🗑️ Entfernen",
+    "addPlan": "📋 Ins Tagebuch",
+    "save": "💾 Speichern",
+    "nextDay": "+1 Tag",
+    "planAdded": "✅ Zum Tagebuch hinzugefügt",
+    "planAlready": "ℹ️ Schon im Tagebuch",
+    "durHM": "{h} Std. {m} Min.",
+    "durM": "{m} Min.",
+    "ambiguous": "Es wurde mehr als ein Bahnhof namens „{name}“ gefunden — Ergebnisse für den wahrscheinlichsten werden angezeigt. Wähle den genauen Bahnhof aus den Vorschlägen, falls das nicht der richtige ist.",
+    "ambiguousVia": "Für den „Über“-Punkt wurde mehr als ein Bahnhof namens „{name}“ gefunden — Ergebnisse für den wahrscheinlichsten werden angezeigt.",
+    "noConnVia": "Keine Verbindung über „{station}“ gefunden — versuche ein anderes Datum/eine andere Uhrzeit oder entferne diesen Punkt.",
+    "noConnLastToday": "Heute ist die letzte passende Verbindung zwischen „{from}“ und „{to}“ (mit diesen Einstellungen) bereits um {time} abgefahren. Wähle das morgige Datum oder ändere die Einstellungen unter „Erweitert“.",
+    "noConn": "Heute wurde keine Verbindung zwischen „{from}“ und „{to}“ gefunden. Versuche ein anderes Datum, eine andere Uhrzeit oder ändere die Einstellungen unter „Erweitert“.",
+    "found": "Gefunden: {list}.",
+    "countDirect": {
+      "one": "{n} direkt",
+      "few": "{n} direkt",
+      "many": "{n} direkt",
+      "other": "{n} direkt"
+    },
+    "countTransfer": "{n} mit 1 Umstieg",
+    "countMulti": "{n} mit 2 Umstiegen",
+    "countVia": "{n} über die gewählten Bahnhöfe",
+    "loadMore": "⬇️ {count} weitere laden (noch {remaining})",
+    "enterStations": "Gib Start- und Zielbahnhof ein.",
+    "searching": "Suche Verbindungen...",
+    "retrying": "Suche Verbindungen... (neuer Versuch, der Server brauchte mehr Zeit)",
+    "serverError": "Fehler bei der Verbindungssuche (Server: {status}). Versuche es gleich noch einmal.",
+    "apiFail": "Verbindung zur API fehlgeschlagen."
   }
 }

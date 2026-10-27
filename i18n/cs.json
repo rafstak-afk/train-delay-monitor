@@ -52,7 +52,12 @@
   "index": {
     "trainWord": "vlak",
     "lastTrain": "🚆 Naposledy zobrazený: {label} →",
-    "favStar": { "on": "★ V oblíbených", "off": "☆ Přidat do oblíbených", "titleOn": "Odebrat z oblíbených stanic", "titleOff": "Přidat do oblíbených stanic" },
+    "favStar": {
+      "on": "★ V oblíbených",
+      "off": "☆ Přidat do oblíbených",
+      "titleOn": "Odebrat z oblíbených stanic",
+      "titleOff": "Přidat do oblíbených stanic"
+    },
     "addFavoriteTitle": "Přidat oblíbenou stanici",
     "noFavorites": "Zatím žádné oblíbené stanice — přidejte je pomocí ☆ po načtení tabule níže.",
     "focusFavoriteHint": "Zadejte název stanice, klikněte na „Zobrazit živá data“ a pak na ☆ vedle názvu tabule, abyste ji přidali do oblíbených.",
@@ -158,9 +163,22 @@
       "noDeparturesForTime": "Pro zvolené datum a čas nejsou žádné odjezdy.",
       "trackWithPrefix": "kolej {track}"
     },
-    "badge": { "cancelled": "ZRUŠEN" },
-    "myTrains": { "addTitle": "Přidat do Mých vlaků", "removeTitle": "Odebrat z Mých vlaků", "added": "✓ „{train}“ přidán do Mých vlaků", "removed": "🗑️ „{train}“ odebrán z Mých vlaků", "addedStatus": "„{train}“ (stanice: {station}) přidán do Mých vlaků.", "removedStatus": "„{train}“ (stanice: {station}) odebrán z Mých vlaků.", "missingData": "Chybí data pro přidání tohoto vlaku do „Mých vlaků“.", "missingDataToast": "⚠️ Chybí data pro přidání vlaku." },
-    "calendar": { "addTitle": "Přidat do kalendáře" },
+    "badge": {
+      "cancelled": "ZRUŠEN"
+    },
+    "myTrains": {
+      "addTitle": "Přidat do Mých vlaků",
+      "removeTitle": "Odebrat z Mých vlaků",
+      "added": "✓ „{train}“ přidán do Mých vlaků",
+      "removed": "🗑️ „{train}“ odebrán z Mých vlaků",
+      "addedStatus": "„{train}“ (stanice: {station}) přidán do Mých vlaků.",
+      "removedStatus": "„{train}“ (stanice: {station}) odebrán z Mých vlaků.",
+      "missingData": "Chybí data pro přidání tohoto vlaku do „Mých vlaků“.",
+      "missingDataToast": "⚠️ Chybí data pro přidání vlaku."
+    },
+    "calendar": {
+      "addTitle": "Přidat do kalendáře"
+    },
     "disruption": {
       "codes": {},
       "texts": {
@@ -174,9 +192,25 @@
         "Awaria sieci trakcyjnej": "Porucha trakčního vedení"
       }
     },
-    "apiLimits": { "noHeaderInfo": "Limit API: v hlavičkách odpovědi PLK nejsou údaje.", "remaining": "zbývá: {value}", "pool": "kvóta: {value}", "reset": "obnovení: {value}", "prefix": "Limit API: ", "noDetails": "bez podrobností." },
+    "apiLimits": {
+      "noHeaderInfo": "Limit API: v hlavičkách odpovědi PLK nejsou údaje.",
+      "remaining": "zbývá: {value}",
+      "pool": "kvóta: {value}",
+      "reset": "obnovení: {value}",
+      "prefix": "Limit API: ",
+      "noDetails": "bez podrobností."
+    },
     "noDirection": "bez směru",
-    "calendarStatus": { "missingData": "Chybí data pro vytvoření události v kalendáři.", "buildFailed": "Událost v kalendáři se nepodařilo vytvořit.", "downloaded": "Soubor .ics stažen — otevřete jej a přidejte jízdu do kalendáře.", "departure": "Odjezd: {station} {time}", "arrivalApprox": "Příjezd: {dest} (přibl., +30 min)", "arrival": "Příjezd: {dest} {time}", "platformTrack": "Nástupiště: {platform} / Kolej: {track}", "fromStation": "ze stanice {station}" },
+    "calendarStatus": {
+      "missingData": "Chybí data pro vytvoření události v kalendáři.",
+      "buildFailed": "Událost v kalendáři se nepodařilo vytvořit.",
+      "downloaded": "Soubor .ics stažen — otevřete jej a přidejte jízdu do kalendáře.",
+      "departure": "Odjezd: {station} {time}",
+      "arrivalApprox": "Příjezd: {dest} (přibl., +30 min)",
+      "arrival": "Příjezd: {dest} {time}",
+      "platformTrack": "Nástupiště: {platform} / Kolej: {track}",
+      "fromStation": "ze stanice {station}"
+    },
     "alert": {
       "reasonToggleTitle": "Zobrazit důvod zpoždění",
       "boxTitle": "🔔 Alarm: zpoždění / zrušení",
@@ -186,5 +220,115 @@
       "delayedText": "{time} {label} +{delay} min",
       "notificationTitle": "Vlakový alarm"
     }
+  },
+  "planer": {
+    "pageTitle": "Plánovač cest",
+    "back": "← Tabule",
+    "title": "🧭 Plánovač cest",
+    "subtitle": "Hledá přímá spojení i spojení s přestupy podle jízdního řádu PLK, s údaji v reálném čase tam, kde už jsou známé.",
+    "from": "Odkud",
+    "to": "Kam",
+    "stationPlaceholder": "Název stanice...",
+    "clear": "Vymazat",
+    "swap": "Prohodit",
+    "date": "Datum",
+    "fromTime": "Od času",
+    "adv": "Pokročilé",
+    "advDotTitle": "Je aktivní nevýchozí nastavení",
+    "advSummary": "Min. čas na přestup: {min} min",
+    "minTransfer": "Minimální čas na přestup",
+    "directOnly": "Pouze přímá spojení (bez přestupů)",
+    "via": "Přes stanici",
+    "viaOptional": "Volitelné",
+    "viaAdded": {
+      "one": "{n} stanice přidána",
+      "few": "{n} stanice přidány",
+      "many": "{n} stanic přidáno",
+      "other": "{n} stanic přidáno"
+    },
+    "addVia": "➕ Přidat stanici",
+    "viaSettings": "Nastavení pro tuto stanici",
+    "remove": "Odebrat",
+    "viaTransferHere": "Čas na přestup zde",
+    "viaDefault": "Výchozí",
+    "viaExtraExclusions": "Další vyloučení na tomto úseku",
+    "carriers": "Vyloučit dopravce",
+    "carriersNone": "Žádný vyloučen",
+    "carriersExcluded": {
+      "one": "{n} vyloučen",
+      "few": "{n} vyloučeni",
+      "many": "{n} vyloučeno",
+      "other": "{n} vyloučeno"
+    },
+    "carriersLoading": "Načítám seznam dopravců...",
+    "carriersUnavailable": "Seznam dopravců je dočasně nedostupný.",
+    "searchBtn": "🔎 Hledat spojení",
+    "history": "Nedávná hledání",
+    "historySummary": "Rychlý návrat k dřívějším trasám",
+    "historyEmpty": "Žádná dřívější hledání.",
+    "historyWhen": "{date}, od {time}",
+    "historyBuffer": "rezerva {min} min",
+    "historyDirectOnly": "jen přímé",
+    "historyVia": "přes {list}",
+    "historyExcluded": {
+      "one": "{n} vyl. dopravce",
+      "few": "{n} vyl. dopravci",
+      "many": "{n} vyl. dopravců",
+      "other": "{n} vyl. dopravců"
+    },
+    "rerun": "🔎 Hledat znovu",
+    "saved": "Uložené výsledky",
+    "savedSummary": "K pozdějšímu prohlédnutí",
+    "savedEmpty": "Žádné uložené výsledky. U libovolného výsledku klikněte na „💾 Uložit“.",
+    "savedAt": "uloženo {date}",
+    "legTitle": "Zobrazit podrobnosti vlaku",
+    "badgeDirect": "PŘÍMÉ",
+    "badgeTransfer": "1 PŘESTUP",
+    "badgeMulti": {
+      "one": "{n} PŘESTUP",
+      "few": "{n} PŘESTUPY",
+      "many": "{n} PŘESTUPŮ",
+      "other": "{n} PŘESTUPŮ"
+    },
+    "badgeVia": "TRASA PŘES {n} ST.",
+    "riskSafe": "🟢 včas",
+    "riskTight": "🟡 těsně: {min} min",
+    "riskMissed": "🔴 pravděpodobně nestihnete",
+    "hintFaster": "⚡ Rychleji: {train} odj. {dep} → příj. {arr} (o {gain} min dříve) ›",
+    "hintTransferSame": "🔁 S přestupem: ve stanici {station} přestupte na {train} → příj. {arr}",
+    "hintTransferOther": "🔁 S přestupem ve stanici {station}: odj. {dep} → příj. {arr}",
+    "hintGain": " (o {gain} min dříve)",
+    "hintTight": " ⚠️ těsný přestup: {min} min",
+    "transferLine": "🔁 Přestup ve stanici {station}: {min} min",
+    "planTitle": "Přidat do plánu cest v deníku — každý úsek pak potvrdíte zvlášť",
+    "removeBtn": "🗑️ Odebrat",
+    "addPlan": "📋 Do deníku",
+    "save": "💾 Uložit",
+    "nextDay": "+1 den",
+    "planAdded": "✅ Přidáno do deníku",
+    "planAlready": "ℹ️ Už je v deníku",
+    "durHM": "{h} h {m} min",
+    "durM": "{m} min",
+    "ambiguous": "Bylo nalezeno více stanic s názvem „{name}“ — zobrazeny jsou výsledky pro nejpravděpodobnější. Pokud to není ona, vyberte přesnou stanici z nabídky.",
+    "ambiguousVia": "Pro bod „přes“ bylo nalezeno více stanic s názvem „{name}“ — zobrazeny jsou výsledky pro nejpravděpodobnější.",
+    "noConnVia": "Spojení přes „{station}“ nebylo nalezeno — zkuste jiné datum/čas nebo tento bod odeberte.",
+    "noConnLastToday": "Poslední vyhovující spojení mezi „{from}“ a „{to}“ (s tímto nastavením) dnes už odjelo v {time}. Zvolte zítřejší datum nebo změňte nastavení v „Pokročilé“.",
+    "noConn": "Dnes nebylo nalezeno spojení mezi „{from}“ a „{to}“. Zkuste jiné datum, čas nebo změňte nastavení v „Pokročilé“.",
+    "found": "Nalezeno: {list}.",
+    "countDirect": {
+      "one": "{n} přímé",
+      "few": "{n} přímá",
+      "many": "{n} přímých",
+      "other": "{n} přímých"
+    },
+    "countTransfer": "{n} s 1 přestupem",
+    "countMulti": "{n} se 2 přestupy",
+    "countVia": "{n} přes zvolené stanice",
+    "loadMore": "⬇️ Načíst dalších {count} (zbývá {remaining})",
+    "enterStations": "Zadejte výchozí a cílovou stanici.",
+    "searching": "Hledám spojení...",
+    "retrying": "Hledám spojení... (zkouším znovu, server potřeboval více času)",
+    "serverError": "Chyba při hledání spojení (server: {status}). Zkuste to za chvíli znovu.",
+    "apiFail": "Nepodařilo se připojit k API."
   }
 }

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Planer podróży</title>
+<title data-i18n="planer.pageTitle">Planer podróży</title>
 <style>
 :root{--bg:#101820;--panel:#1c2833;--card:#223244;--line:#34495e;--text:#fff;--muted:#b8c3cf;--blue:#0b57d0;--green:#5dd39e;--yellow:#ffcc00;--red:#ff4d4d;--violet:#c084fc;--grey:#4b5563;--cyan:#22d3ee}
 *{box-sizing:border-box}
@@ -132,42 +132,42 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
 </head>
 <body>
 <div class="wrap">
-  <a class="back" href="/">← Tablica</a>
-  <h1>🧭 Planer podróży</h1>
-  <div class="subtitle">Szuka połączeń bezpośrednich i z przesiadką(ami) na podstawie rozkładu PLK, z czasem rzeczywistym tam, gdzie już jest znany.</div>
+  <a class="back" href="/" data-i18n="planer.back">← Tablica</a>
+  <h1 data-i18n="planer.title">🧭 Planer podróży</h1>
+  <div class="subtitle" data-i18n="planer.subtitle">Szuka połączeń bezpośrednich i z przesiadką(ami) na podstawie rozkładu PLK, z czasem rzeczywistym tam, gdzie już jest znany.</div>
 
   <div class="panel">
     <div class="station-stack">
       <div class="station-field">
-        <label for="fromInput">Skąd</label>
+        <label for="fromInput" data-i18n="planer.from">Skąd</label>
         <div class="input-wrap">
-          <input id="fromInput" type="text" placeholder="Nazwa stacji..." autocomplete="off">
-          <button type="button" class="field-clear" data-side="from" title="Wyczyść">✕</button>
+          <input id="fromInput" type="text" placeholder="Nazwa stacji..." data-i18n-attr="placeholder:planer.stationPlaceholder" autocomplete="off">
+          <button type="button" class="field-clear" data-side="from" title="Wyczyść" data-i18n-attr="title:planer.clear">✕</button>
         </div>
         <div class="station-dropdown" id="fromDropdown"></div>
       </div>
       <div class="station-field">
-        <label for="toInput">Dokąd</label>
+        <label for="toInput" data-i18n="planer.to">Dokąd</label>
         <div class="input-wrap">
-          <input id="toInput" type="text" placeholder="Nazwa stacji..." autocomplete="off">
-          <button type="button" class="field-clear" data-side="to" title="Wyczyść">✕</button>
+          <input id="toInput" type="text" placeholder="Nazwa stacji..." data-i18n-attr="placeholder:planer.stationPlaceholder" autocomplete="off">
+          <button type="button" class="field-clear" data-side="to" title="Wyczyść" data-i18n-attr="title:planer.clear">✕</button>
         </div>
         <div class="station-dropdown" id="toDropdown"></div>
       </div>
-      <button type="button" class="swap-btn" id="swapBtn" title="Zamień miejscami">⇅</button>
+      <button type="button" class="swap-btn" id="swapBtn" title="Zamień miejscami" data-i18n-attr="title:planer.swap">⇅</button>
     </div>
     <div class="date-time-row">
-      <div><label for="dateInput">Data</label><input id="dateInput" type="date"></div>
-      <div><label for="timeInput">Od godziny</label><input id="timeInput" type="time"></div>
+      <div><label for="dateInput" data-i18n="planer.date">Data</label><input id="dateInput" type="date"></div>
+      <div><label for="timeInput" data-i18n="planer.fromTime">Od godziny</label><input id="timeInput" type="time"></div>
     </div>
     <div class="trips-panel" id="advPanel">
       <button type="button" class="trips-toggle" id="advToggle" aria-expanded="false" onclick="toggleAdv()">
         <span class="trips-toggle-icon" aria-hidden="true">⚙️</span>
-        <span class="trips-toggle-text"><span class="trips-toggle-title">Zaawansowane<span class="adv-dot" id="advDot" title="Aktywne ustawienie niedomyślne"></span></span><span class="trips-toggle-summary" id="advSummary">Min. czas na przesiadkę: 3 min</span></span>
+        <span class="trips-toggle-text"><span class="trips-toggle-title"><span data-i18n="planer.adv">Zaawansowane</span><span class="adv-dot" id="advDot" title="Aktywne ustawienie niedomyślne" data-i18n-attr="title:planer.advDotTitle"></span></span><span class="trips-toggle-summary" id="advSummary">Min. czas na przesiadkę: 3 min</span></span>
         <span class="trips-chevron" aria-hidden="true">▾</span>
       </button>
       <div class="trips-body" id="advBody"><div class="trips-body-inner"><div class="trips-content">
-        <label for="transferMinutesSelect">Minimalny czas na przesiadkę</label>
+        <label for="transferMinutesSelect" data-i18n="planer.minTransfer">Minimalny czas na przesiadkę</label>
         <select id="transferMinutesSelect">
           <option value="0">0 min</option>
           <option value="3" selected>3 min</option>
@@ -183,40 +183,40 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
         </select>
 
         <div class="adv-section">
-          <label class="carrier-chip"><input type="checkbox" id="directOnlyCheckbox"> Tylko połączenia bezpośrednie (bez przesiadek)</label>
+          <label class="carrier-chip"><input type="checkbox" id="directOnlyCheckbox"> <span data-i18n="planer.directOnly">Tylko połączenia bezpośrednie (bez przesiadek)</span></label>
         </div>
 
         <div class="trips-panel sub-panel" id="viaPanel">
           <button type="button" class="trips-toggle" id="viaToggle" aria-expanded="false" onclick="toggleViaPanel()">
             <span class="trips-toggle-icon" aria-hidden="true">🔀</span>
-            <span class="trips-toggle-text"><span class="trips-toggle-title">Przez stację</span><span class="trips-toggle-summary" id="viaSummary">Opcjonalnie</span></span>
+            <span class="trips-toggle-text"><span class="trips-toggle-title" data-i18n="planer.via">Przez stację</span><span class="trips-toggle-summary" id="viaSummary">Opcjonalnie</span></span>
             <span class="trips-chevron" aria-hidden="true">▾</span>
           </button>
           <div class="trips-body" id="viaBody"><div class="trips-body-inner"><div class="trips-content">
             <div id="viaContainer"></div>
-            <button type="button" class="btn-sm secondary" id="addViaBtn" onclick="addViaStation()">➕ Dodaj stację</button>
+            <button type="button" class="btn-sm secondary" id="addViaBtn" onclick="addViaStation()" data-i18n="planer.addVia">➕ Dodaj stację</button>
           </div></div></div>
         </div>
 
         <div class="trips-panel sub-panel" id="carrierPanel">
           <button type="button" class="trips-toggle" id="carrierToggle" aria-expanded="false" onclick="toggleCarrierPanel()">
             <span class="trips-toggle-icon" aria-hidden="true">🚫</span>
-            <span class="trips-toggle-text"><span class="trips-toggle-title">Wyklucz przewoźników</span><span class="trips-toggle-summary" id="carrierSummary">Żaden nie wykluczony</span></span>
+            <span class="trips-toggle-text"><span class="trips-toggle-title" data-i18n="planer.carriers">Wyklucz przewoźników</span><span class="trips-toggle-summary" id="carrierSummary">Żaden nie wykluczony</span></span>
             <span class="trips-chevron" aria-hidden="true">▾</span>
           </button>
           <div class="trips-body" id="carrierBody"><div class="trips-body-inner"><div class="trips-content">
-            <div class="carrier-grid" id="carrierGrid"><div class="muted-note">Ładowanie listy przewoźników...</div></div>
+            <div class="carrier-grid" id="carrierGrid"><div class="muted-note" data-i18n="planer.carriersLoading">Ładowanie listy przewoźników...</div></div>
           </div></div></div>
         </div>
       </div></div></div>
     </div>
-    <button type="button" class="btn" id="searchBtn" onclick="search()">🔎 Szukaj połączeń</button>
+    <button type="button" class="btn" id="searchBtn" onclick="search()" data-i18n="planer.searchBtn">🔎 Szukaj połączeń</button>
   </div>
 
   <div class="trips-panel" id="historyPanel">
     <button type="button" class="trips-toggle" id="historyToggle" aria-expanded="false" onclick="toggleHistory()">
       <span class="trips-toggle-icon" aria-hidden="true">🕘</span>
-      <span class="trips-toggle-text"><span class="trips-toggle-title">Ostatnie wyszukiwania (<span id="historyCount">0</span>)</span><span class="trips-toggle-summary">Szybki powrót do wcześniejszych tras</span></span>
+      <span class="trips-toggle-text"><span class="trips-toggle-title"><span data-i18n="planer.history">Ostatnie wyszukiwania</span> (<span id="historyCount">0</span>)</span><span class="trips-toggle-summary" data-i18n="planer.historySummary">Szybki powrót do wcześniejszych tras</span></span>
       <span class="trips-chevron" aria-hidden="true">▾</span>
     </button>
     <div class="trips-body" id="historyBody"><div class="trips-body-inner"><div class="trips-content">
@@ -230,7 +230,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
   <div class="trips-panel" id="savedPanel">
     <button type="button" class="trips-toggle" id="savedToggle" aria-expanded="false" onclick="toggleSaved()">
       <span class="trips-toggle-icon" aria-hidden="true">📌</span>
-      <span class="trips-toggle-text"><span class="trips-toggle-title">Zapisane wyniki (<span id="savedCount">0</span>)</span><span class="trips-toggle-summary">Do późniejszego przejrzenia</span></span>
+      <span class="trips-toggle-text"><span class="trips-toggle-title"><span data-i18n="planer.saved">Zapisane wyniki</span> (<span id="savedCount">0</span>)</span><span class="trips-toggle-summary" data-i18n="planer.savedSummary">Do późniejszego przejrzenia</span></span>
       <span class="trips-chevron" aria-hidden="true">▾</span>
     </button>
     <div class="trips-body" id="savedBody"><div class="trips-body-inner"><div class="trips-content">
@@ -239,11 +239,17 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
   </div>
 </div>
 
+<script src="/i18n.js"></script>
+<script src="/burger-menu.js"></script>
 <script src="/profile-sync.js"></script>
 <script src="/tutorial.js"></script>
 <script>
 (function(){
   var $=function(id){return document.getElementById(id)};
+  // Tłumaczenia (i18n.js); bez słownika — sam klucz, żeby błąd był widoczny.
+  function T(k,p){return window.I18n?I18n.t(k,p):k}
+  function TP(k,n,p){return window.I18n?I18n.tp(k,n,p):k}
+  function dateLocale(){var l=window.I18n?I18n.getLang():'pl';return {pl:'pl-PL',en:'en-GB',de:'de-DE',cs:'cs-CZ',es:'es-ES',uk:'uk-UA'}[l]||'pl-PL'}
   var selected={from:{id:'',name:''},to:{id:'',name:''}};
   var searchTimers={};
   var viaRows=[];
@@ -326,18 +332,18 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     var el=$('viaSummary');
     if(!el)return;
     var n=viaRows.filter(function(r){return r.name.trim()}).length;
-    el.textContent=n?(n+(n===1?' stacja dodana':' stacje dodane')):'Opcjonalnie';
+    el.textContent=n?TP('planer.viaAdded',n):T('planer.viaOptional');
   }
 
   function updateCarrierSummary(){
     var el=$('carrierSummary');
     if(!el)return;
     var n=excludedCarriers.size;
-    el.textContent=n?(n+(n===1?' wykluczony':' wykluczonych')):'Żaden nie wykluczony';
+    el.textContent=n?TP('planer.carriersExcluded',n):T('planer.carriersNone');
   }
 
   function updateAdvSummary(){
-    $('advSummary').textContent='Min. czas na przesiadkę: '+$('transferMinutesSelect').value+' min';
+    $('advSummary').textContent=T('planer.advSummary',{min:$('transferMinutesSelect').value});
   }
   $('transferMinutesSelect').addEventListener('change',function(){updateAdvSummary();updateAdvDot()});
   $('directOnlyCheckbox').addEventListener('change',updateAdvDot);
@@ -471,11 +477,11 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     var carrierHtml=carriersList.length?carriersList.map(function(c){
       var checked=row.excludeCarriers.indexOf(c.code)>=0?' checked':'';
       return '<label class="carrier-chip"><input type="checkbox" data-code="'+escapeHtml(c.code)+'"'+checked+'> '+escapeHtml(c.name)+'</label>';
-    }).join(''):'<div class="muted-note">Ładowanie listy przewoźników...</div>';
+    }).join(''):'<div class="muted-note">'+escapeHtml(T('planer.carriersLoading'))+'</div>';
     return '<div class="via-advanced" data-key="'+row.key+'" style="display:none">'+
-      '<label>Czas na przesiadkę tutaj</label>'+
-      '<select class="via-transfer-select" data-key="'+row.key+'"><option value="">Jak domyślnie</option>'+transferOptions+'</select>'+
-      '<div class="adv-section-title" style="margin-top:12px">Dodatkowe wykluczenia na tym odcinku</div>'+
+      '<label>'+escapeHtml(T('planer.viaTransferHere'))+'</label>'+
+      '<select class="via-transfer-select" data-key="'+row.key+'"><option value="">'+escapeHtml(T('planer.viaDefault'))+'</option>'+transferOptions+'</select>'+
+      '<div class="adv-section-title" style="margin-top:12px">'+escapeHtml(T('planer.viaExtraExclusions'))+'</div>'+
       '<div class="carrier-grid" data-key="'+row.key+'">'+carrierHtml+'</div>'+
     '</div>';
   }
@@ -485,13 +491,13 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
       return '<div class="station-row via-row">'+
         '<div class="station-field">'+
           '<div class="input-wrap">'+
-            '<input type="text" class="via-input" data-key="'+row.key+'" placeholder="Nazwa stacji..." autocomplete="off" value="'+escapeHtml(row.name)+'">'+
-            '<button type="button" class="field-clear" data-via-key="'+row.key+'" title="Wyczyść">✕</button>'+
+            '<input type="text" class="via-input" data-key="'+row.key+'" placeholder="'+escapeHtml(T('planer.stationPlaceholder'))+'" autocomplete="off" value="'+escapeHtml(row.name)+'">'+
+            '<button type="button" class="field-clear" data-via-key="'+row.key+'" title="'+escapeHtml(T('planer.clear'))+'">✕</button>'+
           '</div>'+
           '<div class="station-dropdown" data-key="'+row.key+'"></div>'+
         '</div>'+
-        '<button type="button" class="via-advanced-toggle" data-key="'+row.key+'" title="Ustawienia dla tej stacji">⚙️</button>'+
-        '<button type="button" class="via-remove" data-key="'+row.key+'" title="Usuń">✕</button>'+
+        '<button type="button" class="via-advanced-toggle" data-key="'+row.key+'" title="'+escapeHtml(T('planer.viaSettings'))+'">⚙️</button>'+
+        '<button type="button" class="via-remove" data-key="'+row.key+'" title="'+escapeHtml(T('planer.remove'))+'">✕</button>'+
       '</div>'+
       viaAdvancedHtml(row);
     }).join('');
@@ -601,7 +607,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
   }
   function renderCarrierCheckboxes(carriers){
     var el=$('carrierGrid');
-    if(!carriers.length){el.innerHTML='<div class="muted-note">Lista przewoźników chwilowo niedostępna.</div>';return}
+    if(!carriers.length){el.innerHTML='<div class="muted-note">'+escapeHtml(T('planer.carriersUnavailable'))+'</div>';return}
     el.innerHTML=carriers.map(function(c){
       var checked=excludedCarriers.has(c.code)?' checked':'';
       return '<label class="carrier-chip"><input type="checkbox" data-code="'+escapeHtml(c.code)+'"'+checked+'> '+escapeHtml(c.name)+'</label>';
@@ -649,14 +655,14 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
         renderCarrierCheckboxes(carriersList);
         fillViaCarrierGrids();
       })
-      .catch(function(){$('carrierGrid').innerHTML='<div class="muted-note">Lista przewoźników chwilowo niedostępna.</div>'});
+      .catch(function(){$('carrierGrid').innerHTML='<div class="muted-note">'+escapeHtml(T('planer.carriersUnavailable'))+'</div>'});
   }
 
   // === Render wyników ===
   function shortDur(min){
     if(min==null)return'';
     var h=Math.floor(min/60),m=min%60;
-    return h>0?(h+'h '+m+'min'):(m+' min');
+    return h>0?T('planer.durHM',{h:h,m:m}):T('planer.durM',{m:m});
   }
 
   // Cała "karta" nogi trasy jest klikalna (jak wiersz w Moich pociągach) i
@@ -665,7 +671,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
   // karcie (ten sam URL co na tablicy), bez gubienia wyników wyszukiwania.
   function legHtml(leg){
     var tr=[leg.train.category,leg.train.number].filter(Boolean).join(' ');
-    return '<div class="leg-row" data-train-url="'+escapeHtml(leg.trainUrl)+'" title="Pokaż szczegóły pociągu">'+
+    return '<div class="leg-row" data-train-url="'+escapeHtml(leg.trainUrl)+'" title="'+escapeHtml(T('planer.legTitle'))+'">'+
       '<div class="leg-time"><span>'+escapeHtml(leg.board.time)+'</span><span class="leg-arr">'+escapeHtml(leg.alight.time)+(leg.alight.nextDay?' +1':'')+'</span></div>'+
       '<div class="leg-main">'+
         '<div class="leg-train-row"><span class="leg-train-num">'+escapeHtml(tr)+'</span>'+(leg.train.name?'<span class="leg-train-name">'+escapeHtml(leg.train.name)+'</span>':'')+'</div>'+
@@ -675,18 +681,18 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
   }
 
   function badgeHtml(it){
-    if(it.type==='direct')return '<span class="itin-badge direct">BEZPOŚREDNIO</span>';
-    if(it.type==='transfer')return '<span class="itin-badge transfer">1 PRZESIADKA</span>';
-    if(it.type==='multi-transfer')return '<span class="itin-badge multi-transfer">'+((it.transfers||[]).length)+' PRZESIADKI</span>';
-    if(it.type==='via')return '<span class="itin-badge via">TRASA PRZEZ '+((it.transfers||[]).length)+' ST.</span>';
+    if(it.type==='direct')return '<span class="itin-badge direct">'+escapeHtml(T('planer.badgeDirect'))+'</span>';
+    if(it.type==='transfer')return '<span class="itin-badge transfer">'+escapeHtml(T('planer.badgeTransfer'))+'</span>';
+    if(it.type==='multi-transfer')return '<span class="itin-badge multi-transfer">'+escapeHtml(TP('planer.badgeMulti',(it.transfers||[]).length))+'</span>';
+    if(it.type==='via')return '<span class="itin-badge via">'+escapeHtml(T('planer.badgeVia',{n:(it.transfers||[]).length}))+'</span>';
     return '';
   }
 
   function riskHtml(t){
     if(!t.liveDataAvailable)return '';
-    if(t.liveRisk==='safe')return ' <span class="risk-safe">🟢 na czas</span>';
-    if(t.liveRisk==='tight')return ' <span class="risk-tight">🟡 ciasno: '+t.realBufferMinutes+' min</span>';
-    if(t.liveRisk==='missed')return ' <span class="risk-missed">🔴 prawdopodobnie nie zdążysz</span>';
+    if(t.liveRisk==='safe')return ' <span class="risk-safe">'+escapeHtml(T('planer.riskSafe'))+'</span>';
+    if(t.liveRisk==='tight')return ' <span class="risk-tight">'+escapeHtml(T('planer.riskTight',{min:t.realBufferMinutes}))+'</span>';
+    if(t.liveRisk==='missed')return ' <span class="risk-missed">'+escapeHtml(T('planer.riskMissed'))+'</span>';
     return '';
   }
 
@@ -714,7 +720,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     if(!f)return '';
     var leg=f.it.legs[0]||{train:{}};
     var tr=[leg.train.category,leg.train.number].filter(Boolean).join(' ');
-    return '<button type="button" class="faster-hint" data-target="'+f.idx+'">⚡ Szybciej: '+escapeHtml(tr)+' odj. '+escapeHtml(f.it.departureTime)+' → przyj. '+escapeHtml(f.it.arrivalTime)+' ('+f.gain+' min wcześniej) ›</button>';
+    return '<button type="button" class="faster-hint" data-target="'+f.idx+'">'+escapeHtml(T('planer.hintFaster',{train:tr,dep:f.it.departureTime,arr:f.it.arrivalTime,gain:f.gain}))+'</button>';
   }
   // Szybszy wariant Z PRZESIADKĄ (≥10 min wcześniej, odjazd nie wcześniej).
   // Słabsza podpowiedź niż ⚡ — przesiadka to opcja dla chętnych. Pomijamy
@@ -744,10 +750,10 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     var first=it.legs[0],oFirst=o.legs[0],oSecond=o.legs[1]||oFirst;
     var sameFirst=first&&oFirst&&first.scheduleId===oFirst.scheduleId&&first.orderId===oFirst.orderId;
     var text=sameFirst
-      ?'🔁 Z przesiadką: na stacji '+escapeHtml(t.stationName||'')+' przesiądź się na '+escapeHtml(trainOf(oSecond))+' → przyj. '+escapeHtml(o.arrivalTime)
-      :'🔁 Z przesiadką na stacji '+escapeHtml(t.stationName||'')+': odj. '+escapeHtml(o.departureTime)+' → przyj. '+escapeHtml(o.arrivalTime);
-    var tight=t.liveRisk==='tight'?' ⚠️ ciasna przesiadka: '+t.realBufferMinutes+' min':'';
-    return '<button type="button" class="faster-hint transfer" data-target="'+f.idx+'">'+text+' ('+f.gain+' min wcześniej)'+tight+' ›</button>';
+      ?escapeHtml(T('planer.hintTransferSame',{station:t.stationName||'',train:trainOf(oSecond),arr:o.arrivalTime}))
+      :escapeHtml(T('planer.hintTransferOther',{station:t.stationName||'',dep:o.departureTime,arr:o.arrivalTime}));
+    var tight=t.liveRisk==='tight'?escapeHtml(T('planer.hintTight',{min:t.realBufferMinutes})):'';
+    return '<button type="button" class="faster-hint transfer" data-target="'+f.idx+'">'+text+escapeHtml(T('planer.hintGain',{gain:f.gain}))+tight+' ›</button>';
   }
   function showItinerary(idx){
     if(idx>=visibleCount){visibleCount=Math.ceil((idx+1)/RESULTS_PAGE_SIZE)*RESULTS_PAGE_SIZE;renderVisibleItineraries()}
@@ -765,23 +771,23 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
       legsHtml+=legHtml(leg);
       if(idx<it.legs.length-1&&transfers[idx]){
         var t=transfers[idx];
-        legsHtml+='<div class="itin-transfer">🔁 Przesiadka w '+escapeHtml(t.stationName)+': '+t.bufferMinutes+' min'+riskHtml(t)+'</div>';
+        legsHtml+='<div class="itin-transfer">'+escapeHtml(T('planer.transferLine',{station:t.stationName,min:t.bufferMinutes}))+riskHtml(t)+'</div>';
       }
     });
     var actionHtml='';
-    var planTitle=' title="Dodaj do planu podróży w dzienniczku — potem potwierdzisz każdy odcinek osobno"';
+    var planTitle=' title="'+escapeHtml(T('planer.planTitle'))+'"';
     if(opts.savedKey){
-      actionHtml='<button type="button" class="btn-sm secondary itin-remove" data-saved-key="'+escapeHtml(opts.savedKey)+'">🗑️ Usuń</button>'+
-        '<button type="button" class="btn-sm secondary itin-addplan" data-saved-key="'+escapeHtml(opts.savedKey)+'"'+planTitle+'>📋 Do dziennika</button>';
+      actionHtml='<button type="button" class="btn-sm secondary itin-remove" data-saved-key="'+escapeHtml(opts.savedKey)+'">'+escapeHtml(T('planer.removeBtn'))+'</button>'+
+        '<button type="button" class="btn-sm secondary itin-addplan" data-saved-key="'+escapeHtml(opts.savedKey)+'"'+planTitle+'>'+escapeHtml(T('planer.addPlan'))+'</button>';
     }else if(opts.index!=null){
-      actionHtml='<button type="button" class="btn-sm itin-save" data-idx="'+opts.index+'">💾 Zapisz</button>'+
-        '<button type="button" class="btn-sm secondary itin-addplan" data-idx="'+opts.index+'"'+planTitle+'>📋 Do dziennika</button>';
+      actionHtml='<button type="button" class="btn-sm itin-save" data-idx="'+opts.index+'">'+escapeHtml(T('planer.save'))+'</button>'+
+        '<button type="button" class="btn-sm secondary itin-addplan" data-idx="'+opts.index+'"'+planTitle+'>'+escapeHtml(T('planer.addPlan'))+'</button>';
     }
-    var savedLine=opts.savedAt?'<div class="saved-at">zapisano '+escapeHtml(new Date(opts.savedAt).toLocaleString('pl-PL'))+'</div>':'';
+    var savedLine=opts.savedAt?'<div class="saved-at">'+escapeHtml(T('planer.savedAt',{date:new Date(opts.savedAt).toLocaleString(dateLocale())}))+'</div>':'';
     return '<div class="entry"'+(opts.index!=null?' id="itin-'+opts.index+'"':'')+'>'+
       '<div class="itin-head">'+
         '<span class="itin-time">'+escapeHtml(it.departureTime)+'</span><span class="itin-arrow">→</span><span class="itin-time">'+escapeHtml(it.arrivalTime)+'</span>'+
-        (it.arrivalNextDay?'<span class="itin-nextday">+1 dzień</span>':'')+
+        (it.arrivalNextDay?'<span class="itin-nextday">'+escapeHtml(T('planer.nextDay'))+'</span>':'')+
         '<span class="itin-dur">'+shortDur(it.durationMinutes)+'</span>'+
         badgeHtml(it)+
       '</div>'+
@@ -805,10 +811,10 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     recordSearchHistory(data.query,data.resolvedFrom,data.resolvedTo);
 
     var notes='';
-    if(data.resolvedFrom&&data.resolvedFrom.ambiguous)notes+='<div class="ambiguous-note">Znaleziono więcej niż jedną stację o nazwie „'+escapeHtml(data.resolvedFrom.name)+'” — pokazano wyniki dla najbardziej prawdopodobnej. Wybierz dokładną stację z podpowiedzi, jeśli to nie ta.</div>';
-    if(data.resolvedTo&&data.resolvedTo.ambiguous)notes+='<div class="ambiguous-note">Znaleziono więcej niż jedną stację o nazwie „'+escapeHtml(data.resolvedTo.name)+'” — pokazano wyniki dla najbardziej prawdopodobnej. Wybierz dokładną stację z podpowiedzi, jeśli to nie ta.</div>';
+    if(data.resolvedFrom&&data.resolvedFrom.ambiguous)notes+='<div class="ambiguous-note">'+escapeHtml(T('planer.ambiguous',{name:data.resolvedFrom.name}))+'</div>';
+    if(data.resolvedTo&&data.resolvedTo.ambiguous)notes+='<div class="ambiguous-note">'+escapeHtml(T('planer.ambiguous',{name:data.resolvedTo.name}))+'</div>';
     (data.resolvedVia||[]).forEach(function(v){
-      if(v.ambiguous)notes+='<div class="ambiguous-note">Znaleziono więcej niż jedną stację o nazwie „'+escapeHtml(v.name)+'” dla punktu „przez” — pokazano wyniki dla najbardziej prawdopodobnej.</div>';
+      if(v.ambiguous)notes+='<div class="ambiguous-note">'+escapeHtml(T('planer.ambiguousVia',{name:v.name}))+'</div>';
     });
     lastNotes=notes;
 
@@ -816,25 +822,35 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
       statusEl.textContent='';
       var msg;
       if(data.viaFailedAt){
-        msg='Nie znaleziono połączenia przez „'+escapeHtml(data.viaFailedAt)+'” — spróbuj innej daty/godziny albo usuń ten punkt.';
+        msg=escapeHtml(T('planer.noConnVia',{station:data.viaFailedAt}));
       }else if(data.lastDepartureToday){
         // Rozroznienie "nic nie ma" od "bylo, ale juz odjechalo" — bez tego
         // uczciwa informacja "ostatni kurs dzis juz minal" wygladala jak awaria.
-        msg='Dziś między „'+escapeHtml(data.query.from)+'” a „'+escapeHtml(data.query.to)+'” (przy tych ustawieniach) ostatnie pasujące połączenie odjechało już o '+escapeHtml(data.lastDepartureToday)+'. Wybierz jutrzejszą datę albo zmień ustawienia w „Zaawansowane”.';
+        msg=escapeHtml(T('planer.noConnLastToday',{from:data.query.from,to:data.query.to,time:data.lastDepartureToday}));
       }else{
-        msg='Nie znaleziono dziś połączenia między „'+escapeHtml(data.query.from)+'” a „'+escapeHtml(data.query.to)+'”. Spróbuj innej daty, godziny albo zmień ustawienia w „Zaawansowane”.';
+        msg=escapeHtml(T('planer.noConn',{from:data.query.from,to:data.query.to}));
       }
       listEl.innerHTML=notes+'<div class="empty">'+msg+'</div>';
       return;
     }
 
-    var parts=[];
-    if(data.counts.direct)parts.push(data.counts.direct+' bezpośrednich');
-    if(data.counts.transfer)parts.push(data.counts.transfer+' z 1 przesiadką');
-    if(data.counts.multiTransfer)parts.push(data.counts.multiTransfer+' z 2 przesiadkami');
-    if(data.counts.via)parts.push(data.counts.via+' przez wskazane stacje');
-    statusEl.textContent='Znaleziono: '+parts.join(', ')+'.';
+    lastCounts=data.counts;
+    renderFoundStatus();
     renderVisibleItineraries();
+  }
+
+  // "Znaleziono: ..." osobno, żeby przy zmianie języka przerysować sam
+  // status bez ponownego wyszukiwania.
+  var lastCounts=null;
+  function renderFoundStatus(){
+    var c=lastCounts;
+    if(!c)return;
+    var parts=[];
+    if(c.direct)parts.push(TP('planer.countDirect',c.direct));
+    if(c.transfer)parts.push(T('planer.countTransfer',{n:c.transfer}));
+    if(c.multiTransfer)parts.push(T('planer.countMulti',{n:c.multiTransfer}));
+    if(c.via)parts.push(T('planer.countVia',{n:c.via}));
+    $('resultsStatus').textContent=T('planer.found',{list:parts.join(', ')});
   }
 
   function renderVisibleItineraries(){
@@ -842,7 +858,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     var toShow=lastItineraries.slice(0,visibleCount);
     var remaining=lastItineraries.length-toShow.length;
     var moreHtml=remaining>0
-      ? '<button type="button" class="btn-sm" id="loadMoreBtn" style="width:100%;margin-top:4px">⬇️ Pobierz kolejnych '+Math.min(RESULTS_PAGE_SIZE,remaining)+' połączeń ('+remaining+' więcej)</button>'
+      ? '<button type="button" class="btn-sm" id="loadMoreBtn" style="width:100%;margin-top:4px">'+escapeHtml(T('planer.loadMore',{count:Math.min(RESULTS_PAGE_SIZE,remaining),remaining:remaining}))+'</button>'
       : '';
     listEl.innerHTML=lastNotes+toShow.map(function(it,i){return itineraryHtml(it,{index:i})}).join('')+moreHtml;
   }
@@ -979,7 +995,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     saveJournalPlan(list);
     return added;
   }
-  function planAddedLabel(n){return n?'✅ Dodano do dziennika':'ℹ️ Już jest w dzienniczku'}
+  function planAddedLabel(n){return n?T('planer.planAdded'):T('planer.planAlready')}
 
   function removeSavedResult(key){
     saveSavedResultsList(getSavedResults().filter(function(e){return e._key!==key}));
@@ -989,7 +1005,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     var list=getSavedResults();
     $('savedCount').textContent=list.length;
     var el=$('savedList');
-    if(!list.length){el.innerHTML='<div class="empty">Brak zapisanych wyników. Kliknij „💾 Zapisz” przy dowolnym wyniku wyszukiwania.</div>';return}
+    if(!list.length){el.innerHTML='<div class="empty">'+escapeHtml(T('planer.savedEmpty'))+'</div>';return}
     el.innerHTML=list.slice().reverse().map(function(e){
       return itineraryHtml(e.snapshot,{savedKey:e._key,savedAt:e.createdAt});
     }).join('');
@@ -1042,24 +1058,24 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     var q=e.query;
     var dateFmt=(function(){var p=String(q.date||'').split('-');return p.length===3?p[2]+'.'+p[1]+'.'+p[0]:q.date})();
     var metaBits=[];
-    if(q.transferMinutes!=null&&Number(q.transferMinutes)!==3)metaBits.push('bufor '+q.transferMinutes+' min');
-    if(q.maxTransfers===0||q.maxTransfers==='0')metaBits.push('tylko bezpośrednie');
-    if((q.via||[]).length)metaBits.push('przez '+q.via.join(', '));
-    if((q.excludeCarriers||[]).length)metaBits.push((q.excludeCarriers.length)+' wykl. przewoźników');
+    if(q.transferMinutes!=null&&Number(q.transferMinutes)!==3)metaBits.push(T('planer.historyBuffer',{min:q.transferMinutes}));
+    if(q.maxTransfers===0||q.maxTransfers==='0')metaBits.push(T('planer.historyDirectOnly'));
+    if((q.via||[]).length)metaBits.push(T('planer.historyVia',{list:q.via.join(', ')}));
+    if((q.excludeCarriers||[]).length)metaBits.push(TP('planer.historyExcluded',q.excludeCarriers.length));
     var metaTxt=metaBits.length?(' · '+metaBits.join(' · ')):'';
     return '<div class="history-entry">'+
       '<div class="history-info">'+
         '<div class="history-route">'+escapeHtml(q.from)+' → '+escapeHtml(q.to)+'</div>'+
-        '<div class="history-meta">'+escapeHtml(dateFmt)+', od '+escapeHtml(q.time)+escapeHtml(metaTxt)+'</div>'+
+        '<div class="history-meta">'+escapeHtml(T('planer.historyWhen',{date:dateFmt,time:q.time}))+escapeHtml(metaTxt)+'</div>'+
       '</div>'+
-      '<button type="button" class="history-rerun" data-idx="'+idx+'">🔎 Szukaj ponownie</button>'+
+      '<button type="button" class="history-rerun" data-idx="'+idx+'">'+escapeHtml(T('planer.rerun'))+'</button>'+
       '</div>';
   }
   function renderHistoryPanel(){
     var list=getSearchHistory();
     $('historyCount').textContent=list.length;
     var el=$('historyList');
-    el.innerHTML=list.length?list.map(historyEntryHtml).join(''):'<div class="empty">Brak wcześniejszych wyszukiwań.</div>';
+    el.innerHTML=list.length?list.map(historyEntryHtml).join(''):'<div class="empty">'+escapeHtml(T('planer.historyEmpty'))+'</div>';
   }
   function rerunHistoryEntry(idx){
     var list=getSearchHistory();
@@ -1149,7 +1165,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
   function search(){
     var from=selected.from.name||$('fromInput').value.trim();
     var to=selected.to.name||$('toInput').value.trim();
-    if(!from||!to){$('resultsStatus').className='status err';$('resultsStatus').textContent='Wpisz stację początkową i docelową.';return}
+    if(!from||!to){$('resultsStatus').className='status err';$('resultsStatus').textContent=T('planer.enterStations');return}
 
     hideDropdown('from');hideDropdown('to');
     viaRows.forEach(function(r){hideDropdown(r.key)});
@@ -1158,7 +1174,8 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     btn.disabled=true;
     // Mrugający, żółty napis — zwykły szary tekst łatwo przeoczyć na ekranie.
     $('resultsStatus').className='status searching';
-    $('resultsStatus').textContent='Szukam połączeń...';
+    $('resultsStatus').textContent=T('planer.searching');
+    lastCounts=null;
     $('resultsList').innerHTML='';
     scrollToResults();
 
@@ -1186,13 +1203,13 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
         .then(function(res){
           if(!res.ok||!res.data.ok){
             if(!res.data.error&&!retry){
-              $('resultsStatus').textContent='Szukam połączeń... (ponawiam, serwer potrzebował więcej czasu)';
+              $('resultsStatus').textContent=T('planer.retrying');
               setTimeout(function(){attempt(true)},1500);
               return;
             }
             btn.disabled=false;
             $('resultsStatus').className='status err';
-            $('resultsStatus').textContent=res.data.error||('Błąd wyszukiwania połączeń (serwer: '+res.status+'). Spróbuj ponownie za chwilę.');
+            $('resultsStatus').textContent=res.data.error||T('planer.serverError',{status:res.status});
             scrollToResults();
             return;
           }
@@ -1204,7 +1221,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
           if(!retry){setTimeout(function(){attempt(true)},1500);return}
           btn.disabled=false;
           $('resultsStatus').className='status err';
-          $('resultsStatus').textContent='Nie udało się połączyć z API.';
+          $('resultsStatus').textContent=T('planer.apiFail');
           scrollToResults();
         });
     }
@@ -1213,14 +1230,31 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
   window.search=search;
 
   setDefaultDateTime();
-  updateAdvSummary();
   loadCarrierPrefs();
   updateAdvDot();
-  updateCarrierSummary();
-  updateViaSummary();
-  loadCarriers();
-  renderHistoryPanel();
-  refreshFromProfile();
+  function renderTexts(){
+    updateAdvSummary();
+    updateCarrierSummary();
+    updateViaSummary();
+    renderHistoryPanel();
+    renderSavedPanel();
+  }
+  (window.I18n?I18n.ready:Promise.resolve()).then(function(){
+    renderTexts();
+    loadCarriers();
+    refreshFromProfile();
+  });
+  // Zmiana języka: przerysowujemy wszystko, co budował JS (statyczne
+  // napisy z data-i18n przełącza samo i18n.js).
+  window.addEventListener('langchange',function(){
+    renderTexts();
+    if(carriersList.length)renderCarrierCheckboxes(carriersList);
+    if(viaRows.length)renderViaRows();
+    var st=$('resultsStatus');
+    if(st.classList.contains('searching'))st.textContent=T('planer.searching');
+    else if(lastCounts)renderFoundStatus();
+    if(lastItineraries.length)renderVisibleItineraries();
+  });
   window.addEventListener('pageshow',function(e){if(e.persisted)refreshFromProfile()});
 })();
 </script>

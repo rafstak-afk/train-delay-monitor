@@ -93,6 +93,21 @@
     return typeof val === "string" ? interpolate(val, params) : val;
   }
 
+  // Liczba mnoga zależna od języka: wpis w słowniku to obiekt z formami
+  // CLDR ({one, few, many, other}), np. PL "1 stacja / 2 stacje / 5 stacji".
+  // Brakująca forma → other → many → one. {n} jest zawsze dostępne.
+  function tp(key, n, params) {
+    var val = getByPath(dict, key);
+    if (val === undefined) val = getByPath(fallbackDict, key);
+    if (val === undefined) return key;
+    var p = Object.assign({ n: n }, params || {});
+    if (typeof val === "string") return interpolate(val, p);
+    var cat = "other";
+    try { cat = new Intl.PluralRules(currentLang).select(n); } catch (e) {}
+    var form = val[cat] || val.other || val.many || val.one || "";
+    return interpolate(form, p);
+  }
+
   // Żadnego sessionStorage/force-cache tutaj — serwer i tak wysyła
   // Cache-Control: max-age=0, must-revalidate na /i18n/*.json, więc zwykły
   // fetch i tak najwyżej robi tani, warunkowy request (304, jeśli słownik
@@ -277,6 +292,7 @@
     DEFAULT_LANG: DEFAULT_LANG,
     getLang: function () { return currentLang; },
     t: t,
+    tp: tp,
     translateDisruption: translateDisruption,
     translateDisruptionReason: translateDisruptionReason,
     applyDom: applyDom,

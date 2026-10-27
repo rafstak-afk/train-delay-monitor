@@ -52,7 +52,12 @@
   "index": {
     "trainWord": "tren",
     "lastTrain": "🚆 Último visto: {label} →",
-    "favStar": { "on": "★ En favoritos", "off": "☆ Añadir a favoritos", "titleOn": "Quitar de estaciones favoritas", "titleOff": "Añadir a estaciones favoritas" },
+    "favStar": {
+      "on": "★ En favoritos",
+      "off": "☆ Añadir a favoritos",
+      "titleOn": "Quitar de estaciones favoritas",
+      "titleOff": "Añadir a estaciones favoritas"
+    },
     "addFavoriteTitle": "Añadir una estación favorita",
     "noFavorites": "Aún no hay estaciones favoritas: añade una con ☆ después de cargar un panel abajo.",
     "focusFavoriteHint": "Escribe el nombre de una estación, pulsa «Ver datos en directo» y luego ☆ junto al título del panel para añadirla a favoritos.",
@@ -158,9 +163,22 @@
       "noDeparturesForTime": "No hay salidas para la fecha y hora elegidas.",
       "trackWithPrefix": "vía {track}"
     },
-    "badge": { "cancelled": "CANCELADO" },
-    "myTrains": { "addTitle": "Añadir a Mis trenes", "removeTitle": "Quitar de Mis trenes", "added": "✓ «{train}» añadido a Mis trenes", "removed": "🗑️ «{train}» quitado de Mis trenes", "addedStatus": "«{train}» (estación: {station}) añadido a Mis trenes.", "removedStatus": "«{train}» (estación: {station}) quitado de Mis trenes.", "missingData": "Faltan datos para añadir este tren a «Mis trenes».", "missingDataToast": "⚠️ Faltan datos para añadir el tren." },
-    "calendar": { "addTitle": "Añadir al calendario" },
+    "badge": {
+      "cancelled": "CANCELADO"
+    },
+    "myTrains": {
+      "addTitle": "Añadir a Mis trenes",
+      "removeTitle": "Quitar de Mis trenes",
+      "added": "✓ «{train}» añadido a Mis trenes",
+      "removed": "🗑️ «{train}» quitado de Mis trenes",
+      "addedStatus": "«{train}» (estación: {station}) añadido a Mis trenes.",
+      "removedStatus": "«{train}» (estación: {station}) quitado de Mis trenes.",
+      "missingData": "Faltan datos para añadir este tren a «Mis trenes».",
+      "missingDataToast": "⚠️ Faltan datos para añadir el tren."
+    },
+    "calendar": {
+      "addTitle": "Añadir al calendario"
+    },
     "disruption": {
       "codes": {},
       "texts": {
@@ -174,9 +192,25 @@
         "Awaria sieci trakcyjnej": "Avería de la catenaria"
       }
     },
-    "apiLimits": { "noHeaderInfo": "Límite de la API: sin información en las cabeceras de respuesta de PLK.", "remaining": "restantes: {value}", "pool": "cupo: {value}", "reset": "reinicio: {value}", "prefix": "Límite de la API: ", "noDetails": "sin detalles." },
+    "apiLimits": {
+      "noHeaderInfo": "Límite de la API: sin información en las cabeceras de respuesta de PLK.",
+      "remaining": "restantes: {value}",
+      "pool": "cupo: {value}",
+      "reset": "reinicio: {value}",
+      "prefix": "Límite de la API: ",
+      "noDetails": "sin detalles."
+    },
     "noDirection": "sin destino",
-    "calendarStatus": { "missingData": "Faltan datos para crear un evento en el calendario.", "buildFailed": "No se pudo crear el evento del calendario.", "downloaded": "Archivo .ics descargado: ábrelo para añadir el viaje a tu calendario.", "departure": "Salida: {station} {time}", "arrivalApprox": "Llegada: {dest} (aprox., +30 min)", "arrival": "Llegada: {dest} {time}", "platformTrack": "Andén: {platform} / Vía: {track}", "fromStation": "desde {station}" },
+    "calendarStatus": {
+      "missingData": "Faltan datos para crear un evento en el calendario.",
+      "buildFailed": "No se pudo crear el evento del calendario.",
+      "downloaded": "Archivo .ics descargado: ábrelo para añadir el viaje a tu calendario.",
+      "departure": "Salida: {station} {time}",
+      "arrivalApprox": "Llegada: {dest} (aprox., +30 min)",
+      "arrival": "Llegada: {dest} {time}",
+      "platformTrack": "Andén: {platform} / Vía: {track}",
+      "fromStation": "desde {station}"
+    },
     "alert": {
       "reasonToggleTitle": "Ver el motivo del retraso",
       "boxTitle": "🔔 Alarma: retrasos / cancelaciones",
@@ -186,5 +220,115 @@
       "delayedText": "{time} {label} +{delay} min",
       "notificationTitle": "Alarma de trenes"
     }
+  },
+  "planer": {
+    "pageTitle": "Planificador de viajes",
+    "back": "← Panel",
+    "title": "🧭 Planificador de viajes",
+    "subtitle": "Busca conexiones directas y con transbordo según el horario de PLK, con datos en tiempo real donde ya se conocen.",
+    "from": "Origen",
+    "to": "Destino",
+    "stationPlaceholder": "Nombre de la estación...",
+    "clear": "Borrar",
+    "swap": "Intercambiar",
+    "date": "Fecha",
+    "fromTime": "Desde la hora",
+    "adv": "Avanzado",
+    "advDotTitle": "Hay un ajuste no predeterminado activo",
+    "advSummary": "Tiempo mín. de transbordo: {min} min",
+    "minTransfer": "Tiempo mínimo de transbordo",
+    "directOnly": "Solo conexiones directas (sin transbordos)",
+    "via": "Por la estación",
+    "viaOptional": "Opcional",
+    "viaAdded": {
+      "one": "{n} estación añadida",
+      "few": "{n} estaciones añadidas",
+      "many": "{n} estaciones añadidas",
+      "other": "{n} estaciones añadidas"
+    },
+    "addVia": "➕ Añadir estación",
+    "viaSettings": "Ajustes de esta estación",
+    "remove": "Quitar",
+    "viaTransferHere": "Tiempo de transbordo aquí",
+    "viaDefault": "Predeterminado",
+    "viaExtraExclusions": "Exclusiones adicionales en este tramo",
+    "carriers": "Excluir operadores",
+    "carriersNone": "Ninguno excluido",
+    "carriersExcluded": {
+      "one": "{n} excluido",
+      "few": "{n} excluidos",
+      "many": "{n} excluidos",
+      "other": "{n} excluidos"
+    },
+    "carriersLoading": "Cargando la lista de operadores...",
+    "carriersUnavailable": "La lista de operadores no está disponible temporalmente.",
+    "searchBtn": "🔎 Buscar conexiones",
+    "history": "Búsquedas recientes",
+    "historySummary": "Vuelve rápido a rutas anteriores",
+    "historyEmpty": "No hay búsquedas anteriores.",
+    "historyWhen": "{date}, desde las {time}",
+    "historyBuffer": "margen {min} min",
+    "historyDirectOnly": "solo directos",
+    "historyVia": "por {list}",
+    "historyExcluded": {
+      "one": "{n} operador excl.",
+      "few": "{n} operadores excl.",
+      "many": "{n} operadores excl.",
+      "other": "{n} operadores excl."
+    },
+    "rerun": "🔎 Buscar de nuevo",
+    "saved": "Resultados guardados",
+    "savedSummary": "Para revisar más tarde",
+    "savedEmpty": "No hay resultados guardados. Pulsa «💾 Guardar» en cualquier resultado.",
+    "savedAt": "guardado {date}",
+    "legTitle": "Ver detalles del tren",
+    "badgeDirect": "DIRECTO",
+    "badgeTransfer": "1 TRANSBORDO",
+    "badgeMulti": {
+      "one": "{n} TRANSBORDO",
+      "few": "{n} TRANSBORDOS",
+      "many": "{n} TRANSBORDOS",
+      "other": "{n} TRANSBORDOS"
+    },
+    "badgeVia": "RUTA POR {n} EST.",
+    "riskSafe": "🟢 a tiempo",
+    "riskTight": "🟡 justo: {min} min",
+    "riskMissed": "🔴 probablemente no llegues",
+    "hintFaster": "⚡ Más rápido: {train} sal. {dep} → lleg. {arr} ({gain} min antes) ›",
+    "hintTransferSame": "🔁 Con transbordo: en {station} cambia al {train} → lleg. {arr}",
+    "hintTransferOther": "🔁 Con transbordo en {station}: sal. {dep} → lleg. {arr}",
+    "hintGain": " ({gain} min antes)",
+    "hintTight": " ⚠️ transbordo justo: {min} min",
+    "transferLine": "🔁 Transbordo en {station}: {min} min",
+    "planTitle": "Añadir al plan de viaje del diario — después confirmarás cada tramo por separado",
+    "removeBtn": "🗑️ Quitar",
+    "addPlan": "📋 Al diario",
+    "save": "💾 Guardar",
+    "nextDay": "+1 día",
+    "planAdded": "✅ Añadido al diario",
+    "planAlready": "ℹ️ Ya está en el diario",
+    "durHM": "{h} h {m} min",
+    "durM": "{m} min",
+    "ambiguous": "Se encontró más de una estación llamada «{name}»: se muestran resultados para la más probable. Elige la estación exacta en las sugerencias si no es esta.",
+    "ambiguousVia": "Se encontró más de una estación llamada «{name}» para el punto «por»: se muestran resultados para la más probable.",
+    "noConnVia": "No se encontró ninguna conexión por «{station}»: prueba otra fecha/hora o quita este punto.",
+    "noConnLastToday": "Hoy la última conexión válida entre «{from}» y «{to}» (con estos ajustes) ya salió a las {time}. Elige la fecha de mañana o cambia los ajustes en «Avanzado».",
+    "noConn": "No se encontró ninguna conexión hoy entre «{from}» y «{to}». Prueba otra fecha u hora, o cambia los ajustes en «Avanzado».",
+    "found": "Encontrado: {list}.",
+    "countDirect": {
+      "one": "{n} directo",
+      "few": "{n} directos",
+      "many": "{n} directos",
+      "other": "{n} directos"
+    },
+    "countTransfer": "{n} con 1 transbordo",
+    "countMulti": "{n} con 2 transbordos",
+    "countVia": "{n} por las estaciones elegidas",
+    "loadMore": "⬇️ Cargar {count} más (quedan {remaining})",
+    "enterStations": "Escribe la estación de origen y la de destino.",
+    "searching": "Buscando conexiones...",
+    "retrying": "Buscando conexiones... (reintentando, el servidor necesitó más tiempo)",
+    "serverError": "Error al buscar conexiones (servidor: {status}). Inténtalo de nuevo en un momento.",
+    "apiFail": "No se pudo conectar con la API."
   }
 }
