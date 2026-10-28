@@ -78,14 +78,22 @@
     } catch (e) {}
   }
 
+  const PULL_TIMEOUT_MS = 8000;
   async function pull() {
     const token = getToken();
     if (!token) return null;
 
+    // Limit czasu: po wybudzeniu telefonu połączenie bywa martwe i fetch()
+    // nie rozstrzyga się w ogóle — strony czekające na profil (Moje pociągi)
+    // stały wtedy na starych danych, aż ktoś je przeładował.
+    const controller = typeof AbortController === "function" ? new AbortController() : null;
+    const timer = controller ? setTimeout(function () { controller.abort(); }, PULL_TIMEOUT_MS) : null;
     try {
       const res = await fetch("/api/profile?token=" + encodeURIComponent(token), {
-        cache: "no-store"
+        cache: "no-store",
+        signal: controller ? controller.signal : undefined
       });
+      if (timer) clearTimeout(timer);
       if (!res.ok) return null;
       const body = await res.json();
       const data = body && body.ok ? (body.data || null) : null;

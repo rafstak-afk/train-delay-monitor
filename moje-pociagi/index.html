@@ -491,10 +491,16 @@ async function mutateTrains(mutate) {
 
 let profileSyncedAt = 0;
 document.addEventListener('visibilitychange', async () => {
-  if (document.visibilityState !== 'visible' || Date.now() - profileSyncedAt < 30000) return;
+  if (document.visibilityState !== 'visible') return;
+  diag('visible', 'dane sprzed ' + Math.round((Date.now() - lastLoadedAt) / 1000) + 's' + (isRefreshing ? ', odświeżanie w toku od ' + Math.round((Date.now() - refreshStartedAt) / 1000) + 's' : ''));
+  // Nie czekamy na profil — stare dane odświeżamy od razu.
+  if (Date.now() - lastLoadedAt > STALE_AFTER_MS || (isRefreshing && Date.now() - refreshStartedAt > REFRESH_STUCK_MS)) init();
+  if (Date.now() - profileSyncedAt < 30000) return;
   profileSyncedAt = Date.now();
-  if (await syncTrainsFromProfile()) init();
-  else if (Date.now() - lastLoadedAt > STALE_AFTER_MS) init();
+  const t0 = Date.now();
+  const changed = await syncTrainsFromProfile();
+  diag('profil', (changed ? 'zmieniona lista' : 'bez zmian/brak odpowiedzi') + ' ' + (Date.now() - t0) + 'ms');
+  if (changed) init();
 });
 
 function saveTrains(list) {
@@ -623,11 +629,33 @@ const STALE_AFTER_MS = 5 * 60 * 1000;
 // wolna odpowiedź PLK) blokowało init() w nieskończoność — strona
 // zostawała na "Pobieranie danych..." bez żadnego błędu, bo fetch()
 // nigdy się nie rozstrzygał ani na sukces, ani na porażkę.
+// Dziennik diagnostyczny — tylko w TYM telefonie (localStorage), bez KV.
+// Ostatnie zdarzenia: start/koniec odświeżania, czasy odpowiedzi, błędy,
+// powroty z tła. Panel do skopiowania widać tylko w profilu z ?wersja=1.
+const DIAG_KEY = 'diagLogV1', DIAG_MAX = 200;
+function diag(e, d) {
+  try {
+    const now = new Date();
+    const t = now.toLocaleDateString('sv-SE') + ' ' + now.toTimeString().slice(0, 8);
+    const list = JSON.parse(localStorage.getItem(DIAG_KEY) || '[]');
+    list.push(t + ' ' + e + (d ? ' ' + d : ''));
+    localStorage.setItem(DIAG_KEY, JSON.stringify(list.slice(-DIAG_MAX)));
+  } catch (err) {}
+}
+window.addEventListener('error', ev => diag('error', String(ev.message || '').slice(0, 120)));
+window.addEventListener('unhandledrejection', ev => diag('rejection', String((ev.reason && ev.reason.message) || ev.reason || '').slice(0, 120)));
 async function fetchWithTimeout(url, opts = {}, timeoutMs = 15000) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const t0 = Date.now();
+  const short = String(url).replace(/^\/api\//, '').replace(/[?&](limit|cache)=[^&]*/g, '').slice(0, 90);
   try {
-    return await fetch(url, { ...opts, signal: controller.signal });
+    const res = await fetch(url, { ...opts, signal: controller.signal });
+    diag('fetch', short + ' → ' + res.status + ' ' + (Date.now() - t0) + 'ms');
+    return res;
+  } catch (e) {
+    diag('fetch', short + ' → ' + (e && e.name === 'AbortError' ? 'TIMEOUT' : 'BŁĄD ' + (e && e.message)) + ' ' + (Date.now() - t0) + 'ms');
+    throw e;
   } finally {
     clearTimeout(timer);
   }
@@ -1070,9 +1098,19 @@ function renderCard(item, index, row) {
   `;
 }
 let isRefreshing = false;
+// Blokada „już odświeżam” zwalnia się sama po 45 s — wcześniej jedno
+// zawieszone odświeżanie (np. martwe połączenie po wybudzeniu telefonu)
+// blokowało wszystkie kolejne, aż do przeładowania strony. Prośba o
+// odświeżenie w trakcie trwającego wykonuje się zaraz po nim.
+let refreshStartedAt = 0, rerunRequested = false, initGen = 0;
+const REFRESH_STUCK_MS = 45 * 1000;
 async function init() {
-  if (isRefreshing) return;
+  if (isRefreshing && Date.now() - refreshStartedAt < REFRESH_STUCK_MS) { rerunRequested = true; return; }
+  if (isRefreshing) diag('lock', 'zawieszone odświeżanie zwolnione po ' + Math.round((Date.now() - refreshStartedAt) / 1000) + 's');
   isRefreshing = true;
+  refreshStartedAt = Date.now();
+  const gen = ++initGen;
+  diag('init', 'start #' + gen + ', pociągów: ' + currentTrains.length);
   const container = document.getElementById('list');
   const refreshBtn = document.getElementById('refreshBtn');
   refreshBtn.disabled = true;
@@ -1085,6 +1123,7 @@ async function init() {
   container.innerHTML = currentTrains.length ? currentTrains.map((item, idx) => renderCard(item, idx, null)).join('') : emptyListHtml();
 
   function paintCard(idx, item, row) {
+    if (gen !== initGen) return; // nowsze odświeżanie już trwa
     lastRows[idx] = row || null;
     const el = document.getElementById('card-' + idx);
     if (el) el.outerHTML = renderCard(item, idx, row);
@@ -1145,8 +1184,15 @@ async function init() {
   } catch (e) {
     container.innerHTML = `<div style="padding:16px;color:#fb7185;">${escapeHtml(I18n.t('mojePociagi.loadError',{message:String(e && e.message || e)}))}</div>`;
   } finally {
-    refreshBtn.disabled = false;
-    isRefreshing = false;
+    // Zawieszone, zastąpione nowszym odświeżaniem — nie ruszamy blokady nowszego.
+    if (gen === initGen) {
+      refreshBtn.disabled = false;
+      isRefreshing = false;
+      diag('init', 'koniec #' + gen + ' po ' + (Date.now() - refreshStartedAt) + 'ms');
+      if (rerunRequested) { rerunRequested = false; setTimeout(init, 0); }
+    } else {
+      diag('init', 'stare #' + gen + ' skończyło się po ' + Math.round((Date.now() - refreshStartedAt) / 1000) + 's (zastąpione)');
+    }
   }
 }
 
@@ -1184,6 +1230,7 @@ window.addEventListener('langchange', () => {
 // tylko, gdy dane mają więcej niż 5 minut — w przeciwnym razie to, co
 // już jest na ekranie, i tak jest wystarczająco świeże.
 window.addEventListener('pageshow', (event) => {
+  if (event.persisted) diag('pageshow', 'z pamięci przeglądarki, dane sprzed ' + Math.round((Date.now() - lastLoadedAt) / 1000) + 's');
   if (event.persisted && Date.now() - lastLoadedAt > STALE_AFTER_MS) {
     init();
   }
@@ -1209,8 +1256,17 @@ setInterval(() => { if (document.visibilityState === 'visible') init(); }, BOARD
   if (window.I18n) await I18n.ready;
   // Statyczne "Alarm: OFF" z HTML — bez profilu nic go potem nie tłumaczyło.
   if (window.I18n) alertButton.textContent = I18n.t(delayAlertsEnabled ? 'index.alarmOn' : 'index.alarmOff');
+  diag('start', document.visibilityState);
+  // Karty od razu z listy zapisanej w telefonie — nie czekamy na profil
+  // (po wybudzeniu potrafił nie odpowiadać wcale). Jeśli w profilu jest
+  // inna lista, odświeżymy ponownie zaraz po jego odczycie.
+  const localBefore = JSON.stringify(currentTrains);
+  init();
+  renderDiagPanel();
   if (window.ProfileSync && ProfileSync.getToken()) {
+    const tp = Date.now();
     const profile = await ProfileSync.pull();
+    diag('profil', (profile ? 'OK' : 'błąd lub brak odpowiedzi (limit 8 s) — zostają dane z telefonu') + ' ' + (Date.now() - tp) + 'ms');
     if (profile && Array.isArray(profile.trains)) {
       currentTrains = profile.trains;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(currentTrains));
@@ -1230,9 +1286,32 @@ setInterval(() => { if (document.visibilityState === 'visible') init(); }, BOARD
         ensurePushSubscription();
       }
     }
+    if (JSON.stringify(currentTrains) !== localBefore) init();
   }
-  init();
 })();
+
+// Panel dziennika diagnostycznego — tylko dla profilu z flagą showVersion
+// (?wersja=1, profil autora). Kopiuj → wklej Claude'owi przy zgłoszeniu.
+function renderDiagPanel() {
+  let on = false;
+  try { on = localStorage.getItem('showVersionBadge') === '1'; } catch (e) {}
+  if (!on || document.getElementById('diagPanel')) return;
+  const box = document.createElement('details');
+  box.id = 'diagPanel';
+  box.style.cssText = 'margin:18px 0 90px;background:#1c2833;border:1px solid #34495e;border-radius:12px;padding:10px 12px;color:#d8e2ee;font-size:13px';
+  box.innerHTML = '<summary style="cursor:pointer;font-weight:800">🩺 Diagnostyka (tylko Twój profil)</summary>' +
+    '<div style="display:flex;gap:8px;margin:10px 0"><button type="button" id="diagCopy" class="btn-small">📋 Kopiuj</button><button type="button" id="diagClear" class="btn-small">🗑️ Wyczyść</button></div>' +
+    '<pre id="diagText" style="white-space:pre-wrap;word-break:break-word;max-height:50vh;overflow:auto;font-size:11px;margin:0"></pre>';
+  const list = document.getElementById('list');
+  (list && list.parentNode ? list.parentNode : document.body).appendChild(box);
+  const fill = () => { let l = []; try { l = JSON.parse(localStorage.getItem(DIAG_KEY) || '[]'); } catch (e) {} document.getElementById('diagText').textContent = l.slice().reverse().join('\n') || '(pusto)'; return l; };
+  box.addEventListener('toggle', () => { if (box.open) fill(); });
+  document.getElementById('diagCopy').addEventListener('click', () => {
+    const txt = fill().join('\n');
+    (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(() => { document.getElementById('diagCopy').textContent = '✅ Skopiowano'; }).catch(() => { const r = document.createRange(); r.selectNodeContents(document.getElementById('diagText')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); });
+  });
+  document.getElementById('diagClear').addEventListener('click', () => { try { localStorage.removeItem(DIAG_KEY); } catch (e) {} fill(); });
+}
 
 // Na Androidzie zwykłe `new Notification(...)` rzuca "Illegal constructor" —
 // pokazanie powiadomienia MUSI iść przez zarejestrowany Service Worker
