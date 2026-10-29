@@ -997,6 +997,7 @@
     },
     "arrShort": "Ankunft",
     "depShort": "Abfahrt",
-    "planB": "Plan B"
+    "planB": "Plan B",
+    "openTrain": "Ganzen Zuglauf anzeigen"
   }
 }

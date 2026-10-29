@@ -38,6 +38,9 @@ details.settings summary{cursor:pointer;font-weight:800;font-size:14px}
 .chip.s-broken{background:rgba(255,77,77,.18);color:var(--red)}.chip.s-cancelled{background:#000;color:#fff}.chip.s-done{background:rgba(34,211,238,.15);color:var(--cyan)}
 .leg{display:grid;grid-template-columns:88px minmax(0,1fr);gap:8px;padding:8px 0;border-top:1px solid #2a3a4c;font-size:13.5px}
 .leg:first-of-type{border-top:0}
+a.leg{color:inherit;text-decoration:none;border-radius:8px;position:relative;padding-right:18px}
+a.leg:hover{background:rgba(255,255,255,.04)}
+a.leg::after{content:"›";position:absolute;right:4px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:20px}
 .leg-t{font-weight:800}.leg-t small{display:block;color:var(--muted);font-weight:400}
 .leg-train{font-weight:800}.leg-st{color:var(--muted);overflow-wrap:anywhere}
 .dl{font-weight:800}.dl.late{color:var(--yellow)}.dl.vlate{color:var(--red)}.dl.ontime{color:var(--green)}
@@ -203,12 +206,27 @@ details.settings summary{cursor:pointer;font-weight:800;font-size:14px}
     var cls=d>=10?'t-vlate':(d>=3?'t-late':'t-ok');
     return '<span class="plan-strike">'+esc(planned)+'</span> <span class="'+cls+'">'+esc(real)+'</span>';
   }
-  function legHtml(l,r){
+  // Pełny bieg pociągu — ten sam adres co z planera (functions/api/planner.js: buildTrainUrl).
+  function trainUrl(l,date){
+    var p=new URLSearchParams();
+    p.set('train',(l.train&&l.train.number)||'');
+    if(l.train&&l.train.category)p.set('category',l.train.category);
+    if(l.train&&l.train.name)p.set('name',l.train.name);
+    p.set('destination',l.alight.stationName);
+    if(date)p.set('date',date);
+    if(l.scheduleId){p.set('scheduleId',l.scheduleId);p.set('scheduledId',l.scheduleId)}
+    if(l.orderId)p.set('orderId',l.orderId);
+    if(l.trainOrderId)p.set('trainOrderId',l.trainOrderId);
+    if(l.board.stationId)p.set('stationId',l.board.stationId);
+    p.set('station',l.board.stationName);
+    return '/train?'+p.toString();
+  }
+  function legHtml(l,r,date){
     var tr=G.trainLabel(l.train)+(l.train&&l.train.name?' '+l.train.name:'');
     var d=r&&!r.noData;
     var info=!r?'':(r.noData?' <span class="src">('+esc(T('guard.status.nodata',null,'brak danych'))+')</span>':(r.cancelled?' <b style="color:#fff;background:#000;padding:1px 6px;border-radius:6px">⚫ '+esc(T('guard.status.cancelled',null,'pociąg odwołany'))+'</b>':''));
-    return '<div class="leg"><div class="leg-t">'+timeHtml(d&&r.plannedDep||l.board.time,d?r.delayDep:0)+'<small>'+timeHtml(d&&r.plannedArr||l.alight.time,d?r.delayArr:0)+(l.alight.nextDay?' +1':'')+'</small></div>'+
-      '<div><div class="leg-train">'+esc(tr)+info+'</div><div class="leg-st">'+esc(l.board.stationName)+(d?delayHtml(r.delayDep,r.depSource):'')+' → '+esc(l.alight.stationName)+(d?delayHtml(r.delayArr,r.arrSource):'')+'</div></div></div>';
+    return '<a class="leg" href="'+esc(trainUrl(l,date))+'" title="'+esc(T('guard.openTrain',null,'Pokaż cały bieg pociągu'))+'"><div class="leg-t">'+timeHtml(d&&r.plannedDep||l.board.time,d?r.delayDep:0)+'<small>'+timeHtml(d&&r.plannedArr||l.alight.time,d?r.delayArr:0)+(l.alight.nextDay?' +1':'')+'</small></div>'+
+      '<div><div class="leg-train">'+esc(tr)+info+'</div><div class="leg-st">'+esc(l.board.stationName)+(d?delayHtml(r.delayDep,r.depSource):'')+' → '+esc(l.alight.stationName)+(d?delayHtml(r.delayArr,r.arrSource):'')+'</div></div></a>';
   }
   function xferHtml(t,rising){
     var s=t.status;
@@ -234,7 +252,7 @@ details.settings summary{cursor:pointer;font-weight:800;font-size:14px}
         return timeHtml(ok0&&l0.plannedDep||c.legs[0].board.time,ok0?l0.delayDep:0)+' → '+timeHtml(okn&&ln.plannedArr||c.legs[c.legs.length-1].alight.time,okn?ln.delayArr:0)})()+'</div></div>'+
       '<span class="chip s-'+s+'">'+EMO[s]+' '+esc(statusText(s))+'</span></div>';
     c.legs.forEach(function(l,i){
-      html+=legHtml(l,r.legs?r.legs[i]:null);
+      html+=legHtml(l,r.legs?r.legs[i]:null,c.date);
       if(i<c.legs.length-1&&r.transfers&&r.transfers[i])html+=xferHtml(r.transfers[i],r.rising&&r.worst===i);
     });
     if(s==='waiting'){

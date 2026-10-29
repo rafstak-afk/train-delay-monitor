@@ -997,6 +997,7 @@
     },
     "arrShort": "przyjazd",
     "depShort": "odjazd",
-    "planB": "Plan B"
+    "planB": "Plan B",
+    "openTrain": "Pokaż cały bieg pociągu"
   }
 }

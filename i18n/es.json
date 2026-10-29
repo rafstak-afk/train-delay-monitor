@@ -997,6 +997,7 @@
     },
     "arrShort": "llegada",
     "depShort": "salida",
-    "planB": "Plan B"
+    "planB": "Plan B",
+    "openTrain": "Ver todo el recorrido del tren"
   }
 }

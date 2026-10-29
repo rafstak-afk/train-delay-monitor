@@ -997,6 +997,7 @@
     },
     "arrShort": "příjezd",
     "depShort": "odjezd",
-    "planB": "Plán B"
+    "planB": "Plán B",
+    "openTrain": "Zobrazit celou trasu vlaku"
   }
 }

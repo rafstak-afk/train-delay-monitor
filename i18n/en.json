@@ -997,6 +997,7 @@
     },
     "arrShort": "arrival",
     "depShort": "departure",
-    "planB": "Plan B"
+    "planB": "Plan B",
+    "openTrain": "Show the train’s full route"
   }
 }
