@@ -8,6 +8,7 @@
 (function () {
   "use strict";
   var LIST_KEY = "guardedConnectionsV1", SET_KEY = "guardSettingsV1", OFF_KEY = "guardPlanOffV1", PLAN_KEY = "dziennikPlanPodrozy";
+  var JOURNAL_KEY = "dziennikPodrozy", PLAN_REMOVED_KEY = "dziennikPlanUsunieteOstatnio";
   var VAPID_PUBLIC_KEY = "BOVJOSGUg7ftbz0Qni3Fo15a25c08pX-OJPavIGysDlyyzYt5FW46c2p3OKu46HJB08fuBB70z5dNk9G_xMAsSA";
 
   function read(k, def) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? def : v; } catch (e) { return def; } }
@@ -118,6 +119,71 @@
     }).catch(function () { return false; });
   }
 
+  // ---------- po podróży: dzienniczek tylko z potwierdzenia ----------
+  var lc = function (s) { return String(s || "").trim().toLowerCase(); };
+  function sameTrip(a, b) {
+    return a._key === b._key || (a.date === b.date && String(a.trainNumber || "") === String(b.trainNumber || "") &&
+      lc(a.boardStation) === lc(b.boardStation) && lc(a.alightStation) === lc(b.alightStation));
+  }
+  // Wpisy planu dzienniczka należące do tego połączenia.
+  function planKeysFor(conn) {
+    var keys = (conn.planKeys || []).slice();
+    read(PLAN_KEY, []).forEach(function (e) {
+      if (e.date === conn.date && conn.legs.some(function (l) {
+        return String(l.scheduleId) === String(e.scheduleId) && String(l.orderId) === String(e.orderId) &&
+          lc(l.board.stationName) === lc(e.boardStation) && lc(l.alight.stationName) === lc(e.alightStation);
+      }) && keys.indexOf(e._key) < 0) keys.push(e._key);
+    });
+    return keys;
+  }
+  // Usunięcie z planu (z „nagrobkiem”, jak w dzienniczku — żeby stary stan
+  // profilu nie przywrócił wpisu).
+  function removeFromPlan(keys, remote) {
+    if (!keys.length) return;
+    var tomb = read(PLAN_REMOVED_KEY, []).filter(function (x) { return keys.indexOf(x.key) < 0; });
+    keys.forEach(function (k) { tomb.push({ key: k, at: Date.now() }); });
+    write(PLAN_REMOVED_KEY, tomb);
+    var base = Array.isArray(remote) ? remote : read(PLAN_KEY, []);
+    var next = base.filter(function (e) { return keys.indexOf(e._key) < 0; });
+    write(PLAN_KEY, next);
+    if (hasProfile()) ProfileSync.push({ plannedTrips: next });
+  }
+  function finishConn(conn) {
+    if (/^plan:/.test(conn.id)) return Promise.resolve();
+    return remove(conn.id);
+  }
+  // ✅ Jechałem — wpisy (tylko zaznaczone odcinki) do dzienniczka.
+  function recordTrip(conn, readings, checked) {
+    var entries = GuardCore.buildJournalEntries(conn, readings, checked, new Date().toISOString());
+    var keys = planKeysFor(conn);
+    var pull = hasProfile() ? ProfileSync.pull().catch(function () { return null; }) : Promise.resolve(null);
+    return pull.then(function (p) {
+      var local = read(JOURNAL_KEY, []);
+      var base = local.slice();
+      if (p && Array.isArray(p.journalEntries)) {
+        base = p.journalEntries.slice();
+        local.forEach(function (e) { if (!base.some(function (x) { return x._key === e._key; })) base.push(e); });
+      }
+      entries.forEach(function (e) {
+        var i = base.findIndex(function (x) { return sameTrip(x, e); });
+        if (i >= 0) { e._key = base[i]._key; base[i] = e; } else base.push(e);
+      });
+      write(JOURNAL_KEY, base);
+      if (hasProfile()) ProfileSync.push({ journalEntries: base });
+      removeFromPlan(keys, p && Array.isArray(p.plannedTrips) ? p.plannedTrips : null);
+      return finishConn(conn);
+    }).then(function () { return entries.length; });
+  }
+  // ❌ Nie jechałem — koniec pilnowania, nic do dzienniczka (i wpisy z planu znikają).
+  function dismissTrip(conn) {
+    var keys = planKeysFor(conn);
+    var pull = keys.length && hasProfile() ? ProfileSync.pull().catch(function () { return null; }) : Promise.resolve(null);
+    return pull.then(function (p) {
+      removeFromPlan(keys, p && Array.isArray(p.plannedTrips) ? p.plannedTrips : null);
+      return finishConn(conn);
+    });
+  }
+
   // Powiadomienia push na TYM urządzeniu (ta sama subskrypcja co alarmy).
   function urlB64(s) {
     var pad = "=".repeat((4 - s.length % 4) % 4), b = (s + pad).replace(/-/g, "+").replace(/_/g, "/"), raw = atob(b);
@@ -148,6 +214,6 @@
   window.GuardStore = {
     settings: settings, saveSettings: saveSettings, all: all, manual: manual, isGuarded: isGuarded,
     add: add, remove: remove, replace: replace, refreshFromProfile: refreshFromProfile,
-    pushState: pushState, enablePush: enablePush, today: today, hasProfile: hasProfile, enabled: enabled, planGuardMap: planGuardMap
+    pushState: pushState, enablePush: enablePush, today: today, hasProfile: hasProfile, enabled: enabled, planGuardMap: planGuardMap, recordTrip: recordTrip, dismissTrip: dismissTrip
   };
 })();

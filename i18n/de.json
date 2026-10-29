@@ -549,15 +549,11 @@
       },
       "s1": {
         "title": "Reiseplan",
-        "text": "Du planst eine Route (z. B. mit Umstieg) und willst vor der Abfahrt prüfen, ob sie klappt? Markiere die Bahnhöfe im Laufweg jedes Zuges und füge „📋 Zum Plan“ hinzu — hier siehst du alle Abschnitte auf einmal. Kommt der Zug an, wandert der Eintrag von selbst zu den gespeicherten Fahrten (du kannst auch „✅ Bestätigen“ klicken); „❌ Ablehnen“ entfernt ihn aus dem Plan."
+        "text": "Du planst eine Route (z. B. mit Umstieg) und willst vor der Abfahrt prüfen, ob sie klappt? Markiere die Bahnhöfe im Laufweg jedes Zuges und füge „📋 Zum Plan“ hinzu — hier siehst du alle Abschnitte auf einmal. Wenn du tatsächlich gefahren bist, klicke „✅ Bestätigen“ — erst dann wandert die Fahrt mit echten Zeiten zu den gespeicherten Fahrten; „❌ Ablehnen“ entfernt sie aus dem Plan."
       },
       "s2": {
         "title": "Gespeicherte Fahrten",
         "text": "Deine gespeicherten, bestätigten Fahrten, die neuesten zuerst. Du kannst sie bearbeiten (🔓) — Änderungen speichern sich ebenfalls selbst — oder alles als XLSX herunterladen."
-      },
-      "autoConfirm": {
-        "title": "Der Plan bestätigt sich selbst",
-        "text": "Nach Ankunft des Zuges wandert der Planeintrag von selbst zu deinen gespeicherten Fahrten — auch wenn PLK inzwischen die Zugnummer ändert."
       }
     },
     "planer": {
@@ -989,6 +985,15 @@
       "unsupported": "Dieser Browser unterstützt keine Push-Benachrichtigungen. Auf dem iPhone die App zum Home-Bildschirm hinzufügen.",
       "off": "Schalte Benachrichtigungen auf diesem Gerät ein, um auch bei geschlossener App gewarnt zu werden.",
       "enable": "Benachrichtigungen einschalten"
+    },
+    "ask": {
+      "title": "Bist du mit dieser Verbindung gefahren?",
+      "legsHint": "Entferne das Häkchen bei Abschnitten, die du nicht gefahren bist.",
+      "yes": "Ja — im Reisetagebuch speichern",
+      "no": "Nicht gefahren",
+      "noneChecked": "Markiere mindestens einen Abschnitt oder wähle „Nicht gefahren“.",
+      "saved": "✅ Im Reisetagebuch gespeichert (Abschnitte: {n}).",
+      "openJournal": "Reisetagebuch öffnen →"
     }
   }
 }

@@ -549,15 +549,11 @@
       },
       "s1": {
         "title": "Plan podróży",
-        "text": "Planujesz trasę (np. z przesiadką) i chcesz sprawdzić, czy się spina, zanim wyjedziesz? Zaznacz stacje na biegu każdego pociągu i dodaj „📋 Do planu” — zobaczysz tu wszystkie odcinki naraz. Gdy pociąg dojedzie, wpis sam przejdzie do zapisanych przejazdów (możesz też kliknąć „✅ Potwierdź”); „❌ Odrzuć” usuwa go z planu."
+        "text": "Planujesz trasę (np. z przesiadką) i chcesz sprawdzić, czy się spina, zanim wyjedziesz? Zaznacz stacje na biegu każdego pociągu i dodaj „📋 Do planu” — zobaczysz tu wszystkie odcinki naraz. Gdy faktycznie pojedziesz, kliknij „✅ Potwierdź” — dopiero wtedy przejazd trafi do zapisanych, z rzeczywistym czasem; „❌ Odrzuć” usuwa go z planu."
       },
       "s2": {
         "title": "Zapisane przejazdy",
         "text": "Twoje zapisane, potwierdzone przejazdy, od najnowszych. Możesz je poprawić (🔓) — zmiany też zapisują się same — albo pobrać wszystko jako XLSX."
-      },
-      "autoConfirm": {
-        "title": "Plan potwierdza się sam",
-        "text": "Po przyjeździe pociągu wpis z planu sam trafia do zapisanych przejazdów — nawet gdy PLK w międzyczasie zmieni numer kursu."
       }
     },
     "planer": {
@@ -989,6 +985,15 @@
       "unsupported": "Ta przeglądarka nie obsługuje powiadomień push. Na iPhonie dodaj aplikację do ekranu głównego.",
       "off": "Włącz powiadomienia na tym urządzeniu, żeby dostawać ostrzeżenia także przy zamkniętej aplikacji.",
       "enable": "Włącz powiadomienia"
+    },
+    "ask": {
+      "title": "Jechałeś tym połączeniem?",
+      "legsHint": "Odznacz odcinki, którymi nie jechałeś.",
+      "yes": "Tak — zapisz w dzienniczku",
+      "no": "Nie jechałem",
+      "noneChecked": "Zaznacz co najmniej jeden odcinek albo wybierz „Nie jechałem”.",
+      "saved": "✅ Zapisano w dzienniczku (odcinki: {n}).",
+      "openJournal": "Otwórz dzienniczek →"
     }
   }
 }

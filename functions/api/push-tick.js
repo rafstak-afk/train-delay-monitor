@@ -510,7 +510,9 @@ function guardSettingsOf(profile) {
   return { leadMin: s.leadMin || d.leadMin, minTransfer: s.minTransfer != null ? s.minTransfer : d.minTransfer, autoPlan: s.autoPlan !== false };
 }
 function dayDiff(a, b) { return Math.round((Date.parse(a + "T00:00:00Z") - Date.parse(b + "T00:00:00Z")) / 86400000); }
-// Połączenia w oknie pilnowania (teraz), najwyżej MAX_ACTIVE.
+// Połączenia w oknie pilnowania (teraz), najwyżej MAX_ACTIVE — oraz te,
+// którym właśnie mija godzina od planowego przyjazdu (_remind: jedno
+// przypomnienie „Dojechałeś? Zapisz w dzienniczku”).
 function activeGuardConnections(profile, now, nowMinutes) {
   if (!GuardCore || profile.showVersion !== true) return [];
   const set = guardSettingsOf(profile);
@@ -523,10 +525,16 @@ function activeGuardConnections(profile, now, nowMinutes) {
       if (!off.includes(c.id) && !have.has(c.id) && !have.has(c.id.replace(/^plan:/, ""))) list.push(c);
     }
   }
+  const remind = [];
+  for (const c of list) {
+    const arr = GuardCore.lastArrMin(c), rel = nowMinutes + dayDiff(now.date, c.date) * 1440;
+    if (arr != null && rel > arr + 60 && rel <= arr + 95) remind.push(Object.assign({}, c, { _remind: true }));
+  }
   return list
     .filter(c => GuardCore.isActive(c, nowMinutes + dayDiff(now.date, c.date) * 1440, set.leadMin))
     .sort((a, b) => (a.date + a.legs[0].board.time).localeCompare(b.date + b.legs[0].board.time))
-    .slice(0, GuardCore.MAX_ACTIVE);
+    .slice(0, GuardCore.MAX_ACTIVE)
+    .concat(remind.slice(0, GuardCore.MAX_ACTIVE));
 }
 // Ten sam pociąg (kurs + dzień) odpytujemy raz na przebieg, nawet jeśli jest
 // w kilku połączeniach albo profilach.
@@ -547,6 +555,17 @@ async function runGuard(env, origin, token, profile, subs, conns, fetchTrain, su
   const set = guardSettingsOf(profile);
   const next = {};
   for (const conn of conns) {
+    if (conn._remind) {
+      const prevR = prevState[conn.id] || {};
+      next[conn.id] = Object.assign({}, prevR, { reminded: true });
+      if (prevR.reminded) continue;
+      const rm = GuardCore.remindMessage(conn, lang);
+      for (const sub of subs) {
+        try { const st = await sendPush(env, sub, { title: rm.title, body: rm.body, url: "/pilnowane/?id=" + encodeURIComponent(conn.id) }); if (st >= 200 && st < 300) { summary.pushSent++; summary.guardReminders = (summary.guardReminders || 0) + 1; } }
+        catch (e) { summary.errors.push(token + " push (guard remind): " + e.message); }
+      }
+      continue;
+    }
     summary.guardChecked = (summary.guardChecked || 0) + 1;
     const readings = await Promise.all(conn.legs.map(l => fetchTrain(l, conn.date)));
     const res = GuardCore.evaluate(conn, readings, { minTransfer: set.minTransfer });
@@ -660,7 +679,7 @@ export async function onRequestPost(context) {
       // pociągi pilnuje (dla nich alarm „Moje pociągi” milczy — mówi strażnik).
       const guardedTrainNums = new Set();
       if (guardConns.length) {
-        for (const c of guardConns) for (const l of c.legs) if (l.train && l.train.number) guardedTrainNums.add(String(l.train.number));
+        for (const c of guardConns) if (!c._remind) for (const l of c.legs) if (l.train && l.train.number) guardedTrainNums.add(String(l.train.number));
         try {
           await runGuard(env, origin, token, profile, subs, guardConns, fetchGuardTrain, summary, typeof profile.language === "string" ? profile.language : "pl");
         } catch (e) { summary.errors.push(token + " guard: " + e.message); }

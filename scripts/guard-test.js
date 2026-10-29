@@ -185,6 +185,25 @@ test("alternatywy: najwcześniejszy przyjazd pierwszy; tekst w powiadomieniu", (
   if (!/Najbliższa alternatywa: KŚ 40610 \+ IC 3815 o 14:25 \(przyj\. 15:05\)\./.test(m.body)) throw new Error(m.body);
 });
 
+test("dzienniczek: wpisy tylko dla potwierdzonych odcinków, z rzeczywistymi godzinami", () => {
+  const rs = [trainA({ started: true, arrived: true, arrDelay: 7, depDelay: 5 }), trainB({ started: true, departed: true, depDelay: 0, arrived: true })];
+  const all = G.buildJournalEntries(conn, rs, null, "2026-10-29T15:00:00Z");
+  eq(all.length, 2);
+  eq(all[0].actualDeparture, "14:05"); eq(all[0].actualArrival, "14:17"); eq(all[0].delayMinutes, 7);
+  eq(all[0].plannedDurationMin, 10); eq(all[0].actualDurationMin, 12);
+  eq(all[0].tripLabel, "Katowice → Tarnowskie Góry"); eq(all[0].legNumber, 1); eq(all[1].legNumber, 2);
+  eq(all[0]._key, "2026-10-29|2026|1|katowice|chorzów batory");
+  const onlySecond = G.buildJournalEntries(conn, rs, [false, true]);
+  eq(onlySecond.length, 1); eq(onlySecond[0].boardStation, "Chorzów Batory");
+  const noData = G.buildJournalEntries(conn, [null, null], null);
+  eq(noData[0].actualDeparture, "14:00"); eq(noData[0].delayMinutes, 0);
+});
+test("przypomnienie po przyjeździe i planowy przyjazd na cel", () => {
+  eq(G.lastArrMin(conn), 14 * 60 + 50);
+  const m = G.remindMessage(conn, "pl");
+  if (!/Dojechałeś\? Zapisz przejazd Katowice → Tarnowskie Góry/.test(m.body)) throw new Error(m.body);
+});
+
 let fail = 0;
 for (const t of T) { try { t.fn(); console.log("  ✔ " + t.name); } catch (e) { fail++; console.log("  ✘ " + t.name + "\n      " + e.message); } }
 console.log("\n" + (T.length - fail) + "/" + T.length + " testów OK");

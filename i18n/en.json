@@ -549,15 +549,11 @@
       },
       "s1": {
         "title": "Travel plan",
-        "text": "Planning a route (e.g. with a change) and want to check it works before you leave? Mark the stations on each train's run and add “📋 To plan” — you'll see all legs here at once. When the train arrives, the entry moves to your saved trips by itself (you can also click “✅ Confirm”); “❌ Reject” removes it from the plan."
+        "text": "Planning a route (e.g. with a change) and want to check it works before you leave? Mark the stations on each train's run and add “📋 To plan” — you'll see all legs here at once. Once you've actually travelled, click “✅ Confirm” — only then does the trip go to your saved trips, with real times; “❌ Reject” removes it from the plan."
       },
       "s2": {
         "title": "Saved trips",
         "text": "Your saved, confirmed trips, newest first. You can edit them (🔓) — changes save themselves too — or download everything as XLSX."
-      },
-      "autoConfirm": {
-        "title": "The plan confirms itself",
-        "text": "Once the train arrives, the plan entry moves to your saved trips by itself — even if PLK changes the service number in the meantime."
       }
     },
     "planer": {
@@ -989,6 +985,15 @@
       "unsupported": "This browser doesn't support push notifications. On iPhone, add the app to the home screen.",
       "off": "Turn on notifications on this device to get warnings even with the app closed.",
       "enable": "Turn on notifications"
+    },
+    "ask": {
+      "title": "Did you travel on this connection?",
+      "legsHint": "Untick the legs you didn't travel on.",
+      "yes": "Yes — save to journal",
+      "no": "I didn't travel",
+      "noneChecked": "Tick at least one leg or choose “I didn't travel”.",
+      "saved": "✅ Saved to the journal (legs: {n}).",
+      "openJournal": "Open the journal →"
     }
   }
 }

@@ -549,15 +549,11 @@
       },
       "s1": {
         "title": "Plan de viaje",
-        "text": "¿Planeas una ruta (p. ej. con transbordo) y quieres comprobar que encaja antes de salir? Marca las estaciones en el recorrido de cada tren y añade «📋 Al plan»: aquí verás todos los tramos a la vez. Cuando el tren llegue, la entrada pasará sola a tus viajes guardados (también puedes pulsar «✅ Confirmar»); «❌ Rechazar» la quita del plan."
+        "text": "¿Planeas una ruta (p. ej. con transbordo) y quieres comprobar que encaja antes de salir? Marca las estaciones en el recorrido de cada tren y añade «📋 Al plan»: aquí verás todos los tramos a la vez. Cuando hayas viajado de verdad, pulsa «✅ Confirmar»: solo entonces el viaje pasará a tus viajes guardados, con horas reales; «❌ Rechazar» lo quita del plan."
       },
       "s2": {
         "title": "Viajes guardados",
         "text": "Tus viajes guardados y confirmados, los más recientes primero. Puedes editarlos (🔓) —los cambios también se guardan solos— o descargarlo todo en XLSX."
-      },
-      "autoConfirm": {
-        "title": "El plan se confirma solo",
-        "text": "Cuando llega el tren, la entrada del plan pasa sola a tus viajes guardados, incluso si PLK cambia mientras tanto el número del servicio."
       }
     },
     "planer": {
@@ -989,6 +985,15 @@
       "unsupported": "Este navegador no admite notificaciones push. En iPhone, añade la app a la pantalla de inicio.",
       "off": "Activa las notificaciones en este dispositivo para recibir avisos incluso con la app cerrada.",
       "enable": "Activar notificaciones"
+    },
+    "ask": {
+      "title": "¿Viajaste en esta conexión?",
+      "legsHint": "Desmarca los tramos en los que no viajaste.",
+      "yes": "Sí — guardar en el diario",
+      "no": "No viajé",
+      "noneChecked": "Marca al menos un tramo o elige «No viajé».",
+      "saved": "✅ Guardado en el diario (tramos: {n}).",
+      "openJournal": "Abrir el diario →"
     }
   }
 }

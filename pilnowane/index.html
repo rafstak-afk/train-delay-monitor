@@ -53,6 +53,13 @@ details.settings summary{cursor:pointer;font-weight:800;font-size:14px}
 .alts h4{margin:0 0 6px;font-size:13.5px}
 .alt{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--card);border-radius:10px;padding:8px 10px;margin:6px 0;font-size:13px}
 .alt b{font-size:14px}
+.ask{margin-top:10px;border-top:1px dashed var(--line);padding-top:10px}
+.ask h4{margin:0 0 6px;font-size:14px}
+.ask label{display:flex;gap:8px;align-items:flex-start;font-size:13px;margin:6px 0;color:var(--muted)}
+.ask label b{color:#fff}
+.ask .btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.ask .btn-sm.ok{background:#15803d}
+.saved-msg{background:rgba(93,211,158,.12);border:1px solid rgba(93,211,158,.5);color:#bff3d8;border-radius:12px;padding:10px 12px;font-size:13.5px;margin:10px 0}
 .empty{text-align:center;color:var(--muted);padding:24px 10px;font-size:14px;line-height:1.5}
 .empty a{color:var(--cyan)}
 .waiting{color:var(--muted);font-size:13px;margin-top:6px}
@@ -100,6 +107,7 @@ details.settings summary{cursor:pointer;font-weight:800;font-size:14px}
   var alts={};           // id → {loading|list|error}
   var lastAt=0, timer=null;
   var focusId=new URLSearchParams(location.search).get('id');
+  var savedMsg='';
 
   function nowWarsawMin(dateStr){
     var p=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Warsaw',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(new Date());
@@ -138,6 +146,7 @@ details.settings summary{cursor:pointer;font-weight:800;font-size:14px}
       if(!w||nm<w.startMin){results[c.id]={status:'waiting',startMin:w&&w.startMin};return Promise.resolve()}
       return Promise.all(c.legs.map(function(l){return fetchTrain(l,c.date)})).then(function(rs){
         var res=G.evaluate(c,rs,{minTransfer:set.minTransfer});
+        res.raw=rs;
         var t=res.transfers[res.worst];
         if(t&&typeof t.delayA==='number'){var h=history[c.id]=(history[c.id]||[]);if(h[h.length-1]!==t.delayA||h.length<1)h.push(t.delayA);if(h.length>6)h.shift();res.rising=G.rising(h)}
         var before=results[c.id]&&results[c.id].status;
@@ -226,6 +235,14 @@ details.settings summary{cursor:pointer;font-weight:800;font-size:14px}
       });
       html+='</div>';
     }
+    var arrMin=G.lastArrMin(c);
+    if(s!=='waiting'&&(s==='done'||(arrMin!=null&&nowWarsawMin(c.date)>=arrMin))){
+      html+='<div class="ask"><h4>📓 '+esc(T('guard.ask.title',null,'Jechałeś tym połączeniem?'))+'</h4>'+
+        (c.legs.length>1?'<div class="src">'+esc(T('guard.ask.legsHint',null,'Odznacz odcinki, którymi nie jechałeś.'))+'</div>':'')+
+        c.legs.map(function(l,i){return '<label><input type="checkbox" class="ask-leg" data-id="'+esc(c.id)+'" data-i="'+i+'" checked> <span><b>'+esc(G.trainLabel(l.train))+'</b> '+esc(l.board.stationName)+' '+esc(l.board.time)+' → '+esc(l.alight.stationName)+' '+esc(l.alight.time)+'</span></label>'}).join('')+
+        '<div class="btns"><button type="button" class="btn-sm ok" data-act="record" data-id="'+esc(c.id)+'">✅ '+esc(T('guard.ask.yes',null,'Tak — zapisz w dzienniczku'))+'</button>'+
+        '<button type="button" class="btn-sm secondary" data-act="dismiss" data-id="'+esc(c.id)+'">❌ '+esc(T('guard.ask.no',null,'Nie jechałem'))+'</button></div></div>';
+    }
     html+='<div class="c-foot"><span class="c-meta">'+(lastAt&&s!=='waiting'?esc(T('guard.updated',{time:new Date(lastAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})},'Aktualizacja: '+new Date(lastAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}))):'')+'</span>'+
       '<span class="c-actions"><button type="button" class="btn-sm secondary" data-act="refresh">↻ '+esc(T('guard.refresh',null,'Odśwież'))+'</button>'+
       '<button type="button" class="btn-sm danger" data-act="remove" data-id="'+esc(c.id)+'">'+esc(T('guard.stop',null,'Przestań pilnować'))+'</button></span></div></div>';
@@ -233,8 +250,8 @@ details.settings summary{cursor:pointer;font-weight:800;font-size:14px}
   }
   function render(){
     var conns=S.all();
-    if(!conns.length){$('list').innerHTML='<div class="empty">'+T('guard.empty',null,'Nie pilnujesz jeszcze żadnego połączenia.<br>W <a href="/planer/">planerze</a> kliknij „🛡️ Pilnuj” przy wyniku — albo dodaj przejazd do planu w dzienniczku.')+'</div>';return}
-    $('list').innerHTML=conns.map(cardHtml).join('');
+    if(!conns.length){$('list').innerHTML=(savedMsg?'<div class="saved-msg">'+esc(savedMsg)+' <a href="/dziennik/" style="color:#bff3d8">'+esc(T('guard.ask.openJournal',null,'Otwórz dzienniczek →'))+'</a></div>':'')+'<div class="empty">'+T('guard.empty',null,'Nie pilnujesz jeszcze żadnego połączenia.<br>W <a href="/planer/">planerze</a> kliknij „🛡️ Pilnuj” przy wyniku — albo dodaj przejazd do planu w dzienniczku.')+'</div>';return}
+    $('list').innerHTML=(savedMsg?'<div class="saved-msg">'+esc(savedMsg)+' <a href="/dziennik/" style="color:#bff3d8">'+esc(T('guard.ask.openJournal',null,'Otwórz dzienniczek →'))+'</a></div>':'')+conns.map(cardHtml).join('');
     if(focusId){var el=document.getElementById('g-'+focusId);if(el){el.scrollIntoView({block:'center'});focusId=null}}
   }
   $('list').addEventListener('click',function(e){
@@ -244,6 +261,16 @@ details.settings summary{cursor:pointer;font-weight:800;font-size:14px}
     if(act==='refresh'){cache={};refresh();return}
     if(act==='remove'&&c){if(!confirm(T('guard.confirmStop',null,'Przestać pilnować tego połączenia?')))return;S.remove(id).then(function(){delete results[id];render()});return}
     if(act==='switch'&&c){switchTo(c,Number(b.dataset.k));return}
+    if(act==='record'&&c){
+      var checked=c.legs.map(function(l,i){var cb=document.querySelector('.ask-leg[data-id="'+CSS.escape(id)+'"][data-i="'+i+'"]');return !cb||cb.checked});
+      if(!checked.some(Boolean)){alert(T('guard.ask.noneChecked',null,'Zaznacz co najmniej jeden odcinek albo wybierz „Nie jechałem”.'));return}
+      b.disabled=true;
+      S.recordTrip(c,(results[id]&&results[id].raw)||[],checked).then(function(n){
+        delete results[id];savedMsg=T('guard.ask.saved',{n:n},'✅ Zapisano w dzienniczku: '+n+' odc.');render();
+      });
+      return;
+    }
+    if(act==='dismiss'&&c){b.disabled=true;S.dismissTrip(c).then(function(){delete results[id];render()});return}
     if(act==='altRetry'&&c){delete alts[id];findAlternatives(c,results[id]);render()}
   });
 

@@ -103,6 +103,18 @@ if (!altOk) fail++;
 // alarm Moje pociągi dla pilnowanego 40500 nie powinien odpytywać smart-lookup
 console.log((smartLookups === 0 ? "  ✔ " : "  ✘ ") + "alarm „Moje pociągi” milczy dla pociągu z pilnowanego połączenia (smart-lookup: " + smartLookups + ")");
 if (smartLookups) fail++;
+// przypomnienie „Dojechałeś? Zapisz w dzienniczku” — godzina po planowym przyjeździe, tylko raz
+if (nowMin >= 200) {
+  const past = { id: today + "|past", date: today, from: "Gliwice", to: "Bytom", source: "planner",
+    legs: [{ train: { category: "KŚ", number: "40777" }, scheduleId: "2026", orderId: "P1", board: { stationName: "Gliwice", time: hm(nowMin - 120) }, alight: { stationName: "Bytom", time: hm(nowMin - 70) } }] };
+  const prof = JSON.parse(store.get(TOKEN)); prof.guardedConnections = [past]; store.set(TOKEN, JSON.stringify(prof));
+  const r1 = await tick(0);
+  const st1 = JSON.parse(store.get("guardstate:" + TOKEN) || "{}")[past.id] || {};
+  const r2 = await tick(0);
+  const okR = r1.pushes === 1 && st1.reminded === true && r2.pushes === 0;
+  console.log((okR ? "  ✔ " : "  ✘ ") + `przypomnienie po przyjeździe: 1. przebieg ${r1.pushes} push, 2. przebieg ${r2.pushes} (tylko raz)`);
+  if (!okR) fail++;
+}
 // profil bez showVersion → strażnik nic nie robi
 const p = JSON.parse(store.get(TOKEN)); p.showVersion = false; p.trains = []; store.set(TOKEN, JSON.stringify(p)); store.delete("guardstate:" + TOKEN);
 const r = await tick(9);

@@ -359,8 +359,64 @@
     return fill(ALT_FMT[lang] || ALT_FMT.pl, { tr: tr, dep: it.departureTime || it.legs[0].board.time, arr: it.arrivalTime || it.legs[it.legs.length - 1].alight.time });
   }
 
+  // ---------- po podróży: dzienniczek tylko z potwierdzenia ----------
+  // Planowy przyjazd na cel (minuty od północy dnia conn.date, może być > 1440).
+  function lastArrMin(conn) {
+    var w = timeWindow(conn, 0);
+    return w ? w.endMin - 60 : null;
+  }
+  // Wpisy dzienniczka dla odcinków, którymi pasażer POTWIERDZIŁ, że jechał
+  // (checked[i] === false = pominąć). Godziny rzeczywiste = plan + opóźnienie
+  // z danych PLK (potwierdzone albo ostatnia prognoza). Format jak w dzienniczku.
+  function buildJournalEntries(conn, readings, checked, nowIso) {
+    var legs = conn.legs || [];
+    var lc = function (s) { return String(s || "").trim().toLowerCase(); };
+    var dur = function (a, b) { var x = hm(a), y = hm(b); if (x == null || y == null) return null; var d = y - x; if (d < 0) d += 1440; return d; };
+    var out = [];
+    legs.forEach(function (leg, i) {
+      if (checked && checked[i] === false) return;
+      var data = readings ? readings[i] : null;
+      var r = readLeg(leg, data);
+      var ok = r && !r.noData;
+      var plannedDep = (ok && r.plannedDep) || leg.board.time;
+      var plannedArr = (ok && r.plannedArr) || leg.alight.time;
+      var dDep = ok ? (r.delayDep || 0) : 0, dArr = ok ? (r.delayArr || 0) : 0;
+      var actualDep = fmt(hm(plannedDep) + dDep), actualArr = fmt(hm(plannedArr) + dArr);
+      out.push({
+        date: conn.date,
+        trainNumber: (data && data.trainNumber) || (leg.train && leg.train.number) || "",
+        category: (data && data.category) || (leg.train && leg.train.category) || "",
+        boardStation: leg.board.stationName, alightStation: leg.alight.stationName,
+        plannedDeparture: plannedDep, actualDeparture: actualDep,
+        plannedArrival: plannedArr, actualArrival: actualArr,
+        delayMinutes: dArr,
+        plannedDurationMin: dur(plannedDep, plannedArr), actualDurationMin: dur(actualDep, actualArr),
+        tripType: "inna",
+        tripLabel: legs.length > 1 ? conn.from + " → " + conn.to : "",
+        legNumber: legs.length > 1 ? i + 1 : null,
+        distanceKm: null,
+        scheduleId: leg.scheduleId, orderId: leg.orderId,
+        _key: [conn.date, leg.scheduleId || "", leg.orderId || "", lc(leg.board.stationName), lc(leg.alight.stationName)].join("|"),
+        createdAt: nowIso || new Date().toISOString()
+      });
+    });
+    return out;
+  }
+  var REMIND = {
+    pl: "📓 Dojechałeś? Zapisz przejazd {from} → {to} w dzienniczku albo oznacz, że nie jechałeś.",
+    en: "📓 Arrived? Save the {from} → {to} trip in your journal, or mark that you didn't travel.",
+    de: "📓 Angekommen? Speichere die Fahrt {from} → {to} im Reisetagebuch oder markiere, dass du nicht gefahren bist.",
+    cs: "📓 Dojel jsi? Ulož jízdu {from} → {to} do deníku, nebo označ, že jsi nejel.",
+    es: "📓 ¿Has llegado? Guarda el viaje {from} → {to} en tu diario o marca que no viajaste.",
+    uk: "📓 Доїхав? Збережи поїздку {from} → {to} у щоденнику або познач, що не їхав."
+  };
+  function remindMessage(conn, lang) {
+    return { title: tx(lang).title, body: fill(REMIND[lang] || REMIND.pl, { from: conn.from, to: conn.to }) };
+  }
+
   var api = {
     DEFAULTS: DEFAULTS, RANK: RANK, MAX_ACTIVE: MAX_ACTIVE,
+    lastArrMin: lastArrMin, buildJournalEntries: buildJournalEntries, remindMessage: remindMessage,
     altOrigin: altOrigin, altQuery: altQuery, pickAlternatives: pickAlternatives, altText: altText,
     norm: norm, hm: hm, fmt: fmt, connectionId: connectionId, fromItinerary: fromItinerary, fromPlannedTrips: fromPlannedTrips,
     timeWindow: timeWindow, isActive: isActive, readLeg: readLeg, evalTransfer: evalTransfer, evaluate: evaluate,

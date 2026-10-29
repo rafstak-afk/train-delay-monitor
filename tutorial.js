@@ -90,7 +90,6 @@
       steps: [
         { sel: "#tripsToggle", title: "Ulubione trasy", text: "Ustaw raz swoją powtarzalną trasę (np. dom→praca) — wszystko zapisuje się samo w trakcie wpisywania. Potem aplikacja sama zapyta na biegu pociągu, czy zapisać pasujący kurs. Przyciskiem „➕ Dodaj kolejną trasę” dodasz ich dowolnie wiele." },
         { sel: "#planPanel", title: "Plan podróży", text: "Planujesz trasę (np. z przesiadką) i chcesz sprawdzić, czy się spina, zanim wyjedziesz? Zaznacz stacje na biegu każdego pociągu i dodaj „📋 Do planu” — zobaczysz tu wszystkie odcinki naraz. Gdy pociąg faktycznie dojedzie, wróć i kliknij „✅ Potwierdź” (przejazd trafi do wpisów poniżej) albo „❌ Odrzuć”." },
-        { id: "autoConfirm", sel: "#planPanel", news: "2026-10-27", newsOnly: true, title: "Plan potwierdza się sam", text: "Po przyjeździe pociągu wpis z planu sam trafia do zapisanych przejazdów — nawet gdy PLK w międzyczasie zmieni numer kursu." },
         { sel: "#entryList", title: "Zapisane przejazdy", text: "Twoje zapisane, potwierdzone przejazdy, od najnowszych. Możesz je poprawić (🔓) — zmiany też zapisują się same — albo pobrać wszystko jako XLSX." }
       ]
     },

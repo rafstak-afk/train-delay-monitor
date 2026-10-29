@@ -549,15 +549,11 @@
       },
       "s1": {
         "title": "Plán cest",
-        "text": "Plánuješ trasu (např. s přestupem) a chceš ověřit, že vyjde, než vyrazíš? Označ stanice na trase každého vlaku a přidej „📋 Do plánu“ — uvidíš tu všechny úseky najednou. Když vlak dojede, záznam se sám přesune do uložených jízd (můžeš i kliknout „✅ Potvrdit“); „❌ Odmítnout“ ho z plánu odstraní."
+        "text": "Plánuješ trasu (např. s přestupem) a chceš ověřit, že vyjde, než vyrazíš? Označ stanice na trase každého vlaku a přidej „📋 Do plánu“ — uvidíš tu všechny úseky najednou. Až opravdu pojedeš, klikni „✅ Potvrdit“ — teprve pak se jízda uloží se skutečnými časy; „❌ Odmítnout“ ji z plánu odstraní."
       },
       "s2": {
         "title": "Uložené jízdy",
         "text": "Vaše uložené a potvrzené jízdy, od nejnovějších. Můžete je upravit (🔓) — změny se také ukládají samy — nebo vše stáhnout jako XLSX."
-      },
-      "autoConfirm": {
-        "title": "Plán se potvrdí sám",
-        "text": "Po příjezdu vlaku se záznam z plánu sám přesune do uložených jízd — i když PLK mezitím změní číslo spoje."
       }
     },
     "planer": {
@@ -989,6 +985,15 @@
       "unsupported": "Tento prohlížeč nepodporuje push oznámení. Na iPhonu přidej aplikaci na plochu.",
       "off": "Zapni oznámení na tomto zařízení, abys dostával varování i se zavřenou aplikací.",
       "enable": "Zapnout oznámení"
+    },
+    "ask": {
+      "title": "Jel jsi tímto spojením?",
+      "legsHint": "Odškrtni úseky, kterými jsi nejel.",
+      "yes": "Ano — uložit do deníku",
+      "no": "Nejel jsem",
+      "noneChecked": "Zaškrtni aspoň jeden úsek nebo zvol „Nejel jsem“.",
+      "saved": "✅ Uloženo do deníku (úseky: {n}).",
+      "openJournal": "Otevřít deník →"
     }
   }
 }
