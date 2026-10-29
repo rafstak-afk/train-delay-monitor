@@ -15,6 +15,9 @@
 // osobnej logiki dopasowania pociągu do kursu PLK.
 
 import { buildPushHTTPRequest } from "../_pushforge/main.js";
+// Strażnik przesiadek — ta sama logika statusów co w aplikacji (/pilnowane/).
+import GuardCoreMod from "../../guard-core.js";
+const GuardCore = (GuardCoreMod && GuardCoreMod.evaluate) ? GuardCoreMod : globalThis.GuardCore;
 
 const TOKEN_RE = /^[A-Z0-9]{16}$/;
 const ADMIN_CONTACT = "mailto:rafstak@gmail.com";
@@ -492,6 +495,91 @@ function disruptionTypesPayload(changes) {
   };
 }
 
+// ============ Strażnik przesiadek („🛡️ Pilnuj połączenia”) ============
+// Pilnowane połączenia profilu (ręczne + z planu dzienniczka) liczymy tą samą
+// logiką co aplikacja (guard-core.js). Push TYLKO przy zmianie statusu albo
+// zmianie opóźnienia o ≥ 5 min (GuardCore.shouldNotify). Stan poprzednich
+// odczytów: klucz KV guardstate:<token> — zapisywany wyłącznie przy zmianie.
+// BETA: tylko profile z showVersion === true (autor, ?wersja=1).
+const GUARD_STATE_PREFIX = "guardstate:";
+const GUARD_STATE_TTL = 60 * 60 * 24 * 3;
+
+function guardSettingsOf(profile) {
+  const s = profile.guardSettings && typeof profile.guardSettings === "object" ? profile.guardSettings : {};
+  const d = GuardCore.DEFAULTS;
+  return { leadMin: s.leadMin || d.leadMin, minTransfer: s.minTransfer != null ? s.minTransfer : d.minTransfer, autoPlan: s.autoPlan !== false };
+}
+function dayDiff(a, b) { return Math.round((Date.parse(a + "T00:00:00Z") - Date.parse(b + "T00:00:00Z")) / 86400000); }
+// Połączenia w oknie pilnowania (teraz), najwyżej MAX_ACTIVE.
+function activeGuardConnections(profile, now, nowMinutes) {
+  if (!GuardCore || profile.showVersion !== true) return [];
+  const set = guardSettingsOf(profile);
+  const manual = Array.isArray(profile.guardedConnections) ? profile.guardedConnections.filter(c => c && c.id && Array.isArray(c.legs) && c.legs.length) : [];
+  const list = manual.slice();
+  if (set.autoPlan) {
+    const off = Array.isArray(profile.guardPlanOff) ? profile.guardPlanOff : [];
+    const have = new Set(manual.map(c => c.id));
+    for (const c of GuardCore.fromPlannedTrips(profile.plannedTrips)) {
+      if (!off.includes(c.id) && !have.has(c.id) && !have.has(c.id.replace(/^plan:/, ""))) list.push(c);
+    }
+  }
+  return list
+    .filter(c => GuardCore.isActive(c, nowMinutes + dayDiff(now.date, c.date) * 1440, set.leadMin))
+    .sort((a, b) => (a.date + a.legs[0].board.time).localeCompare(b.date + b.legs[0].board.time))
+    .slice(0, GuardCore.MAX_ACTIVE);
+}
+// Ten sam pociąg (kurs + dzień) odpytujemy raz na przebieg, nawet jeśli jest
+// w kilku połączeniach albo profilach.
+function guardTrainFetcher(origin) {
+  const cache = new Map();
+  return (leg, date) => {
+    const k = leg.scheduleId + "|" + leg.orderId + "|" + date;
+    if (!cache.has(k)) {
+      const q = new URLSearchParams({ scheduleId: leg.scheduleId, orderId: leg.orderId, operatingDate: date, train: (leg.train && leg.train.number) || "" });
+      cache.set(k, fetchJson(origin, "/api/train-details?" + q.toString()));
+    }
+    return cache.get(k);
+  };
+}
+async function runGuard(env, token, profile, subs, conns, fetchTrain, summary, lang) {
+  let prevState = {};
+  try { prevState = JSON.parse((await env.USER_PROFILES.get(GUARD_STATE_PREFIX + token)) || "{}") || {}; } catch (e) {}
+  const set = guardSettingsOf(profile);
+  const next = {};
+  for (const conn of conns) {
+    summary.guardChecked = (summary.guardChecked || 0) + 1;
+    const readings = await Promise.all(conn.legs.map(l => fetchTrain(l, conn.date)));
+    const res = GuardCore.evaluate(conn, readings, { minTransfer: set.minTransfer });
+    const t = res.transfers[res.worst];
+    const prev = prevState[conn.id] || null;
+    const cur = { status: res.status, delayA: t && typeof t.delayA === "number" ? t.delayA : null };
+    const hist = (prev && Array.isArray(prev.hist) ? prev.hist : []).slice(-5);
+    if (typeof cur.delayA === "number" && hist[hist.length - 1] !== cur.delayA) hist.push(cur.delayA);
+    // „brak danych” nie nadpisuje ostatniego znanego statusu (bez fałszywych „poprawa/pogorszenie”).
+    const base = cur.status === "nodata" && prev ? prev : cur;
+    // „+5 min” liczymy względem opóźnienia z OSTATNIEGO POWIADOMIENIA, nie z
+    // poprzedniego odczytu — inaczej narastanie po minucie nigdy by nie dało ostrzeżenia.
+    const prevForNotify = prev ? { status: prev.status, delayA: typeof prev.notifiedDelay === "number" ? prev.notifiedDelay : prev.delayA } : null;
+    const kind = GuardCore.shouldNotify(prevForNotify, cur);
+    next[conn.id] = { status: base.status, delayA: base.delayA, hist: hist.slice(-5), notifiedDelay: prev ? prev.notifiedDelay : undefined };
+    if (!kind) continue;
+    const msg = GuardCore.message(conn, res, kind, lang, null);
+    const payload = { title: msg.title, body: msg.body, url: "/pilnowane/?id=" + encodeURIComponent(conn.id) };
+    let sent = false;
+    for (const sub of subs) {
+      try {
+        const st = await sendPush(env, sub, payload);
+        if (st >= 200 && st < 300) { summary.pushSent++; summary.guardPushes = (summary.guardPushes || 0) + 1; sent = true; }
+      } catch (e) { summary.errors.push(token + " push (guard): " + e.message); }
+    }
+    if (sent) next[conn.id].notifiedDelay = cur.delayA;
+  }
+  // Zapis tylko przy zmianie (limit zapisów KV).
+  if (JSON.stringify(next) !== JSON.stringify(prevState)) {
+    await env.USER_PROFILES.put(GUARD_STATE_PREFIX + token, JSON.stringify(next), { expirationTtl: GUARD_STATE_TTL });
+  }
+}
+
 export async function onRequestPost(context) {
   const { request, env } = context;
 
@@ -508,6 +596,7 @@ export async function onRequestPost(context) {
   const summary = { profilesChecked: 0, profilesNotified: 0, trainsChecked: 0, trainsSkipped: 0, stationsChecked: 0, pushSent: 0, pushPruned: 0, errors: [] };
   const now = warsawNow();
   const nowMinutes = minutesOf(now.time);
+  const fetchGuardTrain = guardTrainFetcher(origin);
 
   let dtChanges = null;
   try { dtChanges = await checkDisruptionTypes(env, origin, warsawNow().date, summary); }
@@ -544,9 +633,20 @@ export async function onRequestPost(context) {
 
       const useTrains = !!profile.alarmEnabled && trains.length > 0;
       const useStations = watchedStations.length > 0;
-      if (!subs.length || (!useTrains && !useStations)) continue;
+      const guardConns = subs.length ? activeGuardConnections(profile, now, nowMinutes) : [];
+      if (!subs.length || (!useTrains && !useStations && !guardConns.length)) continue;
 
       summary.profilesChecked++;
+
+      // Strażnik przesiadek — przed zwykłymi alarmami, żeby wiedzieć, które
+      // pociągi pilnuje (dla nich alarm „Moje pociągi” milczy — mówi strażnik).
+      const guardedTrainNums = new Set();
+      if (guardConns.length) {
+        for (const c of guardConns) for (const l of c.legs) if (l.train && l.train.number) guardedTrainNums.add(String(l.train.number));
+        try {
+          await runGuard(env, token, profile, subs, guardConns, fetchGuardTrain, summary, typeof profile.language === "string" ? profile.language : "pl");
+        } catch (e) { summary.errors.push(token + " guard: " + e.message); }
+      }
 
       // Dwa NIEZALEŻNE źródła alarmu — pociągi z "Moich pociągów" i
       // obserwowane stacje w tle — trzymane osobno (nie w jednej wspólnej
@@ -559,6 +659,7 @@ export async function onRequestPost(context) {
         let stateChanged = false;
         for (const item of trains) {
           if (!item || !item.station || !item.trainNum) continue;
+          if (guardedTrainNums.has(String(item.trainNum))) { summary.trainsSkipped++; continue; } // mówi strażnik
           const key = trainKey(item);
           if (state.done.has(key) || !isInCheckWindow(item, nowMinutes)) {
             summary.trainsSkipped++;
