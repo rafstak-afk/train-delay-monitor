@@ -996,6 +996,7 @@
       "openJournal": "Reisetagebuch öffnen →"
     },
     "arrShort": "Ankunft",
-    "depShort": "Abfahrt"
+    "depShort": "Abfahrt",
+    "planB": "Plan B"
   }
 }

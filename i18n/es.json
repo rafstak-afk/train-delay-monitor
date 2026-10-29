@@ -996,6 +996,7 @@
       "openJournal": "Abrir el diario →"
     },
     "arrShort": "llegada",
-    "depShort": "salida"
+    "depShort": "salida",
+    "planB": "Plan B"
   }
 }

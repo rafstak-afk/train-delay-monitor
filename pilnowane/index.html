@@ -156,7 +156,12 @@ details.settings summary{cursor:pointer;font-weight:800;font-size:14px}
         var before=results[c.id]&&results[c.id].status;
         if(before&&before!=='waiting'&&before!=='nodata'&&(G.RANK[res.status]||0)>(G.RANK[before]||0)&&(G.RANK[res.status]||0)>=G.RANK.risk&&window.AlarmSound)AlarmSound.playOnce();
         results[c.id]=res;
-        if((res.status==='broken'||res.status==='cancelled')&&!alts[c.id])findAlternatives(c,res);
+        // Alternatywy przy 🟡/🔴/⚫ — od stacji zagrożonej przesiadki; ponowne
+        // wyszukanie, gdy zmieni się stacja albo godzina startu o ≥ 5 min.
+        if(res.status==='risk'||res.status==='broken'||res.status==='cancelled'){
+          var o=G.altOrigin(c,res),prev=alts[c.id];
+          if(o&&(!prev||!prev.origin||prev.origin.station!==o.station||Math.abs(G.hm(prev.origin.time)-G.hm(o.time))>=5))findAlternatives(c,res);
+        }
       });
     });
     return Promise.all(jobs).then(function(){
@@ -236,8 +241,8 @@ details.settings summary{cursor:pointer;font-weight:800;font-size:14px}
       var st=r.startMin;html+='<div class="waiting">⏳ '+esc(T('guard.waitingInfo',{time:G.fmt(st)},'Pilnowanie zacznie się ok. '+G.fmt(st)+' tego dnia.'))+'</div>';
     }
     var a=alts[c.id];
-    if(a&&(s==='broken'||s==='cancelled')){
-      html+='<div class="alts"><h4>🔀 '+esc(T('guard.altTitle',{st:a.origin.station,time:a.origin.time},'Alternatywy z '+a.origin.station+' od '+a.origin.time))+'</h4>';
+    if(a&&(s==='risk'||s==='broken'||s==='cancelled')){
+      html+='<div class="alts"><h4>🔀 '+(s==='risk'?esc(T('guard.planB',null,'Plan B'))+': ':'')+esc(T('guard.altTitle',{st:a.origin.station,time:a.origin.time},'Alternatywy z '+a.origin.station+' od '+a.origin.time))+'</h4>';
       if(a.loading)html+='<div class="src">'+esc(T('guard.altLoading',null,'Szukam połączeń…'))+'</div>';
       else if(a.error||!a.list||!a.list.length)html+='<div class="src">'+esc(T('guard.altNone',null,'Nie znalazłem alternatyw.'))+'</div> <button type="button" class="btn-sm secondary" data-act="altRetry" data-id="'+esc(c.id)+'">'+esc(T('guard.altRetry',null,'Szukaj ponownie'))+'</button>';
       else{

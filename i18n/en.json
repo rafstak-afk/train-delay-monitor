@@ -996,6 +996,7 @@
       "openJournal": "Open the journal →"
     },
     "arrShort": "arrival",
-    "depShort": "departure"
+    "depShort": "departure",
+    "planB": "Plan B"
   }
 }
