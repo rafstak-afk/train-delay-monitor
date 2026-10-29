@@ -491,6 +491,10 @@
       "watchBoard": {
         "title": "La notificación abre el panel",
         "text": "Al tocar una notificación de retraso de una estación vigilada se abre directamente su panel de salidas."
+      },
+      "guard": {
+        "title": "🛡️ Vigila tu conexión",
+        "text": "Novedad en el planificador: junto a un resultado toca 🛡️ Vigilar — seguiré los retrasos, te avisaré con una notificación si un transbordo está en riesgo y te propondré un plan B al momento. Al llegar te preguntaré si guardar el viaje en el diario."
       }
     },
     "mojePociagi": {
@@ -567,6 +571,10 @@
       "s2": {
         "title": "Viajes guardados",
         "text": "Tus viajes guardados y confirmados, los más recientes primero. Puedes editarlos (🔓) —los cambios también se guardan solos— o descargarlo todo en XLSX."
+      },
+      "guard": {
+        "title": "🛡️ Tu plan está vigilado",
+        "text": "Vigilo automáticamente los viajes de tu plan: te aviso si un transbordo está en riesgo y al llegar te pregunto si guardar el viaje. Desactívalo en el planificador: 📌 Mías → ⚙️ Ajustes de vigilancia."
       }
     },
     "planer": {
@@ -593,6 +601,18 @@
       "chat": {
         "title": "💬 Pregunta cómo llegar (BETA)",
         "text": "¿Prefieres escribir o decir 🎤 una frase entera (en polaco)? El asistente rellena este formulario por ti y muestra los resultados al momento, o te guía paso a paso."
+      },
+      "tabs": {
+        "title": "🧭 Todo sobre la conexión en un solo lugar",
+        "text": "🔎 Buscar, 📌 Mías y 🕘 Recientes — cambias con un toque y la barra se queda arriba al desplazarte."
+      },
+      "mine": {
+        "title": "📌 Mías: guardadas y 🛡️ vigiladas",
+        "text": "Toca 🛡️ Vigilar junto a un resultado y vigilaré tus transbordos: horas recalculadas, aviso push si un transbordo está en riesgo y un plan B desde la estación de transbordo. Aquí también están tus resultados guardados — 🛡️ en uno guardado lo pasa a vigiladas."
+      },
+      "recent": {
+        "title": "🕘 ¿Una búsqueda de hace unos días?",
+        "text": "En una entrada de un día pasado eliges: 🔎 hoy desde la misma hora (o mañana, si ya ha pasado) o 📅 aquel día."
       }
     }
   },

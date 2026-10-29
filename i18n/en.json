@@ -491,6 +491,10 @@
       "watchBoard": {
         "title": "The notification opens the board",
         "text": "Tapping a delay notification for a watched station now opens that station's departure board straight away."
+      },
+      "guard": {
+        "title": "🛡️ Guard your connection",
+        "text": "New in the planner: next to a result tap 🛡️ Guard — I'll watch the delays, warn you with a notification when a transfer is at risk and suggest a Plan B right away. After arrival I'll ask whether to save the trip in your journal."
       }
     },
     "mojePociagi": {
@@ -567,6 +571,10 @@
       "s2": {
         "title": "Saved trips",
         "text": "Your saved, confirmed trips, newest first. You can edit them (🔓) — changes save themselves too — or download everything as XLSX."
+      },
+      "guard": {
+        "title": "🛡️ Your plan is guarded",
+        "text": "I guard trips from your travel plan automatically: I'll warn you when a transfer is at risk and after arrival ask whether to save the trip. Turn it off in the planner: 📌 Mine → ⚙️ Guard settings."
       }
     },
     "planer": {
@@ -593,6 +601,18 @@
       "chat": {
         "title": "💬 Ask how to get there (BETA)",
         "text": "Prefer to write or say 🎤 a whole sentence (in Polish)? The assistant fills in this form for you and shows the results right away — or guides you step by step."
+      },
+      "tabs": {
+        "title": "🧭 Everything about a connection in one place",
+        "text": "🔎 Search, 📌 Mine and 🕘 Recent — switch with one tap; the bar stays at the top while you scroll."
+      },
+      "mine": {
+        "title": "📌 Mine: saved and 🛡️ guarded",
+        "text": "Tap 🛡️ Guard next to a result and I'll watch your transfers: recalculated times, a push warning when a transfer is at risk and a Plan B from the transfer station. Your saved results are here too — 🛡️ on a saved one moves it to guarded."
+      },
+      "recent": {
+        "title": "🕘 A search from a few days ago?",
+        "text": "For an entry from a past day you choose: 🔎 today from the same time (or tomorrow if it has passed) or 📅 that day."
       }
     }
   },

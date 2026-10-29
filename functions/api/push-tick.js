@@ -500,7 +500,6 @@ function disruptionTypesPayload(changes) {
 // logiką co aplikacja (guard-core.js). Push TYLKO przy zmianie statusu albo
 // zmianie opóźnienia o ≥ 5 min (GuardCore.shouldNotify). Stan poprzednich
 // odczytów: klucz KV guardstate:<token> — zapisywany wyłącznie przy zmianie.
-// BETA: tylko profile z showVersion === true (autor, ?wersja=1).
 const GUARD_STATE_PREFIX = "guardstate:";
 const GUARD_STATE_TTL = 60 * 60 * 24 * 3;
 
@@ -514,7 +513,7 @@ function dayDiff(a, b) { return Math.round((Date.parse(a + "T00:00:00Z") - Date.
 // którym właśnie mija godzina od planowego przyjazdu (_remind: jedno
 // przypomnienie „Dojechałeś? Zapisz w dzienniczku”).
 function activeGuardConnections(profile, now, nowMinutes) {
-  if (!GuardCore || profile.showVersion !== true) return [];
+  if (!GuardCore) return [];
   const set = guardSettingsOf(profile);
   const manual = Array.isArray(profile.guardedConnections) ? profile.guardedConnections.filter(c => c && c.id && Array.isArray(c.legs) && c.legs.length) : [];
   const list = manual.slice();

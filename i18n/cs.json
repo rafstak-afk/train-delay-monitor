@@ -491,6 +491,10 @@
       "watchBoard": {
         "title": "Oznámení otevře tabuli",
         "text": "Klepnutí na oznámení o zpoždění ze sledované stanice teď rovnou otevře odjezdovou tabuli té stanice."
+      },
+      "guard": {
+        "title": "🛡️ Hlídej spojení",
+        "text": "Novinka v plánovači: u výsledku klepněte na 🛡️ Hlídat — budu sledovat zpoždění, upozorním oznámením, když bude přestup ohrožen, a hned nabídnu plán B. Po příjezdu se zeptám, zda jízdu uložit do deníku."
       }
     },
     "mojePociagi": {
@@ -567,6 +571,10 @@
       "s2": {
         "title": "Uložené jízdy",
         "text": "Vaše uložené a potvrzené jízdy, od nejnovějších. Můžete je upravit (🔓) — změny se také ukládají samy — nebo vše stáhnout jako XLSX."
+      },
+      "guard": {
+        "title": "🛡️ Plán je hlídaný",
+        "text": "Jízdy z plánu cesty hlídám sám: upozorním, když bude přestup ohrožen, a po příjezdu se zeptám, zda jízdu uložit. Vypnete to v plánovači: 📌 Moje → ⚙️ Nastavení hlídání."
       }
     },
     "planer": {
@@ -593,6 +601,18 @@
       "chat": {
         "title": "💬 Zeptej se, jak dojet (BETA)",
         "text": "Raději napíšeš nebo řekneš 🎤 celou větu (polsky)? Asistent za tebe vyplní tento formulář a hned ukáže výsledky — nebo tě provede krok po kroku."
+      },
+      "tabs": {
+        "title": "🧭 Vše o spojení na jednom místě",
+        "text": "🔎 Hledat, 📌 Moje a 🕘 Nedávné — přepnete jedním klepnutím, lišta zůstává při posouvání nahoře."
+      },
+      "mine": {
+        "title": "📌 Moje: uložené a 🛡️ hlídané",
+        "text": "U výsledku klepněte na 🛡️ Hlídat a já ohlídám přestupy: přepočítané časy, push upozornění při ohroženém přestupu a plán B ze stanice přestupu. Jsou tu i vaše uložené výsledky — 🛡️ u uloženého ho přesune mezi hlídané."
+      },
+      "recent": {
+        "title": "🕘 Hledání z doby před pár dny?",
+        "text": "U záznamu z minulého dne si vyberete: 🔎 dnes od stejné hodiny (nebo zítra, pokud už minula) nebo 📅 tamten den."
       }
     }
   },

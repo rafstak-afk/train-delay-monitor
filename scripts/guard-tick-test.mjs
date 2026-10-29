@@ -115,11 +115,11 @@ if (nowMin >= 200) {
   console.log((okR ? "  ✔ " : "  ✘ ") + `przypomnienie po przyjeździe: 1. przebieg ${r1.pushes} push, 2. przebieg ${r2.pushes} (tylko raz)`);
   if (!okR) fail++;
 }
-// profil bez showVersion → strażnik nic nie robi
-const p = JSON.parse(store.get(TOKEN)); p.showVersion = false; p.trains = []; store.set(TOKEN, JSON.stringify(p)); store.delete("guardstate:" + TOKEN);
+// strażnik dla wszystkich: profil bez showVersion też jest pilnowany
+const p = JSON.parse(store.get(TOKEN)); p.showVersion = false; p.trains = []; p.guardedConnections = [conn]; store.set(TOKEN, JSON.stringify(p)); store.delete("guardstate:" + TOKEN);
 const r = await tick(9);
-const silent = r.pushes === 0 && r.status === undefined;
-console.log((silent ? "  ✔ " : "  ✘ ") + "BETA: profil bez ?wersja=1 — strażnik nie działa");
-if (!silent) fail++;
+const works = r.pushes === 1 && r.status === "broken";
+console.log((works ? "  ✔ " : "  ✘ ") + "profil bez ?wersja=1 — strażnik działa (push: " + r.pushes + ", status: " + r.status + ")");
+if (!works) fail++;
 console.log(fail ? `\n${fail} błędów` : "\nwszystko OK");
 process.exit(fail ? 1 : 0);

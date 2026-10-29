@@ -491,6 +491,10 @@
       "watchBoard": {
         "title": "Powiadomienie prowadzi do tablicy",
         "text": "Kliknięcie powiadomienia o opóźnieniu na obserwowanej stacji otwiera od razu tablicę tej stacji."
+      },
+      "guard": {
+        "title": "🛡️ Pilnuj połączenia",
+        "text": "Nowość w planerze: przy wyniku kliknij 🛡️ Pilnuj — sprawdzę opóźnienia, ostrzegę powiadomieniem, gdy przesiadka będzie zagrożona, i od razu podam Plan B. Po przyjeździe zapytam, czy zapisać przejazd w dzienniczku."
       }
     },
     "mojePociagi": {
@@ -567,6 +571,10 @@
       "s2": {
         "title": "Zapisane przejazdy",
         "text": "Twoje zapisane, potwierdzone przejazdy, od najnowszych. Możesz je poprawić (🔓) — zmiany też zapisują się same — albo pobrać wszystko jako XLSX."
+      },
+      "guard": {
+        "title": "🛡️ Plan jest pilnowany",
+        "text": "Przejazdy z planu podróży pilnuję sam: ostrzegę, gdy przesiadka będzie zagrożona, a po przyjeździe zapytam, czy zapisać przejazd. Wyłączysz to w planerze: 📌 Moje → ⚙️ Ustawienia pilnowania."
       }
     },
     "planer": {
@@ -593,6 +601,18 @@
       "chat": {
         "title": "💬 Zapytaj, jak dojechać (BETA)",
         "text": "Wolisz napisać albo powiedzieć 🎤 całe zdanie? Asystent wypełni ten formularz za Ciebie i od razu pokaże wyniki — albo poprowadzi krok po kroku."
+      },
+      "tabs": {
+        "title": "🧭 Wszystko o połączeniu w jednym miejscu",
+        "text": "🔎 Szukaj, 📌 Moje i 🕘 Ostatnie — przełączasz jednym kliknięciem, a pasek zostaje u góry przy przewijaniu."
+      },
+      "mine": {
+        "title": "📌 Moje: zapisane i 🛡️ pilnowane",
+        "text": "Przy wyniku kliknij 🛡️ Pilnuj, a pilnuję przesiadek: przeliczone godziny, ostrzeżenie push, gdy przesiadka jest zagrożona, i Plan B od stacji przesiadki. Tu też są Twoje zapisane wyniki — 🛡️ przy zapisanym przenosi je do pilnowanych."
+      },
+      "recent": {
+        "title": "🕘 Wyszukiwanie sprzed kilku dni?",
+        "text": "Przy wpisie z minionego dnia wybierasz: 🔎 dziś od tej samej godziny (albo jutro, jeśli już minęła) lub 📅 tamten dzień."
       }
     }
   },

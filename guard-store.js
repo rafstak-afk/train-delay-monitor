@@ -14,8 +14,8 @@
   function read(k, def) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? def : v; } catch (e) { return def; } }
   function write(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
   function today() { return new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Warsaw" }); }
-  // BETA: na razie tylko profil autora (flaga showVersion → ?wersja=1).
-  function enabled() { try { return localStorage.getItem("showVersionBadge") === "1"; } catch (e) { return false; } }
+  // Dostępne dla wszystkich od v4.86 (wcześniej beta tylko dla profilu autora).
+  function enabled() { return true; }
   // Zapis do profilu, który przeglądarka dokończy nawet po zmianie strony
   // (sendBeacon) — zwykłe zapytanie bywało przerywane, a tablica potem
   // wczytywała stary profil i wpisy znikały.

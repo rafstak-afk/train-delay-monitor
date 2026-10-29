@@ -491,6 +491,10 @@
       "watchBoard": {
         "title": "Die Benachrichtigung öffnet die Tafel",
         "text": "Ein Tipp auf eine Verspätungsbenachrichtigung eines beobachteten Bahnhofs öffnet jetzt direkt dessen Abfahrtstafel."
+      },
+      "guard": {
+        "title": "🛡️ Verbindung überwachen",
+        "text": "Neu im Planer: Tippe bei einem Ergebnis auf 🛡️ Überwachen — ich verfolge die Verspätungen, warne per Benachrichtigung, wenn ein Umstieg gefährdet ist, und schlage sofort einen Plan B vor. Nach der Ankunft frage ich, ob die Fahrt ins Reisetagebuch soll."
       }
     },
     "mojePociagi": {
@@ -567,6 +571,10 @@
       "s2": {
         "title": "Gespeicherte Fahrten",
         "text": "Deine gespeicherten, bestätigten Fahrten, die neuesten zuerst. Du kannst sie bearbeiten (🔓) — Änderungen speichern sich ebenfalls selbst — oder alles als XLSX herunterladen."
+      },
+      "guard": {
+        "title": "🛡️ Dein Plan wird überwacht",
+        "text": "Fahrten aus deinem Reiseplan überwache ich automatisch: Ich warne, wenn ein Umstieg gefährdet ist, und frage nach der Ankunft, ob die Fahrt gespeichert werden soll. Abschalten im Planer: 📌 Meine → ⚙️ Überwachungseinstellungen."
       }
     },
     "planer": {
@@ -593,6 +601,18 @@
       "chat": {
         "title": "💬 Frag, wie du hinkommst (BETA)",
         "text": "Lieber einen ganzen Satz schreiben oder sagen 🎤 (auf Polnisch)? Der Assistent füllt dieses Formular für dich aus und zeigt sofort die Ergebnisse — oder führt dich Schritt für Schritt."
+      },
+      "tabs": {
+        "title": "🧭 Alles zur Verbindung an einem Ort",
+        "text": "🔎 Suche, 📌 Meine und 🕘 Zuletzt — mit einem Tipp umschalten; die Leiste bleibt beim Scrollen oben."
+      },
+      "mine": {
+        "title": "📌 Meine: gespeichert und 🛡️ überwacht",
+        "text": "Tippe bei einem Ergebnis auf 🛡️ Überwachen, dann behalte ich deine Umstiege im Blick: neu berechnete Zeiten, eine Push-Warnung bei gefährdetem Umstieg und ein Plan B ab dem Umstiegsbahnhof. Hier sind auch deine gespeicherten Ergebnisse — 🛡️ bei einem gespeicherten verschiebt es zu den überwachten."
+      },
+      "recent": {
+        "title": "🕘 Eine Suche von vor ein paar Tagen?",
+        "text": "Bei einem Eintrag von einem vergangenen Tag wählst du: 🔎 heute ab derselben Uhrzeit (oder morgen, falls sie vorbei ist) oder 📅 jenen Tag."
       }
     }
   },

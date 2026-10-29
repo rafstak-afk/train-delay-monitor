@@ -49,6 +49,7 @@
         { id: "lang", sel: "#langSwitchBtn", news: "2026-10-27", highlight: true, title: "🌐 6 języków", text: "Aplikacja mówi po polsku, angielsku, niemiecku, czesku, hiszpańsku i ukraińsku. Wybierz język tutaj — zapamiętam go, a z profilem: na wszystkich Twoich urządzeniach." },
         { id: "districts", sel: ".search-box", news: "2026-10-27", newsOnly: true, title: "Szukaj też po dzielnicy", text: "Wpisz samo „Załęże”, „Ligota” albo „Płaszów” — podpowiem pełną nazwę stacji (Katowice Załęże, Kraków Płaszów). Stacje z Twoich miast pokażę najpierw." },
         { id: "watchBoard", sel: "#watchStationBtn", news: "2026-10-27", newsOnly: true, title: "Powiadomienie prowadzi do tablicy", text: "Kliknięcie powiadomienia o opóźnieniu na obserwowanej stacji otwiera od razu tablicę tej stacji." },
+        { id: "guard", sel: ".btn-planer", news: "2026-10-29", highlight: true, title: "🛡️ Pilnuj połączenia", text: "Nowość w planerze: przy wyniku kliknij 🛡️ Pilnuj — sprawdzę opóźnienia, ostrzegę powiadomieniem, gdy przesiadka będzie zagrożona, i od razu podam Plan B. Po przyjeździe zapytam, czy zapisać przejazd w dzienniczku." },
         { sel: '.bottom-nav a[href="/profil/"]', title: "Profil i synchronizacja", text: "Załóż tu token — 16 znaków, bez hasła i loginu — żeby zsynchronizować ulubione stacje, pociągi, alarmy i dzienniczek między urządzeniami." }
       ]
     },
@@ -90,6 +91,7 @@
       steps: [
         { sel: "#tripsToggle", title: "Ulubione trasy", text: "Ustaw raz swoją powtarzalną trasę (np. dom→praca) — wszystko zapisuje się samo w trakcie wpisywania. Potem aplikacja sama zapyta na biegu pociągu, czy zapisać pasujący kurs. Przyciskiem „➕ Dodaj kolejną trasę” dodasz ich dowolnie wiele." },
         { sel: "#planPanel", title: "Plan podróży", text: "Planujesz trasę (np. z przesiadką) i chcesz sprawdzić, czy się spina, zanim wyjedziesz? Zaznacz stacje na biegu każdego pociągu i dodaj „📋 Do planu” — zobaczysz tu wszystkie odcinki naraz. Gdy pociąg faktycznie dojedzie, wróć i kliknij „✅ Potwierdź” (przejazd trafi do wpisów poniżej) albo „❌ Odrzuć”." },
+        { id: "guard", sel: "#planPanel", news: "2026-10-29", newsOnly: true, title: "🛡️ Plan jest pilnowany", text: "Przejazdy z planu podróży pilnuję sam: ostrzegę, gdy przesiadka będzie zagrożona, a po przyjeździe zapytam, czy zapisać przejazd. Wyłączysz to w planerze: 📌 Moje → ⚙️ Ustawienia pilnowania." },
         { sel: "#entryList", title: "Zapisane przejazdy", text: "Twoje zapisane, potwierdzone przejazdy, od najnowszych. Możesz je poprawić (🔓) — zmiany też zapisują się same — albo pobrać wszystko jako XLSX." }
       ]
     },
@@ -101,6 +103,9 @@
         { id: "districts", sel: ".station-stack", news: "2026-10-27", newsOnly: true, title: "Szukaj też po dzielnicy", text: "Wpisz samo „Załęże”, „Ligota” albo „Płaszów” — podpowiem pełną nazwę stacji. ↑/↓ i Enter wybierają stację, a Enter w polu od razu szuka połączeń." },
         { id: "badges", sel: ".faster-hint", news: "2026-10-27", title: "⚡ i 🔁 — można szybciej", text: "Migająca plakietka ⚡ przy wyniku znaczy, że inny pociąg bezpośredni dojedzie szybciej, a 🔁 — że szybciej będzie z przesiadką. Kliknij plakietkę, żeby zobaczyć to połączenie." },
         { id: "chat", sel: "#chatAssistantFab", news: "2026-10-27", highlight: true, title: "💬 Zapytaj, jak dojechać (BETA)", text: "Wolisz napisać albo powiedzieć 🎤 całe zdanie? Asystent wypełni ten formularz za Ciebie i od razu pokaże wyniki — albo poprowadzi krok po kroku." },
+        { id: "tabs", sel: "#planTabs", news: "2026-10-29", highlight: true, title: "🧭 Wszystko o połączeniu w jednym miejscu", text: "🔎 Szukaj, 📌 Moje i 🕘 Ostatnie — przełączasz jednym kliknięciem, a pasek zostaje u góry przy przewijaniu." },
+        { id: "mine", sel: "#tabSaved", news: "2026-10-29", highlight: true, title: "📌 Moje: zapisane i 🛡️ pilnowane", text: "Przy wyniku kliknij 🛡️ Pilnuj, a pilnuję przesiadek: przeliczone godziny, ostrzeżenie push, gdy przesiadka jest zagrożona, i Plan B od stacji przesiadki. Tu też są Twoje zapisane wyniki — 🛡️ przy zapisanym przenosi je do pilnowanych." },
+        { id: "recent", sel: "#tabHistory", news: "2026-10-29", newsOnly: true, title: "🕘 Wyszukiwanie sprzed kilku dni?", text: "Przy wpisie z minionego dnia wybierasz: 🔎 dziś od tej samej godziny (albo jutro, jeśli już minęła) lub 📅 tamten dzień." },
         { sel: "#advPanel", title: "Zaawansowane", text: "Minimalny czas na przesiadkę (domyślnie 3 min), opcja „Tylko bezpośrednie” (bez przesiadek), wymuszenie konkretnej stacji „przez” oraz wykluczanie wybranych przewoźników z wyników." },
         { sel: "#planTabs", title: "Zapisz albo dodaj do dziennika", text: "Każdy wynik możesz 💾 zapisać do późniejszego przejrzenia albo 📋 dodać do planu podróży w dzienniczku — każda noga osobno. Gdy faktycznie pojedziesz, w dzienniczku potwierdzisz rzeczywisty przejazd jednym kliknięciem." }
       ]
@@ -117,7 +122,7 @@
   // (także osobom z profilem i tym, które samouczek już widziały) —
   // wyróżnione (highlight) na początku, z ⭐. Nowe wydanie: zmień NEWS_ID
   // (najwyżej raz w tygodniu; przy znaczących zmianach — po zgodzie autora).
-  const NEWS_ID = "2026-10-27";
+  const NEWS_ID = "2026-10-29";
   const NEWS_KEY = "tutorialNews:";
   let mode = "full";
   function pageDef() { return STEPS_BY_PAGE.find(function (p) { return p.match(location.pathname); }) || null; }
