@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title data-i18n="guard.pageTitle">Pilnowane połączenia</title>
+<meta name="description" content="Strażnik przesiadek – pilnuje opóźnień pociągów w Twoim połączeniu i ostrzega, gdy przesiadka jest zagrożona." />
+<link rel="canonical" href="https://train-delay-monitor1.pages.dev/pilnowane/" />
+<meta name="robots" content="noindex" />
+<link rel="manifest" href="/manifest.webmanifest" />
+<style>
+:root{--bg:#101820;--panel:#1c2833;--card:#223244;--line:#34495e;--text:#fff;--muted:#b8c3cf;--blue:#0b57d0;--green:#5dd39e;--yellow:#ffcc00;--red:#ff4d4d;--grey:#4b5563;--cyan:#22d3ee}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text);padding:18px 14px 110px}
+.wrap{max-width:720px;margin:0 auto}
+a.back{display:inline-block;margin-bottom:10px;color:var(--muted);text-decoration:none;font-size:14px}
+h1{text-align:center;font-size:24px;margin:6px 0 4px}
+.subtitle{text-align:center;color:var(--muted);font-size:13px;margin:0 0 14px;line-height:1.45}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin:12px 0}
+.notice{background:rgba(255,204,0,.08);border:1px solid rgba(255,204,0,.5);color:#ffe27a;border-radius:12px;padding:10px 12px;font-size:13.5px;line-height:1.45;margin:10px 0}
+.notice a{color:#ffe27a}
+.btn,.btn-sm{border:0;border-radius:10px;background:var(--blue);color:#fff;font-weight:800;cursor:pointer;font-family:inherit}
+.btn{padding:11px 14px;font-size:14px}
+.btn-sm{padding:7px 11px;font-size:12.5px}
+.btn-sm.secondary{background:var(--grey)}
+.btn-sm.danger{background:#7f1d1d}
+details.settings summary{cursor:pointer;font-weight:800;font-size:14px}
+.set-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:10px 0;font-size:13.5px;flex-wrap:wrap}
+.set-row select{background:var(--card);color:#fff;border:1px solid var(--line);border-radius:8px;padding:6px 8px;font-size:13.5px}
+.card{background:var(--panel);border:1px solid var(--line);border-left:6px solid var(--grey);border-radius:14px;padding:12px 14px;margin:12px 0}
+.card.s-ok{border-left-color:var(--green)}.card.s-risk{border-left-color:var(--yellow)}.card.s-broken{border-left-color:var(--red)}.card.s-cancelled{border-left-color:#000;background:#151a20}
+.card.hl{box-shadow:0 0 0 2px var(--cyan)}
+.c-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.c-route{font-weight:800;font-size:15.5px;line-height:1.3}
+.c-date{color:var(--muted);font-size:12.5px;margin-top:2px}
+.chip{flex:none;border-radius:999px;padding:5px 10px;font-size:12.5px;font-weight:800;background:var(--grey);white-space:nowrap}
+.chip.s-ok{background:rgba(93,211,158,.18);color:var(--green)}.chip.s-risk{background:rgba(255,204,0,.16);color:var(--yellow)}
+.chip.s-broken{background:rgba(255,77,77,.18);color:var(--red)}.chip.s-cancelled{background:#000;color:#fff}.chip.s-done{background:rgba(34,211,238,.15);color:var(--cyan)}
+.leg{display:grid;grid-template-columns:64px minmax(0,1fr);gap:8px;padding:8px 0;border-top:1px solid #2a3a4c;font-size:13.5px}
+.leg:first-of-type{border-top:0}
+.leg-t{font-weight:800}.leg-t small{display:block;color:var(--muted);font-weight:400}
+.leg-train{font-weight:800}.leg-st{color:var(--muted);overflow-wrap:anywhere}
+.dl{font-weight:800}.dl.late{color:var(--yellow)}.dl.vlate{color:var(--red)}.dl.ontime{color:var(--green)}
+.src{color:var(--muted);font-size:11.5px}
+.xfer{margin:4px 0 4px 72px;padding:8px 10px;border-radius:10px;background:var(--card);font-size:13px;line-height:1.45}
+.xfer.s-ok{border:1px solid rgba(93,211,158,.4)}.xfer.s-risk{border:1px solid rgba(255,204,0,.55)}.xfer.s-broken,.xfer.s-cancelled{border:1px solid rgba(255,77,77,.6)}
+.xfer .warn{color:var(--yellow)}
+.c-foot{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:space-between;margin-top:10px}
+.c-meta{color:var(--muted);font-size:11.5px}
+.c-actions{display:flex;gap:6px;flex-wrap:wrap}
+.badge{display:inline-block;font-size:11px;border-radius:999px;padding:2px 7px;background:#2b3e52;color:var(--muted);margin-left:6px;vertical-align:middle}
+.alts{margin-top:10px;border-top:1px dashed var(--line);padding-top:10px}
+.alts h4{margin:0 0 6px;font-size:13.5px}
+.alt{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--card);border-radius:10px;padding:8px 10px;margin:6px 0;font-size:13px}
+.alt b{font-size:14px}
+.empty{text-align:center;color:var(--muted);padding:24px 10px;font-size:14px;line-height:1.5}
+.empty a{color:var(--cyan)}
+.waiting{color:var(--muted);font-size:13px;margin-top:6px}
+@media(max-width:480px){.xfer{margin-left:0}.leg{grid-template-columns:56px minmax(0,1fr)}}
+</style>
+<script>try{if(localStorage.getItem('showVersionBadge')==='1')document.documentElement.classList.add('show-version')}catch(e){}</script>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="/" data-i18n="guard.back">← Tablica</a>
+  <h1 data-i18n="guard.title">🛡️ Pilnowane połączenia</h1>
+  <p class="subtitle" data-i18n="guard.subtitle">Pilnuję Twoich przesiadek. Gdy opóźnienie zagrozi przesiadce, dostaniesz powiadomienie i propozycję zastępczą.</p>
+  <div id="pushNotice"></div>
+  <details class="panel settings">
+    <summary data-i18n="guard.settings">⚙️ Ustawienia pilnowania</summary>
+    <div class="set-row"><label for="leadSel" data-i18n="guard.leadLabel">Zacznij pilnować przed odjazdem</label>
+      <select id="leadSel"><option value="60">1 h</option><option value="120">2 h</option><option value="180">3 h</option><option value="240">4 h</option></select></div>
+    <div class="set-row"><label for="minSel" data-i18n="guard.minLabel">Minimalny czas na przesiadkę</label>
+      <select id="minSel"><option value="2">2 min</option><option value="3">3 min</option><option value="5">5 min</option><option value="7">7 min</option><option value="10">10 min</option><option value="15">15 min</option></select></div>
+    <div class="set-row"><label for="autoPlan" data-i18n="guard.autoPlanLabel">Pilnuj automatycznie przejazdów z planu w dzienniczku</label>
+      <input type="checkbox" id="autoPlan" /></div>
+  </details>
+  <div id="list"></div>
+</div>
+<script src="/i18n.js"></script>
+<script src="/burger-menu.js"></script>
+<script src="/profile-sync.js"></script>
+<script src="/guard-core.js"></script>
+<script src="/guard-store.js"></script>
+<script src="/tutorial.js"></script>
+<script>
+(function(){
+  'use strict';
+  var $=function(id){return document.getElementById(id)};
+  function T(k,p,fb){if(window.I18n){var v=I18n.t(k,p);if(v!==k)return v}return fb!=null?fb:k}
+  function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+  var G=window.GuardCore,S=window.GuardStore;
+  var EMO={ok:'🟢',risk:'🟡',broken:'🔴',cancelled:'⚫',nodata:'❔',done:'🏁',waiting:'⏳'};
+  var cache={};          // scheduleId|orderId|date → {at, data}
+  var history={};        // id → [delayA…] (trend „opóźnienie rośnie”)
+  var results={};        // id → wynik evaluate
+  var alts={};           // id → {loading|list|error}
+  var lastAt=0, timer=null;
+  var focusId=new URLSearchParams(location.search).get('id');
+
+  function nowWarsawMin(dateStr){
+    var p=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Warsaw',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(new Date());
+    var g=function(t){return (p.find(function(x){return x.type===t})||{}).value};
+    var today=g('year')+'-'+g('month')+'-'+g('day');
+    var m=(+g('hour')%24)*60+(+g('minute'));
+    var dd=Math.round((Date.parse(today)-Date.parse(dateStr))/86400000);
+    return m+dd*1440;
+  }
+  function statusText(s){return T('guard.status.'+s,null,{ok:'OK',risk:'przesiadka zagrożona',broken:'przesiadka prawdopodobnie zerwana',cancelled:'pociąg odwołany',nodata:'brak danych',done:'dojechano',waiting:'czeka na start'}[s]||s)}
+  function delayHtml(d,src){
+    if(d==null)return '';
+    var cls=d>=10?'vlate':(d>=3?'late':'ontime');
+    var srcT=src==='forecast'?T('guard.src.forecast',null,'prognoza PLK'):(src==='confirmed'?T('guard.src.confirmed',null,'potwierdzone'):(src==='notStarted'?T('guard.src.notStarted',null,'jeszcze nie wyjechał'):''));
+    return ' <span class="dl '+cls+'">'+(d>0?'+'+d:d===0?'0':d)+' min</span>'+(srcT?' <span class="src">('+esc(srcT)+')</span>':'');
+  }
+
+  function fetchTrain(leg,date){
+    var k=leg.scheduleId+'|'+leg.orderId+'|'+date;
+    var c=cache[k];
+    if(c&&Date.now()-c.at<50000)return Promise.resolve(c.data);
+    var q=new URLSearchParams({scheduleId:leg.scheduleId,orderId:leg.orderId,operatingDate:date,train:(leg.train&&leg.train.number)||''});
+    return fetch('/api/train-details?'+q.toString(),{headers:{Accept:'application/json'},cache:'no-store'})
+      .then(function(r){return r.ok?r.json():null}).catch(function(){return null})
+      .then(function(d){cache[k]={at:Date.now(),data:d};return d});
+  }
+
+  function refresh(){
+    clearTimeout(timer);
+    var set=S.settings();
+    var conns=S.all();
+    var jobs=conns.map(function(c){
+      var nm=nowWarsawMin(c.date);
+      var w=G.timeWindow(c,set.leadMin);
+      // poza oknem pilnowania nie odpytujemy PLK — pokazujemy plan
+      if(!w||nm<w.startMin){results[c.id]={status:'waiting',startMin:w&&w.startMin};return Promise.resolve()}
+      return Promise.all(c.legs.map(function(l){return fetchTrain(l,c.date)})).then(function(rs){
+        var res=G.evaluate(c,rs,{minTransfer:set.minTransfer});
+        var t=res.transfers[res.worst];
+        if(t&&typeof t.delayA==='number'){var h=history[c.id]=(history[c.id]||[]);if(h[h.length-1]!==t.delayA||h.length<1)h.push(t.delayA);if(h.length>6)h.shift();res.rising=G.rising(h)}
+        results[c.id]=res;
+        if((res.status==='broken'||res.status==='cancelled')&&!alts[c.id])findAlternatives(c,res);
+      });
+    });
+    return Promise.all(jobs).then(function(){
+      lastAt=Date.now();render();
+      // co 1 min, gdy któraś przesiadka jest w ciągu 60 min; inaczej co 5 min
+      var soon=conns.some(function(c){var r=results[c.id];if(!r||r.status==='waiting'||r.status==='done')return false;var nm=nowWarsawMin(c.date);return c.legs.some(function(l){var t=G.hm(l.alight.time);return t!=null&&t-nm<=60&&t-nm>=-30})});
+      if(document.visibilityState==='visible')timer=setTimeout(refresh,soon?60000:300000);
+    });
+  }
+
+  // Alternatywy: od stacji przesiadki (albo od początku, gdy odwołany pierwszy
+  // pociąg) do celu, od przewidywanej godziny dotarcia na tę stację.
+  function altOrigin(c,res){
+    var ci=res.legs.findIndex(function(x){return !x.noData&&x.cancelled});
+    var tIdx=res.worst;
+    if(ci>=0&&(tIdx<0||ci<=tIdx)){var l=c.legs[ci];return{legIndex:ci,keep:ci,station:l.board.stationName,stationId:l.board.stationId||'',time:l.board.time}}
+    var t=res.transfers[tIdx];if(!t)return null;
+    return{legIndex:tIdx+1,keep:tIdx+1,station:t.station,stationId:c.legs[tIdx].alight.stationId||'',time:t.etaA||c.legs[tIdx].alight.time};
+  }
+  function findAlternatives(c,res){
+    var o=altOrigin(c,res);if(!o)return;
+    alts[c.id]={loading:true,origin:o};
+    var last=c.legs[c.legs.length-1];
+    var q=new URLSearchParams({from:o.station,to:last.alight.stationName,date:c.date,time:o.time});
+    if(o.stationId)q.set('fromId',o.stationId);if(last.alight.stationId)q.set('toId',last.alight.stationId);
+    fetch('/api/planner?'+q.toString(),{headers:{Accept:'application/json'}}).then(function(r){return r.json()}).then(function(d){
+      var list=(d&&Array.isArray(d.itineraries)?d.itineraries:[]).filter(function(it){return it.legs&&it.legs.length}).slice(0);
+      list.sort(function(a,b){return (G.hm(a.arrivalTime)+(a.arrivalNextDay?1440:0))-(G.hm(b.arrivalTime)+(b.arrivalNextDay?1440:0))});
+      alts[c.id]={list:list.slice(0,3),origin:o};render();
+    }).catch(function(){alts[c.id]={error:true,origin:o};render()});
+  }
+  function switchTo(c,idx){
+    var a=alts[c.id];if(!a||!a.list||!a.list[idx])return;
+    var it=a.list[idx];
+    var head=c.legs.slice(0,a.origin.keep);
+    var altConn=G.fromItinerary({legs:it.legs},{date:c.date});
+    var legs=head.concat(altConn.legs);
+    var conn={id:G.connectionId(c.date,legs),date:c.date,from:legs[0].board.stationName,to:legs[legs.length-1].alight.stationName,legs:legs,source:'switched',createdAt:new Date().toISOString()};
+    S.replace(c.id,conn).then(function(){delete alts[c.id];focusId=conn.id;refresh()});
+  }
+
+  function legHtml(l,r){
+    var tr=G.trainLabel(l.train)+(l.train&&l.train.name?' '+l.train.name:'');
+    var d=r&&!r.noData;
+    var info=!r?'':(r.noData?' <span class="src">('+esc(T('guard.status.nodata',null,'brak danych'))+')</span>':(r.cancelled?' <b style="color:#fff;background:#000;padding:1px 6px;border-radius:6px">⚫ '+esc(T('guard.status.cancelled',null,'pociąg odwołany'))+'</b>':''));
+    return '<div class="leg"><div class="leg-t">'+esc(l.board.time)+'<small>'+esc(l.alight.time)+(l.alight.nextDay?' +1':'')+'</small></div>'+
+      '<div><div class="leg-train">'+esc(tr)+info+'</div><div class="leg-st">'+esc(l.board.stationName)+(d?delayHtml(r.delayDep,r.depSource):'')+' → '+esc(l.alight.stationName)+(d?delayHtml(r.delayArr,r.arrSource):'')+'</div></div></div>';
+  }
+  function xferHtml(t,rising){
+    var s=t.status;
+    var main;
+    if(s==='nodata')main=T('guard.xferNoData',{st:t.station},'Przesiadka w '+t.station+': brak danych o jednym z pociągów.');
+    else if(s==='cancelled')main=T('guard.xferCancelled',{st:t.station},'Przesiadka w '+t.station+': pociąg odwołany.');
+    else main=T('guard.xferLine',{st:t.station,slack:t.slack,plan:t.plannedSlack,need:t.need},'Przesiadka w '+t.station+': zapas '+t.slack+' min (wg planu '+t.plannedSlack+', potrzebne '+t.need+')');
+    var extra='';
+    if(t.platformChange)extra+='<div class="src">'+esc(T('guard.platformChange',{a:t.platformArr,b:t.platformDep},'Zmiana peronu: '+t.platformArr+' → '+t.platformDep+' (+2 min)'))+'</div>';
+    if(t.stationChange)extra+='<div class="src">'+esc(T('guard.stationChange',{a:t.station,b:t.toStation},'Przejście między stacjami: '+t.station+' → '+t.toStation+' (+5 min)'))+'</div>';
+    if(t.onlyThanksToB)extra+='<div class="warn">'+esc(T('guard.onlyThanksToB',{b:G.trainLabel(t.trainB)},'Zdążysz tylko, jeśli '+G.trainLabel(t.trainB)+' nie nadrobi opóźnienia.'))+'</div>';
+    if(rising)extra+='<div class="warn">📈 '+esc(T('guard.rising',null,'Opóźnienie rośnie'))+'</div>';
+    return '<div class="xfer s-'+s+'">'+EMO[s]+' '+esc(main)+extra+'</div>';
+  }
+  function cardHtml(c){
+    var r=results[c.id]||{status:'nodata'};
+    var s=r.status;
+    var html='<div class="card s-'+s+(c.id===focusId?' hl':'')+'" id="g-'+esc(c.id)+'">'+
+      '<div class="c-head"><div><div class="c-route">'+esc(c.from)+' → '+esc(c.to)+(c.source==='plan'?'<span class="badge">'+esc(T('guard.fromPlan',null,'z dzienniczka'))+'</span>':'')+'</div>'+
+      '<div class="c-date">'+esc(c.date)+' · '+esc(c.legs[0].board.time)+' → '+esc(r.eta||c.legs[c.legs.length-1].alight.time)+'</div></div>'+
+      '<span class="chip s-'+s+'">'+EMO[s]+' '+esc(statusText(s))+'</span></div>';
+    c.legs.forEach(function(l,i){
+      html+=legHtml(l,r.legs?r.legs[i]:null);
+      if(i<c.legs.length-1&&r.transfers&&r.transfers[i])html+=xferHtml(r.transfers[i],r.rising&&r.worst===i);
+    });
+    if(s==='waiting'){
+      var st=r.startMin;html+='<div class="waiting">⏳ '+esc(T('guard.waitingInfo',{time:G.fmt(st)},'Pilnowanie zacznie się ok. '+G.fmt(st)+' tego dnia.'))+'</div>';
+    }
+    var a=alts[c.id];
+    if(a&&(s==='broken'||s==='cancelled')){
+      html+='<div class="alts"><h4>🔀 '+esc(T('guard.altTitle',{st:a.origin.station,time:a.origin.time},'Alternatywy z '+a.origin.station+' od '+a.origin.time))+'</h4>';
+      if(a.loading)html+='<div class="src">'+esc(T('guard.altLoading',null,'Szukam połączeń…'))+'</div>';
+      else if(a.error||!a.list||!a.list.length)html+='<div class="src">'+esc(T('guard.altNone',null,'Nie znalazłem alternatyw.'))+'</div> <button type="button" class="btn-sm secondary" data-act="altRetry" data-id="'+esc(c.id)+'">'+esc(T('guard.altRetry',null,'Szukaj ponownie'))+'</button>';
+      else a.list.forEach(function(it,k){
+        var trs=it.legs.map(function(l){return G.trainLabel(l.train)}).join(' + ');
+        html+='<div class="alt"><div><b>'+esc(it.departureTime)+' → '+esc(it.arrivalTime)+'</b> · '+esc(trs)+'<div class="src">'+esc(it.legs.length>1?T('guard.altChanges',{n:it.legs.length-1},(it.legs.length-1)+' przesiadka(i)'):T('guard.altDirect',null,'bezpośrednio'))+'</div></div>'+
+          '<button type="button" class="btn-sm" data-act="switch" data-id="'+esc(c.id)+'" data-k="'+k+'">'+esc(T('guard.switch',null,'🛡️ Pilnuj tej'))+'</button></div>';
+      });
+      html+='</div>';
+    }
+    html+='<div class="c-foot"><span class="c-meta">'+(lastAt&&s!=='waiting'?esc(T('guard.updated',{time:new Date(lastAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})},'Aktualizacja: '+new Date(lastAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}))):'')+'</span>'+
+      '<span class="c-actions"><button type="button" class="btn-sm secondary" data-act="refresh">↻ '+esc(T('guard.refresh',null,'Odśwież'))+'</button>'+
+      '<button type="button" class="btn-sm danger" data-act="remove" data-id="'+esc(c.id)+'">'+esc(T('guard.stop',null,'Przestań pilnować'))+'</button></span></div></div>';
+    return html;
+  }
+  function render(){
+    var conns=S.all();
+    if(!conns.length){$('list').innerHTML='<div class="empty">'+T('guard.empty',null,'Nie pilnujesz jeszcze żadnego połączenia.<br>W <a href="/planer/">planerze</a> kliknij „🛡️ Pilnuj” przy wyniku — albo dodaj przejazd do planu w dzienniczku.')+'</div>';return}
+    $('list').innerHTML=conns.map(cardHtml).join('');
+    if(focusId){var el=document.getElementById('g-'+focusId);if(el){el.scrollIntoView({block:'center'});focusId=null}}
+  }
+  $('list').addEventListener('click',function(e){
+    var b=e.target.closest('button[data-act]');if(!b)return;
+    var act=b.dataset.act,id=b.dataset.id;
+    var c=S.all().find(function(x){return x.id===id});
+    if(act==='refresh'){cache={};refresh();return}
+    if(act==='remove'&&c){if(!confirm(T('guard.confirmStop',null,'Przestać pilnować tego połączenia?')))return;S.remove(id).then(function(){delete results[id];render()});return}
+    if(act==='switch'&&c){switchTo(c,Number(b.dataset.k));return}
+    if(act==='altRetry'&&c){delete alts[id];findAlternatives(c,results[id]);render()}
+  });
+
+  // Ustawienia
+  function fillSettings(){var s=S.settings();$('leadSel').value=String(s.leadMin);$('minSel').value=String(s.minTransfer);$('autoPlan').checked=s.autoPlan}
+  $('leadSel').addEventListener('change',function(){S.saveSettings({leadMin:Number(this.value)});refresh()});
+  $('minSel').addEventListener('change',function(){S.saveSettings({minTransfer:Number(this.value)});refresh()});
+  $('autoPlan').addEventListener('change',function(){S.saveSettings({autoPlan:this.checked});refresh()});
+
+  // Powiadomienia na tym urządzeniu
+  function renderPush(){
+    S.pushState().then(function(st){
+      var box=$('pushNotice');
+      if(st==='on'){box.innerHTML='';return}
+      var msg={ 'no-profile':T('guard.push.noProfile',null,'Powiadomienia w tle wymagają profilu. <a href="/profil/">Załóż profil</a> — bez hasła, kilkanaście sekund.'),
+        'denied':T('guard.push.denied',null,'Powiadomienia są zablokowane w przeglądarce. Odblokuj je w ustawieniach strony, żeby dostawać ostrzeżenia.'),
+        'unsupported':T('guard.push.unsupported',null,'Ta przeglądarka nie obsługuje powiadomień push. Na iPhonie dodaj aplikację do ekranu głównego.'),
+        'off':T('guard.push.off',null,'Włącz powiadomienia na tym urządzeniu, żeby dostawać ostrzeżenia także przy zamkniętej aplikacji.')}[st]||'';
+      box.innerHTML='<div class="notice">'+msg+(st==='off'?' <button type="button" class="btn-sm" id="pushOn">🔔 '+esc(T('guard.push.enable',null,'Włącz powiadomienia'))+'</button>':'')+'</div>';
+      var on=$('pushOn');if(on)on.addEventListener('click',function(){on.disabled=true;S.enablePush().then(renderPush)});
+    });
+  }
+
+  document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible'&&Date.now()-lastAt>45000)refresh()});
+  window.addEventListener('langchange',function(){render();renderPush()});
+  if(!S.enabled()){
+    $('list').innerHTML='<div class="empty">🛠️ '+esc(T('guard.soon',null,'Ta funkcja jest jeszcze w przygotowaniu. Wkrótce!'))+'</div>';
+    document.querySelector('details.settings').style.display='none';
+    return;
+  }
+  (window.I18n?I18n.ready:Promise.resolve()).then(function(){
+    fillSettings();render();renderPush();
+    return S.refreshFromProfile();
+  }).then(function(){fillSettings();return refresh()});
+  if('serviceWorker' in navigator)navigator.serviceWorker.register('/service-worker.js').catch(function(){});
+})();
+</script>
+</body>
+</html>

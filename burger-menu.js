@@ -30,6 +30,7 @@
     { href: "/bilety/", key: "common.burger.tickets", fallback: "🎫 Dobierz bilet" },
     { action: "health", key: "common.burger.apiHealth", fallback: "🩺 API", requiresHealthBox: true },
     { action: "limit", key: "common.burger.apiLimit", fallback: "📊 Limit", requiresHealthBox: true },
+    { href: "/pilnowane/", key: "common.burger.guard", fallback: "🛡️ Pilnowane połączenia", requiresBeta: true },
     { href: "/jak-dziala/", key: "common.burger.howItWorks", fallback: "📖 Jak działa aplikacja" },
     { href: "/kontakt/", key: "common.burger.contact", fallback: "💬 Uwagi i kontakt" },
     { href: "/kontakt/#rodo", key: "common.burger.rodo", fallback: "🔒 RODO i prywatność" }
@@ -40,6 +41,8 @@
   }
 
   function linkHtml(l) {
+    // Funkcje w becie — tylko w profilu autora (?wersja=1).
+    if (l.requiresBeta) { try { if (localStorage.getItem("showVersionBadge") !== "1") return ""; } catch (e) { return ""; } }
     if (l.action) {
       if (l.requiresHealthBox && !document.getElementById("healthBox")) return "";
       var call = l.action === "health" ? "checkPlkHealth(true)" : "checkApiLimit(true)";

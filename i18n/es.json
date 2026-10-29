@@ -9,7 +9,8 @@
       "howItWorks": "📖 Cómo funciona",
       "contact": "💬 Opiniones y contacto",
       "rodo": "🔒 Política de privacidad",
-      "language": "Idioma"
+      "language": "Idioma",
+      "guard": "🛡️ Conexiones vigiladas"
     },
     "bottomNav": {
       "ks": "🚧 KŚ",
@@ -392,7 +393,10 @@
       "station_not_found": "No se encontró la estación «{name}»",
       "same_stations": "Dos estaciones consecutivas de la ruta son iguales",
       "plk_error": "Error de la API de PLK"
-    }
+    },
+    "guard": "🛡️ Vigilar",
+    "guarded": "🛡️ Vigilada ✓",
+    "guardTitle": "Vigilar los transbordos de esta conexión: te avisaré si un retraso pone en riesgo un transbordo"
   },
   "tutorial": {
     "ui": {
@@ -929,5 +933,15 @@
     "clearNo": "No, mantener",
     "clearKept": "De acuerdo, el historial se mantiene.",
     "cleared": "Se ha borrado el historial de la conversación."
+  },
+  "guard": {
+    "pageTitle": "Conexiones vigiladas",
+    "back": "← Panel",
+    "title": "🛡️ Conexiones vigiladas",
+    "subtitle": "Vigilo tus transbordos. Si un retraso pone uno en riesgo, recibirás un aviso y una alternativa.",
+    "settings": "⚙️ Ajustes de vigilancia",
+    "leadLabel": "Empezar a vigilar antes de la salida",
+    "minLabel": "Tiempo mínimo de transbordo",
+    "autoPlanLabel": "Vigilar automáticamente los viajes del plan del diario"
   }
 }

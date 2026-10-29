@@ -9,7 +9,8 @@
       "howItWorks": "📖 So funktioniert es",
       "contact": "💬 Feedback & Kontakt",
       "rodo": "🔒 Datenschutz",
-      "language": "Sprache"
+      "language": "Sprache",
+      "guard": "🛡️ Überwachte Verbindungen"
     },
     "bottomNav": {
       "ks": "🚧 KŚ",
@@ -392,7 +393,10 @@
       "station_not_found": "Bahnhof „{name}“ nicht gefunden",
       "same_stations": "Zwei aufeinanderfolgende Bahnhöfe der Strecke sind gleich",
       "plk_error": "PLK-API-Fehler"
-    }
+    },
+    "guard": "🛡️ Überwachen",
+    "guarded": "🛡️ Überwacht ✓",
+    "guardTitle": "Umstiege dieser Verbindung überwachen — ich warne dich, wenn eine Verspätung einen Anschluss gefährdet"
   },
   "tutorial": {
     "ui": {
@@ -929,5 +933,15 @@
     "clearNo": "Nein, behalten",
     "clearKept": "OK, der Verlauf bleibt.",
     "cleared": "Der Gesprächsverlauf wurde gelöscht."
+  },
+  "guard": {
+    "pageTitle": "Überwachte Verbindungen",
+    "back": "← Tafel",
+    "title": "🛡️ Überwachte Verbindungen",
+    "subtitle": "Ich überwache deine Umstiege. Gefährdet eine Verspätung einen Anschluss, bekommst du eine Benachrichtigung und eine Alternative.",
+    "settings": "⚙️ Einstellungen",
+    "leadLabel": "Überwachung beginnt vor Abfahrt",
+    "minLabel": "Mindestumstiegszeit",
+    "autoPlanLabel": "Fahrten aus dem Reiseplan automatisch überwachen"
   }
 }

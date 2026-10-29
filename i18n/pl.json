@@ -9,7 +9,8 @@
       "howItWorks": "📖 Jak działa aplikacja",
       "contact": "💬 Uwagi i kontakt",
       "rodo": "🔒 RODO i prywatność",
-      "language": "Język"
+      "language": "Język",
+      "guard": "🛡️ Pilnowane połączenia"
     },
     "bottomNav": {
       "ks": "🚧 KŚ",
@@ -392,7 +393,10 @@
       "station_not_found": "Nie znaleziono stacji „{name}”",
       "same_stations": "Dwie sąsiednie stacje trasy są takie same",
       "plk_error": "Błąd API PLK"
-    }
+    },
+    "guard": "🛡️ Pilnuj",
+    "guarded": "🛡️ Pilnowane ✓",
+    "guardTitle": "Pilnuj przesiadek w tym połączeniu — ostrzeżę Cię, gdy opóźnienie zagrozi przesiadce"
   },
   "tutorial": {
     "ui": {
@@ -929,5 +933,15 @@
     "clearNo": "Nie, zostaw",
     "clearKept": "OK, historia zostaje.",
     "cleared": "Historia rozmowy została wyczyszczona."
+  },
+  "guard": {
+    "pageTitle": "Pilnowane połączenia",
+    "back": "← Tablica",
+    "title": "🛡️ Pilnowane połączenia",
+    "subtitle": "Pilnuję Twoich przesiadek. Gdy opóźnienie zagrozi przesiadce, dostaniesz powiadomienie i propozycję zastępczą.",
+    "settings": "⚙️ Ustawienia pilnowania",
+    "leadLabel": "Zacznij pilnować przed odjazdem",
+    "minLabel": "Minimalny czas na przesiadkę",
+    "autoPlanLabel": "Pilnuj automatycznie przejazdów z planu w dzienniczku"
   }
 }

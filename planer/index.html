@@ -70,6 +70,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
 .btn:hover{background:#084298}
 .btn:disabled{opacity:.6;cursor:default}
 .btn-sm{border:0;border-radius:8px;padding:8px 12px;background:var(--blue);color:#fff;font-weight:700;cursor:pointer;font-size:12.5px}
+.itin-guarded{text-decoration:none;display:inline-flex;align-items:center;background:rgba(93,211,158,.18)!important;color:#5dd39e!important}
 .btn-sm:hover{background:#084298}
 .btn-sm.secondary{background:#4b5563}
 .btn-sm.secondary:hover{background:#5b6472}
@@ -257,6 +258,8 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
 <script src="/profile-sync.js"></script>
 <script src="/tutorial.js"></script>
 <script src="/profile-prompt.js"></script>
+<script src="/guard-core.js"></script>
+<script src="/guard-store.js"></script>
 <script src="/chat-assistant.js"></script>
 <script>
 (function(){
@@ -810,12 +813,23 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     });
     var actionHtml='';
     var planTitle=' title="'+escapeHtml(T('planer.planTitle'))+'"';
+    // 🛡️ Strażnik przesiadek — pilnowane połączenie (guard-core.js / guard-store.js)
+    var guardHtml='';
+    if(window.GuardCore&&window.GuardStore&&GuardStore.enabled()){
+      var gq=opts.savedKey?((getSavedResults().find(function(x){return x._key===opts.savedKey})||{}).query):lastQuery;
+      if(gq&&gq.date){
+        var gid=GuardCore.fromItinerary(it,gq).id;
+        guardHtml=GuardStore.isGuarded(gid)
+          ?'<a class="btn-sm secondary itin-guarded" href="/pilnowane/?id='+encodeURIComponent(gid)+'">'+escapeHtml(T('planer.guarded'))+'</a>'
+          :'<button type="button" class="btn-sm secondary itin-guard"'+(opts.savedKey?' data-saved-key="'+escapeHtml(opts.savedKey)+'"':' data-idx="'+opts.index+'"')+' title="'+escapeHtml(T('planer.guardTitle'))+'">'+escapeHtml(T('planer.guard'))+'</button>';
+      }
+    }
     if(opts.savedKey){
       actionHtml='<button type="button" class="btn-sm secondary itin-remove" data-saved-key="'+escapeHtml(opts.savedKey)+'">'+escapeHtml(T('planer.removeBtn'))+'</button>'+
-        '<button type="button" class="btn-sm secondary itin-addplan" data-saved-key="'+escapeHtml(opts.savedKey)+'"'+planTitle+'>'+escapeHtml(T('planer.addPlan'))+'</button>';
+        '<button type="button" class="btn-sm secondary itin-addplan" data-saved-key="'+escapeHtml(opts.savedKey)+'"'+planTitle+'>'+escapeHtml(T('planer.addPlan'))+'</button>'+guardHtml;
     }else if(opts.index!=null){
       actionHtml='<button type="button" class="btn-sm itin-save" data-idx="'+opts.index+'">'+escapeHtml(T('planer.save'))+'</button>'+
-        '<button type="button" class="btn-sm secondary itin-addplan" data-idx="'+opts.index+'"'+planTitle+'>'+escapeHtml(T('planer.addPlan'))+'</button>';
+        '<button type="button" class="btn-sm secondary itin-addplan" data-idx="'+opts.index+'"'+planTitle+'>'+escapeHtml(T('planer.addPlan'))+'</button>'+guardHtml;
     }
     var savedLine=opts.savedAt?'<div class="saved-at">'+escapeHtml(T('planer.savedAt',{date:new Date(opts.savedAt).toLocaleString(dateLocale())}))+'</div>':'';
     return '<div class="entry"'+(opts.index!=null?' id="itin-'+opts.index+'"':'')+'>'+
@@ -910,6 +924,8 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
       window.open(legRow.dataset.trainUrl,'_blank');
       return;
     }
+    var gBtn=e.target.closest('.itin-guard');
+    if(gBtn){guardItinerary(gBtn,lastItineraries[Number(gBtn.dataset.idx)],lastQuery);return}
     var planBtn=e.target.closest('.itin-addplan');
     if(planBtn){
       var pIdx=Number(planBtn.dataset.idx);
@@ -926,6 +942,18 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     var it=lastItineraries[idx];
     if(it&&lastQuery)saveItinerary(it,lastQuery);
   });
+
+  // 🛡️ Pilnuj tego połączenia → lista na /pilnowane/ (+ profil, push w tle)
+  function guardItinerary(btn,it,query){
+    if(!it||!query||!window.GuardCore||!window.GuardStore)return;
+    var conn=GuardCore.fromItinerary(it,query);
+    btn.disabled=true;
+    GuardStore.add(conn).then(function(){
+      var a=document.createElement('a');
+      a.className='btn-sm secondary itin-guarded';a.href='/pilnowane/?id='+encodeURIComponent(conn.id);a.textContent=T('planer.guarded');
+      btn.replaceWith(a);
+    });
+  }
 
   // === Zapisane wyniki ===
   function getSavedResults(){try{var v=JSON.parse(localStorage.getItem(SAVED_KEY));return Array.isArray(v)?v:[]}catch(e){return[]}}
@@ -1050,6 +1078,8 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
       window.open(legRow.dataset.trainUrl,'_blank');
       return;
     }
+    var gBtn2=e.target.closest('.itin-guard');
+    if(gBtn2){var gs=getSavedResults().find(function(x){return x._key===gBtn2.dataset.savedKey});if(gs)guardItinerary(gBtn2,gs.snapshot,gs.query);return}
     var planBtn=e.target.closest('.itin-addplan');
     if(planBtn){
       var saved=getSavedResults().find(function(x){return x._key===planBtn.dataset.savedKey});

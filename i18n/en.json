@@ -9,7 +9,8 @@
       "howItWorks": "📖 How it works",
       "contact": "💬 Feedback & contact",
       "rodo": "🔒 Privacy policy",
-      "language": "Language"
+      "language": "Language",
+      "guard": "🛡️ Guarded connections"
     },
     "bottomNav": {
       "ks": "🚧 KŚ",
@@ -392,7 +393,10 @@
       "station_not_found": "Station “{name}” not found",
       "same_stations": "Two consecutive stations of the route are the same",
       "plk_error": "PLK API error"
-    }
+    },
+    "guard": "🛡️ Guard",
+    "guarded": "🛡️ Guarded ✓",
+    "guardTitle": "Guard the changes in this connection — I'll warn you if a delay puts a change at risk"
   },
   "tutorial": {
     "ui": {
@@ -929,5 +933,15 @@
     "clearNo": "No, keep it",
     "clearKept": "OK, the history stays.",
     "cleared": "The conversation history has been cleared."
+  },
+  "guard": {
+    "pageTitle": "Guarded connections",
+    "back": "← Board",
+    "title": "🛡️ Guarded connections",
+    "subtitle": "I watch your changes. If a delay puts a change at risk, you'll get a notification and an alternative.",
+    "settings": "⚙️ Guard settings",
+    "leadLabel": "Start guarding before departure",
+    "minLabel": "Minimum change time",
+    "autoPlanLabel": "Automatically guard trips from the journal plan"
   }
 }

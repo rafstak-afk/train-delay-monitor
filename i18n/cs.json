@@ -9,7 +9,8 @@
       "howItWorks": "📖 Jak to funguje",
       "contact": "💬 Zpětná vazba a kontakt",
       "rodo": "🔒 Ochrana osobních údajů",
-      "language": "Jazyk"
+      "language": "Jazyk",
+      "guard": "🛡️ Hlídaná spojení"
     },
     "bottomNav": {
       "ks": "🚧 KŚ",
@@ -392,7 +393,10 @@
       "station_not_found": "Stanice „{name}“ nebyla nalezena",
       "same_stations": "Dvě po sobě jdoucí stanice trasy jsou stejné",
       "plk_error": "Chyba API PLK"
-    }
+    },
+    "guard": "🛡️ Hlídat",
+    "guarded": "🛡️ Hlídáno ✓",
+    "guardTitle": "Hlídat přestupy v tomto spojení — upozorním tě, když zpoždění ohrozí přestup"
   },
   "tutorial": {
     "ui": {
@@ -929,5 +933,15 @@
     "clearNo": "Ne, ponechat",
     "clearKept": "Dobře, historie zůstává.",
     "cleared": "Historie konverzace byla vymazána."
+  },
+  "guard": {
+    "pageTitle": "Hlídaná spojení",
+    "back": "← Tabule",
+    "title": "🛡️ Hlídaná spojení",
+    "subtitle": "Hlídám tvoje přestupy. Když zpoždění ohrozí přestup, dostaneš upozornění a náhradní spojení.",
+    "settings": "⚙️ Nastavení hlídání",
+    "leadLabel": "Začít hlídat před odjezdem",
+    "minLabel": "Minimální čas na přestup",
+    "autoPlanLabel": "Automaticky hlídat jízdy z plánu v deníku"
   }
 }
