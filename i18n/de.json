@@ -404,7 +404,8 @@
     "savedFor": "📅 Für {date}",
     "tabSearch": "Suche",
     "tabSaved": "Gespeichert",
-    "tabHistory": "Zuletzt"
+    "tabHistory": "Zuletzt",
+    "tabGuard": "Überwacht"
   },
   "tutorial": {
     "ui": {

@@ -404,7 +404,8 @@
     "savedFor": "📅 На {date}",
     "tabSearch": "Пошук",
     "tabSaved": "Збережені",
-    "tabHistory": "Останні"
+    "tabHistory": "Останні",
+    "tabGuard": "Під наглядом"
   },
   "tutorial": {
     "ui": {

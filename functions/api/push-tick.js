@@ -561,7 +561,7 @@ async function runGuard(env, origin, token, profile, subs, conns, fetchTrain, su
       if (prevR.reminded) continue;
       const rm = GuardCore.remindMessage(conn, lang);
       for (const sub of subs) {
-        try { const st = await sendPush(env, sub, { title: rm.title, body: rm.body, url: "/pilnowane/?id=" + encodeURIComponent(conn.id) }); if (st >= 200 && st < 300) { summary.pushSent++; summary.guardReminders = (summary.guardReminders || 0) + 1; } }
+        try { const st = await sendPush(env, sub, { title: rm.title, body: rm.body, url: "/planer/?gid=" + encodeURIComponent(conn.id) + "#pilnowane" }); if (st >= 200 && st < 300) { summary.pushSent++; summary.guardReminders = (summary.guardReminders || 0) + 1; } }
         catch (e) { summary.errors.push(token + " push (guard remind): " + e.message); }
       }
       continue;
@@ -601,7 +601,7 @@ async function runGuard(env, origin, token, profile, subs, conns, fetchTrain, su
       }
     }
     const msg = GuardCore.message(conn, res, kind, lang, altText);
-    const payload = { title: msg.title, body: msg.body, url: "/pilnowane/?id=" + encodeURIComponent(conn.id), kind: "guard" };
+    const payload = { title: msg.title, body: msg.body, url: "/planer/?gid=" + encodeURIComponent(conn.id) + "#pilnowane", kind: "guard" };
     let sent = false;
     for (const sub of subs) {
       try {

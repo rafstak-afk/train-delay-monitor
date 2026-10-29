@@ -132,17 +132,19 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
 .saved-date{font-size:12.5px;font-weight:700;margin-top:6px}
 .saved-date.past{color:var(--muted)}
 .ptabs{position:sticky;top:0;z-index:20;display:flex;gap:6px;background:var(--bg);padding:8px 0;margin:0 0 4px}
-.ptab{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--panel);border:1px solid var(--line);border-radius:11px;color:var(--muted);padding:7px 4px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer}
+.ptab{position:relative;flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--panel);border:1px solid var(--line);border-radius:11px;color:var(--muted);padding:7px 4px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer}
 .ptab .ptab-ico{font-size:17px;line-height:1.1}
 .ptab .ptab-lbl{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ptab.active{border-color:var(--blue);color:#fff;background:#173055}
-.ptab-n{display:inline-block;min-width:17px;padding:0 5px;margin-left:3px;border-radius:9px;background:var(--line);color:#fff;font-size:11px;line-height:17px;text-align:center}
+.ptab-n{position:absolute;top:3px;left:calc(50% + 6px);display:inline-block;min-width:17px;padding:0 5px;border-radius:9px;background:var(--line);color:#fff;font-size:11px;line-height:17px;text-align:center}
 .ptab-n:empty{display:none}
 .ptab-n.bump{animation:ptabBump .9s ease-out 2}
 @keyframes ptabBump{50%{background:#ffd400;color:#101820;transform:scale(1.25)}}
 @media (prefers-reduced-motion:reduce){.ptab-n.bump{animation:none}}
+.ptab[hidden]{display:none}
 .ptabs.stuck{padding-right:100px}
 .ptabs.stuck .ptab{flex-direction:row;justify-content:center;padding:9px 4px}
+.ptabs.stuck .ptab-n{top:1px}
 .ptabs.stuck .ptab-lbl>[data-i18n],.ptabs.stuck .ptab-lbl[data-i18n]{display:none}
 .pview[hidden]{display:none}
 .pview-head{color:var(--muted);font-size:12.5px;text-align:center;margin:6px 0 10px}
@@ -172,6 +174,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
 
   <nav class="ptabs" id="planTabs" role="tablist">
     <button type="button" class="ptab active" role="tab" data-tab="search" aria-selected="true"><span class="ptab-ico" aria-hidden="true">🔎</span><span class="ptab-lbl" data-i18n="planer.tabSearch">Szukaj</span></button>
+    <button type="button" class="ptab" role="tab" id="tabGuard" data-tab="guard" aria-selected="false" hidden><span class="ptab-ico" aria-hidden="true">🛡️</span><span class="ptab-lbl"><span data-i18n="planer.tabGuard">Pilnowane</span><span class="ptab-n" id="guardCount"></span></span></button>
     <button type="button" class="ptab" role="tab" id="tabSaved" data-tab="saved" aria-selected="false"><span class="ptab-ico" aria-hidden="true">📌</span><span class="ptab-lbl"><span data-i18n="planer.tabSaved">Zapisane</span><span class="ptab-n" id="savedCount"></span></span></button>
     <button type="button" class="ptab" role="tab" id="tabHistory" data-tab="history" aria-selected="false"><span class="ptab-ico" aria-hidden="true">🕘</span><span class="ptab-lbl"><span data-i18n="planer.tabHistory">Ostatnie</span><span class="ptab-n" id="historyCount"></span></span></button>
   </nav>
@@ -258,6 +261,11 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
   <div id="resultsList"></div>
   </div>
 
+  <div class="pview" data-view="guard" hidden>
+    <div class="pview-head"><b data-i18n="guard.title">🛡️ Pilnowane połączenia</b> · <span data-i18n="guard.subtitle">Pilnuję Twoich przesiadek. Gdy opóźnienie zagrozi przesiadce, dostaniesz powiadomienie i propozycję zastępczą.</span></div>
+    <div id="guardView"></div>
+  </div>
+
   <div class="pview" data-view="saved" hidden>
     <div class="pview-head"><b data-i18n="planer.saved">Zapisane wyniki</b> · <span data-i18n="planer.savedSummary">Do późniejszego przejrzenia</span></div>
     <div id="savedList"></div>
@@ -276,6 +284,8 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
 <script src="/profile-prompt.js"></script>
 <script src="/guard-core.js"></script>
 <script src="/guard-store.js"></script>
+<script src="/alarm-sound.js"></script>
+<script src="/guard-view.js"></script>
 <script src="/chat-assistant.js"></script>
 <script>
 (function(){
@@ -331,9 +341,19 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
   window.toggleAdv=toggleAdv;
 
   // === Zakładki: Szukaj | Zapisane | Ostatnie (adres #zapisane / #ostatnie) ===
-  var TAB_HASH={search:'',saved:'zapisane',history:'ostatnie'};
+  var TAB_HASH={search:'',guard:'pilnowane',saved:'zapisane',history:'ostatnie'};
+  // 🛡️ Pilnowane (beta, guard-view.js): odpytuje PLK tylko, gdy zakładka jest pokazana.
+  var guardOn=!!(window.GuardStore&&window.GuardView&&GuardStore.enabled());
+  var guardView=null;
+  var urlGid=new URLSearchParams(location.search).get('gid');
+  if(urlGid){try{var u=new URLSearchParams(location.search);u.delete('gid');history.replaceState(null,'',location.pathname+(u.toString()?'?'+u:'')+location.hash)}catch(e){}}
+  if(guardOn){
+    $('tabGuard').hidden=false;
+    guardView=GuardView.mount($('guardView'),{focusId:urlGid,onCount:function(n){$('guardCount').textContent=n||''}});
+  }
   function showTab(name){
-    if(!TAB_HASH.hasOwnProperty(name))name='search';
+    if(!TAB_HASH.hasOwnProperty(name)||(name==='guard'&&!guardOn))name='search';
+    if(guardView){if(name==='guard')guardView.start();else guardView.stop()}
     document.querySelectorAll('#planTabs .ptab').forEach(function(b){
       var on=b.dataset.tab===name;b.classList.toggle('active',on);b.setAttribute('aria-selected',on?'true':'false');
     });
@@ -350,7 +370,16 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     showTab(b.dataset.tab);
     window.scrollTo({top:0,behavior:'smooth'});
   });
-  (function(){var h=(location.hash||'').slice(1);for(var k in TAB_HASH)if(h&&TAB_HASH[k]===h)showTab(k)})();
+  function tabFromHash(){var h=(location.hash||'').slice(1);for(var k in TAB_HASH)if(h&&TAB_HASH[k]===h){showTab(k);return true}return false}
+  // Start: zakładka z adresu; bez niej — „Pilnowane”, gdy któreś połączenie jest
+  // teraz pilnowane (a nie przyszliśmy tu z gotowym wyszukiwaniem).
+  if(!tabFromHash()&&guardView&&!new URLSearchParams(location.search).get('from')&&guardView.anyActive())showTab('guard');
+  window.addEventListener('hashchange',tabFromHash);
+  // „🛡️ Pilnowane” przy wyniku → zakładka z podświetlonym połączeniem (bez przeładowania).
+  document.addEventListener('click',function(e){
+    var a=e.target.closest('a.itin-guarded');if(!a||!guardView)return;
+    e.preventDefault();showTab('guard');guardView.focus(a.dataset.gid);
+  });
   // Zapis wyniku: zostajemy przy wynikach, licznik „Zapisane” mruga.
   function bumpCount(id){var el=$(id);el.classList.remove('bump');void el.offsetWidth;el.classList.add('bump')}
 
@@ -846,7 +875,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
       if(gq&&gq.date){
         var gid=GuardCore.fromItinerary(it,gq).id;
         guardHtml=GuardStore.isGuarded(gid)
-          ?'<a class="btn-sm secondary itin-guarded" href="/pilnowane/?id='+encodeURIComponent(gid)+'">'+escapeHtml(T('planer.guarded'))+'</a>'
+          ?'<a class="btn-sm secondary itin-guarded" data-gid="'+escapeHtml(gid)+'" href="/planer/?gid='+encodeURIComponent(gid)+'#pilnowane">'+escapeHtml(T('planer.guarded'))+'</a>'
           :'<button type="button" class="btn-sm secondary itin-guard"'+(opts.savedKey?' data-saved-key="'+escapeHtml(opts.savedKey)+'"':' data-idx="'+opts.index+'"')+' title="'+escapeHtml(T('planer.guardTitle'))+'">'+escapeHtml(T('planer.guard'))+'</button>';
       }
     }
@@ -973,15 +1002,16 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     if(it&&lastQuery)saveItinerary(it,lastQuery);
   });
 
-  // 🛡️ Pilnuj tego połączenia → lista na /pilnowane/ (+ profil, push w tle)
+  // 🛡️ Pilnuj tego połączenia → zakładka „Pilnowane” (+ profil, push w tle)
   function guardItinerary(btn,it,query){
     if(!it||!query||!window.GuardCore||!window.GuardStore)return;
     var conn=GuardCore.fromItinerary(it,query);
     btn.disabled=true;
     GuardStore.add(conn).then(function(){
       var a=document.createElement('a');
-      a.className='btn-sm secondary itin-guarded';a.href='/pilnowane/?id='+encodeURIComponent(conn.id);a.textContent=T('planer.guarded');
+      a.className='btn-sm secondary itin-guarded';a.dataset.gid=conn.id;a.href='/planer/?gid='+encodeURIComponent(conn.id)+'#pilnowane';a.textContent=T('planer.guarded');
       btn.replaceWith(a);
+      if(guardView)guardView.focus(null);
     });
   }
 

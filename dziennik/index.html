@@ -226,7 +226,7 @@ function planEntryHtml(e){
   const dateFmt=(()=>{const p=String(e.date||'').split('-');return p.length===3?p[2]+'.'+p[1]+'.'+p[0]:e.date})();
   const trainLabel=[e.category,e.trainNumber].filter(Boolean).join(' ')||'—';
   return `<div class="plan-entry" data-key="${escapeHtml(e._key)}">
-    <div class="entry-top"><span class="entry-date">${escapeHtml(dateFmt)}${planGuard[e._key]?'<a class="plan-guard" href="/pilnowane/?id='+encodeURIComponent(planGuard[e._key])+'" title="'+escapeHtml(T('dziennik.guardedTitle'))+'">'+escapeHtml(T('dziennik.guarded'))+'</a>':''}</span><span class="entry-train">${escapeHtml(trainLabel)}</span></div>
+    <div class="entry-top"><span class="entry-date">${escapeHtml(dateFmt)}${planGuard[e._key]?'<a class="plan-guard" href="/planer/?gid='+encodeURIComponent(planGuard[e._key])+'#pilnowane" title="'+escapeHtml(T('dziennik.guardedTitle'))+'">'+escapeHtml(T('dziennik.guarded'))+'</a>':''}</span><span class="entry-train">${escapeHtml(trainLabel)}</span></div>
     <div class="plan-entry-route">${escapeHtml(e.boardStation)} → ${escapeHtml(e.alightStation)}</div>
     <div class="entry-times">
       <span>${escapeHtml(T('dziennik.departure'))}: <b>${escapeHtml(e.plannedDeparture||'—')}</b></span>

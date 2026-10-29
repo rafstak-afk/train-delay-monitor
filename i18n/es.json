@@ -404,7 +404,8 @@
     "savedFor": "📅 Para el {date}",
     "tabSearch": "Buscar",
     "tabSaved": "Guardadas",
-    "tabHistory": "Recientes"
+    "tabHistory": "Recientes",
+    "tabGuard": "Vigiladas"
   },
   "tutorial": {
     "ui": {

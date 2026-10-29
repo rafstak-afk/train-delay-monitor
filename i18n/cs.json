@@ -404,7 +404,8 @@
     "savedFor": "📅 Na {date}",
     "tabSearch": "Hledat",
     "tabSaved": "Uložené",
-    "tabHistory": "Nedávné"
+    "tabHistory": "Nedávné",
+    "tabGuard": "Hlídané"
   },
   "tutorial": {
     "ui": {
