@@ -403,9 +403,13 @@
     "savedPast": "📅 {date} · już minęło",
     "savedFor": "📅 Na dzień {date}",
     "tabSearch": "Szukaj",
-    "tabSaved": "Zapisane",
     "tabHistory": "Ostatnie",
-    "tabGuard": "Pilnowane"
+    "tabMine": "Moje",
+    "myTitle": "Moje połączenia",
+    "myHint": "pilnowane i zapisane",
+    "mySecGuard": "🛡️ Pilnowane",
+    "mySecSaved": "📌 Zapisane",
+    "myEmpty": "Nic tu jeszcze nie ma. Przy wyniku wyszukiwania kliknij 💾 Zapisz albo 🛡️ Pilnuj."
   },
   "tutorial": {
     "ui": {

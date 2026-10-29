@@ -403,9 +403,13 @@
     "savedPast": "📅 {date} · already past",
     "savedFor": "📅 For {date}",
     "tabSearch": "Search",
-    "tabSaved": "Saved",
     "tabHistory": "Recent",
-    "tabGuard": "Guarded"
+    "tabMine": "Mine",
+    "myTitle": "My connections",
+    "myHint": "guarded and saved",
+    "mySecGuard": "🛡️ Guarded",
+    "mySecSaved": "📌 Saved",
+    "myEmpty": "Nothing here yet. Next to a search result, tap 💾 Save or 🛡️ Guard."
   },
   "tutorial": {
     "ui": {

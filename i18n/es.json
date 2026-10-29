@@ -403,9 +403,13 @@
     "savedPast": "📅 {date} · ya pasó",
     "savedFor": "📅 Para el {date}",
     "tabSearch": "Buscar",
-    "tabSaved": "Guardadas",
     "tabHistory": "Recientes",
-    "tabGuard": "Vigiladas"
+    "tabMine": "Mías",
+    "myTitle": "Mis conexiones",
+    "myHint": "vigiladas y guardadas",
+    "mySecGuard": "🛡️ Vigiladas",
+    "mySecSaved": "📌 Guardadas",
+    "myEmpty": "Aún no hay nada. Junto a un resultado, toca 💾 Guardar o 🛡️ Vigilar."
   },
   "tutorial": {
     "ui": {

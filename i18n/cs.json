@@ -403,9 +403,13 @@
     "savedPast": "📅 {date} · už proběhlo",
     "savedFor": "📅 Na {date}",
     "tabSearch": "Hledat",
-    "tabSaved": "Uložené",
     "tabHistory": "Nedávné",
-    "tabGuard": "Hlídané"
+    "tabMine": "Moje",
+    "myTitle": "Moje spojení",
+    "myHint": "hlídaná a uložená",
+    "mySecGuard": "🛡️ Hlídané",
+    "mySecSaved": "📌 Uložené",
+    "myEmpty": "Zatím tu nic není. U výsledku hledání klepněte na 💾 Uložit nebo 🛡️ Hlídat."
   },
   "tutorial": {
     "ui": {

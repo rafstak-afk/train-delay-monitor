@@ -273,8 +273,10 @@
     function render() {
       var conns = S.all();
       var msg = savedMsg ? '<div class="saved-msg">' + esc(savedMsg) + ' <a href="/dziennik/" style="color:#bff3d8">' + esc(T('guard.ask.openJournal', null, 'Otwórz dzienniczek →')) + '</a></div>' : '';
-      if (!conns.length) list.innerHTML = msg + '<div class="empty">' + T('guard.empty', null, 'Nie pilnujesz jeszcze żadnego połączenia.<br>W <a href="/planer/">planerze</a> kliknij „🛡️ Pilnuj” przy wyniku — albo dodaj przejazd do planu w dzienniczku.') + '</div>';
+      if (!conns.length) list.innerHTML = opts.hideWhenEmpty ? msg : msg + '<div class="empty">' + T('guard.empty', null, 'Nie pilnujesz jeszcze żadnego połączenia.<br>W <a href="/planer/">planerze</a> kliknij „🛡️ Pilnuj” przy wyniku — albo dodaj przejazd do planu w dzienniczku.') + '</div>';
       else list.innerHTML = msg + conns.map(cardHtml).join('');
+      // W „Moje” (planer) bez pilnowanych połączeń cała sekcja znika.
+      if (opts.hideWhenEmpty) root.hidden = !conns.length && !savedMsg;
       count();
       if (focusId && shown) { var el = document.getElementById('g-' + focusId); if (el) { el.scrollIntoView({ block: 'center' }); focusId = null; } }
     }
@@ -340,7 +342,8 @@
       },
       stop: function () { shown = false; clearTimeout(timer); },
       // Podświetl i przewiń do połączenia (np. z „🛡️ Pilnowane” przy wyniku).
-      focus: function (id) { focusId = id; render(); },
+      // Nowe połączenie (bez wyniku) — przelicz od razu, żeby nie wisiało „brak danych”.
+      focus: function (id) { focusId = id; if (S.all().some(function (c) { return !results[c.id]; })) refresh(); else render(); },
       // Czy któreś połączenie jest teraz w oknie pilnowania (planer otwiera wtedy tę zakładkę).
       anyActive: function () {
         var lead = S.settings().leadMin;

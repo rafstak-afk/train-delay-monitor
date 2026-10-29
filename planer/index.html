@@ -147,6 +147,8 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
 .ptabs.stuck .ptab-n{top:1px}
 .ptabs.stuck .ptab-lbl>[data-i18n],.ptabs.stuck .ptab-lbl[data-i18n]{display:none}
 .pview[hidden]{display:none}
+.my-sec{font-size:13px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin:16px 2px 4px}
+.my-sec[hidden]{display:none}
 .pview-head{color:var(--muted);font-size:12.5px;text-align:center;margin:6px 0 10px}
 #resultsStatus{scroll-margin-top:72px}
 .via-row{margin-bottom:8px}
@@ -174,8 +176,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
 
   <nav class="ptabs" id="planTabs" role="tablist">
     <button type="button" class="ptab active" role="tab" data-tab="search" aria-selected="true"><span class="ptab-ico" aria-hidden="true">🔎</span><span class="ptab-lbl" data-i18n="planer.tabSearch">Szukaj</span></button>
-    <button type="button" class="ptab" role="tab" id="tabGuard" data-tab="guard" aria-selected="false" hidden><span class="ptab-ico" aria-hidden="true">🛡️</span><span class="ptab-lbl"><span data-i18n="planer.tabGuard">Pilnowane</span><span class="ptab-n" id="guardCount"></span></span></button>
-    <button type="button" class="ptab" role="tab" id="tabSaved" data-tab="saved" aria-selected="false"><span class="ptab-ico" aria-hidden="true">📌</span><span class="ptab-lbl"><span data-i18n="planer.tabSaved">Zapisane</span><span class="ptab-n" id="savedCount"></span></span></button>
+    <button type="button" class="ptab" role="tab" id="tabSaved" data-tab="saved" aria-selected="false"><span class="ptab-ico" aria-hidden="true">📌</span><span class="ptab-lbl"><span data-i18n="planer.tabMine">Moje</span><span class="ptab-n" id="savedCount"></span></span></button>
     <button type="button" class="ptab" role="tab" id="tabHistory" data-tab="history" aria-selected="false"><span class="ptab-ico" aria-hidden="true">🕘</span><span class="ptab-lbl"><span data-i18n="planer.tabHistory">Ostatnie</span><span class="ptab-n" id="historyCount"></span></span></button>
   </nav>
 
@@ -261,13 +262,11 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
   <div id="resultsList"></div>
   </div>
 
-  <div class="pview" data-view="guard" hidden>
-    <div class="pview-head"><b data-i18n="guard.title">🛡️ Pilnowane połączenia</b> · <span data-i18n="guard.subtitle">Pilnuję Twoich przesiadek. Gdy opóźnienie zagrozi przesiadce, dostaniesz powiadomienie i propozycję zastępczą.</span></div>
-    <div id="guardView"></div>
-  </div>
-
   <div class="pview" data-view="saved" hidden>
-    <div class="pview-head"><b data-i18n="planer.saved">Zapisane wyniki</b> · <span data-i18n="planer.savedSummary">Do późniejszego przejrzenia</span></div>
+    <div class="pview-head"><b data-i18n="planer.myTitle">Moje połączenia</b> · <span id="myHint" data-i18n="planer.savedSummary">Do późniejszego przejrzenia</span></div>
+    <div class="my-sec" id="mySecGuard" hidden data-i18n="planer.mySecGuard">🛡️ Pilnowane</div>
+    <div id="guardView" hidden></div>
+    <div class="my-sec" id="mySecSaved" hidden data-i18n="planer.mySecSaved">📌 Zapisane</div>
     <div id="savedList"></div>
   </div>
 
@@ -340,20 +339,31 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
   }
   window.toggleAdv=toggleAdv;
 
-  // === Zakładki: Szukaj | Zapisane | Ostatnie (adres #zapisane / #ostatnie) ===
-  var TAB_HASH={search:'',guard:'pilnowane',saved:'zapisane',history:'ostatnie'};
-  // 🛡️ Pilnowane (beta, guard-view.js): odpytuje PLK tylko, gdy zakładka jest pokazana.
+  // === Zakładki: Szukaj | Moje | Ostatnie (adres #moje / #ostatnie) ===
+  // „Moje” = pilnowane (beta, na żywo) + zapisane wyniki. Stare adresy
+  // #zapisane i #pilnowane (powiadomienia, menu, dzienniczek) też tu prowadzą.
+  var TAB_HASH={search:'',saved:'moje',history:'ostatnie'};
+  var HASH_ALIAS={zapisane:'saved',pilnowane:'saved'};
+  // 🛡️ Pilnowane (guard-view.js): odpytuje PLK tylko, gdy „Moje” jest pokazane.
   var guardOn=!!(window.GuardStore&&window.GuardView&&GuardStore.enabled());
   var guardView=null;
   var urlGid=new URLSearchParams(location.search).get('gid');
   if(urlGid){try{var u=new URLSearchParams(location.search);u.delete('gid');history.replaceState(null,'',location.pathname+(u.toString()?'?'+u:'')+location.hash)}catch(e){}}
+  var myGuardN=0;
+  function updateMine(){
+    var savedN=getSavedResults().length;
+    $('savedCount').textContent=(myGuardN+savedN)||'';
+    $('mySecGuard').hidden=!myGuardN;
+    $('mySecSaved').hidden=!(myGuardN&&savedN);
+    $('myHint').setAttribute('data-i18n',guardOn?'planer.myHint':'planer.savedSummary');
+    $('myHint').textContent=T(guardOn?'planer.myHint':'planer.savedSummary');
+  }
   if(guardOn){
-    $('tabGuard').hidden=false;
-    guardView=GuardView.mount($('guardView'),{focusId:urlGid,onCount:function(n){$('guardCount').textContent=n||''}});
+    guardView=GuardView.mount($('guardView'),{focusId:urlGid,hideWhenEmpty:true,onCount:function(n){myGuardN=n;updateMine()}});
   }
   function showTab(name){
-    if(!TAB_HASH.hasOwnProperty(name)||(name==='guard'&&!guardOn))name='search';
-    if(guardView){if(name==='guard')guardView.start();else guardView.stop()}
+    if(!TAB_HASH.hasOwnProperty(name))name='search';
+    if(guardView){if(name==='saved')guardView.start();else guardView.stop()}
     document.querySelectorAll('#planTabs .ptab').forEach(function(b){
       var on=b.dataset.tab===name;b.classList.toggle('active',on);b.setAttribute('aria-selected',on?'true':'false');
     });
@@ -370,17 +380,22 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     showTab(b.dataset.tab);
     window.scrollTo({top:0,behavior:'smooth'});
   });
-  function tabFromHash(){var h=(location.hash||'').slice(1);for(var k in TAB_HASH)if(h&&TAB_HASH[k]===h){showTab(k);return true}return false}
-  // Start: zakładka z adresu; bez niej — „Pilnowane”, gdy któreś połączenie jest
+  function tabFromHash(){
+    var h=(location.hash||'').slice(1);if(!h)return false;
+    if(HASH_ALIAS[h]){showTab(HASH_ALIAS[h]);return true}
+    for(var k in TAB_HASH)if(TAB_HASH[k]===h){showTab(k);return true}
+    return false;
+  }
+  // Start: zakładka z adresu; bez niej — „Moje”, gdy któreś połączenie jest
   // teraz pilnowane (a nie przyszliśmy tu z gotowym wyszukiwaniem).
-  if(!tabFromHash()&&guardView&&!new URLSearchParams(location.search).get('from')&&guardView.anyActive())showTab('guard');
+  if(!tabFromHash()&&guardView&&!new URLSearchParams(location.search).get('from')&&guardView.anyActive())showTab('saved');
   window.addEventListener('hashchange',tabFromHash);
   // „🛡️ Pilnowane” przy wyniku → zakładka z podświetlonym połączeniem (bez przeładowania).
   document.addEventListener('click',function(e){
     var a=e.target.closest('a.itin-guarded');if(!a||!guardView)return;
-    e.preventDefault();showTab('guard');guardView.focus(a.dataset.gid);
+    e.preventDefault();showTab('saved');guardView.focus(a.dataset.gid);
   });
-  // Zapis wyniku: zostajemy przy wynikach, licznik „Zapisane” mruga.
+  // Zapis wyniku: zostajemy przy wynikach, licznik „Moje” mruga.
   function bumpCount(id){var el=$(id);el.classList.remove('bump');void el.offsetWidth;el.classList.add('bump')}
 
   function toggleViaPanel(force){
@@ -1003,7 +1018,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
   });
 
   // 🛡️ Pilnuj tego połączenia → zakładka „Pilnowane” (+ profil, push w tle)
-  function guardItinerary(btn,it,query){
+  function guardItinerary(btn,it,query,done){
     if(!it||!query||!window.GuardCore||!window.GuardStore)return;
     var conn=GuardCore.fromItinerary(it,query);
     btn.disabled=true;
@@ -1011,7 +1026,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
       var a=document.createElement('a');
       a.className='btn-sm secondary itin-guarded';a.dataset.gid=conn.id;a.href='/planer/?gid='+encodeURIComponent(conn.id)+'#pilnowane';a.textContent=T('planer.guarded');
       btn.replaceWith(a);
-      if(guardView)guardView.focus(null);
+      if(done)done(conn);else if(guardView)guardView.focus(null);
     });
   }
 
@@ -1125,9 +1140,9 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
   }
   function renderSavedPanel(){
     var list=getSavedResults();
-    $('savedCount').textContent=list.length||'';
+    updateMine();
     var el=$('savedList');
-    if(!list.length){el.innerHTML='<div class="empty">'+escapeHtml(T('planer.savedEmpty'))+'</div>';return}
+    if(!list.length){el.innerHTML=myGuardN?'':'<div class="empty">'+escapeHtml(T(guardOn?'planer.myEmpty':'planer.savedEmpty'))+'</div>';return}
     el.innerHTML=list.slice().reverse().map(function(e){
       return itineraryHtml(e.snapshot,{savedKey:e._key,savedAt:e.createdAt});
     }).join('');
@@ -1141,7 +1156,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     var fBtn=e.target.closest('.itin-fresh');
     if(fBtn){var fs2=getSavedResults().find(function(x){return x._key===fBtn.dataset.savedKey});if(fs2&&fs2.query)rerunQuery(fs2.query,'','',freshWhen(fs2.snapshot&&fs2.snapshot.departureTime||fs2.query.time));return}
     var gBtn2=e.target.closest('.itin-guard');
-    if(gBtn2){var gs=getSavedResults().find(function(x){return x._key===gBtn2.dataset.savedKey});if(gs)guardItinerary(gBtn2,gs.snapshot,gs.query);return}
+    if(gBtn2){var gs=getSavedResults().find(function(x){return x._key===gBtn2.dataset.savedKey});if(gs)guardItinerary(gBtn2,gs.snapshot,gs.query,function(conn){removeSavedResult(gs._key);if(guardView){guardView.start();guardView.focus(conn.id)}});return}
     var planBtn=e.target.closest('.itin-addplan');
     if(planBtn){
       var saved=getSavedResults().find(function(x){return x._key===planBtn.dataset.savedKey});

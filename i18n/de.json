@@ -403,9 +403,13 @@
     "savedPast": "📅 {date} · vorbei",
     "savedFor": "📅 Für {date}",
     "tabSearch": "Suche",
-    "tabSaved": "Gespeichert",
     "tabHistory": "Zuletzt",
-    "tabGuard": "Überwacht"
+    "tabMine": "Meine",
+    "myTitle": "Meine Verbindungen",
+    "myHint": "überwacht und gespeichert",
+    "mySecGuard": "🛡️ Überwacht",
+    "mySecSaved": "📌 Gespeichert",
+    "myEmpty": "Noch nichts hier. Tippe bei einem Suchergebnis auf 💾 Speichern oder 🛡️ Überwachen."
   },
   "tutorial": {
     "ui": {
