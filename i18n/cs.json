@@ -994,6 +994,8 @@
       "noneChecked": "Zaškrtni aspoň jeden úsek nebo zvol „Nejel jsem“.",
       "saved": "✅ Uloženo do deníku (úseky: {n}).",
       "openJournal": "Otevřít deník →"
-    }
+    },
+    "arrShort": "příjezd",
+    "depShort": "odjezd"
   }
 }

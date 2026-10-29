@@ -994,6 +994,8 @@
       "noneChecked": "Zaznacz co najmniej jeden odcinek albo wybierz „Nie jechałem”.",
       "saved": "✅ Zapisano w dzienniczku (odcinki: {n}).",
       "openJournal": "Otwórz dzienniczek →"
-    }
+    },
+    "arrShort": "przyjazd",
+    "depShort": "odjazd"
   }
 }

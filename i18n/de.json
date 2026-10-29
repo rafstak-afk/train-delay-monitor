@@ -994,6 +994,8 @@
       "noneChecked": "Markiere mindestens einen Abschnitt oder wähle „Nicht gefahren“.",
       "saved": "✅ Im Reisetagebuch gespeichert (Abschnitte: {n}).",
       "openJournal": "Reisetagebuch öffnen →"
-    }
+    },
+    "arrShort": "Ankunft",
+    "depShort": "Abfahrt"
   }
 }

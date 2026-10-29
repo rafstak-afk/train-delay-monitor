@@ -994,6 +994,8 @@
       "noneChecked": "Marca al menos un tramo o elige «No viajé».",
       "saved": "✅ Guardado en el diario (tramos: {n}).",
       "openJournal": "Abrir el diario →"
-    }
+    },
+    "arrShort": "llegada",
+    "depShort": "salida"
   }
 }
