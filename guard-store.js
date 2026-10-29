@@ -16,6 +16,14 @@
   function today() { return new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Warsaw" }); }
   // BETA: na razie tylko profil autora (flaga showVersion → ?wersja=1).
   function enabled() { try { return localStorage.getItem("showVersionBadge") === "1"; } catch (e) { return false; } }
+  // Zapis do profilu, który przeglądarka dokończy nawet po zmianie strony
+  // (sendBeacon) — zwykłe zapytanie bywało przerywane, a tablica potem
+  // wczytywała stary profil i wpisy znikały.
+  function pushSafe(patch) {
+    if (!hasProfile()) return;
+    if (ProfileSync.pushBeacon && ProfileSync.pushBeacon(patch)) return;
+    ProfileSync.push(patch);
+  }
   function hasProfile() { return !!(window.ProfileSync && ProfileSync.getToken()); }
 
   function settings() {
@@ -68,7 +76,7 @@
       var next = prune(fn(base.slice()));
       next.forEach(function (c) { delete c._pending; });
       write(LIST_KEY, next);
-      if (hasProfile()) ProfileSync.push({ guardedConnections: next });
+      pushSafe({ guardedConnections: next });
       return next;
     };
     if (!hasProfile()) return Promise.resolve(apply(null));
@@ -146,7 +154,7 @@
     var base = Array.isArray(remote) ? remote : read(PLAN_KEY, []);
     var next = base.filter(function (e) { return keys.indexOf(e._key) < 0; });
     write(PLAN_KEY, next);
-    if (hasProfile()) ProfileSync.push({ plannedTrips: next });
+    pushSafe({ plannedTrips: next });
   }
   function finishConn(conn) {
     if (/^plan:/.test(conn.id)) return Promise.resolve();
@@ -169,7 +177,7 @@
         if (i >= 0) { e._key = base[i]._key; base[i] = e; } else base.push(e);
       });
       write(JOURNAL_KEY, base);
-      if (hasProfile()) ProfileSync.push({ journalEntries: base });
+      pushSafe({ journalEntries: base });
       removeFromPlan(keys, p && Array.isArray(p.plannedTrips) ? p.plannedTrips : null);
       return finishConn(conn);
     }).then(function () { return entries.length; });
