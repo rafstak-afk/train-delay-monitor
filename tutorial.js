@@ -102,7 +102,7 @@
         { id: "badges", sel: ".faster-hint", news: "2026-10-27", title: "⚡ i 🔁 — można szybciej", text: "Migająca plakietka ⚡ przy wyniku znaczy, że inny pociąg bezpośredni dojedzie szybciej, a 🔁 — że szybciej będzie z przesiadką. Kliknij plakietkę, żeby zobaczyć to połączenie." },
         { id: "chat", sel: "#chatAssistantFab", news: "2026-10-27", highlight: true, title: "💬 Zapytaj, jak dojechać (BETA)", text: "Wolisz napisać albo powiedzieć 🎤 całe zdanie? Asystent wypełni ten formularz za Ciebie i od razu pokaże wyniki — albo poprowadzi krok po kroku." },
         { sel: "#advPanel", title: "Zaawansowane", text: "Minimalny czas na przesiadkę (domyślnie 3 min), opcja „Tylko bezpośrednie” (bez przesiadek), wymuszenie konkretnej stacji „przez” oraz wykluczanie wybranych przewoźników z wyników." },
-        { sel: "#savedPanel", title: "Zapisz albo dodaj do dziennika", text: "Każdy wynik możesz 💾 zapisać do późniejszego przejrzenia albo 📋 dodać do planu podróży w dzienniczku — każda noga osobno. Gdy faktycznie pojedziesz, w dzienniczku potwierdzisz rzeczywisty przejazd jednym kliknięciem." }
+        { sel: "#planTabs", title: "Zapisz albo dodaj do dziennika", text: "Każdy wynik możesz 💾 zapisać do późniejszego przejrzenia albo 📋 dodać do planu podróży w dzienniczku — każda noga osobno. Gdy faktycznie pojedziesz, w dzienniczku potwierdzisz rzeczywisty przejazd jednym kliknięciem." }
       ]
     }
   ];

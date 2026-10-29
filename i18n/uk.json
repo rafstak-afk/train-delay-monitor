@@ -401,7 +401,10 @@
     "rerunTomorrow": "🔎 Завтра від {time}",
     "rerunOldTitle": "Показати сполучення з того дня",
     "savedPast": "📅 {date} · вже минуло",
-    "savedFor": "📅 На {date}"
+    "savedFor": "📅 На {date}",
+    "tabSearch": "Пошук",
+    "tabSaved": "Збережені",
+    "tabHistory": "Останні"
   },
   "tutorial": {
     "ui": {

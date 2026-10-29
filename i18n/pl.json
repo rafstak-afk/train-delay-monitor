@@ -401,7 +401,10 @@
     "rerunTomorrow": "🔎 Jutro od {time}",
     "rerunOldTitle": "Pokaż połączenia z tamtego dnia",
     "savedPast": "📅 {date} · już minęło",
-    "savedFor": "📅 Na dzień {date}"
+    "savedFor": "📅 Na dzień {date}",
+    "tabSearch": "Szukaj",
+    "tabSaved": "Zapisane",
+    "tabHistory": "Ostatnie"
   },
   "tutorial": {
     "ui": {

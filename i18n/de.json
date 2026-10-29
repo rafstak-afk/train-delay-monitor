@@ -401,7 +401,10 @@
     "rerunTomorrow": "🔎 Morgen ab {time}",
     "rerunOldTitle": "Verbindungen von jenem Tag anzeigen",
     "savedPast": "📅 {date} · vorbei",
-    "savedFor": "📅 Für {date}"
+    "savedFor": "📅 Für {date}",
+    "tabSearch": "Suche",
+    "tabSaved": "Gespeichert",
+    "tabHistory": "Zuletzt"
   },
   "tutorial": {
     "ui": {

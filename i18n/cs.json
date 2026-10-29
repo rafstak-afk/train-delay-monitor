@@ -401,7 +401,10 @@
     "rerunTomorrow": "🔎 Zítra od {time}",
     "rerunOldTitle": "Zobrazit spojení z toho dne",
     "savedPast": "📅 {date} · už proběhlo",
-    "savedFor": "📅 Na {date}"
+    "savedFor": "📅 Na {date}",
+    "tabSearch": "Hledat",
+    "tabSaved": "Uložené",
+    "tabHistory": "Nedávné"
   },
   "tutorial": {
     "ui": {

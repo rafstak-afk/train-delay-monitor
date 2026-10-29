@@ -131,6 +131,22 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
 .history-rerun.old{border-color:var(--line);color:var(--muted);padding:6px 10px;font-weight:600}
 .saved-date{font-size:12.5px;font-weight:700;margin-top:6px}
 .saved-date.past{color:var(--muted)}
+.ptabs{position:sticky;top:0;z-index:20;display:flex;gap:6px;background:var(--bg);padding:8px 0;margin:0 0 4px}
+.ptab{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--panel);border:1px solid var(--line);border-radius:11px;color:var(--muted);padding:7px 4px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer}
+.ptab .ptab-ico{font-size:17px;line-height:1.1}
+.ptab .ptab-lbl{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ptab.active{border-color:var(--blue);color:#fff;background:#173055}
+.ptab-n{display:inline-block;min-width:17px;padding:0 5px;margin-left:3px;border-radius:9px;background:var(--line);color:#fff;font-size:11px;line-height:17px;text-align:center}
+.ptab-n:empty{display:none}
+.ptab-n.bump{animation:ptabBump .9s ease-out 2}
+@keyframes ptabBump{50%{background:#ffd400;color:#101820;transform:scale(1.25)}}
+@media (prefers-reduced-motion:reduce){.ptab-n.bump{animation:none}}
+.ptabs.stuck{padding-right:100px}
+.ptabs.stuck .ptab{flex-direction:row;justify-content:center;padding:9px 4px}
+.ptabs.stuck .ptab-lbl>[data-i18n],.ptabs.stuck .ptab-lbl[data-i18n]{display:none}
+.pview[hidden]{display:none}
+.pview-head{color:var(--muted);font-size:12.5px;text-align:center;margin:6px 0 10px}
+#resultsStatus{scroll-margin-top:72px}
 .via-row{margin-bottom:8px}
 .via-row .station-field{margin-bottom:0}
 .via-remove{flex:0 0 auto;border:1px solid var(--line);background:var(--card);color:var(--red);border-radius:9px;width:42px;height:42px;font-size:16px;cursor:pointer}
@@ -154,6 +170,13 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
   <h1 data-i18n="planer.title">🧭 Planer podróży</h1>
   <div class="subtitle" data-i18n="planer.subtitle">Szuka połączeń bezpośrednich i z przesiadką(ami) na podstawie rozkładu PLK, z czasem rzeczywistym tam, gdzie już jest znany.</div>
 
+  <nav class="ptabs" id="planTabs" role="tablist">
+    <button type="button" class="ptab active" role="tab" data-tab="search" aria-selected="true"><span class="ptab-ico" aria-hidden="true">🔎</span><span class="ptab-lbl" data-i18n="planer.tabSearch">Szukaj</span></button>
+    <button type="button" class="ptab" role="tab" id="tabSaved" data-tab="saved" aria-selected="false"><span class="ptab-ico" aria-hidden="true">📌</span><span class="ptab-lbl"><span data-i18n="planer.tabSaved">Zapisane</span><span class="ptab-n" id="savedCount"></span></span></button>
+    <button type="button" class="ptab" role="tab" id="tabHistory" data-tab="history" aria-selected="false"><span class="ptab-ico" aria-hidden="true">🕘</span><span class="ptab-lbl"><span data-i18n="planer.tabHistory">Ostatnie</span><span class="ptab-n" id="historyCount"></span></span></button>
+  </nav>
+
+  <div class="pview" data-view="search">
   <div class="panel">
     <div class="station-stack">
       <div class="station-field">
@@ -231,29 +254,18 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     <button type="button" class="btn" id="searchBtn" onclick="search()" data-i18n="planer.searchBtn">🔎 Szukaj połączeń</button>
   </div>
 
-  <div class="trips-panel" id="historyPanel">
-    <button type="button" class="trips-toggle" id="historyToggle" aria-expanded="false" onclick="toggleHistory()">
-      <span class="trips-toggle-icon" aria-hidden="true">🕘</span>
-      <span class="trips-toggle-text"><span class="trips-toggle-title"><span data-i18n="planer.history">Ostatnie wyszukiwania</span> (<span id="historyCount">0</span>)</span><span class="trips-toggle-summary" data-i18n="planer.historySummary">Szybki powrót do wcześniejszych tras</span></span>
-      <span class="trips-chevron" aria-hidden="true">▾</span>
-    </button>
-    <div class="trips-body" id="historyBody"><div class="trips-body-inner"><div class="trips-content">
-      <div id="historyList"></div>
-    </div></div></div>
-  </div>
-
   <div id="resultsStatus" class="status"></div>
   <div id="resultsList"></div>
+  </div>
 
-  <div class="trips-panel" id="savedPanel">
-    <button type="button" class="trips-toggle" id="savedToggle" aria-expanded="false" onclick="toggleSaved()">
-      <span class="trips-toggle-icon" aria-hidden="true">📌</span>
-      <span class="trips-toggle-text"><span class="trips-toggle-title"><span data-i18n="planer.saved">Zapisane wyniki</span> (<span id="savedCount">0</span>)</span><span class="trips-toggle-summary" data-i18n="planer.savedSummary">Do późniejszego przejrzenia</span></span>
-      <span class="trips-chevron" aria-hidden="true">▾</span>
-    </button>
-    <div class="trips-body" id="savedBody"><div class="trips-body-inner"><div class="trips-content">
-      <div id="savedList"></div>
-    </div></div></div>
+  <div class="pview" data-view="saved" hidden>
+    <div class="pview-head"><b data-i18n="planer.saved">Zapisane wyniki</b> · <span data-i18n="planer.savedSummary">Do późniejszego przejrzenia</span></div>
+    <div id="savedList"></div>
+  </div>
+
+  <div class="pview" data-view="history" hidden>
+    <div class="pview-head"><b data-i18n="planer.history">Ostatnie wyszukiwania</b> · <span data-i18n="planer.historySummary">Szybki powrót do wcześniejszych tras</span></div>
+    <div id="historyList"></div>
   </div>
 </div>
 
@@ -318,21 +330,29 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
   }
   window.toggleAdv=toggleAdv;
 
-  function toggleSaved(force){
-    var panel=$('savedPanel');
-    var open=typeof force==='boolean'?force:!panel.classList.contains('open');
-    panel.classList.toggle('open',open);
-    $('savedToggle').setAttribute('aria-expanded',open?'true':'false');
+  // === Zakładki: Szukaj | Zapisane | Ostatnie (adres #zapisane / #ostatnie) ===
+  var TAB_HASH={search:'',saved:'zapisane',history:'ostatnie'};
+  function showTab(name){
+    if(!TAB_HASH.hasOwnProperty(name))name='search';
+    document.querySelectorAll('#planTabs .ptab').forEach(function(b){
+      var on=b.dataset.tab===name;b.classList.toggle('active',on);b.setAttribute('aria-selected',on?'true':'false');
+    });
+    document.querySelectorAll('.pview').forEach(function(v){v.hidden=v.dataset.view!==name});
+    var h=TAB_HASH[name];
+    try{history.replaceState(null,'',location.pathname+location.search+(h?'#'+h:''))}catch(e){}
   }
-  window.toggleSaved=toggleSaved;
-
-  function toggleHistory(force){
-    var panel=$('historyPanel');
-    var open=typeof force==='boolean'?force:!panel.classList.contains('open');
-    panel.classList.toggle('open',open);
-    $('historyToggle').setAttribute('aria-expanded',open?'true':'false');
-  }
-  window.toggleHistory=toggleHistory;
+  window.showPlannerTab=showTab;
+  // Przyklejony pasek: kompaktowy (same ikony), z miejscem na przyciski języka i profilu w rogu.
+  function updateStuck(){var n=$("planTabs");n.classList.toggle("stuck",n.getBoundingClientRect().top<=1&&window.scrollY>0)}
+  window.addEventListener("scroll",updateStuck,{passive:true});
+  $('planTabs').addEventListener('click',function(e){
+    var b=e.target.closest('.ptab');if(!b)return;
+    showTab(b.dataset.tab);
+    window.scrollTo({top:0,behavior:'smooth'});
+  });
+  (function(){var h=(location.hash||'').slice(1);for(var k in TAB_HASH)if(h&&TAB_HASH[k]===h)showTab(k)})();
+  // Zapis wyniku: zostajemy przy wynikach, licznik „Zapisane” mruga.
+  function bumpCount(id){var el=$(id);el.classList.remove('bump');void el.offsetWidth;el.classList.add('bump')}
 
   function toggleViaPanel(force){
     var panel=$('viaPanel');
@@ -984,7 +1004,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     if(idx>=0)list[idx]=entry;else list.push(entry);
     saveSavedResultsList(list);
     renderSavedPanel();
-    toggleSaved(true);
+    bumpCount('savedCount');
   }
   // === Dodanie do planu podróży dzienniczka ===
   // Reużywa DOKŁADNIE tego samego mechanizmu co "Plan podróży" w /dziennik/
@@ -1075,7 +1095,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
   }
   function renderSavedPanel(){
     var list=getSavedResults();
-    $('savedCount').textContent=list.length;
+    $('savedCount').textContent=list.length||'';
     var el=$('savedList');
     if(!list.length){el.innerHTML='<div class="empty">'+escapeHtml(T('planer.savedEmpty'))+'</div>';return}
     el.innerHTML=list.slice().reverse().map(function(e){
@@ -1164,7 +1184,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
   function shortDate(d){var p=String(d||'').split('-');return p.length===3?p[2]+'.'+p[1]:d}
   function renderHistoryPanel(){
     var list=getSearchHistory();
-    $('historyCount').textContent=list.length;
+    $('historyCount').textContent=list.length||'';
     var el=$('historyList');
     el.innerHTML=list.length?list.map(historyEntryHtml).join(''):'<div class="empty">'+escapeHtml(T('planer.historyEmpty'))+'</div>';
   }
@@ -1175,6 +1195,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
   }
   // Wypełnia formularz zapisanym zapytaniem i szuka; when = {date,time} nadpisuje dzień.
   function rerunQuery(q,fromId,toId,when){
+    showTab('search');
     selected.from={id:fromId||'',name:q.from||''};
     selected.to={id:toId||'',name:q.to||''};
     $('fromInput').value=q.from||'';

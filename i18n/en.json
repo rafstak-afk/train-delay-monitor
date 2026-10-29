@@ -401,7 +401,10 @@
     "rerunTomorrow": "🔎 Tomorrow from {time}",
     "rerunOldTitle": "Show connections from that day",
     "savedPast": "📅 {date} · already past",
-    "savedFor": "📅 For {date}"
+    "savedFor": "📅 For {date}",
+    "tabSearch": "Search",
+    "tabSaved": "Saved",
+    "tabHistory": "Recent"
   },
   "tutorial": {
     "ui": {
