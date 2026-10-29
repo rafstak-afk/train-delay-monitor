@@ -73,5 +73,22 @@
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", injectButton);
   else injectButton();
 
-  window.AlarmSound = { play, isEnabled, setEnabled };
+  // Ten sam alarm najwyżej raz na 20 s (np. push i strona strażnika naraz).
+  let lastOnceAt = 0;
+  function playOnce() {
+    if (Date.now() - lastOnceAt < 20000) return;
+    lastOnceAt = Date.now();
+    play();
+    try { if (navigator.vibrate) navigator.vibrate([120, 80, 120, 400, 120, 80, 120]); } catch (e) {}
+  }
+  // Powiadomienie strażnika przyszło, a aplikacja jest otwarta i widoczna —
+  // service worker prosi o Rp1 (dźwięku samego powiadomienia systemowego
+  // przeglądarka nie pozwala zmienić).
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.addEventListener("message", function (e) {
+      if (e.data && e.data.type === "playAlarm" && document.visibilityState === "visible") playOnce();
+    });
+  }
+
+  window.AlarmSound = { play, playOnce, isEnabled, setEnabled };
 })();

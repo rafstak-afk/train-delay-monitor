@@ -944,6 +944,51 @@
     "settings": "⚙️ Ajustes de vigilancia",
     "leadLabel": "Empezar a vigilar antes de la salida",
     "minLabel": "Tiempo mínimo de transbordo",
-    "autoPlanLabel": "Vigilar automáticamente los viajes del plan del diario"
+    "autoPlanLabel": "Vigilar automáticamente los viajes del plan del diario",
+    "status": {
+      "ok": "OK",
+      "risk": "transbordo en riesgo",
+      "broken": "transbordo probablemente perdido",
+      "cancelled": "tren cancelado",
+      "nodata": "sin datos",
+      "done": "llegada",
+      "waiting": "esperando inicio"
+    },
+    "src": {
+      "forecast": "previsión PLK",
+      "confirmed": "confirmado",
+      "notStarted": "aún no ha salido"
+    },
+    "xferNoData": "Transbordo en {st}: faltan datos de uno de los trenes.",
+    "xferCancelled": "Transbordo en {st}: tren cancelado.",
+    "xferLine": "Transbordo en {st}: {slack} min de margen (según plan {plan}, se necesitan {need})",
+    "platformChange": "Cambio de andén: {a} → {b} (+2 min)",
+    "stationChange": "Paso entre estaciones: {a} → {b} (+5 min)",
+    "onlyThanksToB": "Solo llegarás si {b} no recupera el retraso.",
+    "rising": "El retraso aumenta",
+    "fromPlan": "del diario",
+    "waitingInfo": "La vigilancia empieza ese día hacia las {time}.",
+    "altTitle": "Alternativas desde {st}, desde las {time}",
+    "altLoading": "Buscando conexiones…",
+    "altNone": "No encontré alternativas.",
+    "altRetry": "Buscar de nuevo",
+    "altChanges": "transbordos: {n}",
+    "altDirect": "directo",
+    "altNote": "No se puede llegar antes a {dest}: la próxima conexión llega a las {arr}. Salir a las {dep} es lo más tarde que aún sirve; los trenes anteriores desde {from} también valen, pero esperarás más en el transbordo.",
+    "switch": "🛡️ Vigilar esta",
+    "updated": "Actualizado: {time}",
+    "refresh": "Actualizar",
+    "stop": "Dejar de vigilar",
+    "confirmStop": "¿Dejar de vigilar esta conexión?",
+    "empty": "Aún no vigilas ninguna conexión.<br>En el <a href=\"/planer/\">planificador</a> toca «🛡️ Vigilar» junto a un resultado, o añade un viaje al plan del diario.",
+    "soon": "Esta función aún se está preparando. ¡Muy pronto!",
+    "soundLabel": "🔊 Sonido Rp1 si empeora (con la app abierta)",
+    "push": {
+      "noProfile": "Las notificaciones en segundo plano requieren un perfil. <a href=\"/profil/\">Crea un perfil</a>: sin contraseña, en segundos.",
+      "denied": "Las notificaciones están bloqueadas en el navegador. Desbloquéalas en los ajustes del sitio.",
+      "unsupported": "Este navegador no admite notificaciones push. En iPhone, añade la app a la pantalla de inicio.",
+      "off": "Activa las notificaciones en este dispositivo para recibir avisos incluso con la app cerrada.",
+      "enable": "Activar notificaciones"
+    }
   }
 }

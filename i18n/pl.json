@@ -944,6 +944,51 @@
     "settings": "⚙️ Ustawienia pilnowania",
     "leadLabel": "Zacznij pilnować przed odjazdem",
     "minLabel": "Minimalny czas na przesiadkę",
-    "autoPlanLabel": "Pilnuj automatycznie przejazdów z planu w dzienniczku"
+    "autoPlanLabel": "Pilnuj automatycznie przejazdów z planu w dzienniczku",
+    "status": {
+      "ok": "OK",
+      "risk": "przesiadka zagrożona",
+      "broken": "przesiadka prawdopodobnie zerwana",
+      "cancelled": "pociąg odwołany",
+      "nodata": "brak danych",
+      "done": "dojechano",
+      "waiting": "czeka na start"
+    },
+    "src": {
+      "forecast": "prognoza PLK",
+      "confirmed": "potwierdzone",
+      "notStarted": "jeszcze nie wyjechał"
+    },
+    "xferNoData": "Przesiadka na stacji {st}: brak danych o jednym z pociągów.",
+    "xferCancelled": "Przesiadka na stacji {st}: pociąg odwołany.",
+    "xferLine": "Przesiadka na stacji {st}: zapas {slack} min (wg planu {plan}, potrzebne {need})",
+    "platformChange": "Zmiana peronu: {a} → {b} (+2 min)",
+    "stationChange": "Przejście między stacjami: {a} → {b} (+5 min)",
+    "onlyThanksToB": "Zdążysz tylko, jeśli {b} nie nadrobi opóźnienia.",
+    "rising": "Opóźnienie rośnie",
+    "fromPlan": "z dzienniczka",
+    "waitingInfo": "Pilnowanie zacznie się ok. {time} tego dnia.",
+    "altTitle": "Alternatywy od stacji {st}, od {time}",
+    "altLoading": "Szukam połączeń…",
+    "altNone": "Nie znalazłem alternatyw.",
+    "altRetry": "Szukaj ponownie",
+    "altChanges": "przesiadki: {n}",
+    "altDirect": "bezpośrednio",
+    "altNote": "Wcześniej do stacji {dest} się nie da: najbliższe połączenie dojedzie o {arr}. Odjazd {dep} to najpóźniejszy, który zdąży — wcześniejsze pociągi ze stacji {from} też zdążą, ale poczekasz dłużej na przesiadkę.",
+    "switch": "🛡️ Pilnuj tej",
+    "updated": "Aktualizacja: {time}",
+    "refresh": "Odśwież",
+    "stop": "Przestań pilnować",
+    "confirmStop": "Przestać pilnować tego połączenia?",
+    "empty": "Nie pilnujesz jeszcze żadnego połączenia.<br>W <a href=\"/planer/\">planerze</a> kliknij „🛡️ Pilnuj” przy wyniku — albo dodaj przejazd do planu w dzienniczku.",
+    "soon": "Ta funkcja jest jeszcze w przygotowaniu. Wkrótce!",
+    "soundLabel": "🔊 Dźwięk Rp1 przy pogorszeniu (gdy aplikacja jest otwarta)",
+    "push": {
+      "noProfile": "Powiadomienia w tle wymagają profilu. <a href=\"/profil/\">Załóż profil</a> — bez hasła, kilkanaście sekund.",
+      "denied": "Powiadomienia są zablokowane w przeglądarce. Odblokuj je w ustawieniach strony, żeby dostawać ostrzeżenia.",
+      "unsupported": "Ta przeglądarka nie obsługuje powiadomień push. Na iPhonie dodaj aplikację do ekranu głównego.",
+      "off": "Włącz powiadomienia na tym urządzeniu, żeby dostawać ostrzeżenia także przy zamkniętej aplikacji.",
+      "enable": "Włącz powiadomienia"
+    }
   }
 }

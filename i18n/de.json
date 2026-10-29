@@ -944,6 +944,51 @@
     "settings": "⚙️ Einstellungen",
     "leadLabel": "Überwachung beginnt vor Abfahrt",
     "minLabel": "Mindestumstiegszeit",
-    "autoPlanLabel": "Fahrten aus dem Reiseplan automatisch überwachen"
+    "autoPlanLabel": "Fahrten aus dem Reiseplan automatisch überwachen",
+    "status": {
+      "ok": "OK",
+      "risk": "Anschluss gefährdet",
+      "broken": "Anschluss wahrscheinlich verpasst",
+      "cancelled": "Zug fällt aus",
+      "nodata": "keine Daten",
+      "done": "angekommen",
+      "waiting": "wartet auf Start"
+    },
+    "src": {
+      "forecast": "PLK-Prognose",
+      "confirmed": "bestätigt",
+      "notStarted": "noch nicht abgefahren"
+    },
+    "xferNoData": "Umstieg in {st}: keine Daten zu einem der Züge.",
+    "xferCancelled": "Umstieg in {st}: Zug fällt aus.",
+    "xferLine": "Umstieg in {st}: {slack} Min. Puffer (Plan {plan}, nötig {need})",
+    "platformChange": "Gleiswechsel: {a} → {b} (+2 Min.)",
+    "stationChange": "Weg zwischen Bahnhöfen: {a} → {b} (+5 Min.)",
+    "onlyThanksToB": "Klappt nur, wenn {b} die Verspätung nicht aufholt.",
+    "rising": "Verspätung steigt",
+    "fromPlan": "aus dem Reiseplan",
+    "waitingInfo": "Überwachung beginnt an diesem Tag um ca. {time}.",
+    "altTitle": "Alternativen ab {st}, ab {time}",
+    "altLoading": "Suche Verbindungen…",
+    "altNone": "Keine Alternativen gefunden.",
+    "altRetry": "Erneut suchen",
+    "altChanges": "Umstiege: {n}",
+    "altDirect": "direkt",
+    "altNote": "Früher kommst du nicht nach {dest}: die nächste Verbindung kommt um {arr} an. Abfahrt {dep} ist die späteste, die noch klappt — frühere Züge ab {from} gehen auch, aber du wartest länger beim Umstieg.",
+    "switch": "🛡️ Diese überwachen",
+    "updated": "Aktualisiert: {time}",
+    "refresh": "Aktualisieren",
+    "stop": "Nicht mehr überwachen",
+    "confirmStop": "Diese Verbindung nicht mehr überwachen?",
+    "empty": "Du überwachst noch keine Verbindung.<br>Tippe im <a href=\"/planer/\">Planer</a> bei einem Ergebnis auf „🛡️ Überwachen“ — oder füge eine Fahrt zum Reiseplan hinzu.",
+    "soon": "Diese Funktion wird noch vorbereitet. Bald verfügbar!",
+    "soundLabel": "🔊 Rp1-Ton bei Verschlechterung (wenn die App offen ist)",
+    "push": {
+      "noProfile": "Hintergrund-Benachrichtigungen brauchen ein Profil. <a href=\"/profil/\">Profil anlegen</a> — ohne Passwort, in Sekunden.",
+      "denied": "Benachrichtigungen sind im Browser blockiert. Gib sie in den Website-Einstellungen frei.",
+      "unsupported": "Dieser Browser unterstützt keine Push-Benachrichtigungen. Auf dem iPhone die App zum Home-Bildschirm hinzufügen.",
+      "off": "Schalte Benachrichtigungen auf diesem Gerät ein, um auch bei geschlossener App gewarnt zu werden.",
+      "enable": "Benachrichtigungen einschalten"
+    }
   }
 }

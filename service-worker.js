@@ -62,6 +62,9 @@ self.addEventListener("push", event => {
     // Wibracja w rytmie "ta-dam ta-dam" (stukot kół) — dźwięku powiadomienia
     // przeglądarka nie pozwala zmienić, wibrację na Androidzie tak.
     self.registration.showNotification(title, { body, vibrate: [120,80,120,400,120,80,120], data: { url } })
+      // Strażnik przesiadek: otwarta aplikacja zagra Rp1 (alarm-sound.js).
+      .then(() => data.kind === "guard" ? self.clients.matchAll({ type: "window", includeUncontrolled: true }) : [])
+      .then(list => { (list || []).forEach(c => { try { c.postMessage({ type: "playAlarm" }); } catch (e) {} }); })
   );
 });
 

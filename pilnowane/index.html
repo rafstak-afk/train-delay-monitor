@@ -74,6 +74,8 @@ details.settings summary{cursor:pointer;font-weight:800;font-size:14px}
       <select id="minSel"><option value="2">2 min</option><option value="3">3 min</option><option value="5">5 min</option><option value="7">7 min</option><option value="10">10 min</option><option value="15">15 min</option></select></div>
     <div class="set-row"><label for="autoPlan" data-i18n="guard.autoPlanLabel">Pilnuj automatycznie przejazdów z planu w dzienniczku</label>
       <input type="checkbox" id="autoPlan" /></div>
+    <div class="set-row"><label for="soundOn" data-i18n="guard.soundLabel">🔊 Dźwięk Rp1 przy pogorszeniu (gdy aplikacja jest otwarta)</label>
+      <input type="checkbox" id="soundOn" /></div>
   </details>
   <div id="list"></div>
 </div>
@@ -82,6 +84,7 @@ details.settings summary{cursor:pointer;font-weight:800;font-size:14px}
 <script src="/profile-sync.js"></script>
 <script src="/guard-core.js"></script>
 <script src="/guard-store.js"></script>
+<script src="/alarm-sound.js"></script>
 <script src="/tutorial.js"></script>
 <script>
 (function(){
@@ -137,6 +140,8 @@ details.settings summary{cursor:pointer;font-weight:800;font-size:14px}
         var res=G.evaluate(c,rs,{minTransfer:set.minTransfer});
         var t=res.transfers[res.worst];
         if(t&&typeof t.delayA==='number'){var h=history[c.id]=(history[c.id]||[]);if(h[h.length-1]!==t.delayA||h.length<1)h.push(t.delayA);if(h.length>6)h.shift();res.rising=G.rising(h)}
+        var before=results[c.id]&&results[c.id].status;
+        if(before&&before!=='waiting'&&before!=='nodata'&&(G.RANK[res.status]||0)>(G.RANK[before]||0)&&(G.RANK[res.status]||0)>=G.RANK.risk&&window.AlarmSound)AlarmSound.playOnce();
         results[c.id]=res;
         if((res.status==='broken'||res.status==='cancelled')&&!alts[c.id])findAlternatives(c,res);
       });
@@ -210,7 +215,11 @@ details.settings summary{cursor:pointer;font-weight:800;font-size:14px}
       html+='<div class="alts"><h4>🔀 '+esc(T('guard.altTitle',{st:a.origin.station,time:a.origin.time},'Alternatywy z '+a.origin.station+' od '+a.origin.time))+'</h4>';
       if(a.loading)html+='<div class="src">'+esc(T('guard.altLoading',null,'Szukam połączeń…'))+'</div>';
       else if(a.error||!a.list||!a.list.length)html+='<div class="src">'+esc(T('guard.altNone',null,'Nie znalazłem alternatyw.'))+'</div> <button type="button" class="btn-sm secondary" data-act="altRetry" data-id="'+esc(c.id)+'">'+esc(T('guard.altRetry',null,'Szukaj ponownie'))+'</button>';
-      else a.list.forEach(function(it,k){
+      else{
+        var gap=G.hm(a.list[0].departureTime)-G.hm(a.origin.time);
+        if(gap>20)html+='<div class="src" style="margin:0 0 6px;line-height:1.45">ℹ️ '+esc(T('guard.altNote',{dest:c.to,arr:a.list[0].arrivalTime,dep:a.list[0].departureTime,from:a.origin.station},'Wcześniej do stacji '+c.to+' się nie da: najbliższe połączenie dojedzie o '+a.list[0].arrivalTime+'. Odjazd '+a.list[0].departureTime+' to najpóźniejszy, który zdąży — wcześniejsze pociągi ze stacji '+a.origin.station+' też zdążą, ale poczekasz dłużej na przesiadkę.'))+'</div>';
+      }
+      if(a.list&&a.list.length)a.list.forEach(function(it,k){
         var trs=it.legs.map(function(l){return G.trainLabel(l.train)}).join(' + ');
         html+='<div class="alt"><div><b>'+esc(it.departureTime)+' → '+esc(it.arrivalTime)+'</b> · '+esc(trs)+'<div class="src">'+esc(it.legs.length>1?T('guard.altChanges',{n:it.legs.length-1},'przesiadki: '+(it.legs.length-1)):T('guard.altDirect',null,'bezpośrednio'))+'</div></div>'+
           '<button type="button" class="btn-sm" data-act="switch" data-id="'+esc(c.id)+'" data-k="'+k+'">'+esc(T('guard.switch',null,'🛡️ Pilnuj tej'))+'</button></div>';
@@ -239,7 +248,8 @@ details.settings summary{cursor:pointer;font-weight:800;font-size:14px}
   });
 
   // Ustawienia
-  function fillSettings(){var s=S.settings();$('leadSel').value=String(s.leadMin);$('minSel').value=String(s.minTransfer);$('autoPlan').checked=s.autoPlan}
+  function fillSettings(){var s=S.settings();$('leadSel').value=String(s.leadMin);$('minSel').value=String(s.minTransfer);$('autoPlan').checked=s.autoPlan;$('soundOn').checked=!window.AlarmSound||AlarmSound.isEnabled()}
+  $('soundOn').addEventListener('change',function(){if(window.AlarmSound){AlarmSound.setEnabled(this.checked);if(this.checked)AlarmSound.play()}});
   $('leadSel').addEventListener('change',function(){S.saveSettings({leadMin:Number(this.value)});refresh()});
   $('minSel').addEventListener('change',function(){S.saveSettings({minTransfer:Number(this.value)});refresh()});
   $('autoPlan').addEventListener('change',function(){S.saveSettings({autoPlan:this.checked});refresh()});

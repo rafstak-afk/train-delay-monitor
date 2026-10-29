@@ -944,6 +944,51 @@
     "settings": "⚙️ Nastavení hlídání",
     "leadLabel": "Začít hlídat před odjezdem",
     "minLabel": "Minimální čas na přestup",
-    "autoPlanLabel": "Automaticky hlídat jízdy z plánu v deníku"
+    "autoPlanLabel": "Automaticky hlídat jízdy z plánu v deníku",
+    "status": {
+      "ok": "OK",
+      "risk": "přestup ohrožen",
+      "broken": "přestup pravděpodobně ujede",
+      "cancelled": "vlak zrušen",
+      "nodata": "bez dat",
+      "done": "dojeto",
+      "waiting": "čeká na start"
+    },
+    "src": {
+      "forecast": "prognóza PLK",
+      "confirmed": "potvrzeno",
+      "notStarted": "ještě neodjel"
+    },
+    "xferNoData": "Přestup ve stanici {st}: chybí data o jednom z vlaků.",
+    "xferCancelled": "Přestup ve stanici {st}: vlak zrušen.",
+    "xferLine": "Přestup ve stanici {st}: rezerva {slack} min (podle plánu {plan}, potřeba {need})",
+    "platformChange": "Změna nástupiště: {a} → {b} (+2 min)",
+    "stationChange": "Přechod mezi stanicemi: {a} → {b} (+5 min)",
+    "onlyThanksToB": "Stihneš jen, pokud {b} zpoždění nedožene.",
+    "rising": "Zpoždění roste",
+    "fromPlan": "z deníku",
+    "waitingInfo": "Hlídání začne ten den kolem {time}.",
+    "altTitle": "Alternativy ze stanice {st}, od {time}",
+    "altLoading": "Hledám spojení…",
+    "altNone": "Alternativy jsem nenašel.",
+    "altRetry": "Hledat znovu",
+    "altChanges": "přestupy: {n}",
+    "altDirect": "přímo",
+    "altNote": "Dřív do stanice {dest} nedojedeš: nejbližší spojení přijede v {arr}. Odjezd {dep} je nejpozdější, který stihne — dřívější vlaky ze stanice {from} stihnou také, jen budeš déle čekat na přestup.",
+    "switch": "🛡️ Hlídat tohle",
+    "updated": "Aktualizace: {time}",
+    "refresh": "Obnovit",
+    "stop": "Přestat hlídat",
+    "confirmStop": "Přestat hlídat toto spojení?",
+    "empty": "Zatím nehlídáš žádné spojení.<br>V <a href=\"/planer/\">plánovači</a> klepni u výsledku na „🛡️ Hlídat“ — nebo přidej jízdu do plánu v deníku.",
+    "soon": "Tato funkce se teprve připravuje. Brzy!",
+    "soundLabel": "🔊 Zvuk Rp1 při zhoršení (když je aplikace otevřená)",
+    "push": {
+      "noProfile": "Oznámení na pozadí vyžadují profil. <a href=\"/profil/\">Založ profil</a> — bez hesla, za pár vteřin.",
+      "denied": "Oznámení jsou v prohlížeči zablokovaná. Povol je v nastavení webu.",
+      "unsupported": "Tento prohlížeč nepodporuje push oznámení. Na iPhonu přidej aplikaci na plochu.",
+      "off": "Zapni oznámení na tomto zařízení, abys dostával varování i se zavřenou aplikací.",
+      "enable": "Zapnout oznámení"
+    }
   }
 }

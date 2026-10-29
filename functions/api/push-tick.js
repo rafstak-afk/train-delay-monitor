@@ -582,7 +582,7 @@ async function runGuard(env, origin, token, profile, subs, conns, fetchTrain, su
       }
     }
     const msg = GuardCore.message(conn, res, kind, lang, altText);
-    const payload = { title: msg.title, body: msg.body, url: "/pilnowane/?id=" + encodeURIComponent(conn.id) };
+    const payload = { title: msg.title, body: msg.body, url: "/pilnowane/?id=" + encodeURIComponent(conn.id), kind: "guard" };
     let sent = false;
     for (const sub of subs) {
       try {

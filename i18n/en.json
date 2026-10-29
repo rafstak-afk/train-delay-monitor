@@ -944,6 +944,51 @@
     "settings": "⚙️ Guard settings",
     "leadLabel": "Start guarding before departure",
     "minLabel": "Minimum change time",
-    "autoPlanLabel": "Automatically guard trips from the journal plan"
+    "autoPlanLabel": "Automatically guard trips from the journal plan",
+    "status": {
+      "ok": "OK",
+      "risk": "connection at risk",
+      "broken": "connection probably missed",
+      "cancelled": "train cancelled",
+      "nodata": "no data",
+      "done": "arrived",
+      "waiting": "waiting to start"
+    },
+    "src": {
+      "forecast": "PLK forecast",
+      "confirmed": "confirmed",
+      "notStarted": "not departed yet"
+    },
+    "xferNoData": "Change at {st}: no data for one of the trains.",
+    "xferCancelled": "Change at {st}: train cancelled.",
+    "xferLine": "Change at {st}: {slack} min to spare (planned {plan}, needed {need})",
+    "platformChange": "Platform change: {a} → {b} (+2 min)",
+    "stationChange": "Walk between stations: {a} → {b} (+5 min)",
+    "onlyThanksToB": "You'll make it only if {b} doesn't make up its delay.",
+    "rising": "Delay is growing",
+    "fromPlan": "from journal",
+    "waitingInfo": "Guarding starts at about {time} that day.",
+    "altTitle": "Alternatives from {st}, from {time}",
+    "altLoading": "Searching for connections…",
+    "altNone": "No alternatives found.",
+    "altRetry": "Search again",
+    "altChanges": "changes: {n}",
+    "altDirect": "direct",
+    "altNote": "You can't get to {dest} any earlier: the next connection arrives at {arr}. Leaving at {dep} is the latest that still makes it — earlier trains from {from} work too, but you'll wait longer for the change.",
+    "switch": "🛡️ Guard this one",
+    "updated": "Updated: {time}",
+    "refresh": "Refresh",
+    "stop": "Stop guarding",
+    "confirmStop": "Stop guarding this connection?",
+    "empty": "You're not guarding any connection yet.<br>In the <a href=\"/planer/\">planner</a> tap “🛡️ Guard” next to a result — or add a trip to the plan in the journal.",
+    "soon": "This feature is still being prepared. Coming soon!",
+    "soundLabel": "🔊 Rp1 sound when things get worse (while the app is open)",
+    "push": {
+      "noProfile": "Background notifications need a profile. <a href=\"/profil/\">Create a profile</a> — no password, takes seconds.",
+      "denied": "Notifications are blocked in the browser. Unblock them in the site settings to get warnings.",
+      "unsupported": "This browser doesn't support push notifications. On iPhone, add the app to the home screen.",
+      "off": "Turn on notifications on this device to get warnings even with the app closed.",
+      "enable": "Turn on notifications"
+    }
   }
 }
