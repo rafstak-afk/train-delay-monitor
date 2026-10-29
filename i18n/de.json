@@ -396,7 +396,12 @@
     },
     "guard": "🛡️ Überwachen",
     "guarded": "🛡️ Überwacht ✓",
-    "guardTitle": "Umstiege dieser Verbindung überwachen — ich warne dich, wenn eine Verspätung einen Anschluss gefährdet"
+    "guardTitle": "Umstiege dieser Verbindung überwachen — ich warne dich, wenn eine Verspätung einen Anschluss gefährdet",
+    "rerunToday": "🔎 Heute ab {time}",
+    "rerunTomorrow": "🔎 Morgen ab {time}",
+    "rerunOldTitle": "Verbindungen von jenem Tag anzeigen",
+    "savedPast": "📅 {date} · vorbei",
+    "savedFor": "📅 Für {date}"
   },
   "tutorial": {
     "ui": {

@@ -396,7 +396,12 @@
     },
     "guard": "🛡️ Guard",
     "guarded": "🛡️ Guarded ✓",
-    "guardTitle": "Guard the changes in this connection — I'll warn you if a delay puts a change at risk"
+    "guardTitle": "Guard the changes in this connection — I'll warn you if a delay puts a change at risk",
+    "rerunToday": "🔎 Today from {time}",
+    "rerunTomorrow": "🔎 Tomorrow from {time}",
+    "rerunOldTitle": "Show connections from that day",
+    "savedPast": "📅 {date} · already past",
+    "savedFor": "📅 For {date}"
   },
   "tutorial": {
     "ui": {

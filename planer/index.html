@@ -127,6 +127,10 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
 .history-meta{color:var(--muted);font-size:12px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .history-rerun{flex:0 0 auto;border:1.5px solid var(--blue);background:transparent;color:#8fb8f5;border-radius:8px;padding:9px 12px;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap}
 .history-rerun:hover{background:rgba(11,87,208,.18)}
+.history-btns{flex:0 0 auto;display:flex;flex-direction:column;gap:6px;align-items:stretch}
+.history-rerun.old{border-color:var(--line);color:var(--muted);padding:6px 10px;font-weight:600}
+.saved-date{font-size:12.5px;font-weight:700;margin-top:6px}
+.saved-date.past{color:var(--muted)}
 .via-row{margin-bottom:8px}
 .via-row .station-field{margin-bottom:0}
 .via-remove{flex:0 0 auto;border:1px solid var(--line);background:var(--card);color:var(--red);border-radius:9px;width:42px;height:42px;font-size:16px;cursor:pointer}
@@ -815,7 +819,9 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     var planTitle=' title="'+escapeHtml(T('planer.planTitle'))+'"';
     // 🛡️ Strażnik przesiadek — pilnowane połączenie (guard-core.js / guard-store.js)
     var guardHtml='';
-    if(window.GuardCore&&window.GuardStore&&GuardStore.enabled()){
+    var savedQ=opts.savedKey?((getSavedResults().find(function(x){return x._key===opts.savedKey})||{}).query||null):null;
+    var savedPast=!!(savedQ&&isPastDate(savedQ.date));
+    if(!savedPast&&window.GuardCore&&window.GuardStore&&GuardStore.enabled()){
       var gq=opts.savedKey?((getSavedResults().find(function(x){return x._key===opts.savedKey})||{}).query):lastQuery;
       if(gq&&gq.date){
         var gid=GuardCore.fromItinerary(it,gq).id;
@@ -824,13 +830,17 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
           :'<button type="button" class="btn-sm secondary itin-guard"'+(opts.savedKey?' data-saved-key="'+escapeHtml(opts.savedKey)+'"':' data-idx="'+opts.index+'"')+' title="'+escapeHtml(T('planer.guardTitle'))+'">'+escapeHtml(T('planer.guard'))+'</button>';
       }
     }
-    if(opts.savedKey){
+    if(opts.savedKey&&savedPast){
+      actionHtml='<button type="button" class="btn-sm itin-fresh" data-saved-key="'+escapeHtml(opts.savedKey)+'">'+escapeHtml(freshLabel(freshWhen(it.departureTime)))+'</button>'+
+        '<button type="button" class="btn-sm secondary itin-remove" data-saved-key="'+escapeHtml(opts.savedKey)+'">'+escapeHtml(T('planer.removeBtn'))+'</button>';
+    }else if(opts.savedKey){
       actionHtml='<button type="button" class="btn-sm secondary itin-remove" data-saved-key="'+escapeHtml(opts.savedKey)+'">'+escapeHtml(T('planer.removeBtn'))+'</button>'+
         '<button type="button" class="btn-sm secondary itin-addplan" data-saved-key="'+escapeHtml(opts.savedKey)+'"'+planTitle+'>'+escapeHtml(T('planer.addPlan'))+'</button>'+guardHtml;
     }else if(opts.index!=null){
       actionHtml='<button type="button" class="btn-sm itin-save" data-idx="'+opts.index+'">'+escapeHtml(T('planer.save'))+'</button>'+
         '<button type="button" class="btn-sm secondary itin-addplan" data-idx="'+opts.index+'"'+planTitle+'>'+escapeHtml(T('planer.addPlan'))+'</button>'+guardHtml;
     }
+    var dateLine=savedQ&&savedQ.date?'<div class="saved-date'+(savedPast?' past':'')+'">'+escapeHtml(T(savedPast?'planer.savedPast':'planer.savedFor',{date:shortDate(savedQ.date)}))+'</div>':'';
     var savedLine=opts.savedAt?'<div class="saved-at">'+escapeHtml(T('planer.savedAt',{date:new Date(opts.savedAt).toLocaleString(dateLocale())}))+'</div>':'';
     return '<div class="entry"'+(opts.index!=null?' id="itin-'+opts.index+'"':'')+'>'+
       '<div class="itin-head">'+
@@ -841,7 +851,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
       '</div>'+
       legsHtml+
       (opts.index!=null?fasterHintHtml(opts.index)+transferHintHtml(opts.index):'')+
-      savedLine+
+      dateLine+savedLine+
       (actionHtml?'<div class="itin-actions">'+actionHtml+'</div>':'')+
       '</div>';
   }
@@ -1078,6 +1088,8 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
       window.open(legRow.dataset.trainUrl,'_blank');
       return;
     }
+    var fBtn=e.target.closest('.itin-fresh');
+    if(fBtn){var fs2=getSavedResults().find(function(x){return x._key===fBtn.dataset.savedKey});if(fs2&&fs2.query)rerunQuery(fs2.query,'','',freshWhen(fs2.snapshot&&fs2.snapshot.departureTime||fs2.query.time));return}
     var gBtn2=e.target.closest('.itin-guard');
     if(gBtn2){var gs=getSavedResults().find(function(x){return x._key===gBtn2.dataset.savedKey});if(gs)guardItinerary(gBtn2,gs.snapshot,gs.query);return}
     var planBtn=e.target.closest('.itin-addplan');
@@ -1132,26 +1144,43 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
         '<div class="history-route">'+escapeHtml(q.from)+' → '+escapeHtml(q.to)+'</div>'+
         '<div class="history-meta">'+escapeHtml(T('planer.historyWhen',{date:dateFmt,time:q.time}))+escapeHtml(metaTxt)+'</div>'+
       '</div>'+
-      '<button type="button" class="history-rerun" data-idx="'+idx+'">'+escapeHtml(T('planer.rerun'))+'</button>'+
+      (isPastDate(q.date)
+        ?'<div class="history-btns"><button type="button" class="history-rerun" data-idx="'+idx+'" data-fresh="1">'+escapeHtml(freshLabel(freshWhen(q.time)))+'</button>'+
+          '<button type="button" class="history-rerun old" data-idx="'+idx+'" title="'+escapeHtml(T('planer.rerunOldTitle'))+'">📅 '+escapeHtml(shortDate(q.date))+'</button></div>'
+        :'<button type="button" class="history-rerun" data-idx="'+idx+'">'+escapeHtml(T('planer.rerun'))+'</button>')+
       '</div>';
   }
+  // Wpis z minioną datą: szukamy tej samej trasy dziś od tej samej godziny,
+  // a gdy ta godzina dziś już minęła — jutro. „00:00” (cały dzień) → dziś od teraz.
+  function isPastDate(d){return !!d&&d<todayYYYYMMDD()}
+  function freshWhen(time){
+    var n=new Date(),now=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
+    if(!time||time==='00:00')return{date:todayYYYYMMDD(),time:now,tomorrow:false};
+    if(time>=now)return{date:todayYYYYMMDD(),time:time,tomorrow:false};
+    var t=new Date(n.getFullYear(),n.getMonth(),n.getDate()+1);
+    return{date:t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0'),time:time,tomorrow:true};
+  }
+  function freshLabel(w){return T(w.tomorrow?'planer.rerunTomorrow':'planer.rerunToday',{time:w.time})}
+  function shortDate(d){var p=String(d||'').split('-');return p.length===3?p[2]+'.'+p[1]:d}
   function renderHistoryPanel(){
     var list=getSearchHistory();
     $('historyCount').textContent=list.length;
     var el=$('historyList');
     el.innerHTML=list.length?list.map(historyEntryHtml).join(''):'<div class="empty">'+escapeHtml(T('planer.historyEmpty'))+'</div>';
   }
-  function rerunHistoryEntry(idx){
-    var list=getSearchHistory();
-    var e=list[idx];
+  function rerunHistoryEntry(idx,fresh){
+    var e=getSearchHistory()[idx];
     if(!e)return;
-    var q=e.query;
-    selected.from={id:e.fromId||'',name:q.from||''};
-    selected.to={id:e.toId||'',name:q.to||''};
+    rerunQuery(e.query,e.fromId,e.toId,fresh?freshWhen(e.query.time):null);
+  }
+  // Wypełnia formularz zapisanym zapytaniem i szuka; when = {date,time} nadpisuje dzień.
+  function rerunQuery(q,fromId,toId,when){
+    selected.from={id:fromId||'',name:q.from||''};
+    selected.to={id:toId||'',name:q.to||''};
     $('fromInput').value=q.from||'';
     $('toInput').value=q.to||'';
-    $('dateInput').value=q.date||'';
-    $('timeInput').value=q.time||'';
+    $('dateInput').value=(when&&when.date)||q.date||'';
+    $('timeInput').value=(when&&when.time)||q.time||'';
     viaRows=(q.via||[]).map(function(name,i){
       var tm=(q.viaTransferMinutes||[])[i];
       return{key:'via'+(viaCounter++),id:'',name:name,transferMinutes:(tm==null?null:Number(tm)),excludeCarriers:((q.viaExcludeCarriers||[])[i]||[]).slice()};
@@ -1168,7 +1197,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
   $('historyList').addEventListener('click',function(e){
     var btn=e.target.closest('.history-rerun');
     if(!btn)return;
-    rerunHistoryEntry(Number(btn.dataset.idx));
+    rerunHistoryEntry(Number(btn.dataset.idx),btn.dataset.fresh==='1');
   });
 
   async function refreshFromProfile(){

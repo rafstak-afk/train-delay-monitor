@@ -396,7 +396,12 @@
     },
     "guard": "🛡️ Vigilar",
     "guarded": "🛡️ Vigilada ✓",
-    "guardTitle": "Vigilar los transbordos de esta conexión: te avisaré si un retraso pone en riesgo un transbordo"
+    "guardTitle": "Vigilar los transbordos de esta conexión: te avisaré si un retraso pone en riesgo un transbordo",
+    "rerunToday": "🔎 Hoy desde las {time}",
+    "rerunTomorrow": "🔎 Mañana desde las {time}",
+    "rerunOldTitle": "Mostrar conexiones de aquel día",
+    "savedPast": "📅 {date} · ya pasó",
+    "savedFor": "📅 Para el {date}"
   },
   "tutorial": {
     "ui": {

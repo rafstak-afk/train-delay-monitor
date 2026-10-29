@@ -396,7 +396,12 @@
     },
     "guard": "🛡️ Hlídat",
     "guarded": "🛡️ Hlídáno ✓",
-    "guardTitle": "Hlídat přestupy v tomto spojení — upozorním tě, když zpoždění ohrozí přestup"
+    "guardTitle": "Hlídat přestupy v tomto spojení — upozorním tě, když zpoždění ohrozí přestup",
+    "rerunToday": "🔎 Dnes od {time}",
+    "rerunTomorrow": "🔎 Zítra od {time}",
+    "rerunOldTitle": "Zobrazit spojení z toho dne",
+    "savedPast": "📅 {date} · už proběhlo",
+    "savedFor": "📅 Na {date}"
   },
   "tutorial": {
     "ui": {

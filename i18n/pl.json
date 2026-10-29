@@ -396,7 +396,12 @@
     },
     "guard": "🛡️ Pilnuj",
     "guarded": "🛡️ Pilnowane ✓",
-    "guardTitle": "Pilnuj przesiadek w tym połączeniu — ostrzeżę Cię, gdy opóźnienie zagrozi przesiadce"
+    "guardTitle": "Pilnuj przesiadek w tym połączeniu — ostrzeżę Cię, gdy opóźnienie zagrozi przesiadce",
+    "rerunToday": "🔎 Dziś od {time}",
+    "rerunTomorrow": "🔎 Jutro od {time}",
+    "rerunOldTitle": "Pokaż połączenia z tamtego dnia",
+    "savedPast": "📅 {date} · już minęło",
+    "savedFor": "📅 Na dzień {date}"
   },
   "tutorial": {
     "ui": {
