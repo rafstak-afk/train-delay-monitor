@@ -44,11 +44,17 @@ const env = {
   }
 };
 
-let delayA = 0, pushes = [], smartLookups = 0;
+let delayA = 0, pushes = [], smartLookups = 0, plannerCalls = [];
 globalThis.fetch = async (url, opts) => {
   const u = String(url);
   if (u.startsWith("https://push.example/")) { pushes.push(u); return new Response("", { status: 201 }); }
   const q = new URL(u).searchParams;
+  if (u.includes("/api/planner")) {
+    plannerCalls.push(q.get("from") + " " + q.get("time"));
+    return new Response(JSON.stringify({ ok: true, itineraries: [
+      { departureTime: hm(B.dep + 20), arrivalTime: hm(B.arr + 25), legs: [{ train: { category: "KŚ", number: "40699" }, board: { time: hm(B.dep + 20) }, alight: { time: hm(B.arr + 25) } }] },
+      { departureTime: hm(B.dep + 10), arrivalTime: hm(B.arr + 15), legs: [{ train: { category: "KŚ", number: "40602" }, board: { time: hm(B.dep + 10) }, alight: { time: hm(B.arr + 15) } }] }] }), { status: 200 });
+  }
   if (u.includes("/api/v2/smart-lookup")) { smartLookups++; return new Response(JSON.stringify({ ok: false }), { status: 200 }); }
   if (u.includes("/api/train-details")) {
     const isA = q.get("orderId") === "A1";
@@ -89,6 +95,11 @@ for (const [d, wantPush, wantStatus, label] of steps) {
   if (!ok) fail++;
   console.log((ok ? "  ✔ " : "  ✘ ") + label + `  [push: ${r.pushes}, status: ${r.status}, zapisy stanu: ${r.guardPuts}${r.errors.length ? ", błędy: " + r.errors.join("; ") : ""}]`);
 }
+// etap 3: alternatywy szukane tylko przy ostrzeżeniach 🔴 (2× — inna przewidywana godzina), najlepsza w stanie
+const alt = (JSON.parse(store.get("guardstate:" + TOKEN) || "{}")[conn.id] || {}).alt;
+const altOk = plannerCalls.length === 2 && alt && /KŚ 40602 o /.test(alt.text) && plannerCalls.every(c => c.startsWith("Chorzów Batory "));
+console.log((altOk ? "  ✔ " : "  ✘ ") + "alternatywa w powiadomieniu: " + (alt && alt.text) + " (wyszukiwań: " + plannerCalls.length + ": " + plannerCalls.join(", ") + ")");
+if (!altOk) fail++;
 // alarm Moje pociągi dla pilnowanego 40500 nie powinien odpytywać smart-lookup
 console.log((smartLookups === 0 ? "  ✔ " : "  ✘ ") + "alarm „Moje pociągi” milczy dla pociągu z pilnowanego połączenia (smart-lookup: " + smartLookups + ")");
 if (smartLookups) fail++;

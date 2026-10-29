@@ -42,6 +42,17 @@
     }
     return prune(list).sort(function (a, b) { return (a.date + (a.legs[0] && a.legs[0].board.time)).localeCompare(b.date + (b.legs[0] && b.legs[0].board.time)); });
   }
+  // Wpis planu dzienniczka (_key) → id pilnowanego połączenia (dla znaczka 🛡️).
+  function planGuardMap() {
+    var map = {};
+    if (!enabled() || !settings().autoPlan) return map;
+    var off = planOff();
+    GuardCore.fromPlannedTrips(read(PLAN_KEY, [])).forEach(function (c) {
+      if (off.indexOf(c.id) >= 0) return;
+      (c.planKeys || []).forEach(function (k) { if (k) map[k] = c.id; });
+    });
+    return map;
+  }
   function isGuarded(id) { return manual().some(function (c) { return c.id === id; }); }
 
   // Zmiana JEDNEJ pozycji: najpierw świeży profil (inne urządzenie mogło coś
@@ -137,6 +148,6 @@
   window.GuardStore = {
     settings: settings, saveSettings: saveSettings, all: all, manual: manual, isGuarded: isGuarded,
     add: add, remove: remove, replace: replace, refreshFromProfile: refreshFromProfile,
-    pushState: pushState, enablePush: enablePush, today: today, hasProfile: hasProfile, enabled: enabled
+    pushState: pushState, enablePush: enablePush, today: today, hasProfile: hasProfile, enabled: enabled, planGuardMap: planGuardMap
   };
 })();

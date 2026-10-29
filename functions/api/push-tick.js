@@ -541,7 +541,7 @@ function guardTrainFetcher(origin) {
     return cache.get(k);
   };
 }
-async function runGuard(env, token, profile, subs, conns, fetchTrain, summary, lang) {
+async function runGuard(env, origin, token, profile, subs, conns, fetchTrain, summary, lang) {
   let prevState = {};
   try { prevState = JSON.parse((await env.USER_PROFILES.get(GUARD_STATE_PREFIX + token)) || "{}") || {}; } catch (e) {}
   const set = guardSettingsOf(profile);
@@ -561,9 +561,27 @@ async function runGuard(env, token, profile, subs, conns, fetchTrain, summary, l
     // poprzedniego odczytu — inaczej narastanie po minucie nigdy by nie dało ostrzeżenia.
     const prevForNotify = prev ? { status: prev.status, delayA: typeof prev.notifiedDelay === "number" ? prev.notifiedDelay : prev.delayA } : null;
     const kind = GuardCore.shouldNotify(prevForNotify, cur);
-    next[conn.id] = { status: base.status, delayA: base.delayA, hist: hist.slice(-5), notifiedDelay: prev ? prev.notifiedDelay : undefined };
+    next[conn.id] = { status: base.status, delayA: base.delayA, hist: hist.slice(-5), notifiedDelay: prev ? prev.notifiedDelay : undefined, alt: prev ? prev.alt : undefined };
     if (!kind) continue;
-    const msg = GuardCore.message(conn, res, kind, lang, null);
+    // Etap 3: przy 🔴/⚫ najlepsza alternatywa do treści powiadomienia. Wyszukiwarka
+    // jest ciężka, więc szukamy TYLKO przy wysyłce ostrzeżenia, a wynik dla tego
+    // samego miejsca i godziny startu bierzemy z pamięci (stan w KV).
+    let altText = null;
+    if ((res.status === "broken" || res.status === "cancelled") && kind !== "better") {
+      const o = GuardCore.altOrigin(conn, res);
+      if (o) {
+        const key = o.station + "|" + o.time;
+        if (prev && prev.alt && prev.alt.key === key) altText = prev.alt.text || null;
+        else {
+          const d = await fetchJson(origin, "/api/planner?" + new URLSearchParams(GuardCore.altQuery(conn, o)).toString());
+          const best = d && Array.isArray(d.itineraries) ? GuardCore.pickAlternatives(d.itineraries, 1)[0] : null;
+          altText = best ? GuardCore.altText(best, lang) : null;
+          next[conn.id].alt = { key, text: altText };
+          summary.guardAltSearches = (summary.guardAltSearches || 0) + 1;
+        }
+      }
+    }
+    const msg = GuardCore.message(conn, res, kind, lang, altText);
     const payload = { title: msg.title, body: msg.body, url: "/pilnowane/?id=" + encodeURIComponent(conn.id) };
     let sent = false;
     for (const sub of subs) {
@@ -644,7 +662,7 @@ export async function onRequestPost(context) {
       if (guardConns.length) {
         for (const c of guardConns) for (const l of c.legs) if (l.train && l.train.number) guardedTrainNums.add(String(l.train.number));
         try {
-          await runGuard(env, token, profile, subs, guardConns, fetchGuardTrain, summary, typeof profile.language === "string" ? profile.language : "pl");
+          await runGuard(env, origin, token, profile, subs, guardConns, fetchGuardTrain, summary, typeof profile.language === "string" ? profile.language : "pl");
         } catch (e) { summary.errors.push(token + " guard: " + e.message); }
       }
 

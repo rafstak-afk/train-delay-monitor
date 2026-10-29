@@ -693,7 +693,9 @@
       "leg": "Úsek",
       "km": "km",
       "otherTrip": "jiná"
-    }
+    },
+    "guarded": "🛡️ hlídáno",
+    "guardedTitle": "Strážce přestupů hlídá tuto jízdu — klepni pro stav"
   },
   "profil": {
     "pageTitle": "Můj profil",

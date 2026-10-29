@@ -693,7 +693,9 @@
       "leg": "Leg",
       "km": "Km",
       "otherTrip": "other"
-    }
+    },
+    "guarded": "🛡️ guarded",
+    "guardedTitle": "The transfer guard is watching this trip — tap to see its status"
   },
   "profil": {
     "pageTitle": "My profile",

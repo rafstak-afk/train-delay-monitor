@@ -693,7 +693,9 @@
       "leg": "Odcinek",
       "km": "Km",
       "otherTrip": "inna"
-    }
+    },
+    "guarded": "🛡️ pilnowane",
+    "guardedTitle": "Strażnik przesiadek pilnuje tego przejazdu — kliknij, żeby zobaczyć status"
   },
   "profil": {
     "pageTitle": "Mój profil",

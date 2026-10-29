@@ -693,7 +693,9 @@
       "leg": "Tramo",
       "km": "km",
       "otherTrip": "otra"
-    }
+    },
+    "guarded": "🛡️ vigilado",
+    "guardedTitle": "El vigilante de transbordos sigue este viaje: toca para ver su estado"
   },
   "profil": {
     "pageTitle": "Mi perfil",

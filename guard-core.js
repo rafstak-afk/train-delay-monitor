@@ -319,8 +319,49 @@
     return out;
   }
 
+  // ---------- alternatywy (przy 🔴 / ⚫) ----------
+  // Skąd i od kiedy szukać: odwołany pociąg przed najgorszą przesiadką → od
+  // stacji, gdzie miałem do niego wsiąść, od jego planowego odjazdu; inaczej
+  // od stacji przesiadki, od przewidywanej godziny dotarcia tam (z opóźnieniem).
+  // keep = ile pierwszych nóg zostaje przy przełączeniu na alternatywę.
+  function altOrigin(conn, res) {
+    if (!res || !res.legs) return null;
+    var ci = -1;
+    res.legs.forEach(function (x, i) { if (ci < 0 && x && !x.noData && x.cancelled) ci = i; });
+    var tIdx = res.worst;
+    if (ci >= 0 && (tIdx < 0 || ci <= tIdx)) {
+      var l = conn.legs[ci];
+      return { keep: ci, station: l.board.stationName, stationId: l.board.stationId || "", time: l.board.time };
+    }
+    var t = res.transfers && res.transfers[tIdx];
+    if (!t) return null;
+    return { keep: tIdx + 1, station: t.station, stationId: conn.legs[tIdx].alight.stationId || "", time: t.etaA || conn.legs[tIdx].alight.time };
+  }
+  // Zapytanie do /api/planner dla alternatyw.
+  function altQuery(conn, origin) {
+    var last = conn.legs[conn.legs.length - 1];
+    var q = { from: origin.station, to: last.alight.stationName, date: conn.date, time: origin.time };
+    if (origin.stationId) q.fromId = origin.stationId;
+    if (last.alight.stationId) q.toId = last.alight.stationId;
+    return q;
+  }
+  // 2–3 najlepsze: najwcześniejszy przyjazd na cel.
+  function pickAlternatives(itineraries, n) {
+    return (itineraries || []).filter(function (it) { return it && it.legs && it.legs.length; })
+      .slice().sort(function (a, b) { return (hm(a.arrivalTime) + (a.arrivalNextDay ? 1440 : 0)) - (hm(b.arrivalTime) + (b.arrivalNextDay ? 1440 : 0)); })
+      .slice(0, n || 3);
+  }
+  var ALT_FMT = { pl: "{tr} o {dep} (przyj. {arr})", en: "{tr} at {dep} (arr. {arr})", de: "{tr} um {dep} (an {arr})", cs: "{tr} v {dep} (příj. {arr})", es: "{tr} a las {dep} (llega {arr})", uk: "{tr} о {dep} (приб. {arr})" };
+  // „KŚ 40602 o 17:42 (przyj. 18:30)” — do treści powiadomienia.
+  function altText(it, lang) {
+    if (!it || !it.legs || !it.legs.length) return "";
+    var tr = it.legs.map(function (l) { return trainLabel(l.train); }).join(" + ");
+    return fill(ALT_FMT[lang] || ALT_FMT.pl, { tr: tr, dep: it.departureTime || it.legs[0].board.time, arr: it.arrivalTime || it.legs[it.legs.length - 1].alight.time });
+  }
+
   var api = {
     DEFAULTS: DEFAULTS, RANK: RANK, MAX_ACTIVE: MAX_ACTIVE,
+    altOrigin: altOrigin, altQuery: altQuery, pickAlternatives: pickAlternatives, altText: altText,
     norm: norm, hm: hm, fmt: fmt, connectionId: connectionId, fromItinerary: fromItinerary, fromPlannedTrips: fromPlannedTrips,
     timeWindow: timeWindow, isActive: isActive, readLeg: readLeg, evalTransfer: evalTransfer, evaluate: evaluate,
     rising: rising, shouldNotify: shouldNotify, message: message, tx: tx, trainLabel: trainLabel

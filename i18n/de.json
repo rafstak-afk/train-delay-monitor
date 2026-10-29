@@ -693,7 +693,9 @@
       "leg": "Abschnitt",
       "km": "km",
       "otherTrip": "andere"
-    }
+    },
+    "guarded": "🛡️ überwacht",
+    "guardedTitle": "Der Umstiegswächter überwacht diese Fahrt — tippe für den Status"
   },
   "profil": {
     "pageTitle": "Mein Profil",

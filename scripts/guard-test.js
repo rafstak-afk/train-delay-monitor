@@ -156,6 +156,35 @@ test("z wyniku planera: to samo połączenie → to samo id", () => {
   eq(G.fromItinerary(it, { date: "2026-10-29" }).id, G.fromItinerary(it, { date: "2026-10-29" }).id);
 });
 
+test("alternatywy: zerwana przesiadka → szukamy od stacji przesiadki od przewidywanego przyjazdu", () => {
+  const r = ev(trainA({ started: true, cur: 9, forecast: 9 }), trainB());
+  const o = G.altOrigin(conn, r);
+  eq(o.station, "Chorzów Batory"); eq(o.time, "14:19"); eq(o.keep, 1);
+  const q = G.altQuery(conn, o);
+  eq(q.from, "Chorzów Batory"); eq(q.to, "Tarnowskie Góry"); eq(q.date, "2026-10-29"); eq(q.time, "14:19");
+});
+test("alternatywy: odwołany pierwszy pociąg → szukamy od stacji startowej od jego odjazdu", () => {
+  const o = G.altOrigin(conn, ev(trainA({ cancelled: true }), trainB()));
+  eq(o.station, "Katowice"); eq(o.time, "14:00"); eq(o.keep, 0);
+});
+test("alternatywy: odwołany drugi pociąg → od stacji przesiadki", () => {
+  const o = G.altOrigin(conn, ev(trainA(), trainB({ cancelled: true })));
+  eq(o.station, "Chorzów Batory"); eq(o.keep, 1);
+});
+test("alternatywy: najwcześniejszy przyjazd pierwszy; tekst w powiadomieniu", () => {
+  const its = [
+    { departureTime: "14:30", arrivalTime: "15:20", legs: [{ train: { category: "KŚ", number: "40602" }, board: { time: "14:30" }, alight: { time: "15:20" } }] },
+    { departureTime: "14:25", arrivalTime: "15:05", legs: [{ train: { category: "KŚ", number: "40610" }, board: { time: "14:25" }, alight: { time: "14:45" } }, { train: { category: "IC", number: "3815" }, board: { time: "14:50" }, alight: { time: "15:05" } }] },
+    { departureTime: "23:50", arrivalTime: "00:30", arrivalNextDay: true, legs: [{ train: { category: "R", number: "1" }, board: { time: "23:50" }, alight: { time: "00:30" } }] }
+  ];
+  const best = G.pickAlternatives(its, 3);
+  eq(best[0].arrivalTime, "15:05"); eq(best[2].arrivalTime, "00:30");
+  eq(G.altText(best[0], "pl"), "KŚ 40610 + IC 3815 o 14:25 (przyj. 15:05)");
+  eq(G.altText(best[0], "en"), "KŚ 40610 + IC 3815 at 14:25 (arr. 15:05)");
+  const m = G.message(conn, ev(trainA({ started: true, cur: 9, forecast: 9 }), trainB()), "worse", "pl", G.altText(best[0], "pl"));
+  if (!/Najbliższa alternatywa: KŚ 40610 \+ IC 3815 o 14:25 \(przyj\. 15:05\)\./.test(m.body)) throw new Error(m.body);
+});
+
 let fail = 0;
 for (const t of T) { try { t.fn(); console.log("  ✔ " + t.name); } catch (e) { fail++; console.log("  ✘ " + t.name + "\n      " + e.message); } }
 console.log("\n" + (T.length - fail) + "/" + T.length + " testów OK");
