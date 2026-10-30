@@ -1130,6 +1130,8 @@
     "cGuard": "Vigilar los trenes de este viaje",
     "cGuarded": "Vigilado",
     "cNote": "Trenes del planificador PLK, autobuses y tranvías del horario GZM con retrasos en directo. El vigilante cuida por ahora de los trenes; la parte GZM, en esta pestaña.",
-    "cWalk": "{n} min a pie hasta: {s}"
+    "cWalk": "{n} min a pie hasta: {s}",
+    "cNext": "Después hasta: {d}, tras la llegada del tren",
+    "cBest": "lo más rápido al destino: {l} a las {s}, llegada {t}"
   }
 }

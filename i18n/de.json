@@ -1130,6 +1130,8 @@
     "cGuard": "Züge dieser Reise überwachen",
     "cGuarded": "Überwacht",
     "cNote": "Züge aus dem PLK-Planer, Busse und Straßenbahnen aus dem GZM-Fahrplan mit Live-Verspätungen. Der Wächter überwacht vorerst die Züge; den GZM-Teil behältst du in diesem Tab im Blick.",
-    "cWalk": "{n} Min. zu Fuß zu: {s}"
+    "cWalk": "{n} Min. zu Fuß zu: {s}",
+    "cNext": "Weiter nach: {d} — nach Ankunft des Zuges",
+    "cBest": "am schnellsten ans Ziel: {l} um {s}, Ankunft {t}"
   }
 }

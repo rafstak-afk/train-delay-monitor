@@ -1130,6 +1130,8 @@
     "cGuard": "Pilnuj pociągów tej podróży",
     "cGuarded": "Pilnowane",
     "cNote": "Pociągi z planera PLK, autobusy i tramwaje z rozkładu GZM z opóźnieniami na żywo. Strażnik pilnuje na razie pociągów; części GZM pilnuj w tej zakładce.",
-    "cWalk": "{n} min pieszo do: {s}"
+    "cWalk": "{n} min pieszo do: {s}",
+    "cNext": "Dalej do: {d} — po przyjeździe pociągu",
+    "cBest": "najszybciej do celu: {l} o {s}, na miejscu {t}"
   }
 }
