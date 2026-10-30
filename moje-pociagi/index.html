@@ -971,7 +971,8 @@ function wmActive() {
   const p = Object.fromEntries(new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Warsaw', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', hour12: false }).formatToParts(new Date()).map(x => [x.type, x.value]));
   const d = p.year + '-' + p.month + '-' + p.day, h = +p.hour % 24;
   if (st.running) return true;
-  return d >= '2026-11-02' && d <= '2026-11-06' && h >= 4 && h < 12 && !(st.results || []).length;
+  // na prośbę autora już od 30.10 14:00, potem codziennie 4:00–24:00 do 6.11
+  return ((d === '2026-10-30' && h >= 14) || (d > '2026-10-30' && d <= '2026-11-06' && h >= 4)) && !(st.results || []).length;
 }
 function wmFmt(ms) { const s = Math.max(0, Math.round(ms / 1000)); return Math.floor(s / 60) + ' min ' + String(s % 60).padStart(2, '0') + ' s'; }
 let wmTimer = null;
