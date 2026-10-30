@@ -146,6 +146,20 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
 .ptabs.stuck .ptab{flex-direction:row;justify-content:center;padding:9px 4px}
 .ptabs.stuck .ptab-n{top:1px}
 .ptabs.stuck .ptab-lbl>[data-i18n],.ptabs.stuck .ptab-lbl[data-i18n]{display:none}
+/* TEST (profil autora, .lbl-active): po przyklejeniu aktywna zakładka z napisem,
+   pozostałe same ikony; dymek z nazwą — najechanie myszą / przytrzymanie palcem. */
+.ptabs.lbl-active .ptab{-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}
+.ptabs.lbl-active.stuck{gap:4px;padding-right:90px}
+.ptabs.lbl-active.stuck .ptab{flex:0 0 38px;padding:9px 2px;transition:flex-basis .2s ease}
+.ptabs.lbl-active.stuck .ptab.active{flex:1 1 auto;min-width:0;gap:5px;padding:9px 8px}
+.ptabs.lbl-active.stuck .ptab.active .ptab-lbl{min-width:0;display:flex;align-items:center}
+.ptabs.lbl-active.stuck .ptab.active .ptab-lbl>[data-i18n],.ptabs.lbl-active.stuck .ptab.active .ptab-lbl[data-i18n]{display:inline;animation:ptabLbl .25s ease-out}
+.ptabs.lbl-active.stuck .ptab.active .ptab-n{display:none}
+@keyframes ptabLbl{from{opacity:0;transform:translateX(-4px)}to{opacity:1;transform:none}}
+.ptabs.lbl-active .ptab::after{content:attr(data-tip);position:absolute;top:calc(100% + 7px);left:50%;transform:translateX(-50%);background:#0b1220;color:#fff;border:1px solid var(--line);border-radius:8px;padding:5px 9px;font-size:12px;font-weight:700;white-space:nowrap;pointer-events:none;opacity:0;visibility:hidden;transition:opacity .12s;z-index:30;box-shadow:0 6px 18px rgba(0,0,0,.45)}
+@media (hover:hover){.ptabs.lbl-active.stuck .ptab:not(.active):hover::after{opacity:1;visibility:visible}}
+.ptabs.lbl-active .ptab.tip-show::after{opacity:1;visibility:visible}
+@media (prefers-reduced-motion:reduce){.ptabs.lbl-active.stuck .ptab.active .ptab-lbl>[data-i18n]{animation:none}}
 .pview[hidden]{display:none}
 .my-sec{font-size:13px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin:16px 2px 4px}
 .my-sec[hidden]{display:none}
@@ -397,8 +411,33 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
   // Przyklejony pasek: kompaktowy (same ikony), z miejscem na przyciski języka i profilu w rogu.
   function updateStuck(){var n=$("planTabs");n.classList.toggle("stuck",n.getBoundingClientRect().top<=1&&window.scrollY>0)}
   window.addEventListener("scroll",updateStuck,{passive:true});
+  // Dymki z nazwami zakładek (tylko profil autora — TEST).
+  var longPressed=false;
+  if(splitTabs){
+    var tabsEl=$('planTabs');
+    tabsEl.classList.add('lbl-active');
+    var setTips=function(){tabsEl.querySelectorAll('.ptab').forEach(function(b){var l=b.querySelector('[data-i18n]');if(l)b.setAttribute('data-tip',l.textContent.trim())})};
+    setTips();
+    (window.I18n?I18n.ready:Promise.resolve()).then(setTips);
+    window.addEventListener('langchange',function(){setTimeout(setTips,0)});
+    // Przytrzymanie palcem (~0,45 s) pokazuje nazwę na 1,5 s, bez przełączania zakładki.
+    var lpTimer=null,lpBtn=null;
+    tabsEl.addEventListener('touchstart',function(e){
+      var b=e.target.closest('.ptab');if(!b)return;
+      longPressed=false;lpBtn=b;clearTimeout(lpTimer);
+      lpTimer=setTimeout(function(){
+        longPressed=true;
+        tabsEl.querySelectorAll('.tip-show').forEach(function(x){x.classList.remove('tip-show')});
+        b.classList.add('tip-show');
+        setTimeout(function(){b.classList.remove('tip-show')},1500);
+      },450);
+    },{passive:true});
+    ['touchend','touchmove','touchcancel'].forEach(function(ev){tabsEl.addEventListener(ev,function(){clearTimeout(lpTimer)},{passive:true})});
+    tabsEl.addEventListener('contextmenu',function(e){if(e.target.closest('.ptab'))e.preventDefault()});
+  }
   $('planTabs').addEventListener('click',function(e){
     var b=e.target.closest('.ptab');if(!b)return;
+    if(longPressed){longPressed=false;return}
     showTab(b.dataset.tab);
     window.scrollTo({top:0,behavior:'smooth'});
   });
