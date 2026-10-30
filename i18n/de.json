@@ -1113,6 +1113,23 @@
     "bSlack": "{n} Min. Puffer",
     "bLatest": "spätestens los: {t} — {l} ab {s}",
     "bArrive": "Ankunft",
-    "bNote": "Züge aus dem PLK-Planer. Fußweg von der Haltestelle zum Bahnsteig nach Karte, vorsichtig gerechnet (entferntester Bahnsteig)."
+    "bNote": "Züge aus dem PLK-Planer. Fußweg von der Haltestelle zum Bahnsteig nach Karte, vorsichtig gerechnet (entferntester Bahnsteig).",
+    "modeC": "Ganze Reise",
+    "cFrom": "Von (GZM-Haltestelle oder Bahnhof)",
+    "cFromPh": "z. B. AWF",
+    "cTo": "Nach (GZM-Haltestelle oder Bahnhof)",
+    "cToPh": "z. B. Tarnowskie Góry Plac Zembali",
+    "cNeed": "Start und Ziel eingeben.",
+    "cSearching": "Plane die Reise: Zubringer, Zug, Weiterfahrt…",
+    "cNoTo": "Haltestelle „{d}“ unbekannt oder von keinem Bahnhof erreichbar.",
+    "cSame": "Start und Ziel sind dieselbe Haltestelle.",
+    "cNoCombo": "Keine Bahnhöfe gefunden, über die sich das verbinden lässt.",
+    "cNone": "Keine Reise innerhalb von 2 Stunden nach Abfahrt möglich.",
+    "cLeave": "los: {t} ab {s}",
+    "cTrainAt": "Zug {t} ab {s}",
+    "cGuard": "Züge dieser Reise überwachen",
+    "cGuarded": "Überwacht",
+    "cNote": "Züge aus dem PLK-Planer, Busse und Straßenbahnen aus dem GZM-Fahrplan mit Live-Verspätungen. Der Wächter überwacht vorerst die Züge; den GZM-Teil behältst du in diesem Tab im Blick.",
+    "cWalk": "{n} Min. zu Fuß zu: {s}"
   }
 }

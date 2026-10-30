@@ -1113,6 +1113,23 @@
     "bSlack": "rezerva {n} min",
     "bLatest": "vyrazte nejpozději: {t} — {l} z {s}",
     "bArrive": "příjezd",
-    "bNote": "Vlaky z plánovače PLK. Chůze ze zastávky na nástupiště podle mapy, opatrně (nejvzdálenější nástupiště)."
+    "bNote": "Vlaky z plánovače PLK. Chůze ze zastávky na nástupiště podle mapy, opatrně (nejvzdálenější nástupiště).",
+    "modeC": "Celá cesta",
+    "cFrom": "Odkud (zastávka GZM nebo stanice)",
+    "cFromPh": "např. AWF",
+    "cTo": "Kam (zastávka GZM nebo stanice)",
+    "cToPh": "např. Tarnowskie Góry Plac Zembali",
+    "cNeed": "Zadejte odkud a kam.",
+    "cSearching": "Skládám cestu: dojezd, vlak, dojezd do cíle…",
+    "cNoTo": "Zastávku „{d}“ neznám, nebo k ní nic nejede od žádné stanice.",
+    "cSame": "Start a cíl jsou stejná zastávka.",
+    "cNoCombo": "Nenašel jsem stanice, přes které to lze spojit.",
+    "cNone": "Do 2 hodin od odchodu se cestu nepodařilo sestavit.",
+    "cLeave": "vyrazte: {t} z {s}",
+    "cTrainAt": "vlak {t} z {s}",
+    "cGuard": "Hlídat vlaky této cesty",
+    "cGuarded": "Hlídané",
+    "cNote": "Vlaky z plánovače PLK, autobusy a tramvaje z jízdního řádu GZM s živými zpožděními. Strážce zatím hlídá vlaky; část GZM sledujte v této záložce.",
+    "cWalk": "{n} min pěšky na: {s}"
   }
 }

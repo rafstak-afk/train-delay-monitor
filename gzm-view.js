@@ -229,7 +229,7 @@
     function schedule() {
       clearTimeout(tRt); clearInterval(tTick); clearTimeout(tTrain);
       if (!shown || document.visibilityState !== "visible") return;
-      tTick = setInterval(function () { if (st.dir === "B") renderB(); else render(); }, 5000);
+      tTick = setInterval(function () { if (st.dir === "B") renderB(); else if (st.dir === "C") renderC(); else render(); }, 5000);
       (function rtLoop() { tRt = setTimeout(function () { getRt().then(function () { render(); rtLoop(); }); }, 25000); })();
       if (cfg.train) (function trLoop() { tTrain = setTimeout(function () { getTrain().then(function () { render(); trLoop(); }); }, 60000); })();
     }
@@ -248,7 +248,8 @@
     }
     function initModes() {
       var tg = document.createElement("div"); tg.className = "gz-chips"; tg.id = "gzModes";
-      tg.innerHTML = '<button type="button" class="gz-chip" data-mode="A">🚆 → 🚌 ' + esc(T("gzm.modeA", null, "Wysiadam z pociągu")) + '</button><button type="button" class="gz-chip" data-mode="B">🚌 → 🚆 ' + esc(T("gzm.modeB", null, "Jadę na pociąg")) + "</button>";
+      tg.innerHTML = '<button type="button" class="gz-chip" data-mode="A">🚆 → 🚌 ' + esc(T("gzm.modeA", null, "Wysiadam z pociągu")) + '</button><button type="button" class="gz-chip" data-mode="B">🚌 → 🚆 ' + esc(T("gzm.modeB", null, "Jadę na pociąg")) + "</button>" +
+        '<button type="button" class="gz-chip" data-mode="C">🧭 ' + esc(T("gzm.modeC", null, "Cała podróż")) + "</button>";
       var a = document.createElement("div"); a.id = "gzA";
       var lic = root.querySelector(".gz-lic");
       while (root.firstChild && root.firstChild !== lic) a.appendChild(root.firstChild);
@@ -260,7 +261,19 @@
         '<div><label for="gzFromT">' + esc(T("gzm.bTime", null, "Wyjście")) + '</label><input id="gzFromT" type="time" value="' + C.fmt(n.min) + '"></div>' +
         '<div><button type="button" class="gz-btn" id="gzGo" style="padding:10px 14px">🔎 ' + esc(T("gzm.bGo", null, "Szukaj")) + "</button></div></div>" +
         '<div id="gzBRes"></div>';
-      root.insertBefore(tg, lic); root.insertBefore(a, lic); root.insertBefore(b, lic);
+      var c = document.createElement("div"); c.id = "gzC"; c.hidden = true;
+      c.innerHTML = '<div class="gz-bar">' +
+        '<div class="gz-st"><label for="gzCFrom">' + esc(T("gzm.cFrom", null, "Skąd (przystanek GZM albo stacja)")) + '</label><input id="gzCFrom" list="gzCList" autocomplete="off" placeholder="' + esc(T("gzm.cFromPh", null, "np. AWF")) + '" style="width:100%"></div>' +
+        '<div class="gz-st"><label for="gzCTo">' + esc(T("gzm.cTo", null, "Dokąd (przystanek GZM albo stacja)")) + '</label><input id="gzCTo" list="gzCList" autocomplete="off" placeholder="' + esc(T("gzm.cToPh", null, "np. Tarnowskie Góry Plac Zembali")) + '" style="width:100%"></div>' +
+        '<datalist id="gzCList"></datalist>' +
+        '<div><label for="gzCTime">' + esc(T("gzm.bTime", null, "Wyjście")) + '</label><input id="gzCTime" type="time" value="' + C.fmt(n.min) + '"></div>' +
+        '<div><button type="button" class="gz-btn" id="gzCGo" style="padding:10px 14px">🔎 ' + esc(T("gzm.bGo", null, "Szukaj")) + "</button></div></div>" +
+        '<div id="gzCRes"></div>';
+      root.insertBefore(tg, lic); root.insertBefore(a, lic); root.insertBefore(b, lic); root.insertBefore(c, lic);
+      c.querySelector("#gzCFrom").value = st.cFrom || ""; c.querySelector("#gzCTo").value = st.cTo || "";
+      c.querySelector("#gzCGo").addEventListener("click", searchC);
+      ["#gzCFrom", "#gzCTo"].forEach(function (q) { c.querySelector(q).addEventListener("keydown", function (e) { if (e.key === "Enter") searchC(); }); });
+      c.addEventListener("click", function (e) { var g = e.target.closest("[data-guard]"); if (g) guardTrip(g); });
       var fi = b.querySelector("#gzFrom"), ti = b.querySelector("#gzTo");
       fi.value = st.bFrom || ""; ti.value = st.bTo || "";
       b.querySelector("#gzToList").innerHTML = (index.stations || []).map(function (x) { return '<option value="' + esc(x.n) + '">'; }).join("");
@@ -272,7 +285,13 @@
     function setMode(m) {
       st.dir = m; save(LS, st);
       root.querySelectorAll("#gzModes [data-mode]").forEach(function (x) { x.classList.toggle("on", x.dataset.mode === m); });
-      var A = root.querySelector("#gzA"), B = root.querySelector("#gzB"); if (A) A.hidden = m !== "A"; if (B) B.hidden = m !== "B";
+      var A = root.querySelector("#gzA"), B = root.querySelector("#gzB"), Cc = root.querySelector("#gzC"); if (A) A.hidden = m !== "A"; if (B) B.hidden = m !== "B"; if (Cc) Cc.hidden = m !== "C";
+      if (m === "C") Promise.all([getFeeders(), getEgress()]).then(function (r) {
+        var dl = root.querySelector("#gzCList"); if (!dl || dl.childElementCount) return;
+        var all = new Set(Object.keys(r[0]).concat(Object.keys(r[1])));
+        (index.stations || []).forEach(function (x) { all.add(x.n); });
+        dl.innerHTML = Array.from(all).sort(function (x, y) { return x.localeCompare(y, "pl"); }).map(function (k) { return '<option value="' + esc(k) + '">'; }).join("");
+      }).catch(function () {});
       if (m === "B") getFeeders().then(function (fz) {
         var dl = root.querySelector("#gzFromList");
         if (dl && !dl.childElementCount) dl.innerHTML = Object.keys(fz).sort(function (x, y) { return x.localeCompare(y, "pl"); }).map(function (k) { return '<option value="' + esc(k) + '">'; }).join("");
@@ -348,6 +367,130 @@
           m.rides.map(rideRow).join("") + "</div>" +
           '<div class="gz-right"><div class="gz-t">' + esc(it.arrivalTime) + '</div><div class="gz-in">' + esc(T("gzm.bArrive", null, "na miejscu")) + "</div></div></div>";
       }).join("") + '<div class="gz-sub" style="margin:6px 2px">' + esc(T("gzm.bNote", null, "Pociągi z planera PLK. Dojście z przystanku na peron wg mapy, liczone ostrożnie (najdalszy peron).")) + "</div>";
+    }
+
+    // ===== Tryb C: cała podróż (przystanek/stacja → przystanek/stacja) =====
+    var egressIx = null, depFiles = {}, cState = null;
+    function getEgress() {
+      if (egressIx) return Promise.resolve(egressIx);
+      return fetch(dataUrl("egress.json")).then(function (r) { if (!r.ok) throw new Error("egress"); return r.json(); }).then(function (j) { egressIx = j.stops || {}; return egressIx; });
+    }
+    function getDep(id) {
+      if (depFiles[id]) return Promise.resolve(depFiles[id]);
+      return fetch(dataUrl("stations/" + id + ".json")).then(function (r) { if (!r.ok) throw new Error("dep"); return r.json(); }).then(function (j) { depFiles[id] = j; return j; });
+    }
+    function stationByName(name) { var n = normName(name); return (index.stations || []).find(function (x) { return normName(x.n) === n; }) || null; }
+    // przystanek (dokładna nazwa albo fragment) → lista nazw ze słownika
+    function stopNames(dict, txt) {
+      var keys = Object.keys(dict), n = normName(txt);
+      var ex = keys.filter(function (k) { return normName(k) === n; });
+      return ex.length ? ex : keys.filter(function (k) { return normName(k).indexOf(n) >= 0; });
+    }
+    function topStations(dict, names, k) {
+      var m = new Map();
+      names.forEach(function (nm) { (dict[nm] || []).forEach(function (e) { if (!m.has(e[0]) || m.get(e[0]) > e[1]) m.set(e[0], e[1]); }); });
+      return Array.from(m.entries()).sort(function (a, b) { return a[1] - b[1]; }).slice(0, k).map(function (e) { return { st: (index.stations || []).find(function (x) { return x.id === e[0]; }), ride: e[1] }; }).filter(function (x) { return x.st; });
+    }
+    function searchC() {
+      var res = root.querySelector("#gzCRes"), fromTxt = root.querySelector("#gzCFrom").value.trim(), toTxt = root.querySelector("#gzCTo").value.trim();
+      var tmin = C.hm(root.querySelector("#gzCTime").value) || Math.floor(warsawNow().min);
+      st.cFrom = fromTxt; st.cTo = toTxt; save(LS, st);
+      if (!fromTxt || !toTxt) { res.innerHTML = '<div class="gz-warn">' + esc(T("gzm.cNeed", null, "Wpisz skąd i dokąd.")) + "</div>"; return; }
+      res.innerHTML = '<div class="gz-empty">' + esc(T("gzm.cSearching", null, "Układam podróż: dojazd, pociąg, dojazd do celu…")) + "</div>";
+      var date = warsawNow().date;
+      Promise.all([getFeeders(), getEgress(), getRt()]).then(function (r) {
+        var fz = r[0], ez = r[1];
+        // Skąd: stacja (dokładna nazwa) albo przystanek GZM
+        var fromSt = stationByName(fromTxt), fromNames = fromSt ? null : stopNames(fz, fromTxt);
+        var toSt = stationByName(toTxt), toNames = toSt ? null : stopNames(ez, toTxt);
+        if (!fromSt && !fromNames.length) { res.innerHTML = '<div class="gz-warn">' + esc(T("gzm.bNoFrom", { d: fromTxt }, "Nie znam przystanku „{d}” albo z niego nic nie dojeżdża pod stację kolejową.")) + "</div>"; return; }
+        if (!toSt && !toNames.length) { res.innerHTML = '<div class="gz-warn">' + esc(T("gzm.cNoTo", { d: toTxt }, "Nie znam przystanku „{d}” albo spod żadnej stacji nic do niego nie dojeżdża.")) + "</div>"; return; }
+        if (!fromSt && !toSt && fromNames.some(function (x) { return toNames.indexOf(x) >= 0; })) { res.innerHTML = '<div class="gz-warn">' + esc(T("gzm.cSame", null, "Start i cel to ten sam przystanek.")) + "</div>"; return; }
+        // stacje dostępu i wyjścia: najwyżej 2 + 2, kombinacji najwyżej 3 (= najwyżej 3 zapytania do PLK)
+        var acc = fromSt ? [{ st: fromSt, ride: 0 }] : topStations(fz, fromNames, 2);
+        var egr = toSt ? [{ st: toSt, ride: 0 }] : topStations(ez, toNames, 2);
+        // cel przy samej stacji (jej własny przystanek) → wystarczy dojść pieszo
+        if (!toSt) (index.stations || []).forEach(function (x) {
+          var own = (x.s || []).filter(function (p) { return toNames.indexOf(p[1]) >= 0; });
+          if (own.length && !egr.some(function (e) { return e.st.id === x.id; })) egr.unshift({ st: x, ride: 0, walkOnly: Math.min.apply(null, own.map(function (p) { return p[3]; })), walkName: own[0][1] });
+          else if (own.length) egr.forEach(function (e) { if (e.st.id === x.id) { e.ride = 0; e.walkOnly = Math.min.apply(null, own.map(function (p) { return p[3]; })); e.walkName = own[0][1]; } });
+        });
+        egr.sort(function (a, b) { return a.ride - b.ride; }); egr = egr.slice(0, 2);
+        var combos = [];
+        acc.forEach(function (a) { egr.forEach(function (e) { if (a.st.id !== e.st.id) combos.push({ a: a, e: e, cost: a.ride + e.ride }); }); });
+        combos.sort(function (x, y) { return x.cost - y.cost; }); combos = combos.slice(0, 3);
+        if (!combos.length) { res.innerHTML = '<div class="gz-warn">' + esc(T("gzm.cNoCombo", null, "Nie znalazłem stacji kolejowych, przez które da się to połączyć.")) + "</div>"; return; }
+        return Promise.all(combos.map(function (cb) {
+          var accP = fromSt ? Promise.resolve(null) : getArr(cb.a.st.id);
+          var egrP = (toSt || cb.e.walkOnly != null) ? Promise.resolve(null) : getDep(cb.e.st.id);
+          return Promise.all([accP, egrP]).then(function (files) {
+            var rides = files[0] ? C.ridesToStation({ arrFile: files[0], origin: fromNames, date: date, fromMin: tmin, maxMin: 120, rt: rt }) : null;
+            if (files[0] && !rides.length) return null;
+            var q = new URLSearchParams({ from: cb.a.st.n, to: cb.e.st.n, date: date, time: C.fmt(rides ? rides[0].platform : tmin), transferMinutes: "3" });
+            return fetch("/api/planner?" + q, { headers: { Accept: "application/json" } }).then(function (x) { return x.json(); }).then(function (pl) {
+              return { cb: cb, accFile: files[0], egrFile: files[1], its: (pl && pl.itineraries) || [], query: pl && pl.query };
+            });
+          }).catch(function () { return null; });
+        })).then(function (parts) {
+          cState = { parts: parts.filter(Boolean), fromNames: fromNames, toNames: toNames, fromSt: fromSt, toSt: toSt, tmin: tmin, date: date };
+          renderC();
+        });
+      }).catch(function () { res.innerHTML = '<div class="gz-warn">' + esc(T("gzm.noIndex", null, "Dane GZM są chwilowo niedostępne.")) + "</div>"; });
+    }
+    function renderC() {
+      var res = root.querySelector("#gzCRes"); if (!res || !cState) return;
+      var S = cState, out = [], now = nowOn(S.date);
+      S.parts.forEach(function (p) {
+        var rides = p.accFile ? C.ridesToStation({ arrFile: p.accFile, origin: S.fromNames, date: S.date, fromMin: S.tmin, maxMin: 120, rt: rt }) : null;
+        p.its.slice(0, 6).forEach(function (it) {
+          var dep = C.hm(it.departureTime), arr = C.hm(it.arrivalTime);
+          if (dep < S.tmin - 60) dep += 1440;
+          if (arr < dep % 1440 || it.arrivalNextDay) arr += 1440;
+          if (!rides && dep < S.tmin) return;
+          var acc = null;
+          if (rides) { var m = C.matchTrains(rides, [{ dep: dep }], 3)[0]; if (!m) return; acc = m; }
+          var egr = null, final = arr;
+          if (p.cb.e.walkOnly != null) { egr = { walkOnly: true, walk: p.cb.e.walkOnly, name: p.cb.e.walkName }; final = arr + p.cb.e.walkOnly; }
+          else if (p.egrFile) {
+            var r = C.compute({ file: p.egrFile, date: S.date, arrMin: arr, nowMin: Math.min(now, arr), windowMin: 120, dest: S.toNames, rt: rt });
+            egr = r.catchable[0]; if (!egr) return;
+            final = egr.arrDest;
+          }
+          out.push({ p: p, it: it, dep: dep, arr: arr, acc: acc, egr: egr, final: final, start: acc && acc.latest ? acc.latest.dep : dep });
+        });
+      });
+      out.sort(function (a, b) { return a.final - b.final || b.start - a.start; });
+      var seen = new Set();
+      out = out.filter(function (x) { var k = x.final + "|" + x.it.departureTime + "|" + x.p.cb.a.st.id; if (seen.has(k)) return false; seen.add(k); return true; }).slice(0, 5);
+      if (!out.length) { res.innerHTML = '<div class="gz-empty">' + esc(T("gzm.cNone", null, "Nie udało się ułożyć podróży w ciągu 2 godzin od wyjścia.")) + "</div>"; return; }
+      var guardOk = !!(window.GuardStore && window.GuardCore && GuardStore.enabled && GuardStore.enabled());
+      res.innerHTML = '<div class="gz-live ' + (rtOk ? "on" : "off") + '" style="margin:4px 2px">' + (rtOk ? "● " + esc(T("gzm.liveOn", null, "na żywo")) : "○ " + esc(T("gzm.liveOff", null, "dane na żywo niedostępne, pokazuję rozkład"))) + "</div>" +
+        out.map(function (x, i) {
+          var it = x.it, L = x.acc && x.acc.latest, E = x.egr;
+          var legs = (it.legs || []).map(function (l) { return esc(((l.train && l.train.category) || "") + " " + ((l.train && l.train.number) || "")); }).join(" + ");
+          var steps = [];
+          if (L) steps.push((L.status === "ok" ? "🟢" : "🟡") + " " + TYPE_ICON[L.type] + " <b>" + esc(L.line) + "</b> " + C.fmt(L.dep) + " " + esc(L.from) + " → " + esc(L.stop.n) + " " + C.fmt(L.arrStop) + " · 🚶 " + L.walk + " min · " + esc(T("gzm.bSlack", { n: L.slack }, "zapas {n} min")));
+          steps.push("🚆 <b>" + esc(it.departureTime) + "</b> " + esc((it.legs && it.legs[0] && it.legs[0].board.stationName) || x.p.cb.a.st.n) + " → <b>" + esc(it.arrivalTime) + "</b> " + esc((it.legs && it.legs[it.legs.length - 1].alight.stationName) || x.p.cb.e.st.n) + " · " + legs);
+          if (E && E.walkOnly) steps.push("🚶 " + esc(T("gzm.cWalk", { n: E.walk, s: E.name }, "{n} min pieszo do: {s}")));
+          else if (E) steps.push((E.status === "ok" ? "🟢" : "🟡") + " 🚶 " + E.walk.min + " min · " + TYPE_ICON[E.dep.type] + " <b>" + esc(E.dep.line) + "</b> " + C.fmt(E.real) + " " + esc(E.dep.stop.n) + " → " + esc(E.destName) + " <b>" + C.fmt(E.arrDest) + "</b> · " + esc(T("gzm.bSlack", { n: E.slack }, "zapas {n} min")));
+          var worst = [L && L.status, E && !E.walkOnly && E.status].indexOf("tight") >= 0 ? "tight" : "ok";
+          return '<div class="gz-dep ' + worst + '" style="grid-template-columns:minmax(0,1fr) auto">' +
+            '<div class="gz-main">' + (L ? '<div class="gz-dir" style="white-space:normal">⏰ ' + esc(T("gzm.cLeave", { t: C.fmt(L.dep), s: L.from }, "wyjdź: {t} z {s}")) + "</div>" : '<div class="gz-dir" style="white-space:normal">🚆 ' + esc(T("gzm.cTrainAt", { t: it.departureTime, s: x.p.cb.a.st.n }, "pociąg {t} z {s}")) + "</div>") +
+            steps.map(function (h) { return '<div class="gz-stop" style="white-space:normal;margin-top:4px">' + h + "</div>"; }).join("") +
+            (guardOk ? '<div style="margin-top:8px"><button type="button" class="gz-btn sec" data-guard="' + i + '">🛡️ ' + esc(T("gzm.cGuard", null, "Pilnuj pociągów tej podróży")) + "</button></div>" : "") +
+            "</div>" +
+            '<div class="gz-right"><div class="gz-t">' + C.fmt(x.final) + '</div><div class="gz-in">' + esc(T("gzm.bArrive", null, "na miejscu")) + "</div></div></div>";
+        }).join("") +
+        '<div class="gz-sub" style="margin:6px 2px">' + esc(T("gzm.cNote", null, "Pociągi z planera PLK, autobusy i tramwaje z rozkładu GZM z opóźnieniami na żywo. Strażnik pilnuje na razie pociągów; części GZM pilnuj w tej zakładce.")) + "</div>";
+      cState.shown = out;
+    }
+    function guardTrip(btn) {
+      var x = cState && cState.shown && cState.shown[+btn.dataset.guard];
+      if (!x || !window.GuardStore || !window.GuardCore) return;
+      var q = x.p.query || { from: x.p.cb.a.st.n, to: x.p.cb.e.st.n, date: cState.date };
+      if (!q.date) q.date = cState.date;
+      btn.disabled = true;
+      GuardStore.add(GuardCore.fromItinerary(x.it, q)).then(function () { btn.textContent = "🛡️ " + T("gzm.cGuarded", null, "Pilnowane"); });
     }
 
     var ready = (window.I18n ? I18n.ready : Promise.resolve()).then(getIndex).then(function () { shell(); initModes(); load1(); }).catch(function () {

@@ -1113,6 +1113,23 @@
     "bSlack": "margen {n} min",
     "bLatest": "sal como muy tarde: {t} — {l} desde {s}",
     "bArrive": "llegada",
-    "bNote": "Trenes del planificador PLK. Camino de la parada al andén según el mapa, calculado con prudencia (andén más lejano)."
+    "bNote": "Trenes del planificador PLK. Camino de la parada al andén según el mapa, calculado con prudencia (andén más lejano).",
+    "modeC": "Viaje completo",
+    "cFrom": "Desde (parada GZM o estación)",
+    "cFromPh": "p. ej. AWF",
+    "cTo": "Hasta (parada GZM o estación)",
+    "cToPh": "p. ej. Tarnowskie Góry Plac Zembali",
+    "cNeed": "Indica origen y destino.",
+    "cSearching": "Preparando el viaje: acceso, tren, llegada al destino…",
+    "cNoTo": "No conozco la parada «{d}» o no se llega a ella desde ninguna estación.",
+    "cSame": "Origen y destino son la misma parada.",
+    "cNoCombo": "No encontré estaciones para conectar este viaje.",
+    "cNone": "No se pudo preparar un viaje en las 2 horas siguientes a la salida.",
+    "cLeave": "sal: {t} desde {s}",
+    "cTrainAt": "tren {t} desde {s}",
+    "cGuard": "Vigilar los trenes de este viaje",
+    "cGuarded": "Vigilado",
+    "cNote": "Trenes del planificador PLK, autobuses y tranvías del horario GZM con retrasos en directo. El vigilante cuida por ahora de los trenes; la parte GZM, en esta pestaña.",
+    "cWalk": "{n} min a pie hasta: {s}"
   }
 }

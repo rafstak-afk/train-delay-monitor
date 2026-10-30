@@ -301,6 +301,7 @@ async function main() {
   const arrByCode = new Map();
   for (const [id, list] of built.arrivals) { const c = codeById.get(id); if (c) (arrByCode.get(c) || arrByCode.set(c, []).get(c)).push(...list); }
   const feeders = new Map();   // nazwa przystanku → Map(stacja → najkrótsza jazda pod stację)
+  const egress = new Map();    // nazwa przystanku → Map(stacja → najkrótsza jazda spod stacji do przystanku)
 
   // ---------- zapis (najpierw do out.tmp/) ----------
   fs.rmSync(TMP, { recursive: true, force: true });
@@ -313,7 +314,12 @@ async function main() {
     const patOf = down => {
       if (!down || !down.length) return -1;
       const flat = [];
-      for (const [n, off] of down) { if (!dsIdx.has(n)) { dsIdx.set(n, dsNames.length); dsNames.push(n); } flat.push(dsIdx.get(n), off); }
+      for (const [n, off] of down) {
+        if (!dsIdx.has(n)) { dsIdx.set(n, dsNames.length); dsNames.push(n); }
+        flat.push(dsIdx.get(n), off);
+        const em = egress.get(n) || egress.set(n, new Map()).get(n);
+        if (!em.has(st.id) || em.get(st.id) > off) em.set(st.id, off);
+      }
       const k = flat.join(",");
       if (!patIdx.has(k)) { patIdx.set(k, pats.length); pats.push(flat); }
       return patIdx.get(k);
@@ -367,6 +373,10 @@ async function main() {
   const fz = {};
   for (const [n, m] of feeders) fz[n] = [...m.entries()].sort((a, b) => a[1] - b[1]).slice(0, 6);
   writeJson(path.join(TMP, "feeders.json"), { v: 1, generated: gen, stops: fz });
+  // przystanek → stacje, spod których do niego dojedziesz bez przesiadki
+  const ez = {};
+  for (const [n, m] of egress) ez[n] = [...m.entries()].sort((a, b) => a[1] - b[1]).slice(0, 6);
+  writeJson(path.join(TMP, "egress.json"), { v: 1, generated: gen, stops: ez });
 
   // raport (dane) — z porównaniem z poprzednim
   const prev = readJson(path.join(OUT, "raport.json"), null);

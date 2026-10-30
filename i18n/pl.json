@@ -1113,6 +1113,23 @@
     "bSlack": "zapas {n} min",
     "bLatest": "najpóźniej wyjdź: {t} — {l} z {s}",
     "bArrive": "na miejscu",
-    "bNote": "Pociągi z planera PLK. Dojście z przystanku na peron wg mapy, liczone ostrożnie (najdalszy peron)."
+    "bNote": "Pociągi z planera PLK. Dojście z przystanku na peron wg mapy, liczone ostrożnie (najdalszy peron).",
+    "modeC": "Cała podróż",
+    "cFrom": "Skąd (przystanek GZM albo stacja)",
+    "cFromPh": "np. AWF",
+    "cTo": "Dokąd (przystanek GZM albo stacja)",
+    "cToPh": "np. Tarnowskie Góry Plac Zembali",
+    "cNeed": "Wpisz skąd i dokąd.",
+    "cSearching": "Układam podróż: dojazd, pociąg, dojazd do celu…",
+    "cNoTo": "Nie znam przystanku „{d}” albo spod żadnej stacji nic do niego nie dojeżdża.",
+    "cSame": "Start i cel to ten sam przystanek.",
+    "cNoCombo": "Nie znalazłem stacji kolejowych, przez które da się to połączyć.",
+    "cNone": "Nie udało się ułożyć podróży w ciągu 2 godzin od wyjścia.",
+    "cLeave": "wyjdź: {t} z {s}",
+    "cTrainAt": "pociąg {t} z {s}",
+    "cGuard": "Pilnuj pociągów tej podróży",
+    "cGuarded": "Pilnowane",
+    "cNote": "Pociągi z planera PLK, autobusy i tramwaje z rozkładu GZM z opóźnieniami na żywo. Strażnik pilnuje na razie pociągów; części GZM pilnuj w tej zakładce.",
+    "cWalk": "{n} min pieszo do: {s}"
   }
 }

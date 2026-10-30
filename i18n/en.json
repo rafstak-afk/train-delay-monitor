@@ -1113,6 +1113,23 @@
     "bSlack": "{n} min to spare",
     "bLatest": "leave at the latest: {t} — {l} from {s}",
     "bArrive": "arrival",
-    "bNote": "Trains from the PLK planner. Walk from the stop to the platform based on the map, counted cautiously (farthest platform)."
+    "bNote": "Trains from the PLK planner. Walk from the stop to the platform based on the map, counted cautiously (farthest platform).",
+    "modeC": "Whole trip",
+    "cFrom": "From (GZM stop or station)",
+    "cFromPh": "e.g. AWF",
+    "cTo": "To (GZM stop or station)",
+    "cToPh": "e.g. Tarnowskie Góry Plac Zembali",
+    "cNeed": "Enter from and to.",
+    "cSearching": "Building the trip: ride, train, ride to the destination…",
+    "cNoTo": "I don't know the stop “{d}”, or nothing reaches it from any station.",
+    "cSame": "Start and destination are the same stop.",
+    "cNoCombo": "No railway stations found to connect this.",
+    "cNone": "Could not build a trip within 2 hours of leaving.",
+    "cLeave": "leave: {t} from {s}",
+    "cTrainAt": "train {t} from {s}",
+    "cGuard": "Guard the trains of this trip",
+    "cGuarded": "Guarded",
+    "cNote": "Trains from the PLK planner, buses and trams from the GZM timetable with live delays. The guard watches the trains for now; keep an eye on the GZM part in this tab.",
+    "cWalk": "{n} min walk to: {s}"
   }
 }
