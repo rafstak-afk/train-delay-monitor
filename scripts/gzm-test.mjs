@@ -124,6 +124,17 @@ t("pociąg 14:45: k1 (zapas 6) i k2 (zapas 4), oba 🟢; najpóźniej = k2", mt[
 t("pociąg 14:40: tylko k1 na styk (zapas 1)", mt[1].count === 1 && mt[1].rides[0].status === "tight");
 t("pociąg 14:30: nic nie zdąży → pominięty", mt.length === 2);
 
+// ---------- podróż bez pociągu (przesiadka przy stacji-węźle) ----------
+const HA = { stops: [{ c: "S1", n: "Węzeł A", w: [3, 3] }], lines: [["670", 3, "X"]], us: ["Start"], up: [[0, 5]], days: { [D]: [[600, 0, 0, "t1", 4, 0], [660, 0, 0, "t9", 4, 0]], [D2]: [] } };
+const HD = { stops: [{ c: "S1", n: "Węzeł A", lat: 50, lon: 19, w: [3, 3] }, { c: "S2", n: "Węzeł B", lat: 50.001, lon: 19, w: [3, 3] }], lines: [["129", 3, "Y"], ["670", 3, "X"]],
+  ds: ["Cel"], pt: [[0, 40], [0, 30]], days: { [D]: [[602, 0, 1, "u1", 1, 0], [604, 0, 1, "u2", 1, 0], [601, 1, 0, "t1", 5, 1]], [D2]: [] } };
+const hub = C.hubTrips({ arrFile: HA, depFile: HD, origin: ["Start"], dest: ["Cel"], date: D, fromMin: 590, maxMin: 120 });
+const h1 = hub.find(o => o.dep === 595);
+t("bez pociągu: ten sam kurs jedzie dalej → bez przesiadki, najwcześniejszy dojazd", h1 && h1.same && h1.arrDest === 631, JSON.stringify(h1 && { same: h1.same, arr: h1.arrDest }));
+const hubNoSame = C.hubTrips({ arrFile: HA, depFile: { ...HD, days: { [D]: [[602, 0, 1, "u1", 1, 0], [604, 0, 1, "u2", 1, 0]], [D2]: [] } }, origin: ["Start"], dest: ["Cel"], date: D, fromMin: 590, maxMin: 120 });
+const h2 = hubNoSame.find(o => o.dep === 595);
+t("bez pociągu: inny słupek ~111 m → przesiadka 4 min (3 marszu + 1), łapie 129 o 10:04 (nie 10:02)", h2 && !h2.same && h2.transfer === 4 && h2.b.real === 604 && h2.arrDest === 644, JSON.stringify(h2 && { tr: h2.transfer, b: h2.b.real, arr: h2.arrDest }));
+
 // ---------- dekoder GTFS-RT ----------
 // FeedMessage{ header{version "2.0", timestamp 100}, entity{ id "e1", trip_update{ trip{trip_id "1_5"}, stop_time_update{ seq 7, arrival{ delay -120 } } } } }
 function varint(n) { const o = []; let v = BigInt.asUintN(64, BigInt(n)); do { let b = Number(v & 0x7fn); v >>= 7n; if (v) b |= 0x80; o.push(b); } while (v); return o; }

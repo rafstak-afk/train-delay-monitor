@@ -1136,6 +1136,9 @@
     "cAcc": "Dojazd na pociąg {t} ({s}) — {n} możliwości",
     "cLate": "Za późno na ten pociąg",
     "cTooLate": "za późno na ten pociąg",
-    "cOnPlatform": "na peronie {t} · zapas {n} min"
+    "cOnPlatform": "na peronie {t} · zapas {n} min",
+    "hTitle": "bez pociągu — przez {s}",
+    "hSame": "ten sam kurs jedzie dalej — bez przesiadki",
+    "hChange": "przesiadka: {n} min do {s}, czekasz {w} min"
   }
 }

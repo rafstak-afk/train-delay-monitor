@@ -1136,6 +1136,9 @@
     "cAcc": "Zum Zug um {t} ({s}) — {n} Möglichkeiten",
     "cLate": "Zu spät für diesen Zug",
     "cTooLate": "zu spät für diesen Zug",
-    "cOnPlatform": "am Bahnsteig {t} · {n} Min. Puffer"
+    "cOnPlatform": "am Bahnsteig {t} · {n} Min. Puffer",
+    "hTitle": "ohne Zug — über {s}",
+    "hSame": "dasselbe Fahrzeug fährt weiter — kein Umstieg",
+    "hChange": "Umstieg: {n} Min. zu {s}, {w} Min. warten"
   }
 }

@@ -149,6 +149,64 @@
     }).filter(function (x) { return x.count > 0; });
   }
 
+  // ===== Podróż bez pociągu: GZM → (przesiadka przy stacji-węźle) → GZM =====
+  // Gdy start i cel „łączy” ta sama stacja (np. TG Powstańców → TG Dworzec →
+  // Krupski Młyn), pociąg nie jest potrzebny. Przyjazdy z przystanku startowego
+  // pod węzeł (plik -arr) łączymy z odjazdami spod węzła do celu (plik stacji):
+  //   — ten sam kurs (jedzie dalej) → bez przesiadki,
+  //   — inny kurs → przesiadka: ten sam słupek 1 min, inny słupek = dojście
+  //     (linia prosta × 1,4 / 1,2 m/s) + 1 min.
+  function hav(a, b) { var R = 6371000, t = Math.PI / 180, x = Math.pow(Math.sin((b.lat - a.lat) * t / 2), 2) + Math.cos(a.lat * t) * Math.cos(b.lat * t) * Math.pow(Math.sin((b.lon - a.lon) * t / 2), 2); return 2 * R * Math.asin(Math.sqrt(x)); }
+  function hubTrips(opts) {
+    var af = opts.arrFile, df = opts.depFile, from = {}, to = {};
+    (opts.origin || []).forEach(function (n) { from[n] = true; });
+    (opts.dest || []).forEach(function (n) { to[n] = true; });
+    var pos = {}; (df.stops || []).forEach(function (x) { pos[x.c] = x; });
+    // przyjazdy z przystanku startowego
+    var arrs = [];
+    [0, 1].forEach(function (k) {
+      var list = (af.days || {})[addDays(opts.date, k)] || [];
+      for (var i = 0; i < list.length; i++) {
+        var r = list[i], p = af.up[r[5]]; if (!p) continue;
+        var off = null, nm = null;
+        for (var j = 0; j < p.length; j += 2) if (from[af.us[p[j]]]) { off = p[j + 1]; nm = af.us[p[j]]; break; }
+        if (off == null) continue;
+        var t = opts.rt && opts.rt.trips && opts.rt.trips[r[3]], dl = t && t[1] !== "X" ? Math.round((t[1] || 0) / 60) : 0;
+        if (t && t[1] === "X") continue;
+        var ta = r[0] + k * 1440 + dl, d0 = ta - off;
+        if (d0 < opts.fromMin || d0 > opts.fromMin + (opts.maxMin || 120)) continue;
+        var ln = af.lines[r[1]];
+        arrs.push({ trip: r[3], line: ln[0], type: TYPE[ln[1]] || "bus", from: nm, dep: d0, stopA: af.stops[r[2]], ta: ta, delay: dl, live: !!t });
+      }
+    });
+    // odjazdy spod węzła do celu
+    var deps = departures(df, opts.date).map(function (d) {
+      var tr = travelTo(df, d, to); if (!tr) return null;
+      var L = live(d, opts.rt); if (L.passed || L.cancelled) return null;
+      return { d: d, real: L.min, travel: tr.min, destName: tr.name, live: L.live, delay: L.delay || 0 };
+    }).filter(Boolean);
+    var best = new Map();
+    arrs.forEach(function (a) {
+      deps.forEach(function (b) {
+        var same = b.d.trip === a.trip;
+        var need = same ? 0 : (a.stopA.c === b.d.stop.c ? 1 : Math.ceil(hav(pos[a.stopA.c] || b.d.stop, b.d.stop) * 1.4 / 1.2 / 60) + 1);
+        if (b.real < a.ta + need) return;
+        if (!same && b.real - a.ta > 45) return;        // nie czekamy w nieskończoność
+        var arrD = b.real + b.travel;
+        var o = { a: a, b: b, same: same, transfer: need, wait: b.real - a.ta - need, arrDest: arrD, dep: a.dep };
+        var k = a.trip + "|" + a.dep;
+        var prev = best.get(k);
+        if (!prev || arrD < prev.arrDest || (arrD === prev.arrDest && o.wait > prev.wait)) best.set(k, o);
+      });
+    });
+    // dla każdego odjazdu ze startu najlepsza kontynuacja; odrzuć wyraźnie gorsze (później start i później meta)
+    var list = Array.from(best.values()).sort(function (x, y) { return x.arrDest - y.arrDest || y.dep - x.dep; });
+    var out = [], seenArr = {};
+    list.forEach(function (o) { if (!seenArr[o.arrDest] || seenArr[o.arrDest] < o.dep) { seenArr[o.arrDest] = o.dep; out.push(o); } });
+    out = out.filter(function (o) { return !out.some(function (q) { return q !== o && q.dep >= o.dep && q.arrDest <= o.arrDest && (q.dep > o.dep || q.arrDest < o.arrDest); }); });
+    return out.sort(function (x, y) { return x.dep - y.dep; });
+  }
+
   // Lista pogrupowana po linii + kierunku: dla każdej najbliższe `per` odjazdów.
   function groupByLine(items, per) {
     var map = new Map();
@@ -162,5 +220,5 @@
       .sort(function (a, b) { return a.items[0].real - b.items[0].real; });
   }
 
-  return { ridesToStation: ridesToStation, matchTrains: matchTrains, travelTo: travelTo, destinations: destinations, compute: compute, groupByLine: groupByLine, departures: departures, walkFor: walkFor, live: live, favKey: favKey, fmt: fmt, hm: hm, addDays: addDays, OK_SLACK: OK_SLACK };
+  return { hubTrips: hubTrips, ridesToStation: ridesToStation, matchTrains: matchTrains, travelTo: travelTo, destinations: destinations, compute: compute, groupByLine: groupByLine, departures: departures, walkFor: walkFor, live: live, favKey: favKey, fmt: fmt, hm: hm, addDays: addDays, OK_SLACK: OK_SLACK };
 });

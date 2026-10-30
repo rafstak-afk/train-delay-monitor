@@ -1136,6 +1136,9 @@
     "cAcc": "Para el tren de las {t} ({s}): {n} opciones",
     "cLate": "Demasiado tarde para este tren",
     "cTooLate": "demasiado tarde para este tren",
-    "cOnPlatform": "en el andén {t} · margen {n} min"
+    "cOnPlatform": "en el andén {t} · margen {n} min",
+    "hTitle": "sin tren, por {s}",
+    "hSame": "el mismo vehículo sigue, sin transbordo",
+    "hChange": "transbordo: {n} min hasta {s}, esperas {w} min"
   }
 }

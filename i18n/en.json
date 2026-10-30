@@ -1136,6 +1136,9 @@
     "cAcc": "Getting to the {t} train ({s}) — {n} options",
     "cLate": "Too late for this train",
     "cTooLate": "too late for this train",
-    "cOnPlatform": "on the platform {t} · {n} min to spare"
+    "cOnPlatform": "on the platform {t} · {n} min to spare",
+    "hTitle": "no train — via {s}",
+    "hSame": "the same vehicle continues — no change",
+    "hChange": "change: {n} min to {s}, wait {w} min"
   }
 }

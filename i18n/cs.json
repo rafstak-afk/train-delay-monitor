@@ -1136,6 +1136,9 @@
     "cAcc": "Na vlak v {t} ({s}) — {n} možností",
     "cLate": "Na tento vlak pozdě",
     "cTooLate": "na tento vlak pozdě",
-    "cOnPlatform": "na nástupišti {t} · rezerva {n} min"
+    "cOnPlatform": "na nástupišti {t} · rezerva {n} min",
+    "hTitle": "bez vlaku — přes {s}",
+    "hSame": "stejný spoj jede dál — bez přestupu",
+    "hChange": "přestup: {n} min na {s}, čekáte {w} min"
   }
 }
