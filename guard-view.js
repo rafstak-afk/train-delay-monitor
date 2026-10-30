@@ -6,7 +6,7 @@
 //   v.stop()   — ukryty: bez odpytywania
 (function () {
   'use strict';
-  var CSS =
+  var STYLE =
     '.gv .notice{background:rgba(255,204,0,.08);border:1px solid rgba(255,204,0,.5);color:#ffe27a;border-radius:12px;padding:10px 12px;font-size:13.5px;line-height:1.45;margin:10px 0}' +
     '.gv .notice a{color:#ffe27a}' +
     '.gv .btn-sm{border:0;border-radius:10px;background:var(--blue);color:#fff;font-weight:800;cursor:pointer;font-family:inherit;padding:7px 11px;font-size:12.5px}' +
@@ -79,7 +79,7 @@
     opts = opts || {};
     var G = window.GuardCore, S = window.GuardStore;
     if (!document.getElementById('guard-view-css')) {
-      var st = document.createElement('style'); st.id = 'guard-view-css'; st.textContent = CSS; document.head.appendChild(st);
+      var st = document.createElement('style'); st.id = 'guard-view-css'; st.textContent = STYLE; document.head.appendChild(st);
     }
     root.classList.add('gv');
     root.innerHTML =
