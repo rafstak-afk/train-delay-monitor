@@ -1132,6 +1132,10 @@
     "cNote": "Vlaky z plánovače PLK, autobusy a tramvaje z jízdního řádu GZM s živými zpožděními. Strážce zatím hlídá vlaky; část GZM sledujte v této záložce.",
     "cWalk": "{n} min pěšky na: {s}",
     "cNext": "Dál do: {d} — po příjezdu vlaku",
-    "cBest": "nejrychleji do cíle: {l} v {s}, na místě {t}"
+    "cBest": "nejrychleji do cíle: {l} v {s}, na místě {t}",
+    "cAcc": "Na vlak v {t} ({s}) — {n} možností",
+    "cLate": "Na tento vlak pozdě",
+    "cTooLate": "na tento vlak pozdě",
+    "cOnPlatform": "na nástupišti {t} · rezerva {n} min"
   }
 }

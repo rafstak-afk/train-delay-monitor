@@ -1132,6 +1132,10 @@
     "cNote": "Trenes del planificador PLK, autobuses y tranvías del horario GZM con retrasos en directo. El vigilante cuida por ahora de los trenes; la parte GZM, en esta pestaña.",
     "cWalk": "{n} min a pie hasta: {s}",
     "cNext": "Después hasta: {d}, tras la llegada del tren",
-    "cBest": "lo más rápido al destino: {l} a las {s}, llegada {t}"
+    "cBest": "lo más rápido al destino: {l} a las {s}, llegada {t}",
+    "cAcc": "Para el tren de las {t} ({s}): {n} opciones",
+    "cLate": "Demasiado tarde para este tren",
+    "cTooLate": "demasiado tarde para este tren",
+    "cOnPlatform": "en el andén {t} · margen {n} min"
   }
 }

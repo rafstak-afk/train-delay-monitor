@@ -1132,6 +1132,10 @@
     "cNote": "Pociągi z planera PLK, autobusy i tramwaje z rozkładu GZM z opóźnieniami na żywo. Strażnik pilnuje na razie pociągów; części GZM pilnuj w tej zakładce.",
     "cWalk": "{n} min pieszo do: {s}",
     "cNext": "Dalej do: {d} — po przyjeździe pociągu",
-    "cBest": "najszybciej do celu: {l} o {s}, na miejscu {t}"
+    "cBest": "najszybciej do celu: {l} o {s}, na miejscu {t}",
+    "cAcc": "Dojazd na pociąg {t} ({s}) — {n} możliwości",
+    "cLate": "Za późno na ten pociąg",
+    "cTooLate": "za późno na ten pociąg",
+    "cOnPlatform": "na peronie {t} · zapas {n} min"
   }
 }

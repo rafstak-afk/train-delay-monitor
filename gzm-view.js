@@ -437,10 +437,22 @@
             });
           }).catch(function () { return null; });
         })).then(function (parts) {
-          cState = { parts: parts.filter(Boolean), fromNames: fromNames, toNames: toNames, fromSt: fromSt, toSt: toSt, tmin: tmin, date: date, more: {}, tDelay: {} };
+          cState = { parts: parts.filter(Boolean), fromNames: fromNames, toNames: toNames, fromSt: fromSt, toSt: toSt, tmin: tmin, date: date, more: {}, tDelay: {}, live: tmin >= Math.floor(warsawNow().min) - 5 };
           renderC(); trainLiveC();
         });
       }).catch(function () { res.innerHTML = '<div class="gz-warn">' + esc(T("gzm.noIndex", null, "Dane GZM są chwilowo niedostępne.")) + "</div>"; });
+    }
+    function rideHtml(r, cls) {
+      var inMin = Math.round(r.dep - nowOn(cState.date));
+      var tTxt = (r.live && r.delay) ? '<span class="plan-strike">' + C.fmt(r.depPlan) + "</span> " + C.fmt(r.dep) : C.fmt(r.dep);
+      var stTxt = r.status === "ok" ? "🟢 " + T("gzm.st.ok", null, "zdążysz") : r.status === "tight" ? "🟡 " + T("gzm.st.tight", null, "na styk") : "🔴 " + T("gzm.cTooLate", null, "za późno na ten pociąg");
+      var liveTxt = r.live ? (r.delay ? (r.delay > 0 ? "+" : "") + r.delay + " min, " + T("gzm.live", null, "na żywo") : T("gzm.onTimeLive", null, "punktualnie, na żywo")) : T("gzm.sched", null, "wg rozkładu");
+      return '<div class="gz-dep ' + (r.status || "missed") + (cls || "") + '">' +
+        '<div class="gz-line ' + r.type + '">' + esc(r.line) + "<small>" + TYPE_ICON[r.type] + "</small></div>" +
+        '<div class="gz-main"><div class="gz-dir">' + esc(r.from) + " → " + esc(r.stop.n) + "</div>" +
+        '<div class="gz-stop">' + C.fmt(r.arrStop) + " · 🚶 " + r.walk + " min · " + esc(liveTxt) + "</div>" +
+        (r.slack != null ? '<div class="gz-stop" style="color:#fff">🚉 ' + esc(T("gzm.cOnPlatform", { t: C.fmt(r.platform), n: r.slack }, "na peronie {t} · zapas {n} min")) + "</div>" : "") + "</div>" +
+        '<div class="gz-right"><div class="gz-t">' + tTxt + '</div><div class="gz-in">' + (inMin > 180 || inMin < -1 ? "" : inMin <= 0 ? esc(T("gzm.now", null, "teraz")) : esc(T("gzm.inMin", { n: inMin }, "za {n} min"))) + '</div><div class="gz-in gz-st-' + (r.status || "missed") + '">' + esc(stTxt) + "</div></div></div>";
     }
     function cKey(p, it) { return p.cb.a.st.id + "|" + p.cb.e.st.id + "|" + it.departureTime + "|" + it.arrivalTime; }
     // Opóźnienie pociągu (ostatni odcinek) na stacji wysiadki — dla 2 pierwszych propozycji, co 60 s.
@@ -460,7 +472,7 @@
       var res = root.querySelector("#gzCRes"); if (!res || !cState) return;
       var S = cState, out = [], now = nowOn(S.date);
       S.parts.forEach(function (p) {
-        var rides = p.accFile ? C.ridesToStation({ arrFile: p.accFile, origin: S.fromNames, date: S.date, fromMin: S.tmin, maxMin: 120, rt: rt }) : null;
+        var rides = p.accFile ? C.ridesToStation({ arrFile: p.accFile, origin: S.fromNames, date: S.date, fromMin: S.live ? Math.max(S.tmin, now - 1) : S.tmin, maxMin: S.live ? 120 + Math.max(0, now - S.tmin) : 120, rt: rt }) : null;
         p.its.slice(0, 6).forEach(function (it) {
           var dep = C.hm(it.departureTime), arr = C.hm(it.arrivalTime);
           if (dep < S.tmin - 60) dep += 1440;
@@ -477,7 +489,7 @@
             egr = r.catchable[0]; if (!egr) return;
             final = egr.arrDest;
           }
-          out.push({ p: p, it: it, dep: dep, arr: arr, tDelay: tDelay, tl: tl, acc: acc, egr: egr, egrR: r || null, final: final, start: acc && acc.latest ? acc.latest.dep : dep });
+          out.push({ rides: rides, p: p, it: it, dep: dep, arr: arr, tDelay: tDelay, tl: tl, acc: acc, egr: egr, egrR: r || null, final: final, start: acc && acc.latest ? acc.latest.dep : dep });
         });
       });
       out.sort(function (a, b) { return a.final - b.final || b.start - a.start; });
@@ -493,7 +505,18 @@
           if (L) steps.push((L.status === "ok" ? "🟢" : "🟡") + " " + TYPE_ICON[L.type] + " <b>" + esc(L.line) + "</b> " + C.fmt(L.dep) + " " + esc(L.from) + " → " + esc(L.stop.n) + " " + C.fmt(L.arrStop) + " · 🚶 " + L.walk + " min · " + esc(T("gzm.bSlack", { n: L.slack }, "zapas {n} min")));
           steps.push("🚆 <b>" + esc(it.departureTime) + "</b> " + esc((it.legs && it.legs[0] && it.legs[0].board.stationName) || x.p.cb.a.st.n) + " → " + (x.tDelay ? '<span class="plan-strike">' + esc(it.arrivalTime) + "</span> <b>" + C.fmt(x.arr) + "</b> (+" + x.tDelay + " min)" : "<b>" + esc(it.arrivalTime) + "</b>") + " " + esc((it.legs && it.legs[it.legs.length - 1].alight.stationName) || x.p.cb.e.st.n) + " · " + legs);
           if (E && E.walkOnly) steps.push("🚶 " + esc(T("gzm.cWalk", { n: E.walk, s: E.name }, "{n} min pieszo do: {s}")));
-          var key = cKey(x.p, it), more = (S.more && S.more[key]) || 0, list = "";
+          var key = cKey(x.p, it), more = (S.more && S.more[key]) || 0, list = "", accList = "";
+          if (x.rides) {
+            var moreA = (S.more && S.more["a|" + key]) || 0, nA = 5 + moreA * 5;
+            var okR = x.rides.filter(function (r) { return r.platform <= x.dep; }).map(function (r) { var sl = x.dep - r.platform; return Object.assign({}, r, { slack: sl, status: sl >= C.OK_SLACK ? "ok" : "tight" }); });
+            var lateR = x.rides.filter(function (r) { return r.platform > x.dep; }).slice(0, 2).map(function (r) { return Object.assign({}, r, { slack: null, status: "missed" }); });
+            accList = '<div style="margin:0 0 6px 12px;padding-left:8px;border-left:2px solid var(--line)">' +
+              '<div class="gz-sub" style="margin:4px 2px 2px">🚌 ' + esc(T("gzm.cAcc", { t: it.departureTime, s: x.p.cb.a.st.n, n: okR.length }, "Dojazd na pociąg {t} ({s}) — {n} możliwości")) + "</div>" +
+              okR.slice(0, nA).map(function (r) { return rideHtml(r); }).join("") +
+              (okR.length > nA ? '<button type="button" class="gz-btn sec" data-cmore="a|' + esc(key) + '">' + esc(T("gzm.more", null, "Pokaż kolejne 5")) + "</button>" : "") +
+              (lateR.length ? '<div class="gz-sub" style="margin:8px 2px 2px">' + esc(T("gzm.cLate", null, "Za późno na ten pociąg")) + "</div>" + lateR.map(function (r) { return rideHtml(r); }).join("") : "") +
+              "</div>";
+          }
           if (E && !E.walkOnly && x.egrR) {
             var n5 = 5 + more * 5, cat = x.egrR.catchable;
             list = '<div style="margin:-6px 0 14px 12px;padding-left:8px;border-left:2px solid var(--line)">' +
@@ -505,7 +528,7 @@
           }
           if (E && !E.walkOnly) steps.push("🏁 " + esc(T("gzm.cBest", { t: C.fmt(E.arrDest), l: E.dep.line, s: C.fmt(E.real) }, "najszybciej do celu: {l} o {s}, na miejscu {t}")));
           var worst = [L && L.status, E && !E.walkOnly && E.status].indexOf("tight") >= 0 ? "tight" : "ok";
-          return '<div class="gz-dep ' + worst + '" style="grid-template-columns:minmax(0,1fr) auto">' +
+          return accList + '<div class="gz-dep ' + worst + '" style="grid-template-columns:minmax(0,1fr) auto">' +
             '<div class="gz-main">' + (L ? '<div class="gz-dir" style="white-space:normal">⏰ ' + esc(T("gzm.cLeave", { t: C.fmt(L.dep), s: L.from }, "wyjdź: {t} z {s}")) + "</div>" : '<div class="gz-dir" style="white-space:normal">🚆 ' + esc(T("gzm.cTrainAt", { t: it.departureTime, s: x.p.cb.a.st.n }, "pociąg {t} z {s}")) + "</div>") +
             steps.map(function (h) { return '<div class="gz-stop" style="white-space:normal;margin-top:4px">' + h + "</div>"; }).join("") +
             (guardOk ? '<div style="margin-top:8px"><button type="button" class="gz-btn sec" data-guard="' + i + '">🛡️ ' + esc(T("gzm.cGuard", null, "Pilnuj pociągów tej podróży")) + "</button></div>" : "") +

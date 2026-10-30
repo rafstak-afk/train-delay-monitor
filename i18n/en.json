@@ -1132,6 +1132,10 @@
     "cNote": "Trains from the PLK planner, buses and trams from the GZM timetable with live delays. The guard watches the trains for now; keep an eye on the GZM part in this tab.",
     "cWalk": "{n} min walk to: {s}",
     "cNext": "Onward to: {d} — after the train arrives",
-    "cBest": "fastest to the destination: {l} at {s}, arriving {t}"
+    "cBest": "fastest to the destination: {l} at {s}, arriving {t}",
+    "cAcc": "Getting to the {t} train ({s}) — {n} options",
+    "cLate": "Too late for this train",
+    "cTooLate": "too late for this train",
+    "cOnPlatform": "on the platform {t} · {n} min to spare"
   }
 }
