@@ -1090,6 +1090,11 @@
     "byLine": "podle linek",
     "byTime": "chronologicky",
     "search": "Hledat linku nebo směr…",
-    "noneAll": "V tomto okně žádné odjezdy."
+    "noneAll": "V tomto okně žádné odjezdy.",
+    "dest": "Kam (zastávka GZM, volitelně)",
+    "destPh": "např. AWF",
+    "destNone": "Z této stanice nic nejede bez přestupu do „{d}“.",
+    "arrDest": "{t} {n} (jízda {m} min)",
+    "destOn": "Spoje, které dojedou do: {d} — podle času příjezdu."
   }
 }

@@ -93,6 +93,21 @@ t("północ: odjazd 23:50 uciekł", !night.catchable.some(x => x.dep.trip === "n
 const groups = C.groupByLine(C.compute({ file: F, date: D, arrMin: 365, nowMin: 300, windowMin: 60 }).items, 3);
 t("grupowanie: linie 12 i T16, po max 3 odjazdy", groups.length === 2 && groups.every(g => g.items.length <= 3));
 
+// ---------- przystanek docelowy (etap: pociąg → przystanek GZM) ----------
+// wzór 0: 12 jedzie do „Cel” 6 min; wzór 1: T16 do „Cel B” 5 min; wzór 2: okrężna 99 do „Cel” 40 min
+const FD = { id: 2, name: "Test", generated: new Date().toISOString(), stops: [{ c: "A", n: "Dworzec", w: [2, 2] }], lines: [["12", 3, "X"], ["T16", 0, "Y"], ["99", 3, "Z"], ["5", 3, "W"]],
+  ds: ["Cel", "Cel B", "Inny"], pt: [[2, 3, 0, 6], [1, 5], [0, 40], [2, 4]],
+  days: { [D]: [[370, 0, 0, "a", 1, 0], [371, 1, 0, "b", 1, 1], [372, 2, 0, "c", 1, 2], [373, 3, 0, "d", 1, 3], [380, 0, 0, "e", 1, 0]], [D2]: [] } };
+const dr = C.compute({ file: FD, date: D, arrMin: 365, nowMin: 300, windowMin: 60, dest: ["Cel"] });
+t("cel: tylko kursy, które dowiozą (bez linii 5)", dr.items.every(x => x.dep.line !== "5") && dr.items.some(x => x.dep.line === "12"), dr.items.map(x => x.dep.line).join());
+t("cel: okrężna 40 min odrzucona (najszybsza 6)", !dr.items.some(x => x.dep.line === "99"));
+t("cel: godzina dojazdu = odjazd + jazda", dr.items.find(x => x.dep.trip === "a").arrDest === 376);
+const dr2 = C.compute({ file: FD, date: D, arrMin: 365, nowMin: 300, windowMin: 60, dest: ["Cel", "Cel B"] });
+t("cel: kilka nazw (np. AWF i Stadion AWF), sortowanie wg dojazdu (remis → wcześniejszy odjazd)", dr2.catchable[0].arrDest === 376 && dr2.catchable[1].arrDest === 376 && dr2.catchable[0].dep.trip === "a" && dr2.catchable[2].arrDest > 376);
+const drLive = C.compute({ file: FD, date: D, arrMin: 365, nowMin: 300, windowMin: 60, dest: ["Cel"], rt: { trips: { a: [1, 180] } } });
+t("cel: opóźnienie na żywo przesuwa dojazd", drLive.items.find(x => x.dep.trip === "a").arrDest === 379);
+t("cel: ulubione linie ignorowane, gdy jest cel", C.compute({ file: FD, date: D, arrMin: 365, nowMin: 300, windowMin: 60, dest: ["Cel"], favs: ["5|W"], onlyFavs: true }).catchable.length > 0);
+
 // ---------- dekoder GTFS-RT ----------
 // FeedMessage{ header{version "2.0", timestamp 100}, entity{ id "e1", trip_update{ trip{trip_id "1_5"}, stop_time_update{ seq 7, arrival{ delay -120 } } } } }
 function varint(n) { const o = []; let v = BigInt.asUintN(64, BigInt(n)); do { let b = Number(v & 0x7fn); v >>= 7n; if (v) b |= 0x80; o.push(b); } while (v); return o; }

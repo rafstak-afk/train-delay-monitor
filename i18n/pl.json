@@ -1090,6 +1090,11 @@
     "byLine": "po liniach",
     "byTime": "chronologicznie",
     "search": "Szukaj linii albo kierunku…",
-    "noneAll": "Brak odjazdów w tym oknie."
+    "noneAll": "Brak odjazdów w tym oknie.",
+    "dest": "Dokąd (przystanek GZM, opcjonalnie)",
+    "destPh": "np. AWF",
+    "destNone": "Z tej stacji nic nie dojeżdża bez przesiadki do „{d}”.",
+    "arrDest": "{t} {n} (jazda {m} min)",
+    "destOn": "Kursy, które dowiozą do: {d} — według godziny dojazdu."
   }
 }

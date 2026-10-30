@@ -179,6 +179,7 @@ async function buildDepartures(dates, zipsFor, wantedIds) {
     const trips = new Map(G.readTable(z.zip, "trips.txt").map(t => [t.trip_id, { route: t.route_id, service: t.service_id, head: t.trip_headsign }]));
     const active = days.map(d => ({ d, on: G.activeServices(cal, cd, d) }));
     const ids = wantedIds(z);
+    const local = [];   // odjazdy z tego pliku — do dopisania dalszych przystanków
     await G.streamTable(z.zip, "stop_times.txt", r => {
       if (!ids.has(r.stop_id) || r.pickup_type === "1") return;
       const t = trips.get(r.trip_id); if (!t) return;
@@ -191,12 +192,36 @@ async function buildDepartures(dates, zipsFor, wantedIds) {
         // duplikaty (ten sam przystanek, godzina, linia, kierunek) — wypadają
         const key = r.stop_id + "|" + date + "|" + min + "|" + rt.short + "|" + t.head;
         if (seen.has(key)) continue; seen.add(key);
-        (dep.get(r.stop_id) || dep.set(r.stop_id, []).get(r.stop_id)).push({ date, min, line: rt.short, type: rt.type, head: t.head, trip: r.trip_id, seq: +r.stop_sequence });
+        const x = { date, min, m0, line: rt.short, type: rt.type, head: t.head, trip: r.trip_id, seq: +r.stop_sequence };
+        (dep.get(r.stop_id) || dep.set(r.stop_id, []).get(r.stop_id)).push(x);
+        local.push(x);
       }
     });
+    // Drugi przebieg: całe kursy (tylko te, które odjeżdżają spod stacji) →
+    // dla każdego odjazdu dalsze przystanki z czasem jazdy (do DOWN_MAX min).
+    // Linia okrężna mija przystanek dwa razy — bierzemy PIERWSZE wystąpienie.
+    const want = new Set(local.map(x => x.trip)), seqs = new Map();
+    await G.streamTable(z.zip, "stop_times.txt", r => {
+      if (!want.has(r.trip_id)) return;
+      (seqs.get(r.trip_id) || seqs.set(r.trip_id, []).get(r.trip_id)).push([+r.stop_sequence, r.stop_id, G.hmsMin(r.arrival_time || r.departure_time), r.drop_off_type === "1"]);
+    });
+    const names = new Map(loadStops(z.zip).map(st => [st.id, st.name]));
+    for (const rows of seqs.values()) rows.sort((a, b) => a[0] - b[0]);
+    for (const x of local) {
+      const rows = seqs.get(x.trip) || [], seen2 = new Set(), down = [];
+      for (const [sq, sid, arr, noDrop] of rows) {
+        if (sq <= x.seq || arr == null || noDrop) continue;
+        const off = arr - x.m0; if (off > DOWN_MAX) break;
+        const n = names.get(sid); if (!n || seen2.has(n)) continue;
+        seen2.add(n); down.push([n, off]);
+      }
+      x.down = down;
+    }
   }
   return dep;
 }
+
+const DOWN_MAX = 120;   // dalsze przystanki kursu: do 2 h jazdy
 
 // ---------- główny przebieg ----------
 async function main() {
@@ -248,16 +273,25 @@ async function main() {
   let biggest = { id: null, kb: 0 }, totalDeps = 0;
   for (const st of stations) {
     const lines = [], lineIdx = new Map(), days = {};
+    const dsNames = [], dsIdx = new Map(), pats = [], patIdx = new Map();
+    const patOf = down => {
+      if (!down || !down.length) return -1;
+      const flat = [];
+      for (const [n, off] of down) { if (!dsIdx.has(n)) { dsIdx.set(n, dsNames.length); dsNames.push(n); } flat.push(dsIdx.get(n), off); }
+      const k = flat.join(",");
+      if (!patIdx.has(k)) { patIdx.set(k, pats.length); pats.push(flat); }
+      return patIdx.get(k);
+    };
     for (const d of dates) days[d] = [];
     st.stops.forEach((s, si) => {
       for (const x of depByCode.get(s.code) || []) {
         const lk = x.line + "|" + x.type + "|" + x.head;
         if (!lineIdx.has(lk)) { lineIdx.set(lk, lines.length); lines.push([x.line, x.type, x.head]); }
-        days[x.date].push([x.min, lineIdx.get(lk), si, x.trip, x.seq]);
+        days[x.date].push([x.min, lineIdx.get(lk), si, x.trip, x.seq, patOf(x.down)]);
       }
     });
     for (const d of dates) { days[d].sort((a, b) => a[0] - b[0]); totalDeps += days[d].length; }
-    const file = { v: 1, id: st.id, name: st.name, generated: gen, range: index.range, stops: st.stops.map(s => ({ c: s.code, n: s.name, lat: s.lat, lon: s.lon, w: [s.min, s.max], p: s.byPlat, stairs: s.stairs, u: s.url, src: s.src })), lines, days };
+    const file = { v: 1, id: st.id, name: st.name, generated: gen, range: index.range, stops: st.stops.map(s => ({ c: s.code, n: s.name, lat: s.lat, lon: s.lon, w: [s.min, s.max], p: s.byPlat, stairs: s.stairs, u: s.url, src: s.src })), lines, days, ds: dsNames, pt: pats };
     const txt = JSON.stringify(file);
     if (st.stops.length) {
       fs.mkdirSync(path.join(TMP, "stations"), { recursive: true });
