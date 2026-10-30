@@ -1,1 +1,155 @@
-<!DOCTYPE html><title>raport</title>
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Raport: przystanki GZM przy stacjach PLK</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<style>
+:root{--bg:#101820;--panel:#1c2833;--card:#223244;--line:#34495e;--muted:#b8c3cf;--green:#5dd39e;--yellow:#ffcc00;--red:#ff4d4d;--orange:#ff9f43;--cyan:#22d3ee;--blue:#0b57d0}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#fff}
+header{padding:12px 14px}
+h1{font-size:19px;margin:0 0 4px}
+.meta{color:var(--muted);font-size:12.5px;line-height:1.5}
+#map{height:55vh;min-height:320px}
+.wrap{padding:12px 14px;max-width:1100px;margin:0 auto}
+details{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:8px 0}
+summary{cursor:pointer;font-weight:800;font-size:14px}
+details ul{margin:8px 0 0;padding-left:18px;font-size:13px;line-height:1.55}
+details li a{color:var(--cyan);cursor:pointer}
+.legend{display:flex;flex-wrap:wrap;gap:10px;font-size:12.5px;color:var(--muted);margin-top:6px}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:middle}
+input.search{width:100%;padding:10px;border-radius:9px;border:1px solid var(--line);background:var(--card);color:#fff;font-size:15px;margin:8px 0}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:6px 7px;border-bottom:1px solid #2a3a4c;text-align:left;vertical-align:top}
+th{cursor:pointer;color:var(--muted);position:sticky;top:0;background:var(--bg)}
+tr.st td{background:var(--panel);font-weight:800}
+tr.row:hover td{background:#1a2a3a;cursor:pointer}
+.ok{color:var(--green)}.chk{color:var(--orange)}.rej{color:#8a97a5}
+.btn{border:0;border-radius:8px;background:var(--blue);color:#fff;font-weight:700;padding:5px 9px;font-size:12px;cursor:pointer}
+.leaflet-popup-content{font-size:13px;line-height:1.45}
+.foot{color:var(--muted);font-size:12px;margin:14px 0 30px}
+@media(max-width:700px){td.hide,th.hide{display:none}}
+</style>
+</head>
+<body>
+<header>
+  <h1>🚉 → 🚌 Przystanki GZM przy stacjach PLK</h1>
+  <div class="meta" id="meta">Wczytuję…</div>
+  <div class="legend">
+    <span><span class="dot" style="background:#fff;border:2px solid #0b57d0"></span>stacja PLK</span>
+    <span><span class="dot" style="background:#5dd39e"></span>przypisany przystanek</span>
+    <span><span class="dot" style="background:#ff9f43"></span>do sprawdzenia</span>
+    <span><span class="dot" style="background:#7b8794"></span>odrzucony (za daleko pieszo)</span>
+    <span><span class="dot" style="background:#22d3ee"></span>peron</span>
+  </div>
+</header>
+<div id="map"></div>
+<div class="wrap">
+  <details open><summary id="sumNone">Stacje bez przystanków GZM</summary><ul id="listNone"></ul></details>
+  <details><summary id="sumCheck">Do sprawdzenia</summary><ul id="listCheck"></ul></details>
+  <details><summary id="sumLong">Długie dojście (najbliższy przystanek &gt; 5 min)</summary><ul id="listLong"></ul></details>
+  <details><summary id="sumChange">Zmiany od poprzedniego raportu</summary><ul id="listChange"></ul></details>
+  <details><summary id="sumUnmatched">Stacje z OSM bez odpowiednika w PLK</summary><ul id="listUnmatched"></ul></details>
+  <input class="search" id="q" placeholder="Szukaj stacji albo przystanku…" autocomplete="off">
+  <table>
+    <thead><tr><th data-k="n">Stacja / przystanek</th><th data-k="straight">Prosto</th><th data-k="m" class="hide">Pieszo</th><th data-k="min">Czas</th><th>Status</th><th class="hide"></th></tr></thead>
+    <tbody id="tb"></tbody>
+  </table>
+  <div class="foot">Mapa: © <a href="https://www.openstreetmap.org/copyright" style="color:#22d3ee">OpenStreetMap</a> contributors. Źródło danych rozkładowych: <a href="https://otwartedane.metropoliagzm.pl/dataset/rozklady-jazdy-i-lokalizacja-przystankow-gtfs-wersja-rozszerzona" style="color:#22d3ee">ZTM GZM (CC BY 4.0)</a>. Czas dojścia: trasa piesza z OSM / 1,2 m/s + 1 min za schody, przejście podziemne, kładkę; zakres = od najbliższego do najdalszego peronu.</div>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script>
+(function(){
+  var esc=function(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})};
+  var map=L.map('map').setView([50.27,19.0],10);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(map);
+  var layers={},R=null,sortK='min',sortDir=1;
+  function statusOf(c){return c.kept?(c.check?'chk':'ok'):(c.check?'chk':'rej')}
+  function color(c){var s=statusOf(c);return s==='ok'?'#5dd39e':s==='chk'?'#ff9f43':'#7b8794'}
+  function walkTxt(c){return c.min==null?'—':(c.min===c.max?c.min:c.min+'–'+c.max)+' min'}
+  function override(st){
+    var o={};o[st.id]={note:st.n,add:[],remove:[],walk:{}};
+    st.cands.forEach(function(c){if(c.kept)o[st.id].walk[c.c]=[c.min,c.max]});
+    return JSON.stringify(o,null,2).replace(/^\{\n|\n\}$/g,'')+',';
+  }
+  function popup(st,c){
+    return '<b>'+esc(c.n)+'</b> <span style="color:#888">'+esc(c.c)+'</span><br>'+
+      'stacja: '+esc(st.n)+'<br>prosto: '+(c.straight!=null?c.straight+' m':'—')+', pieszo: '+(c.m!=null?c.m+' m':'—')+'<br>'+
+      'czas dojścia: <b>'+walkTxt(c)+'</b>'+(c.byPlat?' <span style="color:#888">('+Object.keys(c.byPlat).map(function(k){return 'peron '+esc(k)+': '+c.byPlat[k]}).join(', ')+')</span>':'')+'<br>'+
+      ((c.obst||[]).length?'po drodze: '+esc(c.obst.join(', '))+'<br>':'')+
+      'źródło: '+esc(c.src==='osm'?'trasa OSM':c.src==='fallback'?'zapasowy (prosto × 1,4)':c.src||'—')+
+      (c.check?'<br><b style="color:#ff9f43">⚠ '+esc(c.check)+'</b>':'')+
+      (c.u?'<br><a href="'+esc(c.u)+'" target="_blank" rel="noopener">rozkład przystanku ↗</a>':'');
+  }
+  function drawStation(st){
+    if(layers[st.id])return layers[st.id];
+    var g=L.layerGroup();
+    L.circleMarker([st.lat,st.lon],{radius:8,color:'#0b57d0',weight:3,fillColor:'#fff',fillOpacity:1}).bindPopup('<b>🚉 '+esc(st.n)+'</b><br>przystanków: '+st.cands.filter(function(c){return c.kept}).length+' / kandydatów: '+st.cands.length+'<br><button class="btn" onclick="copyOv('+st.id+')">skopiuj wpis poprawki</button>').addTo(g);
+    (st.platforms||[]).forEach(function(p){if(p.c)L.circleMarker(p.c,{radius:4,color:'#22d3ee',fillOpacity:.9}).bindTooltip('peron '+esc(p.ref||'?')).addTo(g)});
+    st.cands.forEach(function(c){
+      if(c.lat==null)return;
+      if(c.pts&&c.pts.length>1)L.polyline(c.pts,{color:color(c),weight:3,opacity:.75,dashArray:c.kept?null:'4 6'}).bindTooltip(walkTxt(c)+' · '+(c.m||'?')+' m').addTo(g);
+      L.circleMarker([c.lat,c.lon],{radius:6,color:'#111',weight:1,fillColor:color(c),fillOpacity:1}).bindPopup(popup(st,c)).addTo(g);
+    });
+    layers[st.id]=g;return g;
+  }
+  window.copyOv=function(id){
+    var st=R.stations.find(function(s){return s.id===id});if(!st)return;
+    var t=override(st);
+    (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(function(){alert('Skopiowano wpis dla: '+st.n)},function(){prompt('Skopiuj:',t)});
+  };
+  function focus(id,code){
+    var st=R.stations.find(function(s){return s.id===id});if(!st)return;
+    var g=drawStation(st);if(!map.hasLayer(g))g.addTo(map);
+    var c=code&&st.cands.find(function(x){return x.c===code});
+    map.setView(c?[c.lat,c.lon]:[st.lat,st.lon],c?18:16);
+    document.getElementById('map').scrollIntoView({behavior:'smooth'});
+  }
+  window.focusSt=focus;
+  function li(st,txt){return '<li><a onclick="focusSt('+st.id+')">'+esc(st.n)+'</a>'+(txt?' — '+esc(txt):'')+'</li>'}
+  function render(){
+    var q=document.getElementById('q').value.trim().toLowerCase(),rows=[];
+    var sts=R.stations.slice().sort(function(a,b){return a.n.localeCompare(b.n,'pl')});
+    sts.forEach(function(st){
+      var cs=st.cands.slice().sort(function(a,b){var x=a[sortK],y=b[sortK];if(x==null)return 1;if(y==null)return -1;return (x>y?1:x<y?-1:0)*sortDir});
+      var hit=!q||st.n.toLowerCase().indexOf(q)>=0;
+      var sub=cs.filter(function(c){return hit||String(c.n||'').toLowerCase().indexOf(q)>=0||String(c.c).toLowerCase().indexOf(q)>=0});
+      if(!sub.length&&!hit)return;
+      rows.push('<tr class="st row" onclick="focusSt('+st.id+')"><td colspan="4">🚉 '+esc(st.n)+' <span class="meta">('+st.cands.filter(function(c){return c.kept}).length+' / '+st.cands.length+')</span></td><td></td><td class="hide"><button class="btn" onclick="event.stopPropagation();copyOv('+st.id+')">skopiuj wpis poprawki</button></td></tr>');
+      sub.forEach(function(c){
+        var s=statusOf(c);
+        rows.push('<tr class="row" onclick="focusSt('+st.id+',\''+esc(c.c)+'\')"><td>&nbsp;&nbsp;'+esc(c.n)+' <span class="meta">'+esc(c.c)+'</span>'+((c.obst||[]).indexOf('schody')>=0?' 🪜':'')+'</td><td>'+(c.straight!=null?c.straight+' m':'')+'</td><td class="hide">'+(c.m!=null?c.m+' m':'')+'</td><td>'+walkTxt(c)+'</td><td class="'+s+'">'+(s==='ok'?'✓ przypisany':s==='chk'?'⚠ '+esc(c.check||'do sprawdzenia'):'odrzucony')+'</td><td class="hide"></td></tr>');
+      });
+    });
+    document.getElementById('tb').innerHTML=rows.join('');
+  }
+  fetch('raport.json',{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){
+    R=j;
+    var st=j.stats||{};
+    document.getElementById('meta').innerHTML='Wygenerowano: '+esc(new Date(j.generated).toLocaleString('pl-PL'))+' · dni rozkładu: '+esc((j.dates||[]).join(', '))+' · limit dojścia: '+j.maxWalkMin+' min<br>'+
+      'Stacje: '+j.stations.length+', z przystankami: '+j.stations.filter(function(s){return s.cands.some(function(c){return c.kept})}).length+' · odjazdów w danych: '+(st.totalDeps||0)+' · największy plik: '+esc(st.biggest&&st.biggest.name||'')+' '+(st.biggest&&st.biggest.kb||'')+' KB · Overpass: '+(st.overpassCalls||0)+' zapytań / '+(st.walkSeconds||0)+' s';
+    var none=j.stations.filter(function(s){return !s.cands.some(function(c){return c.kept})});
+    var chk=[];j.stations.forEach(function(s){s.cands.forEach(function(c){if(c.check)chk.push(li(s,(c.n||c.c)+': '+c.check))})});
+    var lng=j.stations.filter(function(s){var k=s.cands.filter(function(c){return c.kept});return k.length&&Math.min.apply(null,k.map(function(c){return c.min}))>j.longWalkMin});
+    document.getElementById('listNone').innerHTML=none.map(function(s){return li(s,s.osmError?'błąd OSM: '+s.osmError:(s.cands.length?s.cands.length+' kandydatów, żaden w zasięgu':'brak przystanków w promieniu 800 m'))}).join('')||'<li>brak</li>';
+    document.getElementById('sumNone').textContent='Stacje bez przystanków GZM ('+none.length+')';
+    document.getElementById('listCheck').innerHTML=chk.join('')||'<li>brak</li>';
+    document.getElementById('sumCheck').textContent='Do sprawdzenia ('+chk.length+')';
+    document.getElementById('listLong').innerHTML=lng.map(function(s){return li(s)}).join('')||'<li>brak</li>';
+    document.getElementById('sumLong').textContent='Długie dojście, najbliższy przystanek > '+j.longWalkMin+' min ('+lng.length+')';
+    document.getElementById('listChange').innerHTML=(j.changes||[]).map(function(c){return '<li><a onclick="focusSt('+c.id+')">'+esc(c.n)+'</a>: '+esc(c.name||c.c)+' — '+esc(c.what)+'</li>'}).join('')||'<li>brak (albo pierwszy raport)</li>';
+    document.getElementById('sumChange').textContent='Zmiany od poprzedniego raportu ('+(j.changes||[]).length+')';
+    document.getElementById('listUnmatched').innerHTML=(j.unmatched||[]).map(function(n){return '<li>'+esc(n)+'</li>'}).join('')||'<li>brak</li>';
+    var b=[];j.stations.forEach(function(s){drawStation(s).addTo(map);b.push([s.lat,s.lon])});
+    if(b.length)map.fitBounds(b,{padding:[20,20]});
+    render();
+  }).catch(function(e){document.getElementById('meta').textContent='Nie udało się wczytać raport.json: '+e});
+  document.getElementById('q').addEventListener('input',render);
+  document.querySelectorAll('th[data-k]').forEach(function(th){th.addEventListener('click',function(){var k=th.dataset.k;if(sortK===k)sortDir=-sortDir;else{sortK=k;sortDir=1}render()})});
+})();
+</script>
+</body>
+</html>
