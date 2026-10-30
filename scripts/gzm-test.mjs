@@ -135,6 +135,28 @@ const hubNoSame = C.hubTrips({ arrFile: HA, depFile: { ...HD, days: { [D]: [[602
 const h2 = hubNoSame.find(o => o.dep === 595);
 t("bez pociągu: inny słupek ~111 m → przesiadka 4 min (3 marszu + 1), łapie 129 o 10:04 (nie 10:02)", h2 && !h2.same && h2.transfer === 4 && h2.b.real === 604 && h2.arrDest === 644, JSON.stringify(h2 && { tr: h2.transfer, b: h2.b.real, arr: h2.arrDest }));
 
+// ---------- cała sieć GZM (RAPTOR) ----------
+const Rp = require("../gzm-raptor.js");
+// przystanki: 0 A, 1 B, 2 B2 (80 m od B), 3 C, 4 D; linie: L1 A→B, L2 B2→C, L3 A→C (wolna), L4 C→D
+const NJ = { names: ["A", "B", "B2", "C", "D"], stops: [[0, 50, 19, "a"], [1, 50.01, 19, "b"], [2, 50.0107, 19, "b2"], [3, 50.02, 19, "c"], [4, 50.03, 19, "d"]],
+  lines: [["L1", 3, "B"], ["L2", 0, "C"], ["L3", 3, "C"], ["L4", 3, "D"]],
+  pats: [[0, [0, 1], [0, 0, 10, 10], "00"], [1, [2, 3], [0, 0, 10, 10], "00"], [2, [0, 3], [0, 0, 40, 40], "00"], [3, [3, 4], [0, 0, 5, 5], "00"]],
+  trips: [[0, 600, "x1"], [0, 630, "x2"], [1, 612, "y1"], [1, 615, "y0"], [1, 640, "y2"], [2, 601, "z1"], [3, 625, "w1"]] };
+NJ.trips.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+const NN = Rp.prepare(NJ);
+t("sieć: przejście B→B2 (80 m) = 1 min", NN.foot[1].includes(2));
+let rr = Rp.search(NN, { from: ["A"], to: ["C"], dep: 595, count: 3 });
+const fast = rr.find(x => x.transfers === 1);
+t("sieć: L1 → pieszo → L2 szybciej (meta 10:22) niż bezpośrednia L3 (10:41)", fast && fast.arr === 622 && fast.legs.some(l => l.type === "walk"), JSON.stringify(rr.map(x => [x.dep, x.arr, x.transfers])));
+t("sieć: bezpośrednia L3 też jest (mniej przesiadek)", rr.some(x => x.transfers === 0 && x.arr === 641));
+t("sieć: przesiadka łapie y1 o 10:12 (10:10 + 1 min pieszo + 1 min)", fast && fast.legs[2].dep === 612);
+rr = Rp.search(NN, { from: ["A"], to: ["D"], dep: 595, count: 3 });
+t("sieć: 2 przesiadki A→B→C→D (L1, L2, L4)", rr.some(x => x.transfers === 2 && x.arr === 630));
+rr = Rp.search(NN, { from: ["A"], to: ["C"], dep: 595, count: 3, rt: { trips: { x1: [1, 300] } } });
+t("sieć: opóźnienie L1 +5 → przesiadka łapie y0 10:15 albo później", rr.filter(x => x.transfers === 1).every(x => x.legs[0].delay === 5 ? x.legs[2].dep >= 617 : true));
+rr = Rp.search(NN, { from: ["A"], to: ["C"], dep: 595, count: 3, rt: { trips: { z1: [0, "X"] } } });
+t("sieć: odwołana L3 → nie ma jej w wynikach", !rr.some(x => x.legs.some(l => l.trip === "z1")));
+
 // ---------- dekoder GTFS-RT ----------
 // FeedMessage{ header{version "2.0", timestamp 100}, entity{ id "e1", trip_update{ trip{trip_id "1_5"}, stop_time_update{ seq 7, arrival{ delay -120 } } } } }
 function varint(n) { const o = []; let v = BigInt.asUintN(64, BigInt(n)); do { let b = Number(v & 0x7fn); v >>= 7n; if (v) b |= 0x80; o.push(b); } while (v); return o; }

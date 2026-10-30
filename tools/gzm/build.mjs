@@ -256,6 +256,53 @@ async function buildDepartures(dates, zipsFor, wantedIds) {
 const DOWN_MAX = 120;   // dalsze przystanki kursu: do 2 h jazdy
 const UP_MAX = 90;      // wcześniejsze przystanki kursu (dojazd pod stację): do 1,5 h
 
+// ---------- I. cała sieć na dzień (wyszukiwanie GZM ↔ GZM w przeglądarce) ----------
+// Zwarta postać: słownik nazw, przystanki [nazwa, lat, lon, kod], linie
+// [numer, typ, kierunek], wzory przejazdów [linia, przystanki…, czasy od startu
+// (przyjazd, odjazd)…, flagi wsiadania/wysiadania] i kursy [wzór, start, trip_id].
+// Kursy jednego wzoru mają te same czasy względne → wyszukiwanie po starcie.
+// Do dnia D trafiają też kursy dnia D−1 jadące po północy (start − 1440).
+async function buildNetwork(date, zipsFor) {
+  const out = { names: [], stops: [], lines: [], pats: [], trips: [] };
+  const nameIdx = new Map(), stopIdx = new Map(), lineIdx = new Map(), patIdx = new Map();
+  for (const [d, shift] of [[G.addDays(date, -1), -1440], [date, 0]]) {
+    const z = zipsFor(d); if (!z) continue;
+    const on = G.activeServices(G.readTable(z.zip, "calendar.txt"), G.readTable(z.zip, "calendar_dates.txt"), d);
+    const routes = new Map(G.readTable(z.zip, "routes.txt").map(r => [r.route_id, { short: r.route_short_name, type: +r.route_type }]));
+    const trips = new Map(G.readTable(z.zip, "trips.txt").filter(t => on.has(t.service_id)).map(t => [t.trip_id, t]));
+    const stops = new Map(loadStops(z.zip).map(x => [x.id, x]));
+    const st = new Map();
+    await G.streamTable(z.zip, "stop_times.txt", r => {
+      if (!trips.has(r.trip_id)) return;
+      (st.get(r.trip_id) || st.set(r.trip_id, []).get(r.trip_id)).push([+r.stop_sequence, r.stop_id, G.hmsMin(r.arrival_time), G.hmsMin(r.departure_time), (r.pickup_type === "1" ? 1 : 0) + (r.drop_off_type === "1" ? 2 : 0)]);
+    });
+    for (const [tid, rows0] of st) {
+      const rows = rows0.filter(r => stops.has(r[1]) && r[2] != null && r[3] != null).sort((a, b) => a[0] - b[0]);
+      if (rows.length < 2) continue;
+      const t0 = rows[0][3] + shift;
+      if (t0 + rows[rows.length - 1][2] - rows[0][3] < 0) continue;   // kurs z D−1, który skończył się przed północą
+      const tr = trips.get(tid), rt = routes.get(tr.route_id) || { short: "?", type: 3 };
+      const lk = rt.short + "|" + rt.type + "|" + tr.trip_headsign;
+      if (!lineIdx.has(lk)) { lineIdx.set(lk, out.lines.length); out.lines.push([rt.short, rt.type, tr.trip_headsign]); }
+      const seq = rows.map(r => {
+        const sx = stops.get(r[1]), key = sx.code || r[1];
+        if (!stopIdx.has(key)) {
+          if (!nameIdx.has(sx.name)) { nameIdx.set(sx.name, out.names.length); out.names.push(sx.name); }
+          stopIdx.set(key, out.stops.length); out.stops.push([nameIdx.get(sx.name), +sx.lat.toFixed(5), +sx.lon.toFixed(5), sx.code || ""]);
+        }
+        return stopIdx.get(key);
+      });
+      const offs = []; rows.forEach(r => offs.push(r[2] - rows[0][3], r[3] - rows[0][3]));
+      const flags = rows.map(r => r[4]).join("");
+      const pk = lineIdx.get(lk) + "|" + seq.join(",") + "|" + offs.join(",") + "|" + flags;
+      if (!patIdx.has(pk)) { patIdx.set(pk, out.pats.length); out.pats.push([lineIdx.get(lk), seq, offs, flags]); }
+      out.trips.push([patIdx.get(pk), t0, tid]);
+    }
+  }
+  out.trips.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  return out;
+}
+
 // ---------- główny przebieg ----------
 async function main() {
   const start = args.date || warsawToday();
@@ -383,6 +430,17 @@ async function main() {
   const report = buildReport(stations, stopsByCode, cache, prev, { gen, dates, walkStats, walkSeconds, biggest, totalDeps, unmatched: (readJson(path.join(DIR, "stations-osm.json"), {}).unmatched || []) });
   writeJson(path.join(TMP, "raport.json"), report);
   fs.copyFileSync(path.join(DIR, "raport.html"), path.join(TMP, "raport.html"));
+
+  // cała sieć na każdy dzień
+  if (!only || args.network) {
+    fs.mkdirSync(path.join(TMP, "network"), { recursive: true });
+    for (const d of dates) {
+      if (!zipsFor(d)) continue;
+      const net = await buildNetwork(d, zipsFor);
+      fs.writeFileSync(path.join(TMP, "network", d + ".json"), JSON.stringify(Object.assign({ v: 1, date: d, generated: gen }, net)));
+      log("sieć", d, "kursów", net.trips.length, "przystanków", net.stops.length, "wzorów", net.pats.length);
+    }
+  }
 
   // walidacja: są stacje z przystankami i odjazdy
   const withStops = index.stations.filter(s => s.s.length).length;

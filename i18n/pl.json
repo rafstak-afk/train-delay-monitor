@@ -1139,6 +1139,8 @@
     "cOnPlatform": "na peronie {t} · zapas {n} min",
     "hTitle": "bez pociągu — przez {s}",
     "hSame": "ten sam kurs jedzie dalej — bez przesiadki",
-    "hChange": "przesiadka: {n} min do {s}, czekasz {w} min"
+    "hChange": "przesiadka: {n} min do {s}, czekasz {w} min",
+    "nTitle": "komunikacja GZM · przesiadki: {n}",
+    "nDirect": "komunikacja GZM · bez przesiadek"
   }
 }

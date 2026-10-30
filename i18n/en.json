@@ -1139,6 +1139,8 @@
     "cOnPlatform": "on the platform {t} · {n} min to spare",
     "hTitle": "no train — via {s}",
     "hSame": "the same vehicle continues — no change",
-    "hChange": "change: {n} min to {s}, wait {w} min"
+    "hChange": "change: {n} min to {s}, wait {w} min",
+    "nTitle": "GZM transport · changes: {n}",
+    "nDirect": "GZM transport · direct"
   }
 }

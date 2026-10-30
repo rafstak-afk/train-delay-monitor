@@ -1139,6 +1139,8 @@
     "cOnPlatform": "am Bahnsteig {t} · {n} Min. Puffer",
     "hTitle": "ohne Zug — über {s}",
     "hSame": "dasselbe Fahrzeug fährt weiter — kein Umstieg",
-    "hChange": "Umstieg: {n} Min. zu {s}, {w} Min. warten"
+    "hChange": "Umstieg: {n} Min. zu {s}, {w} Min. warten",
+    "nTitle": "GZM-Nahverkehr · Umstiege: {n}",
+    "nDirect": "GZM-Nahverkehr · ohne Umstieg"
   }
 }
