@@ -903,9 +903,55 @@ function getDelay(row) {
 // zmianie kolejności/usunięciu, żeby kliknięcie ▲/▼/✕ nie odpytywało
 // od nowa wszystkich stacji i wszystkich pociągów (to robi tylko
 // "Odśwież" / pierwsze załadowanie strony).
+// === Przewinięcie do „teraz” (TEST — tylko profil autora, ?wersja=1) ===
+// Po otwarciu strony lista sama przewija się do pociągu, którego godzina
+// obserwacji jest najbliżej aktualnej: pierwszy, który odjechał najwyżej
+// NOW_BACK_MIN minut temu albo dopiero odjedzie. Karty dociągają dane i
+// zmieniają wysokość, więc przez kilka sekund poprawiamy pozycję — chyba że
+// użytkownik sam zaczął przewijać (wtedy zostawiamy go w spokoju).
+const NOW_BACK_MIN = 20, NOW_FOLLOW_MS = 4000;
+const nowScroll = { done: false, idx: -1, until: 0, userMoved: false };
+['wheel', 'touchstart', 'keydown', 'mousedown'].forEach(ev => window.addEventListener(ev, () => { nowScroll.userMoved = true; }, { passive: true, capture: true }));
+function nowScrollEnabled() { try { return localStorage.getItem('showVersionBadge') === '1'; } catch (e) { return false; } }
+function nowTargetIndex() {
+  const n = new Date(), nowMin = n.getHours() * 60 + n.getMinutes();
+  let best = -1, bestKey = Infinity, lastPast = -1, lastPastMin = -1;
+  currentTrains.forEach((t, i) => {
+    const m = String(t.planTime || '').match(/^(\d{1,2}):(\d{2})$/);
+    if (!m) return;
+    const pm = +m[1] * 60 + +m[2];
+    const diff = pm - nowMin;                 // minuty do odjazdu (ujemne = już był)
+    if (diff >= -NOW_BACK_MIN) { if (diff < bestKey) { bestKey = diff; best = i; } }
+    else if (pm > lastPastMin) { lastPastMin = pm; lastPast = i; }
+  });
+  return best >= 0 ? best : lastPast;         // wieczorem, gdy wszystko minęło — ostatni z dnia
+}
+function scrollToNowCard(highlight) {
+  const el = document.getElementById('card-' + nowScroll.idx);
+  if (!el) return;
+  const top = el.getBoundingClientRect().top + window.scrollY - 58;
+  window.scrollTo({ top: Math.max(0, top), behavior: highlight ? 'smooth' : 'auto' });
+  if (highlight) { el.style.transition = 'box-shadow .4s'; el.style.boxShadow = '0 0 0 3px #ffd400'; setTimeout(() => { const e2 = document.getElementById('card-' + nowScroll.idx); if (e2) e2.style.boxShadow = ''; }, 1800); }
+}
+function maybeScrollToNow() {
+  if (!nowScrollEnabled() || nowScroll.userMoved) return;
+  if (!nowScroll.done) {
+    nowScroll.done = true;
+    if (window.scrollY > 40 || location.hash) return;       // wróciliśmy w środek strony / konkretny adres
+    nowScroll.idx = nowTargetIndex();
+    if (nowScroll.idx <= 0) return;                          // pierwszy na liście — nic nie przewijamy
+    nowScroll.until = Date.now() + NOW_FOLLOW_MS;
+    requestAnimationFrame(() => scrollToNowCard(true));
+    return;
+  }
+  // karty nad celem urosły po dociągnięciu danych — wyrównaj (krótko po otwarciu)
+  if (nowScroll.idx > 0 && Date.now() < nowScroll.until) scrollToNowCard(false);
+}
+
 function renderFromCache() {
   const container = document.getElementById('list');
   container.innerHTML = currentTrains.length ? currentTrains.map((item, idx) => renderCard(item, idx, lastRows[idx])).join('') : emptyListHtml();
+  maybeScrollToNow();
   reconcileStuckTimers();
 }
 
@@ -1121,6 +1167,7 @@ async function init() {
   clearAllStuckTimers();
 
   container.innerHTML = currentTrains.length ? currentTrains.map((item, idx) => renderCard(item, idx, null)).join('') : emptyListHtml();
+  maybeScrollToNow();
 
   function paintCard(idx, item, row) {
     if (gen !== initGen) return; // nowsze odświeżanie już trwa
@@ -1128,6 +1175,7 @@ async function init() {
     const el = document.getElementById('card-' + idx);
     if (el) el.outerHTML = renderCard(item, idx, row);
     maybeStartStuckTimer(idx, item, row);
+    if (idx < nowScroll.idx) maybeScrollToNow();
   }
 
   try {
