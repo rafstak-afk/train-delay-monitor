@@ -950,66 +950,86 @@ function maybeScrollToNow() {
 }
 
 // === Pomiar dojścia peron → przystanek (TEST — tylko profil autora) ===
-// Przypomnienie z prośby autora: w poniedziałek 2.11 rano zmierzyć z zegarkiem,
-// ile naprawdę trwa dojście z peronu w Katowicach do przystanków GZM (do
-// sprawdzenia wyliczeń z mapy dla zakładki „Przesiadki GZM”). Widoczne od
-// 2.11 4:00 rano w dni robocze do 6.11, aż do zapisania wyniku albo „Nie teraz”.
+// Narzędzie autora do sprawdzania czasów dojścia liczonych z mapy dla
+// „Przesiadek GZM”: Start przy wysiadaniu z pociągu, Stop na przystanku. Przy
+// obu zapisujemy położenie GPS (jeśli telefon pozwoli) — po nim dopasujemy
+// stację i przystanek z rozkładu GZM. Nazwa przystanku i peron są opcjonalne.
 // Stoper liczy od zapisanej chwili startu, więc przeżyje zgaszony ekran.
 const WM_KEY = 'walkMeasureV1';
-const WM_TARGETS = [
-  { id: 'miarki-t', name: 'Plac Miarki — tramwaje', calc: '8–11 min' },
-  { id: 'jana-t', name: 'Św. Jana — tramwaje', calc: '5–6 min' },
-  { id: 'dworzec-b', name: 'Dworzec — autobusy (pod galerią)', calc: '2–3 min' },
-  { id: 'miarki-b', name: 'Plac Miarki — autobusy', calc: '7–9 min' }
-];
 function wmState() { try { return JSON.parse(localStorage.getItem(WM_KEY)) || {}; } catch (e) { return {}; } }
 function wmSave(st) { try { localStorage.setItem(WM_KEY, JSON.stringify(st)); } catch (e) {} }
-function wmActive() {
-  try { if (localStorage.getItem('showVersionBadge') !== '1') return false; } catch (e) { return false; }
-  const st = wmState();
-  if (st.dismissed) return false;
-  const p = Object.fromEntries(new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Warsaw', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', hour12: false }).formatToParts(new Date()).map(x => [x.type, x.value]));
-  const d = p.year + '-' + p.month + '-' + p.day, h = +p.hour % 24;
-  if (st.running) return true;
-  // na prośbę autora już od 30.10 14:00, potem codziennie 4:00–24:00 do 6.11
-  return ((d === '2026-10-30' && h >= 14) || (d > '2026-10-30' && d <= '2026-11-06' && h >= 4)) && !(st.results || []).length;
-}
+function wmEnabled() { try { return localStorage.getItem('showVersionBadge') === '1'; } catch (e) { return false; } }
 function wmFmt(ms) { const s = Math.max(0, Math.round(ms / 1000)); return Math.floor(s / 60) + ' min ' + String(s % 60).padStart(2, '0') + ' s'; }
+function wmGeo() {
+  return new Promise(res => {
+    if (!navigator.geolocation) return res(null);
+    let done = false;
+    const t = setTimeout(() => { if (!done) { done = true; res(null); } }, 12000);
+    navigator.geolocation.getCurrentPosition(p => { if (done) return; done = true; clearTimeout(t); res({ lat: +p.coords.latitude.toFixed(6), lon: +p.coords.longitude.toFixed(6), acc: Math.round(p.coords.accuracy) }); },
+      () => { if (done) return; done = true; clearTimeout(t); res(null); }, { enableHighAccuracy: true, timeout: 11000, maximumAge: 5000 });
+  });
+}
+function wmGeoTxt(g) { return g ? g.lat + ',' + g.lon + ' (±' + g.acc + ' m)' : 'brak GPS'; }
+function wmLine(r) {
+  return new Date(r.at).toLocaleString('pl-PL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) + ' · ' +
+    (r.platform ? 'peron ' + r.platform + ' · ' : '') + (r.name || 'przystanek ?') + ' · ' + wmFmt(r.ms) + ' · start ' + wmGeoTxt(r.from) + ' → meta ' + wmGeoTxt(r.to);
+}
 let wmTimer = null;
+const WM_BTN = 'border:0;border-radius:10px;color:#fff;font-weight:800;padding:9px 12px;font-size:13.5px;cursor:pointer;';
 function renderWalkMeasure() {
   const box = document.getElementById('walkMeasure'); if (!box) return;
   clearInterval(wmTimer);
-  const st = wmState();
-  if (st.dismissed && !st.running) { box.innerHTML = ''; return; }
-  if (!wmActive() && !(st.results || []).length) { box.innerHTML = ''; return; }
-  if (!wmActive() && st.showResultsUntil && Date.now() > st.showResultsUntil) { box.innerHTML = ''; return; }
-  const results = (st.results || []).map(r => '<div style="margin-top:4px">✅ ' + escapeHtml(r.name) + ' (peron ' + escapeHtml(r.platform || '?') + '): <b>' + wmFmt(r.ms) + '</b> <span style="color:#b8c3cf">— wg mapy ' + escapeHtml(r.calc) + '</span></div>').join('');
-  let body;
-  if (st.running) {
-    body = '<div style="font-size:30px;font-weight:900;margin:6px 0" id="wmClock">' + wmFmt(Date.now() - st.running.start) + '</div>' +
-      '<div style="color:#b8c3cf;font-size:13px">Idziesz od peronu ' + escapeHtml(st.running.platform) + '. Kliknij, gdy staniesz na przystanku:</div>' +
-      '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">' + WM_TARGETS.map(t => '<button type="button" class="wm-stop" data-t="' + t.id + '" style="border:0;border-radius:10px;background:#15803d;color:#fff;font-weight:800;padding:9px 11px;font-size:13px;cursor:pointer">⏹ ' + escapeHtml(t.name) + '</button>').join('') + '</div>' +
-      '<button type="button" id="wmCancel" style="margin-top:8px;border:0;background:none;color:#b8c3cf;text-decoration:underline;cursor:pointer;font-size:12.5px">anuluj pomiar</button>';
-  } else {
-    body = '<div style="color:#d8e2ee;font-size:13.5px;line-height:1.45">Zmierz z zegarkiem, ile naprawdę idziesz w Katowicach <b>z peronu do przystanku</b> (Plac Miarki, Św. Jana, dworzec autobusowy). Porównam z wyliczeniem z mapy dla „Przesiadek GZM”. Wybierz peron i kliknij Start, gdy wysiadasz z pociągu:</div>' +
-      '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">' + ['1', '2', '3', '4'].map(p => '<button type="button" class="wm-start" data-p="' + p + '" style="border:0;border-radius:10px;background:#0b57d0;color:#fff;font-weight:800;padding:10px 13px;font-size:14px;cursor:pointer">▶ Start — peron ' + p + '</button>').join('') + '</div>' +
-      '<button type="button" id="wmLater" style="margin-top:8px;border:0;background:none;color:#b8c3cf;text-decoration:underline;cursor:pointer;font-size:12.5px">' + ((st.results || []).length ? 'zamknij' : 'nie teraz') + '</button>';
+  if (!wmEnabled()) { box.innerHTML = ''; return; }
+  const st = wmState(), results = st.results || [], names = st.names || [];
+  const open = st.open || !!st.running;
+  const head = '<button type="button" id="wmToggle" style="all:unset;cursor:pointer;display:flex;justify-content:space-between;width:100%;font-weight:900;font-size:15px">' +
+    '<span>⏱️ Pomiar dojścia peron → przystanek' + (st.running ? ' · <span id="wmClockMini">' + wmFmt(Date.now() - st.running.start) + '</span>' : (results.length ? ' (' + results.length + ')' : '')) + '</span><span>' + (open ? '▴' : '▾') + '</span></button>';
+  let body = '';
+  if (open && st.running) {
+    body = '<div style="font-size:32px;font-weight:900;margin:6px 0" id="wmClock">' + wmFmt(Date.now() - st.running.start) + '</div>' +
+      '<div style="color:#b8c3cf;font-size:12.5px">Start: ' + escapeHtml(wmGeoTxt(st.running.from)) + (st.running.platform ? ' · peron ' + escapeHtml(st.running.platform) : '') + '</div>' +
+      '<input id="wmName" placeholder="Nazwa przystanku (opcjonalnie)" list="wmNames" style="width:100%;margin-top:8px;padding:10px;border-radius:9px;border:1px solid #34495e;background:#223244;color:#fff;font-size:15px">' +
+      '<datalist id="wmNames">' + names.map(n => '<option value="' + escapeHtml(n) + '">').join('') + '</datalist>' +
+      (names.length ? '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">' + names.slice(0, 6).map(n => '<button type="button" class="wm-name" data-n="' + escapeHtml(n) + '" style="border:1px solid #34495e;background:#223244;color:#fff;border-radius:16px;padding:5px 10px;font-size:12.5px;cursor:pointer">' + escapeHtml(n) + '</button>').join('') + '</div>' : '') +
+      '<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button type="button" id="wmStop" style="' + WM_BTN + 'background:#15803d;font-size:15px;padding:11px 14px">⏹ Jestem na przystanku</button>' +
+      '<button type="button" id="wmCancel" style="' + WM_BTN + 'background:#4b5563">Anuluj</button></div>';
+  } else if (open) {
+    body = '<div style="color:#d8e2ee;font-size:13px;line-height:1.45;margin-top:6px">Kliknij <b>Start</b>, gdy wysiadasz z pociągu, i <b>Stop</b> na przystanku. Zapiszę czas i położenie z GPS — po nim dopasuję stację i przystanek. Peron opcjonalnie:</div>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">' + ['', '1', '2', '3', '4', '5'].map(p => '<button type="button" class="wm-plat" data-p="' + p + '" style="border:1px solid ' + ((st.platform || '') === p ? '#0b57d0' : '#34495e') + ';background:' + ((st.platform || '') === p ? '#173055' : '#223244') + ';color:#fff;border-radius:16px;padding:6px 11px;font-size:12.5px;cursor:pointer">' + (p ? 'peron ' + p : 'peron ?') + '</button>').join('') + '</div>' +
+      '<div style="margin-top:10px"><button type="button" id="wmStart" style="' + WM_BTN + 'background:#0b57d0;font-size:15px;padding:11px 16px">▶ Start — wysiadam</button></div>';
   }
-  box.innerHTML = '<div style="background:rgba(255,212,0,.08);border:1px solid #ffd400;border-radius:12px;padding:12px;margin:0 0 12px">' +
-    '<div style="font-weight:900;font-size:15px">⏱️ Pomiar dojścia: peron → przystanek GZM</div>' + body + results + '</div>';
-  if (st.running) wmTimer = setInterval(() => { const c = document.getElementById('wmClock'); if (c) c.textContent = wmFmt(Date.now() - wmState().running.start); else clearInterval(wmTimer); }, 1000);
+  if (open && results.length) {
+    body += '<div style="margin-top:10px;font-size:12.5px;line-height:1.5">' + results.slice().reverse().map((r, i) => '<div style="border-top:1px solid #2a3a4c;padding:4px 0">✅ <b>' + escapeHtml(r.name || 'przystanek ?') + '</b>: <b>' + wmFmt(r.ms) + '</b>' + (r.platform ? ' · peron ' + escapeHtml(r.platform) : '') + ' <span style="color:#b8c3cf">· ' + escapeHtml(new Date(r.at).toLocaleString('pl-PL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })) + (r.from && r.to ? '' : ' · bez GPS') + '</span> <button type="button" class="wm-del" data-i="' + (results.length - 1 - i) + '" style="border:0;background:none;color:#ff4d4d;cursor:pointer">✕</button></div>').join('') + '</div>' +
+      '<div style="margin-top:8px"><button type="button" id="wmCopy" style="' + WM_BTN + 'background:#4b5563">📋 Kopiuj wyniki</button></div>';
+  }
+  box.innerHTML = '<div style="background:rgba(255,212,0,.07);border:1px solid ' + (st.running ? '#ffd400' : '#6b5d1a') + ';border-radius:12px;padding:10px 12px;margin:0 0 12px">' + head + body + '</div>';
+  if (st.running) wmTimer = setInterval(() => { const ms = Date.now() - (wmState().running || { start: Date.now() }).start; ['wmClock', 'wmClockMini'].forEach(id => { const c = document.getElementById(id); if (c) c.textContent = wmFmt(ms); }); }, 1000);
 }
-document.addEventListener('click', e => {
+document.addEventListener('click', async e => {
   const b = e.target.closest('#walkMeasure button'); if (!b) return;
   const st = wmState();
-  if (b.classList.contains('wm-start')) { st.running = { start: Date.now(), platform: b.dataset.p }; wmSave(st); }
-  else if (b.classList.contains('wm-stop') && st.running) {
-    const t = WM_TARGETS.find(x => x.id === b.dataset.t);
-    (st.results = st.results || []).push({ id: t.id, name: t.name, calc: t.calc, platform: st.running.platform, ms: Date.now() - st.running.start, at: new Date().toISOString() });
-    st.running = null; st.showResultsUntil = Date.now() + 7 * 86400000; wmSave(st);
+  if (b.id === 'wmToggle') { st.open = !(st.open || st.running); wmSave(st); }
+  else if (b.classList.contains('wm-plat')) { st.platform = b.dataset.p; wmSave(st); }
+  else if (b.classList.contains('wm-name')) { const i = document.getElementById('wmName'); if (i) i.value = b.dataset.n; return; }
+  else if (b.id === 'wmStart') {
+    st.running = { start: Date.now(), platform: st.platform || '', from: null }; st.open = true; wmSave(st); renderWalkMeasure();
+    const g = await wmGeo(); const s2 = wmState(); if (s2.running && s2.running.start === st.running.start) { s2.running.from = g; wmSave(s2); }
+  }
+  else if (b.id === 'wmStop' && st.running) {
+    const ms = Date.now() - st.running.start, name = ((document.getElementById('wmName') || {}).value || '').trim();
+    b.disabled = true; b.textContent = '⏳ zapisuję położenie…';
+    const g = await wmGeo();
+    const s2 = wmState(); if (!s2.running) return;
+    (s2.results = s2.results || []).push({ at: new Date().toISOString(), ms, name, platform: s2.running.platform, from: s2.running.from, to: g });
+    if (name) s2.names = [name].concat((s2.names || []).filter(n => n !== name)).slice(0, 12);
+    s2.running = null; wmSave(s2);
   }
   else if (b.id === 'wmCancel') { st.running = null; wmSave(st); }
-  else if (b.id === 'wmLater') { st.dismissed = true; wmSave(st); }
+  else if (b.classList.contains('wm-del')) { if (!confirm('Usunąć ten pomiar?')) return; (st.results || []).splice(+b.dataset.i, 1); wmSave(st); }
+  else if (b.id === 'wmCopy') {
+    const txt = 'Pomiary dojścia peron → przystanek:\n' + (st.results || []).map(wmLine).join('\n');
+    try { await navigator.clipboard.writeText(txt); b.textContent = '✅ Skopiowano'; setTimeout(renderWalkMeasure, 1500); return; } catch (err) { prompt('Skopiuj wyniki:', txt); }
+  }
   renderWalkMeasure();
 });
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') renderWalkMeasure(); });
