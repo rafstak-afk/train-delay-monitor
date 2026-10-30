@@ -33,7 +33,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: gzm
+          ref: main
           fetch-depth: 1
 
       - uses: actions/setup-node@v4
@@ -53,14 +53,14 @@ jobs:
           if [ "${{ github.event.schedule }}" = "0 1 1 * *" ] || [ "${{ inputs.full_walk }}" = "true" ]; then FLAG="--full-walk"; fi
           node tools/gzm/build.mjs $FLAG
 
-      - name: Zapis pamięci dojść na gałęzi gzm (tylko gdy się zmieniła)
+      - name: Zapis pamięci dojść na main (tylko gdy się zmieniła)
         run: |
           git config user.name "gzm-data bot"
           git config user.email "actions@users.noreply.github.com"
           git add tools/gzm/walk-cache.json tools/gzm/stations-osm.json
           if ! git diff --cached --quiet; then
             git commit -m "gzm: pamięć dojść pieszych ($(date -u +%F))"
-            git push origin HEAD:gzm || echo "::warning::nie udało się zapisać walk-cache (ktoś zmienił gałąź gzm) — przeliczy się następnym razem"
+            git push origin HEAD:main || echo "::warning::nie udało się zapisać walk-cache (ktoś zmienił main) — przeliczy się następnym razem"
           fi
 
       - name: Publikacja na gałęzi gzm-data (jeden commit, bez historii)
