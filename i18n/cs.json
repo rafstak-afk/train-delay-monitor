@@ -607,11 +607,11 @@
       },
       "tabs": {
         "title": "🧭 Vše o spojení na jednom místě",
-        "text": "🔎 Hledat, 📌 Moje a 🕘 Nedávné — přepnete jedním klepnutím, lišta zůstává při posouvání nahoře."
+        "text": "🔎 Hledat, 🛡️ Hlídané, 📌 Uložené a 🕘 Nedávné — přepnete jedním klepnutím. Při posouvání zůstává lišta nahoře: aktivní záložka s názvem, ostatní jako ikony (název v bublině)."
       },
       "mine": {
-        "title": "📌 Moje: uložené a 🛡️ hlídané",
-        "text": "U výsledku klepněte na 🛡️ Hlídat a já ohlídám přestupy: přepočítané časy, push upozornění při ohroženém přestupu a plán B ze stanice přestupu. Jsou tu i vaše uložené výsledky — 🛡️ u uloženého ho přesune mezi hlídané."
+        "title": "🛡️ Hlídaná spojení",
+        "text": "U výsledku klepněte na 🛡️ Hlídat a já ohlídám přestupy: přepočítané časy, push upozornění při ohroženém přestupu a plán B ze stanice přestupu. Uložené výsledky jsou vedle, v 📌 Uložené."
       },
       "recent": {
         "title": "🕘 Hledání z doby před pár dny?",

@@ -913,7 +913,7 @@ function getDelay(row) {
 const NOW_BACK_MIN = 20, NOW_FOLLOW_MS = 4000;
 const nowScroll = { done: false, idx: -1, until: 0, userMoved: false };
 ['wheel', 'touchstart', 'keydown', 'mousedown'].forEach(ev => window.addEventListener(ev, () => { nowScroll.userMoved = true; }, { passive: true, capture: true }));
-function nowScrollEnabled() { try { return localStorage.getItem('showVersionBadge') === '1'; } catch (e) { return false; } }
+function nowScrollEnabled() { return true; }   // dla wszystkich od v4.97
 function nowTargetIndex() {
   const n = new Date(), nowMin = n.getHours() * 60 + n.getMinutes();
   let best = -1, bestKey = Infinity, lastPast = -1, lastPastMin = -1;

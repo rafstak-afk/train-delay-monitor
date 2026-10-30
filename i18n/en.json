@@ -607,11 +607,11 @@
       },
       "tabs": {
         "title": "🧭 Everything about a connection in one place",
-        "text": "🔎 Search, 📌 Mine and 🕘 Recent — switch with one tap; the bar stays at the top while you scroll."
+        "text": "🔎 Search, 🛡️ Guarded, 📌 Saved and 🕘 Recent — switch with one tap. When you scroll, the bar stays at the top: the active tab with its name, the others as icons (name in a tooltip)."
       },
       "mine": {
-        "title": "📌 Mine: saved and 🛡️ guarded",
-        "text": "Tap 🛡️ Guard next to a result and I'll watch your transfers: recalculated times, a push warning when a transfer is at risk and a Plan B from the transfer station. Your saved results are here too — 🛡️ on a saved one moves it to guarded."
+        "title": "🛡️ Guarded connections",
+        "text": "Tap 🛡️ Guard next to a result and I'll watch your transfers: recalculated times, a push warning when a transfer is at risk and a Plan B from the transfer station. Saved results are next door, in 📌 Saved."
       },
       "recent": {
         "title": "🕘 A search from a few days ago?",

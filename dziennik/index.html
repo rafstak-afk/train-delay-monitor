@@ -660,7 +660,7 @@ function renderTripCards(){
 // są przy niej przystanki GZM. Bez zmian w formularzu i w profilu.
 let gzmIndexP=null;
 function addGzmTripButtons(){
-  let on=false;try{on=localStorage.getItem('showVersionBadge')==='1'||location.hostname.indexOf('gzm.')===0}catch(e){}
+  const on=true;   // dla wszystkich od v4.97
   if(!on)return;
   if(!gzmIndexP)gzmIndexP=fetch('/api/gzm-data/index.json').then(r=>r.ok?r.json():null).catch(()=>null);
   gzmIndexP.then(ix=>{

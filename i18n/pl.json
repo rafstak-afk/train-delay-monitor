@@ -607,11 +607,11 @@
       },
       "tabs": {
         "title": "🧭 Wszystko o połączeniu w jednym miejscu",
-        "text": "🔎 Szukaj, 📌 Moje i 🕘 Ostatnie — przełączasz jednym kliknięciem, a pasek zostaje u góry przy przewijaniu."
+        "text": "🔎 Szukaj, 🛡️ Pilnowane, 📌 Zapisane i 🕘 Ostatnie — przełączasz jednym kliknięciem. Po przewinięciu pasek zostaje u góry: aktywna zakładka z nazwą, pozostałe jako ikony (nazwa w dymku)."
       },
       "mine": {
-        "title": "📌 Moje: zapisane i 🛡️ pilnowane",
-        "text": "Przy wyniku kliknij 🛡️ Pilnuj, a pilnuję przesiadek: przeliczone godziny, ostrzeżenie push, gdy przesiadka jest zagrożona, i Plan B od stacji przesiadki. Tu też są Twoje zapisane wyniki — 🛡️ przy zapisanym przenosi je do pilnowanych."
+        "title": "🛡️ Pilnowane połączenia",
+        "text": "Przy wyniku kliknij 🛡️ Pilnuj, a pilnuję przesiadek: przeliczone godziny, ostrzeżenie push, gdy przesiadka jest zagrożona, i Plan B od stacji przesiadki. Zapisane wyniki są obok, w 📌 Zapisane."
       },
       "recent": {
         "title": "🕘 Wyszukiwanie sprzed kilku dni?",

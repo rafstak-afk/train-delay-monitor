@@ -375,9 +375,9 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
   var HASH_ALIAS={zapisane:'saved',pilnowane:'saved'};
   // 🛡️ Pilnowane (guard-view.js): odpytuje PLK tylko, gdy jego zakładka jest pokazana.
   var guardOn=!!(window.GuardStore&&window.GuardView&&GuardStore.enabled());
-  // TEST (tylko profil autora, ?wersja=1): 4 osobne zakładki
-  // Szukaj | Pilnowane | Zapisane | Ostatnie zamiast wspólnego „Moje”.
-  var splitTabs=guardOn&&(function(){try{return localStorage.getItem('showVersionBadge')==='1'}catch(e){return false}})();
+  // 4 osobne zakładki Szukaj | Pilnowane | Zapisane | Ostatnie (dla wszystkich od v4.97;
+  // wcześniej wspólne „Moje”, które zostaje jako zapas bez strażnika).
+  var splitTabs=guardOn;
   var GUARD_TAB=splitTabs?'guard':'saved';
   if(splitTabs){
     TAB_HASH={search:'',guard:'pilnowane',saved:'zapisane',history:'ostatnie'};
@@ -388,10 +388,9 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
   }else{
     document.querySelector('.pview[data-view="guard"]').remove();
   }
-  // 🚌 Przesiadki GZM (gzm-view.js) — TEST: tylko profil autora (?wersja=1)
-  // albo podgląd gałęzi gzm (gzm.train-delay-monitor1.pages.dev).
+  // 🚌 Przesiadki GZM (gzm-view.js) — dla wszystkich od v4.97.
   // Adres: /planer/?gzm=<stacja PLK>&arr=HH:MM[&date=&orderId=&scheduleId=&train=&from=]#gzm
-  var gzmOn=!!(window.GzmView&&window.GzmCore&&((function(){try{return localStorage.getItem('showVersionBadge')==='1'}catch(e){return false}})()||location.hostname.indexOf('gzm.')===0));
+  var gzmOn=!!(window.GzmView&&window.GzmCore);
   var gzmView=null;
   if(gzmOn){
     TAB_HASH.gzm='gzm';
@@ -436,7 +435,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
   // Przyklejony pasek: kompaktowy (same ikony), z miejscem na przyciski języka i profilu w rogu.
   function updateStuck(){var n=$("planTabs");n.classList.toggle("stuck",n.getBoundingClientRect().top<=1&&window.scrollY>0)}
   window.addEventListener("scroll",updateStuck,{passive:true});
-  // Dymki z nazwami zakładek (tylko profil autora — TEST).
+  // Dymki z nazwami zakładek.
   var longPressed=false;
   if(splitTabs){
     var tabsEl=$('planTabs');

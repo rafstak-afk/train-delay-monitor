@@ -1133,7 +1133,7 @@ function renderTrain(train,data){
 // przy stacjach z przystankami GZM przycisk otwierający zakładkę „GZM” w
 // planerze z tym pociągiem (przyjazd + opóźnienie liczone jak w strażniku).
 var gzmIndexP=null;
-function gzmEnabled(){try{return localStorage.getItem('showVersionBadge')==='1'||location.hostname.indexOf('gzm.')===0}catch(e){return false}}
+function gzmEnabled(){return true}
 function addGzmButtons(){
   if(!gzmEnabled()||!currentTrainData)return;
   if(!gzmIndexP)gzmIndexP=fetch('/api/gzm-data/index.json').then(function(r){return r.ok?r.json():null}).catch(function(){return null});

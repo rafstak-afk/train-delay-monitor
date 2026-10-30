@@ -607,11 +607,11 @@
       },
       "tabs": {
         "title": "🧭 Todo sobre la conexión en un solo lugar",
-        "text": "🔎 Buscar, 📌 Mías y 🕘 Recientes — cambias con un toque y la barra se queda arriba al desplazarte."
+        "text": "🔎 Buscar, 🛡️ Vigiladas, 📌 Guardadas y 🕘 Recientes: cambias con un toque. Al desplazarte, la barra se queda arriba: la pestaña activa con su nombre y las demás como iconos (nombre en un globo)."
       },
       "mine": {
-        "title": "📌 Mías: guardadas y 🛡️ vigiladas",
-        "text": "Toca 🛡️ Vigilar junto a un resultado y vigilaré tus transbordos: horas recalculadas, aviso push si un transbordo está en riesgo y un plan B desde la estación de transbordo. Aquí también están tus resultados guardados — 🛡️ en uno guardado lo pasa a vigiladas."
+        "title": "🛡️ Conexiones vigiladas",
+        "text": "Toca 🛡️ Vigilar junto a un resultado y vigilaré tus transbordos: horas recalculadas, aviso push si un transbordo está en riesgo y un plan B desde la estación de transbordo. Los resultados guardados están al lado, en 📌 Guardadas."
       },
       "recent": {
         "title": "🕘 ¿Una búsqueda de hace unos días?",
