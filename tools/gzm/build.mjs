@@ -154,7 +154,7 @@ function assign(stations, stopsByCode, cache, overrides) {
       const s = stopsByCode.get(code); if (!s) return null;
       const e = cache.entries[st.id + "|" + code] || { straight: Math.round(W.haversine(st, s)), src: "override" };
       const w = ov.walk && ov.walk[code];
-      return { code, id: s.id, name: s.name, lat: s.lat, lon: s.lon, url: s.url, types: s.types, min: w ? w[0] : e.min, max: w ? w[1] : e.max, stairs: (e.obst || []).includes("schody") || undefined, src: w ? "override" : e.src };
+      return { code, id: s.id, name: s.name, lat: s.lat, lon: s.lon, url: s.url, types: s.types, byPlat: w ? undefined : e.byPlat, min: w ? w[0] : e.min, max: w ? w[1] : e.max, stairs: (e.obst || []).includes("schody") || undefined, src: w ? "override" : e.src };
     }).filter(Boolean).sort((a, b) => a.min - b.min || a.max - b.max || a.name.localeCompare(b.name, "pl"));
   }
 }
@@ -252,7 +252,7 @@ async function main() {
       }
     });
     for (const d of dates) { days[d].sort((a, b) => a[0] - b[0]); totalDeps += days[d].length; }
-    const file = { v: 1, id: st.id, name: st.name, generated: gen, range: index.range, stops: st.stops.map(s => ({ c: s.code, n: s.name, lat: s.lat, lon: s.lon, w: [s.min, s.max], stairs: s.stairs, u: s.url, src: s.src })), lines, days };
+    const file = { v: 1, id: st.id, name: st.name, generated: gen, range: index.range, stops: st.stops.map(s => ({ c: s.code, n: s.name, lat: s.lat, lon: s.lon, w: [s.min, s.max], p: s.byPlat, stairs: s.stairs, u: s.url, src: s.src })), lines, days };
     const txt = JSON.stringify(file);
     if (st.stops.length) {
       fs.mkdirSync(path.join(TMP, "stations"), { recursive: true });
