@@ -727,7 +727,8 @@
       "otherTrip": "inna"
     },
     "guarded": "🛡️ pilnowane",
-    "guardedTitle": "Strażnik przesiadek pilnuje tego przejazdu — kliknij, żeby zobaczyć status"
+    "guardedTitle": "Strażnik przesiadek pilnuje tego przejazdu — kliknij, żeby zobaczyć status",
+    "gzmTrip": "Przesiadki GZM: {st}"
   },
   "profil": {
     "pageTitle": "Mój profil",
@@ -916,7 +917,8 @@
     "noIdsErr": "Brak pełnych identyfikatorów kursu.",
     "noIdsHint": "Kliknij numer pociągu bezpośrednio z naszej tablicy odjazdów. Sam numer może oznaczać więcej niż jeden kurs.",
     "portalBtn": "Otwórz wyszukiwarkę w Portal Pasażera",
-    "loadingNote": "Czekam na dane PLK. Spokojnie, to nie cisza, to informatyka."
+    "loadingNote": "Czekam na dane PLK. Spokojnie, to nie cisza, to informatyka.",
+    "gzmTitle": "Przesiadki GZM — autobusy i tramwaje, na które zdążysz po wyjściu z pociągu"
   },
   "survey": {
     "aria": "Ankieta zadowolenia",

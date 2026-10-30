@@ -111,6 +111,11 @@ async function computeWalks(stations, stopsByCode, cache) {
       osmCalls++;
       g = W.buildGraph(osm);
       plats = g.platforms.filter(p => p.center && W.haversine(p.center, st) < 450);
+      // Mała stacja bez peronów w OSM: start z sieci pieszej w promieniu 120 m od punktu stacji.
+      if (!plats.length) {
+        const near = [...g.adj.keys()].filter(id => W.haversine(g.nodes.get(id), st) <= 120);
+        if (near.length) plats = [{ ref: "", startIds: near, center: { lat: st.lat, lon: st.lon }, approx: true }];
+      }
     } catch (e) { err = String(e.message || e); }
     osmSeconds += (Date.now() - t0) / 1000;
     const per = plats.map(p => W.dijkstra(g, p.startIds, 1500));
@@ -122,7 +127,7 @@ async function computeWalks(stations, stopsByCode, cache) {
         const mins = res.map(r => Math.max(2, Math.ceil(r.s / 60)));
         const best = res.reduce((a, b) => a.s < b.s ? a : b);
         const p = W.pathTo(g, per[best.i], best.id);
-        Object.assign(e, { src: "osm", m: Math.round(best.m), min: Math.min(...mins), max: Math.max(...mins), byPlat: Object.fromEntries(res.map((r, k) => [r.plat || String(k + 1), mins[k]])), obst: p.obstacles, pts: simplify(p.pts.concat([[+c.s.lat.toFixed(6), +c.s.lon.toFixed(6)]])) });
+        Object.assign(e, { src: plats[0] && plats[0].approx ? "osm-stacja" : "osm", m: Math.round(best.m), min: Math.min(...mins), max: Math.max(...mins), byPlat: Object.fromEntries(res.map((r, k) => [r.plat || String(k + 1), mins[k]])), obst: p.obstacles, pts: simplify(p.pts.concat([[+c.s.lat.toFixed(6), +c.s.lon.toFixed(6)]])) });
         if (best.m > CFG.suspiciousRatio * Math.max(c.straight, 40)) e.check = "trasa ponad " + CFG.suspiciousRatio + "× dłuższa niż prosto";
       } else {
         const fm = Math.max(2, Math.ceil(c.straight * CFG.fallbackFactor / W.WALK_SPEED / 60));

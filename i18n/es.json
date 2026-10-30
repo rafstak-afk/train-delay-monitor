@@ -727,7 +727,8 @@
       "otherTrip": "otra"
     },
     "guarded": "🛡️ vigilado",
-    "guardedTitle": "El vigilante de transbordos sigue este viaje: toca para ver su estado"
+    "guardedTitle": "El vigilante de transbordos sigue este viaje: toca para ver su estado",
+    "gzmTrip": "Conexiones GZM: {st}"
   },
   "profil": {
     "pageTitle": "Mi perfil",
@@ -916,7 +917,8 @@
     "noIdsErr": "Faltan los identificadores completos del servicio.",
     "noIdsHint": "Pulsa el número del tren directamente en nuestro panel de salidas. El número solo puede corresponder a más de un servicio.",
     "portalBtn": "Abrir el buscador de Portal Pasażera",
-    "loadingNote": "Esperando los datos de PLK. Tranquilo, no es silencio, es informática."
+    "loadingNote": "Esperando los datos de PLK. Tranquilo, no es silencio, es informática.",
+    "gzmTitle": "Conexiones GZM — autobuses y tranvías que alcanzas al bajar del tren"
   },
   "survey": {
     "aria": "Encuesta de satisfacción",

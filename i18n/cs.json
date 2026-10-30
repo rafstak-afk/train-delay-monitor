@@ -727,7 +727,8 @@
       "otherTrip": "jiná"
     },
     "guarded": "🛡️ hlídáno",
-    "guardedTitle": "Strážce přestupů hlídá tuto jízdu — klepni pro stav"
+    "guardedTitle": "Strážce přestupů hlídá tuto jízdu — klepni pro stav",
+    "gzmTrip": "Přestupy GZM: {st}"
   },
   "profil": {
     "pageTitle": "Můj profil",
@@ -916,7 +917,8 @@
     "noIdsErr": "Chybí úplné identifikátory spoje.",
     "noIdsHint": "Klikněte na číslo vlaku přímo na naší odjezdové tabuli. Samotné číslo může znamenat více než jeden spoj.",
     "portalBtn": "Otevřít vyhledávání na Portal Pasażera",
-    "loadingNote": "Čekám na data PLK. Klid, to není ticho, to je informatika."
+    "loadingNote": "Čekám na data PLK. Klid, to není ticho, to je informatika.",
+    "gzmTitle": "Přestupy GZM — autobusy a tramvaje, které stihnete po výstupu z vlaku"
   },
   "survey": {
     "aria": "Anketa spokojenosti",
