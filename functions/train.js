@@ -228,6 +228,7 @@ const HTML = String.raw`<!DOCTYPE html>
 .delay-cell{text-align:center}
 .platform-cell{text-align:center}
 .mark-btns{display:flex;gap:4px;margin-top:4px}
+.mark-btn.gzm{text-decoration:none;display:inline-flex;align-items:center;justify-content:center;background:#7a1f2b;border-color:#a33}
 .toast{position:fixed;left:50%;top:14px;transform:translate(-50%,-20px);background:#1c2833;color:#fff;border:1px solid #0b57d0;border-radius:999px;padding:13px 22px;font-size:17px;font-weight:700;box-shadow:0 10px 30px rgba(0,0,0,.45);z-index:10000;opacity:0;pointer-events:none;transition:opacity .2s ease;max-width:calc(100vw - 24px);text-align:center}
 .toast.show{opacity:1}
 .mt-star{font-size:18px}
@@ -1122,12 +1123,35 @@ function renderTrain(train,data){
     +'</div>';
   });
 
-  html+='</div></div>';document.getElementById('content').innerHTML=html;updateMarkButtons();renderJournalBar();setTimeout(()=>{const el=document.getElementById('station-'+focusIdx);if(el)el.scrollIntoView({behavior:'smooth',block:'center'})},150);
+  html+='</div></div>';document.getElementById('content').innerHTML=html;updateMarkButtons();addGzmButtons();renderJournalBar();setTimeout(()=>{const el=document.getElementById('station-'+focusIdx);if(el)el.scrollIntoView({behavior:'smooth',block:'center'})},150);
 }
 // "Moje pociągi" trzyma prostą listę {station,trainNum,planTime} pod tym
 // samym kluczem co moje-pociagi/index.html. Stacją jest ta, z której ktoś
 // przyszedł na ten bieg (qs('station') — z tablicy albo z listy Moich
 // pociągów), a w braku takiego kontekstu pierwsza stacja trasy.
+// 🚌 Przesiadki GZM (TEST — tylko profil autora albo podgląd gałęzi gzm):
+// przy stacjach z przystankami GZM przycisk otwierający zakładkę „GZM” w
+// planerze z tym pociągiem (przyjazd + opóźnienie liczone jak w strażniku).
+var gzmIndexP=null;
+function gzmEnabled(){try{return localStorage.getItem('showVersionBadge')==='1'||location.hostname.indexOf('gzm.')===0}catch(e){return false}}
+function addGzmButtons(){
+  if(!gzmEnabled()||!currentTrainData)return;
+  if(!gzmIndexP)gzmIndexP=fetch('/api/gzm-data/index.json').then(function(r){return r.ok?r.json():null}).catch(function(){return null});
+  gzmIndexP.then(function(ix){
+    if(!ix||!ix.stations)return;
+    var byName={};ix.stations.forEach(function(x){if(x.s&&x.s.length)byName[normStation(x.n)]=x.id});
+    var d=currentTrainData,first=(currentStations[0]||{}).stationName||'';
+    currentStations.forEach(function(st,i){
+      var id=byName[normStation(st.stationName)];if(!id||i===0)return;
+      var row=document.getElementById('station-'+i),box=row&&row.querySelector('.mark-btns');
+      if(!box||box.querySelector('.gzm'))return;
+      var m=/(\d{1,2}):(\d{2})/.exec(String(st.plannedArrival||st.plannedTime||st.plannedDeparture||''));
+      var p=new URLSearchParams({gzm:String(id),arr:m?(m[1].length<2?'0':'')+m[1]+':'+m[2]:'',date:d.operatingDate||'',orderId:d.orderId||'',scheduleId:d.scheduleId||'',train:d.trainNumber||'',from:first});
+      var a=document.createElement('a');a.className='mark-btn gzm';a.href='/planer/?'+p.toString();a.title=T('train.gzmTitle');a.textContent='🚌';
+      box.appendChild(a);
+    });
+  });
+}
 const MY_TRAINS_KEY='rafstakMojePociagiV4';
 // Kontekst gwiazdki z ostatniego renderu — do poprawienia jej stanu po
 // świeżym odczycie listy z profilu (ProfileSync.refreshMyTrains).

@@ -10,3 +10,9 @@ dist/
 # lokalna konfiguracja — nie commitujemy sekretów
 .env
 .env.local
+
+# GZM: pobrane ZIP-y i wygenerowane dane (dane idą na gałąź gzm-data)
+tools/gzm/.cache/
+tools/gzm/out/
+tools/gzm/out.tmp/
+tools/gzm/out.only/
