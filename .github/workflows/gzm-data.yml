@@ -1,0 +1,74 @@
+name: gzm-data
+
+# Dane „Przesiadki GZM”: codziennie pobiera rozkłady ZTM GZM (portal publikuje
+# nowe pliki ok. 4:30), buduje małe pliki stacji (tools/gzm/build.mjs) i
+# wypycha je na gałąź `gzm-data` — zawsze jako JEDEN commit bez historii, żeby
+# repozytorium nie puchło. Aplikacja czyta je przez /api/gzm-data/…
+# Raz w miesiącu (oraz ręcznie z opcją full_walk) przelicza wszystkie dojścia
+# piesze z OpenStreetMap (~2–3 h). Gdy budowanie albo walidacja się nie uda,
+# gałąź gzm-data zostaje bez zmian (poprzednie dane działają dalej).
+
+on:
+  schedule:
+    - cron: "0 5 * * *"      # 6:00 czasu zimowego (7:00 letniego)
+    - cron: "0 1 1 * *"      # 1. dnia miesiąca: pełne przeliczenie dojść
+  workflow_dispatch:
+    inputs:
+      full_walk:
+        description: "Przelicz wszystkie dojścia piesze (długo, ~2–3 h)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gzm-data
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: gzm
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Poprzedni raport (do listy zmian)
+        run: |
+          mkdir -p tools/gzm/out
+          if git fetch --depth 1 origin gzm-data 2>/dev/null; then
+            git show FETCH_HEAD:raport.json > tools/gzm/out/raport.json 2>/dev/null || true
+          fi
+
+      - name: Budowanie danych
+        run: |
+          FLAG=""
+          if [ "${{ github.event.schedule }}" = "0 1 1 * *" ] || [ "${{ inputs.full_walk }}" = "true" ]; then FLAG="--full-walk"; fi
+          node tools/gzm/build.mjs $FLAG
+
+      - name: Zapis pamięci dojść na gałęzi gzm (tylko gdy się zmieniła)
+        run: |
+          git config user.name "gzm-data bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add tools/gzm/walk-cache.json tools/gzm/stations-osm.json
+          if ! git diff --cached --quiet; then
+            git commit -m "gzm: pamięć dojść pieszych ($(date -u +%F))"
+            git push origin HEAD:gzm || echo "::warning::nie udało się zapisać walk-cache (ktoś zmienił gałąź gzm) — przeliczy się następnym razem"
+          fi
+
+      - name: Publikacja na gałęzi gzm-data (jeden commit, bez historii)
+        run: |
+          cd tools/gzm/out
+          git init -q -b gzm-data
+          git config user.name "gzm-data bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git commit -q -m "dane GZM $(date -u +%FT%TZ)"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" gzm-data

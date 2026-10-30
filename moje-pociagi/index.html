@@ -259,6 +259,7 @@ h1{ margin:0; font-size:20px; }
 </header>
 
 <div id="delayAlertBox" class="alert-box"></div>
+<div id="walkMeasure"></div>
 <main id="list" class="list"></main>
 
 <section class="add-form">
@@ -947,6 +948,71 @@ function maybeScrollToNow() {
   // karty nad celem urosły po dociągnięciu danych — wyrównaj (krótko po otwarciu)
   if (nowScroll.idx > 0 && Date.now() < nowScroll.until) scrollToNowCard(false);
 }
+
+// === Pomiar dojścia peron → przystanek (TEST — tylko profil autora) ===
+// Przypomnienie z prośby autora: w poniedziałek 2.11 rano zmierzyć z zegarkiem,
+// ile naprawdę trwa dojście z peronu w Katowicach do przystanków GZM (do
+// sprawdzenia wyliczeń z mapy dla zakładki „Przesiadki GZM”). Widoczne od
+// 2.11 4:00 rano w dni robocze do 6.11, aż do zapisania wyniku albo „Nie teraz”.
+// Stoper liczy od zapisanej chwili startu, więc przeżyje zgaszony ekran.
+const WM_KEY = 'walkMeasureV1';
+const WM_TARGETS = [
+  { id: 'miarki-t', name: 'Plac Miarki — tramwaje', calc: '8–11 min' },
+  { id: 'jana-t', name: 'Św. Jana — tramwaje', calc: '5–6 min' },
+  { id: 'dworzec-b', name: 'Dworzec — autobusy (pod galerią)', calc: '2–3 min' },
+  { id: 'miarki-b', name: 'Plac Miarki — autobusy', calc: '7–9 min' }
+];
+function wmState() { try { return JSON.parse(localStorage.getItem(WM_KEY)) || {}; } catch (e) { return {}; } }
+function wmSave(st) { try { localStorage.setItem(WM_KEY, JSON.stringify(st)); } catch (e) {} }
+function wmActive() {
+  try { if (localStorage.getItem('showVersionBadge') !== '1') return false; } catch (e) { return false; }
+  const st = wmState();
+  if (st.dismissed) return false;
+  const p = Object.fromEntries(new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Warsaw', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', hour12: false }).formatToParts(new Date()).map(x => [x.type, x.value]));
+  const d = p.year + '-' + p.month + '-' + p.day, h = +p.hour % 24;
+  if (st.running) return true;
+  return d >= '2026-11-02' && d <= '2026-11-06' && h >= 4 && h < 12 && !(st.results || []).length;
+}
+function wmFmt(ms) { const s = Math.max(0, Math.round(ms / 1000)); return Math.floor(s / 60) + ' min ' + String(s % 60).padStart(2, '0') + ' s'; }
+let wmTimer = null;
+function renderWalkMeasure() {
+  const box = document.getElementById('walkMeasure'); if (!box) return;
+  clearInterval(wmTimer);
+  const st = wmState();
+  if (st.dismissed && !st.running) { box.innerHTML = ''; return; }
+  if (!wmActive() && !(st.results || []).length) { box.innerHTML = ''; return; }
+  if (!wmActive() && st.showResultsUntil && Date.now() > st.showResultsUntil) { box.innerHTML = ''; return; }
+  const results = (st.results || []).map(r => '<div style="margin-top:4px">✅ ' + escapeHtml(r.name) + ' (peron ' + escapeHtml(r.platform || '?') + '): <b>' + wmFmt(r.ms) + '</b> <span style="color:#b8c3cf">— wg mapy ' + escapeHtml(r.calc) + '</span></div>').join('');
+  let body;
+  if (st.running) {
+    body = '<div style="font-size:30px;font-weight:900;margin:6px 0" id="wmClock">' + wmFmt(Date.now() - st.running.start) + '</div>' +
+      '<div style="color:#b8c3cf;font-size:13px">Idziesz od peronu ' + escapeHtml(st.running.platform) + '. Kliknij, gdy staniesz na przystanku:</div>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">' + WM_TARGETS.map(t => '<button type="button" class="wm-stop" data-t="' + t.id + '" style="border:0;border-radius:10px;background:#15803d;color:#fff;font-weight:800;padding:9px 11px;font-size:13px;cursor:pointer">⏹ ' + escapeHtml(t.name) + '</button>').join('') + '</div>' +
+      '<button type="button" id="wmCancel" style="margin-top:8px;border:0;background:none;color:#b8c3cf;text-decoration:underline;cursor:pointer;font-size:12.5px">anuluj pomiar</button>';
+  } else {
+    body = '<div style="color:#d8e2ee;font-size:13.5px;line-height:1.45">Zmierz z zegarkiem, ile naprawdę idziesz w Katowicach <b>z peronu do przystanku</b> (Plac Miarki, Św. Jana, dworzec autobusowy). Porównam z wyliczeniem z mapy dla „Przesiadek GZM”. Wybierz peron i kliknij Start, gdy wysiadasz z pociągu:</div>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">' + ['1', '2', '3', '4'].map(p => '<button type="button" class="wm-start" data-p="' + p + '" style="border:0;border-radius:10px;background:#0b57d0;color:#fff;font-weight:800;padding:10px 13px;font-size:14px;cursor:pointer">▶ Start — peron ' + p + '</button>').join('') + '</div>' +
+      '<button type="button" id="wmLater" style="margin-top:8px;border:0;background:none;color:#b8c3cf;text-decoration:underline;cursor:pointer;font-size:12.5px">' + ((st.results || []).length ? 'zamknij' : 'nie teraz') + '</button>';
+  }
+  box.innerHTML = '<div style="background:rgba(255,212,0,.08);border:1px solid #ffd400;border-radius:12px;padding:12px;margin:0 0 12px">' +
+    '<div style="font-weight:900;font-size:15px">⏱️ Pomiar dojścia: peron → przystanek GZM</div>' + body + results + '</div>';
+  if (st.running) wmTimer = setInterval(() => { const c = document.getElementById('wmClock'); if (c) c.textContent = wmFmt(Date.now() - wmState().running.start); else clearInterval(wmTimer); }, 1000);
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('#walkMeasure button'); if (!b) return;
+  const st = wmState();
+  if (b.classList.contains('wm-start')) { st.running = { start: Date.now(), platform: b.dataset.p }; wmSave(st); }
+  else if (b.classList.contains('wm-stop') && st.running) {
+    const t = WM_TARGETS.find(x => x.id === b.dataset.t);
+    (st.results = st.results || []).push({ id: t.id, name: t.name, calc: t.calc, platform: st.running.platform, ms: Date.now() - st.running.start, at: new Date().toISOString() });
+    st.running = null; st.showResultsUntil = Date.now() + 7 * 86400000; wmSave(st);
+  }
+  else if (b.id === 'wmCancel') { st.running = null; wmSave(st); }
+  else if (b.id === 'wmLater') { st.dismissed = true; wmSave(st); }
+  renderWalkMeasure();
+});
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') renderWalkMeasure(); });
+setTimeout(renderWalkMeasure, 0);
 
 function renderFromCache() {
   const container = document.getElementById('list');
