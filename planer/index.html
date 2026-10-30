@@ -193,6 +193,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     <button type="button" class="ptab" role="tab" id="tabGuard" data-tab="guard" aria-selected="false" hidden><span class="ptab-ico" aria-hidden="true">🛡️</span><span class="ptab-lbl"><span data-i18n="planer.tabGuard">Pilnowane</span><span class="ptab-n" id="guardCount"></span></span></button>
     <button type="button" class="ptab" role="tab" id="tabSaved" data-tab="saved" aria-selected="false"><span class="ptab-ico" aria-hidden="true">📌</span><span class="ptab-lbl"><span data-i18n="planer.tabMine">Moje</span><span class="ptab-n" id="savedCount"></span></span></button>
     <button type="button" class="ptab" role="tab" id="tabHistory" data-tab="history" aria-selected="false"><span class="ptab-ico" aria-hidden="true">🕘</span><span class="ptab-lbl"><span data-i18n="planer.tabHistory">Ostatnie</span><span class="ptab-n" id="historyCount"></span></span></button>
+    <button type="button" class="ptab" role="tab" id="tabGzm" data-tab="gzm" aria-selected="false" hidden><span class="ptab-ico" aria-hidden="true">🚌</span><span class="ptab-lbl" data-i18n="planer.tabGzm">GZM</span></button>
   </nav>
 
   <div class="pview" data-view="search">
@@ -290,6 +291,11 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     <div id="savedList"></div>
   </div>
 
+  <div class="pview" data-view="gzm" hidden>
+    <div class="pview-head"><b data-i18n="gzm.title">🚌 Przesiadki GZM</b> · <span data-i18n="gzm.subtitle">autobusy i tramwaje, na które zdążysz z peronu</span></div>
+    <div id="gzmView"></div>
+  </div>
+
   <div class="pview" data-view="history" hidden>
     <div class="pview-head"><b data-i18n="planer.history">Ostatnie wyszukiwania</b> · <span data-i18n="planer.historySummary">Szybki powrót do wcześniejszych tras</span></div>
     <div id="historyList"></div>
@@ -305,6 +311,8 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
 <script src="/guard-store.js"></script>
 <script src="/alarm-sound.js"></script>
 <script src="/guard-view.js"></script>
+<script src="/gzm-core.js"></script>
+<script src="/gzm-view.js"></script>
 <script src="/chat-assistant.js"></script>
 <script>
 (function(){
@@ -379,6 +387,21 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
   }else{
     document.querySelector('.pview[data-view="guard"]').remove();
   }
+  // 🚌 Przesiadki GZM (gzm-view.js) — TEST: tylko profil autora (?wersja=1)
+  // albo podgląd gałęzi gzm (gzm.train-delay-monitor1.pages.dev).
+  // Adres: /planer/?gzm=<stacja PLK>&arr=HH:MM[&date=&orderId=&scheduleId=&train=&from=]#gzm
+  var gzmOn=!!(window.GzmView&&window.GzmCore&&((function(){try{return localStorage.getItem('showVersionBadge')==='1'}catch(e){return false}})()||location.hostname.indexOf('gzm.')===0));
+  var gzmView=null;
+  if(gzmOn){
+    TAB_HASH.gzm='gzm';
+    $('tabGzm').hidden=false;
+    var gq=new URLSearchParams(location.search);
+    var gzmOpen=gq.get('gzm')?{stationId:gq.get('gzm'),arr:gq.get('arr')||null,date:gq.get('date')||null,train:gq.get('orderId')?{orderId:gq.get('orderId'),scheduleId:gq.get('scheduleId')||'',number:gq.get('train')||'',from:gq.get('from')||''}:null}:null;
+    gzmView=GzmView.mount($('gzmView'),gzmOpen||{});
+    if(gzmOpen){try{history.replaceState(null,'',location.pathname+'#gzm')}catch(e){}}
+  }else{
+    document.querySelector('.pview[data-view="gzm"]').remove();
+  }
   var guardView=null;
   var urlGid=new URLSearchParams(location.search).get('gid');
   if(urlGid){try{var u=new URLSearchParams(location.search);u.delete('gid');history.replaceState(null,'',location.pathname+(u.toString()?'?'+u:'')+location.hash)}catch(e){}}
@@ -400,6 +423,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
   function showTab(name){
     if(!TAB_HASH.hasOwnProperty(name))name='search';
     if(guardView){if(name===GUARD_TAB)guardView.start();else guardView.stop()}
+    if(gzmView){if(name==='gzm')gzmView.start();else gzmView.stop()}
     document.querySelectorAll('#planTabs .ptab').forEach(function(b){
       var on=b.dataset.tab===name;b.classList.toggle('active',on);b.setAttribute('aria-selected',on?'true':'false');
     });
