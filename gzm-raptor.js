@@ -51,13 +51,14 @@
   }
 
   // Pojedynczy przebieg RAPTOR od godziny `dep` (minuty). Zwraca podróże Pareto (czas, przesiadki).
-  function raptor(net, origin, destSet, dep, K, rt) {
+  // startAt (opcjonalnie): przystanek → własna godzina startu (np. słupki przy stacji: przyjazd pociągu + dojście z peronu)
+  function raptor(net, origin, destSet, dep, K, rt, startAt, keep) {
     var j = net.j, n = net.n;
     var tau = [], walkL = [], par = [], star = new Float64Array(n).fill(INF), marked = new Set();
     for (var k = 0; k <= K; k++) { tau.push(new Float64Array(n).fill(INF)); walkL.push(new Uint8Array(n)); par.push(new Array(n)); }
-    origin.forEach(function (s) { tau[0][s] = dep; star[s] = dep; marked.add(s); });
+    origin.forEach(function (s) { var t0s = startAt && startAt[s] != null ? Math.max(startAt[s], dep) : dep; tau[0][s] = t0s; star[s] = t0s; marked.add(s); });
     // dojście z przystanku startowego do pobliskich słupków
-    Array.from(marked).forEach(function (s) { var f = net.foot[s]; for (var q = 0; q < f.length; q += 2) { var o = f[q], tt = dep + f[q + 1]; if (tt < tau[0][o]) { tau[0][o] = tt; star[o] = tt; walkL[0][o] = 1; par[0][o] = { walk: s, w: f[q + 1] }; marked.add(o); } } });
+    Array.from(marked).forEach(function (s) { var f = net.foot[s]; for (var q = 0; q < f.length; q += 2) { var o = f[q], tt = tau[0][s] + f[q + 1]; if (tt < tau[0][o]) { tau[0][o] = tt; star[o] = tt; walkL[0][o] = 1; par[0][o] = { walk: s, w: f[q + 1] }; marked.add(o); } } });
     var bestDest = INF;
     for (k = 1; k <= K; k++) {
       var Q = new Map();
@@ -102,6 +103,7 @@
       });
       if (!marked.size) break;
     }
+    if (keep) keep.star = star;
     // odtworzenie podróży (Pareto po liczbie przejazdów)
     var out = [], best = INF;
     for (k = 1; k <= K; k++) {
@@ -128,14 +130,32 @@
   }
 
   // Kilka kolejnych podróży (jak „5 propozycji”): przebiegi od coraz późniejszej godziny.
+  // Najwcześniejszy dojazd do KAŻDEGO przystanku sieci (jeden przebieg) — np. żeby
+  // wybrać stację przesiadkową: najwcześniej na którym peronie zdążę.
+  function reachAll(net, o) {
+    var origin = [];
+    (o.from || []).forEach(function (nm) { (net.byName[nm] || []).forEach(function (s) { origin.push(s); }); });
+    var keep = {};
+    if (!origin.length) return null;
+    raptor(net, origin, {}, o.dep, (o.maxTransfers == null ? 1 : o.maxTransfers) + 1, o.rt, null, keep);
+    return keep.star;
+  }
+  // indeks przystanku po kodzie słupka (kody z plików stacji)
+  function byCode(net) {
+    if (!net._code) { net._code = {}; net.j.stops.forEach(function (x, i) { if (x[3]) net._code[x[3]] = i; }); }
+    return net._code;
+  }
+
   function search(net, o) {
-    var origin = [], destSet = {};
+    var origin = [], destSet = {}, startAt = null;
+    if (o.fromStops) { startAt = {}; o.fromStops.forEach(function (x) { origin.push(x.s); startAt[x.s] = x.t; }); }
     (o.from || []).forEach(function (nm) { (net.byName[nm] || []).forEach(function (s) { origin.push(s); }); });
     (o.to || []).forEach(function (nm) { (net.byName[nm] || []).forEach(function (s) { destSet[s] = true; }); });
+    (o.toStops || []).forEach(function (s) { destSet[s] = true; });
     if (!origin.length || !Object.keys(destSet).length) return [];
-    var K = (o.maxTransfers == null ? 2 : o.maxTransfers) + 1, dep = o.dep, all = [], count = o.count || 5;
+    var K = (o.maxTransfers == null ? 2 : o.maxTransfers) + 1, dep = o.dep != null ? o.dep : Math.min.apply(null, (o.fromStops || []).map(function (x) { return x.t; })), all = [], count = o.count || 5;
     for (var r = 0; r < count * 3 && all.length < count * 2; r++) {
-      var res = raptor(net, origin, destSet, dep, K, o.rt);
+      var res = raptor(net, origin, destSet, dep, K, o.rt, startAt);
       if (!res.length) break;
       res.forEach(function (x) { all.push(x); });
       var first = Math.min.apply(null, res.map(function (x) { return x.dep; }));
@@ -153,5 +173,5 @@
     });
   }
 
-  return { prepare: prepare, search: search };
+  return { prepare: prepare, search: search, reachAll: reachAll, byCode: byCode };
 });

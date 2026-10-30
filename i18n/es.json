@@ -1141,6 +1141,7 @@
     "hSame": "el mismo vehículo sigue, sin transbordo",
     "hChange": "transbordo: {n} min hasta {s}, esperas {w} min",
     "nTitle": "transporte GZM · transbordos: {n}",
-    "nDirect": "transporte GZM · directo"
+    "nDirect": "transporte GZM · directo",
+    "mmNote": "Una sola búsqueda: acceso y continuación en toda la red GZM (hasta 1 transbordo), trenes del planificador PLK. El vigilante cuida por ahora de los trenes."
   }
 }

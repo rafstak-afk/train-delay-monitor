@@ -1141,6 +1141,7 @@
     "hSame": "the same vehicle continues — no change",
     "hChange": "change: {n} min to {s}, wait {w} min",
     "nTitle": "GZM transport · changes: {n}",
-    "nDirect": "GZM transport · direct"
+    "nDirect": "GZM transport · direct",
+    "mmNote": "One search: getting to and from the train across the whole GZM network (up to 1 change), trains from the PLK planner. The guard watches the trains for now."
   }
 }

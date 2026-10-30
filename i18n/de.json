@@ -1141,6 +1141,7 @@
     "hSame": "dasselbe Fahrzeug fährt weiter — kein Umstieg",
     "hChange": "Umstieg: {n} Min. zu {s}, {w} Min. warten",
     "nTitle": "GZM-Nahverkehr · Umstiege: {n}",
-    "nDirect": "GZM-Nahverkehr · ohne Umstieg"
+    "nDirect": "GZM-Nahverkehr · ohne Umstieg",
+    "mmNote": "Eine Suche: Zubringer und Weiterfahrt im ganzen GZM-Netz (bis 1 Umstieg), Züge aus dem PLK-Planer. Der Wächter überwacht vorerst die Züge."
   }
 }

@@ -1141,6 +1141,7 @@
     "hSame": "stejný spoj jede dál — bez přestupu",
     "hChange": "přestup: {n} min na {s}, čekáte {w} min",
     "nTitle": "doprava GZM · přestupy: {n}",
-    "nDirect": "doprava GZM · bez přestupu"
+    "nDirect": "doprava GZM · bez přestupu",
+    "mmNote": "Jedno hledání: dojezd a další cesta v celé síti GZM (do 1 přestupu), vlaky z plánovače PLK. Strážce zatím hlídá vlaky."
   }
 }
