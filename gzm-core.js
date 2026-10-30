@@ -102,6 +102,53 @@
     return { arr: arr, items: items, catchable: pool, missed: missed };
   }
 
+  // ===== Krok 2: przystanek GZM → pociąg =====
+  // Przejazdy z przystanku startowego pod stację (plik <id>-arr.json): dla
+  // każdego kursu wybieramy przystanek przy stacji, z którego NAJSZYBCIEJ
+  // dojdziesz na peron (np. 46: Mikołowska 14:34 + 8 min vs Dworzec 14:37 + 2 min).
+  //   opts: { arrFile, origin: [nazwy], date, fromMin (najwcześniej na przystanku), rt, maxMin }
+  function ridesToStation(opts) {
+    var f = opts.arrFile, set = {}, best = new Map();
+    (opts.origin || []).forEach(function (n) { set[n] = true; });
+    [0, 1].forEach(function (k) {
+      var d = addDays(opts.date, k), list = (f.days || {})[d] || [];
+      for (var i = 0; i < list.length; i++) {
+        var r = list[i], p = f.up[r[5]]; if (!p) continue;
+        var off = null, name = null;
+        for (var j = 0; j < p.length; j += 2) if (set[f.us[p[j]]]) { off = p[j + 1]; name = f.us[p[j]]; break; }
+        if (off == null) continue;
+        var arr = r[0] + k * 1440, depO = arr - off;
+        var t = opts.rt && opts.rt.trips && opts.rt.trips[r[3]], dl = 0, live = false;
+        if (t) {
+          if (t[1] === "X") continue;                    // odwołany
+          if (t[0] != null && t[0] >= r[4]) continue;    // już pod stacją albo dalej
+          dl = Math.round((t[1] || 0) / 60); live = true;
+        }
+        if (depO + dl < opts.fromMin) continue;
+        if (opts.maxMin && depO > opts.fromMin + opts.maxMin) continue;
+        var st = f.stops[r[2]], ln = f.lines[r[1]];
+        var ride = { trip: r[3], line: ln[0], type: TYPE[ln[1]] || "bus", head: ln[2], from: name, dep: depO + dl, depPlan: depO, arrStop: arr + dl, stop: st, walk: st.w[1], platform: arr + dl + st.w[1], live: live, delay: dl };
+        var prev = best.get(r[3]);
+        if (!prev || ride.platform < prev.platform) best.set(r[3], ride);
+      }
+    });
+    return Array.from(best.values()).sort(function (a, b) { return a.platform - b.platform || a.dep - b.dep; });
+  }
+  // Dla pociągów (minuty odjazdu ze stacji) — przejazdy GZM, na które zdążysz:
+  // zapas = odjazd pociągu − (przyjazd GZM + dojście na peron); 🟢 ≥ 3, 🟡 0–2.
+  //   trains: [{ dep (min), ... }] → [{ train, rides: [...] (od najwcześniejszego), latest }]
+  function matchTrains(rides, trains, per) {
+    return trains.map(function (tr) {
+      var ok = rides.filter(function (r) { return r.platform <= tr.dep; }).map(function (r) {
+        var slack = tr.dep - r.platform;
+        return Object.assign({}, r, { slack: slack, status: slack >= OK_SLACK ? "ok" : "tight" });
+      });
+      var safe = ok.filter(function (r) { return r.status === "ok"; });
+      // pokazujemy najpóźniejsze BEZPIECZNE przejazdy (🟢); „na styk” tylko, gdy nie ma innych
+      return { train: tr, rides: (safe.length ? safe : ok).slice(-(per || 3)), latest: safe.length ? safe[safe.length - 1] : (ok.length ? ok[ok.length - 1] : null), count: ok.length };
+    }).filter(function (x) { return x.count > 0; });
+  }
+
   // Lista pogrupowana po linii + kierunku: dla każdej najbliższe `per` odjazdów.
   function groupByLine(items, per) {
     var map = new Map();
@@ -115,5 +162,5 @@
       .sort(function (a, b) { return a.items[0].real - b.items[0].real; });
   }
 
-  return { travelTo: travelTo, destinations: destinations, compute: compute, groupByLine: groupByLine, departures: departures, walkFor: walkFor, live: live, favKey: favKey, fmt: fmt, hm: hm, addDays: addDays, OK_SLACK: OK_SLACK };
+  return { ridesToStation: ridesToStation, matchTrains: matchTrains, travelTo: travelTo, destinations: destinations, compute: compute, groupByLine: groupByLine, departures: departures, walkFor: walkFor, live: live, favKey: favKey, fmt: fmt, hm: hm, addDays: addDays, OK_SLACK: OK_SLACK };
 });

@@ -1095,6 +1095,24 @@
     "destPh": "e.g. AWF",
     "destNone": "Nothing from this station reaches “{d}” without a change.",
     "arrDest": "{t} {n} ({m} min ride)",
-    "destOn": "Rides that reach: {d} — sorted by arrival time."
+    "destOn": "Rides that reach: {d} — sorted by arrival time.",
+    "modeA": "Leaving the train",
+    "modeB": "Going to the train",
+    "bFrom": "From (GZM stop)",
+    "bFromPh": "e.g. AWF",
+    "bTo": "To (railway station)",
+    "bToPh": "e.g. Tarnowskie Góry",
+    "bTime": "Leaving at",
+    "bGo": "Search",
+    "bNeed": "Enter the start stop and the destination station.",
+    "bSearching": "Looking for a ride and trains…",
+    "bNoFrom": "I don't know the stop “{d}”, or nothing from it reaches a railway station.",
+    "bNoStation": "From this stop you can't reach any railway station without a change.",
+    "bNone": "No train you can catch from this stop within 2 hours.",
+    "bVia": "via {s}",
+    "bSlack": "{n} min to spare",
+    "bLatest": "leave at the latest: {t} — {l} from {s}",
+    "bArrive": "arrival",
+    "bNote": "Trains from the PLK planner. Walk from the stop to the platform based on the map, counted cautiously (farthest platform)."
   }
 }

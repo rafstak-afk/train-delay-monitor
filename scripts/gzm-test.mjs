@@ -108,6 +108,22 @@ const drLive = C.compute({ file: FD, date: D, arrMin: 365, nowMin: 300, windowMi
 t("cel: opóźnienie na żywo przesuwa dojazd", drLive.items.find(x => x.dep.trip === "a").arrDest === 379);
 t("cel: ulubione linie ignorowane, gdy jest cel", C.compute({ file: FD, date: D, arrMin: 365, nowMin: 300, windowMin: 60, dest: ["Cel"], favs: ["5|W"], onlyFavs: true }).catchable.length > 0);
 
+// ---------- krok 2: przystanek GZM → pociąg ----------
+// kurs k1 (linia 46) z „Start” jedzie pod stację: przystanek P1 (8 min na peron) o 14:34 i P2 (2 min) o 14:37
+const AF = { stops: [{ c: "P1", n: "Mikołowska", w: [8, 8] }, { c: "P2", n: "Dworzec", w: [2, 2] }], lines: [["46", 3, "X"], ["T6", 0, "Y"]],
+  us: ["Start", "Inny"], up: [[0, 4], [0, 7], [1, 3, 0, 6]],
+  days: { [D]: [[874, 0, 0, "k1", 5, 0], [877, 0, 1, "k1", 7, 1], [879, 1, 1, "k2", 9, 2], [930, 0, 1, "k3", 7, 1]], [D2]: [] } };
+const rides = C.ridesToStation({ arrFile: AF, origin: ["Start"], date: D, fromMin: 870, maxMin: 120 });
+t("do pociągu: kurs liczony raz, z przystankiem najszybszym na peron (Dworzec)", rides.filter(r => r.trip === "k1").length === 1 && rides.find(r => r.trip === "k1").stop.n === "Dworzec" && rides[0].platform === 879, JSON.stringify(rides[0]));
+t("do pociągu: odjazd z przystanku startowego = przyjazd − jazda", rides.find(r => r.trip === "k1").dep === 870 && rides.find(r => r.trip === "k2").dep === 873);
+t("do pociągu: przed godziną wyjścia — pomijany", C.ridesToStation({ arrFile: AF, origin: ["Start"], date: D, fromMin: 872, maxMin: 120 }).every(r => r.trip !== "k1"));
+const ridesLive = C.ridesToStation({ arrFile: AF, origin: ["Start"], date: D, fromMin: 870, maxMin: 120, rt: { trips: { k1: [3, 120], k2: [9, 0] } } });
+t("do pociągu: opóźnienie +2 przesuwa peron; pojazd już pod stacją → znika", ridesLive.find(r => r.trip === "k1").platform === 881 && !ridesLive.some(r => r.trip === "k2"));
+const mt = C.matchTrains(rides, [{ dep: 885 }, { dep: 880 }, { dep: 870 }], 3);
+t("pociąg 14:45: k1 (zapas 6) i k2 (zapas 4), oba 🟢; najpóźniej = k2", mt[0].count === 2 && mt[0].latest.trip === "k2" && mt[0].rides.every(r => r.status === "ok"));
+t("pociąg 14:40: tylko k1 na styk (zapas 1)", mt[1].count === 1 && mt[1].rides[0].status === "tight");
+t("pociąg 14:30: nic nie zdąży → pominięty", mt.length === 2);
+
 // ---------- dekoder GTFS-RT ----------
 // FeedMessage{ header{version "2.0", timestamp 100}, entity{ id "e1", trip_update{ trip{trip_id "1_5"}, stop_time_update{ seq 7, arrival{ delay -120 } } } } }
 function varint(n) { const o = []; let v = BigInt.asUintN(64, BigInt(n)); do { let b = Number(v & 0x7fn); v >>= 7n; if (v) b |= 0x80; o.push(b); } while (v); return o; }

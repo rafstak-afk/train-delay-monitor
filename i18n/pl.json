@@ -1095,6 +1095,24 @@
     "destPh": "np. AWF",
     "destNone": "Z tej stacji nic nie dojeżdża bez przesiadki do „{d}”.",
     "arrDest": "{t} {n} (jazda {m} min)",
-    "destOn": "Kursy, które dowiozą do: {d} — według godziny dojazdu."
+    "destOn": "Kursy, które dowiozą do: {d} — według godziny dojazdu.",
+    "modeA": "Wysiadam z pociągu",
+    "modeB": "Jadę na pociąg",
+    "bFrom": "Skąd (przystanek GZM)",
+    "bFromPh": "np. AWF",
+    "bTo": "Dokąd (stacja kolejowa)",
+    "bToPh": "np. Tarnowskie Góry",
+    "bTime": "Wyjście",
+    "bGo": "Szukaj",
+    "bNeed": "Wpisz przystanek startowy i stację docelową.",
+    "bSearching": "Szukam przejazdu i pociągów…",
+    "bNoFrom": "Nie znam przystanku „{d}” albo z niego nic nie dojeżdża pod stację kolejową.",
+    "bNoStation": "Z tego przystanku nie dojedziesz bez przesiadki pod żadną stację kolejową.",
+    "bNone": "Nie znalazłem pociągu, na który zdążysz z tego przystanku w ciągu 2 godzin.",
+    "bVia": "przez {s}",
+    "bSlack": "zapas {n} min",
+    "bLatest": "najpóźniej wyjdź: {t} — {l} z {s}",
+    "bArrive": "na miejscu",
+    "bNote": "Pociągi z planera PLK. Dojście z przystanku na peron wg mapy, liczone ostrożnie (najdalszy peron)."
   }
 }

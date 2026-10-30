@@ -171,7 +171,8 @@ async function buildDepartures(dates, zipsFor, wantedIds) {
   const byZip = new Map();
   for (const d of serviceDays) { const z = zipsFor(d); if (z) (byZip.get(z.zip) || byZip.set(z.zip, { z, days: [] }).get(z.zip)).days.push(d); }
   const dep = new Map();  // stopId → [{date, min, line, head, type, trip, seq}]
-  const seen = new Set();
+  const arrivals = new Map();  // stopId → [{date, min, m0, line, type, head, trip, seq, up}]
+  const seen = new Set(), seenA = new Set();
   for (const { z, days } of byZip.values()) {
     log("rozkład", z.name, "dni:", days.join(", "));
     const cal = G.readTable(z.zip, "calendar.txt"), cd = G.readTable(z.zip, "calendar_dates.txt");
@@ -180,8 +181,26 @@ async function buildDepartures(dates, zipsFor, wantedIds) {
     const active = days.map(d => ({ d, on: G.activeServices(cal, cd, d) }));
     const ids = wantedIds(z);
     const local = [];   // odjazdy z tego pliku — do dopisania dalszych przystanków
+    const localA = [];  // przyjazdy — do dopisania wcześniejszych przystanków
     await G.streamTable(z.zip, "stop_times.txt", r => {
-      if (!ids.has(r.stop_id) || r.pickup_type === "1") return;
+      if (!ids.has(r.stop_id)) return;
+      if (r.drop_off_type !== "1" && +r.stop_sequence > 0) {
+        const ta = trips.get(r.trip_id), ma = G.hmsMin(r.arrival_time || r.departure_time);
+        if (ta && ma != null) {
+          const rta = routes.get(ta.route) || { short: "?", type: 3 };
+          for (const { d, on } of active) {
+            if (!on.has(ta.service)) continue;
+            const date = G.addDays(d, Math.floor(ma / 1440)), min = ma % 1440;
+            if (date < dates[0] || date > dates[dates.length - 1]) continue;
+            const ka = r.stop_id + "|" + date + "|" + min + "|" + rta.short + "|" + ta.head;
+            if (seenA.has(ka)) continue; seenA.add(ka);
+            const xa = { date, min, m0: ma, line: rta.short, type: rta.type, head: ta.head, trip: r.trip_id, seq: +r.stop_sequence };
+            (arrivals.get(r.stop_id) || arrivals.set(r.stop_id, []).get(r.stop_id)).push(xa);
+            localA.push(xa);
+          }
+        }
+      }
+      if (r.pickup_type === "1") return;
       const t = trips.get(r.trip_id); if (!t) return;
       const m0 = G.hmsMin(r.departure_time || r.arrival_time); if (m0 == null) return;
       const rt = routes.get(t.route) || { short: "?", type: 3 };
@@ -200,10 +219,10 @@ async function buildDepartures(dates, zipsFor, wantedIds) {
     // Drugi przebieg: całe kursy (tylko te, które odjeżdżają spod stacji) →
     // dla każdego odjazdu dalsze przystanki z czasem jazdy (do DOWN_MAX min).
     // Linia okrężna mija przystanek dwa razy — bierzemy PIERWSZE wystąpienie.
-    const want = new Set(local.map(x => x.trip)), seqs = new Map();
+    const want = new Set(local.map(x => x.trip).concat(localA.map(x => x.trip))), seqs = new Map();
     await G.streamTable(z.zip, "stop_times.txt", r => {
       if (!want.has(r.trip_id)) return;
-      (seqs.get(r.trip_id) || seqs.set(r.trip_id, []).get(r.trip_id)).push([+r.stop_sequence, r.stop_id, G.hmsMin(r.arrival_time || r.departure_time), r.drop_off_type === "1"]);
+      (seqs.get(r.trip_id) || seqs.set(r.trip_id, []).get(r.trip_id)).push([+r.stop_sequence, r.stop_id, G.hmsMin(r.arrival_time || r.departure_time), r.drop_off_type === "1", G.hmsMin(r.departure_time || r.arrival_time), r.pickup_type === "1"]);
     });
     const names = new Map(loadStops(z.zip).map(st => [st.id, st.name]));
     for (const rows of seqs.values()) rows.sort((a, b) => a[0] - b[0]);
@@ -217,11 +236,25 @@ async function buildDepartures(dates, zipsFor, wantedIds) {
       }
       x.down = down;
     }
+    // Wcześniejsze przystanki (skąd można było wsiąść): od stacji wstecz, do UP_MAX min;
+    // linia okrężna — bierzemy NAJBLIŻSZE wystąpienie przed stacją (najkrótsza jazda).
+    for (const x of localA) {
+      const rows = seqs.get(x.trip) || [], seen3 = new Set(), up = [];
+      for (let i = rows.length - 1; i >= 0; i--) {
+        const [sq, sid, , , dep, noPick] = rows[i];
+        if (sq >= x.seq || dep == null || noPick) continue;
+        const off = x.m0 - dep; if (off > UP_MAX) break;
+        const n = names.get(sid); if (!n || seen3.has(n)) continue;
+        seen3.add(n); up.push([n, off]);
+      }
+      x.up = up;
+    }
   }
-  return dep;
+  return { dep, arrivals };
 }
 
 const DOWN_MAX = 120;   // dalsze przystanki kursu: do 2 h jazdy
+const UP_MAX = 90;      // wcześniejsze przystanki kursu (dojazd pod stację): do 1,5 h
 
 // ---------- główny przebieg ----------
 async function main() {
@@ -262,9 +295,12 @@ async function main() {
   };
   const codeById = new Map();
   for (const z of new Set(dates.map(zipsFor).filter(Boolean))) for (const s of loadStops(z.zip)) codeById.set(s.id, s.code);
-  const dep = await buildDepartures(dates, zipsFor, wantedIds);
+  const built = await buildDepartures(dates, zipsFor, wantedIds), dep = built.dep;
   const depByCode = new Map();
   for (const [id, list] of dep) { const c = codeById.get(id); if (c) (depByCode.get(c) || depByCode.set(c, []).get(c)).push(...list); }
+  const arrByCode = new Map();
+  for (const [id, list] of built.arrivals) { const c = codeById.get(id); if (c) (arrByCode.get(c) || arrByCode.set(c, []).get(c)).push(...list); }
+  const feeders = new Map();   // nazwa przystanku → Map(stacja → najkrótsza jazda pod stację)
 
   // ---------- zapis (najpierw do out.tmp/) ----------
   fs.rmSync(TMP, { recursive: true, force: true });
@@ -298,9 +334,39 @@ async function main() {
       fs.writeFileSync(path.join(TMP, "stations", st.id + ".json"), txt);
       if (txt.length / 1024 > biggest.kb) biggest = { id: st.id, name: st.name, kb: Math.round(txt.length / 1024) };
     }
+    if (st.stops.length) {
+      const aLines = [], aLineIdx = new Map(), usNames = [], usIdx = new Map(), ups = [], upIdx = new Map(), aDays = {};
+      for (const d of dates) aDays[d] = [];
+      const upOf = up => {
+        if (!up || !up.length) return -1;
+        const flat = [];
+        for (const [n, off] of up) {
+          if (!usIdx.has(n)) { usIdx.set(n, usNames.length); usNames.push(n); }
+          flat.push(usIdx.get(n), off);
+          const fm = feeders.get(n) || feeders.set(n, new Map()).get(n);
+          if (!fm.has(st.id) || fm.get(st.id) > off) fm.set(st.id, off);
+        }
+        const k = flat.join(",");
+        if (!upIdx.has(k)) { upIdx.set(k, ups.length); ups.push(flat); }
+        return upIdx.get(k);
+      };
+      st.stops.forEach((s, si) => {
+        for (const x of arrByCode.get(s.code) || []) {
+          const lk = x.line + "|" + x.type + "|" + x.head;
+          if (!aLineIdx.has(lk)) { aLineIdx.set(lk, aLines.length); aLines.push([x.line, x.type, x.head]); }
+          aDays[x.date].push([x.min, aLineIdx.get(lk), si, x.trip, x.seq, upOf(x.up)]);
+        }
+      });
+      for (const d of dates) aDays[d].sort((a, b) => a[0] - b[0]);
+      fs.writeFileSync(path.join(TMP, "stations", st.id + "-arr.json"), JSON.stringify({ v: 1, id: st.id, name: st.name, generated: gen, range: index.range, stops: st.stops.map(s => ({ c: s.code, n: s.name, w: [s.min, s.max] })), lines: aLines, us: usNames, up: ups, days: aDays }));
+    }
     index.stations.push({ id: st.id, n: st.name, lat: +st.lat.toFixed(6), lon: +st.lon.toFixed(6), s: st.stops.map(s => [s.code, s.n || s.name, s.min, s.max]) });
   }
   writeJson(path.join(TMP, "index.json"), index);
+  // przystanek → stacje, do których z niego dojedziesz bez przesiadki (z najkrótszym czasem jazdy)
+  const fz = {};
+  for (const [n, m] of feeders) fz[n] = [...m.entries()].sort((a, b) => a[1] - b[1]).slice(0, 6);
+  writeJson(path.join(TMP, "feeders.json"), { v: 1, generated: gen, stops: fz });
 
   // raport (dane) — z porównaniem z poprzednim
   const prev = readJson(path.join(OUT, "raport.json"), null);

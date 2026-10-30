@@ -1095,6 +1095,24 @@
     "destPh": "z. B. AWF",
     "destNone": "Von diesem Bahnhof fährt nichts ohne Umstieg nach „{d}“.",
     "arrDest": "{t} {n} ({m} Min. Fahrt)",
-    "destOn": "Fahrten, die hinfahren: {d} — nach Ankunftszeit."
+    "destOn": "Fahrten, die hinfahren: {d} — nach Ankunftszeit.",
+    "modeA": "Ich steige aus dem Zug",
+    "modeB": "Ich fahre zum Zug",
+    "bFrom": "Von (GZM-Haltestelle)",
+    "bFromPh": "z. B. AWF",
+    "bTo": "Nach (Bahnhof)",
+    "bToPh": "z. B. Tarnowskie Góry",
+    "bTime": "Los um",
+    "bGo": "Suchen",
+    "bNeed": "Start-Haltestelle und Zielbahnhof eingeben.",
+    "bSearching": "Suche Fahrt und Züge…",
+    "bNoFrom": "Haltestelle „{d}“ unbekannt oder von dort fährt nichts zu einem Bahnhof.",
+    "bNoStation": "Von dieser Haltestelle erreichst du keinen Bahnhof ohne Umstieg.",
+    "bNone": "Kein erreichbarer Zug von dieser Haltestelle innerhalb von 2 Stunden.",
+    "bVia": "über {s}",
+    "bSlack": "{n} Min. Puffer",
+    "bLatest": "spätestens los: {t} — {l} ab {s}",
+    "bArrive": "Ankunft",
+    "bNote": "Züge aus dem PLK-Planer. Fußweg von der Haltestelle zum Bahnsteig nach Karte, vorsichtig gerechnet (entferntester Bahnsteig)."
   }
 }

@@ -1095,6 +1095,24 @@
     "destPh": "p. ej. AWF",
     "destNone": "Desde esta estación nada llega a «{d}» sin transbordo.",
     "arrDest": "{t} {n} ({m} min de viaje)",
-    "destOn": "Viajes que llegan a: {d}, por hora de llegada."
+    "destOn": "Viajes que llegan a: {d}, por hora de llegada.",
+    "modeA": "Bajo del tren",
+    "modeB": "Voy al tren",
+    "bFrom": "Desde (parada GZM)",
+    "bFromPh": "p. ej. AWF",
+    "bTo": "Hasta (estación de tren)",
+    "bToPh": "p. ej. Tarnowskie Góry",
+    "bTime": "Salida",
+    "bGo": "Buscar",
+    "bNeed": "Introduce la parada de inicio y la estación de destino.",
+    "bSearching": "Buscando trayecto y trenes…",
+    "bNoFrom": "No conozco la parada «{d}» o desde ella nada llega a una estación de tren.",
+    "bNoStation": "Desde esta parada no llegas a ninguna estación sin transbordo.",
+    "bNone": "No hay ningún tren que alcances desde esta parada en 2 horas.",
+    "bVia": "por {s}",
+    "bSlack": "margen {n} min",
+    "bLatest": "sal como muy tarde: {t} — {l} desde {s}",
+    "bArrive": "llegada",
+    "bNote": "Trenes del planificador PLK. Camino de la parada al andén según el mapa, calculado con prudencia (andén más lejano)."
   }
 }

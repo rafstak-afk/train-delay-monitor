@@ -1095,6 +1095,24 @@
     "destPh": "např. AWF",
     "destNone": "Z této stanice nic nejede bez přestupu do „{d}“.",
     "arrDest": "{t} {n} (jízda {m} min)",
-    "destOn": "Spoje, které dojedou do: {d} — podle času příjezdu."
+    "destOn": "Spoje, které dojedou do: {d} — podle času příjezdu.",
+    "modeA": "Vystupuji z vlaku",
+    "modeB": "Jedu na vlak",
+    "bFrom": "Odkud (zastávka GZM)",
+    "bFromPh": "např. AWF",
+    "bTo": "Kam (železniční stanice)",
+    "bToPh": "např. Tarnowskie Góry",
+    "bTime": "Odchod",
+    "bGo": "Hledat",
+    "bNeed": "Zadejte výchozí zastávku a cílovou stanici.",
+    "bSearching": "Hledám spoj a vlaky…",
+    "bNoFrom": "Zastávku „{d}“ neznám, nebo z ní nic nejede k železniční stanici.",
+    "bNoStation": "Z této zastávky se bez přestupu k žádné stanici nedostanete.",
+    "bNone": "Z této zastávky do 2 hodin žádný vlak nestihnete.",
+    "bVia": "přes {s}",
+    "bSlack": "rezerva {n} min",
+    "bLatest": "vyrazte nejpozději: {t} — {l} z {s}",
+    "bArrive": "příjezd",
+    "bNote": "Vlaky z plánovače PLK. Chůze ze zastávky na nástupiště podle mapy, opatrně (nejvzdálenější nástupiště)."
   }
 }
