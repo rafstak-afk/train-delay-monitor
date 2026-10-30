@@ -1142,6 +1142,7 @@
     "hChange": "przesiadka: {n} min do {s}, czekasz {w} min",
     "nTitle": "komunikacja GZM · przesiadki: {n}",
     "nDirect": "komunikacja GZM · bez przesiadek",
-    "mmNote": "Jedno wyszukiwanie: dojazd i dalsza podróż w całej sieci GZM (do 1 przesiadki), pociągi z planera PLK. Strażnik pilnuje na razie pociągów."
+    "mmNote": "Jedno wyszukiwanie: dojazd i dalsza podróż w całej sieci GZM (do 1 przesiadki), pociągi z planera PLK. „Pilnuj całej podróży” — strażnik pilnuje też autobusów i tramwajów.",
+    "cGuardAll": "Pilnuj całej podróży"
   }
 }

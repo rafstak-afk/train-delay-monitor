@@ -539,7 +539,12 @@ function activeGuardConnections(profile, now, nowMinutes) {
 // w kilku połączeniach albo profilach.
 function guardTrainFetcher(origin) {
   const cache = new Map();
+  let gzmRt = null;   // dane na żywo GZM — raz na przebieg (i tak z pamięci podręcznej 20 s)
   return (leg, date) => {
+    if (leg.mode === "gzm") {
+      if (!gzmRt) gzmRt = fetchJson(origin, "/api/gzm-rt");
+      return gzmRt.then(rt => ({ gzm: true, t: rt && rt.ok && rt.trips ? rt.trips[leg.trip] || null : null }));
+    }
     const k = leg.scheduleId + "|" + leg.orderId + "|" + date;
     if (!cache.has(k)) {
       const q = new URLSearchParams({ scheduleId: leg.scheduleId, orderId: leg.orderId, operatingDate: date, train: (leg.train && leg.train.number) || "" });

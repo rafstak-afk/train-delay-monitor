@@ -110,11 +110,16 @@
     function delayHtml(d, src) {
       if (d == null) return '';
       var cls = d >= 10 ? 'vlate' : (d >= 3 ? 'late' : 'ontime');
-      var srcT = src === 'forecast' ? T('guard.src.forecast', null, 'prognoza PLK') : (src === 'confirmed' ? T('guard.src.confirmed', null, 'potwierdzone') : (src === 'notStarted' ? T('guard.src.notStarted', null, 'jeszcze nie wyjechał') : ''));
+      var srcT = src === 'live' ? T('gzm.live', null, 'na żywo') : src === 'sched' ? T('gzm.sched', null, 'wg rozkładu') : src === 'forecast' ? T('guard.src.forecast', null, 'prognoza PLK') : (src === 'confirmed' ? T('guard.src.confirmed', null, 'potwierdzone') : (src === 'notStarted' ? T('guard.src.notStarted', null, 'jeszcze nie wyjechał') : ''));
       return ' <span class="dl ' + cls + '">' + (d > 0 ? '+' + d : d === 0 ? '0' : d) + ' min</span>' + (srcT ? ' <span class="src">(' + esc(srcT) + ')</span>' : '');
     }
 
+    var gzmRtP = null, gzmRtAt = 0;
     function fetchTrain(leg, date) {
+      if (leg.mode === "gzm") {
+        if (!gzmRtP || Date.now() - gzmRtAt > 20000) { gzmRtAt = Date.now(); gzmRtP = fetch('/api/gzm-rt', { cache: 'no-store' }).then(function (r) { return r.json(); }).catch(function () { return null; }); }
+        return gzmRtP.then(function (rt) { return { gzm: true, t: rt && rt.ok && rt.trips ? rt.trips[leg.trip] || null : null }; });
+      }
       var k = leg.scheduleId + '|' + leg.orderId + '|' + date;
       var c = cache[k];
       if (c && Date.now() - c.at < 50000) return Promise.resolve(c.data);
@@ -206,6 +211,8 @@
       var tr = G.trainLabel(l.train) + (l.train && l.train.name ? ' ' + l.train.name : '');
       var d = r && !r.noData;
       var info = !r ? '' : (r.noData ? ' <span class="src">(' + esc(T('guard.status.nodata', null, 'brak danych')) + ')</span>' : (r.cancelled ? ' <b style="color:#fff;background:#000;padding:1px 6px;border-radius:6px">⚫ ' + esc(T('guard.status.cancelled', null, 'pociąg odwołany')) + '</b>' : ''));
+      if (l.mode === "gzm") return '<div class="leg"><div class="leg-t">' + timeHtml(l.board.time, d ? r.delayDep : 0) + '<small>' + timeHtml(l.alight.time, d ? r.delayArr : 0) + '</small></div>' +
+        '<div><div class="leg-train">' + esc(tr) + info + '</div><div class="leg-st">' + esc(l.board.stationName) + (d ? delayHtml(r.delayDep, r.depSource) : '') + ' → ' + esc(l.alight.stationName) + '</div></div></div>';
       return '<a class="leg" href="' + esc(trainUrl(l, date)) + '" title="' + esc(T('guard.openTrain', null, 'Pokaż cały bieg pociągu')) + '"><div class="leg-t">' + timeHtml(d && r.plannedDep || l.board.time, d ? r.delayDep : 0) + '<small>' + timeHtml(d && r.plannedArr || l.alight.time, d ? r.delayArr : 0) + (l.alight.nextDay ? ' +1' : '') + '</small></div>' +
         '<div><div class="leg-train">' + esc(tr) + info + '</div><div class="leg-st">' + esc(l.board.stationName) + (d ? delayHtml(r.delayDep, r.depSource) : '') + ' → ' + esc(l.alight.stationName) + (d ? delayHtml(r.delayArr, r.arrSource) : '') + '</div></div></a>';
     }

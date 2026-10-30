@@ -204,6 +204,41 @@ test("przypomnienie po przyjeździe i planowy przyjazd na cel", () => {
   if (!/Dojechałeś\? Zapisz przejazd Katowice → Tarnowskie Góry/.test(m.body)) throw new Error(m.body);
 });
 
+// ---------- podróż z odcinkami GZM (autobus → pociąg → tramwaj) ----------
+// 46: AWF 14:30 → Katowice Dworzec 14:37 (na peron 2 min); pociąg Katowice 14:45 → TG 15:30;
+// tramwaj z TG Dworzec 15:40 (z peronu 5 min) → Plac 15:50
+const mm = { id: "m1", date: "2026-10-29", from: "Katowice AWF", to: "Plac", legs: [
+  { mode: "gzm", trip: "b46", train: { category: "🚌", number: "46" }, board: { stationName: "Katowice AWF", time: "14:30" }, alight: { stationName: "Katowice Dworzec", time: "14:37" } },
+  { train: { category: "KŚ", number: "40500" }, scheduleId: "2026", orderId: "1", walkBefore: 2, board: { stationName: "Katowice", time: "14:45" }, alight: { stationName: "Tarnowskie Góry", time: "15:30" } },
+  { mode: "gzm", trip: "t9", walkBefore: 5, train: { category: "🚋", number: "9" }, board: { stationName: "TG Dworzec", time: "15:40" }, alight: { stationName: "Plac", time: "15:50" } }
+] };
+function trainM(arrDelay) { return { status: "", delay: 0, lastConfirmedStation: "", route: [
+  { stationName: "Katowice", status: "upcoming", plannedDeparture: "14:45", forecastDepartureDelay: 0 },
+  { stationName: "Tarnowskie Góry", status: "upcoming", plannedArrival: "15:30", forecastArrivalDelay: arrDelay } ] }; }
+test("GZM: autobus i tramwaj planowo, pociąg punktualnie → 🟢 (zapas 6 i 5 min)", () => {
+  const r = G.evaluate(mm, [{ gzm: true, t: null }, trainM(0), { gzm: true, t: null }], { minTransfer: 3 });
+  if (r.status !== "ok") throw new Error(r.status + " " + JSON.stringify(r.transfers.map(t => [t.status, t.slack, t.need])));
+  if (r.transfers[0].need !== 2 || r.transfers[1].need !== 5) throw new Error("need " + r.transfers.map(t => t.need));
+});
+test("GZM: autobus +5 min (na żywo) → przesiadka na pociąg na styk 🟡", () => {
+  const r = G.evaluate(mm, [{ gzm: true, t: [3, 300] }, trainM(0), { gzm: true, t: null }], { minTransfer: 3 });
+  if (r.transfers[0].status !== "risk" || r.transfers[0].slack !== 3) throw new Error(JSON.stringify(r.transfers[0]));
+});
+test("GZM: pociąg +6 min → tramwaj ucieka 🔴", () => {
+  const r = G.evaluate(mm, [{ gzm: true, t: null }, trainM(6), { gzm: true, t: null }], { minTransfer: 3 });
+  if (r.transfers[1].status !== "broken") throw new Error(JSON.stringify(r.transfers[1]));
+});
+test("GZM: tramwaj odwołany → ⚫", () => {
+  const r = G.evaluate(mm, [{ gzm: true, t: null }, trainM(0), { gzm: true, t: [1, "X"] }], { minTransfer: 3 });
+  if (r.status !== "cancelled") throw new Error(r.status);
+});
+test("GZM: bez alternatyw z planera PLK, w dzienniczku tylko pociąg, id z numerem kursu GZM", () => {
+  if (G.altOrigin(mm, { legs: [{ cancelled: true }] }) !== null) throw new Error("alt");
+  const e = G.buildJournalEntries(mm, [null, trainM(0), null], null, "2026-10-29T16:00:00Z");
+  if (e.length !== 1 || e[0].trainNumber !== "40500") throw new Error(JSON.stringify(e));
+  if (!/gb46@katowice awf/.test(G.connectionId("2026-10-29", mm.legs))) throw new Error(G.connectionId("2026-10-29", mm.legs));
+});
+
 let fail = 0;
 for (const t of T) { try { t.fn(); console.log("  ✔ " + t.name); } catch (e) { fail++; console.log("  ✘ " + t.name + "\n      " + e.message); } }
 console.log("\n" + (T.length - fail) + "/" + T.length + " testów OK");

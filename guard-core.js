@@ -37,7 +37,7 @@
   // Id połączenia — z daty i kursów, więc ten sam wynik dodany dwa razy
   // (albo z dwóch urządzeń) to ta sama pozycja, nie duplikat.
   function connectionId(date, legs) {
-    return date + "|" + legs.map(function (l) { return (l.scheduleId || "") + "-" + (l.orderId || "") + "@" + norm(l.board && l.board.stationName); }).join(">");
+    return date + "|" + legs.map(function (l) { return (l.mode === "gzm" ? "g" + (l.trip || "") : (l.scheduleId || "") + "-" + (l.orderId || "")) + "@" + norm(l.board && l.board.stationName); }).join(">");
   }
 
   // Z wyniku planera ({legs, …} + zapytanie) — tylko to, co potrzebne do pilnowania.
@@ -103,6 +103,14 @@
     return { delay: 0, source: "notStarted" };
   }
   function readLeg(leg, data) {
+    // Odcinek GZM (autobus/tramwaj): data = { gzm: true, t: [stop_sequence, opóźnienie s, …] | null }
+    // z /api/gzm-rt. Bez danych na żywo — rozkład (to nie „brak danych”).
+    if (leg.mode === "gzm") {
+      var gt = data && data.t, cx = !!(gt && gt[1] === "X"), gd = gt && !cx ? Math.round((gt[1] || 0) / 60) : 0;
+      var src = gt ? "live" : "sched";
+      return { noData: false, gzm: true, cancelled: cx, started: !!gt, boarded: false, arrived: false,
+        plannedDep: leg.board.time, plannedArr: leg.alight.time, delayDep: gd, delayArr: gd, depSource: src, arrSource: src, platformDep: "", platformArr: "" };
+    }
     if (!data || data.error || !Array.isArray(data.route) || !data.route.length) return { noData: true };
     var bi = findStop(data.route, leg.board.stationName, 0);
     var ai = findStop(data.route, leg.alight.stationName, bi < 0 ? 0 : bi + 1);
@@ -139,6 +147,11 @@
     var plannedSlack = plannedB - plannedA;
     var platformChange = !!(rA && rB && !rA.noData && !rB.noData && rA.platformArr && rB.platformDep && rA.platformArr !== rB.platformDep);
     var need = minTransfer + (platformChange ? PLATFORM_EXTRA : 0) + (stationChange ? STATION_EXTRA : 0);
+    // przesiadka z udziałem GZM: potrzebny czas = dojście (peron ↔ przystanek, słupek ↔ słupek), zapisane w odcinku B
+    if (legA.mode === "gzm" || legB.mode === "gzm" || legB.walkBefore != null) {
+      platformChange = false; stationChange = false;
+      need = Math.max(1, legB.walkBefore != null ? legB.walkBefore : minTransfer);
+    }
     var out = {
       station: station, toStation: legB.board.stationName, stationChange: stationChange, platformChange: platformChange,
       platformArr: rA && rA.platformArr || "", platformDep: rB && rB.platformDep || "",
@@ -326,6 +339,7 @@
   // keep = ile pierwszych nóg zostaje przy przełączeniu na alternatywę.
   function altOrigin(conn, res) {
     if (!res || !res.legs) return null;
+    if ((conn.legs || []).some(function (l) { return l.mode === "gzm"; })) return null;   // podróż z GZM — bez alternatyw z planera PLK
     var ci = -1;
     res.legs.forEach(function (x, i) { if (ci < 0 && x && !x.noData && x.cancelled) ci = i; });
     var tIdx = res.worst;
@@ -375,6 +389,7 @@
     var out = [];
     legs.forEach(function (leg, i) {
       if (checked && checked[i] === false) return;
+      if (leg.mode === "gzm") return;   // dzienniczek: tylko przejazdy pociągiem
       var data = readings ? readings[i] : null;
       var r = readLeg(leg, data);
       var ok = r && !r.noData;

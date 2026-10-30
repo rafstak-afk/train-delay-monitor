@@ -554,11 +554,11 @@
           var card = '<div class="gz-dep ' + (L && L.status === "tight" ? "tight" : "ok") + '" style="grid-template-columns:minmax(0,1fr) auto">' +
             '<div class="gz-main">' + headHtml +
             steps.map(function (h) { return '<div class="gz-stop" style="white-space:normal;margin-top:4px">' + h + "</div>"; }).join("") +
-            (guardOk ? '<div style="margin-top:8px"><button type="button" class="gz-btn sec" data-guard="' + i + '">🛡️ ' + esc(T("gzm.cGuard", null, "Pilnuj pociągów tej podróży")) + "</button></div>" : "") + "</div>" +
+            (guardOk ? '<div style="margin-top:8px"><button type="button" class="gz-btn sec" data-guard="' + i + '">🛡️ ' + esc(T("gzm.cGuardAll", null, "Pilnuj całej podróży")) + "</button></div>" : "") + "</div>" +
             '<div class="gz-right"><div class="gz-t">' + C.fmt(x.final) + '</div><div class="gz-in">' + esc(T("gzm.bArrive", null, "na miejscu")) + "</div></div></div>";
           return accHtml + card + egrHtml;
         }).join("") +
-        '<div class="gz-sub" style="margin:6px 2px">' + esc(T("gzm.mmNote", null, "Jedno wyszukiwanie: dojazd i dalsza podróż w całej sieci GZM (do 1 przesiadki), pociągi z planera PLK. Strażnik pilnuje na razie pociągów.")) + "</div>";
+        '<div class="gz-sub" style="margin:6px 2px">' + esc(T("gzm.mmNote", null, "Jedno wyszukiwanie: dojazd i dalsza podróż w całej sieci GZM (do 1 przesiadki), pociągi z planera PLK.")) + "</div>";
       cState.shown = out;
     }
     function searchCOld() {
@@ -760,9 +760,43 @@
         '<div class="gz-sub" style="margin:6px 2px">' + esc(T("gzm.cNote", null, "Pociągi z planera PLK, autobusy i tramwaje z rozkładu GZM z opóźnieniami na żywo. Strażnik pilnuje na razie pociągów; części GZM pilnuj w tej zakładce.")) + "</div>";
       cState.shown = out;
     }
+    // Odcinki GZM z podróży RAPTOR-a → nogi strażnika (mode: "gzm"); walkBefore = dojście przed odcinkiem.
+    var KIND_ICON = { bus: "🚌", tram: "🚋", trolley: "🚎" };
+    function gzmLegs(jn, firstWalk) {
+      var out = [], walk = firstWalk || 0;
+      jn.legs.forEach(function (l) {
+        if (l.type === "walk") { walk += l.min; return; }
+        out.push({ mode: "gzm", trip: l.trip, kind: l.kind, train: { category: KIND_ICON[l.kind] || "🚌", number: l.line, name: "→ " + l.head },
+          board: { stationName: l.fromName, time: C.fmt(l.depPlan) }, alight: { stationName: l.toName, time: C.fmt(l.arr - (l.delay || 0)) }, walkBefore: walk || null });
+        walk = 0;
+      });
+      return out;
+    }
+    function guardWhole(x, btn) {
+      var S = cState, c = x.c, q = x.p.query || { from: x.p.cb.a.st.n, to: x.p.cb.e.st.n, date: S.date };
+      if (!q.date) q.date = S.date;
+      var legs = [];
+      if (c.latest) {
+        var acc = gzmLegs(c.latest.jn, 0);
+        legs = legs.concat(acc);
+        var lastRide = c.latest.jn.legs.filter(function (l) { return l.type === "ride"; }).pop();
+        var trainLegs = GuardCore.fromItinerary(x.it, q).legs;
+        if (trainLegs.length && lastRide) trainLegs[0].walkBefore = Math.max(1, c.latest.plat - lastRide.arr);
+        legs = legs.concat(trainLegs);
+      } else legs = legs.concat(GuardCore.fromItinerary(x.it, q).legs);
+      if (c.egr && c.egr.length) {
+        var e = c.egr[0], firstRide = e.legs.filter(function (l) { return l.type === "ride"; })[0];
+        var poleWalk = 3; polesOf(x.p.cb.e.st).forEach(function (p) { if (p.s === firstRide.from || S.net.name[p.s] === firstRide.fromName) poleWalk = p.walk; });
+        legs = legs.concat(gzmLegs(e, poleWalk));
+      }
+      var conn = { id: GuardCore.connectionId(S.date, legs), date: S.date, from: legs[0].board.stationName, to: legs[legs.length - 1].alight.stationName, legs: legs, source: "multimodal", createdAt: new Date().toISOString() };
+      btn.disabled = true;
+      GuardStore.add(conn).then(function () { btn.textContent = "🛡️ " + T("gzm.cGuarded", null, "Pilnowane"); });
+    }
     function guardTrip(btn) {
       var x = cState && cState.shown && cState.shown[+btn.dataset.guard];
       if (!x || !window.GuardStore || !window.GuardCore) return;
+      if (cState.mm && x.c) return guardWhole(x, btn);
       var q = x.p.query || { from: x.p.cb.a.st.n, to: x.p.cb.e.st.n, date: cState.date };
       if (!q.date) q.date = cState.date;
       btn.disabled = true;
