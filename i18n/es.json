@@ -409,7 +409,9 @@
     "myHint": "vigiladas y guardadas",
     "mySecGuard": "🛡️ Vigiladas",
     "mySecSaved": "📌 Guardadas",
-    "myEmpty": "Aún no hay nada. Junto a un resultado, toca 💾 Guardar o 🛡️ Vigilar."
+    "myEmpty": "Aún no hay nada. Junto a un resultado, toca 💾 Guardar o 🛡️ Vigilar.",
+    "tabGuard": "Vigiladas",
+    "tabSaved": "Guardadas"
   },
   "tutorial": {
     "ui": {

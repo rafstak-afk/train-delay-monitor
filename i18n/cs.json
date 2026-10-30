@@ -409,7 +409,9 @@
     "myHint": "hlídaná a uložená",
     "mySecGuard": "🛡️ Hlídané",
     "mySecSaved": "📌 Uložené",
-    "myEmpty": "Zatím tu nic není. U výsledku hledání klepněte na 💾 Uložit nebo 🛡️ Hlídat."
+    "myEmpty": "Zatím tu nic není. U výsledku hledání klepněte na 💾 Uložit nebo 🛡️ Hlídat.",
+    "tabGuard": "Hlídané",
+    "tabSaved": "Uložené"
   },
   "tutorial": {
     "ui": {

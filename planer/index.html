@@ -176,6 +176,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
 
   <nav class="ptabs" id="planTabs" role="tablist">
     <button type="button" class="ptab active" role="tab" data-tab="search" aria-selected="true"><span class="ptab-ico" aria-hidden="true">🔎</span><span class="ptab-lbl" data-i18n="planer.tabSearch">Szukaj</span></button>
+    <button type="button" class="ptab" role="tab" id="tabGuard" data-tab="guard" aria-selected="false" hidden><span class="ptab-ico" aria-hidden="true">🛡️</span><span class="ptab-lbl"><span data-i18n="planer.tabGuard">Pilnowane</span><span class="ptab-n" id="guardCount"></span></span></button>
     <button type="button" class="ptab" role="tab" id="tabSaved" data-tab="saved" aria-selected="false"><span class="ptab-ico" aria-hidden="true">📌</span><span class="ptab-lbl"><span data-i18n="planer.tabMine">Moje</span><span class="ptab-n" id="savedCount"></span></span></button>
     <button type="button" class="ptab" role="tab" id="tabHistory" data-tab="history" aria-selected="false"><span class="ptab-ico" aria-hidden="true">🕘</span><span class="ptab-lbl"><span data-i18n="planer.tabHistory">Ostatnie</span><span class="ptab-n" id="historyCount"></span></span></button>
   </nav>
@@ -262,8 +263,13 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
   <div id="resultsList"></div>
   </div>
 
+  <div class="pview" data-view="guard" hidden>
+    <div class="pview-head"><b data-i18n="guard.title">🛡️ Pilnowane połączenia</b> · <span data-i18n="guard.subtitle">Pilnuję Twoich przesiadek. Gdy opóźnienie zagrozi przesiadce, dostaniesz powiadomienie i propozycję zastępczą.</span></div>
+    <div id="guardViewSplit"></div>
+  </div>
+
   <div class="pview" data-view="saved" hidden>
-    <div class="pview-head"><b data-i18n="planer.myTitle">Moje połączenia</b> · <span id="myHint" data-i18n="planer.savedSummary">Do późniejszego przejrzenia</span></div>
+    <div class="pview-head" id="myHead"><b data-i18n="planer.myTitle">Moje połączenia</b> · <span id="myHint" data-i18n="planer.savedSummary">Do późniejszego przejrzenia</span></div>
     <div class="my-sec" id="mySecGuard" hidden data-i18n="planer.mySecGuard">🛡️ Pilnowane</div>
     <div id="guardView" hidden></div>
     <div class="my-sec" id="mySecSaved" hidden data-i18n="planer.mySecSaved">📌 Zapisane</div>
@@ -344,14 +350,28 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
   // #zapisane i #pilnowane (powiadomienia, menu, dzienniczek) też tu prowadzą.
   var TAB_HASH={search:'',saved:'moje',history:'ostatnie'};
   var HASH_ALIAS={zapisane:'saved',pilnowane:'saved'};
-  // 🛡️ Pilnowane (guard-view.js): odpytuje PLK tylko, gdy „Moje” jest pokazane.
+  // 🛡️ Pilnowane (guard-view.js): odpytuje PLK tylko, gdy jego zakładka jest pokazana.
   var guardOn=!!(window.GuardStore&&window.GuardView&&GuardStore.enabled());
+  // TEST (tylko profil autora, ?wersja=1): 4 osobne zakładki
+  // Szukaj | Pilnowane | Zapisane | Ostatnie zamiast wspólnego „Moje”.
+  var splitTabs=guardOn&&(function(){try{return localStorage.getItem('showVersionBadge')==='1'}catch(e){return false}})();
+  var GUARD_TAB=splitTabs?'guard':'saved';
+  if(splitTabs){
+    TAB_HASH={search:'',guard:'pilnowane',saved:'zapisane',history:'ostatnie'};
+    HASH_ALIAS={moje:'saved'};
+    $('tabGuard').hidden=false;
+    var lbl=document.querySelector('#tabSaved [data-i18n="planer.tabMine"]');lbl.setAttribute('data-i18n','planer.tabSaved');lbl.textContent=T('planer.tabSaved');
+    $('myHead').innerHTML='<b data-i18n="planer.saved">'+escapeHtml(T('planer.saved'))+'</b> · <span data-i18n="planer.savedSummary">'+escapeHtml(T('planer.savedSummary'))+'</span>';
+  }else{
+    document.querySelector('.pview[data-view="guard"]').remove();
+  }
   var guardView=null;
   var urlGid=new URLSearchParams(location.search).get('gid');
   if(urlGid){try{var u=new URLSearchParams(location.search);u.delete('gid');history.replaceState(null,'',location.pathname+(u.toString()?'?'+u:'')+location.hash)}catch(e){}}
   var myGuardN=0;
   function updateMine(){
     var savedN=getSavedResults().length;
+    if(splitTabs){$('savedCount').textContent=savedN||'';$('guardCount').textContent=myGuardN||'';return}
     $('savedCount').textContent=(myGuardN+savedN)||'';
     $('mySecGuard').hidden=!myGuardN;
     $('mySecSaved').hidden=!(myGuardN&&savedN);
@@ -359,11 +379,13 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     $('myHint').textContent=T(guardOn?'planer.myHint':'planer.savedSummary');
   }
   if(guardOn){
-    guardView=GuardView.mount($('guardView'),{focusId:urlGid,hideWhenEmpty:true,onCount:function(n){myGuardN=n;updateMine()}});
+    guardView=splitTabs
+      ?GuardView.mount($('guardViewSplit'),{focusId:urlGid,onCount:function(n){myGuardN=n;updateMine()}})
+      :GuardView.mount($('guardView'),{focusId:urlGid,hideWhenEmpty:true,onCount:function(n){myGuardN=n;updateMine()}});
   }
   function showTab(name){
     if(!TAB_HASH.hasOwnProperty(name))name='search';
-    if(guardView){if(name==='saved')guardView.start();else guardView.stop()}
+    if(guardView){if(name===GUARD_TAB)guardView.start();else guardView.stop()}
     document.querySelectorAll('#planTabs .ptab').forEach(function(b){
       var on=b.dataset.tab===name;b.classList.toggle('active',on);b.setAttribute('aria-selected',on?'true':'false');
     });
@@ -386,14 +408,14 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     for(var k in TAB_HASH)if(TAB_HASH[k]===h){showTab(k);return true}
     return false;
   }
-  // Start: zakładka z adresu; bez niej — „Moje”, gdy któreś połączenie jest
+  // Start: zakładka z adresu; bez niej — pilnowane, gdy któreś połączenie jest
   // teraz pilnowane (a nie przyszliśmy tu z gotowym wyszukiwaniem).
-  if(!tabFromHash()&&guardView&&!new URLSearchParams(location.search).get('from')&&guardView.anyActive())showTab('saved');
+  if(!tabFromHash()&&guardView&&!new URLSearchParams(location.search).get('from')&&guardView.anyActive())showTab(GUARD_TAB);
   window.addEventListener('hashchange',tabFromHash);
   // „🛡️ Pilnowane” przy wyniku → zakładka z podświetlonym połączeniem (bez przeładowania).
   document.addEventListener('click',function(e){
     var a=e.target.closest('a.itin-guarded');if(!a||!guardView)return;
-    e.preventDefault();showTab('saved');guardView.focus(a.dataset.gid);
+    e.preventDefault();showTab(GUARD_TAB);guardView.focus(a.dataset.gid);
   });
   // Zapis wyniku: zostajemy przy wynikach, licznik „Moje” mruga.
   function bumpCount(id){var el=$(id);el.classList.remove('bump');void el.offsetWidth;el.classList.add('bump')}
@@ -1142,7 +1164,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     var list=getSavedResults();
     updateMine();
     var el=$('savedList');
-    if(!list.length){el.innerHTML=myGuardN?'':'<div class="empty">'+escapeHtml(T(guardOn?'planer.myEmpty':'planer.savedEmpty'))+'</div>';return}
+    if(!list.length){el.innerHTML=(myGuardN&&!splitTabs)?'':'<div class="empty">'+escapeHtml(T(guardOn?'planer.myEmpty':'planer.savedEmpty'))+'</div>';return}
     el.innerHTML=list.slice().reverse().map(function(e){
       return itineraryHtml(e.snapshot,{savedKey:e._key,savedAt:e.createdAt});
     }).join('');
@@ -1156,7 +1178,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     var fBtn=e.target.closest('.itin-fresh');
     if(fBtn){var fs2=getSavedResults().find(function(x){return x._key===fBtn.dataset.savedKey});if(fs2&&fs2.query)rerunQuery(fs2.query,'','',freshWhen(fs2.snapshot&&fs2.snapshot.departureTime||fs2.query.time));return}
     var gBtn2=e.target.closest('.itin-guard');
-    if(gBtn2){var gs=getSavedResults().find(function(x){return x._key===gBtn2.dataset.savedKey});if(gs)guardItinerary(gBtn2,gs.snapshot,gs.query,function(conn){removeSavedResult(gs._key);if(guardView){guardView.start();guardView.focus(conn.id)}});return}
+    if(gBtn2){var gs=getSavedResults().find(function(x){return x._key===gBtn2.dataset.savedKey});if(gs)guardItinerary(gBtn2,gs.snapshot,gs.query,function(conn){removeSavedResult(gs._key);if(guardView){if(splitTabs)showTab('guard');guardView.start();guardView.focus(conn.id)}});return}
     var planBtn=e.target.closest('.itin-addplan');
     if(planBtn){
       var saved=getSavedResults().find(function(x){return x._key===planBtn.dataset.savedKey});

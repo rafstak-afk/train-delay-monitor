@@ -409,7 +409,9 @@
     "myHint": "überwacht und gespeichert",
     "mySecGuard": "🛡️ Überwacht",
     "mySecSaved": "📌 Gespeichert",
-    "myEmpty": "Noch nichts hier. Tippe bei einem Suchergebnis auf 💾 Speichern oder 🛡️ Überwachen."
+    "myEmpty": "Noch nichts hier. Tippe bei einem Suchergebnis auf 💾 Speichern oder 🛡️ Überwachen.",
+    "tabGuard": "Überwacht",
+    "tabSaved": "Gespeichert"
   },
   "tutorial": {
     "ui": {

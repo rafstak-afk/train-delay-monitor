@@ -409,7 +409,9 @@
     "myHint": "pilnowane i zapisane",
     "mySecGuard": "🛡️ Pilnowane",
     "mySecSaved": "📌 Zapisane",
-    "myEmpty": "Nic tu jeszcze nie ma. Przy wyniku wyszukiwania kliknij 💾 Zapisz albo 🛡️ Pilnuj."
+    "myEmpty": "Nic tu jeszcze nie ma. Przy wyniku wyszukiwania kliknij 💾 Zapisz albo 🛡️ Pilnuj.",
+    "tabGuard": "Pilnowane",
+    "tabSaved": "Zapisane"
   },
   "tutorial": {
     "ui": {

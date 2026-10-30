@@ -409,7 +409,9 @@
     "myHint": "guarded and saved",
     "mySecGuard": "🛡️ Guarded",
     "mySecSaved": "📌 Saved",
-    "myEmpty": "Nothing here yet. Next to a search result, tap 💾 Save or 🛡️ Guard."
+    "myEmpty": "Nothing here yet. Next to a search result, tap 💾 Save or 🛡️ Guard.",
+    "tabGuard": "Guarded",
+    "tabSaved": "Saved"
   },
   "tutorial": {
     "ui": {
