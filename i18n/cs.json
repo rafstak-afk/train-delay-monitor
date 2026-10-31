@@ -1163,6 +1163,7 @@
     "pMine": "Moje místa",
     "pSet": "nastaveno",
     "pSetHere": "nastavit sem, kde jsem",
-    "pNote": "Místa ukládám jen v tomto zařízení. Chůzi počítám k zastávkám do cca 900 m (a ke stanici, je-li blízko)."
+    "pNote": "Místa ukládám jen v tomto zařízení (s profilem — ve všech). Chůzi počítám k zastávkám do cca 900 m (a ke stanici, je-li blízko).",
+    "pNoteProf": "Místa ukládám ve vašem profilu — jsou v každém zařízení s vaším tokenem. Chůzi počítám k zastávkám do cca 900 m (a ke stanici, je-li blízko)."
   }
 }

@@ -1163,6 +1163,7 @@
     "pMine": "My places",
     "pSet": "set",
     "pSetHere": "set to where I am",
-    "pNote": "Places are stored only on this device. Walking is counted to stops within about 900 m (and to the station when it is close)."
+    "pNote": "Places are stored only on this device (with a profile — on all of them). Walking is counted to stops within about 900 m (and to the station when it is close).",
+    "pNoteProf": "Places are stored in your profile — on every device with your token. Walking is counted to stops within about 900 m (and to the station when it is close)."
   }
 }

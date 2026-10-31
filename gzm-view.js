@@ -334,14 +334,16 @@
             '<span class="gz-sub" style="margin-left:6px">' + esc(T("gzm.pTo", null, "Dokąd:")) + "</span>" + chip("dom", "t") + chip("praca", "t") + "</div>" +
             '<details class="gz-sub" style="margin:2px 2px 8px"><summary>' + esc(T("gzm.pMine", null, "Moje miejsca")) + "</summary>" +
             ["dom", "praca"].map(function (k) { return '<div style="margin:6px 0">' + esc(PL_TOK[k]) + ": " + (P[k] ? "✔ " + esc(T("gzm.pSet", null, "ustawione")) + " " : "— ") + '<button type="button" class="gz-chip" data-plset="' + k + '">📍 ' + esc(T("gzm.pSetHere", null, "ustaw tu, gdzie jestem")) + "</button>" + (P[k] ? ' <button type="button" class="gz-chip" data-plclr="' + k + '">✕</button>' : "") + "</div>"; }).join("") +
-            '<div style="font-size:11.5px">' + esc(T("gzm.pNote", null, "Miejsca zapisuję tylko na tym urządzeniu. Dojście pieszo liczę do przystanków w promieniu ok. 900 m (i na stację, gdy jest blisko).")) + "</div></details>";
+            '<div style="font-size:11.5px">' + esc(profOn() ? T("gzm.pNoteProf", null, "Miejsca zapisuję w Twoim profilu — są na każdym urządzeniu z Twoim tokenem. Dojście pieszo liczę do przystanków w promieniu ok. 900 m (i na stację, gdy jest blisko).") : T("gzm.pNote", null, "Miejsca zapisuję tylko na tym urządzeniu (z profilem — na wszystkich). Dojście pieszo liczę do przystanków w promieniu ok. 900 m (i na stację, gdy jest blisko).")) + "</div></details>";
         };
         drawPlaces();
+        syncPlaces().then(function (ch) { if (ch) drawPlaces(); });
+        document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") syncPlaces().then(function (ch) { if (ch) drawPlaces(); }); });
         pb.addEventListener("click", function (e) {
           var b = e.target.closest("button"); if (!b) return;
           if (b.dataset.pl) { c.querySelector(b.dataset.side === "f" ? "#gzCFrom" : "#gzCTo").value = PL_TOK[b.dataset.pl]; return; }
-          if (b.dataset.plclr) { var P0 = load(PLACES, {}); delete P0[b.dataset.plclr]; save(PLACES, P0); drawPlaces(); return; }
-          if (b.dataset.plset) { b.disabled = true; b.textContent = "⏳"; gpsNow().then(function (g) { var P1 = load(PLACES, {}); P1[b.dataset.plset] = { lat: +g.lat.toFixed(6), lon: +g.lon.toFixed(6) }; save(PLACES, P1); drawPlaces(); }, function () { b.textContent = "⚠ GPS"; }); }
+          if (b.dataset.plclr) { putPlace(b.dataset.plclr, null); drawPlaces(); return; }
+          if (b.dataset.plset) { b.disabled = true; b.textContent = "⏳"; gpsNow().then(function (g) { putPlace(b.dataset.plset, { lat: +g.lat.toFixed(6), lon: +g.lon.toFixed(6) }); drawPlaces(); }, function () { b.textContent = "⚠ GPS"; }); }
         });
       }
       c.querySelector("#gzCGo").addEventListener("click", searchC);
@@ -505,6 +507,31 @@
       var pl = load(PLACES, {})[k];
       if (!pl) return Promise.reject(new Error("unset:" + k));
       return Promise.resolve({ key: k, label: PL_TOK[k], lat: pl.lat, lon: pl.lon });
+    }
+    // Profil: każde miejsce to osobny klucz (zmiana jednego nie nadpisuje drugiego); null = usunięte.
+    var PL_PROF = { dom: "gzmPlaceDom", praca: "gzmPlacePraca" };
+    function profOn() { return !!(window.ProfileSync && ProfileSync.getToken && ProfileSync.getToken()); }
+    function putPlace(k, v) {
+      var P = load(PLACES, {}); if (v) P[k] = v; else delete P[k]; save(PLACES, P);
+      if (profOn()) { var patch = {}; patch[PL_PROF[k]] = v || null; ProfileSync.push(patch); }
+    }
+    // Odczyt z profilu → to urządzenie. Miejsca ustawione tu przed zapisem w profilu
+    // (klucza jeszcze nie ma) wysyłamy raz, żeby nie przepadły.
+    function syncPlaces() {
+      if (!profOn() || !ProfileSync.pull) return Promise.resolve(false);
+      return ProfileSync.pull().then(function (d) {
+        if (!d) return false;
+        var P = load(PLACES, {}), up = {}, ch = false;
+        Object.keys(PL_PROF).forEach(function (k) {
+          var v = d[PL_PROF[k]];
+          if (v === undefined) { if (P[k]) up[PL_PROF[k]] = P[k]; }
+          else if (!v || typeof v.lat !== "number" || typeof v.lon !== "number") { if (P[k]) { delete P[k]; ch = true; } }
+          else if (!P[k] || P[k].lat !== v.lat || P[k].lon !== v.lon) { P[k] = { lat: v.lat, lon: v.lon }; ch = true; }
+        });
+        if (ch) save(PLACES, P);
+        if (Object.keys(up).length) ProfileSync.push(up);
+        return ch;
+      }).catch(function () { return false; });
     }
     function havM(a, b, c, d) { var R = 6371000, t = Math.PI / 180, x = Math.pow(Math.sin((c - a) * t / 2), 2) + Math.cos(a * t) * Math.cos(c * t) * Math.pow(Math.sin((d - b) * t / 2), 2); return 2 * R * Math.asin(Math.sqrt(x)); }
     function walkMin(m) { return Math.max(1, Math.ceil(m * 1.4 / 1.2 / 60)); }
