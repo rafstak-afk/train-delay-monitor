@@ -27,6 +27,11 @@
     '.gz .gz-line.tram{background:#7a1f2b}.gz .gz-line.trolley{background:#1f5a3a}.gz .gz-line small{display:block;font-size:10px;font-weight:700;opacity:.85}' +
     '.gz .gz-main{min-width:0}.gz .gz-dir{font-weight:800;font-size:14px;overflow-wrap:anywhere;line-height:1.3}' +
     '.gz .gz-stop{color:var(--muted);font-size:12.5px;overflow-wrap:anywhere;line-height:1.35}' +
+    '.gz .gz-dep[data-tripx]{cursor:pointer}' +
+    '.gz .gz-trip{background:#141f2b;border:1px solid var(--line);border-top:0;border-radius:0 0 12px 12px;margin:-8px 0 8px;padding:8px 11px 10px;font-size:13px}' +
+    '.gz .gz-trip-pos{color:var(--cyan);font-weight:700;margin:2px 0 6px}.gz .gz-trip-pos a{color:var(--cyan)}' +
+    '.gz .gz-tr{display:grid;grid-template-columns:56px 1fr;gap:6px;padding:3px 0;border-left:3px solid var(--line);padding-left:8px}' +
+    '.gz .gz-tr.past{opacity:.45}.gz .gz-tr.me{border-left-color:var(--yellow);font-weight:800}.gz .gz-tr.here{border-left-color:var(--cyan)}' +
     '.gz .gz-total{font-size:12px;color:var(--cyan);font-weight:700;margin-top:2px}' +
     '.gz .gz-right{text-align:right;white-space:nowrap}.gz .gz-t{font-weight:900;font-size:16px}.gz .gz-in{font-size:12px;color:var(--muted)}' +
     '.gz .gz-st-ok{color:var(--green)}.gz .gz-st-tight{color:var(--yellow)}.gz .gz-st-missed{color:var(--red)}' +
@@ -141,18 +146,65 @@
       });
     }
 
+    // ===== Rozwinięcie odjazdu: cały bieg kursu i gdzie jest teraz pojazd (TEST — tylko profil autora) =====
+    var tripOpen = {};
+    function tripExpandOn() { try { return localStorage.getItem("showVersionBadge") === "1"; } catch (e) { return false; } }
+    function tripIndex(net, tid) {
+      if (!net._tripIx) { net._tripIx = {}; net.j.trips.forEach(function (t, i) { net._tripIx[t[2]] = i; }); }
+      var i = net._tripIx[tid]; return i == null ? -1 : i;
+    }
+    function tripHtml(tid, date, boardName) {
+      var p = netP[date], net = null;
+      if (!p) { getNet(date).then(function () { rerender(); }).catch(function () {}); return '<div class="gz-trip">' + esc(T("gzm.tLoading", null, "Wczytuję bieg kursu…")) + "</div>"; }
+      p.then(function (n) { net = n; });
+      if (!p._net) { p.then(function (n) { p._net = n; rerender(); }); return '<div class="gz-trip">' + esc(T("gzm.tLoading", null, "Wczytuję bieg kursu…")) + "</div>"; }
+      net = p._net;
+      var ti = tripIndex(net, tid);
+      if (ti < 0) return '<div class="gz-trip">' + esc(T("gzm.tNone", null, "Brak danych o biegu tego kursu.")) + "</div>";
+      var tr = net.j.trips[ti], pat = net.j.pats[tr[0]], seq = pat[1], off = pat[2];
+      var rtT = rt && rt.trips && rt.trips[tid], dl = rtT && rtT[1] !== "X" ? Math.round((rtT[1] || 0) / 60) : 0, curSeq = rtT ? rtT[0] : null;
+      var nearIdx = -1;
+      if (rtT && rtT[2] != null) {
+        var bd = 1e9; seq.forEach(function (sx, i) { var d2 = Math.pow(net.lat[sx] - rtT[2], 2) + Math.pow((net.lon[sx] - rtT[3]) * 0.64, 2); if (d2 < bd) { bd = d2; nearIdx = i; } });
+      }
+      var pos = "";
+      if (rtT && rtT[2] != null) {
+        var ago = rtT[4] ? Math.max(0, Math.round((Date.now() / 1000 - rtT[4]) / 60)) : null;
+        pos = '<div class="gz-trip-pos">📍 ' + esc(T("gzm.tPos", { s: net.name[seq[nearIdx]] }, "pojazd teraz w pobliżu: {s}")) + (ago != null ? " · " + esc(T("gzm.tAgo", { n: ago }, "{n} min temu")) : "") +
+          ' · <a href="https://www.openstreetmap.org/?mlat=' + rtT[2] + "&mlon=" + rtT[3] + "#map=17/" + rtT[2] + "/" + rtT[3] + '" target="_blank" rel="noopener">' + esc(T("gzm.tMap", null, "mapa")) + "</a></div>";
+      } else pos = '<div class="gz-trip-pos" style="color:var(--muted)">' + esc(T("gzm.tNoPos", null, "brak pozycji na żywo — godziny wg rozkładu")) + "</div>";
+      var rows = seq.map(function (sx, i) {
+        var plan = tr[1] + off[2 * i + 1], nm = net.name[sx];
+        var cls = (curSeq != null && i < curSeq ? " past" : "") + (nm === boardName ? " me" : "") + (i === nearIdx ? " here" : "");
+        var t = dl ? '<span class="plan-strike">' + C.fmt(plan) + "</span> " + C.fmt(plan + dl) : C.fmt(plan);
+        return '<div class="gz-tr' + cls + '"><div>' + t + "</div><div>" + (i === nearIdx ? "📍 " : "") + esc(nm) + "</div></div>";
+      }).join("");
+      return '<div class="gz-trip">' + pos + rows + "</div>";
+    }
+    function rerender() { if (st.dir === "C" && cState) renderC(); else render(); }
+    root.addEventListener("click", function (e) {
+      if (!tripExpandOn()) return;
+      var card = e.target.closest(".gz-dep[data-tripx]");
+      if (!card || e.target.closest("button,a")) return;
+      var k = card.getAttribute("data-tripx");
+      if (tripOpen[k]) delete tripOpen[k]; else tripOpen[k] = true;
+      rerender();
+    });
+
     function depHtml(x, cls, noFav) {
       var d = x.dep, inMin = Math.round(x.real - nowOn(cfg.date || warsawNow().date));
       var tTxt = (x.live && x.delay) ? '<span class="plan-strike">' + C.fmt(d.min) + "</span> " + C.fmt(x.real) : C.fmt(x.real);
       var stTxt = x.status === "ok" ? "🟢 " + T("gzm.st.ok", null, "zdążysz") : x.status === "tight" ? "🟡 " + T("gzm.st.tight", null, "na styk") : x.status === "cancelled" ? "⚫ " + T("gzm.st.cancelled", null, "odwołany") : "🔴 " + T("gzm.st.missed", null, "nie zdążysz");
       var liveTxt = x.live ? (x.delay ? (x.delay > 0 ? "+" : "") + x.delay + " min, " + T("gzm.live", null, "na żywo") : T("gzm.onTimeLive", null, "punktualnie, na żywo")) : T("gzm.sched", null, "wg rozkładu");
       var key = C.favKey(d), isF = (favs[cfg.stationId] || []).indexOf(key) >= 0;
-      return '<div class="gz-dep ' + x.status + (cls || "") + '" data-k="' + esc(d.trip + "|" + d.stopIdx) + '">' +
+      var tk = d.trip + "|" + d.date + "|" + d.stop.n;
+      return '<div class="gz-dep ' + x.status + (cls || "") + '" data-k="' + esc(d.trip + "|" + d.stopIdx) + '"' + (tripExpandOn() ? ' data-tripx="' + esc(tk) + '" title="' + esc(T("gzm.tTap", null, "Stuknij — cały bieg kursu")) + '"' : "") + '>' +
         '<div class="gz-line ' + d.type + '">' + esc(d.line) + "<small>" + TYPE_ICON[d.type] + "</small></div>" +
         '<div class="gz-main"><div class="gz-dir">→ ' + esc(d.head) + ' ' + (noFav ? "" : '<button type="button" class="gz-fav" data-fav="' + esc(key) + '" title="' + esc(T("gzm.favTitle", null, "Ulubiona linia w tym kierunku na tej stacji")) + '">' + (isF ? "★" : "☆") + "</button>") + "</div>" +
         '<div class="gz-stop">' + esc(d.stop.n) + " · 🚶 " + esc(x.walk.exact ? x.walk.min : (d.stop.w[0] === d.stop.w[1] ? d.stop.w[1] : d.stop.w[0] + "–" + d.stop.w[1])) + " min" + (d.stop.stairs ? " 🪜" : "") + " · " + esc(liveTxt) + "</div>" +
         (x.arrDest != null ? '<div class="gz-stop" style="color:#fff">🏁 ' + esc(T("gzm.arrDest", { t: C.fmt(x.arrDest), n: x.destName, m: x.travel }, "{t} {n} (jazda {m} min)")) + "</div>" : "") +        "</div>" +
-        '<div class="gz-right"><div class="gz-t">' + tTxt + '</div><div class="gz-in">' + (inMin > 180 || inMin < -1 ? "" : inMin <= 0 ? esc(T("gzm.now", null, "teraz")) : esc(T("gzm.inMin", { n: inMin }, "za {n} min"))) + '</div><div class="gz-in gz-st-' + x.status + '">' + esc(stTxt) + "</div></div></div>";
+        '<div class="gz-right"><div class="gz-t">' + tTxt + '</div><div class="gz-in">' + (inMin > 180 || inMin < -1 ? "" : inMin <= 0 ? esc(T("gzm.now", null, "teraz")) : esc(T("gzm.inMin", { n: inMin }, "za {n} min"))) + '</div><div class="gz-in gz-st-' + x.status + '">' + esc(stTxt) + "</div></div></div>" +
+        (tripOpen[tk] ? tripHtml(d.trip, d.date, d.stop.n) : "");
     }
 
     function render(keepFocus) {

@@ -1144,6 +1144,13 @@
     "nDirect": "GZM transport · direct",
     "mmNote": "One search: getting to and from the train across the whole GZM network (up to 1 change), trains from the PLK planner. “Guard the whole trip” — the guard also watches buses and trams.",
     "cGuardAll": "Guard the whole trip",
-    "total": "journey {t}"
+    "total": "journey {t}",
+    "tLoading": "Loading the route…",
+    "tNone": "No route data for this trip.",
+    "tPos": "vehicle now near: {s}",
+    "tAgo": "{n} min ago",
+    "tMap": "map",
+    "tNoPos": "no live position — times from the timetable",
+    "tTap": "Tap for the whole route"
   }
 }

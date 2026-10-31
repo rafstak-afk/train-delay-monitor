@@ -1144,6 +1144,13 @@
     "nDirect": "doprava GZM · bez přestupu",
     "mmNote": "Jedno hledání: dojezd a další cesta v celé síti GZM (do 1 přestupu), vlaky z plánovače PLK. „Hlídat celou cestu“ — strážce hlídá i autobusy a tramvaje.",
     "cGuardAll": "Hlídat celou cestu",
-    "total": "na cestě {t}"
+    "total": "na cestě {t}",
+    "tLoading": "Načítám trasu spoje…",
+    "tNone": "O trase tohoto spoje nejsou data.",
+    "tPos": "vozidlo je teď u: {s}",
+    "tAgo": "před {n} min",
+    "tMap": "mapa",
+    "tNoPos": "bez polohy živě — časy podle jízdního řádu",
+    "tTap": "Klepněte — celá trasa spoje"
   }
 }

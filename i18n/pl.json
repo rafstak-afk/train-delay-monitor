@@ -1144,6 +1144,13 @@
     "nDirect": "komunikacja GZM · bez przesiadek",
     "mmNote": "Jedno wyszukiwanie: dojazd i dalsza podróż w całej sieci GZM (do 1 przesiadki), pociągi z planera PLK. „Pilnuj całej podróży” — strażnik pilnuje też autobusów i tramwajów.",
     "cGuardAll": "Pilnuj całej podróży",
-    "total": "w drodze {t}"
+    "total": "w drodze {t}",
+    "tLoading": "Wczytuję bieg kursu…",
+    "tNone": "Brak danych o biegu tego kursu.",
+    "tPos": "pojazd teraz w pobliżu: {s}",
+    "tAgo": "{n} min temu",
+    "tMap": "mapa",
+    "tNoPos": "brak pozycji na żywo — godziny wg rozkładu",
+    "tTap": "Stuknij — cały bieg kursu"
   }
 }
