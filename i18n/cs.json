@@ -1181,6 +1181,7 @@
     "uNoAddr": "Adresu „{a}“ jsem nenašel (hledám ve Slezsku). Doplňte město, např. „Opolska 5, Tarnowskie Góry“.",
     "uNeed": "Zadejte, odkud a kam jedete. Samotná stanice v „Odkud“ (prázdné „Kam“) ukáže odjezdy autobusů a tramvají u ní.",
     "uTitle": "🚆🚌 Vlak + GZM",
-    "uSub": "ode dveří ke dveřím: vlak, autobus, tramvaj a chůze"
+    "uSub": "ode dveří ke dveřím: vlak, autobus, tramvaj a chůze",
+    "jMeasured": "změřeno"
   }
 }

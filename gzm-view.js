@@ -202,7 +202,7 @@
     // odcinki podróży: każdy kurs w osobnym wierszu, przejście słowami
     function legsHtml(jn) {
       return '<div class="gz-legs">' + jn.legs.map(function (l) {
-        if (l.type === "walk") return '<div class="gz-walk">' + esc(T("gzm.jWalk", { n: l.min }, "przejście pieszo {n} min")) + (l.toName && l.fromName && l.fromName.charAt(0) > "~" ? " · " + esc(l.fromName) + " → " + esc(l.toName) : "") + "</div>";
+        if (l.type === "walk") return '<div class="gz-walk">' + esc(T("gzm.jWalk", { n: l.min }, "przejście pieszo {n} min")) + (l.measured ? " · " + esc(T("gzm.jMeasured", null, "zmierzone")) : "") + (l.toName && l.fromName && l.fromName.charAt(0) > "~" ? " · " + esc(l.fromName) + " → " + esc(l.toName) : "") + "</div>";
         var dep = (l.live && l.delay ? '<span class="plan-strike">' + C.fmt(l.depPlan) + "</span> " : "") + C.fmt(l.dep);
         return '<div class="gz-leg"><span class="ln">' + esc(l.line) + '</span><span><span class="tm">' + dep + "</span> " + esc(l.fromName) + "</span>" +
           '<span class="to">→ <b>' + C.fmt(l.arr) + "</b> " + esc(l.toName) + (l.live && l.delay ? " (+" + l.delay + " min)" : "") + "</span></div>";
@@ -621,15 +621,44 @@
       }).catch(function () { return false; });
     }
     function havM(a, b, c, d) { var R = 6371000, t = Math.PI / 180, x = Math.pow(Math.sin((c - a) * t / 2), 2) + Math.cos(a * t) * Math.cos(c * t) * Math.pow(Math.sin((d - b) * t / 2), 2); return 2 * R * Math.asin(Math.sqrt(x)); }
-    function walkMin(m) { return Math.max(1, Math.ceil(m * 1.4 / 1.2 / 60)); }
+    // ×1,15 na kluczenie ulicami, 1,2 m/s (pomiary autora 31.10: dom → stanowisko 432 m w 5:49, peron → dom 572 m w 10:08)
+    function walkMin(m) { return Math.max(1, Math.ceil(m * 1.15 / 1.2 / 60)); }
+    // Zmierzone dojścia (pomiar w planerze, walkMeasureV1): jeden koniec ≤ 150 m od miejsca, drugi przy przystanku
+    // (ten sam przystanek — wszystkie stanowiska tej nazwy w pobliżu) albo przy stacji (pomiar „peron”).
+    function measuredFor(net, pl) {
+      var res = (load("walkMeasureV1", {}).results || []), stops = {}, sts = {};
+      res.forEach(function (r) {
+        if (!r.from || !r.to || !(r.ms > 0)) return;
+        var min = Math.max(1, Math.ceil(r.ms / 60000));
+        [[r.from, r.to], [r.to, r.from]].forEach(function (pq) {
+          var p = pq[0], q = pq[1];
+          if (havM(pl.lat, pl.lon, p.lat, p.lon) > 150) return;
+          var lim = Math.max(60, Math.min(q.acc || 60, 100)), bi = -1, bd = 1e9;
+          for (var i = 0; i < net.n; i++) { var d = havM(q.lat, q.lon, net.lat[i], net.lon[i]); if (d < bd) { bd = d; bi = i; } }
+          var stopEnd = bi >= 0 && bd <= lim && !(/peron/.test(r.kind || "") && !/stanowisk|przystan/i.test(r.name || ""));
+          if (stopEnd) {
+            for (var j = 0; j < net.n; j++) if (net.name[j] === net.name[bi] && havM(q.lat, q.lon, net.lat[j], net.lon[j]) <= 200) stops[j] = Math.min(stops[j] || 1e9, min);
+          } else if (/peron/.test(r.kind || "")) {
+            (index.stations || []).forEach(function (x) { if (havM(q.lat, q.lon, x.lat, x.lon) <= 300) sts[x.id] = Math.min(sts[x.id] || 1e9, min); });
+          }
+        });
+      });
+      return { stops: stops, sts: sts };
+    }
     // przystanki w zasięgu pieszym miejsca (≤ 900 m) + stacje w zasięgu (≤ 1,5 km, + 2 min na peron)
     function placeReach(net, pl) {
       var out = [];
       var rS = pl.far ? 1500 : 900, rT = pl.far ? 2000 : 1500;
       for (var i = 0; i < net.n; i++) { var d = havM(pl.lat, pl.lon, net.lat[i], net.lon[i]); if (d <= rS) out.push({ s: i, walk: walkMin(d), d: d }); }
+      var ms = measuredFor(net, pl);
+      Object.keys(ms.stops).forEach(function (k) {
+        k = +k; var o = out.find(function (x) { return x.s === k; });
+        if (o) { o.walk = ms.stops[k]; o.measured = true; } else out.push({ s: k, walk: ms.stops[k], d: 0, measured: true });
+      });
       out.sort(function (a, b) { return a.d - b.d; });
       pl.stops = out.slice(0, 30); pl.walkSt = {};
       (index.stations || []).forEach(function (x) { var d = havM(pl.lat, pl.lon, x.lat, x.lon); if (d <= rT) pl.walkSt[x.id] = walkMin(d) + 2; });
+      Object.keys(ms.sts).forEach(function (k) { pl.walkSt[k] = ms.sts[k]; });
       return pl;
     }
     function searchC() {
@@ -718,11 +747,11 @@
     function withPlaceWalks(jn, fromPl, toPl) {
       if (fromPl) {
         var r0 = jn.legs.find(function (l) { return l.type === "ride"; }), w0 = fromPl.stops.find(function (x) { return x.s === (jn.legs[0].type === "walk" ? jn.legs[0].from : r0.from); });
-        if (w0) { jn.legs.unshift({ type: "walk", min: w0.walk, fromName: fromPl.label, toName: S_name(jn.legs[0].type === "walk" ? jn.legs[0].from : r0.from) }); jn.leave = (jn.legs[1].type === "walk" ? r0.dep - jn.legs[1].min : r0.dep) - w0.walk; }
+        if (w0) { jn.legs.unshift({ type: "walk", min: w0.walk, measured: !!w0.measured, fromName: fromPl.label, toName: S_name(jn.legs[0].type === "walk" ? jn.legs[0].from : r0.from) }); jn.leave = (jn.legs[1].type === "walk" ? r0.dep - jn.legs[1].min : r0.dep) - w0.walk; }
       }
       if (toPl) {
         var last = jn.legs[jn.legs.length - 1], w1 = toPl.stops.find(function (x) { return x.s === last.to; });
-        if (w1) { jn.legs.push({ type: "walk", min: w1.walk, fromName: S_name(last.to), toName: toPl.label }); jn.arr += w1.walk; }
+        if (w1) { jn.legs.push({ type: "walk", min: w1.walk, measured: !!w1.measured, fromName: S_name(last.to), toName: toPl.label }); jn.arr += w1.walk; }
       }
       return jn;
     }

@@ -1181,6 +1181,7 @@
     "uNoAddr": "Nie znalazłem adresu „{a}” (szukam na Śląsku). Dopisz miasto, np. „Opolska 5, Tarnowskie Góry”.",
     "uNeed": "Wpisz, skąd i dokąd jedziesz. Samą stację w „Skąd” (puste „Dokąd”) — pokażę odjazdy autobusów i tramwajów spod niej.",
     "uTitle": "🚆🚌 Pociąg + GZM",
-    "uSub": "od drzwi do drzwi: pociąg, autobus, tramwaj i dojście pieszo"
+    "uSub": "od drzwi do drzwi: pociąg, autobus, tramwaj i dojście pieszo",
+    "jMeasured": "zmierzone"
   }
 }

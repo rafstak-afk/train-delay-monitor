@@ -1181,6 +1181,7 @@
     "uNoAddr": "Address “{a}” not found (I search in Silesia). Add the town, e.g. “Opolska 5, Tarnowskie Góry”.",
     "uNeed": "Enter where from and where to. A station alone in “From” (empty “To”) shows bus and tram departures near it.",
     "uTitle": "🚆🚌 Train + GZM",
-    "uSub": "door to door: train, bus, tram and walking"
+    "uSub": "door to door: train, bus, tram and walking",
+    "jMeasured": "measured"
   }
 }
