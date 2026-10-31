@@ -1182,6 +1182,9 @@
     "uNeed": "Enter where from and where to. A station alone in “From” (empty “To”) shows bus and tram departures near it.",
     "uTitle": "🚆🚌 Train + GZM",
     "uSub": "door to door: train, bus, tram and walking",
-    "jMeasured": "measured"
+    "jMeasured": "measured",
+    "uDate": "Date",
+    "uDateRange": "I have the GZM timetable for {a} – {b}.",
+    "uSched": "{d} — times from the timetable"
   }
 }

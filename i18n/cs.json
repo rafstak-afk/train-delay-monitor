@@ -1182,6 +1182,9 @@
     "uNeed": "Zadejte, odkud a kam jedete. Samotná stanice v „Odkud“ (prázdné „Kam“) ukáže odjezdy autobusů a tramvají u ní.",
     "uTitle": "🚆🚌 Vlak + GZM",
     "uSub": "ode dveří ke dveřím: vlak, autobus, tramvaj a chůze",
-    "jMeasured": "změřeno"
+    "jMeasured": "změřeno",
+    "uDate": "Datum",
+    "uDateRange": "Jízdní řád GZM mám na dny {a} – {b}.",
+    "uSched": "{d} — časy podle jízdního řádu"
   }
 }

@@ -1182,6 +1182,9 @@
     "uNeed": "Gib Start und Ziel ein. Nur ein Bahnhof bei „Von“ (leeres „Nach“) zeigt Bus- und Straßenbahnabfahrten in der Nähe.",
     "uTitle": "🚆🚌 Zug + GZM",
     "uSub": "von Tür zu Tür: Zug, Bus, Straßenbahn und Fußweg",
-    "jMeasured": "gemessen"
+    "jMeasured": "gemessen",
+    "uDate": "Datum",
+    "uDateRange": "Den GZM-Fahrplan habe ich für {a} – {b}.",
+    "uSched": "{d} — Zeiten laut Fahrplan"
   }
 }

@@ -351,7 +351,7 @@
         '<div><button type="button" class="gz-btn" id="gzCGo" style="padding:10px 14px">🔎 ' + esc(T("gzm.bGo", null, "Szukaj")) + "</button></div></div>" +
         '<div id="gzCRes"></div>';
       root.insertBefore(tg, lic); root.insertBefore(a, lic); root.insertBefore(b, lic); root.insertBefore(c, lic);
-      c.querySelector("#gzCFrom").value = st.cFrom || ""; c.querySelector("#gzCTo").value = st.cTo || "";
+      if (!uniOn()) { c.querySelector("#gzCFrom").value = st.cFrom || ""; c.querySelector("#gzCTo").value = st.cTo || ""; }
       if (placesOn()) {
         var pb = document.createElement("div"); pb.id = "gzPlaces"; c.insertBefore(pb, c.querySelector("#gzCRes"));
         var drawPlaces = function () {
@@ -409,12 +409,18 @@
       root.insertBefore(u, a);
       var aBar = a.querySelector(".gz-bar"); if (aBar) aBar.style.display = "none";
       var lbl = function (id, txt) { var l = u.querySelector('label[for="' + id + '"]'); if (l) l.textContent = txt; };
+      var today = warsawNow().date, rg = index.range || [today, today];
+      var tIn = u.querySelector("#gzCTime"), dWrap = document.createElement("div");
+      dWrap.innerHTML = '<label for="gzCDate">' + esc(T("gzm.uDate", null, "Data")) + '</label><input id="gzCDate" type="date" autocomplete="off">';
+      tIn.parentNode.parentNode.insertBefore(dWrap, tIn.parentNode);
+      var dIn = dWrap.querySelector("input"); dIn.min = rg[0] > today ? rg[0] : today; dIn.max = rg[1] || today; dIn.value = today;
+      tIn.setAttribute("autocomplete", "off"); tIn.value = C.fmt(warsawNow().min);
       lbl("gzCFrom", T("gzm.uFrom", null, "Skąd")); lbl("gzCTo", T("gzm.uTo", null, "Dokąd (puste = odjazdy ze stacji)")); lbl("gzCTime", T("gzm.uWhen", null, "Kiedy"));
       u.querySelector("#gzCFrom").placeholder = T("gzm.uFromPh", null, "stacja, przystanek, adres, 🏠 Dom…");
       u.querySelector("#gzCTo").placeholder = T("gzm.uToPh", null, "przystanek, stacja albo adres");
       if (cfg.stationId) {
         var sm = (index.stations || []).find(function (x) { return x.id === +cfg.stationId; });
-        if (sm && opts.stationId) { u.querySelector("#gzCFrom").value = sm.n; u.querySelector("#gzCTo").value = ""; if (cfg.arr) u.querySelector("#gzCTime").value = cfg.arr; }
+        if (sm && opts.stationId) { u.querySelector("#gzCFrom").value = sm.n; u.querySelector("#gzCTo").value = ""; if (cfg.arr) u.querySelector("#gzCTime").value = cfg.arr; if (cfg.date && cfg.date >= dIn.min && cfg.date <= dIn.max) dIn.value = cfg.date; }
       }
       var lic = root.querySelector(".gz-lic");
       if (lic) lic.insertAdjacentHTML("beforeend", " " + esc(T("gzm.uGeoLic", null, "Adresy: wyszukiwarka Nominatim, © OpenStreetMap contributors.")));
@@ -667,12 +673,17 @@
       st.cFrom = fromTxt; st.cTo = toTxt; save(LS, st);
       if (uniOn()) {
         var fsU = stationByName(fromTxt);
-        if (fsU && !toTxt) { goA(fsU, tmin); return; }
+        if (fsU && !toTxt) { var dU = root.querySelector("#gzCDate"); cfg.date = dU && dU.value && dU.value !== warsawNow().date ? dU.value : null; goA(fsU, tmin); return; }
         setMode("C");
         if (!fromTxt || !toTxt) { root.querySelector("#gzCRes").innerHTML = '<div class="gz-warn">' + esc(T("gzm.uNeed", null, "Wpisz, skąd i dokąd jedziesz. Samą stację w „Skąd” (puste „Dokąd”) — pokażę odjazdy autobusów i tramwajów spod niej.")) + "</div>"; return; }
       }
       if (!fromTxt || !toTxt || !window.GzmRaptor) return searchCOld();
       var res = root.querySelector("#gzCRes"), date = warsawNow().date;
+      var dSel = uniOn() && root.querySelector("#gzCDate");
+      if (dSel && dSel.value) {
+        if ((dSel.max && dSel.value > dSel.max) || dSel.value < date) { res.innerHTML = '<div class="gz-warn">' + esc(T("gzm.uDateRange", { a: dSel.min, b: dSel.max }, "Rozkład GZM mam na dni {a} – {b}.")) + "</div>"; return; }
+        date = dSel.value;
+      }
       res.innerHTML = '<div class="gz-empty">' + esc(T("gzm.cSearching", null, "Układam podróż: dojazd, pociąg, dojazd do celu…")) + "</div>";
       var fromPlace = null, toPlace = null;
       Promise.all([resolvePlace(fromTxt), resolvePlace(toTxt)]).then(function (pp) { fromPlace = pp[0]; toPlace = pp[1]; return Promise.all([getNet(date), getRt()]); }, function (e) {
@@ -721,7 +732,7 @@
           }).catch(function () { return null; });
         })).then(function (parts) {
           cState = { mm: true, net: net, code: code, fN: fN, tN: tN, fromSt: fromSt, toSt: toSt, fromPlace: fromPlace, toPlace: toPlace, uni: uniOn(), parts: parts.filter(Boolean), tmin: tmin, date: date, more: {}, tDelay: {}, cache: {},
-            live: tmin >= Math.floor(warsawNow().min) - 5, netFrom: (!fromSt && !toSt) ? fN : null, netTo: (!fromSt && !toSt) ? tN : null };
+            live: date === warsawNow().date && tmin >= Math.floor(warsawNow().min) - 5, netFrom: (!fromSt && !toSt) ? fN : null, netTo: (!fromSt && !toSt) ? tN : null };
           renderC(); trainLiveC();
         });
       }).catch(function (e) { if (e !== "handled") searchCOld(); });
@@ -850,7 +861,7 @@
       }).slice(0, 6);
       if (!out.length) { res.innerHTML = '<div class="gz-empty">' + esc(T("gzm.cNone", null, "Nie udało się ułożyć podróży w ciągu 2 godzin od wyjścia.")) + "</div>"; return; }
       var guardOk = !!(window.GuardStore && window.GuardCore && GuardStore.enabled && GuardStore.enabled());
-      res.innerHTML = '<div class="gz-live ' + (rtOk ? "on" : "off") + '" style="margin:4px 2px">' + (rtOk ? "● " + esc(T("gzm.liveOn", null, "na żywo")) : "○ " + esc(T("gzm.liveOff", null, "dane na żywo niedostępne, pokazuję rozkład"))) + "</div>" +
+      res.innerHTML = (S.date !== warsawNow().date ? '<div class="gz-live off" style="margin:4px 2px">📅 ' + esc(T("gzm.uSched", { d: S.date }, "{d} — godziny wg rozkładu")) + "</div>" : '<div class="gz-live ' + (rtOk ? "on" : "off") + '" style="margin:4px 2px">' + (rtOk ? "● " + esc(T("gzm.liveOn", null, "na żywo")) : "○ " + esc(T("gzm.liveOff", null, "dane na żywo niedostępne, pokazuję rozkład"))) + "</div>") +
         out.map(function (x, i) {
           if (x.net) return netCard(x.net);
           var it = x.it, c = x.c, key = cKey(x.p, it);

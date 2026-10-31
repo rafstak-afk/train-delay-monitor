@@ -1182,6 +1182,9 @@
     "uNeed": "Wpisz, skąd i dokąd jedziesz. Samą stację w „Skąd” (puste „Dokąd”) — pokażę odjazdy autobusów i tramwajów spod niej.",
     "uTitle": "🚆🚌 Pociąg + GZM",
     "uSub": "od drzwi do drzwi: pociąg, autobus, tramwaj i dojście pieszo",
-    "jMeasured": "zmierzone"
+    "jMeasured": "zmierzone",
+    "uDate": "Data",
+    "uDateRange": "Rozkład GZM mam na dni {a} – {b}.",
+    "uSched": "{d} — godziny wg rozkładu"
   }
 }
