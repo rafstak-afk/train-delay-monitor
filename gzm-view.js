@@ -456,7 +456,7 @@
       [fi, ti].forEach(function (el) { el.addEventListener("keydown", function (e) { if (e.key === "Enter") searchB(); }); });
       if (uniOn()) initUni(tg, a, b, c);
       // wejście z 🚌 (strona pociągu / dzienniczek): po wczytaniu przewiń do pierwszego odjazdu, na który zdążysz
-      if (uniOn() && opts.stationId) scrollToFirst(root.querySelector("#gzBody"), ".gz-dep.ok, .gz-dep.tight, .gz-warn");
+      if (uniOn() && opts.stationId) scrollToFirst(root.querySelector("#gzBody"), ".gz-dep.ok, .gz-dep.tight, .gz-warn, .gz-farbox");
       // wejście z przycisku 🚌 (pociąg / dzienniczek) — zawsze „Wysiadam z pociągu”
       setMode(opts.stationId ? "A" : uniOn() ? (st.dir === "A" && cfg.stationId ? "A" : "C") : (st.dir || "A"));
     }
@@ -610,7 +610,7 @@
       var ar = root.querySelector("#gzArr"); if (ar) ar.value = cfg.arr;
       var di = root.querySelector("#gzDest"); if (di) di.value = "";
       showMore = 0; setMode("A"); load1();
-      scrollToFirst(root.querySelector("#gzBody"), ".gz-dep.ok, .gz-dep.tight, .gz-warn");
+      scrollToFirst(root.querySelector("#gzBody"), ".gz-dep.ok, .gz-dep.tight, .gz-warn, .gz-farbox");
     }
     // ===== Adres → współrzędne (OSM Nominatim, tylko po kliknięciu Szukaj; wyniki zapamiętane na urządzeniu) =====
     var GEO = "gzmGeoCacheV2";
