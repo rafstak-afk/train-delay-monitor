@@ -563,6 +563,11 @@
         setTimeout(function () { if (Math.abs(el.getBoundingClientRect().top - 90) > 30) go("auto"); }, 900);
       })();
     }
+    function clearAll() {
+      cState = null; tripOpen = {};
+      var r1 = root.querySelector("#gzCRes"), r2 = root.querySelector("#gzBody");
+      if (r1) r1.innerHTML = ""; if (r2) r2.innerHTML = "";
+    }
     function searchBusy(on) {
       var b = root.querySelector("#gzCGo"); if (!b) return;
       if (on) { b.dataset.lbl = b.dataset.lbl || b.innerHTML; b.innerHTML = "⏳ " + esc(T("gzm.uBusy", null, "Szukam…")); b.disabled = true; }
@@ -572,6 +577,7 @@
     function goA(stn, tmin) {
       cfg.stationId = String(stn.id); st.stationId = cfg.stationId; cfg.arr = C.fmt(tmin); cfg.train = null; trainInfo = null; cfg.alighted = false;
       dests[cfg.stationId] = ""; save(DEST, dests); save(LS, st);
+      clearAll();
       var sel = root.querySelector("#gzSt"); if (sel) sel.value = cfg.stationId;
       var ar = root.querySelector("#gzArr"); if (ar) ar.value = cfg.arr;
       var di = root.querySelector("#gzDest"); if (di) di.value = "";
@@ -824,6 +830,7 @@
       var tmin = C.hm(root.querySelector("#gzCTime").value) || Math.floor(warsawNow().min);
       st.cFrom = fromTxt; st.cTo = toTxt; save(LS, st);
       if (uniOn()) {
+        clearAll();
         var fsU = stationByName(fromTxt);
         if (fsU && !toTxt) { var dU = root.querySelector("#gzCDate"); cfg.date = dU && dU.value && dU.value !== warsawNow().date ? dU.value : null; goA(fsU, tmin); return; }
         setMode("C");
@@ -837,6 +844,8 @@
         date = dSel.value;
       }
       var uniS = uniOn();
+      // każde „Szukaj” zaczyna od zera: bez starych wyników (odświeżanie co 5 s nie może ich wstawić z powrotem)
+      if (uniS) { clearAll(); }
       res.innerHTML = '<div class="gz-empty' + (uniS ? " gz-searching" : "") + '">' + (uniS ? "🔎 " : "") + esc(T("gzm.cSearching", null, "Układam podróż: dojazd, pociąg, dojazd do celu…")) + "</div>";
       if (uniS) {
         searchBusy(true);
