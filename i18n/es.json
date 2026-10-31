@@ -1164,6 +1164,9 @@
     "pSet": "guardado",
     "pSetHere": "fijar donde estoy",
     "pNote": "Los lugares se guardan solo en este dispositivo (con perfil, en todos). Cuento el camino a pie hasta paradas a unos 900 m (y hasta la estación si está cerca).",
-    "pNoteProf": "Los lugares se guardan en tu perfil, en cada dispositivo con tu token. Cuento el camino a pie hasta paradas a unos 900 m (y hasta la estación si está cerca)."
+    "pNoteProf": "Los lugares se guardan en tu perfil, en cada dispositivo con tu token. Cuento el camino a pie hasta paradas a unos 900 m (y hasta la estación si está cerca).",
+    "jWalk": "a pie {n} min",
+    "tShow": "▼ recorrido y dónde está ahora",
+    "tHide": "▲ ocultar recorrido"
   }
 }

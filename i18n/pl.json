@@ -1164,6 +1164,9 @@
     "pSet": "ustawione",
     "pSetHere": "ustaw tu, gdzie jestem",
     "pNote": "Miejsca zapisuję tylko na tym urządzeniu (z profilem — na wszystkich). Dojście pieszo liczę do przystanków w promieniu ok. 900 m (i na stację, gdy jest blisko).",
-    "pNoteProf": "Miejsca zapisuję w Twoim profilu — są na każdym urządzeniu z Twoim tokenem. Dojście pieszo liczę do przystanków w promieniu ok. 900 m (i na stację, gdy jest blisko)."
+    "pNoteProf": "Miejsca zapisuję w Twoim profilu — są na każdym urządzeniu z Twoim tokenem. Dojście pieszo liczę do przystanków w promieniu ok. 900 m (i na stację, gdy jest blisko).",
+    "jWalk": "przejście pieszo {n} min",
+    "tShow": "▼ trasa kursu i gdzie jest teraz",
+    "tHide": "▲ zwiń trasę"
   }
 }

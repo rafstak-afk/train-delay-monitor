@@ -32,6 +32,14 @@
     '.gz .gz-trip-pos{color:var(--cyan);font-weight:700;margin:2px 0 6px}.gz .gz-trip-pos a{color:var(--cyan)}' +
     '.gz .gz-tr{display:grid;grid-template-columns:56px 1fr;gap:6px;padding:3px 0;border-left:3px solid var(--line);padding-left:8px}' +
     '.gz .gz-tr.past{opacity:.45}.gz .gz-tr.me{border-left-color:var(--yellow);font-weight:800}.gz .gz-tr.here{border-left-color:var(--cyan)}' +
+    '.gz .gz-legs{display:flex;flex-direction:column;gap:5px}' +
+    '.gz .gz-leg{display:grid;grid-template-columns:auto 1fr;gap:2px 8px;align-items:baseline;font-size:13.5px;color:#fff}' +
+    '.gz .gz-leg .ln{font-weight:900;min-width:34px;text-align:center;background:#24384c;border-radius:6px;padding:1px 5px;font-size:12.5px}' +
+    '.gz .gz-leg .tm{font-weight:800}.gz .gz-leg .to{grid-column:2;color:var(--muted)}' +
+    '.gz .gz-walk{font-size:12.5px;color:var(--muted);padding-left:4px}' +
+    '.gz .gz-fin{font-size:13px;color:#fff;font-weight:700;margin-top:3px}' +
+    '.gz .gz-tap{font-size:11.5px;color:var(--cyan);margin-top:3px}' +
+    '.gz .gz-trip h5{margin:8px 0 4px;font-size:13px;color:#fff}' +
     '.gz .gz-total{font-size:12px;color:var(--cyan);font-weight:700;margin-top:2px}' +
     '.gz .gz-right{text-align:right;white-space:nowrap}.gz .gz-t{font-weight:900;font-size:16px}.gz .gz-in{font-size:12px;color:var(--muted)}' +
     '.gz .gz-st-ok{color:var(--green)}.gz .gz-st-tight{color:var(--yellow)}.gz .gz-st-missed{color:var(--red)}' +
@@ -153,7 +161,7 @@
       if (!net._tripIx) { net._tripIx = {}; net.j.trips.forEach(function (t, i) { net._tripIx[t[2]] = i; }); }
       var i = net._tripIx[tid]; return i == null ? -1 : i;
     }
-    function tripHtml(tid, date, boardName) {
+    function tripHtml(tid, date, boardName, alightName, inner) {
       var p = netP[date], net = null;
       if (!p) { getNet(date).then(function () { rerender(); }).catch(function () {}); return '<div class="gz-trip">' + esc(T("gzm.tLoading", null, "Wczytuję bieg kursu…")) + "</div>"; }
       p.then(function (n) { net = n; });
@@ -175,11 +183,30 @@
       } else pos = '<div class="gz-trip-pos" style="color:var(--muted)">' + esc(T("gzm.tNoPos", null, "brak pozycji na żywo — godziny wg rozkładu")) + "</div>";
       var rows = seq.map(function (sx, i) {
         var plan = tr[1] + off[2 * i + 1], nm = net.name[sx];
-        var cls = (curSeq != null && i < curSeq ? " past" : "") + (nm === boardName ? " me" : "") + (i === nearIdx ? " here" : "");
+        var cls = (curSeq != null && i < curSeq ? " past" : "") + (nm === boardName || (alightName && nm === alightName) ? " me" : "") + (i === nearIdx ? " here" : "");
         var t = dl ? '<span class="plan-strike">' + C.fmt(plan) + "</span> " + C.fmt(plan + dl) : C.fmt(plan);
         return '<div class="gz-tr' + cls + '"><div>' + t + "</div><div>" + (i === nearIdx ? "📍 " : "") + esc(nm) + "</div></div>";
       }).join("");
-      return '<div class="gz-trip">' + pos + rows + "</div>";
+      return inner ? pos + rows : '<div class="gz-trip">' + pos + rows + "</div>";
+    }
+    // bieg wszystkich kursów podróży (po kolei), pod kartą
+    function tripsOfJourney(jn) {
+      var rides = jn.legs.filter(function (l) { return l.type === "ride" && l.trip; });
+      var date = (cState && cState.date) || warsawNow().date;
+      if (!netP[date] || !netP[date]._net) return tripHtml(rides[0].trip, date, rides[0].fromName, rides[0].toName);
+      return '<div class="gz-trip">' + rides.map(function (l) {
+        return "<h5>" + esc(l.line) + " → " + esc(l.head || l.toName) + "</h5>" + tripHtml(l.trip, date, l.fromName, l.toName, true);
+      }).join("") + "</div>";
+    }
+    function jKey(jn) { return "j|" + jn.legs.map(function (l) { return l.trip || ("w" + l.min); }).join(">"); }
+    // odcinki podróży: każdy kurs w osobnym wierszu, przejście słowami
+    function legsHtml(jn) {
+      return '<div class="gz-legs">' + jn.legs.map(function (l) {
+        if (l.type === "walk") return '<div class="gz-walk">' + esc(T("gzm.jWalk", { n: l.min }, "przejście pieszo {n} min")) + (l.toName && l.fromName && l.fromName.charAt(0) > "~" ? " · " + esc(l.fromName) + " → " + esc(l.toName) : "") + "</div>";
+        var dep = (l.live && l.delay ? '<span class="plan-strike">' + C.fmt(l.depPlan) + "</span> " : "") + C.fmt(l.dep);
+        return '<div class="gz-leg"><span class="ln">' + esc(l.line) + '</span><span><span class="tm">' + dep + "</span> " + esc(l.fromName) + "</span>" +
+          '<span class="to">→ <b>' + C.fmt(l.arr) + "</b> " + esc(l.toName) + (l.live && l.delay ? " (+" + l.delay + " min)" : "") + "</span></div>";
+      }).join("") + "</div>";
     }
     function rerender() { if (st.dir === "C" && cState) renderC(); else render(); }
     root.addEventListener("click", function (e) {
@@ -606,6 +633,7 @@
     function polesOf(stn) { var out = []; (stn.s || []).forEach(function (p) { var i = cState.code[p[0]]; if (i != null) out.push({ s: i, walk: p[3] }); }); return out; }
     // wiersz podróży GZM (może mieć przesiadki), z dopiskiem i statusem
     function jRow(jn, extra, status) {
+      if (tripExpandOn()) return jRow2(jn, extra, status);
       var rides = jn.legs.filter(function (l) { return l.type === "ride"; }), r0 = rides[0];
       var inMin = Math.round(r0.dep - nowOn(cState.date));
       var legs = jn.legs.map(function (l) {
@@ -632,6 +660,17 @@
     }
     function S_name(i) { return cState.net.name[i]; }
     function fromOpts(S, t) { return S.fromPlace ? { fromStops: S.fromPlace.stops.map(function (x) { return { s: x.s, t: t + x.walk }; }), dep: t } : { from: S.fN, dep: t }; }
+    function jRow2(jn, extra, status) {
+      var rides = jn.legs.filter(function (l) { return l.type === "ride"; }), r0 = rides[0], k = jKey(jn);
+      var inMin = Math.round(r0.dep - nowOn(cState.date));
+      var fin = String(extra || "").replace(/^🚉 /, "").replace(/^🏁 /, esc(T("gzm.bArrive", null, "na miejscu")) + " ");
+      var stTxt = status === "ok" ? "🟢 " + T("gzm.st.ok", null, "zdążysz") : status === "tight" ? "🟡 " + T("gzm.st.tight", null, "na styk") : status === "missed" ? "🔴 " + T("gzm.cTooLate", null, "za późno na ten pociąg") : "";
+      return '<div class="gz-dep ' + (status || "ok") + '" data-tripx="' + esc(k) + '" style="grid-template-columns:minmax(0,1fr) auto">' +
+        '<div class="gz-main">' + legsHtml(jn) + (fin ? '<div class="gz-fin">' + fin + "</div>" : "") +
+        '<div class="gz-tap">' + esc(tripOpen[k] ? T("gzm.tHide", null, "▲ zwiń trasę") : T("gzm.tShow", null, "▼ trasa kursu i gdzie jest teraz")) + "</div></div>" +
+        '<div class="gz-right"><div class="gz-t">' + ((r0.live && r0.delay) ? '<span class="plan-strike">' + C.fmt(r0.depPlan) + "</span> " : "") + C.fmt(r0.dep) + '</div><div class="gz-in">' + (inMin > 180 || inMin < -1 ? "" : inMin <= 0 ? esc(T("gzm.now", null, "teraz")) : esc(T("gzm.inMin", { n: inMin }, "za {n} min"))) + "</div>" + (stTxt ? '<div class="gz-in gz-st-' + status + '">' + esc(stTxt) + "</div>" : "") + "</div></div>" +
+        (tripOpen[k] ? tripsOfJourney(jn) : "");
+    }
     function renderMM() {
       var res = root.querySelector("#gzCRes"), S = cState, now = nowOn(S.date), base = S.live ? Math.max(S.tmin, now) : S.tmin, out = [];
       if ((S.fromPlace || S.toPlace) && !S.fromSt && !S.toSt && !S.netFrom) { S.netFrom = S.fN || []; S.netTo = S.tN || []; }
@@ -817,6 +856,15 @@
         '<div class="gz-right"><div class="gz-t">' + tTxt + '</div><div class="gz-in">' + (inMin > 180 || inMin < -1 ? "" : inMin <= 0 ? esc(T("gzm.now", null, "teraz")) : esc(T("gzm.inMin", { n: inMin }, "za {n} min"))) + '</div><div class="gz-in gz-st-' + (r.status || "missed") + '">' + esc(stTxt) + "</div></div></div>";
     }
     function netCard(jn) {
+      if (tripExpandOn()) {
+        var f0 = jn.legs.find(function (l) { return l.type === "ride"; }), k = jKey(jn), lv = jn.leave != null ? jn.leave : jn.legs[0].type === "walk" ? f0.dep - jn.legs[0].min : jn.dep;
+        return '<div class="gz-dep ok" data-tripx="' + esc(k) + '" style="grid-template-columns:minmax(0,1fr) auto">' +
+          '<div class="gz-main"><div class="gz-dir" style="white-space:normal">' + esc(T("gzm.cLeave", { t: C.fmt(lv), s: jn.legs[0].fromName }, "wyjdź: {t} z {s}")) + "</div>" +
+          '<div class="gz-sub" style="margin:0 0 5px">' + esc(jn.transfers ? T("gzm.nTitle", { n: jn.transfers }, "komunikacja GZM · przesiadki: {n}") : T("gzm.nDirect", null, "komunikacja GZM · bez przesiadek")) + "</div>" +
+          legsHtml(jn) + '<div class="gz-tap">' + esc(tripOpen[k] ? T("gzm.tHide", null, "▲ zwiń trasę") : T("gzm.tShow", null, "▼ trasa kursu i gdzie jest teraz")) + "</div></div>" +
+          '<div class="gz-right"><div class="gz-t">' + C.fmt(jn.arr) + '</div><div class="gz-in">' + esc(T("gzm.bArrive", null, "na miejscu")) + "</div>" + totalHtml(jn.arr - lv) + "</div></div>" +
+          (tripOpen[k] ? tripsOfJourney(jn) : "");
+      }
       var steps = jn.legs.map(function (l) {
         if (l.type === "walk") return "🚶 " + esc(T("gzm.cWalk", { n: l.min, s: l.toName }, "{n} min pieszo do: {s}"));
         return TYPE_ICON[l.kind] + " <b>" + esc(l.line) + "</b> → " + esc(l.head) + "<br>" + (l.live && l.delay ? '<span class="plan-strike">' + C.fmt(l.depPlan) + "</span> " : "") + C.fmt(l.dep) + " " + esc(l.fromName) + " → " + esc(l.toName) + " <b>" + C.fmt(l.arr) + "</b>" + (l.live ? (l.delay ? " (+" + l.delay + " min)" : " · " + esc(T("gzm.live", null, "na żywo"))) : "");

@@ -1164,6 +1164,9 @@
     "pSet": "nastaveno",
     "pSetHere": "nastavit sem, kde jsem",
     "pNote": "Místa ukládám jen v tomto zařízení (s profilem — ve všech). Chůzi počítám k zastávkám do cca 900 m (a ke stanici, je-li blízko).",
-    "pNoteProf": "Místa ukládám ve vašem profilu — jsou v každém zařízení s vaším tokenem. Chůzi počítám k zastávkám do cca 900 m (a ke stanici, je-li blízko)."
+    "pNoteProf": "Místa ukládám ve vašem profilu — jsou v každém zařízení s vaším tokenem. Chůzi počítám k zastávkám do cca 900 m (a ke stanici, je-li blízko).",
+    "jWalk": "pěšky {n} min",
+    "tShow": "▼ trasa spoje a kde je teď",
+    "tHide": "▲ skrýt trasu"
   }
 }

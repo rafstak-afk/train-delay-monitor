@@ -1164,6 +1164,9 @@
     "pSet": "festgelegt",
     "pSetHere": "auf meinen Standort setzen",
     "pNote": "Orte werden nur auf diesem Gerät gespeichert (mit Profil — auf allen). Fußwege zu Haltestellen im Umkreis von etwa 900 m (und zum Bahnhof, wenn er nah ist).",
-    "pNoteProf": "Orte werden in deinem Profil gespeichert — auf jedem Gerät mit deinem Token. Fußwege zu Haltestellen im Umkreis von etwa 900 m (und zum Bahnhof, wenn er nah ist)."
+    "pNoteProf": "Orte werden in deinem Profil gespeichert — auf jedem Gerät mit deinem Token. Fußwege zu Haltestellen im Umkreis von etwa 900 m (und zum Bahnhof, wenn er nah ist).",
+    "jWalk": "{n} Min. zu Fuß",
+    "tShow": "▼ Fahrtverlauf und aktuelle Position",
+    "tHide": "▲ Verlauf ausblenden"
   }
 }
