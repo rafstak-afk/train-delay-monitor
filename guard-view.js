@@ -37,6 +37,13 @@
     '.gv .xfer{margin:4px 0 4px 72px;padding:8px 10px;border-radius:10px;background:var(--card);font-size:13px;line-height:1.45}' +
     '.gv .xfer.s-ok{border:1px solid rgba(93,211,158,.4)}.gv .xfer.s-risk{border:1px solid rgba(255,204,0,.55)}.gv .xfer.s-broken,.gv .xfer.s-cancelled{border:1px solid rgba(255,77,77,.6)}' +
     '.gv .xfer .warn{color:var(--yellow)}' +
+    '.gv .rem{margin-top:10px;padding:9px 10px;border:1px solid #6b5d1a;border-radius:10px;background:rgba(255,212,0,.06);font-size:13.5px}' +
+    '.gv .rem label.rem-t{display:flex;gap:8px;align-items:center;font-weight:800;cursor:pointer}' +
+    '.gv .rem-row{margin-top:7px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}' +
+    '.gv .rem input[type=number]{width:62px;padding:5px;border-radius:7px;border:1px solid #48627c;background:#223244;color:#fff;font-size:14px}' +
+    '.gv .rem-chip{display:inline-flex;gap:6px;align-items:center;border:1px solid #6b5d1a;border-radius:14px;padding:4px 9px;background:#2a2410}' +
+    '.gv .rem-chip button{border:0;background:transparent;color:#ff8a8a;cursor:pointer;font-size:13px;padding:0}' +
+    '.gv .rem-note{color:#b8c3cf;font-size:12px;line-height:1.4}' +
     '.gv .c-foot{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:space-between;margin-top:10px}' +
     '.gv .c-meta{color:var(--muted);font-size:11.5px}' +
     '.gv .c-actions{display:flex;gap:6px;flex-wrap:wrap}' +
@@ -75,6 +82,8 @@
     return m + dd * 1440;
   }
 
+  function remOn() { try { return localStorage.getItem('showVersionBadge') === '1'; } catch (e) { return false; } }
+
   function mount(root, opts) {
     opts = opts || {};
     var G = window.GuardCore, S = window.GuardStore;
@@ -92,6 +101,8 @@
       '<select id="gvMin"><option value="2">2 min</option><option value="3">3 min</option><option value="5">5 min</option><option value="7">7 min</option><option value="10">10 min</option><option value="15">15 min</option></select></div>' +
       '<div class="set-row"><label for="gvAuto" data-i18n="guard.autoPlanLabel">' + esc(T('guard.autoPlanLabel', null, 'Pilnuj automatycznie przejazdów z planu w dzienniczku')) + '</label><input type="checkbox" id="gvAuto" /></div>' +
       '<div class="set-row"><label for="gvSound" data-i18n="guard.soundLabel">' + esc(T('guard.soundLabel', null, '🔊 Dźwięk Rp1 przy pogorszeniu (gdy aplikacja jest otwarta)')) + '</label><input type="checkbox" id="gvSound" /></div>' +
+      (remOn() ? '<div class="set-row"><label for="gvVol">' + esc(T('guard.rem.vol', null, '🔊 Głośność alarmu Rp1 (aplikacja otwarta)')) + '</label><span style="display:flex;gap:8px;align-items:center"><input type="range" id="gvVol" min="0" max="100" step="5" style="width:120px">' +
+        '<button type="button" class="btn-sm secondary" id="gvTest">▶ ' + esc(T('guard.rem.test', null, 'Odsłuchaj')) + '</button></span></div>' : '') +
       '</details>' +
       '<div class="gv-list"></div>';
     var q = function (sel) { return root.querySelector(sel); };
@@ -231,6 +242,72 @@
       if (t.plannedArrA && t.plannedDepB && s !== 'nodata') times = '<div class="xtimes">' + esc(T('guard.arrShort', null, 'przyjazd')) + ' ' + timeHtml(t.plannedArrA, t.delayA) + ' → ' + esc(T('guard.depShort', null, 'odjazd')) + ' ' + timeHtml(t.plannedDepB, t.delayB) + '</div>';
       return '<div class="xfer s-' + s + '">' + EMO[s] + ' ' + esc(main) + times + extra + '</div>';
     }
+    // ===== ⏰ Przypomnienia o wyjściu z domu (TEST — tylko profil autora) =====
+    function lang() { try { return (window.I18n && I18n.getLang && I18n.getLang()) || 'pl'; } catch (e) { return 'pl'; } }
+    function defWalk(c) {
+      // czas „na sztywno” z 🏠 Dom (planer → Moje miejsca), gdy jest dla tej stacji/przystanku
+      try { var d = (JSON.parse(localStorage.getItem('gzmPlacesV1')) || {}).dom, w = d && d.walks, nm = c.legs[0].board.stationName; if (w) { if (w.st && w.st[nm] != null) return +w.st[nm]; if (w.stop && w.stop[nm] != null) return +w.stop[nm]; } } catch (e) {}
+      return G.REM_DEFAULTS.walk;
+    }
+    function remCfg(c) { return S.reminder(c.id) || { on: false, walk: defWalk(c), mins: G.REM_DEFAULTS.mins.slice(), date: c.date }; }
+    function remShift(c) { var r = results[c.id]; return G.remindShift(r && r.legs && r.legs[0]); }
+    function isIOS() { return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); }
+    function standalone() { return (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true; }
+    function remHtml(c) {
+      var cfg = remCfg(c), on = !!cfg.on;
+      var html = '<div class="rem"><label class="rem-t"><input type="checkbox" class="rem-on" data-id="' + esc(c.id) + '"' + (on ? ' checked' : '') + '> ⏰ ' + esc(T('guard.rem.title', null, 'Przypomnij o wyjściu z domu')) + '</label>';
+      if (!on) return html + '</div>';
+      var sh = remShift(c), p = G.remindPlan(c, cfg, sh), p0 = G.remindPlan(c, cfg, 0);
+      html += '<div class="rem-row">' + esc(T('guard.rem.walk', null, 'Dojście na stację / przystanek:')) + ' <input type="number" class="rem-walk" data-id="' + esc(c.id) + '" min="0" max="120" value="' + esc(p.walk) + '"> min</div>' +
+        '<div class="rem-row">' + esc(T('guard.rem.leave', { t: G.fmt(p.leave), d: c.legs[0].board.time, w: p.walk }, 'Wyjście: {t} (odjazd {d} − {w} min dojścia)')).replace(G.fmt(p.leave), '<b>' + G.fmt(p.leave) + '</b>') +
+        (sh ? ' · <b style="color:#ffd400">' + esc(T('guard.rem.shift', { n: sh }, 'przesunięte o +{n} min (opóźnienie)')) + '</b>' : '') + '</div>' +
+        '<div class="rem-row">' + esc(T('guard.rem.list', null, 'Przypomnienia:')) + ' ' + p.fires.map(function (f) {
+          return '<span class="rem-chip">' + esc(T('guard.rem.chip', { m: f.m, t: G.fmt(f.at) }, '{m} min przed → {t}')) + ' <button type="button" data-act="remDel" data-id="' + esc(c.id) + '" data-m="' + f.m + '" title="✕">✕</button></span>';
+        }).join('') +
+        (p.fires.length < 5 ? ' <input type="number" class="rem-add" data-id="' + esc(c.id) + '" min="1" max="180" placeholder="min"> <button type="button" class="btn-sm secondary" data-act="remAdd" data-id="' + esc(c.id) + '">+ ' + esc(T('guard.rem.add', null, 'dodaj')) + '</button>' : '') + '</div>' +
+        '<div class="rem-row"><button type="button" class="btn-sm secondary" data-act="remIcs" data-id="' + esc(c.id) + '">📅 ' + esc(T('guard.rem.ics', null, 'Dodaj do kalendarza (z alarmami)')) + '</button>' +
+        (/Android/i.test(navigator.userAgent) && p0.fires.length ? '<a class="btn-sm secondary" style="text-decoration:none" href="' + esc(alarmIntent(c, p0)) + '">⏰ ' + esc(T('guard.rem.alarm', null, 'Ustaw budzik w telefonie (test)')) + '</a>' : '') + '</div>';
+      var notes = [];
+      if (!('Notification' in window) || Notification.permission !== 'granted') notes.push(T('guard.rem.noPush', null, 'Żeby przypomnienie przyszło przy zamkniętej aplikacji, włącz powiadomienia (przycisk nad listą).'));
+      if (isIOS() && !standalone()) notes.push(T('guard.rem.ios', null, 'iPhone: przypomnienie przy zamkniętej aplikacji przyjdzie tylko, gdy dodasz ją do ekranu początkowego: Udostępnij ⬆️ → „Do ekranu początkowego”, otwórz z ikony i zezwól na powiadomienia.'));
+      notes.push(T('guard.rem.sound', null, 'Przy zamkniętej aplikacji gra zwykły dźwięk powiadomienia telefonu. Android: dźwięk możesz zmienić w ustawieniach powiadomień tej aplikacji.'));
+      return html + notes.map(function (n) { return '<div class="rem-note" style="margin-top:6px">' + esc(n) + '</div>'; }).join('') + '</div>';
+    }
+    // Android: systemowy budzik (Chrome może tego nie wpuścić — dlatego „test”)
+    function alarmIntent(c, p) {
+      var at = ((p.fires[0].at % 1440) + 1440) % 1440, msg = T('guard.rem.alarmMsg', { d: c.legs[0].board.time, from: c.from }, 'Wyjście na pociąg {d} z {from}');
+      return 'intent:#Intent;action=android.intent.action.SET_ALARM;i.android.intent.extra.alarm.HOUR=' + Math.floor(at / 60) + ';i.android.intent.extra.alarm.MINUTES=' + (at % 60) + ';S.android.intent.extra.alarm.MESSAGE=' + encodeURIComponent(msg) + ';B.android.intent.extra.alarm.SKIP_UI=false;end';
+    }
+    function saveRem(c, patch) {
+      var cfg = Object.assign({}, remCfg(c), patch, { date: c.date });
+      return S.setReminder(c.id, cfg.on ? cfg : null).then(function () { render(); });
+    }
+    function downloadIcs(c) {
+      var cfg = remCfg(c), title = '🚆 ' + T('guard.rem.icsTitle', { d: c.legs[0].board.time, from: c.from, to: c.to }, 'Wyjście: {d} {from} → {to}');
+      var blob = new Blob([G.remindIcs(c, cfg, title)], { type: 'text/calendar;charset=utf-8' });
+      var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'przypomnienie-' + c.date + '.ics';
+      document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    }
+    // Alarm na otwartej stronie (bez czekania na push): co 20 s, każde przypomnienie raz.
+    function remLocalTick() {
+      if (!remOn()) return;
+      var fired; try { fired = JSON.parse(localStorage.getItem('remindFiredV1')) || {}; } catch (e) { fired = {}; }
+      var changed = false;
+      S.all().forEach(function (c) {
+        var cfg = S.reminder(c.id); if (!cfg || !cfg.on) return;
+        var nm = nowWarsawMin(c.date), sh = remShift(c), p = G.remindPlan(c, cfg, sh); if (!p) return;
+        p.fires.forEach(function (f) {
+          var k = c.date + '|' + c.id + '|' + f.m;
+          if (fired[k] || nm < f.at || nm > f.at + 10) return;
+          fired[k] = Date.now(); changed = true;
+          var r = results[c.id], t = G.remindText(lang(), { m: f.m, conn: c, reading: r && r.legs && r.legs[0], plan: p, shift: sh });
+          if (window.AlarmSound && AlarmSound.banner) AlarmSound.banner(t.title, t.body, null);
+        });
+      });
+      if (changed) { var lim = Date.now() - 2 * 86400000; Object.keys(fired).forEach(function (k) { if (fired[k] < lim) delete fired[k]; }); try { localStorage.setItem('remindFiredV1', JSON.stringify(fired)); } catch (e) {} }
+    }
+    setInterval(remLocalTick, 20000); setTimeout(remLocalTick, 3000);
+
     function cardHtml(c) {
       var r = results[c.id] || { status: 'nodata' };
       var s = r.status;
@@ -272,12 +349,17 @@
           '<div class="btns"><button type="button" class="btn-sm ok" data-act="record" data-id="' + esc(c.id) + '">✅ ' + esc(T('guard.ask.yes', null, 'Tak — zapisz w dzienniczku')) + '</button>' +
           '<button type="button" class="btn-sm secondary" data-act="dismiss" data-id="' + esc(c.id) + '">❌ ' + esc(T('guard.ask.no', null, 'Nie jechałem')) + '</button></div></div>';
       }
+      if (remOn() && s !== 'done') html += remHtml(c);
       html += '<div class="c-foot"><span class="c-meta">' + (lastAt && s !== 'waiting' ? esc(T('guard.updated', { time: new Date(lastAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }, 'Aktualizacja: ' + new Date(lastAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))) : '') + '</span>' +
         '<span class="c-actions"><button type="button" class="btn-sm secondary" data-act="refresh">↻ ' + esc(T('guard.refresh', null, 'Odśwież')) + '</button>' +
         '<button type="button" class="btn-sm danger" data-act="remove" data-id="' + esc(c.id) + '">' + esc(T('guard.stop', null, 'Przestań pilnować')) + '</button></span></div></div>';
       return html;
     }
+    var pendingRender = false;
     function render() {
+      var ae = document.activeElement;
+      if (ae && list.contains(ae) && ae.tagName === 'INPUT' && ae.type === 'number') { pendingRender = true; return; }
+      pendingRender = false;
       var conns = S.all();
       var msg = savedMsg ? '<div class="saved-msg">' + esc(savedMsg) + ' <a href="/dziennik/" style="color:#bff3d8">' + esc(T('guard.ask.openJournal', null, 'Otwórz dzienniczek →')) + '</a></div>' : '';
       if (!conns.length) list.innerHTML = opts.hideWhenEmpty ? msg : msg + '<div class="empty">' + T('guard.empty', null, 'Nie pilnujesz jeszcze żadnego połączenia.<br>W <a href="/planer/">planerze</a> kliknij „🛡️ Pilnuj” przy wyniku — albo dodaj przejazd do planu w dzienniczku.') + '</div>';
@@ -292,6 +374,9 @@
       var act = b.dataset.act, id = b.dataset.id;
       var c = S.all().find(function (x) { return x.id === id; });
       if (act === 'refresh') { cache = {}; refresh(); return; }
+      if (act === 'remDel' && c) { var cf = remCfg(c); saveRem(c, { mins: G.remindMins(cf).filter(function (m) { return m !== Number(b.dataset.m); }) }); return; }
+      if (act === 'remAdd' && c) { var inp = list.querySelector('.rem-add[data-id="' + CSS.escape(id) + '"]'), v = Math.round(Number(inp && inp.value)); if (v >= 1 && v <= 180) saveRem(c, { mins: G.remindMins(remCfg(c)).concat([v]) }); return; }
+      if (act === 'remIcs' && c) { downloadIcs(c); return; }
       if (act === 'remove' && c) { if (!confirm(T('guard.confirmStop', null, 'Przestać pilnować tego połączenia?'))) return; S.remove(id).then(function () { delete results[id]; render(); }); return; }
       if (act === 'switch' && c) { switchTo(c, Number(b.dataset.k)); return; }
       if (act === 'record' && c) {
@@ -307,8 +392,22 @@
       if (act === 'altRetry' && c) { delete alts[id]; findAlternatives(c, results[id]); render(); }
     });
 
+    list.addEventListener('change', function (e) {
+      var el = e.target, id = el.dataset && el.dataset.id; if (!id) return;
+      var c = S.all().find(function (x) { return x.id === id; }); if (!c) return;
+      if (el.classList.contains('rem-on')) { saveRem(c, { on: el.checked }); if (el.checked && window.AlarmSound) AlarmSound.play(); }
+      else if (el.classList.contains('rem-walk')) { var w = Math.round(Number(el.value)); if (w >= 0 && w <= 120) saveRem(c, { walk: w }); }
+    });
+    list.addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target.classList.contains('rem-add')) { e.preventDefault(); var bt = e.target.parentNode.querySelector('[data-act="remAdd"]'); if (bt) bt.click(); } });
+    list.addEventListener('focusout', function () { setTimeout(function () { if (pendingRender) render(); }, 50); });
     // Ustawienia
     function fillSettings() { var s = S.settings(); q('#gvLead').value = String(s.leadMin); q('#gvMin').value = String(s.minTransfer); q('#gvAuto').checked = s.autoPlan; q('#gvSound').checked = !window.AlarmSound || AlarmSound.isEnabled(); }
+    if (q('#gvVol')) {
+      q('#gvVol').value = String(Math.round((window.AlarmSound && AlarmSound.volume ? AlarmSound.volume() : 1) * 100));
+      q('#gvVol').addEventListener('input', function () { if (window.AlarmSound && AlarmSound.setVolume) AlarmSound.setVolume(this.value / 100, false); });
+      q('#gvVol').addEventListener('change', function () { if (window.AlarmSound && AlarmSound.setVolume) { AlarmSound.setVolume(this.value / 100, true); AlarmSound.play(); } });
+      q('#gvTest').addEventListener('click', function () { if (window.AlarmSound) AlarmSound.play(); });
+    }
     q('#gvSound').addEventListener('change', function () { if (window.AlarmSound) { AlarmSound.setEnabled(this.checked); if (this.checked) AlarmSound.play(); } });
     q('#gvLead').addEventListener('change', function () { S.saveSettings({ leadMin: Number(this.value) }); refresh(); });
     q('#gvMin').addEventListener('change', function () { S.saveSettings({ minTransfer: Number(this.value) }); refresh(); });

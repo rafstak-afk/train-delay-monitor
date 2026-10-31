@@ -432,7 +432,62 @@
     return { title: tx(lang).title, body: fill(REMIND[lang] || REMIND.pl, { from: conn.from, to: conn.to }) };
   }
 
+  // ===== Przypomnienia o wyjściu z domu =====
+  // cfg = { on, walk (min dojścia na stację/przystanek), mins: [30, 15] (przed WYJŚCIEM) }.
+  // Wyjście = odjazd pierwszego odcinka − dojście (+ przesunięcie o opóźnienie pociągu).
+  var REM_DEFAULTS = { walk: 10, mins: [30, 15] };
+  function remindMins(cfg) {
+    var m = (cfg && Array.isArray(cfg.mins) ? cfg.mins : REM_DEFAULTS.mins).map(Number).filter(function (x) { return x >= 1 && x <= 180; });
+    m = m.filter(function (x, i) { return m.indexOf(x) === i; }).sort(function (a, b) { return b - a; });
+    return m.slice(0, 5);
+  }
+  function remindPlan(conn, cfg, shift) {
+    var l0 = conn && conn.legs && conn.legs[0]; if (!l0) return null;
+    var dep = hm(l0.board.time); if (dep == null) return null;
+    var walk = cfg && cfg.walk != null && cfg.walk !== "" ? Math.max(0, Math.min(120, Number(cfg.walk) || 0)) : REM_DEFAULTS.walk;
+    var leave = dep - walk + (shift || 0);
+    return { dep: dep, walk: walk, leave: leave, fires: remindMins(cfg).map(function (m) { return { m: m, at: leave - m }; }) };
+  }
+  // Przesunięcie wyjścia: tylko przy opóźnieniu ≥ 3 min (potwierdzonym, prognozie PLK albo bieżącym).
+  function remindShift(reading) {
+    if (!reading || reading.noData || reading.cancelled) return 0;
+    var d = Number(reading.delayDep) || 0;
+    return d >= 3 ? d : 0;
+  }
+  var REM_TX = {
+    pl: { title: "⏰ Za {m} min wyjście", now: "⏰ Czas wychodzić", train: "pociąg", plat: "peron {p}", delay: "opóźnienie +{d} min — wyjdź o {t}", cancel: "⚫ pociąg odwołany wg PLK", may: "pociąg może nadrobić" },
+    en: { title: "⏰ Leave in {m} min", now: "⏰ Time to leave", train: "train", plat: "platform {p}", delay: "delay +{d} min — leave at {t}", cancel: "⚫ train cancelled (PLK)", may: "the train may catch up" },
+    de: { title: "⏰ In {m} Min. losgehen", now: "⏰ Zeit zu gehen", train: "Zug", plat: "Bahnsteig {p}", delay: "Verspätung +{d} Min. — geh um {t} los", cancel: "⚫ Zug fällt aus (PLK)", may: "der Zug kann aufholen" },
+    cs: { title: "⏰ Za {m} min odchod", now: "⏰ Čas vyrazit", train: "vlak", plat: "nástupiště {p}", delay: "zpoždění +{d} min — vyraz v {t}", cancel: "⚫ vlak zrušen (PLK)", may: "vlak může dohnat zpoždění" },
+    es: { title: "⏰ Sal en {m} min", now: "⏰ Hora de salir", train: "tren", plat: "andén {p}", delay: "retraso +{d} min: sal a las {t}", cancel: "⚫ tren cancelado (PLK)", may: "el tren puede recuperar tiempo" },
+    uk: { title: "⏰ Через {m} хв виходь", now: "⏰ Час виходити", train: "потяг", plat: "перон {p}", delay: "затримка +{d} хв — виходь о {t}", cancel: "⚫ потяг скасовано (PLK)", may: "потяг може надолужити" }
+  };
+  // o = { m, conn, reading (readLeg pierwszego odcinka) | null, plan (remindPlan z przesunięciem) }
+  function remindText(lang, o) {
+    var t = REM_TX[lang] || REM_TX.pl, c = o.conn, l0 = c.legs[0], r = o.reading || null;
+    var lab = l0.mode === "gzm" ? trainLabel(l0.train) : (t.train + " " + trainLabel(l0.train));
+    var parts = [lab + " " + l0.board.time + " " + c.from + " → " + c.to];
+    if (r && !r.noData && r.platformDep && r.platformDep !== "-") parts[0] += ", " + fill(t.plat, { p: r.platformDep });
+    if (r && r.cancelled) parts.push(t.cancel);
+    else if (o.shift) parts.push(fill(t.delay, { d: o.shift, t: fmt(o.plan.leave) }) + " (" + t.may + ")");
+    return { title: o.m > 0 ? fill(t.title, { m: o.m }) : t.now, body: "→ " + parts.join(" · ") };
+  }
+  // Plik kalendarza: wydarzenie „wyjście” z alarmem przed nim (VALARM) — dla każdego przypomnienia.
+  function remindIcs(conn, cfg, title) {
+    var p = remindPlan(conn, cfg, 0); if (!p) return "";
+    var d = String(conn.date).replace(/-/g, "");
+    var at = function (min) { var day = new Date(Date.parse(conn.date + "T00:00:00Z") + Math.floor(min / 1440) * 86400000).toISOString().slice(0, 10).replace(/-/g, ""); min = ((min % 1440) + 1440) % 1440; return day + "T" + String(Math.floor(min / 60)).padStart(2, "0") + String(min % 60).padStart(2, "0") + "00"; };
+    var esc = function (x) { return String(x || "").replace(/[\\;,]/g, function (ch) { return "\\" + ch; }).replace(/\n/g, "\\n"); };
+    var lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//czy-zdaze//przypomnienie//PL", "CALSCALE:GREGORIAN", "BEGIN:VEVENT",
+      "UID:" + conn.id.replace(/[^A-Za-z0-9]/g, "") + "-" + d + "@czy-zdaze", "DTSTAMP:" + new Date().toISOString().replace(/[-:]/g, "").slice(0, 15) + "Z",
+      "DTSTART;TZID=Europe/Warsaw:" + at(p.leave), "DTEND;TZID=Europe/Warsaw:" + at(p.dep), "SUMMARY:" + esc(title), "DESCRIPTION:" + esc(conn.from + " → " + conn.to + " · " + conn.legs[0].board.time)];
+    p.fires.forEach(function (f) { lines.push("BEGIN:VALARM", "ACTION:DISPLAY", "DESCRIPTION:" + esc(title), "TRIGGER:-PT" + f.m + "M", "END:VALARM"); });
+    lines.push("BEGIN:VALARM", "ACTION:DISPLAY", "DESCRIPTION:" + esc(title), "TRIGGER:PT0M", "END:VALARM", "END:VEVENT", "END:VCALENDAR");
+    return lines.join("\r\n");
+  }
+
   var api = {
+    REM_DEFAULTS: REM_DEFAULTS, remindMins: remindMins, remindPlan: remindPlan, remindShift: remindShift, remindText: remindText, remindIcs: remindIcs,
     DEFAULTS: DEFAULTS, RANK: RANK, MAX_ACTIVE: MAX_ACTIVE,
     lastArrMin: lastArrMin, buildJournalEntries: buildJournalEntries, remindMessage: remindMessage,
     altOrigin: altOrigin, altQuery: altQuery, pickAlternatives: pickAlternatives, altText: altText,

@@ -1038,7 +1038,25 @@
     "arrShort": "příjezd",
     "depShort": "odjezd",
     "planB": "Plán B",
-    "openTrain": "Zobrazit celou trasu vlaku"
+    "openTrain": "Zobrazit celou trasu vlaku",
+    "rem": {
+      "vol": "🔊 Hlasitost alarmu Rp1 (aplikace otevřená)",
+      "test": "Přehrát",
+      "title": "Připomenout odchod z domu",
+      "walk": "Chůze na stanici / zastávku:",
+      "leave": "Odchod: {t} (odjezd {d} − {w} min chůze)",
+      "shift": "posunuto o +{n} min (zpoždění)",
+      "list": "Připomenutí:",
+      "chip": "{m} min předem → {t}",
+      "add": "přidat",
+      "ics": "Přidat do kalendáře (s alarmy)",
+      "alarm": "Nastavit budík v telefonu (test)",
+      "alarmMsg": "Odchod na vlak {d} z {from}",
+      "noPush": "Aby připomenutí přišlo i se zavřenou aplikací, zapněte oznámení (tlačítko nad seznamem).",
+      "ios": "iPhone: připomenutí se zavřenou aplikací funguje jen po přidání na plochu: Sdílet ⬆️ → „Přidat na plochu“, otevřete z ikony a povolte oznámení.",
+      "sound": "Se zavřenou aplikací zazní běžný zvuk oznámení. Android: změníte ho v nastavení oznámení této aplikace.",
+      "icsTitle": "Odchod: {d} {from} → {to}"
+    }
   },
   "gzm": {
     "title": "🚌 Přestupy GZM",

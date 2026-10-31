@@ -247,6 +247,22 @@ test("GZM: z opcją gzm w dzienniczku cała podróż (autobus, pociąg, tramwaj)
   if (new Set(e.map(x => x._key)).size !== 3) throw new Error("klucze");
 });
 
+test("Przypomnienia: wyjście = odjazd − dojście, domyślnie 30 i 15 min, porządek i limity", () => {
+  const c = { id: "x", date: "2026-11-02", from: "Tarnowskie Góry", to: "Katowice", legs: [{ train: { category: "KŚ", number: "40500" }, board: { stationName: "Tarnowskie Góry", time: "14:52" }, alight: { stationName: "Katowice", time: "15:30" } }] };
+  const p = G.remindPlan(c, { walk: 12 });
+  if (p.leave !== 14 * 60 + 40 || p.fires.map(f => f.m).join() !== "30,15" || p.fires[0].at !== 14 * 60 + 10) throw new Error(JSON.stringify(p));
+  if (G.remindMins({ mins: [5, 30, 30, 0, 400, "15"] }).join() !== "30,15,5") throw new Error(G.remindMins({ mins: [5, 30, 30, 0, 400, "15"] }).join());
+  if (G.remindShift({ delayDep: 2 }) !== 0 || G.remindShift({ delayDep: 8 }) !== 8 || G.remindShift({ delayDep: 8, cancelled: true }) !== 0) throw new Error("shift");
+  const t = G.remindText("pl", { m: 15, conn: c, reading: { platformDep: "2", delayDep: 0 }, plan: p, shift: 0 });
+  if (t.title !== "⏰ Za 15 min wyjście" || !/pociąg KŚ 40500 14:52 Tarnowskie Góry → Katowice, peron 2/.test(t.body)) throw new Error(JSON.stringify(t));
+  const p2 = G.remindPlan(c, { walk: 12 }, 8), t2 = G.remindText("pl", { m: 15, conn: c, reading: { delayDep: 8 }, plan: p2, shift: 8 });
+  if (!/opóźnienie \+8 min — wyjdź o 14:48/.test(t2.body)) throw new Error(t2.body);
+  const t3 = G.remindText("pl", { m: 15, conn: c, reading: { cancelled: true }, plan: p, shift: 0 });
+  if (!/odwołany/.test(t3.body)) throw new Error(t3.body);
+  const ics = G.remindIcs(c, { walk: 12, mins: [30, 15] }, "Wyjście");
+  if (!/DTSTART;TZID=Europe\/Warsaw:20261102T144000/.test(ics) || (ics.match(/BEGIN:VALARM/g) || []).length !== 3 || !/TRIGGER:-PT30M/.test(ics)) throw new Error(ics);
+});
+
 let fail = 0;
 for (const t of T) { try { t.fn(); console.log("  ✔ " + t.name); } catch (e) { fail++; console.log("  ✘ " + t.name + "\n      " + e.message); } }
 console.log("\n" + (T.length - fail) + "/" + T.length + " testów OK");

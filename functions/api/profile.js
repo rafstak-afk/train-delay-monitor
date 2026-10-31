@@ -172,8 +172,27 @@ export async function onRequest(context) {
       metadata: { createdAt: merged.createdAt, updatedAt: merged.updatedAt }
     });
 
+    // Przypomnienia o wyjściu: indeks profili, które je mają (remind-tick co minutę czyta tylko te profile).
+    // Zapis indeksu wyłącznie gdy zmienia się data ostatniego przypomnienia profilu.
+    if (patch.guardReminders !== undefined) {
+      try { await updateRemindIndex(env, token, patch.guardReminders); } catch (e) {}
+    }
+
     return json({ ok: true, data: merged });
   }
 
   return json({ ok: false, error: "Niedozwolona metoda" }, 405);
+}
+
+const REMIND_INDEX_KEY = "remind:index";
+async function updateRemindIndex(env, token, rem) {
+  let last = "";
+  if (rem && typeof rem === "object") for (const k of Object.keys(rem)) { const r = rem[k]; if (r && r.on && typeof r.date === "string" && r.date > last) last = r.date; }
+  let idx = {};
+  try { idx = JSON.parse((await env.USER_PROFILES.get(REMIND_INDEX_KEY)) || "{}") || {}; } catch (e) { idx = {}; }
+  const today = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Warsaw" });
+  const next = {};
+  for (const k of Object.keys(idx)) if (k !== token && idx[k] >= today) next[k] = idx[k];
+  if (last && last >= today) next[token] = last;
+  if (JSON.stringify(next) !== JSON.stringify(idx)) await env.USER_PROFILES.put(REMIND_INDEX_KEY, JSON.stringify(next));
 }

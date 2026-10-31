@@ -1038,7 +1038,25 @@
     "arrShort": "Ankunft",
     "depShort": "Abfahrt",
     "planB": "Plan B",
-    "openTrain": "Ganzen Zuglauf anzeigen"
+    "openTrain": "Ganzen Zuglauf anzeigen",
+    "rem": {
+      "vol": "🔊 Lautstärke des Rp1-Alarms (App offen)",
+      "test": "Anhören",
+      "title": "Ans Losgehen erinnern",
+      "walk": "Fußweg zum Bahnhof / zur Haltestelle:",
+      "leave": "Losgehen: {t} (Abfahrt {d} − {w} Min. Fußweg)",
+      "shift": "um +{n} Min. verschoben (Verspätung)",
+      "list": "Erinnerungen:",
+      "chip": "{m} Min. vorher → {t}",
+      "add": "hinzufügen",
+      "ics": "Zum Kalender (mit Alarmen)",
+      "alarm": "Wecker im Telefon stellen (Test)",
+      "alarmMsg": "Losgehen zum Zug {d} ab {from}",
+      "noPush": "Damit die Erinnerung bei geschlossener App kommt, schalte Benachrichtigungen ein (Knopf über der Liste).",
+      "ios": "iPhone: Erinnerungen bei geschlossener App nur nach „Zum Home-Bildschirm“: Teilen ⬆️ → „Zum Home-Bildschirm“, über das Symbol öffnen und Mitteilungen erlauben.",
+      "sound": "Bei geschlossener App spielt das Telefon den normalen Mitteilungston. Android: änderbar in den Benachrichtigungseinstellungen dieser App.",
+      "icsTitle": "Losgehen: {d} {from} → {to}"
+    }
   },
   "gzm": {
     "title": "🚌 GZM-Anschlüsse",

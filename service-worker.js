@@ -63,10 +63,13 @@ self.addEventListener("push", event => {
     // przeglądarka nie pozwala zmienić, wibrację na Androidzie tak.
     // tag: nowe powiadomienie tego samego rodzaju ZASTĘPUJE poprzednie (renotify = znowu dzwoni),
     // zamiast układać się w paczkę — w zgrupowaną paczkę Androida nie zawsze da się „wejść”.
-    self.registration.showNotification(title, { body, vibrate: [120,80,120,400,120,80,120], data: { url }, tag: data.tag || data.kind || "alarm", renotify: true })
-      // Strażnik przesiadek: otwarta aplikacja zagra Rp1 (alarm-sound.js).
-      .then(() => data.kind === "guard" ? self.clients.matchAll({ type: "window", includeUncontrolled: true }) : [])
-      .then(list => { (list || []).forEach(c => { try { c.postMessage({ type: "playAlarm" }); } catch (e) {} }); })
+    // Przypomnienie o wyjściu: jak budzik — dłuższa wibracja, nie znika samo (requireInteraction; Android i tak je trzyma na liście).
+    self.registration.showNotification(title, data.kind === "remind"
+      ? { body, vibrate: [500, 200, 500, 200, 500, 600, 900], requireInteraction: true, data: { url }, tag: data.tag || "remind", renotify: true }
+      : { body, vibrate: [120,80,120,400,120,80,120], data: { url }, tag: data.tag || data.kind || "alarm", renotify: true })
+      // Strażnik i przypomnienia: otwarta aplikacja zagra Rp1 (alarm-sound.js), przypomnienie pokaże też duży baner.
+      .then(() => (data.kind === "guard" || data.kind === "remind") ? self.clients.matchAll({ type: "window", includeUncontrolled: true }) : [])
+      .then(list => { (list || []).forEach(c => { try { c.postMessage(data.kind === "remind" ? { type: "remindBanner", title, body, url } : { type: "playAlarm" }); } catch (e) {} }); })
   );
 });
 

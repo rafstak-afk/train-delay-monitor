@@ -102,6 +102,26 @@
     if (/^plan:/.test(oldId)) remove(oldId);
     return mutate(function (list) { return list.filter(function (c) { return c.id !== oldId && c.id !== conn.id; }).concat([conn]); });
   }
+  // ⏰ Przypomnienia o wyjściu: profil guardReminders = { id połączenia: {on, walk, mins, date} }.
+  // Zapis tylko przy zmianie: świeży odczyt profilu, zmiana JEDNEGO wpisu, zapis (bez nadpisywania starą listą).
+  var REM_KEY = "guardRemindersV1";
+  function reminders() { return read(REM_KEY, {}); }
+  function reminder(id) { return reminders()[id] || null; }
+  function setReminder(id, cfg) {
+    var apply = function (base) {
+      var m = Object.assign({}, base || {}), min = new Date(Date.parse(today() + "T00:00:00Z") - 86400000).toISOString().slice(0, 10);
+      Object.keys(m).forEach(function (k) { if (!m[k] || !m[k].date || m[k].date < min) delete m[k]; });
+      if (cfg) m[id] = cfg; else delete m[id];
+      return m;
+    };
+    var local = apply(reminders()); write(REM_KEY, local);
+    if (!hasProfile()) return Promise.resolve(local);
+    return ProfileSync.pull().catch(function () { return null; }).then(function (p) {
+      var m = apply(p && p.guardReminders && typeof p.guardReminders === "object" ? p.guardReminders : local);
+      write(REM_KEY, m); ProfileSync.push({ guardReminders: m });
+      return m;
+    });
+  }
   function saveSettings(patch) {
     var s = settings(); Object.keys(patch).forEach(function (k) { s[k] = patch[k]; });
     write(SET_KEY, s);
@@ -122,6 +142,7 @@
       }
       if (p.guardSettings && typeof p.guardSettings === "object") write(SET_KEY, p.guardSettings);
       if (Array.isArray(p.guardPlanOff)) write(OFF_KEY, p.guardPlanOff);
+      if (p.guardReminders && typeof p.guardReminders === "object") write(REM_KEY, p.guardReminders);
       if (Array.isArray(p.plannedTrips)) write(PLAN_KEY, p.plannedTrips);
       return true;
     }).catch(function () { return false; });
@@ -221,6 +242,7 @@
   }
 
   window.GuardStore = {
+    reminders: reminders, reminder: reminder, setReminder: setReminder,
     settings: settings, saveSettings: saveSettings, all: all, manual: manual, isGuarded: isGuarded,
     add: add, remove: remove, replace: replace, refreshFromProfile: refreshFromProfile,
     pushState: pushState, enablePush: enablePush, today: today, hasProfile: hasProfile, enabled: enabled, planGuardMap: planGuardMap, recordTrip: recordTrip, dismissTrip: dismissTrip

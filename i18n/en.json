@@ -1038,7 +1038,25 @@
     "arrShort": "arrival",
     "depShort": "departure",
     "planB": "Plan B",
-    "openTrain": "Show the train’s full route"
+    "openTrain": "Show the train’s full route",
+    "rem": {
+      "vol": "🔊 Rp1 alarm volume (app open)",
+      "test": "Play",
+      "title": "Remind me to leave home",
+      "walk": "Walk to the station / stop:",
+      "leave": "Leave: {t} (departure {d} − {w} min walk)",
+      "shift": "moved by +{n} min (delay)",
+      "list": "Reminders:",
+      "chip": "{m} min before → {t}",
+      "add": "add",
+      "ics": "Add to calendar (with alarms)",
+      "alarm": "Set a phone alarm (test)",
+      "alarmMsg": "Leave for the {d} train from {from}",
+      "noPush": "To get the reminder with the app closed, turn on notifications (button above the list).",
+      "ios": "iPhone: reminders with the app closed only work after adding it to the Home Screen: Share ⬆️ → “Add to Home Screen”, open it from the icon and allow notifications.",
+      "sound": "With the app closed, the phone plays its normal notification sound. Android: you can change it in this app's notification settings.",
+      "icsTitle": "Leave: {d} {from} → {to}"
+    }
   },
   "gzm": {
     "title": "🚌 GZM connections",

@@ -108,6 +108,9 @@
         } catch (e) {}
       }
       // Ustawienie dźwięku alarmu (alarm-sound.js) jest wspólne dla profilu.
+      if (data && typeof data.alarmVolume === "number") {
+        try { localStorage.setItem("alarmVolume", String(Math.max(0, Math.min(1, data.alarmVolume)))); } catch (e) {}
+      }
       if (data && typeof data.alarmSound === "boolean") {
         try { localStorage.setItem("alarmSoundEnabled", data.alarmSound ? "1" : "0"); } catch (e) {}
         try { window.dispatchEvent(new Event("alarmsoundchange")); } catch (e) {}

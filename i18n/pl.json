@@ -1038,7 +1038,25 @@
     "arrShort": "przyjazd",
     "depShort": "odjazd",
     "planB": "Plan B",
-    "openTrain": "Pokaż cały bieg pociągu"
+    "openTrain": "Pokaż cały bieg pociągu",
+    "rem": {
+      "vol": "🔊 Głośność alarmu Rp1 (aplikacja otwarta)",
+      "test": "Odsłuchaj",
+      "title": "Przypomnij o wyjściu z domu",
+      "walk": "Dojście na stację / przystanek:",
+      "leave": "Wyjście: {t} (odjazd {d} − {w} min dojścia)",
+      "shift": "przesunięte o +{n} min (opóźnienie)",
+      "list": "Przypomnienia:",
+      "chip": "{m} min przed → {t}",
+      "add": "dodaj",
+      "ics": "Dodaj do kalendarza (z alarmami)",
+      "alarm": "Ustaw budzik w telefonie (test)",
+      "alarmMsg": "Wyjście na pociąg {d} z {from}",
+      "noPush": "Żeby przypomnienie przyszło przy zamkniętej aplikacji, włącz powiadomienia (przycisk nad listą).",
+      "ios": "iPhone: przypomnienie przy zamkniętej aplikacji przyjdzie tylko, gdy dodasz ją do ekranu początkowego: Udostępnij ⬆️ → „Do ekranu początkowego”, otwórz z ikony i zezwól na powiadomienia.",
+      "sound": "Przy zamkniętej aplikacji gra zwykły dźwięk powiadomienia telefonu. Android: dźwięk możesz zmienić w ustawieniach powiadomień tej aplikacji.",
+      "icsTitle": "Wyjście: {d} {from} → {to}"
+    }
   },
   "gzm": {
     "title": "🚌 Przesiadki GZM",
