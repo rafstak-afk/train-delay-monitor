@@ -414,7 +414,8 @@
     "tabSaved": "Gespeichert",
     "tabGzm": "GZM",
     "tabTrain": "Zug",
-    "tabTrainGzm": "Zug + GZM"
+    "tabTrainGzm": "Zug + GZM",
+    "historyGzmDeps": "Abfahrten am Bahnhof"
   },
   "tutorial": {
     "ui": {
@@ -1214,6 +1215,15 @@
     "tChange": "Umstieg: {s}, {n} Min.",
     "tShowTrain": "▼ Zuglauf und aktuelle Position",
     "tTrainPos": "zuletzt bestätigt: {s} · Verspätung {n} Min.",
-    "tPlat": "Bahnsteig {p}"
+    "tPlat": "Bahnsteig {p}",
+    "farTitle": "Weiter als üblich — ZTM-Haltestelle außerhalb des üblichen Fußwegs",
+    "farLetter": "W",
+    "farDist": "{d} — weiter als üblich",
+    "farHead": "Am Bahnhof {st} gibt es keine ZTM-Haltestelle im üblichen Fußweg (bis {n} Min.).",
+    "farNear": "Nächste Haltestellen — weiter als üblich:",
+    "farRow": "{d}, ca. {n} Min. zu Fuß",
+    "farUse": "Von: diese Haltestelle",
+    "farHint": "Gib auch „Nach“ ein, dann plane ich die Reise mit Fußweg zu dieser Haltestelle.",
+    "farNone": "ZTM fährt hier nicht — nächste Haltestelle: {s}, {d} vom Bahnhof."
   }
 }

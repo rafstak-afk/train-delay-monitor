@@ -11,6 +11,9 @@
   var CSS =
     '.gz .gz-dt{display:flex;gap:10px;width:100%}.gz .gz-dt input{flex:1 1 0;min-width:0;padding:14px!important;border-radius:10px!important;border:0!important;font-size:16px!important;background:#fff!important;color:#102027!important;color-scheme:light}' +
     '.gz .gz-ddw{position:relative}' +
+    '.gz .gz-far{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#a855f7;color:#fff;font-weight:900;font-size:12px;margin-right:5px;vertical-align:middle;flex:0 0 auto}' +
+    '.gz .gz-farbox{margin:10px 0;padding:12px;border:1px solid #a855f7;border-radius:12px;background:rgba(168,85,247,.1);font-size:13.5px;line-height:1.45}' +
+    '.gz .gz-farrow{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px}' +
     '.gz .gz-searching{margin:10px 0;padding:16px 14px;border-radius:12px;border:2px solid #ffd400;background:rgba(255,212,0,.1);color:#ffe8a3;font-size:17px;font-weight:900;text-align:center;animation:gzPulse 1.1s ease-in-out infinite}' +
     '@keyframes gzPulse{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(255,212,0,.45)}50%{transform:scale(1.035);box-shadow:0 0 22px 4px rgba(255,212,0,.35)}}' +
     '@media (prefers-reduced-motion:reduce){.gz .gz-searching{animation:none}}' +
@@ -154,7 +157,24 @@
       var body = root.querySelector("#gzBody");
       if (!cfg.stationId) { body.innerHTML = '<div class="gz-empty">' + esc(T("gzm.intro", null, "Wybierz stację, na której wysiadasz, i godzinę przyjazdu — pokażę autobusy i tramwaje GZM, na które zdążysz dojść z peronu.")) + "</div>"; return; }
       var meta = (index.stations || []).find(function (s) { return s.id === +cfg.stationId; });
-      if (meta && !meta.s.length) { body.innerHTML = '<div class="gz-empty">' + esc(T("gzm.noStops", null, "Brak przystanków GZM w pobliżu tej stacji.")) + "</div>"; return; }
+      if (meta && !meta.s.length) {
+        if (!uniOn()) { body.innerHTML = '<div class="gz-empty">' + esc(T("gzm.noStops", null, "Brak przystanków GZM w pobliżu tej stacji.")) + "</div>"; return; }
+        body.innerHTML = '<div class="gz-empty">' + esc(T("gzm.loading", null, "Wczytuję rozkład…")) + "</div>";
+        getNet(cfg.date || warsawNow().date).then(function (net) {
+          var r = farStops(net, meta), h = '<div class="gz-farbox"><b>' + esc(T("gzm.farHead", { st: meta.n, n: index.maxWalkMin || 8 }, "Przy stacji {st} nie ma przystanku ZTM w zwykłym zasięgu pieszym (do {n} min).")) + "</b>";
+          if (r.list.length) {
+            h += "<div>" + esc(T("gzm.farNear", null, "Najbliższe przystanki — dalej niż zwykle:")) + "</div>" + r.list.map(function (o) {
+              return '<div class="gz-farrow">' + farBadge() + "<b>" + esc(o.name) + "</b> · " + esc(T("gzm.farRow", { d: kmTxt(o.d), n: o.walk }, "{d}, ok. {n} min pieszo")) +
+                ' <button type="button" class="gz-chip" data-farfrom="' + esc(o.name) + '">' + esc(T("gzm.farUse", null, "Skąd: ten przystanek")) + "</button></div>";
+            }).join("") + '<div class="gz-sub" style="margin-top:8px">' + esc(T("gzm.farHint", null, "Wpisz też „Dokąd”, a ułożę podróż z dojściem do tego przystanku.")) + "</div>";
+          } else if (r.nearest) {
+            h += "<div>" + esc(T("gzm.farNone", { s: r.nearest.name, d: kmTxt(r.nearest.d) }, "ZTM tu nie dojeżdża — najbliższy przystanek: {s}, {d} od stacji.")) + "</div>";
+          }
+          body.innerHTML = h + "</div>";
+          body.querySelectorAll("[data-farfrom]").forEach(function (b) { b.addEventListener("click", function () { var fi = root.querySelector("#gzCFrom"), ti = root.querySelector("#gzCTo"); if (fi) fi.value = b.dataset.farfrom; if (ti) { ti.focus(); ti.scrollIntoView({ block: "center" }); } }); });
+        }).catch(function () { body.innerHTML = '<div class="gz-empty">' + esc(T("gzm.noStops", null, "Brak przystanków GZM w pobliżu tej stacji.")) + "</div>"; });
+        return;
+      }
       body.innerHTML = '<div class="gz-empty">' + esc(T("gzm.loading", null, "Wczytuję rozkład…")) + "</div>";
       getStation(cfg.stationId).then(function () {
         var dl = root.querySelector("#gzDestList"), di = root.querySelector("#gzDest");
@@ -214,7 +234,7 @@
     // odcinki podróży: każdy kurs w osobnym wierszu, przejście słowami
     function legsHtml(jn) {
       return '<div class="gz-legs">' + jn.legs.map(function (l) {
-        if (l.type === "walk") return '<div class="gz-walk">' + esc(T("gzm.jWalk", { n: l.min }, "przejście pieszo {n} min")) + (l.fixed ? " · " + esc(T("gzm.jFixed", null, "Twój czas")) : l.measured ? " · " + esc(T("gzm.jMeasured", null, "zmierzone")) : "") + (l.toName && l.fromName && l.fromName.charAt(0) > "~" ? " · " + esc(l.fromName) + " → " + esc(l.toName) : "") + "</div>";
+        if (l.type === "walk") return '<div class="gz-walk">' + (l.far ? farBadge() : "") + esc(T("gzm.jWalk", { n: l.min }, "przejście pieszo {n} min")) + (l.far ? " · " + esc(T("gzm.farDist", { d: kmTxt(l.dist || 0) }, "{d} — dalej niż zwykle")) : "") + (l.fixed ? " · " + esc(T("gzm.jFixed", null, "Twój czas")) : l.measured ? " · " + esc(T("gzm.jMeasured", null, "zmierzone")) : "") + (l.toName && l.fromName && l.fromName.charAt(0) > "~" ? " · " + esc(l.fromName) + " → " + esc(l.toName) : "") + "</div>";
         var dep = (l.live && l.delay ? '<span class="plan-strike">' + C.fmt(l.depPlan) + "</span> " : "") + C.fmt(l.dep);
         return '<div class="gz-leg"><span class="ln">' + esc(l.line) + '</span><span><span class="tm">' + dep + "</span> " + esc(l.fromName) + "</span>" +
           '<span class="to">→ <b>' + C.fmt(l.arr) + "</b> " + esc(l.toName) + (l.live && l.delay ? " (+" + l.delay + " min)" : "") + "</span></div>";
@@ -565,6 +585,12 @@
         setTimeout(function () { if (Math.abs(el.getBoundingClientRect().top - 90) > 30) go("auto"); }, 900);
       })();
     }
+    function announce(from, to) {
+      try {
+        var d = root.querySelector("#gzCDate"), t = root.querySelector("#gzCTime");
+        window.dispatchEvent(new CustomEvent("gzmsearch", { detail: { from: from, to: to || "", date: (d && d.value) || warsawNow().date, time: (t && t.value) || C.fmt(warsawNow().min) } }));
+      } catch (e) {}
+    }
     function clearAll() {
       cState = null; tripOpen = {};
       var r1 = root.querySelector("#gzCRes"), r2 = root.querySelector("#gzBody");
@@ -778,6 +804,30 @@
         return ch;
       }).catch(function () { return false; });
     }
+    var FAR_MAX = 2500;
+    function farStops(net, x) {
+      var by = {}, best = null;
+      for (var i = 0; i < net.n; i++) {
+        var d = havM(x.lat, x.lon, net.lat[i], net.lon[i]), nm = net.name[i];
+        if (!best || d < best.d) best = { name: nm, d: d };
+        if (d > FAR_MAX) continue;
+        if (!by[nm]) by[nm] = { name: nm, d: d, idx: [] };
+        by[nm].idx.push(i); if (d < by[nm].d) by[nm].d = d;
+      }
+      var list = Object.keys(by).map(function (k) { return by[k]; }).sort(function (a, b) { return a.d - b.d; }).slice(0, 3);
+      list.forEach(function (o) { o.walk = walkMin(o.d); });
+      return { list: list, nearest: best };
+    }
+    function kmTxt(m) { return m < 950 ? Math.round(m / 10) * 10 + " m" : (Math.round(m / 100) / 10).toString().replace(".", ",") + " km"; }
+    function farBadge() { return '<span class="gz-far" title="' + esc(T("gzm.farTitle", null, "Dalej niż zwykle — przystanek ZTM poza typowym dojściem od stacji")) + '">' + esc(T("gzm.farLetter", null, "D")) + "</span>"; }
+    // stacja jako punkt startu/celu: słupki w zasięgu albo (gdy brak) najbliższe przystanki „D”
+    function stationNet(net, stn) {
+      var p = polesOf(stn);
+      if (p.length) return { label: stn.n, stops: p };
+      var fs2 = farStops(net, stn), stops = [];
+      fs2.list.forEach(function (o) { o.idx.forEach(function (i) { stops.push({ s: i, walk: walkMin(havM(stn.lat, stn.lon, net.lat[i], net.lon[i])) + 2, d: havM(stn.lat, stn.lon, net.lat[i], net.lon[i]), far: true }); }); });
+      return { label: stn.n, stops: stops };
+    }
     function havM(a, b, c, d) { var R = 6371000, t = Math.PI / 180, x = Math.pow(Math.sin((c - a) * t / 2), 2) + Math.cos(a * t) * Math.cos(c * t) * Math.pow(Math.sin((d - b) * t / 2), 2); return 2 * R * Math.asin(Math.sqrt(x)); }
     // ×1,15 na kluczenie ulicami, 1,2 m/s (pomiary autora 31.10: dom → stanowisko 432 m w 5:49, peron → dom 572 m w 10:08)
     function walkMin(m) { return Math.max(1, Math.ceil(m * 1.15 / 1.2 / 60)); }
@@ -833,6 +883,7 @@
       st.cFrom = fromTxt; st.cTo = toTxt; save(LS, st);
       if (uniOn()) {
         clearAll();
+        if (fromTxt) announce(fromTxt, toTxt);
         var fsU = stationByName(fromTxt);
         if (fsU && !toTxt) { var dU = root.querySelector("#gzCDate"); cfg.date = dU && dU.value && dU.value !== warsawNow().date ? dU.value : null; goA(fsU, tmin); return; }
         setMode("C");
@@ -930,11 +981,11 @@
     function withPlaceWalks(jn, fromPl, toPl) {
       if (fromPl) {
         var r0 = jn.legs.find(function (l) { return l.type === "ride"; }), w0 = fromPl.stops.find(function (x) { return x.s === (jn.legs[0].type === "walk" ? jn.legs[0].from : r0.from); });
-        if (w0) { jn.legs.unshift({ type: "walk", min: w0.walk, measured: !!w0.measured, fixed: !!w0.fixed, fromName: fromPl.label, toName: S_name(jn.legs[0].type === "walk" ? jn.legs[0].from : r0.from) }); jn.leave = (jn.legs[1].type === "walk" ? r0.dep - jn.legs[1].min : r0.dep) - w0.walk; }
+        if (w0) { jn.legs.unshift({ type: "walk", min: w0.walk, measured: !!w0.measured, fixed: !!w0.fixed, far: !!w0.far, dist: w0.d, fromName: fromPl.label, toName: S_name(jn.legs[0].type === "walk" ? jn.legs[0].from : r0.from) }); jn.leave = (jn.legs[1].type === "walk" ? r0.dep - jn.legs[1].min : r0.dep) - w0.walk; }
       }
       if (toPl) {
         var last = jn.legs[jn.legs.length - 1], w1 = toPl.stops.find(function (x) { return x.s === last.to; });
-        if (w1) { jn.legs.push({ type: "walk", min: w1.walk, measured: !!w1.measured, fixed: !!w1.fixed, fromName: S_name(last.to), toName: toPl.label }); jn.arr += w1.walk; }
+        if (w1) { jn.legs.push({ type: "walk", min: w1.walk, measured: !!w1.measured, fixed: !!w1.fixed, far: !!w1.far, dist: w1.d, fromName: S_name(last.to), toName: toPl.label }); jn.arr += w1.walk; }
       }
       return jn;
     }
@@ -1004,8 +1055,8 @@
       if ((S.fromPlace || S.toPlace) && !S.fromSt && !S.toSt && !S.netFrom) { S.netFrom = S.fN || []; S.netTo = S.tN || []; }
       // jeden formularz: stacja jako punkt z przystankami pod nią (dojście z peronu) — sama komunikacja też od/do stacji
       if (S.uni && !S.netFrom) {
-        S.fromNet = S.fromPlace || (S.fromSt ? { label: S.fromSt.n, stops: polesOf(S.fromSt) } : null);
-        S.toNet = S.toPlace || (S.toSt ? { label: S.toSt.n, stops: polesOf(S.toSt) } : null);
+        S.fromNet = S.fromPlace || (S.fromSt ? stationNet(S.net, S.fromSt) : null);
+        S.toNet = S.toPlace || (S.toSt ? stationNet(S.net, S.toSt) : null);
         if ((S.fromNet ? S.fromNet.stops.length : (S.fN || []).length) && (S.toNet ? S.toNet.stops.length : (S.tN || []).length)) { S.netFrom = S.fN || []; S.netTo = S.tN || []; }
       }
       // tylko GZM (gdy oba końce to przystanki)
@@ -1390,6 +1441,16 @@
     return {
       start: function () { shown = true; ready.then(function () { if (file) getRt().then(function () { render(); }); schedule(); }); },
       stop: function () { shown = false; schedule(); },
+      rerun: function (q) {
+        ready.then(function () {
+          var f = root.querySelector("#gzCFrom"), t = root.querySelector("#gzCTo"), d = root.querySelector("#gzCDate"), tm = root.querySelector("#gzCTime");
+          if (!f || !t) return;
+          f.value = q.from || ""; t.value = q.to || "";
+          if (d) { var v = q.date && q.date >= (d.min || "") && (!d.max || q.date <= d.max) ? q.date : warsawNow().date; d.value = v; }
+          if (tm && q.time) tm.value = q.time;
+          searchC();
+        });
+      },
       open: function (o) {
         cfg = { stationId: o.stationId, arr: o.arr || null, date: o.date || null, train: o.train || null, alighted: false };
         trainInfo = null; showMore = 0;

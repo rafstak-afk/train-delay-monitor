@@ -414,7 +414,8 @@
     "tabSaved": "Zapisane",
     "tabGzm": "GZM",
     "tabTrain": "Pociąg",
-    "tabTrainGzm": "Pociąg + GZM"
+    "tabTrainGzm": "Pociąg + GZM",
+    "historyGzmDeps": "odjazdy spod stacji"
   },
   "tutorial": {
     "ui": {
@@ -1214,6 +1215,15 @@
     "tChange": "przesiadka: {s}, {n} min",
     "tShowTrain": "▼ trasa pociągu i gdzie jest teraz",
     "tTrainPos": "ostatnio potwierdzony: {s} · opóźnienie {n} min",
-    "tPlat": "peron {p}"
+    "tPlat": "peron {p}",
+    "farTitle": "Dalej niż zwykle — przystanek ZTM poza typowym dojściem od stacji",
+    "farLetter": "D",
+    "farDist": "{d} — dalej niż zwykle",
+    "farHead": "Przy stacji {st} nie ma przystanku ZTM w zwykłym zasięgu pieszym (do {n} min).",
+    "farNear": "Najbliższe przystanki — dalej niż zwykle:",
+    "farRow": "{d}, ok. {n} min pieszo",
+    "farUse": "Skąd: ten przystanek",
+    "farHint": "Wpisz też „Dokąd”, a ułożę podróż z dojściem do tego przystanku.",
+    "farNone": "ZTM tu nie dojeżdża — najbliższy przystanek: {s}, {d} od stacji."
   }
 }

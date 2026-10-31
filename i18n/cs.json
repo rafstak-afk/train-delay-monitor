@@ -414,7 +414,8 @@
     "tabSaved": "Uložené",
     "tabGzm": "GZM",
     "tabTrain": "Vlak",
-    "tabTrainGzm": "Vlak + GZM"
+    "tabTrainGzm": "Vlak + GZM",
+    "historyGzmDeps": "odjezdy u stanice"
   },
   "tutorial": {
     "ui": {
@@ -1214,6 +1215,15 @@
     "tChange": "přestup: {s}, {n} min",
     "tShowTrain": "▼ trasa vlaku a kde je teď",
     "tTrainPos": "naposledy potvrzeno: {s} · zpoždění {n} min",
-    "tPlat": "nástupiště {p}"
+    "tPlat": "nástupiště {p}",
+    "farTitle": "Dál než obvykle — zastávka ZTM mimo běžnou docházku od stanice",
+    "farLetter": "D",
+    "farDist": "{d} — dál než obvykle",
+    "farHead": "U stanice {st} není zastávka ZTM v běžné docházkové vzdálenosti (do {n} min).",
+    "farNear": "Nejbližší zastávky — dál než obvykle:",
+    "farRow": "{d}, asi {n} min pěšky",
+    "farUse": "Odkud: tato zastávka",
+    "farHint": "Zadejte i „Kam“ a naplánuji cestu s chůzí k této zastávce.",
+    "farNone": "ZTM sem nejezdí — nejbližší zastávka: {s}, {d} od stanice."
   }
 }

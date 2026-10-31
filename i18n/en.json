@@ -414,7 +414,8 @@
     "tabSaved": "Saved",
     "tabGzm": "GZM",
     "tabTrain": "Train",
-    "tabTrainGzm": "Train + GZM"
+    "tabTrainGzm": "Train + GZM",
+    "historyGzmDeps": "departures near the station"
   },
   "tutorial": {
     "ui": {
@@ -1214,6 +1215,15 @@
     "tChange": "change: {s}, {n} min",
     "tShowTrain": "▼ train route and where it is now",
     "tTrainPos": "last confirmed: {s} · delay {n} min",
-    "tPlat": "platform {p}"
+    "tPlat": "platform {p}",
+    "farTitle": "Farther than usual — the ZTM stop is beyond a typical walk from the station",
+    "farLetter": "F",
+    "farDist": "{d} — farther than usual",
+    "farHead": "There is no ZTM stop within the usual walk of {st} (up to {n} min).",
+    "farNear": "Nearest stops — farther than usual:",
+    "farRow": "{d}, about {n} min on foot",
+    "farUse": "From: this stop",
+    "farHint": "Also enter “To” and I'll plan the trip with the walk to this stop.",
+    "farNone": "ZTM does not serve this place — nearest stop: {s}, {d} from the station."
   }
 }

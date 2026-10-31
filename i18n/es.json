@@ -414,7 +414,8 @@
     "tabSaved": "Guardadas",
     "tabGzm": "GZM",
     "tabTrain": "Tren",
-    "tabTrainGzm": "Tren + GZM"
+    "tabTrainGzm": "Tren + GZM",
+    "historyGzmDeps": "salidas junto a la estación"
   },
   "tutorial": {
     "ui": {
@@ -1214,6 +1215,15 @@
     "tChange": "transbordo: {s}, {n} min",
     "tShowTrain": "▼ recorrido del tren y dónde está ahora",
     "tTrainPos": "última confirmación: {s} · retraso {n} min",
-    "tPlat": "andén {p}"
+    "tPlat": "andén {p}",
+    "farTitle": "Más lejos de lo habitual: parada ZTM fuera del trayecto a pie típico",
+    "farLetter": "L",
+    "farDist": "{d}: más lejos de lo habitual",
+    "farHead": "Junto a la estación {st} no hay parada ZTM a una distancia a pie habitual (hasta {n} min).",
+    "farNear": "Paradas más cercanas, más lejos de lo habitual:",
+    "farRow": "{d}, unos {n} min a pie",
+    "farUse": "Desde: esta parada",
+    "farHint": "Escribe también «Hasta» y planificaré el viaje con el camino a pie a esta parada.",
+    "farNone": "ZTM no llega aquí; parada más cercana: {s}, a {d} de la estación."
   }
 }

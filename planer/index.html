@@ -1292,8 +1292,27 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     saveSearchHistoryList(list);
     renderHistoryPanel();
   }
+  // 🚆🚌 Pociąg + GZM (gzm-view.js wysyła „gzmsearch”) — do tej samej listy Ostatnich
+  window.addEventListener('gzmsearch',function(ev){
+    var d=ev.detail||{};if(!d.from)return;
+    var q={gzm:true,from:d.from,to:d.to||'',date:d.date,time:d.time};
+    var sig='gzm|'+[q.from,q.to,q.date,q.time].join('|');
+    var list=getSearchHistory().filter(function(e){return e.sig!==sig});
+    list.unshift({sig:sig,query:q,searchedAt:new Date().toISOString()});
+    if(list.length>HISTORY_MAX)list=list.slice(0,HISTORY_MAX);
+    saveSearchHistoryList(list);renderHistoryPanel();
+  });
   function historyEntryHtml(e,idx){
     var q=e.query;
+    if(q&&q.gzm){
+      var df=(function(){var p=String(q.date||'').split('-');return p.length===3?p[2]+'.'+p[1]+'.'+p[0]:q.date})();
+      return '<div class="history-entry"><div class="history-info">'+
+        '<div class="history-route">🚆🚌 '+escapeHtml(q.from)+(q.to?' → '+escapeHtml(q.to):' · '+escapeHtml(T('planer.historyGzmDeps')))+'</div>'+
+        '<div class="history-meta">'+escapeHtml(T('planer.historyWhen',{date:df,time:q.time}))+' · '+escapeHtml(T('planer.tabTrainGzm'))+'</div></div>'+
+        (isPastDate(q.date)
+          ?'<div class="history-btns"><button type="button" class="history-rerun" data-idx="'+idx+'" data-fresh="1">'+escapeHtml(freshLabel(freshWhen(q.time)))+'</button></div>'
+          :'<button type="button" class="history-rerun" data-idx="'+idx+'">'+escapeHtml(T('planer.rerun'))+'</button>')+'</div>';
+    }
     var dateFmt=(function(){var p=String(q.date||'').split('-');return p.length===3?p[2]+'.'+p[1]+'.'+p[0]:q.date})();
     var metaBits=[];
     if(q.transferMinutes!=null&&Number(q.transferMinutes)!==3)metaBits.push(T('planer.historyBuffer',{min:q.transferMinutes}));
@@ -1333,6 +1352,12 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
   function rerunHistoryEntry(idx,fresh){
     var e=getSearchHistory()[idx];
     if(!e)return;
+    if(e.query&&e.query.gzm){
+      if(!gzmView)return;
+      var w=fresh?freshWhen(e.query.time):null;
+      showTab('gzm');gzmView.rerun({from:e.query.from,to:e.query.to,date:(w&&w.date)||e.query.date,time:(w&&w.time)||e.query.time});
+      return;
+    }
     rerunQuery(e.query,e.fromId,e.toId,fresh?freshWhen(e.query.time):null);
   }
   // Wypełnia formularz zapisanym zapytaniem i szuka; when = {date,time} nadpisuje dzień.
