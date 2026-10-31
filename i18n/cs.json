@@ -1050,8 +1050,6 @@
       "chip": "{m} min předem → {t}",
       "add": "přidat",
       "ics": "Přidat do kalendáře (s alarmy)",
-      "alarm": "Nastavit budík v telefonu (test)",
-      "alarmMsg": "Odchod na vlak {d} z {from}",
       "noPush": "Aby připomenutí přišlo i se zavřenou aplikací, zapněte oznámení (tlačítko nad seznamem).",
       "ios": "iPhone: připomenutí se zavřenou aplikací funguje jen po přidání na plochu: Sdílet ⬆️ → „Přidat na plochu“, otevřete z ikony a povolte oznámení.",
       "sound": "Se zavřenou aplikací zazní běžný zvuk oznámení. Android: změníte ho v nastavení oznámení této aplikace.",

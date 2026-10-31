@@ -1050,8 +1050,6 @@
       "chip": "{m} min antes → {t}",
       "add": "añadir",
       "ics": "Añadir al calendario (con alarmas)",
-      "alarm": "Poner alarma en el teléfono (prueba)",
-      "alarmMsg": "Sal para el tren de las {d} desde {from}",
       "noPush": "Para recibir el recordatorio con la app cerrada, activa las notificaciones (botón sobre la lista).",
       "ios": "iPhone: con la app cerrada solo funciona si la añades a la pantalla de inicio: Compartir ⬆️ → «Añadir a pantalla de inicio», ábrela desde el icono y permite notificaciones.",
       "sound": "Con la app cerrada suena el tono normal de notificaciones. Android: puedes cambiarlo en los ajustes de notificaciones de esta app.",

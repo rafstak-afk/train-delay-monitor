@@ -1050,8 +1050,6 @@
       "chip": "{m} Min. vorher → {t}",
       "add": "hinzufügen",
       "ics": "Zum Kalender (mit Alarmen)",
-      "alarm": "Wecker im Telefon stellen (Test)",
-      "alarmMsg": "Losgehen zum Zug {d} ab {from}",
       "noPush": "Damit die Erinnerung bei geschlossener App kommt, schalte Benachrichtigungen ein (Knopf über der Liste).",
       "ios": "iPhone: Erinnerungen bei geschlossener App nur nach „Zum Home-Bildschirm“: Teilen ⬆️ → „Zum Home-Bildschirm“, über das Symbol öffnen und Mitteilungen erlauben.",
       "sound": "Bei geschlossener App spielt das Telefon den normalen Mitteilungston. Android: änderbar in den Benachrichtigungseinstellungen dieser App.",

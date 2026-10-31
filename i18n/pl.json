@@ -1050,8 +1050,6 @@
       "chip": "{m} min przed → {t}",
       "add": "dodaj",
       "ics": "Dodaj do kalendarza (z alarmami)",
-      "alarm": "Ustaw budzik w telefonie (test)",
-      "alarmMsg": "Wyjście na pociąg {d} z {from}",
       "noPush": "Żeby przypomnienie przyszło przy zamkniętej aplikacji, włącz powiadomienia (przycisk nad listą).",
       "ios": "iPhone: przypomnienie przy zamkniętej aplikacji przyjdzie tylko, gdy dodasz ją do ekranu początkowego: Udostępnij ⬆️ → „Do ekranu początkowego”, otwórz z ikony i zezwól na powiadomienia.",
       "sound": "Przy zamkniętej aplikacji gra zwykły dźwięk powiadomienia telefonu. Android: dźwięk możesz zmienić w ustawieniach powiadomień tej aplikacji.",

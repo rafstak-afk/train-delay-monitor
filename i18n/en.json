@@ -1050,8 +1050,6 @@
       "chip": "{m} min before → {t}",
       "add": "add",
       "ics": "Add to calendar (with alarms)",
-      "alarm": "Set a phone alarm (test)",
-      "alarmMsg": "Leave for the {d} train from {from}",
       "noPush": "To get the reminder with the app closed, turn on notifications (button above the list).",
       "ios": "iPhone: reminders with the app closed only work after adding it to the Home Screen: Share ⬆️ → “Add to Home Screen”, open it from the icon and allow notifications.",
       "sound": "With the app closed, the phone plays its normal notification sound. Android: you can change it in this app's notification settings.",

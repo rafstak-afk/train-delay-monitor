@@ -257,7 +257,7 @@
       var cfg = remCfg(c), on = !!cfg.on;
       var html = '<div class="rem"><label class="rem-t"><input type="checkbox" class="rem-on" data-id="' + esc(c.id) + '"' + (on ? ' checked' : '') + '> ⏰ ' + esc(T('guard.rem.title', null, 'Przypomnij o wyjściu z domu')) + '</label>';
       if (!on) return html + '</div>';
-      var sh = remShift(c), p = G.remindPlan(c, cfg, sh), p0 = G.remindPlan(c, cfg, 0);
+      var sh = remShift(c), p = G.remindPlan(c, cfg, sh);
       html += '<div class="rem-row">' + esc(T('guard.rem.walk', null, 'Dojście na stację / przystanek:')) + ' <input type="number" class="rem-walk" data-id="' + esc(c.id) + '" min="0" max="120" value="' + esc(p.walk) + '"> min</div>' +
         '<div class="rem-row">' + esc(T('guard.rem.leave', { t: G.fmt(p.leave), d: c.legs[0].board.time, w: p.walk }, 'Wyjście: {t} (odjazd {d} − {w} min dojścia)')).replace(G.fmt(p.leave), '<b>' + G.fmt(p.leave) + '</b>') +
         (sh ? ' · <b style="color:#ffd400">' + esc(T('guard.rem.shift', { n: sh }, 'przesunięte o +{n} min (opóźnienie)')) + '</b>' : '') + '</div>' +
@@ -266,17 +266,12 @@
         }).join('') +
         (p.fires.length < 5 ? ' <input type="number" class="rem-add" data-id="' + esc(c.id) + '" min="1" max="180" placeholder="min"> <button type="button" class="btn-sm secondary" data-act="remAdd" data-id="' + esc(c.id) + '">+ ' + esc(T('guard.rem.add', null, 'dodaj')) + '</button>' : '') + '</div>' +
         '<div class="rem-row"><button type="button" class="btn-sm secondary" data-act="remIcs" data-id="' + esc(c.id) + '">📅 ' + esc(T('guard.rem.ics', null, 'Dodaj do kalendarza (z alarmami)')) + '</button>' +
-        (/Android/i.test(navigator.userAgent) && p0.fires.length ? '<a class="btn-sm secondary" style="text-decoration:none" href="' + esc(alarmIntent(c, p0)) + '">⏰ ' + esc(T('guard.rem.alarm', null, 'Ustaw budzik w telefonie (test)')) + '</a>' : '') + '</div>';
+        '</div>';
       var notes = [];
       if (!('Notification' in window) || Notification.permission !== 'granted') notes.push(T('guard.rem.noPush', null, 'Żeby przypomnienie przyszło przy zamkniętej aplikacji, włącz powiadomienia (przycisk nad listą).'));
       if (isIOS() && !standalone()) notes.push(T('guard.rem.ios', null, 'iPhone: przypomnienie przy zamkniętej aplikacji przyjdzie tylko, gdy dodasz ją do ekranu początkowego: Udostępnij ⬆️ → „Do ekranu początkowego”, otwórz z ikony i zezwól na powiadomienia.'));
       notes.push(T('guard.rem.sound', null, 'Przy zamkniętej aplikacji gra zwykły dźwięk powiadomienia telefonu. Android: dźwięk możesz zmienić w ustawieniach powiadomień tej aplikacji.'));
       return html + notes.map(function (n) { return '<div class="rem-note" style="margin-top:6px">' + esc(n) + '</div>'; }).join('') + '</div>';
-    }
-    // Android: systemowy budzik (Chrome może tego nie wpuścić — dlatego „test”)
-    function alarmIntent(c, p) {
-      var at = ((p.fires[0].at % 1440) + 1440) % 1440, msg = T('guard.rem.alarmMsg', { d: c.legs[0].board.time, from: c.from }, 'Wyjście na pociąg {d} z {from}');
-      return 'intent:#Intent;action=android.intent.action.SET_ALARM;i.android.intent.extra.alarm.HOUR=' + Math.floor(at / 60) + ';i.android.intent.extra.alarm.MINUTES=' + (at % 60) + ';S.android.intent.extra.alarm.MESSAGE=' + encodeURIComponent(msg) + ';B.android.intent.extra.alarm.SKIP_UI=false;end';
     }
     function saveRem(c, patch) {
       var cfg = Object.assign({}, remCfg(c), patch, { date: c.date });
