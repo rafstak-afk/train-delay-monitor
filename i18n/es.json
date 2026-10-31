@@ -1151,6 +1151,18 @@
     "tAgo": "hace {n} min",
     "tMap": "mapa",
     "tNoPos": "sin posición en directo; horas según el horario",
-    "tTap": "Toca para ver todo el recorrido"
+    "tTap": "Toca para ver todo el recorrido",
+    "pDom": "Casa",
+    "pPraca": "Trabajo",
+    "pGps": "Mi ubicación",
+    "pUnset": "Primero guarda el lugar {p}, abajo en «Mis lugares».",
+    "pGpsErr": "No se pudo leer la ubicación GPS (¿permiso del navegador?).",
+    "pFar": "No hay parada GZM ni estación cerca de este lugar (900 m).",
+    "pFrom": "Desde:",
+    "pTo": "Hasta:",
+    "pMine": "Mis lugares",
+    "pSet": "guardado",
+    "pSetHere": "fijar donde estoy",
+    "pNote": "Los lugares se guardan solo en este dispositivo. Cuento el camino a pie hasta paradas a unos 900 m (y hasta la estación si está cerca)."
   }
 }

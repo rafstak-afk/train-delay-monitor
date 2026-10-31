@@ -1151,6 +1151,18 @@
     "tAgo": "před {n} min",
     "tMap": "mapa",
     "tNoPos": "bez polohy živě — časy podle jízdního řádu",
-    "tTap": "Klepněte — celá trasa spoje"
+    "tTap": "Klepněte — celá trasa spoje",
+    "pDom": "Domov",
+    "pPraca": "Práce",
+    "pGps": "Moje poloha",
+    "pUnset": "Nejprve nastavte místo {p} — níže v „Moje místa“.",
+    "pGpsErr": "Polohu GPS se nepodařilo zjistit (oprávnění v prohlížeči?).",
+    "pFar": "V okolí tohoto místa není zastávka GZM ani stanice (900 m).",
+    "pFrom": "Odkud:",
+    "pTo": "Kam:",
+    "pMine": "Moje místa",
+    "pSet": "nastaveno",
+    "pSetHere": "nastavit sem, kde jsem",
+    "pNote": "Místa ukládám jen v tomto zařízení. Chůzi počítám k zastávkám do cca 900 m (a ke stanici, je-li blízko)."
   }
 }

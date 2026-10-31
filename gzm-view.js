@@ -325,6 +325,25 @@
         '<div id="gzCRes"></div>';
       root.insertBefore(tg, lic); root.insertBefore(a, lic); root.insertBefore(b, lic); root.insertBefore(c, lic);
       c.querySelector("#gzCFrom").value = st.cFrom || ""; c.querySelector("#gzCTo").value = st.cTo || "";
+      if (placesOn()) {
+        var pb = document.createElement("div"); pb.id = "gzPlaces"; c.insertBefore(pb, c.querySelector("#gzCRes"));
+        var drawPlaces = function () {
+          var P = load(PLACES, {});
+          var chip = function (k, side) { return '<button type="button" class="gz-chip" data-pl="' + k + '" data-side="' + side + '">' + esc(PL_TOK[k]) + "</button>"; };
+          pb.innerHTML = '<div class="gz-chips" style="align-items:center"><span class="gz-sub">' + esc(T("gzm.pFrom", null, "Skąd:")) + "</span>" + chip("dom", "f") + chip("praca", "f") + chip("gps", "f") +
+            '<span class="gz-sub" style="margin-left:6px">' + esc(T("gzm.pTo", null, "Dokąd:")) + "</span>" + chip("dom", "t") + chip("praca", "t") + "</div>" +
+            '<details class="gz-sub" style="margin:2px 2px 8px"><summary>' + esc(T("gzm.pMine", null, "Moje miejsca")) + "</summary>" +
+            ["dom", "praca"].map(function (k) { return '<div style="margin:6px 0">' + esc(PL_TOK[k]) + ": " + (P[k] ? "✔ " + esc(T("gzm.pSet", null, "ustawione")) + " " : "— ") + '<button type="button" class="gz-chip" data-plset="' + k + '">📍 ' + esc(T("gzm.pSetHere", null, "ustaw tu, gdzie jestem")) + "</button>" + (P[k] ? ' <button type="button" class="gz-chip" data-plclr="' + k + '">✕</button>' : "") + "</div>"; }).join("") +
+            '<div style="font-size:11.5px">' + esc(T("gzm.pNote", null, "Miejsca zapisuję tylko na tym urządzeniu. Dojście pieszo liczę do przystanków w promieniu ok. 900 m (i na stację, gdy jest blisko).")) + "</div></details>";
+        };
+        drawPlaces();
+        pb.addEventListener("click", function (e) {
+          var b = e.target.closest("button"); if (!b) return;
+          if (b.dataset.pl) { c.querySelector(b.dataset.side === "f" ? "#gzCFrom" : "#gzCTo").value = PL_TOK[b.dataset.pl]; return; }
+          if (b.dataset.plclr) { var P0 = load(PLACES, {}); delete P0[b.dataset.plclr]; save(PLACES, P0); drawPlaces(); return; }
+          if (b.dataset.plset) { b.disabled = true; b.textContent = "⏳"; gpsNow().then(function (g) { var P1 = load(PLACES, {}); P1[b.dataset.plset] = { lat: +g.lat.toFixed(6), lon: +g.lon.toFixed(6) }; save(PLACES, P1); drawPlaces(); }, function () { b.textContent = "⚠ GPS"; }); }
+        });
+      }
       c.querySelector("#gzCGo").addEventListener("click", searchC);
       ["#gzCFrom", "#gzCTo"].forEach(function (q) { c.querySelector(q).addEventListener("keydown", function (e) { if (e.key === "Enter") searchC(); }); });
       c.addEventListener("click", function (e) {
@@ -462,6 +481,42 @@
       return Array.from(m.entries()).sort(function (a, b) { return a[1] - b[1]; }).slice(0, k).map(function (e) { return { st: (index.stations || []).find(function (x) { return x.id === e[0]; }), ride: e[1] }; }).filter(function (x) { return x.st; });
     }
     // ===== Jedno wyszukiwanie pociąg + GZM (cała sieć) =====
+    // ===== Moje miejsca: 🏠 Dom, 🏢 Praca, 📍 Moja lokalizacja (TEST — tylko profil autora) =====
+    var PLACES = "gzmPlacesV1";
+    function placesOn() { try { return localStorage.getItem("showVersionBadge") === "1"; } catch (e) { return false; } }
+    var PL_TOK = { dom: "🏠 " + T("gzm.pDom", null, "Dom"), praca: "🏢 " + T("gzm.pPraca", null, "Praca"), gps: "📍 " + T("gzm.pGps", null, "Moja lokalizacja") };
+    function placeKey(txt) {
+      if (!placesOn()) return null;
+      var n = normName(txt).replace(/^[^a-z0-9]+/, "");
+      if (n === normName(T("gzm.pDom", null, "Dom")) || n === "dom") return "dom";
+      if (n === normName(T("gzm.pPraca", null, "Praca")) || n === "praca") return "praca";
+      if (n === normName(T("gzm.pGps", null, "Moja lokalizacja")) || n === "moja lokalizacja" || n === "tu jestem") return "gps";
+      return null;
+    }
+    function gpsNow() {
+      return new Promise(function (res, rej) {
+        if (!navigator.geolocation) return rej(new Error("gps"));
+        navigator.geolocation.getCurrentPosition(function (p) { res({ lat: p.coords.latitude, lon: p.coords.longitude, acc: p.coords.accuracy }); }, function () { rej(new Error("gps")); }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 30000 });
+      });
+    }
+    function resolvePlace(txt) {
+      var k = placeKey(txt); if (!k) return Promise.resolve(null);
+      if (k === "gps") return gpsNow().then(function (g) { return { key: k, label: PL_TOK.gps, lat: g.lat, lon: g.lon }; });
+      var pl = load(PLACES, {})[k];
+      if (!pl) return Promise.reject(new Error("unset:" + k));
+      return Promise.resolve({ key: k, label: PL_TOK[k], lat: pl.lat, lon: pl.lon });
+    }
+    function havM(a, b, c, d) { var R = 6371000, t = Math.PI / 180, x = Math.pow(Math.sin((c - a) * t / 2), 2) + Math.cos(a * t) * Math.cos(c * t) * Math.pow(Math.sin((d - b) * t / 2), 2); return 2 * R * Math.asin(Math.sqrt(x)); }
+    function walkMin(m) { return Math.max(1, Math.ceil(m * 1.4 / 1.2 / 60)); }
+    // przystanki w zasięgu pieszym miejsca (≤ 900 m) + stacje w zasięgu (≤ 1,5 km, + 2 min na peron)
+    function placeReach(net, pl) {
+      var out = [];
+      for (var i = 0; i < net.n; i++) { var d = havM(pl.lat, pl.lon, net.lat[i], net.lon[i]); if (d <= 900) out.push({ s: i, walk: walkMin(d), d: d }); }
+      out.sort(function (a, b) { return a.d - b.d; });
+      pl.stops = out.slice(0, 30); pl.walkSt = {};
+      (index.stations || []).forEach(function (x) { var d = havM(pl.lat, pl.lon, x.lat, x.lon); if (d <= 1500) pl.walkSt[x.id] = walkMin(d) + 2; });
+      return pl;
+    }
     function searchC() {
       var fromTxt = root.querySelector("#gzCFrom").value.trim(), toTxt = root.querySelector("#gzCTo").value.trim();
       var tmin = C.hm(root.querySelector("#gzCTime").value) || Math.floor(warsawNow().min);
@@ -469,20 +524,30 @@
       if (!fromTxt || !toTxt || !window.GzmRaptor) return searchCOld();
       var res = root.querySelector("#gzCRes"), date = warsawNow().date;
       res.innerHTML = '<div class="gz-empty">' + esc(T("gzm.cSearching", null, "Układam podróż: dojazd, pociąg, dojazd do celu…")) + "</div>";
-      Promise.all([getNet(date), getRt()]).then(function (r) {
+      var fromPlace = null, toPlace = null;
+      Promise.all([resolvePlace(fromTxt), resolvePlace(toTxt)]).then(function (pp) { fromPlace = pp[0]; toPlace = pp[1]; return Promise.all([getNet(date), getRt()]); }, function (e) {
+        var m = String(e && e.message || "");
+        res.innerHTML = '<div class="gz-warn">' + esc(m.indexOf("unset:") === 0 ? T("gzm.pUnset", { p: PL_TOK[m.slice(6)] }, "Najpierw ustaw miejsce {p} — poniżej, w „Moje miejsca”.") : T("gzm.pGpsErr", null, "Nie udało się odczytać lokalizacji GPS (zgoda w przeglądarce?).")) + "</div>";
+        throw "handled";
+      }).then(function (r) {
         var net = r[0], code = GzmRaptor.byCode(net);
-        var fromSt = stationByName(fromTxt), toSt = stationByName(toTxt);
-        var fN = fromSt ? null : netNames(net, fromTxt), tN = toSt ? null : netNames(net, toTxt);
-        if (!fromSt && !fN.length) { res.innerHTML = '<div class="gz-warn">' + esc(T("gzm.cNoTo", { d: fromTxt }, "Nie znam przystanku „{d}”.")) + "</div>"; return; }
-        if (!toSt && !tN.length) { res.innerHTML = '<div class="gz-warn">' + esc(T("gzm.cNoTo", { d: toTxt }, "Nie znam przystanku „{d}”.")) + "</div>"; return; }
+        if (fromPlace) placeReach(net, fromPlace);
+        if (toPlace) placeReach(net, toPlace);
+        var fromSt = fromPlace ? null : stationByName(fromTxt), toSt = toPlace ? null : stationByName(toTxt);
+        var fN = fromSt || fromPlace ? (fromPlace ? [] : null) : netNames(net, fromTxt), tN = toSt || toPlace ? (toPlace ? [] : null) : netNames(net, toTxt);
+        if (fromPlace && !fromPlace.stops.length && !Object.keys(fromPlace.walkSt).length) { res.innerHTML = '<div class="gz-warn">' + esc(T("gzm.pFar", null, "W pobliżu tego miejsca nie ma przystanku GZM ani stacji (900 m).")) + "</div>"; return; }
+        if (toPlace && !toPlace.stops.length && !Object.keys(toPlace.walkSt).length) { res.innerHTML = '<div class="gz-warn">' + esc(T("gzm.pFar", null, "W pobliżu tego miejsca nie ma przystanku GZM ani stacji (900 m).")) + "</div>"; return; }
+        if (!fromSt && !fromPlace && !fN.length) { res.innerHTML = '<div class="gz-warn">' + esc(T("gzm.cNoTo", { d: fromTxt }, "Nie znam przystanku „{d}”.")) + "</div>"; return; }
+        if (!toSt && !toPlace && !tN.length) { res.innerHTML = '<div class="gz-warn">' + esc(T("gzm.cNoTo", { d: toTxt }, "Nie znam przystanku „{d}”.")) + "</div>"; return; }
         var withStops = (index.stations || []).filter(function (x) { return x.s && x.s.length; });
         // stacje przy starcie: gdzie najwcześniej będę na peronie (cała sieć, do 1 przesiadki)
         var accSt;
         if (fromSt) accSt = [fromSt];
         else {
-          var star = GzmRaptor.reachAll(net, { from: fN, dep: tmin, rt: rt, maxTransfers: 1 });
-          accSt = withStops.map(function (x) {
-            var best = 1e9; x.s.forEach(function (p) { var i = code[p[0]]; if (i != null && star[i] + p[3] < best) best = star[i] + p[3]; });
+          var star = GzmRaptor.reachAll(net, fromPlace ? { fromStops: fromPlace.stops.map(function (x) { return { s: x.s, t: tmin + x.walk }; }), dep: tmin, rt: rt, maxTransfers: 1 } : { from: fN, dep: tmin, rt: rt, maxTransfers: 1 }) || [];
+          accSt = (index.stations || []).filter(function (x) { return (x.s && x.s.length) || (fromPlace && fromPlace.walkSt[x.id] != null); }).map(function (x) {
+            var best = 1e9; (x.s || []).forEach(function (p) { var i = code[p[0]]; if (i != null && star[i] + p[3] < best) best = star[i] + p[3]; });
+            if (fromPlace && fromPlace.walkSt[x.id] != null) best = Math.min(best, tmin + fromPlace.walkSt[x.id]);
             return { st: x, plat: best };
           }).filter(function (x) { return x.plat < 1e8 && (!toSt || x.st.id !== toSt.id); }).sort(function (a, b) { return a.plat - b.plat; }).slice(0, 2).map(function (x) { return x.st; });
         }
@@ -490,8 +555,8 @@
         var egrSt;
         if (toSt) egrSt = [toSt];
         else {
-          var d0 = net.byName[tN[0]][0], la = net.lat[d0], lo = net.lon[d0];
-          egrSt = withStops.map(function (x) { return { st: x, d: Math.pow(x.lat - la, 2) + Math.pow((x.lon - lo) * 0.64, 2) }; })
+          var d0 = toPlace ? -1 : net.byName[tN[0]][0], la = toPlace ? toPlace.lat : net.lat[d0], lo = toPlace ? toPlace.lon : net.lon[d0];
+          egrSt = (index.stations || []).filter(function (x) { return (x.s && x.s.length) || (toPlace && toPlace.walkSt[x.id] != null); }).map(function (x) { return { st: x, d: Math.pow(x.lat - la, 2) + Math.pow((x.lon - lo) * 0.64, 2) }; })
             .filter(function (x) { return !fromSt || x.st.id !== fromSt.id; }).sort(function (a, b) { return a.d - b.d; }).slice(0, 2).map(function (x) { return x.st; });
         }
         var combos = [];
@@ -504,11 +569,11 @@
             return { cb: cb, its: (pl && pl.itineraries) || [], query: pl && pl.query };
           }).catch(function () { return null; });
         })).then(function (parts) {
-          cState = { mm: true, net: net, code: code, fN: fN, tN: tN, fromSt: fromSt, toSt: toSt, parts: parts.filter(Boolean), tmin: tmin, date: date, more: {}, tDelay: {}, cache: {},
+          cState = { mm: true, net: net, code: code, fN: fN, tN: tN, fromSt: fromSt, toSt: toSt, fromPlace: fromPlace, toPlace: toPlace, parts: parts.filter(Boolean), tmin: tmin, date: date, more: {}, tDelay: {}, cache: {},
             live: tmin >= Math.floor(warsawNow().min) - 5, netFrom: (!fromSt && !toSt) ? fN : null, netTo: (!fromSt && !toSt) ? tN : null };
           renderC(); trainLiveC();
         });
-      }).catch(function () { searchCOld(); });
+      }).catch(function (e) { if (e !== "handled") searchCOld(); });
     }
     // słupki stacji: indeks w sieci + dojście peron ↔ słupek (górna granica)
     function polesOf(stn) { var out = []; (stn.s || []).forEach(function (p) { var i = cState.code[p[0]]; if (i != null) out.push({ s: i, walk: p[3] }); }); return out; }
@@ -517,7 +582,7 @@
       var rides = jn.legs.filter(function (l) { return l.type === "ride"; }), r0 = rides[0];
       var inMin = Math.round(r0.dep - nowOn(cState.date));
       var legs = jn.legs.map(function (l) {
-        if (l.type === "walk") return "🚶 " + l.min;
+        if (l.type === "walk") return "🚶 " + l.min + (l.fromName && !l.from && l.from !== 0 ? " " + esc(l.toName && l.fromName.charAt(0) > "~" ? "→ " + l.toName : "") : "");
         return "<b>" + esc(l.line) + "</b> " + C.fmt(l.dep) + " " + esc(l.fromName) + " → " + esc(l.toName) + " " + C.fmt(l.arr) + (l.live && l.delay ? " (+" + l.delay + ")" : "");
       }).join(" · ");
       var stTxt = status === "ok" ? "🟢 " + T("gzm.st.ok", null, "zdążysz") : status === "tight" ? "🟡 " + T("gzm.st.tight", null, "na styk") : status === "missed" ? "🔴 " + T("gzm.cTooLate", null, "za późno na ten pociąg") : "";
@@ -526,12 +591,32 @@
         '<div class="gz-main"><div class="gz-stop" style="white-space:normal;color:#fff">' + legs + "</div>" + (extra ? '<div class="gz-stop" style="white-space:normal">' + extra + "</div>" : "") + "</div>" +
         '<div class="gz-right"><div class="gz-t">' + ((r0.live && r0.delay) ? '<span class="plan-strike">' + C.fmt(r0.depPlan) + "</span> " : "") + C.fmt(r0.dep) + '</div><div class="gz-in">' + (inMin > 180 || inMin < -1 ? "" : inMin <= 0 ? esc(T("gzm.now", null, "teraz")) : esc(T("gzm.inMin", { n: inMin }, "za {n} min"))) + "</div>" + (stTxt ? '<div class="gz-in gz-st-' + status + '">' + esc(stTxt) + "</div>" : "") + "</div></div>";
     }
+    // podróż RAPTOR-a z miejsca/do miejsca: dopisz dojście pieszo na początku/końcu (i przesuń przyjazd)
+    function withPlaceWalks(jn, fromPl, toPl) {
+      if (fromPl) {
+        var r0 = jn.legs.find(function (l) { return l.type === "ride"; }), w0 = fromPl.stops.find(function (x) { return x.s === (jn.legs[0].type === "walk" ? jn.legs[0].from : r0.from); });
+        if (w0) { jn.legs.unshift({ type: "walk", min: w0.walk, fromName: fromPl.label, toName: S_name(jn.legs[0].type === "walk" ? jn.legs[0].from : r0.from) }); jn.leave = (jn.legs[1].type === "walk" ? r0.dep - jn.legs[1].min : r0.dep) - w0.walk; }
+      }
+      if (toPl) {
+        var last = jn.legs[jn.legs.length - 1], w1 = toPl.stops.find(function (x) { return x.s === last.to; });
+        if (w1) { jn.legs.push({ type: "walk", min: w1.walk, fromName: S_name(last.to), toName: toPl.label }); jn.arr += w1.walk; }
+      }
+      return jn;
+    }
+    function S_name(i) { return cState.net.name[i]; }
+    function fromOpts(S, t) { return S.fromPlace ? { fromStops: S.fromPlace.stops.map(function (x) { return { s: x.s, t: t + x.walk }; }), dep: t } : { from: S.fN, dep: t }; }
     function renderMM() {
       var res = root.querySelector("#gzCRes"), S = cState, now = nowOn(S.date), base = S.live ? Math.max(S.tmin, now) : S.tmin, out = [];
+      if ((S.fromPlace || S.toPlace) && !S.fromSt && !S.toSt && !S.netFrom) { S.netFrom = S.fN || []; S.netTo = S.tN || []; }
       // tylko GZM (gdy oba końce to przystanki)
       if (S.netFrom && S.netTo) {
-        if (S.netRtAt !== rtAt || !S.netRes) { S.netRtAt = rtAt; S.netRes = GzmRaptor.search(S.net, { from: S.netFrom, to: S.netTo, dep: base, rt: rt, maxTransfers: 2, count: 5, maxDep: base + 180 }); }
-        S.netRes.forEach(function (jn) { out.push({ net: jn, final: jn.arr, start: jn.dep }); });
+        if (S.netRtAt !== rtAt || !S.netRes) {
+          S.netRtAt = rtAt;
+          var o = Object.assign(fromOpts(S, base), { rt: rt, maxTransfers: 2, count: 5, maxDep: base + 180 });
+          if (S.toPlace) o.toStops = S.toPlace.stops.map(function (x) { return { s: x.s, walk: x.walk }; }); else o.to = S.netTo;
+          S.netRes = GzmRaptor.search(S.net, o).map(function (jn) { return withPlaceWalks(jn, S.fromPlace, S.toPlace); });
+        }
+        S.netRes.forEach(function (jn) { out.push({ net: jn, final: jn.arr, start: jn.leave != null ? jn.leave : jn.dep }); });
       }
       S.parts.forEach(function (p) {
         var aP = polesOf(p.cb.a.st), eP = polesOf(p.cb.e.st), walkA = {};
@@ -545,14 +630,18 @@
           var c = S.cache[ck];
           if (!c) {
             c = {};
-            var walkFromA = !S.fromSt ? aP.filter(function (x) { return S.fN.indexOf(S.net.name[x.s]) >= 0; }) : [];
-            if (walkFromA.length) {
+            var walkFromA = !S.fromSt && !S.fromPlace ? aP.filter(function (x) { return S.fN.indexOf(S.net.name[x.s]) >= 0; }) : [];
+            var plWalkA = S.fromPlace && S.fromPlace.walkSt[p.cb.a.st.id];
+            if (plWalkA != null && plWalkA <= 20) {
+              if (base + plWalkA > dep) { S.cache[ck] = { skip: true }; return; }
+              c.walkA = { min: plWalkA, name: S.fromPlace.label, leave: dep - plWalkA - C.OK_SLACK };
+            } else if (walkFromA.length) {
               var wA = Math.min.apply(null, walkFromA.map(function (x) { return x.walk; }));
               if (base + wA > dep) { S.cache[ck] = { skip: true }; return; }
               c.walkA = { min: wA, name: S.net.name[walkFromA[0].s], leave: dep - wA - C.OK_SLACK };
             } else if (!S.fromSt) {
               if (base > dep) return;
-              var J = GzmRaptor.search(S.net, { from: S.fN, toStops: aP.map(function (x) { return x.s; }), dep: base, rt: rt, maxTransfers: 1, count: 6 + 5 * ((S.more && S.more["a|" + key]) || 0), maxDep: dep });
+              var J = GzmRaptor.search(S.net, Object.assign(fromOpts(S, base), { toStops: aP.map(function (x) { return x.s; }), rt: rt, maxTransfers: 1, count: 6 + 5 * ((S.more && S.more["a|" + key]) || 0), maxDep: dep })).map(function (jn) { return withPlaceWalks(jn, S.fromPlace, null); });
               c.acc = J.map(function (jn) {
                 var last = jn.legs[jn.legs.length - 1], stop = last.to, plat = jn.arr + (walkA[stop] != null ? walkA[stop] : 3), sl = dep - plat;
                 return { jn: jn, plat: plat, slack: sl, status: sl >= C.OK_SLACK ? "ok" : sl >= 0 ? "tight" : "missed" };
@@ -562,10 +651,14 @@
               var safe = okA.filter(function (x) { return x.status === "ok"; });
               c.latest = (safe.length ? safe : okA)[(safe.length ? safe : okA).length - 1];
             } else if (dep < base) return;
-            var walkToE = !S.toSt ? eP.filter(function (x) { return S.tN.indexOf(S.net.name[x.s]) >= 0; }) : [];
-            if (walkToE.length) c.walkE = { min: Math.min.apply(null, walkToE.map(function (x) { return x.walk; })), name: S.net.name[walkToE[0].s] };
+            var walkToE = !S.toSt && !S.toPlace ? eP.filter(function (x) { return S.tN.indexOf(S.net.name[x.s]) >= 0; }) : [];
+            var plWalkE = S.toPlace && S.toPlace.walkSt[p.cb.e.st.id];
+            if (plWalkE != null && plWalkE <= 20) c.walkE = { min: plWalkE, name: S.toPlace.label };
+            else if (walkToE.length) c.walkE = { min: Math.min.apply(null, walkToE.map(function (x) { return x.walk; })), name: S.net.name[walkToE[0].s] };
             else if (!S.toSt) {
-              c.egr = GzmRaptor.search(S.net, { fromStops: eP.map(function (x) { return { s: x.s, t: arr + x.walk }; }), to: S.tN, rt: rt, maxTransfers: 1, count: 5 + 5 * ((S.more && S.more[key]) || 0) });
+              var eo = { fromStops: eP.map(function (x) { return { s: x.s, t: arr + x.walk }; }), rt: rt, maxTransfers: 1, count: 5 + 5 * ((S.more && S.more[key]) || 0) };
+              if (S.toPlace) eo.toStops = S.toPlace.stops.map(function (x) { return { s: x.s, walk: x.walk }; }); else eo.to = S.tN;
+              c.egr = GzmRaptor.search(S.net, eo).map(function (jn) { return withPlaceWalks(jn, null, S.toPlace); }).sort(function (a, b) { return a.arr - b.arr; });
               if (!c.egr.length) { S.cache[ck] = { skip: true }; return; }
             }
             S.cache[ck] = c;
@@ -595,7 +688,7 @@
           }
           if (c.egr) {
             egrHtml = '<div style="margin:-6px 0 14px 12px;padding-left:8px;border-left:2px solid var(--line)">' +
-              '<div class="gz-sub" style="margin:4px 2px 2px">🚌 ' + esc(T("gzm.cNext", { d: (S.tN || []).join(", ") }, "Dalej do: {d} — po przyjeździe pociągu")) + "</div>" +
+              '<div class="gz-sub" style="margin:4px 2px 2px">🚌 ' + esc(T("gzm.cNext", { d: S.toPlace ? S.toPlace.label : (S.tN || []).join(", ") }, "Dalej do: {d} — po przyjeździe pociągu")) + "</div>" +
               c.egr.map(function (y) { return jRow(y, "🏁 " + C.fmt(y.arr) + " " + esc(y.legs[y.legs.length - 1].toName), "ok"); }).join("") +
               (c.egr.length >= 5 + 5 * ((S.more && S.more[key]) || 0) ? '<button type="button" class="gz-btn sec" data-cmore="' + esc(key) + '">' + esc(T("gzm.more", null, "Pokaż kolejne 5")) + "</button>" : "") + "</div>";
           }
@@ -609,7 +702,7 @@
             '<div class="gz-main">' + headHtml +
             steps.map(function (h) { return '<div class="gz-stop" style="white-space:normal;margin-top:4px">' + h + "</div>"; }).join("") +
             (guardOk ? '<div style="margin-top:8px"><button type="button" class="gz-btn sec" data-guard="' + i + '">🛡️ ' + esc(T("gzm.cGuardAll", null, "Pilnuj całej podróży")) + "</button></div>" : "") + "</div>" +
-            '<div class="gz-right"><div class="gz-t">' + C.fmt(x.final) + '</div><div class="gz-in">' + esc(T("gzm.bArrive", null, "na miejscu")) + "</div>" + totalHtml(x.final - (c.walkA ? c.walkA.leave : L ? (L.jn.legs[0].type === "walk" ? L.jn.dep - L.jn.legs[0].min : L.jn.dep) : x.dep)) + "</div></div>";
+            '<div class="gz-right"><div class="gz-t">' + C.fmt(x.final) + '</div><div class="gz-in">' + esc(T("gzm.bArrive", null, "na miejscu")) + "</div>" + totalHtml(x.final - (c.walkA ? c.walkA.leave : L ? (L.jn.leave != null ? L.jn.leave : L.jn.legs[0].type === "walk" ? L.jn.dep - L.jn.legs[0].min : L.jn.dep) : x.dep)) + "</div></div>";
           return accHtml + card + egrHtml;
         }).join("") +
         '<div class="gz-sub" style="margin:6px 2px">' + esc(T("gzm.mmNote", null, "Jedno wyszukiwanie: dojazd i dalsza podróż w całej sieci GZM (do 1 przesiadki), pociągi z planera PLK.")) + "</div>";
@@ -697,9 +790,9 @@
       var first = jn.legs.find(function (l) { return l.type === "ride"; });
       return '<div class="gz-dep ok" style="grid-template-columns:minmax(0,1fr) auto">' +
         '<div class="gz-main"><div class="gz-dir" style="white-space:normal">🚌 ' + esc(jn.transfers ? T("gzm.nTitle", { n: jn.transfers }, "komunikacja GZM · przesiadki: {n}") : T("gzm.nDirect", null, "komunikacja GZM · bez przesiadek")) + "</div>" +
-        '<div class="gz-dir" style="white-space:normal;font-size:13px">⏰ ' + esc(T("gzm.cLeave", { t: C.fmt(jn.legs[0].type === "walk" ? first.dep - jn.legs[0].min : jn.dep), s: jn.legs[0].fromName }, "wyjdź: {t} z {s}")) + "</div>" +
+        '<div class="gz-dir" style="white-space:normal;font-size:13px">⏰ ' + esc(T("gzm.cLeave", { t: C.fmt(jn.leave != null ? jn.leave : jn.legs[0].type === "walk" ? first.dep - jn.legs[0].min : jn.dep), s: jn.legs[0].fromName }, "wyjdź: {t} z {s}")) + "</div>" +
         steps.map(function (h) { return '<div class="gz-stop" style="white-space:normal;margin-top:4px">' + h + "</div>"; }).join("") + "</div>" +
-        '<div class="gz-right"><div class="gz-t">' + C.fmt(jn.arr) + '</div><div class="gz-in">' + esc(T("gzm.bArrive", null, "na miejscu")) + "</div>" + totalHtml(jn.arr - (jn.legs[0].type === "walk" ? first.dep - jn.legs[0].min : jn.dep)) + "</div></div>";
+        '<div class="gz-right"><div class="gz-t">' + C.fmt(jn.arr) + '</div><div class="gz-in">' + esc(T("gzm.bArrive", null, "na miejscu")) + "</div>" + totalHtml(jn.arr - (jn.leave != null ? jn.leave : jn.legs[0].type === "walk" ? first.dep - jn.legs[0].min : jn.dep)) + "</div></div>";
     }
     // ⏱ łączny czas podróży (od wyjścia do celu, z dojściami)
     function totalHtml(min) {

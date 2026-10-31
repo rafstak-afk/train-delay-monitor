@@ -1151,6 +1151,18 @@
     "tAgo": "vor {n} Min.",
     "tMap": "Karte",
     "tNoPos": "keine Live-Position — Zeiten laut Fahrplan",
-    "tTap": "Tippen — ganzer Fahrtverlauf"
+    "tTap": "Tippen — ganzer Fahrtverlauf",
+    "pDom": "Zuhause",
+    "pPraca": "Arbeit",
+    "pGps": "Mein Standort",
+    "pUnset": "Lege zuerst den Ort {p} fest — unten unter „Meine Orte“.",
+    "pGpsErr": "GPS-Standort konnte nicht gelesen werden (Berechtigung im Browser?).",
+    "pFar": "Keine GZM-Haltestelle oder kein Bahnhof in der Nähe (900 m).",
+    "pFrom": "Von:",
+    "pTo": "Nach:",
+    "pMine": "Meine Orte",
+    "pSet": "festgelegt",
+    "pSetHere": "auf meinen Standort setzen",
+    "pNote": "Orte werden nur auf diesem Gerät gespeichert. Fußwege zu Haltestellen im Umkreis von etwa 900 m (und zum Bahnhof, wenn er nah ist)."
   }
 }

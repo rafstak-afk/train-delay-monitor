@@ -1151,6 +1151,18 @@
     "tAgo": "{n} min temu",
     "tMap": "mapa",
     "tNoPos": "brak pozycji na żywo — godziny wg rozkładu",
-    "tTap": "Stuknij — cały bieg kursu"
+    "tTap": "Stuknij — cały bieg kursu",
+    "pDom": "Dom",
+    "pPraca": "Praca",
+    "pGps": "Moja lokalizacja",
+    "pUnset": "Najpierw ustaw miejsce {p} — poniżej, w „Moje miejsca”.",
+    "pGpsErr": "Nie udało się odczytać lokalizacji GPS (zgoda w przeglądarce?).",
+    "pFar": "W pobliżu tego miejsca nie ma przystanku GZM ani stacji (900 m).",
+    "pFrom": "Skąd:",
+    "pTo": "Dokąd:",
+    "pMine": "Moje miejsca",
+    "pSet": "ustawione",
+    "pSetHere": "ustaw tu, gdzie jestem",
+    "pNote": "Miejsca zapisuję tylko na tym urządzeniu. Dojście pieszo liczę do przystanków w promieniu ok. 900 m (i na stację, gdy jest blisko)."
   }
 }

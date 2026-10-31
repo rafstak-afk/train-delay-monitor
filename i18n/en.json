@@ -1151,6 +1151,18 @@
     "tAgo": "{n} min ago",
     "tMap": "map",
     "tNoPos": "no live position — times from the timetable",
-    "tTap": "Tap for the whole route"
+    "tTap": "Tap for the whole route",
+    "pDom": "Home",
+    "pPraca": "Work",
+    "pGps": "My location",
+    "pUnset": "First set the place {p} — below, in “My places”.",
+    "pGpsErr": "Could not read the GPS location (browser permission?).",
+    "pFar": "No GZM stop or station near this place (900 m).",
+    "pFrom": "From:",
+    "pTo": "To:",
+    "pMine": "My places",
+    "pSet": "set",
+    "pSetHere": "set to where I am",
+    "pNote": "Places are stored only on this device. Walking is counted to stops within about 900 m (and to the station when it is close)."
   }
 }

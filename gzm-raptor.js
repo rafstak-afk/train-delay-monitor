@@ -73,7 +73,7 @@
             var arr = t0 + dl + off[2 * i];
             if (arr < star[s] && arr < bestDest) {
               tau[k][s] = arr; star[s] = arr; walkL[k][s] = 0; par[k][s] = { p: p, trip: trip, b: bPos, a: i };
-              marked.add(s); if (destSet[s] && arr < bestDest) bestDest = arr;
+              marked.add(s); if (destSet[s] != null && arr + destSet[s] < bestDest) bestDest = arr + destSet[s];
             }
           }
           var prev = tau[k - 1][s];
@@ -98,7 +98,7 @@
         var f = net.foot[s];
         for (var q = 0; q < f.length; q += 2) {
           var o = f[q], tt = tau[k][s] + f[q + 1];
-          if (tt < star[o] && tt < bestDest) { tau[k][o] = tt; star[o] = tt; walkL[k][o] = 1; par[k][o] = { walk: s, w: f[q + 1] }; marked.add(o); if (destSet[o]) bestDest = Math.min(bestDest, tt); }
+          if (tt < star[o] && tt < bestDest) { tau[k][o] = tt; star[o] = tt; walkL[k][o] = 1; par[k][o] = { walk: s, w: f[q + 1] }; marked.add(o); if (destSet[o] != null) bestDest = Math.min(bestDest, tt + destSet[o]); }
         }
       });
       if (!marked.size) break;
@@ -108,7 +108,7 @@
     var out = [], best = INF;
     for (k = 1; k <= K; k++) {
       var bs = -1, bt = INF;
-      Object.keys(destSet).forEach(function (s) { s = +s; if (tau[k][s] < bt) { bt = tau[k][s]; bs = s; } });
+      Object.keys(destSet).forEach(function (s) { s = +s; if (tau[k][s] + destSet[s] < bt) { bt = tau[k][s] + destSet[s]; bs = s; } });
       if (bs < 0 || bt >= best) continue;
       best = bt;
       var legs = [], s = bs, kk = k, guard = 0;
@@ -124,7 +124,7 @@
       var p0 = par[0][s]; if (p0 && p0.walk != null) legs.unshift({ type: "walk", from: p0.walk, to: s, min: p0.w });
       var rides = legs.filter(function (l) { return l.type === "ride"; });
       if (!rides.length) continue;
-      out.push({ dep: rides[0].dep, arr: bt, transfers: rides.length - 1, legs: legs });
+      out.push({ dep: rides[0].dep, arr: tau[k][bs], arrTotal: bt, transfers: rides.length - 1, legs: legs });
     }
     return out;
   }
@@ -133,11 +133,12 @@
   // Najwcześniejszy dojazd do KAŻDEGO przystanku sieci (jeden przebieg) — np. żeby
   // wybrać stację przesiadkową: najwcześniej na którym peronie zdążę.
   function reachAll(net, o) {
-    var origin = [];
+    var origin = [], startAt = null;
+    if (o.fromStops) { startAt = {}; o.fromStops.forEach(function (x) { origin.push(x.s); startAt[x.s] = x.t; }); }
     (o.from || []).forEach(function (nm) { (net.byName[nm] || []).forEach(function (s) { origin.push(s); }); });
     var keep = {};
     if (!origin.length) return null;
-    raptor(net, origin, {}, o.dep, (o.maxTransfers == null ? 1 : o.maxTransfers) + 1, o.rt, null, keep);
+    raptor(net, origin, {}, o.dep, (o.maxTransfers == null ? 1 : o.maxTransfers) + 1, o.rt, startAt, keep);
     return keep.star;
   }
   // indeks przystanku po kodzie słupka (kody z plików stacji)
@@ -150,8 +151,9 @@
     var origin = [], destSet = {}, startAt = null;
     if (o.fromStops) { startAt = {}; o.fromStops.forEach(function (x) { origin.push(x.s); startAt[x.s] = x.t; }); }
     (o.from || []).forEach(function (nm) { (net.byName[nm] || []).forEach(function (s) { origin.push(s); }); });
-    (o.to || []).forEach(function (nm) { (net.byName[nm] || []).forEach(function (s) { destSet[s] = true; }); });
-    (o.toStops || []).forEach(function (s) { destSet[s] = true; });
+    (o.to || []).forEach(function (nm) { (net.byName[nm] || []).forEach(function (s) { destSet[s] = 0; }); });
+    // toStops: indeks przystanku albo { s, walk } (dojście od przystanku do celu, np. do domu)
+    (o.toStops || []).forEach(function (x) { if (typeof x === "number") destSet[x] = 0; else destSet[x.s] = x.walk || 0; });
     if (!origin.length || !Object.keys(destSet).length) return [];
     var K = (o.maxTransfers == null ? 2 : o.maxTransfers) + 1, dep = o.dep != null ? o.dep : Math.min.apply(null, (o.fromStops || []).map(function (x) { return x.t; })), all = [], count = o.count || 5;
     for (var r = 0; r < count * 3 && all.length < count * 2; r++) {
@@ -165,8 +167,8 @@
     // bez duplikatów i bez podróży zdominowanych (później start i nie wcześniejsza meta przy ≥ przesiadkach)
     var key = function (x) { return x.legs.filter(function (l) { return l.type === "ride"; }).map(function (l) { return l.trip + "@" + l.from; }).join(">"); };
     var seen = {}; all = all.filter(function (x) { var kx = key(x); if (seen[kx]) return false; seen[kx] = 1; return true; });
-    all = all.filter(function (x) { return !all.some(function (y) { return y !== x && y.dep >= x.dep && y.arr <= x.arr && y.transfers <= x.transfers && (y.dep > x.dep || y.arr < x.arr || y.transfers < x.transfers); }); });
-    all.sort(function (a, b) { return a.dep - b.dep || a.arr - b.arr; });
+    all = all.filter(function (x) { return !all.some(function (y) { return y !== x && y.dep >= x.dep && y.arrTotal <= x.arrTotal && y.transfers <= x.transfers && (y.dep > x.dep || y.arrTotal < x.arrTotal || y.transfers < x.transfers); }); });
+    all.sort(function (a, b) { return a.dep - b.dep || a.arrTotal - b.arrTotal; });
     return all.slice(0, count).map(function (x) {
       x.legs.forEach(function (l) { l.fromName = net.name[l.from]; l.toName = net.name[l.to]; l.fromCode = net.j.stops[l.from][3]; l.toCode = net.j.stops[l.to][3]; });
       return x;
