@@ -1181,7 +1181,7 @@
     "uNoAddr": "No encontré la dirección «{a}» (busco en Silesia). Añade la ciudad, p. ej. «Opolska 5, Tarnowskie Góry».",
     "uNeed": "Escribe desde dónde y hasta dónde. Solo una estación en «Desde» («Hasta» vacío) muestra las salidas de autobuses y tranvías cercanas.",
     "uTitle": "🚆🚌 Tren + GZM",
-    "uSub": "puerta a puerta: tren, autobús, tranvía y a pie",
+    "uSub": "puerta a puerta: tren, autobús, tranvía, trolebús y a pie",
     "jMeasured": "medido",
     "uDate": "Fecha",
     "uDateRange": "Tengo el horario de GZM para {a} – {b}.",

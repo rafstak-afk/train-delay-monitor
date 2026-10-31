@@ -9,6 +9,7 @@
   "use strict";
   var C = window.GzmCore;
   var CSS =
+    '.gz .gz-dt{display:flex;gap:10px;width:100%}.gz .gz-dt input{flex:1 1 0;min-width:0;padding:14px!important;border-radius:10px!important;border:0!important;font-size:16px!important;background:#fff!important;color:#102027!important;color-scheme:light}' +
     '.gz .gz-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin:8px 0}' +
     '.gz .gz-bar label{font-size:12px;color:var(--muted);display:block;margin-bottom:3px}' +
     '.gz .gz-bar select,.gz .gz-bar input{width:auto;min-width:0;padding:9px;border-radius:9px;border:1px solid var(--line);background:var(--card);color:#fff;font-size:15px;font-family:inherit}' +
@@ -424,7 +425,7 @@
     function initUni(tg, a, b, c) {
       tg.style.display = "none"; b.hidden = true; b.style.display = "none";
       var ph = root.parentNode && root.parentNode.querySelector(".pview-head");
-      if (ph) ph.innerHTML = "<b>" + esc(T("gzm.uTitle", null, "🚆🚌 Pociąg + GZM")) + "</b> · " + esc(T("gzm.uSub", null, "od drzwi do drzwi: pociąg, autobus, tramwaj i dojście pieszo"));
+      if (ph) ph.innerHTML = "<b>" + esc(T("gzm.uTitle", null, "🚆🚌 Pociąg + GZM")) + "</b> · " + esc(T("gzm.uSub", null, "od drzwi do drzwi: pociąg, autobus, tramwaj, trolejbus i dojście pieszo"));
       var u = document.createElement("div"); u.id = "gzU";
       var form = c.querySelector(".gz-bar"), pl = c.querySelector("#gzPlaces");
       u.appendChild(form); if (pl) u.appendChild(pl);
@@ -439,10 +440,14 @@
       var aBar = a.querySelector(".gz-bar"); if (aBar) aBar.style.display = "none";
       var lbl = function (id, txt) { var l = u.querySelector('label[for="' + id + '"]'); if (l) l.textContent = txt; };
       var today = warsawNow().date, rg = index.range || [today, today];
-      var tIn = u.querySelector("#gzCTime"), dWrap = document.createElement("div");
-      dWrap.innerHTML = '<label for="gzCDate">' + esc(T("gzm.uDate", null, "Data")) + '</label><input id="gzCDate" type="date" autocomplete="off">';
-      tIn.parentNode.parentNode.insertBefore(dWrap, tIn.parentNode);
-      var dIn = dWrap.querySelector("input"); dIn.min = rg[0] > today ? rg[0] : today; dIn.max = rg[1] || today; dIn.value = today;
+      // data i godzina jak na tablicy głównej: dwa pola obok siebie, bez etykiet
+      var tIn = u.querySelector("#gzCTime"), tDiv = tIn.parentNode, dWrap = document.createElement("div");
+      dWrap.className = "gz-dt";
+      dWrap.innerHTML = '<input id="gzCDate" type="date" autocomplete="off" aria-label="' + esc(T("gzm.uDate", null, "Data")) + '" title="' + esc(T("gzm.uDate", null, "Data")) + '">';
+      tIn.setAttribute("aria-label", T("gzm.uWhen", null, "Kiedy")); tIn.title = T("gzm.uWhen", null, "Kiedy");
+      dWrap.appendChild(tIn);
+      tDiv.parentNode.insertBefore(dWrap, tDiv); tDiv.remove();
+      var dIn = dWrap.querySelector("#gzCDate"); dIn.min = rg[0] > today ? rg[0] : today; dIn.max = rg[1] || today; dIn.value = today;
       tIn.setAttribute("autocomplete", "off"); tIn.value = C.fmt(warsawNow().min);
       lbl("gzCFrom", T("gzm.uFrom", null, "Skąd")); lbl("gzCTo", T("gzm.uTo", null, "Dokąd (puste = odjazdy ze stacji)")); lbl("gzCTime", T("gzm.uWhen", null, "Kiedy"));
       u.querySelector("#gzCFrom").placeholder = T("gzm.uFromPh", null, "stacja, przystanek, adres, 🏠 Dom…");
