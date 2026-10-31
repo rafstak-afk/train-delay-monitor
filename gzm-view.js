@@ -949,6 +949,54 @@
         '<div class="gz-right"><div class="gz-t">' + ((r0.live && r0.delay) ? '<span class="plan-strike">' + C.fmt(r0.depPlan) + "</span> " : "") + C.fmt(r0.dep) + '</div><div class="gz-in">' + (inMin > 180 || inMin < -1 ? "" : inMin <= 0 ? esc(T("gzm.now", null, "teraz")) : esc(T("gzm.inMin", { n: inMin }, "za {n} min"))) + "</div>" + (stTxt ? '<div class="gz-in gz-st-' + status + '">' + esc(stTxt) + "</div>" : "") + "</div></div>" +
         (tripOpen[k] ? tripsOfJourney(jn) : "");
     }
+    // ===== Pociągi w karcie podróży (TEST — tylko profil autora) =====
+    var trainRun = {};
+    function trainLegsHtml(it, x) {
+      var L = it.legs || [];
+      var out = L.map(function (l, i) {
+        var lab = ((l.train && l.train.category) || "") + " " + ((l.train && l.train.number) || "");
+        var last = i === L.length - 1, arrTxt = last && x.tDelay ? '<span class="plan-strike">' + esc(l.alight.time) + "</span> " + C.fmt(x.arr) + " (+" + x.tDelay + " min)" : esc(l.alight.time);
+        var row = '<div class="gz-leg"><span class="ln">🚆 ' + esc(lab.trim()) + '</span><span><span class="tm">' + esc(l.board.time) + "</span> " + esc(l.board.stationName) + "</span>" +
+          '<span class="to">→ <b>' + arrTxt + "</b> " + esc(l.alight.stationName) + "</span></div>";
+        if (i > 0) {
+          var p = L[i - 1], ch = C.hm(l.board.time) - C.hm(p.alight.time); if (ch < 0) ch += 1440;
+          row = '<div class="gz-walk">🔁 ' + esc(T("gzm.tChange", { s: l.board.stationName, n: ch }, "przesiadka: {s}, {n} min")) + "</div>" + row;
+        }
+        return row;
+      }).join("");
+      return '<div class="gz-legs" style="margin-top:2px">' + out + "</div>";
+    }
+    function trainRunsHtml(it, date) {
+      var html = (it.legs || []).map(function (l, i) {
+        var k = date + "|" + (l.scheduleId || "") + "|" + l.orderId, c = trainRun[k];
+        var head = "<h5>🚆 " + esc((((l.train && l.train.category) || "") + " " + ((l.train && l.train.number) || "")).trim()) + " · " + esc(l.board.stationName) + " → " + esc(l.alight.stationName) + "</h5>";
+        if (!l.orderId) return head + '<div class="gz-sub">' + esc(T("gzm.tNone", null, "Brak danych o biegu tego kursu.")) + "</div>";
+        if (!c || (Date.now() - c.at > 120000 && !c.loading)) {
+          trainRun[k] = { at: Date.now(), loading: true };
+          var q = new URLSearchParams({ scheduleId: l.scheduleId || "", orderId: l.orderId, operatingDate: date, train: (l.train && l.train.number) || "" });
+          fetch("/api/train-details?" + q, { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) { trainRun[k] = { at: Date.now(), d: d }; rerender(); })
+            .catch(function () { trainRun[k] = { at: Date.now(), d: null }; rerender(); });
+          return head + '<div class="gz-sub">' + esc(T("gzm.tLoading", null, "Wczytuję bieg kursu…")) + "</div>";
+        }
+        if (c.loading) return head + '<div class="gz-sub">' + esc(T("gzm.tLoading", null, "Wczytuję bieg kursu…")) + "</div>";
+        var route = c.d && Array.isArray(c.d.route) ? c.d.route : null;
+        if (!route || !route.length) return head + '<div class="gz-sub">' + esc(T("gzm.tNone", null, "Brak danych o biegu tego kursu.")) + "</div>";
+        var nb = normName(l.board.stationName), na = normName(l.alight.stationName), lastC = -1;
+        route.forEach(function (r, j) { if (r.status === "confirmed") lastC = j; });
+        var pos = c.d.lastConfirmedStation ? '<div class="gz-trip-pos">📍 ' + esc(T("gzm.tTrainPos", { s: c.d.lastConfirmedStation.station || c.d.lastConfirmedStation, n: c.d.delay || 0 }, "ostatnio potwierdzony: {s} · opóźnienie {n} min")) + "</div>" : '<div class="gz-trip-pos" style="color:var(--muted)">' + esc(T("gzm.tNoPos", null, "brak pozycji na żywo — godziny wg rozkładu")) + "</div>";
+        var rows = route.map(function (r, j) {
+          var nm = normName(r.stationName), me = nm === nb || nm === na;
+          // na stacji wysiadki — przyjazd, w pozostałych — odjazd
+          var useArr = nm === na && !!r.plannedArrival;
+          var plan = useArr ? r.plannedArrival : (r.plannedDeparture || r.plannedArrival || r.plannedTime || "");
+          var real = r.status === "confirmed" ? (useArr ? r.actualArrival : (r.actualDeparture || r.actualArrival || r.actualTime)) : (useArr ? r.forecastArrival : (r.forecastDeparture || r.forecastArrival || ""));
+          var t = real && real !== plan ? '<span class="plan-strike">' + esc(plan) + "</span> " + esc(real) : esc(plan);
+          return '<div class="gz-tr' + (j <= lastC ? " past" : "") + (me ? " me" : "") + (j === lastC ? " here" : "") + '"><div>' + t + "</div><div>" + (j === lastC ? "📍 " : "") + esc(r.stationName) + (r.platform && r.platform !== "-" ? ' <span style="color:var(--muted);font-weight:400">· ' + esc(T("gzm.tPlat", { p: r.platform }, "peron {p}")) + "</span>" : "") + "</div></div>";
+        }).join("");
+        return head + pos + rows;
+      }).join("");
+      return '<div class="gz-trip">' + html + "</div>";
+    }
     function renderMM() {
       var res = root.querySelector("#gzCRes"), S = cState, now = nowOn(S.date), base = S.live ? Math.max(S.tmin, now) : S.tmin, out = [];
       if ((S.fromPlace || S.toPlace) && !S.fromSt && !S.toSt && !S.netFrom) { S.netFrom = S.fN || []; S.netTo = S.tN || []; }
@@ -1052,15 +1100,22 @@
           }
           var L = c.latest, steps = [];
           steps.push("🚆 <b>" + esc(it.departureTime) + "</b> " + esc((it.legs && it.legs[0] && it.legs[0].board.stationName) || x.p.cb.a.st.n) + " → " + (x.tDelay ? '<span class="plan-strike">' + esc(it.arrivalTime) + "</span> <b>" + C.fmt(x.arr) + "</b> (+" + x.tDelay + " min)" : "<b>" + esc(it.arrivalTime) + "</b>") + " " + esc((it.legs && it.legs[it.legs.length - 1].alight.stationName) || x.p.cb.e.st.n) + " · " + legs);
+          if (tripExpandOn()) steps[steps.length - 1] = trainLegsHtml(it, x);
           if (c.walkA) steps.unshift("🚶 " + esc(T("gzm.cWalk", { n: c.walkA.min, s: x.p.cb.a.st.n }, "{n} min pieszo do: {s}")));
           if (c.walkE) steps.push("🚶 " + esc(T("gzm.cWalk", { n: c.walkE.min, s: c.walkE.name }, "{n} min pieszo do: {s}")));
           if (c.egr) steps.push("🏁 " + esc(T("gzm.cBest", { t: C.fmt(x.final), l: c.egr[0].legs.filter(function (l) { return l.type === "ride"; })[0].line, s: C.fmt(c.egr[0].dep) }, "najszybciej do celu: {l} o {s}, na miejscu {t}")));
           var headHtml = c.walkA ? '<div class="gz-dir" style="white-space:normal">⏰ ' + esc(T("gzm.cLeave", { t: C.fmt(c.walkA.leave), s: c.walkA.name }, "wyjdź: {t} z {s}")) + "</div>" : (L ? '<div class="gz-dir" style="white-space:normal">⏰ ' + esc(T("gzm.cLeave", { t: C.fmt(L.jn.legs[0].type === "walk" ? L.jn.dep - L.jn.legs[0].min : L.jn.dep), s: L.jn.legs[0].fromName }, "wyjdź: {t} z {s}")) + "</div>" : '<div class="gz-dir" style="white-space:normal">🚆 ' + esc(T("gzm.cTrainAt", { t: it.departureTime, s: x.p.cb.a.st.n }, "pociąg {t} z {s}")) + "</div>");
-          var card = '<div class="gz-dep ' + (L && L.status === "tight" ? "tight" : "ok") + '" style="grid-template-columns:minmax(0,1fr) auto">' +
+          var tKey = "t|" + key, tOpen = tripExpandOn() && tripOpen[tKey];
+          var card = '<div class="gz-dep ' + (L && L.status === "tight" ? "tight" : "ok") + '"' + (tripExpandOn() ? ' data-tripx="' + esc(tKey) + '"' : "") + ' style="grid-template-columns:minmax(0,1fr) auto">' +
             '<div class="gz-main">' + headHtml +
             steps.map(function (h) { return '<div class="gz-stop" style="white-space:normal;margin-top:4px">' + h + "</div>"; }).join("") +
             (guardOk ? '<div style="margin-top:8px"><button type="button" class="gz-btn sec" data-guard="' + i + '">🛡️ ' + esc(T("gzm.cGuardAll", null, "Pilnuj całej podróży")) + "</button></div>" : "") + "</div>" +
             '<div class="gz-right"><div class="gz-t">' + C.fmt(x.final) + '</div><div class="gz-in">' + esc(T("gzm.bArrive", null, "na miejscu")) + "</div>" + totalHtml(x.final - (c.walkA ? c.walkA.leave : L ? (L.jn.leave != null ? L.jn.leave : L.jn.legs[0].type === "walk" ? L.jn.dep - L.jn.legs[0].min : L.jn.dep) : x.dep)) + "</div></div>";
+          if (tripExpandOn()) {
+            card = card.replace(/(<div style="margin-top:8px"><button type="button" class="gz-btn sec" data-guard=)/, '<div class="gz-tap">' + esc(tOpen ? T("gzm.tHide", null, "▲ zwiń trasę") : T("gzm.tShowTrain", null, "▼ trasa pociągu i gdzie jest teraz")) + "</div>$1");
+            if (card.indexOf("gz-tap") < 0) card = card.replace(/<\/div><div class="gz-right">/, '<div class="gz-tap">' + esc(tOpen ? T("gzm.tHide", null, "▲ zwiń trasę") : T("gzm.tShowTrain", null, "▼ trasa pociągu i gdzie jest teraz")) + '</div></div><div class="gz-right">');
+            if (tOpen) card += trainRunsHtml(it, S.date);
+          }
           return accHtml + card + egrHtml;
         }).join("") +
         '<div class="gz-sub" style="margin:6px 2px">' + esc(T("gzm.mmNote", null, "Jedno wyszukiwanie: dojazd i dalsza podróż w całej sieci GZM (do 1 przesiadki), pociągi z planera PLK.")) + "</div>";

@@ -1194,6 +1194,10 @@
     "ddStop": "przystanek",
     "ddPl": "moje miejsce",
     "uSwap": "Zamień miejscami (podróż powrotna)",
-    "uBusy": "Szukam…"
+    "uBusy": "Szukam…",
+    "tChange": "przesiadka: {s}, {n} min",
+    "tShowTrain": "▼ trasa pociągu i gdzie jest teraz",
+    "tTrainPos": "ostatnio potwierdzony: {s} · opóźnienie {n} min",
+    "tPlat": "peron {p}"
   }
 }

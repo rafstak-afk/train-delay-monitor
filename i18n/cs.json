@@ -1194,6 +1194,10 @@
     "ddStop": "zastávka",
     "ddPl": "moje místo",
     "uSwap": "Prohodit (zpáteční cesta)",
-    "uBusy": "Hledám…"
+    "uBusy": "Hledám…",
+    "tChange": "přestup: {s}, {n} min",
+    "tShowTrain": "▼ trasa vlaku a kde je teď",
+    "tTrainPos": "naposledy potvrzeno: {s} · zpoždění {n} min",
+    "tPlat": "nástupiště {p}"
   }
 }

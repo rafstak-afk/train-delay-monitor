@@ -1194,6 +1194,10 @@
     "ddStop": "Haltestelle",
     "ddPl": "mein Ort",
     "uSwap": "Tauschen (Rückfahrt)",
-    "uBusy": "Suche…"
+    "uBusy": "Suche…",
+    "tChange": "Umstieg: {s}, {n} Min.",
+    "tShowTrain": "▼ Zuglauf und aktuelle Position",
+    "tTrainPos": "zuletzt bestätigt: {s} · Verspätung {n} Min.",
+    "tPlat": "Bahnsteig {p}"
   }
 }

@@ -1194,6 +1194,10 @@
     "ddStop": "stop",
     "ddPl": "my place",
     "uSwap": "Swap (return trip)",
-    "uBusy": "Searching…"
+    "uBusy": "Searching…",
+    "tChange": "change: {s}, {n} min",
+    "tShowTrain": "▼ train route and where it is now",
+    "tTrainPos": "last confirmed: {s} · delay {n} min",
+    "tPlat": "platform {p}"
   }
 }
