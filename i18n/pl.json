@@ -412,7 +412,9 @@
     "myEmpty": "Nic tu jeszcze nie ma. Przy wyniku wyszukiwania kliknij 💾 Zapisz albo 🛡️ Pilnuj.",
     "tabGuard": "Pilnowane",
     "tabSaved": "Zapisane",
-    "tabGzm": "GZM"
+    "tabGzm": "GZM",
+    "tabTrain": "Pociąg",
+    "tabTrainGzm": "Pociąg + GZM"
   },
   "tutorial": {
     "ui": {

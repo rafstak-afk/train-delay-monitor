@@ -135,6 +135,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
 .ptab{position:relative;flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--panel);border:1px solid var(--line);border-radius:11px;color:var(--muted);padding:7px 4px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer}
 .ptab .ptab-ico{font-size:17px;line-height:1.1}
 .ptab .ptab-lbl{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ptabs.names2:not(.stuck) .ptab{flex:1 1 0;transition:flex-grow .2s ease}.ptabs.names2:not(.stuck) .ptab.active{flex:2.6 1 0}
 .ptab.active{border-color:var(--blue);color:#fff;background:#173055}
 .ptab-n{position:absolute;top:3px;left:calc(50% + 6px);display:inline-block;min-width:17px;padding:0 5px;border-radius:9px;background:var(--line);color:#fff;font-size:11px;line-height:17px;text-align:center}
 .ptab-n:empty{display:none}
@@ -400,6 +401,14 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     var gzmOpen=gq.get('gzm')?{stationId:gq.get('gzm'),arr:gq.get('arr')||null,date:gq.get('date')||null,train:gq.get('orderId')?{orderId:gq.get('orderId'),scheduleId:gq.get('scheduleId')||'',number:gq.get('train')||'',from:gq.get('from')||''}:null}:null;
     gzmView=GzmView.mount($('gzmView'),gzmOpen||{});
     if(gzmOpen){try{history.replaceState(null,'',location.pathname+'#gzm')}catch(e){}}
+    // Nazwy zakładek wyszukiwania: 🚆 Pociąg | 🚆🚌 Pociąg + GZM (obok siebie). TEST: tylko profil autora.
+    if(localStorage.getItem('showVersionBadge')==='1'){
+      var tS=document.querySelector('.ptab[data-tab="search"]'),tG=$('tabGzm');
+      tS.querySelector('.ptab-ico').textContent='🚆';var lS=tS.querySelector('.ptab-lbl');lS.setAttribute('data-i18n','planer.tabTrain');lS.textContent=T('planer.tabTrain');
+      tG.querySelector('.ptab-ico').textContent='🚆🚌';var lG=tG.querySelector('.ptab-lbl');lG.setAttribute('data-i18n','planer.tabTrainGzm');lG.textContent=T('planer.tabTrainGzm');
+      tS.after(tG);
+      tS.parentNode.classList.add('names2');
+    }
   }else{
     document.querySelector('.pview[data-view="gzm"]').remove();
   }

@@ -412,7 +412,9 @@
     "myEmpty": "Nothing here yet. Next to a search result, tap 💾 Save or 🛡️ Guard.",
     "tabGuard": "Guarded",
     "tabSaved": "Saved",
-    "tabGzm": "GZM"
+    "tabGzm": "GZM",
+    "tabTrain": "Train",
+    "tabTrainGzm": "Train + GZM"
   },
   "tutorial": {
     "ui": {

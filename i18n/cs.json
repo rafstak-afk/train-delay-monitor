@@ -412,7 +412,9 @@
     "myEmpty": "Zatím tu nic není. U výsledku hledání klepněte na 💾 Uložit nebo 🛡️ Hlídat.",
     "tabGuard": "Hlídané",
     "tabSaved": "Uložené",
-    "tabGzm": "GZM"
+    "tabGzm": "GZM",
+    "tabTrain": "Vlak",
+    "tabTrainGzm": "Vlak + GZM"
   },
   "tutorial": {
     "ui": {

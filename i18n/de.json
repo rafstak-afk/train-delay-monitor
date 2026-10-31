@@ -412,7 +412,9 @@
     "myEmpty": "Noch nichts hier. Tippe bei einem Suchergebnis auf 💾 Speichern oder 🛡️ Überwachen.",
     "tabGuard": "Überwacht",
     "tabSaved": "Gespeichert",
-    "tabGzm": "GZM"
+    "tabGzm": "GZM",
+    "tabTrain": "Zug",
+    "tabTrainGzm": "Zug + GZM"
   },
   "tutorial": {
     "ui": {

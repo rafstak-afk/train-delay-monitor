@@ -412,7 +412,9 @@
     "myEmpty": "Aún no hay nada. Junto a un resultado, toca 💾 Guardar o 🛡️ Vigilar.",
     "tabGuard": "Vigiladas",
     "tabSaved": "Guardadas",
-    "tabGzm": "GZM"
+    "tabGzm": "GZM",
+    "tabTrain": "Tren",
+    "tabTrainGzm": "Tren + GZM"
   },
   "tutorial": {
     "ui": {
