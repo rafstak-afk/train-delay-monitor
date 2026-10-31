@@ -125,6 +125,23 @@
   const NEWS_ID = "2026-10-29";
   const NEWS_KEY = "tutorialNews:";
   let mode = "full";
+  // „Jak to zrobić?” — krótkie samouczki uruchamiane z czatu 💬 (?jak=<temat>).
+  // Krok bez elementu na stronie (np. wynik jeszcze nie wyszukany) pokazuje
+  // sam dymek na środku ekranu.
+  const HOWTO = {
+    ulubione: { path: "/", steps: [
+      { sel: ".search-box", title: "1. Wybierz stację", text: "Wpisz nazwę stacji i kliknij „Pokaż z API” — zobaczysz tablicę odjazdów." },
+      { sel: "#favStar", title: "2. ☆ Ulubiona stacja", text: "Nad tablicą kliknij ☆ — stacja trafi do przycisków na górze strony. Drugie kliknięcie ją usuwa." },
+      { sel: ".action-head", title: "3. ★ Ulubiony pociąg", text: "W kolumnie „Dodaj” przy odjeździe kliknij ★ — pociąg trafi do „Moich pociągów” z aktualnym statusem. Gwiazdkę masz też na stronie biegu pociągu." },
+      { sel: 'a[href="/moje-pociagi/"]', title: "4. Tu je znajdziesz", text: "Wszystkie ulubione pociągi są w „Moich pociągach”, ulubione stacje — w przyciskach na górze. Z profilem są na każdym Twoim urządzeniu." }
+    ] },
+    pilnuj: { path: "/planer/", steps: [
+      { sel: ".station-stack", title: "1. Skąd i dokąd", text: "Wpisz stację początkową i docelową (możesz też datę i godzinę)." },
+      { sel: "#searchBtn", title: "2. Szukaj", text: "Kliknij „Szukaj połączeń” — pojawi się lista wyników." },
+      { sel: ".itin-guard", title: "3. 🛡️ Pilnuj", text: "Przy wybranym wyniku kliknij „🛡️ Pilnuj”. Pilnuję opóźnień: ostrzegę powiadomieniem, gdy przesiadka będzie zagrożona, i podam Plan B." },
+      { sel: "#tabGuard", title: "4. Pilnowane", text: "Wszystkie pilnowane połączenia są w tej zakładce. Po przyjeździe zapytam, czy zapisać przejazd w dzienniczku." }
+    ] }
+  };
   function pageDef() { return STEPS_BY_PAGE.find(function (p) { return p.match(location.pathname); }) || null; }
   function newsSeen() { const p = pageDef(); try { return !p || localStorage.getItem(NEWS_KEY + p.id) === NEWS_ID; } catch (e) { return true; } }
   function markNewsSeen() { const p = pageDef(); if (!p) return; try { localStorage.setItem(NEWS_KEY + p.id, NEWS_ID); } catch (e) {} }
@@ -239,7 +256,14 @@
 
   function positionAll() {
     const step = currentSteps[currentIndex];
-    if (!step || !step.el) return;
+    if (!step) return;
+    if (!step.el || !isVisible(step.el)) {
+      highlightEl.style.display = "none";
+      tooltipEl.style.top = Math.max(10, (window.innerHeight - (tooltipEl.offsetHeight || 140)) / 2) + "px";
+      tooltipEl.style.left = Math.max(10, (window.innerWidth - (tooltipEl.offsetWidth || 300)) / 2) + "px";
+      return;
+    }
+    highlightEl.style.display = "block";
     const rect = step.el.getBoundingClientRect();
     const pad = 8;
     highlightEl.style.top = (rect.top - pad) + "px";
@@ -269,10 +293,10 @@
     // Kroki przewodnika mogą wskazywać elementy, które pojawiają się dopiero
     // po poprzednim kroku (np. token po utworzeniu profilu) — szukamy na bieżąco.
     if (!step.el || !isVisible(step.el)) step.el = document.querySelector(step.def.sel);
-    if (step.el) step.el.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (step.el && isVisible(step.el)) step.el.scrollIntoView({ behavior: "smooth", block: "center" });
 
     const prog = tr("tutorial.ui.progress", "Krok " + (index + 1) + " z " + currentSteps.length, { n: index + 1, total: currentSteps.length });
-    tooltipEl.querySelector("#spotProgress").textContent = mode === "news" ? tr("tutorial.ui.whatsNew", "Co nowego") + " · " + prog : prog;
+    tooltipEl.querySelector("#spotProgress").textContent = mode === "howto" ? tr("tutorial.ui.howto", "Jak to zrobić?") + " · " + prog : mode === "news" ? tr("tutorial.ui.whatsNew", "Co nowego") + " · " + prog : prog;
     tooltipEl.querySelector("#spotTitle").textContent = (mode === "news" && step.def.highlight ? "⭐ " : "") + tr(step.def.k + ".title", step.def.title);
     tooltipEl.querySelector("#spotText").textContent = tr(step.def.k + ".text", step.def.text);
     tooltipEl.querySelector("#spotSkip").textContent = tr("tutorial.ui.skip", "Pomiń");
@@ -383,6 +407,19 @@
     return false;
   }
 
+  function startHowTo(topic) {
+    const h = HOWTO[topic]; if (!h) return false;
+    if (location.pathname !== h.path) { location.href = h.path + "?jak=" + encodeURIComponent(topic); return true; }
+    ensureTourUI();
+    guided = false; mode = "howto";
+    currentSteps = h.steps.map(function (s, i) { s.k = s.k || "tutorial.howto." + topic + ".s" + i; return { def: s, el: document.querySelector(s.sel) }; });
+    active = true;
+    highlightEl.style.display = "block";
+    tooltipEl.style.display = "block";
+    goToStep(0);
+    return true;
+  }
+  window.showHowTo = startHowTo;
   window.showTutorial = function () { startTour("full"); };
   window.showWhatsNew = function () { startTour("news"); };
 
@@ -406,6 +443,14 @@
     }
     if (guide === "pending") {
       try { localStorage.removeItem(GUIDE_KEY); } catch (e) {}
+    }
+    var jak = null;
+    try { jak = new URLSearchParams(location.search).get("jak"); } catch (e) {}
+    if (jak && HOWTO[jak]) {
+      try { history.replaceState(null, "", location.pathname + location.hash); } catch (e) {}
+      setTimeout(function () { startHowTo(jak); }, 400);
+      injectDemoButton(false);
+      return;
     }
     function proceed() {
       const autoShown = maybeAutoShow();

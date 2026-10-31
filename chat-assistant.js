@@ -696,10 +696,12 @@
   }
   // Kreator od zera — dla tych, którzy wolą klikać niż pisać zdania.
   function offerWizard() {
-    addOptions([{ label: "🧭 Krok po kroku", onClick: function () {
+    var o = [{ label: "🧭 Krok po kroku", onClick: function () {
       addMsg("Krok po kroku", "user");
       startNewRoute(); st.wizard = true; next();
-    } }]);
+    } }];
+    if (howtoOn()) o.push({ label: "❓ Jak to zrobić?", onClick: function () { addMsg("Jak to zrobić?", "user"); addMsg("Mogę pokazać na stronie, co kliknąć:", "bot"); howtoOffer(null); } });
+    addOptions(o);
   }
   function restoreOrGreet() {
     resetState();
@@ -743,8 +745,35 @@
     next();
   }
 
+  // „Jak dodać do ulubionych / jak pilnować połączenia?” — klikalny samouczek
+  // na właściwej stronie (tutorial.js → showHowTo). TEST: tylko profil autora.
+  function howtoOn() { try { return localStorage.getItem("showVersionBadge") === "1"; } catch (e) { return false; } }
+  var HOWTO_FAV_RE = / (ulubion\w*|gwiazdk\w*|moich pociagow|moje pociagi|zapamietac (stacje|pociag)) /;
+  var HOWTO_GUARD_RE = / (pilnow\w*|pilnuj\w*|strazni\w*|obserwowan\w*|przesiadk\w* zagrozon\w*) /;
+  var HOWTO_ASK_RE = / (jak|gdzie|co zrobic|pomoc|pomocy|samouczek|instrukcj\w*) /;
+  function howtoOffer(only) {
+    var opts = [];
+    if (!only || only === "ulubione") opts.push({ label: "⭐ " + "Pokaż, jak dodać stację lub pociąg do ulubionych", primary: only === "ulubione", onClick: function () { addMsg("Pokaż: ulubione", "user"); runHowTo("ulubione"); } });
+    if (!only || only === "pilnuj") opts.push({ label: "🛡️ " + "Pokaż, jak pilnować połączenia", primary: only === "pilnuj", onClick: function () { addMsg("Pokaż: pilnowanie połączenia", "user"); runHowTo("pilnuj"); } });
+    addOptions(opts);
+  }
+  function runHowTo(topic) {
+    addMsg("Już pokazuję — podświetlę po kolei, co kliknąć.", "bot");
+    closePanel();
+    if (window.showHowTo) window.showHowTo(topic);
+    else location.href = (topic === "pilnuj" ? "/planer/" : "/") + "?jak=" + topic;
+  }
+  function howto(f) {
+    if (!howtoOn() || !HOWTO_ASK_RE.test(" " + f + " ")) return false;
+    var fav = HOWTO_FAV_RE.test(" " + f + " "), grd = HOWTO_GUARD_RE.test(" " + f + " ");
+    if (fav && !grd) { addMsg("Ulubione stacje dodajesz gwiazdką ☆ nad tablicą odjazdów, a ulubione pociągi — gwiazdką ★ przy odjeździe. Pokazać krok po kroku?", "bot"); howtoOffer("ulubione"); return true; }
+    if (grd && !fav) { addMsg("Połączenie pilnujesz z planera: wyszukaj je i przy wyniku kliknij 🛡️ Pilnuj. Pokazać krok po kroku?", "bot"); howtoOffer("pilnuj"); return true; }
+    if (/ (pomoc|pomocy|samouczek|instrukcj\w*|co umiesz) /.test(" " + f + " ") || (fav && grd)) { addMsg("W czym pomóc? Mogę pokazać na stronie, co kliknąć:", "bot"); howtoOffer(null); return true; }
+    return false;
+  }
   function handle(text) {
     var f = fold(text);
+    if (!st.pending && howto(f)) return;
     if (RETURN_RE.test(" " + f + " ")) return returnTrip(text);
     // odpowiedź pisana na pytanie z przyciskami („tak”, „nie, to mój cel”…)
     if (st.pending && st.pending.kind === "choice") {
