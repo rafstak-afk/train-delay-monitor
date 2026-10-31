@@ -11,6 +11,8 @@
   var CSS =
     '.gz .gz-dt{display:flex;gap:10px;width:100%}.gz .gz-dt input{flex:1 1 0;min-width:0;padding:14px!important;border-radius:10px!important;border:0!important;font-size:16px!important;background:#fff!important;color:#102027!important;color-scheme:light}' +
     '.gz .gz-ddw{position:relative}' +
+    '.gz .gz-stack{position:relative;width:100%;display:flex;flex-direction:column;gap:8px}.gz .gz-stack>.gz-st{width:100%;flex:0 0 auto!important;min-width:0}.gz .gz-stack #gzCFrom,.gz .gz-stack #gzCTo{padding-right:54px}' +
+    '.gz .gz-swap{position:absolute;right:10px;top:50%;transform:translateY(-50%);z-index:6;border:1px solid var(--line);background:var(--panel);color:#fff;border-radius:50%;width:38px;height:38px;font-size:16px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.35)}.gz .gz-swap:hover{background:#2a3b4d}' +
     '.gz .gz-dd{display:none;position:absolute;z-index:10000;top:calc(100% + 4px);left:0;right:0;background:#172433;border:1px solid #48627c;border-radius:12px;box-shadow:0 14px 35px rgba(0,0,0,.45);max-height:280px;overflow:auto;text-align:left}' +
     '.gz .gz-dd.open{display:block}' +
     '.gz .gz-dd-item{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;width:100%;border:0;border-bottom:1px solid rgba(255,255,255,.07);background:transparent;color:#fff;padding:10px 12px;text-align:left;cursor:pointer;font-family:inherit;font-size:14px}' +
@@ -470,6 +472,15 @@
         if (sm && opts.stationId) { u.querySelector("#gzCFrom").value = sm.n; u.querySelector("#gzCTo").value = ""; if (cfg.arr) u.querySelector("#gzCTime").value = cfg.arr; if (cfg.date && cfg.date >= dIn.min && cfg.date <= dIn.max) dIn.value = cfg.date; }
       }
       ["#gzCFrom", "#gzCTo"].forEach(function (q) { initDd(u.querySelector(q)); });
+      // ⇅ zamiana Skąd ↔ Dokąd (podróż powrotna); gdy oba pola wypełnione — od razu szuka
+      var fDiv = u.querySelector("#gzCFrom").closest(".gz-st"), tDiv2 = u.querySelector("#gzCTo").closest(".gz-st"), stack = document.createElement("div");
+      stack.className = "gz-stack"; fDiv.parentNode.insertBefore(stack, fDiv); stack.appendChild(fDiv); stack.appendChild(tDiv2);
+      var sw = document.createElement("button"); sw.type = "button"; sw.className = "gz-swap"; sw.textContent = "⇅";
+      sw.title = T("gzm.uSwap", null, "Zamień miejscami (podróż powrotna)"); sw.setAttribute("aria-label", sw.title); stack.appendChild(sw);
+      sw.addEventListener("click", function () {
+        var a1 = u.querySelector("#gzCFrom"), b1 = u.querySelector("#gzCTo"), t = a1.value; a1.value = b1.value; b1.value = t;
+        if (a1.value.trim() && b1.value.trim()) searchC();
+      });
       var lic = root.querySelector(".gz-lic");
       if (lic) lic.insertAdjacentHTML("beforeend", " " + esc(T("gzm.uGeoLic", null, "Adresy: wyszukiwarka Nominatim, © OpenStreetMap contributors.")));
     }

@@ -1192,6 +1192,7 @@
     "wPlatform": "platform",
     "ddSt": "station",
     "ddStop": "stop",
-    "ddPl": "my place"
+    "ddPl": "my place",
+    "uSwap": "Swap (return trip)"
   }
 }

@@ -1192,6 +1192,7 @@
     "wPlatform": "andén",
     "ddSt": "estación",
     "ddStop": "parada",
-    "ddPl": "mi lugar"
+    "ddPl": "mi lugar",
+    "uSwap": "Intercambiar (viaje de vuelta)"
   }
 }

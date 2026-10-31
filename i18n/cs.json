@@ -1192,6 +1192,7 @@
     "wPlatform": "nástupiště",
     "ddSt": "stanice",
     "ddStop": "zastávka",
-    "ddPl": "moje místo"
+    "ddPl": "moje místo",
+    "uSwap": "Prohodit (zpáteční cesta)"
   }
 }

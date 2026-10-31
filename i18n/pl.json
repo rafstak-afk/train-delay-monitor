@@ -1192,6 +1192,7 @@
     "wPlatform": "peron",
     "ddSt": "stacja",
     "ddStop": "przystanek",
-    "ddPl": "moje miejsce"
+    "ddPl": "moje miejsce",
+    "uSwap": "Zamień miejscami (podróż powrotna)"
   }
 }

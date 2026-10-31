@@ -1192,6 +1192,7 @@
     "wPlatform": "Bahnsteig",
     "ddSt": "Bahnhof",
     "ddStop": "Haltestelle",
-    "ddPl": "mein Ort"
+    "ddPl": "mein Ort",
+    "uSwap": "Tauschen (Rückfahrt)"
   }
 }
