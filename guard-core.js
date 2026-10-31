@@ -382,14 +382,16 @@
   // Wpisy dzienniczka dla odcinków, którymi pasażer POTWIERDZIŁ, że jechał
   // (checked[i] === false = pominąć). Godziny rzeczywiste = plan + opóźnienie
   // z danych PLK (potwierdzone albo ostatnia prognoza). Format jak w dzienniczku.
-  function buildJournalEntries(conn, readings, checked, nowIso) {
+  // opts.gzm — także odcinki GZM (autobus/tramwaj/trolejbus): linia jako numer, ikona jako kategoria, godziny z rozkładu + opóźnienie GZM na żywo.
+  function buildJournalEntries(conn, readings, checked, nowIso, opts) {
     var legs = conn.legs || [];
     var lc = function (s) { return String(s || "").trim().toLowerCase(); };
     var dur = function (a, b) { var x = hm(a), y = hm(b); if (x == null || y == null) return null; var d = y - x; if (d < 0) d += 1440; return d; };
     var out = [];
     legs.forEach(function (leg, i) {
       if (checked && checked[i] === false) return;
-      if (leg.mode === "gzm") return;   // dzienniczek: tylko przejazdy pociągiem
+      var isG = leg.mode === "gzm";
+      if (isG && !(opts && opts.gzm)) return;   // dzienniczek: domyślnie tylko przejazdy pociągiem
       var data = readings ? readings[i] : null;
       var r = readLeg(leg, data);
       var ok = r && !r.noData;
@@ -410,8 +412,9 @@
         tripLabel: legs.length > 1 ? conn.from + " → " + conn.to : "",
         legNumber: legs.length > 1 ? i + 1 : null,
         distanceKm: null,
-        scheduleId: leg.scheduleId, orderId: leg.orderId,
-        _key: [conn.date, leg.scheduleId || "", leg.orderId || "", lc(leg.board.stationName), lc(leg.alight.stationName)].join("|"),
+        scheduleId: isG ? "" : leg.scheduleId, orderId: isG ? "" : leg.orderId,
+        mode: isG ? "gzm" : undefined, gzmTrip: isG ? leg.trip : undefined, gzmKind: isG ? leg.kind : undefined,
+        _key: [conn.date, isG ? "gzm" : (leg.scheduleId || ""), isG ? String(leg.trip || "") : (leg.orderId || ""), lc(leg.board.stationName), lc(leg.alight.stationName)].join("|"),
         createdAt: nowIso || new Date().toISOString()
       });
     });

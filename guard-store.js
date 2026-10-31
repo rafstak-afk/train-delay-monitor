@@ -162,7 +162,8 @@
   }
   // ✅ Jechałem — wpisy (tylko zaznaczone odcinki) do dzienniczka.
   function recordTrip(conn, readings, checked) {
-    var entries = GuardCore.buildJournalEntries(conn, readings, checked, new Date().toISOString());
+    var gz = false; try { gz = localStorage.getItem("showVersionBadge") === "1"; } catch (e) {}
+    var entries = GuardCore.buildJournalEntries(conn, readings, checked, new Date().toISOString(), { gzm: gz });
     var keys = planKeysFor(conn);
     var pull = hasProfile() ? ProfileSync.pull().catch(function () { return null; }) : Promise.resolve(null);
     return pull.then(function (p) {

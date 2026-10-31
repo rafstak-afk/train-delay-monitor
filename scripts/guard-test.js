@@ -239,6 +239,14 @@ test("GZM: bez alternatyw z planera PLK, w dzienniczku tylko pociąg, id z numer
   if (!/gb46@katowice awf/.test(G.connectionId("2026-10-29", mm.legs))) throw new Error(G.connectionId("2026-10-29", mm.legs));
 });
 
+test("GZM: z opcją gzm w dzienniczku cała podróż (autobus, pociąg, tramwaj), osobne klucze", () => {
+  const e = G.buildJournalEntries(mm, [{ gzm: true, t: [3, 120] }, trainM(0), null], null, "2026-10-29T16:00:00Z", { gzm: true });
+  if (e.length !== 3) throw new Error(JSON.stringify(e));
+  if (e[0].mode !== "gzm" || !e[0].trainNumber || e[0].delayMinutes !== 2 || e[0].orderId !== "") throw new Error(JSON.stringify(e[0]));
+  if (e[1].trainNumber !== "40500" || e[1].mode) throw new Error(JSON.stringify(e[1]));
+  if (new Set(e.map(x => x._key)).size !== 3) throw new Error("klucze");
+});
+
 let fail = 0;
 for (const t of T) { try { t.fn(); console.log("  ✔ " + t.name); } catch (e) { fail++; console.log("  ✘ " + t.name + "\n      " + e.message); } }
 console.log("\n" + (T.length - fail) + "/" + T.length + " testów OK");
