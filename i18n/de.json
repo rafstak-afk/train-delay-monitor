@@ -1143,6 +1143,7 @@
     "nTitle": "GZM-Nahverkehr · Umstiege: {n}",
     "nDirect": "GZM-Nahverkehr · ohne Umstieg",
     "mmNote": "Eine Suche: Zubringer und Weiterfahrt im ganzen GZM-Netz (bis 1 Umstieg), Züge aus dem PLK-Planer. „Ganze Reise überwachen“ — der Wächter überwacht auch Busse und Straßenbahnen.",
-    "cGuardAll": "Ganze Reise überwachen"
+    "cGuardAll": "Ganze Reise überwachen",
+    "total": "unterwegs {t}"
   }
 }

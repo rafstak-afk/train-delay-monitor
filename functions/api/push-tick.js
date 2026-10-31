@@ -366,7 +366,7 @@ function buildPayload(items, kind, lang) {
   const url = kind === "station" && items[0].station
     ? "/?station=" + encodeURIComponent(items[0].station)
     : items.length === 1 ? items[0].url : (kind === "station" ? "/" : "/moje-pociagi/");
-  return { title, body, url };
+  return { title, body, url, tag: kind === "station" ? "alarm-station" : "alarm-trains" };
 }
 
 // Ponowny push o tym samym pociągu dopiero, gdy opóźnienie wzrosło o co
@@ -605,7 +605,7 @@ async function runGuard(env, origin, token, profile, subs, conns, fetchTrain, su
       }
     }
     const msg = GuardCore.message(conn, res, kind, lang, altText);
-    const payload = { title: msg.title, body: msg.body, url: "/planer/?gid=" + encodeURIComponent(conn.id) + "#pilnowane", kind: "guard" };
+    const payload = { title: msg.title, body: msg.body, url: "/planer/?gid=" + encodeURIComponent(conn.id) + "#pilnowane", kind: "guard", tag: "guard-" + conn.id };
     let sent = false;
     for (const sub of subs) {
       try {

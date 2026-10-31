@@ -1,9 +1,45 @@
 {
+  "73619": {
+    "note": "Katowice Zawodzie: przystanek Zawodzie Ośrodek Sportowy (tramwaje + autobusy) tuż przy stacji — OSM prowadzi okrężnie (10–11 min), w rzeczywistości ok. 250–280 m. Zgłoszenie użytkownika 31.10.",
+    "add": [
+      "2469011-28501t",
+      "2469011-28502t",
+      "2469011-28501",
+      "2469011-28502"
+    ],
+    "walk": {
+      "2469011-28501t": [
+        3,
+        4
+      ],
+      "2469011-28502t": [
+        3,
+        4
+      ],
+      "2469011-28501": [
+        3,
+        4
+      ],
+      "2469011-28502": [
+        3,
+        4
+      ]
+    }
+  },
   "_opis": "Ręczne poprawki dopasowań stacja PLK → przystanki GZM. Mają pierwszeństwo nad automatem (tools/gzm/build.mjs). Klucz = numer stacji PLK (jak w adresach aplikacji, np. Katowice = 73312). Pola (wszystkie opcjonalne): add = przystanki do dodania (stop_code z rozkładu GZM, np. „2469011-01803”), remove = przystanki do usunięcia, walk = nadpisany czas dojścia w minutach [od, do] dla danego stop_code, note = Twoja notatka. Przycisk „skopiuj wpis poprawki” w raporcie daje gotowy fragment do wklejenia.",
   "_przyklad_73312": {
     "note": "Katowice: przykład — dodaj przystanek, usuń inny, popraw czas dojścia",
-    "add": ["2469011-01804"],
-    "remove": ["2469011-00105"],
-    "walk": { "2469011-01803": [5, 7] }
+    "add": [
+      "2469011-01804"
+    ],
+    "remove": [
+      "2469011-00105"
+    ],
+    "walk": {
+      "2469011-01803": [
+        5,
+        7
+      ]
+    }
   }
 }

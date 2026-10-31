@@ -1143,6 +1143,7 @@
     "nTitle": "GZM transport · changes: {n}",
     "nDirect": "GZM transport · direct",
     "mmNote": "One search: getting to and from the train across the whole GZM network (up to 1 change), trains from the PLK planner. “Guard the whole trip” — the guard also watches buses and trams.",
-    "cGuardAll": "Guard the whole trip"
+    "cGuardAll": "Guard the whole trip",
+    "total": "journey {t}"
   }
 }

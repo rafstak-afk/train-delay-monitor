@@ -240,6 +240,7 @@ button.mt-star{background:transparent;border:0;color:#8fa6bf;cursor:pointer;padd
 .last-station{margin-top:8px;padding-top:7px;border-top:1px solid var(--line)}
 .last-line{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
 .journal-bar{margin:6px 0 4px}
+.route-table{margin-bottom:150px}
 .legend{margin:8px 0 0;font-size:12px;color:var(--muted)}
 .legend summary{display:inline-block;cursor:pointer;list-style:none;padding:2px 9px;border:1px solid var(--line);border-radius:999px;user-select:none}
 .legend summary::-webkit-details-marker{display:none}

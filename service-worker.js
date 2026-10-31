@@ -61,7 +61,9 @@ self.addEventListener("push", event => {
   event.waitUntil(
     // Wibracja w rytmie "ta-dam ta-dam" (stukot kół) — dźwięku powiadomienia
     // przeglądarka nie pozwala zmienić, wibrację na Androidzie tak.
-    self.registration.showNotification(title, { body, vibrate: [120,80,120,400,120,80,120], data: { url } })
+    // tag: nowe powiadomienie tego samego rodzaju ZASTĘPUJE poprzednie (renotify = znowu dzwoni),
+    // zamiast układać się w paczkę — w zgrupowaną paczkę Androida nie zawsze da się „wejść”.
+    self.registration.showNotification(title, { body, vibrate: [120,80,120,400,120,80,120], data: { url }, tag: data.tag || data.kind || "alarm", renotify: true })
       // Strażnik przesiadek: otwarta aplikacja zagra Rp1 (alarm-sound.js).
       .then(() => data.kind === "guard" ? self.clients.matchAll({ type: "window", includeUncontrolled: true }) : [])
       .then(list => { (list || []).forEach(c => { try { c.postMessage({ type: "playAlarm" }); } catch (e) {} }); })
@@ -78,18 +80,14 @@ self.addEventListener("notificationclick", event => {
   const url = (event.notification.data && event.notification.data.url) || "/";
   const targetUrl = new URL(url, self.location.origin).href;
 
+  // Otwarta karta naszej strony: przełącz ją na cel i pokaż. Gdy się nie da
+  // (karta niekontrolowana, navigate() zwróci null albo odrzuci) — nowe okno.
   event.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true }).then(list => {
-      for (const client of list) {
-        if ("focus" in client) {
-          client.focus();
-          // navigate() działa tylko dla kart kontrolowanych przez ten SW —
-          // inaczej odrzuca obietnicę; wtedy otwieramy nowe okno z celem.
-          if ("navigate" in client) return client.navigate(targetUrl).catch(() => clients.openWindow(targetUrl));
-          return clients.openWindow(targetUrl);
-        }
-      }
-      return clients.openWindow(targetUrl);
+      const own = list.find(c => c.url && c.url.indexOf(self.location.origin) === 0);
+      if (!own) return clients.openWindow(targetUrl);
+      const nav = "navigate" in own ? own.navigate(targetUrl).catch(() => null) : Promise.resolve(null);
+      return nav.then(c => c ? c.focus() : clients.openWindow(targetUrl)).catch(() => clients.openWindow(targetUrl));
     })
   );
 });

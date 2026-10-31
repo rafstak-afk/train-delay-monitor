@@ -1143,6 +1143,7 @@
     "nTitle": "doprava GZM · přestupy: {n}",
     "nDirect": "doprava GZM · bez přestupu",
     "mmNote": "Jedno hledání: dojezd a další cesta v celé síti GZM (do 1 přestupu), vlaky z plánovače PLK. „Hlídat celou cestu“ — strážce hlídá i autobusy a tramvaje.",
-    "cGuardAll": "Hlídat celou cestu"
+    "cGuardAll": "Hlídat celou cestu",
+    "total": "na cestě {t}"
   }
 }

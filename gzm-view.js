@@ -25,8 +25,9 @@
     '.gz .gz-dep.flash{animation:gzFlash 1.4s ease-out}@keyframes gzFlash{0%{box-shadow:0 0 0 3px #ffd400}100%{box-shadow:none}}' +
     '.gz .gz-line{font-weight:900;font-size:16px;text-align:center;border-radius:8px;padding:5px 2px;background:#2b3e52}' +
     '.gz .gz-line.tram{background:#7a1f2b}.gz .gz-line.trolley{background:#1f5a3a}.gz .gz-line small{display:block;font-size:10px;font-weight:700;opacity:.85}' +
-    '.gz .gz-main{min-width:0}.gz .gz-dir{font-weight:800;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' +
-    '.gz .gz-stop{color:var(--muted);font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' +
+    '.gz .gz-main{min-width:0}.gz .gz-dir{font-weight:800;font-size:14px;overflow-wrap:anywhere;line-height:1.3}' +
+    '.gz .gz-stop{color:var(--muted);font-size:12.5px;overflow-wrap:anywhere;line-height:1.35}' +
+    '.gz .gz-total{font-size:12px;color:var(--cyan);font-weight:700;margin-top:2px}' +
     '.gz .gz-right{text-align:right;white-space:nowrap}.gz .gz-t{font-weight:900;font-size:16px}.gz .gz-in{font-size:12px;color:var(--muted)}' +
     '.gz .gz-st-ok{color:var(--green)}.gz .gz-st-tight{color:var(--yellow)}.gz .gz-st-missed{color:var(--red)}' +
     '.gz .plan-strike{text-decoration:line-through;color:var(--muted);font-weight:400;font-size:13px}' +
@@ -285,7 +286,8 @@
       tg.addEventListener("click", function (e) { var m = e.target.closest("[data-mode]"); if (m) setMode(m.dataset.mode); });
       b.querySelector("#gzGo").addEventListener("click", searchB);
       [fi, ti].forEach(function (el) { el.addEventListener("keydown", function (e) { if (e.key === "Enter") searchB(); }); });
-      setMode(st.dir || "A");
+      // wejście z przycisku 🚌 (pociąg / dzienniczek) — zawsze „Wysiadam z pociągu”
+      setMode(opts.stationId ? "A" : (st.dir || "A"));
     }
     function setMode(m) {
       st.dir = m; save(LS, st);
@@ -555,7 +557,7 @@
             '<div class="gz-main">' + headHtml +
             steps.map(function (h) { return '<div class="gz-stop" style="white-space:normal;margin-top:4px">' + h + "</div>"; }).join("") +
             (guardOk ? '<div style="margin-top:8px"><button type="button" class="gz-btn sec" data-guard="' + i + '">🛡️ ' + esc(T("gzm.cGuardAll", null, "Pilnuj całej podróży")) + "</button></div>" : "") + "</div>" +
-            '<div class="gz-right"><div class="gz-t">' + C.fmt(x.final) + '</div><div class="gz-in">' + esc(T("gzm.bArrive", null, "na miejscu")) + "</div></div></div>";
+            '<div class="gz-right"><div class="gz-t">' + C.fmt(x.final) + '</div><div class="gz-in">' + esc(T("gzm.bArrive", null, "na miejscu")) + "</div>" + totalHtml(x.final - (c.walkA ? c.walkA.leave : L ? (L.jn.legs[0].type === "walk" ? L.jn.dep - L.jn.legs[0].min : L.jn.dep) : x.dep)) + "</div></div>";
           return accHtml + card + egrHtml;
         }).join("") +
         '<div class="gz-sub" style="margin:6px 2px">' + esc(T("gzm.mmNote", null, "Jedno wyszukiwanie: dojazd i dalsza podróż w całej sieci GZM (do 1 przesiadki), pociągi z planera PLK.")) + "</div>";
@@ -645,7 +647,13 @@
         '<div class="gz-main"><div class="gz-dir" style="white-space:normal">🚌 ' + esc(jn.transfers ? T("gzm.nTitle", { n: jn.transfers }, "komunikacja GZM · przesiadki: {n}") : T("gzm.nDirect", null, "komunikacja GZM · bez przesiadek")) + "</div>" +
         '<div class="gz-dir" style="white-space:normal;font-size:13px">⏰ ' + esc(T("gzm.cLeave", { t: C.fmt(jn.legs[0].type === "walk" ? first.dep - jn.legs[0].min : jn.dep), s: jn.legs[0].fromName }, "wyjdź: {t} z {s}")) + "</div>" +
         steps.map(function (h) { return '<div class="gz-stop" style="white-space:normal;margin-top:4px">' + h + "</div>"; }).join("") + "</div>" +
-        '<div class="gz-right"><div class="gz-t">' + C.fmt(jn.arr) + '</div><div class="gz-in">' + esc(T("gzm.bArrive", null, "na miejscu")) + "</div></div></div>";
+        '<div class="gz-right"><div class="gz-t">' + C.fmt(jn.arr) + '</div><div class="gz-in">' + esc(T("gzm.bArrive", null, "na miejscu")) + "</div>" + totalHtml(jn.arr - (jn.legs[0].type === "walk" ? first.dep - jn.legs[0].min : jn.dep)) + "</div></div>";
+    }
+    // ⏱ łączny czas podróży (od wyjścia do celu, z dojściami)
+    function totalHtml(min) {
+      if (!(min > 0)) return "";
+      var h = Math.floor(min / 60), m = min % 60;
+      return '<div class="gz-total">⏱ ' + esc(T("gzm.total", { t: (h ? h + " h " : "") + m + " min" }, "w drodze {t}")) + "</div>";
     }
     function hubCard(x) {
       var o = x.o, a = o.a, b = o.b;

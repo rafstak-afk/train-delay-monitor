@@ -1143,6 +1143,7 @@
     "nTitle": "transporte GZM · transbordos: {n}",
     "nDirect": "transporte GZM · directo",
     "mmNote": "Una sola búsqueda: acceso y continuación en toda la red GZM (hasta 1 transbordo), trenes del planificador PLK. «Vigilar todo el viaje»: el vigilante también cuida de autobuses y tranvías.",
-    "cGuardAll": "Vigilar todo el viaje"
+    "cGuardAll": "Vigilar todo el viaje",
+    "total": "viaje de {t}"
   }
 }
