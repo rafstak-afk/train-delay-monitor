@@ -692,12 +692,19 @@
           }
           if (c.skip) return;
           var final = c.walkE ? arr + c.walkE.min : c.egr ? Math.min.apply(null, c.egr.map(function (x) { return x.arr; })) : arr;
-          out.push({ mm: true, p: p, it: it, dep: dep, arr: arr, tDelay: tD, c: c, final: final, start: c.latest ? c.latest.jn.dep : dep });
+          out.push({ mm: true, p: p, it: it, dep: dep, arr: arr, tDelay: tD, c: c, final: final, start: c.walkA ? c.walkA.leave : c.latest ? (c.latest.jn.leave != null ? c.latest.jn.leave : c.latest.jn.dep) : dep });
         });
       });
       out.sort(function (a, b) { return a.final - b.final || b.start - a.start; });
       var seen = new Set();
-      out = out.filter(function (x) { var k = x.net ? "n|" + x.net.legs.map(function (l) { return l.trip || l.min; }).join(">") : cKey(x.p, x.it); if (seen.has(k)) return false; seen.add(k); return true; }).slice(0, 6);
+      // Ten sam pociąg (te same numery, ten sam przyjazd) z kilku stacji startowych — zostaje tylko
+      // wsiadanie najpóźniej (lista posortowana: przy równym przyjeździe najpóźniejsze wyjście pierwsze).
+      // Inaczej np. z Tarnowskich Gór proponowało autobus WSTECZ na Stroszek do pociągu, który i tak jedzie przez TG.
+      function trainKey(x) { return "t|" + (x.it.legs || []).map(function (l) { return (l.train && l.train.number) || "?"; }).join(">") + "|" + x.it.arrivalTime + "|" + x.p.cb.e.st.id; }
+      out = out.filter(function (x) {
+        var k = x.net ? "n|" + x.net.legs.map(function (l) { return l.trip || l.min; }).join(">") : cKey(x.p, x.it), k2 = x.net ? null : trainKey(x);
+        if (seen.has(k) || (k2 && seen.has(k2))) return false; seen.add(k); if (k2) seen.add(k2); return true;
+      }).slice(0, 6);
       if (!out.length) { res.innerHTML = '<div class="gz-empty">' + esc(T("gzm.cNone", null, "Nie udało się ułożyć podróży w ciągu 2 godzin od wyjścia.")) + "</div>"; return; }
       var guardOk = !!(window.GuardStore && window.GuardCore && GuardStore.enabled && GuardStore.enabled());
       res.innerHTML = '<div class="gz-live ' + (rtOk ? "on" : "off") + '" style="margin:4px 2px">' + (rtOk ? "● " + esc(T("gzm.liveOn", null, "na żywo")) : "○ " + esc(T("gzm.liveOff", null, "dane na żywo niedostępne, pokazuję rozkład"))) + "</div>" +
