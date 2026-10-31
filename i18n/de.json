@@ -1189,6 +1189,9 @@
     "jFixed": "deine Zeit",
     "wLoading": "Suche Bahnhöfe und Haltestellen in der Nähe…",
     "wHead": "Fußweg — trage deine Zeit ein, wenn die Schätzung nicht passt (leer = Schätzung):",
-    "wPlatform": "Bahnsteig"
+    "wPlatform": "Bahnsteig",
+    "ddSt": "Bahnhof",
+    "ddStop": "Haltestelle",
+    "ddPl": "mein Ort"
   }
 }

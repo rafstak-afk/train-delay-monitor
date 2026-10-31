@@ -1189,6 +1189,9 @@
     "jFixed": "your time",
     "wLoading": "Looking for nearby stations and stops…",
     "wHead": "Walking time — enter your own if the estimate is off (empty = estimate):",
-    "wPlatform": "platform"
+    "wPlatform": "platform",
+    "ddSt": "station",
+    "ddStop": "stop",
+    "ddPl": "my place"
   }
 }

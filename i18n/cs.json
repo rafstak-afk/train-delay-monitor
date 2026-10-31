@@ -1189,6 +1189,9 @@
     "jFixed": "váš čas",
     "wLoading": "Hledám stanice a zastávky v okolí…",
     "wHead": "Doba chůze — zadejte vlastní, pokud odhad nesedí (prázdné = odhad):",
-    "wPlatform": "nástupiště"
+    "wPlatform": "nástupiště",
+    "ddSt": "stanice",
+    "ddStop": "zastávka",
+    "ddPl": "moje místo"
   }
 }

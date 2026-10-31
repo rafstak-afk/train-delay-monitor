@@ -10,6 +10,12 @@
   var C = window.GzmCore;
   var CSS =
     '.gz .gz-dt{display:flex;gap:10px;width:100%}.gz .gz-dt input{flex:1 1 0;min-width:0;padding:14px!important;border-radius:10px!important;border:0!important;font-size:16px!important;background:#fff!important;color:#102027!important;color-scheme:light}' +
+    '.gz .gz-ddw{position:relative}' +
+    '.gz .gz-dd{display:none;position:absolute;z-index:10000;top:calc(100% + 4px);left:0;right:0;background:#172433;border:1px solid #48627c;border-radius:12px;box-shadow:0 14px 35px rgba(0,0,0,.45);max-height:280px;overflow:auto;text-align:left}' +
+    '.gz .gz-dd.open{display:block}' +
+    '.gz .gz-dd-item{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;width:100%;border:0;border-bottom:1px solid rgba(255,255,255,.07);background:transparent;color:#fff;padding:10px 12px;text-align:left;cursor:pointer;font-family:inherit;font-size:14px}' +
+    '.gz .gz-dd-item:hover,.gz .gz-dd-item.active{background:#223244}' +
+    '.gz .gz-dd-name{font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.gz .gz-dd-kind{opacity:.65;font-size:12px}' +
     '.gz .gz-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin:8px 0}' +
     '.gz .gz-bar label{font-size:12px;color:var(--muted);display:block;margin-bottom:3px}' +
     '.gz .gz-bar select,.gz .gz-bar input{width:auto;min-width:0;padding:9px;border-radius:9px;border:1px solid var(--line);background:var(--card);color:#fff;font-size:15px;font-family:inherit}' +
@@ -463,8 +469,73 @@
         var sm = (index.stations || []).find(function (x) { return x.id === +cfg.stationId; });
         if (sm && opts.stationId) { u.querySelector("#gzCFrom").value = sm.n; u.querySelector("#gzCTo").value = ""; if (cfg.arr) u.querySelector("#gzCTime").value = cfg.arr; if (cfg.date && cfg.date >= dIn.min && cfg.date <= dIn.max) dIn.value = cfg.date; }
       }
+      ["#gzCFrom", "#gzCTo"].forEach(function (q) { initDd(u.querySelector(q)); });
       var lic = root.querySelector(".gz-lic");
       if (lic) lic.insertAdjacentHTML("beforeend", " " + esc(T("gzm.uGeoLic", null, "Adresy: wyszukiwarka Nominatim, © OpenStreetMap contributors.")));
+    }
+    // Lista podpowiedzi (jak w planerze kolejowym): moje miejsca, stacje, przystanki GZM (cała sieć).
+    var ddNames = null;
+    function ddList() {
+      if (ddNames) return Promise.resolve(ddNames);
+      return getNet(warsawNow().date).then(function (net) { return Object.keys(net.byName); }, function () { return []; }).then(function (stops) {
+        var stN = {}; (index.stations || []).forEach(function (x) { stN[x.n] = 1; });
+        ddNames = Object.keys(stN).map(function (n) { return { n: n, k: "st" }; })
+          .concat(stops.filter(function (n) { return !stN[n]; }).map(function (n) { return { n: n, k: "stop" }; }))
+          .map(function (x) { x.f = normName(x.n); return x; });
+        return ddNames;
+      });
+    }
+    function ddMatch(q) {
+      var f0 = normName(q), words = f0.split(/\s+/).filter(Boolean), out = [];
+      if (!words.length) return out;
+      Object.keys(PL_TOK).forEach(function (k) {
+        var lab = normName(PL_TOK[k]).replace(/^[^a-z0-9]+/, "");
+        if (lab.indexOf(f0) === 0 && (k === "gps" || load(PLACES, {})[k])) out.push({ n: PL_TOK[k], k: "pl", r: -1 });
+      });
+      (ddNames || []).forEach(function (x) {
+        var ws = x.f.split(/[\s\-–.,()]+/), ok = words.every(function (w) { return ws.some(function (z) { return z.indexOf(w) === 0; }); });
+        if (!ok) return;
+        var r = (x.f.indexOf(f0) === 0 ? 0 : 2) + (x.k === "st" ? 0 : 1);
+        out.push({ n: x.n, k: x.k, r: r });
+      });
+      return out.sort(function (a, b) { return a.r - b.r || a.n.length - b.n.length || a.n.localeCompare(b.n, "pl"); }).slice(0, 12);
+    }
+    function initDd(inp) {
+      if (!inp) return;
+      inp.removeAttribute("list");
+      var w = document.createElement("div"); w.className = "gz-ddw"; inp.parentNode.insertBefore(w, inp); w.appendChild(inp);
+      var dd = document.createElement("div"); dd.className = "gz-dd"; w.appendChild(dd);
+      var KIND = { st: T("gzm.ddSt", null, "stacja"), stop: T("gzm.ddStop", null, "przystanek"), pl: T("gzm.ddPl", null, "moje miejsce") };
+      var timer = null;
+      function close() { dd.classList.remove("open"); dd.innerHTML = ""; }
+      function show() {
+        var q = inp.value.trim();
+        if (q.length < 2) { close(); return; }
+        ddList().then(function () {
+          if (inp.value.trim() !== q) return;
+          var m = ddMatch(q);
+          if (!m.length || (m.length === 1 && m[0].n === q)) { close(); return; }
+          dd.innerHTML = m.map(function (x) { return '<button type="button" class="gz-dd-item" data-n="' + esc(x.n) + '"><span class="gz-dd-name">' + esc(x.n) + '</span><span class="gz-dd-kind">' + esc(KIND[x.k]) + "</span></button>"; }).join("");
+          dd.classList.add("open");
+        });
+      }
+      function pick(n) { inp.value = n; close(); }
+      inp.addEventListener("input", function () { clearTimeout(timer); timer = setTimeout(show, 150); });
+      inp.addEventListener("focus", function () { if (inp.value.trim().length >= 2) show(); });
+      inp.addEventListener("blur", function () { setTimeout(close, 180); });
+      // ↓/↑ zaznaczenie, Enter wybiera (wyszukiwanie uruchamia dotychczasowy Enter), Esc zamyka
+      inp.addEventListener("keydown", function (e) {
+        var items = dd.classList.contains("open") ? [].slice.call(dd.querySelectorAll(".gz-dd-item")) : [];
+        var cur = items.findIndex(function (b) { return b.classList.contains("active"); });
+        if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+          if (!items.length) return; e.preventDefault();
+          var nx = e.key === "ArrowDown" ? Math.min(cur + 1, items.length - 1) : Math.max(cur - 1, 0);
+          items.forEach(function (b, i) { b.classList.toggle("active", i === nx); }); items[nx].scrollIntoView({ block: "nearest" });
+        } else if (e.key === "Enter" && items.length && cur >= 0) { pick(items[cur].dataset.n); }
+        else if (e.key === "Escape") close();
+      }, true);
+      dd.addEventListener("mousedown", function (e) { e.preventDefault(); });
+      dd.addEventListener("click", function (e) { var b = e.target.closest(".gz-dd-item"); if (b) { pick(b.dataset.n); inp.focus(); } });
     }
     // stacja + puste „Dokąd” → lista odjazdów ze stacji (dawne „Wysiadam z pociągu”)
     function goA(stn, tmin) {

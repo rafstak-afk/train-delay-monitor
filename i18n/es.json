@@ -1189,6 +1189,9 @@
     "jFixed": "tu tiempo",
     "wLoading": "Buscando estaciones y paradas cercanas…",
     "wHead": "Tiempo a pie: escribe el tuyo si la estimación no cuadra (vacío = estimación):",
-    "wPlatform": "andén"
+    "wPlatform": "andén",
+    "ddSt": "estación",
+    "ddStop": "parada",
+    "ddPl": "mi lugar"
   }
 }

@@ -1189,6 +1189,9 @@
     "jFixed": "Twój czas",
     "wLoading": "Szukam stacji i przystanków w pobliżu…",
     "wHead": "Czas dojścia — wpisz swój, jeśli szacunek się nie zgadza (puste = szacunek):",
-    "wPlatform": "peron"
+    "wPlatform": "peron",
+    "ddSt": "stacja",
+    "ddStop": "przystanek",
+    "ddPl": "moje miejsce"
   }
 }
