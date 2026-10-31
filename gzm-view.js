@@ -398,7 +398,14 @@
         document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") syncPlaces().then(function (ch) { if (ch) drawPlaces(); }); });
         pb.addEventListener("click", function (e) {
           var b = e.target.closest("button"); if (!b) return;
-          if (b.dataset.pl) { c.querySelector(b.dataset.side === "f" ? "#gzCFrom" : "#gzCTo").value = PL_TOK[b.dataset.pl]; return; }
+          if (b.dataset.pl) {
+            // pola formularza mogą być już przeniesione na górę (jeden formularz) — szukamy w całym widoku
+            var fIn = root.querySelector("#gzCFrom"), tIn2 = root.querySelector("#gzCTo"), me = b.dataset.side === "f" ? fIn : tIn2, other = me === fIn ? tIn2 : fIn;
+            me.value = PL_TOK[b.dataset.pl];
+            me.style.boxShadow = "0 0 0 2px #22c55e"; setTimeout(function () { me.style.boxShadow = ""; }, 900);
+            if (other.value.trim()) searchC(); else other.focus();
+            return;
+          }
           if (b.dataset.plclr) { putPlace(b.dataset.plclr, null); drawPlaces(); return; }
           if (b.dataset.plset) { b.disabled = true; b.textContent = "⏳"; gpsNow().then(function (g) { var old = load(PLACES, {})[b.dataset.plset] || {}; putPlace(b.dataset.plset, Object.assign({}, old, { lat: +g.lat.toFixed(6), lon: +g.lon.toFixed(6) })); drawPlaces(); }, function () { b.textContent = "⚠ GPS"; }); }
         });
