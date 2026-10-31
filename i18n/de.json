@@ -1169,6 +1169,18 @@
     "pNoteProf": "Orte werden in deinem Profil gespeichert — auf jedem Gerät mit deinem Token. Fußwege zu Haltestellen im Umkreis von etwa 900 m (und zum Bahnhof, wenn er nah ist).",
     "jWalk": "{n} Min. zu Fuß",
     "tShow": "▼ Fahrtverlauf und aktuelle Position",
-    "tHide": "▲ Verlauf ausblenden"
+    "tHide": "▲ Verlauf ausblenden",
+    "uMore": "Weitere Optionen",
+    "uMoreNote": "Das Zeitfenster gilt für die Abfahrtsliste am Bahnhof (wenn „Nach“ leer ist). Der Stern ☆ an einer Abfahrt merkt sich die Lieblingslinie.",
+    "uFrom": "Von",
+    "uTo": "Nach (leer = Abfahrten am Bahnhof)",
+    "uWhen": "Wann",
+    "uFromPh": "Bahnhof, Haltestelle, Adresse, 🏠 Zuhause…",
+    "uToPh": "Haltestelle, Bahnhof oder Adresse",
+    "uGeoLic": "Adressen: Nominatim-Suche, © OpenStreetMap contributors.",
+    "uNoAddr": "Adresse „{a}“ nicht gefunden (Suche in Schlesien). Ort ergänzen, z. B. „Opolska 5, Tarnowskie Góry“.",
+    "uNeed": "Gib Start und Ziel ein. Nur ein Bahnhof bei „Von“ (leeres „Nach“) zeigt Bus- und Straßenbahnabfahrten in der Nähe.",
+    "uTitle": "🚆🚌 Zug + GZM",
+    "uSub": "von Tür zu Tür: Zug, Bus, Straßenbahn und Fußweg"
   }
 }

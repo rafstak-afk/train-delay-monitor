@@ -386,8 +386,63 @@
       tg.addEventListener("click", function (e) { var m = e.target.closest("[data-mode]"); if (m) setMode(m.dataset.mode); });
       b.querySelector("#gzGo").addEventListener("click", searchB);
       [fi, ti].forEach(function (el) { el.addEventListener("keydown", function (e) { if (e.key === "Enter") searchB(); }); });
+      if (uniOn()) initUni(tg, a, b, c);
       // wejście z przycisku 🚌 (pociąg / dzienniczek) — zawsze „Wysiadam z pociągu”
-      setMode(opts.stationId ? "A" : (st.dir || "A"));
+      setMode(opts.stationId ? "A" : uniOn() ? (st.dir === "A" && cfg.stationId ? "A" : "C") : (st.dir || "A"));
+    }
+    // ===== Jeden formularz (all in one) — TEST, tylko profil autora =====
+    function uniOn() { try { return localStorage.getItem("showVersionBadge") === "1"; } catch (e) { return false; } }
+    function initUni(tg, a, b, c) {
+      tg.style.display = "none"; b.hidden = true; b.style.display = "none";
+      var ph = root.parentNode && root.parentNode.querySelector(".pview-head");
+      if (ph) ph.innerHTML = "<b>" + esc(T("gzm.uTitle", null, "🚆🚌 Pociąg + GZM")) + "</b> · " + esc(T("gzm.uSub", null, "od drzwi do drzwi: pociąg, autobus, tramwaj i dojście pieszo"));
+      var u = document.createElement("div"); u.id = "gzU";
+      var form = c.querySelector(".gz-bar"), pl = c.querySelector("#gzPlaces");
+      u.appendChild(form); if (pl) u.appendChild(pl);
+      // „Więcej opcji”: okno czasu z dawnego „Wysiadam” (ulubione linie ★ są przy wynikach)
+      var more = document.createElement("details"); more.className = "gz-sub"; more.style.margin = "0 2px 8px";
+      more.innerHTML = "<summary>" + esc(T("gzm.uMore", null, "Więcej opcji")) + '</summary><div style="display:flex;gap:10px;align-items:end;margin-top:6px"></div>' +
+        '<div style="font-size:11.5px;margin-top:4px">' + esc(T("gzm.uMoreNote", null, "Okno czasu dotyczy listy odjazdów ze stacji (gdy „Dokąd” jest puste). Gwiazdka ☆ przy odjeździe zapamiętuje ulubioną linię.")) + "</div>";
+      var win = a.querySelector("#gzWin"); if (win) more.querySelector("div").appendChild(win.parentNode);
+      u.appendChild(more);
+      var wm = document.getElementById("walkMeasure"); if (wm) u.appendChild(wm); // pomiar dojścia pod formularzem
+      root.insertBefore(u, a);
+      var aBar = a.querySelector(".gz-bar"); if (aBar) aBar.style.display = "none";
+      var lbl = function (id, txt) { var l = u.querySelector('label[for="' + id + '"]'); if (l) l.textContent = txt; };
+      lbl("gzCFrom", T("gzm.uFrom", null, "Skąd")); lbl("gzCTo", T("gzm.uTo", null, "Dokąd (puste = odjazdy ze stacji)")); lbl("gzCTime", T("gzm.uWhen", null, "Kiedy"));
+      u.querySelector("#gzCFrom").placeholder = T("gzm.uFromPh", null, "stacja, przystanek, adres, 🏠 Dom…");
+      u.querySelector("#gzCTo").placeholder = T("gzm.uToPh", null, "przystanek, stacja albo adres");
+      if (cfg.stationId) {
+        var sm = (index.stations || []).find(function (x) { return x.id === +cfg.stationId; });
+        if (sm && opts.stationId) { u.querySelector("#gzCFrom").value = sm.n; u.querySelector("#gzCTo").value = ""; if (cfg.arr) u.querySelector("#gzCTime").value = cfg.arr; }
+      }
+      var lic = root.querySelector(".gz-lic");
+      if (lic) lic.insertAdjacentHTML("beforeend", " " + esc(T("gzm.uGeoLic", null, "Adresy: wyszukiwarka Nominatim, © OpenStreetMap contributors.")));
+    }
+    // stacja + puste „Dokąd” → lista odjazdów ze stacji (dawne „Wysiadam z pociągu”)
+    function goA(stn, tmin) {
+      cfg.stationId = String(stn.id); st.stationId = cfg.stationId; cfg.arr = C.fmt(tmin); cfg.train = null; trainInfo = null; cfg.alighted = false;
+      dests[cfg.stationId] = ""; save(DEST, dests); save(LS, st);
+      var sel = root.querySelector("#gzSt"); if (sel) sel.value = cfg.stationId;
+      var ar = root.querySelector("#gzArr"); if (ar) ar.value = cfg.arr;
+      var di = root.querySelector("#gzDest"); if (di) di.value = "";
+      showMore = 0; setMode("A"); load1();
+    }
+    // ===== Adres → współrzędne (OSM Nominatim, tylko po kliknięciu Szukaj; wyniki zapamiętane na urządzeniu) =====
+    var GEO = "gzmGeoCacheV2";
+    function looksAddress(txt) { return /\d|,|^\s*(ul\.|al\.|pl\.|os\.)/i.test(txt); }
+    function geocode(txt) {
+      var key = normName(txt), cache = load(GEO, {});
+      if (cache[key]) return Promise.resolve(cache[key]);
+      var q = new URLSearchParams({ format: "jsonv2", q: txt, addressdetails: "1", countrycodes: "pl", viewbox: "18.2,50.75,19.75,49.9", bounded: "1", limit: "1", "accept-language": "pl" });
+      return fetch("https://nominatim.openstreetmap.org/search?" + q, { headers: { Accept: "application/json" } }).then(function (r) { return r.ok ? r.json() : []; }).then(function (j) {
+        if (!j || !j[0]) return null;
+        var ad = j[0].address || {}, street = [ad.road || ad.pedestrian || ad.square || j[0].name || "", ad.house_number || ""].join(" ").trim(), town = ad.city || ad.town || ad.village || ad.suburb || "";
+        var lab = [street, town].filter(Boolean).join(", ") || String(j[0].display_name || txt).split(",").slice(0, 2).join(",");
+        var v = { lat: +(+j[0].lat).toFixed(6), lon: +(+j[0].lon).toFixed(6), label: "📍 " + lab };
+        cache[key] = v; var ks = Object.keys(cache); if (ks.length > 40) delete cache[ks[0]]; save(GEO, cache);
+        return v;
+      }).catch(function () { return null; });
     }
     function setMode(m) {
       st.dir = m; save(LS, st);
@@ -529,7 +584,12 @@
       });
     }
     function resolvePlace(txt) {
-      var k = placeKey(txt); if (!k) return Promise.resolve(null);
+      var k = placeKey(txt);
+      if (!k && uniOn() && !stationByName(txt) && looksAddress(txt)) return geocode(txt).then(function (g) {
+        if (!g) throw new Error("addr:" + txt);
+        return { key: "addr", label: g.label, lat: g.lat, lon: g.lon, far: true };
+      });
+      if (!k) return Promise.resolve(null);
       if (k === "gps") return gpsNow().then(function (g) { return { key: k, label: PL_TOK.gps, lat: g.lat, lon: g.lon }; });
       var pl = load(PLACES, {})[k];
       if (!pl) return Promise.reject(new Error("unset:" + k));
@@ -565,22 +625,30 @@
     // przystanki w zasięgu pieszym miejsca (≤ 900 m) + stacje w zasięgu (≤ 1,5 km, + 2 min na peron)
     function placeReach(net, pl) {
       var out = [];
-      for (var i = 0; i < net.n; i++) { var d = havM(pl.lat, pl.lon, net.lat[i], net.lon[i]); if (d <= 900) out.push({ s: i, walk: walkMin(d), d: d }); }
+      var rS = pl.far ? 1500 : 900, rT = pl.far ? 2000 : 1500;
+      for (var i = 0; i < net.n; i++) { var d = havM(pl.lat, pl.lon, net.lat[i], net.lon[i]); if (d <= rS) out.push({ s: i, walk: walkMin(d), d: d }); }
       out.sort(function (a, b) { return a.d - b.d; });
       pl.stops = out.slice(0, 30); pl.walkSt = {};
-      (index.stations || []).forEach(function (x) { var d = havM(pl.lat, pl.lon, x.lat, x.lon); if (d <= 1500) pl.walkSt[x.id] = walkMin(d) + 2; });
+      (index.stations || []).forEach(function (x) { var d = havM(pl.lat, pl.lon, x.lat, x.lon); if (d <= rT) pl.walkSt[x.id] = walkMin(d) + 2; });
       return pl;
     }
     function searchC() {
       var fromTxt = root.querySelector("#gzCFrom").value.trim(), toTxt = root.querySelector("#gzCTo").value.trim();
       var tmin = C.hm(root.querySelector("#gzCTime").value) || Math.floor(warsawNow().min);
       st.cFrom = fromTxt; st.cTo = toTxt; save(LS, st);
+      if (uniOn()) {
+        var fsU = stationByName(fromTxt);
+        if (fsU && !toTxt) { goA(fsU, tmin); return; }
+        setMode("C");
+        if (!fromTxt || !toTxt) { root.querySelector("#gzCRes").innerHTML = '<div class="gz-warn">' + esc(T("gzm.uNeed", null, "Wpisz, skąd i dokąd jedziesz. Samą stację w „Skąd” (puste „Dokąd”) — pokażę odjazdy autobusów i tramwajów spod niej.")) + "</div>"; return; }
+      }
       if (!fromTxt || !toTxt || !window.GzmRaptor) return searchCOld();
       var res = root.querySelector("#gzCRes"), date = warsawNow().date;
       res.innerHTML = '<div class="gz-empty">' + esc(T("gzm.cSearching", null, "Układam podróż: dojazd, pociąg, dojazd do celu…")) + "</div>";
       var fromPlace = null, toPlace = null;
       Promise.all([resolvePlace(fromTxt), resolvePlace(toTxt)]).then(function (pp) { fromPlace = pp[0]; toPlace = pp[1]; return Promise.all([getNet(date), getRt()]); }, function (e) {
         var m = String(e && e.message || "");
+        if (m.indexOf("addr:") === 0) { res.innerHTML = '<div class="gz-warn">' + esc(T("gzm.uNoAddr", { a: m.slice(5) }, "Nie znalazłem adresu „{a}” (szukam na Śląsku). Dopisz miasto, np. „Opolska 5, Tarnowskie Góry”.")) + "</div>"; throw "handled"; }
         res.innerHTML = '<div class="gz-warn">' + esc(m.indexOf("unset:") === 0 ? T("gzm.pUnset", { p: PL_TOK[m.slice(6)] }, "Najpierw ustaw miejsce {p} — poniżej, w „Moje miejsca”.") : T("gzm.pGpsErr", null, "Nie udało się odczytać lokalizacji GPS (zgoda w przeglądarce?).")) + "</div>";
         throw "handled";
       }).then(function (r) {
@@ -623,7 +691,7 @@
             return { cb: cb, its: (pl && pl.itineraries) || [], query: pl && pl.query };
           }).catch(function () { return null; });
         })).then(function (parts) {
-          cState = { mm: true, net: net, code: code, fN: fN, tN: tN, fromSt: fromSt, toSt: toSt, fromPlace: fromPlace, toPlace: toPlace, parts: parts.filter(Boolean), tmin: tmin, date: date, more: {}, tDelay: {}, cache: {},
+          cState = { mm: true, net: net, code: code, fN: fN, tN: tN, fromSt: fromSt, toSt: toSt, fromPlace: fromPlace, toPlace: toPlace, uni: uniOn(), parts: parts.filter(Boolean), tmin: tmin, date: date, more: {}, tDelay: {}, cache: {},
             live: tmin >= Math.floor(warsawNow().min) - 5, netFrom: (!fromSt && !toSt) ? fN : null, netTo: (!fromSt && !toSt) ? tN : null };
           renderC(); trainLiveC();
         });
@@ -674,13 +742,20 @@
     function renderMM() {
       var res = root.querySelector("#gzCRes"), S = cState, now = nowOn(S.date), base = S.live ? Math.max(S.tmin, now) : S.tmin, out = [];
       if ((S.fromPlace || S.toPlace) && !S.fromSt && !S.toSt && !S.netFrom) { S.netFrom = S.fN || []; S.netTo = S.tN || []; }
+      // jeden formularz: stacja jako punkt z przystankami pod nią (dojście z peronu) — sama komunikacja też od/do stacji
+      if (S.uni && !S.netFrom) {
+        S.fromNet = S.fromPlace || (S.fromSt ? { label: S.fromSt.n, stops: polesOf(S.fromSt) } : null);
+        S.toNet = S.toPlace || (S.toSt ? { label: S.toSt.n, stops: polesOf(S.toSt) } : null);
+        if ((S.fromNet ? S.fromNet.stops.length : (S.fN || []).length) && (S.toNet ? S.toNet.stops.length : (S.tN || []).length)) { S.netFrom = S.fN || []; S.netTo = S.tN || []; }
+      }
       // tylko GZM (gdy oba końce to przystanki)
       if (S.netFrom && S.netTo) {
         if (S.netRtAt !== rtAt || !S.netRes) {
           S.netRtAt = rtAt;
-          var o = Object.assign(fromOpts(S, base), { rt: rt, maxTransfers: 2, count: 5, maxDep: base + 180 });
-          if (S.toPlace) o.toStops = S.toPlace.stops.map(function (x) { return { s: x.s, walk: x.walk }; }); else o.to = S.netTo;
-          S.netRes = GzmRaptor.search(S.net, o).map(function (jn) { return withPlaceWalks(jn, S.fromPlace, S.toPlace); });
+          var fP = S.fromNet || S.fromPlace, tP = S.toNet || S.toPlace;
+          var o = Object.assign(fP ? { fromStops: fP.stops.map(function (x) { return { s: x.s, t: base + x.walk }; }), dep: base } : { from: S.fN, dep: base }, { rt: rt, maxTransfers: 2, count: 5, maxDep: base + 180 });
+          if (tP) o.toStops = tP.stops.map(function (x) { return { s: x.s, walk: x.walk }; }); else o.to = S.netTo;
+          S.netRes = GzmRaptor.search(S.net, o).map(function (jn) { return withPlaceWalks(jn, fP, tP); });
         }
         S.netRes.forEach(function (jn) { out.push({ net: jn, final: jn.arr, start: jn.leave != null ? jn.leave : jn.dep }); });
       }

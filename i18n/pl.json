@@ -1169,6 +1169,18 @@
     "pNoteProf": "Miejsca zapisuję w Twoim profilu — są na każdym urządzeniu z Twoim tokenem. Dojście pieszo liczę do przystanków w promieniu ok. 900 m (i na stację, gdy jest blisko).",
     "jWalk": "przejście pieszo {n} min",
     "tShow": "▼ trasa kursu i gdzie jest teraz",
-    "tHide": "▲ zwiń trasę"
+    "tHide": "▲ zwiń trasę",
+    "uMore": "Więcej opcji",
+    "uMoreNote": "Okno czasu dotyczy listy odjazdów ze stacji (gdy „Dokąd” jest puste). Gwiazdka ☆ przy odjeździe zapamiętuje ulubioną linię.",
+    "uFrom": "Skąd",
+    "uTo": "Dokąd (puste = odjazdy ze stacji)",
+    "uWhen": "Kiedy",
+    "uFromPh": "stacja, przystanek, adres, 🏠 Dom…",
+    "uToPh": "przystanek, stacja albo adres",
+    "uGeoLic": "Adresy: wyszukiwarka Nominatim, © OpenStreetMap contributors.",
+    "uNoAddr": "Nie znalazłem adresu „{a}” (szukam na Śląsku). Dopisz miasto, np. „Opolska 5, Tarnowskie Góry”.",
+    "uNeed": "Wpisz, skąd i dokąd jedziesz. Samą stację w „Skąd” (puste „Dokąd”) — pokażę odjazdy autobusów i tramwajów spod niej.",
+    "uTitle": "🚆🚌 Pociąg + GZM",
+    "uSub": "od drzwi do drzwi: pociąg, autobus, tramwaj i dojście pieszo"
   }
 }

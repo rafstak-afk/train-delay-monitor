@@ -1169,6 +1169,18 @@
     "pNoteProf": "Places are stored in your profile — on every device with your token. Walking is counted to stops within about 900 m (and to the station when it is close).",
     "jWalk": "walk {n} min",
     "tShow": "▼ route and where it is now",
-    "tHide": "▲ hide route"
+    "tHide": "▲ hide route",
+    "uMore": "More options",
+    "uMoreNote": "The time window applies to the departure list from a station (when “To” is empty). The ☆ star next to a departure saves a favourite line.",
+    "uFrom": "From",
+    "uTo": "To (empty = departures from the station)",
+    "uWhen": "When",
+    "uFromPh": "station, stop, address, 🏠 Home…",
+    "uToPh": "stop, station or address",
+    "uGeoLic": "Addresses: Nominatim search, © OpenStreetMap contributors.",
+    "uNoAddr": "Address “{a}” not found (I search in Silesia). Add the town, e.g. “Opolska 5, Tarnowskie Góry”.",
+    "uNeed": "Enter where from and where to. A station alone in “From” (empty “To”) shows bus and tram departures near it.",
+    "uTitle": "🚆🚌 Train + GZM",
+    "uSub": "door to door: train, bus, tram and walking"
   }
 }

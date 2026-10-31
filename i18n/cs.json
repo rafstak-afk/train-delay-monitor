@@ -1169,6 +1169,18 @@
     "pNoteProf": "Místa ukládám ve vašem profilu — jsou v každém zařízení s vaším tokenem. Chůzi počítám k zastávkám do cca 900 m (a ke stanici, je-li blízko).",
     "jWalk": "pěšky {n} min",
     "tShow": "▼ trasa spoje a kde je teď",
-    "tHide": "▲ skrýt trasu"
+    "tHide": "▲ skrýt trasu",
+    "uMore": "Další možnosti",
+    "uMoreNote": "Časové okno platí pro seznam odjezdů ze stanice (když je „Kam“ prázdné). Hvězdička ☆ u odjezdu uloží oblíbenou linku.",
+    "uFrom": "Odkud",
+    "uTo": "Kam (prázdné = odjezdy ze stanice)",
+    "uWhen": "Kdy",
+    "uFromPh": "stanice, zastávka, adresa, 🏠 Domov…",
+    "uToPh": "zastávka, stanice nebo adresa",
+    "uGeoLic": "Adresy: vyhledávač Nominatim, © OpenStreetMap contributors.",
+    "uNoAddr": "Adresu „{a}“ jsem nenašel (hledám ve Slezsku). Doplňte město, např. „Opolska 5, Tarnowskie Góry“.",
+    "uNeed": "Zadejte, odkud a kam jedete. Samotná stanice v „Odkud“ (prázdné „Kam“) ukáže odjezdy autobusů a tramvají u ní.",
+    "uTitle": "🚆🚌 Vlak + GZM",
+    "uSub": "ode dveří ke dveřím: vlak, autobus, tramvaj a chůze"
   }
 }

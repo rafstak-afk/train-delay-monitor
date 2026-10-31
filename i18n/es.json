@@ -1169,6 +1169,18 @@
     "pNoteProf": "Los lugares se guardan en tu perfil, en cada dispositivo con tu token. Cuento el camino a pie hasta paradas a unos 900 m (y hasta la estación si está cerca).",
     "jWalk": "a pie {n} min",
     "tShow": "▼ recorrido y dónde está ahora",
-    "tHide": "▲ ocultar recorrido"
+    "tHide": "▲ ocultar recorrido",
+    "uMore": "Más opciones",
+    "uMoreNote": "La ventana de tiempo se aplica a la lista de salidas desde una estación (si «Hasta» está vacío). La estrella ☆ junto a una salida guarda la línea favorita.",
+    "uFrom": "Desde",
+    "uTo": "Hasta (vacío = salidas desde la estación)",
+    "uWhen": "Cuándo",
+    "uFromPh": "estación, parada, dirección, 🏠 Casa…",
+    "uToPh": "parada, estación o dirección",
+    "uGeoLic": "Direcciones: buscador Nominatim, © OpenStreetMap contributors.",
+    "uNoAddr": "No encontré la dirección «{a}» (busco en Silesia). Añade la ciudad, p. ej. «Opolska 5, Tarnowskie Góry».",
+    "uNeed": "Escribe desde dónde y hasta dónde. Solo una estación en «Desde» («Hasta» vacío) muestra las salidas de autobuses y tranvías cercanas.",
+    "uTitle": "🚆🚌 Tren + GZM",
+    "uSub": "puerta a puerta: tren, autobús, tranvía y a pie"
   }
 }
