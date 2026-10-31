@@ -425,7 +425,8 @@
       "next": "Další",
       "finish": "Dokončit",
       "show": "Zobrazit průvodce",
-      "whatsNew": "Co je nového"
+      "whatsNew": "Co je nového",
+      "howto": "Jak na to?"
     },
     "guide": {
       "s0": {
@@ -549,6 +550,10 @@
       "s2": {
         "title": "Cestovní deník",
         "text": "Jedete tímto vlakem? Označte 🚏, kde nastupujete, a 🏁, kde vystupujete — zbytek spočítáme. Plovoucí tlačítko uložení se objeví dole na obrazovce, ať posunete stránku kamkoli. U spoje, který ještě nedojel do vaší výstupní stanice, uvidíte místo uložení „📋 Přidat do plánu“ — záznam v plánu cest v deníku, zatím ne skutečnou jízdu."
+      },
+      "gzm": {
+        "title": "🚌 Autobusy a tramvaje u stanice",
+        "text": "Tlačítko 🚌 u stanice ukáže autobusy, tramvaje a trolejbusy ZTM, které stihnete po příjezdu vlaku (s chůzí z nástupiště). Fialové písmeno znamená, že nejbližší zastávka je dál než obvykle — vzdálenost uvidíte v bublině."
       }
     },
     "profil": {
@@ -610,7 +615,7 @@
       },
       "tabs": {
         "title": "🧭 Vše o spojení na jednom místě",
-        "text": "🔎 Hledat, 🛡️ Hlídané, 📌 Uložené a 🕘 Nedávné — přepnete jedním klepnutím. Při posouvání zůstává lišta nahoře: aktivní záložka s názvem, ostatní jako ikony (název v bublině)."
+        "text": "🚆 Vlak, 🚆🚌 Vlak + GZM, 🛡️ Hlídané, 📌 Uložené a 🕘 Poslední — přepnete jedním klepnutím. Po posunutí zůstane lišta nahoře: aktivní karta s názvem, ostatní jako ikony (název v bublině)."
       },
       "mine": {
         "title": "🛡️ Hlídaná spojení",
@@ -619,6 +624,52 @@
       "recent": {
         "title": "🕘 Hledání z doby před pár dny?",
         "text": "U záznamu z minulého dne si vyberete: 🔎 dnes od stejné hodiny (nebo zítra, pokud už minula) nebo 📅 tamten den."
+      },
+      "gzm": {
+        "title": "🚆🚌 Vlak + GZM — ode dveří ke dveřím",
+        "text": "Jeden formulář: Odkud, Kam, datum a čas. Zadejte stanici, zastávku, adresu nebo 🏠 Domov / 🏢 Práce / 📍 Moje poloha — naplánuji cestu vlakem, autobusem, tramvají i trolejbusem včetně chůze. ⇅ otočí směr (zpáteční cesta); klepnutím na návrh uvidíte trasu spoje a kde je teď vozidlo."
+      },
+      "remind": {
+        "title": "⏰ Připomenutí odchodu z domu",
+        "text": "V kartě hlídaného spojení zaškrtněte ⏰ — připomenu 30 a 15 min před ODCHODEM (odjezd minus vaše chůze). Když má vlak zpoždění, připomenutí přijde později; při zrušení hned. Funguje i se zavřenou aplikací (oznámení musí být zapnutá)."
+      }
+    },
+    "howto": {
+      "ulubione": {
+        "s0": {
+          "title": "1. Vyberte stanici",
+          "text": "Zadejte název stanice a klepněte na „Zobrazit z API“ — uvidíte tabuli odjezdů."
+        },
+        "s1": {
+          "title": "2. ☆ Oblíbená stanice",
+          "text": "Nad tabulí klepněte na ☆ — stanice se přidá k tlačítkům nahoře. Druhé klepnutí ji odebere."
+        },
+        "s2": {
+          "title": "3. ★ Oblíbený vlak",
+          "text": "Ve sloupci „Přidat“ u odjezdu klepněte na ★ — vlak se přidá do „Mých vlaků“ s aktuálním stavem. Hvězdička je i na stránce trasy vlaku."
+        },
+        "s3": {
+          "title": "4. Tady je najdete",
+          "text": "Oblíbené vlaky jsou v „Mých vlacích“, oblíbené stanice v tlačítkách nahoře. S profilem na všech vašich zařízeních."
+        }
+      },
+      "pilnuj": {
+        "s0": {
+          "title": "1. Odkud a kam",
+          "text": "Zadejte výchozí a cílovou stanici (i datum a čas)."
+        },
+        "s1": {
+          "title": "2. Hledat",
+          "text": "Klepněte na „Hledat spojení“ — objeví se seznam výsledků."
+        },
+        "s2": {
+          "title": "3. 🛡️ Hlídat",
+          "text": "U zvoleného výsledku klepněte na „🛡️ Hlídat“. Hlídám zpoždění, upozorním oznámením, když je přestup ohrožený, a nabídnu plán B."
+        },
+        "s3": {
+          "title": "4. Hlídané",
+          "text": "Všechna hlídaná spojení jsou v této kartě. Po příjezdu se zeptám, zda uložit jízdu do deníku."
+        }
       }
     }
   },

@@ -425,7 +425,8 @@
       "next": "Weiter",
       "finish": "Fertig",
       "show": "Anleitung anzeigen",
-      "whatsNew": "Was ist neu"
+      "whatsNew": "Was ist neu",
+      "howto": "Wie geht das?"
     },
     "guide": {
       "s0": {
@@ -549,6 +550,10 @@
       "s2": {
         "title": "Reisetagebuch",
         "text": "Fährst du mit diesem Zug? Markiere 🚏, wo du einsteigst, und 🏁, wo du aussteigst — den Rest rechnen wir aus. Unten am Bildschirm erscheint ein schwebender Speichern-Knopf, egal wohin du scrollst. Bei einem Zug, der deinen Ausstiegsbahnhof noch nicht erreicht hat, siehst du statt Speichern „📋 Zum Plan hinzufügen“ — einen Eintrag im Reiseplan des Tagebuchs, noch keine echte Fahrt."
+      },
+      "gzm": {
+        "title": "🚌 Busse und Straßenbahnen am Bahnhof",
+        "text": "Der Knopf 🚌 am Bahnhof zeigt ZTM-Busse, Straßenbahnen und Oberleitungsbusse, die du nach Ankunft des Zuges erreichst (mit Fußweg vom Bahnsteig). Ein violetter Buchstabe heißt: die nächste Haltestelle ist weiter als üblich — Entfernung im Tooltip."
       }
     },
     "profil": {
@@ -609,8 +614,8 @@
         "text": "Lieber einen ganzen Satz schreiben oder sagen 🎤 (auf Polnisch)? Der Assistent füllt dieses Formular für dich aus und zeigt sofort die Ergebnisse — oder führt dich Schritt für Schritt."
       },
       "tabs": {
-        "title": "🧭 Alles zur Verbindung an einem Ort",
-        "text": "🔎 Suche, 🛡️ Überwacht, 📌 Gespeichert und 🕘 Zuletzt — mit einem Tipp umschalten. Beim Scrollen bleibt die Leiste oben: der aktive Tab mit Namen, die anderen als Symbole (Name im Tooltip)."
+        "title": "🧭 Alles zu einer Verbindung an einem Ort",
+        "text": "🚆 Zug, 🚆🚌 Zug + GZM, 🛡️ Überwacht, 📌 Gespeichert und 🕘 Zuletzt — ein Tipp zum Wechseln. Beim Scrollen bleibt die Leiste oben: der aktive Tab mit Namen, die anderen als Symbole (Name im Tooltip)."
       },
       "mine": {
         "title": "🛡️ Überwachte Verbindungen",
@@ -619,6 +624,52 @@
       "recent": {
         "title": "🕘 Eine Suche von vor ein paar Tagen?",
         "text": "Bei einem Eintrag von einem vergangenen Tag wählst du: 🔎 heute ab derselben Uhrzeit (oder morgen, falls sie vorbei ist) oder 📅 jenen Tag."
+      },
+      "gzm": {
+        "title": "🚆🚌 Zug + GZM — von Tür zu Tür",
+        "text": "Ein Formular: Von, Nach, Datum und Uhrzeit. Gib einen Bahnhof, eine Haltestelle, eine Adresse oder 🏠 Zuhause / 🏢 Arbeit / 📍 Mein Standort ein — ich plane die Reise mit Zug, Bus, Straßenbahn und Oberleitungsbus samt Fußweg. ⇅ kehrt die Richtung um (Rückfahrt); tippe auf einen Vorschlag für Fahrtverlauf und aktuelle Position."
+      },
+      "remind": {
+        "title": "⏰ Erinnerung ans Losgehen",
+        "text": "Hake in der Karte einer überwachten Verbindung ⏰ an — ich erinnere 30 und 15 Min. vor dem LOSGEHEN (Abfahrt minus dein Fußweg). Ist der Zug verspätet, kommt die Erinnerung später; bei Ausfall sofort. Funktioniert auch bei geschlossener App (Benachrichtigungen müssen an sein)."
+      }
+    },
+    "howto": {
+      "ulubione": {
+        "s0": {
+          "title": "1. Bahnhof wählen",
+          "text": "Gib einen Bahnhof ein und tippe auf „Aus API anzeigen“ — du siehst die Abfahrtstafel."
+        },
+        "s1": {
+          "title": "2. ☆ Lieblingsbahnhof",
+          "text": "Über der Tafel ☆ tippen — der Bahnhof landet bei den Knöpfen oben. Nochmal tippen entfernt ihn."
+        },
+        "s2": {
+          "title": "3. ★ Lieblingszug",
+          "text": "In der Spalte „Hinzufügen“ bei einer Abfahrt ★ tippen — der Zug kommt mit aktuellem Status in „Meine Züge“. Den Stern gibt es auch auf der Zuglaufseite."
+        },
+        "s3": {
+          "title": "4. Hier findest du sie",
+          "text": "Lieblingszüge sind in „Meine Züge“, Lieblingsbahnhöfe in den Knöpfen oben. Mit Profil auf all deinen Geräten."
+        }
+      },
+      "pilnuj": {
+        "s0": {
+          "title": "1. Von und nach",
+          "text": "Gib Start- und Zielbahnhof ein (auch Datum und Uhrzeit möglich)."
+        },
+        "s1": {
+          "title": "2. Suchen",
+          "text": "Tippe auf „Verbindungen suchen“ — die Ergebnisliste erscheint."
+        },
+        "s2": {
+          "title": "3. 🛡️ Überwachen",
+          "text": "Beim gewünschten Ergebnis „🛡️ Überwachen“ tippen. Ich beobachte Verspätungen, warne per Benachrichtigung, wenn ein Umstieg gefährdet ist, und nenne Plan B."
+        },
+        "s3": {
+          "title": "4. Überwacht",
+          "text": "Alle überwachten Verbindungen sind in diesem Tab. Nach der Ankunft frage ich, ob die Fahrt ins Reisetagebuch soll."
+        }
       }
     }
   },

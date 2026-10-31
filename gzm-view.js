@@ -188,7 +188,7 @@
 
     // ===== Rozwinięcie odjazdu: cały bieg kursu i gdzie jest teraz pojazd (TEST — tylko profil autora) =====
     var tripOpen = {};
-    function tripExpandOn() { try { return localStorage.getItem("showVersionBadge") === "1"; } catch (e) { return false; } }
+    function tripExpandOn() { return true; }   // dla wszystkich od v5.25
     function tripIndex(net, tid) {
       if (!net._tripIx) { net._tripIx = {}; net.j.trips.forEach(function (t, i) { net._tripIx[t[2]] = i; }); }
       var i = net._tripIx[tid]; return i == null ? -1 : i;
@@ -461,7 +461,7 @@
       setMode(opts.stationId ? "A" : uniOn() ? (st.dir === "A" && cfg.stationId ? "A" : "C") : (st.dir || "A"));
     }
     // ===== Jeden formularz (all in one) — TEST, tylko profil autora =====
-    function uniOn() { try { return localStorage.getItem("showVersionBadge") === "1"; } catch (e) { return false; } }
+    function uniOn() { return true; }   // jeden formularz — dla wszystkich od v5.25
     function initUni(tg, a, b, c) {
       tg.style.display = "none"; b.hidden = true; b.style.display = "none";
       var ph = root.parentNode && root.parentNode.querySelector(".pview-head");
@@ -751,7 +751,7 @@
     // ===== Jedno wyszukiwanie pociąg + GZM (cała sieć) =====
     // ===== Moje miejsca: 🏠 Dom, 🏢 Praca, 📍 Moja lokalizacja (TEST — tylko profil autora) =====
     var PLACES = "gzmPlacesV1";
-    function placesOn() { try { return localStorage.getItem("showVersionBadge") === "1"; } catch (e) { return false; } }
+    function placesOn() { return true; }   // 🏠 Dom / 🏢 Praca / 📍 — dla wszystkich od v5.25
     var PL_TOK = { dom: "🏠 " + T("gzm.pDom", null, "Dom"), praca: "🏢 " + T("gzm.pPraca", null, "Praca"), gps: "📍 " + T("gzm.pGps", null, "Moja lokalizacja") };
     function placeKey(txt) {
       if (!placesOn()) return null;

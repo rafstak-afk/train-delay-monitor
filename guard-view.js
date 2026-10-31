@@ -82,7 +82,7 @@
     return m + dd * 1440;
   }
 
-  function remOn() { try { return localStorage.getItem('showVersionBadge') === '1'; } catch (e) { return false; } }
+  function remOn() { return true; }   // ⏰ przypomnienia — dla wszystkich od v5.25
 
   function mount(root, opts) {
     opts = opts || {};

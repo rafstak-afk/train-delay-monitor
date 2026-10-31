@@ -425,7 +425,8 @@
       "next": "Siguiente",
       "finish": "Terminar",
       "show": "Ver el tutorial",
-      "whatsNew": "Novedades"
+      "whatsNew": "Novedades",
+      "howto": "¿Cómo se hace?"
     },
     "guide": {
       "s0": {
@@ -549,6 +550,10 @@
       "s2": {
         "title": "Diario de viajes",
         "text": "¿Vas en este tren? Marca 🚏 donde subes y 🏁 donde bajas; nosotros calculamos el resto. Aparecerá un botón flotante para guardar abajo en la pantalla, te desplaces donde te desplaces. Para un servicio que aún no ha llegado a tu estación de bajada, en lugar de guardar verás «📋 Añadir al plan»: una entrada en el plan de viaje del diario, todavía no un viaje real."
+      },
+      "gzm": {
+        "title": "🚌 Autobuses y tranvías junto a la estación",
+        "text": "El botón 🚌 junto a una estación muestra los autobuses, tranvías y trolebuses de ZTM que alcanzas al llegar el tren (con el camino desde el andén). Una letra morada indica que la parada más cercana está más lejos de lo habitual; la distancia aparece en la burbuja."
       }
     },
     "profil": {
@@ -609,8 +614,8 @@
         "text": "¿Prefieres escribir o decir 🎤 una frase entera (en polaco)? El asistente rellena este formulario por ti y muestra los resultados al momento, o te guía paso a paso."
       },
       "tabs": {
-        "title": "🧭 Todo sobre la conexión en un solo lugar",
-        "text": "🔎 Buscar, 🛡️ Vigiladas, 📌 Guardadas y 🕘 Recientes: cambias con un toque. Al desplazarte, la barra se queda arriba: la pestaña activa con su nombre y las demás como iconos (nombre en un globo)."
+        "title": "🧭 Todo sobre una conexión en un solo lugar",
+        "text": "🚆 Tren, 🚆🚌 Tren + GZM, 🛡️ Vigiladas, 📌 Guardadas y 🕘 Recientes: cambias con un toque. Al desplazarte, la barra se queda arriba: la pestaña activa con su nombre y las demás como iconos (nombre en la burbuja)."
       },
       "mine": {
         "title": "🛡️ Conexiones vigiladas",
@@ -619,6 +624,52 @@
       "recent": {
         "title": "🕘 ¿Una búsqueda de hace unos días?",
         "text": "En una entrada de un día pasado eliges: 🔎 hoy desde la misma hora (o mañana, si ya ha pasado) o 📅 aquel día."
+      },
+      "gzm": {
+        "title": "🚆🚌 Tren + GZM: puerta a puerta",
+        "text": "Un solo formulario: Desde, Hasta, fecha y hora. Escribe una estación, una parada, una dirección o 🏠 Casa / 🏢 Trabajo / 📍 Mi ubicación y planificaré el viaje en tren, autobús, tranvía y trolebús con los tramos a pie. ⇅ invierte el sentido (vuelta); toca una propuesta para ver el recorrido y dónde está ahora el vehículo."
+      },
+      "remind": {
+        "title": "⏰ Recordatorio para salir de casa",
+        "text": "En la tarjeta de una conexión vigilada marca ⏰: te avisaré 30 y 15 min antes de SALIR (salida del tren menos tu tiempo a pie). Si el tren va con retraso, el aviso llega más tarde; si se cancela, al momento. Funciona también con la app cerrada (las notificaciones deben estar activadas)."
+      }
+    },
+    "howto": {
+      "ulubione": {
+        "s0": {
+          "title": "1. Elige una estación",
+          "text": "Escribe el nombre de la estación y toca «Mostrar desde la API»: verás el panel de salidas."
+        },
+        "s1": {
+          "title": "2. ☆ Estación favorita",
+          "text": "Encima del panel toca ☆: la estación irá a los botones de arriba. Otro toque la quita."
+        },
+        "s2": {
+          "title": "3. ★ Tren favorito",
+          "text": "En la columna «Añadir» junto a una salida toca ★: el tren irá a «Mis trenes» con su estado actual. La estrella también está en la página del recorrido."
+        },
+        "s3": {
+          "title": "4. Dónde encontrarlos",
+          "text": "Los trenes favoritos están en «Mis trenes» y las estaciones favoritas en los botones de arriba. Con perfil, en todos tus dispositivos."
+        }
+      },
+      "pilnuj": {
+        "s0": {
+          "title": "1. Desde y hasta",
+          "text": "Escribe la estación de salida y la de destino (también fecha y hora)."
+        },
+        "s1": {
+          "title": "2. Buscar",
+          "text": "Toca «Buscar conexiones»: aparecerá la lista de resultados."
+        },
+        "s2": {
+          "title": "3. 🛡️ Vigilar",
+          "text": "Junto al resultado elegido toca «🛡️ Vigilar». Vigilo los retrasos, te aviso con una notificación si el transbordo peligra y te propongo un plan B."
+        },
+        "s3": {
+          "title": "4. Vigiladas",
+          "text": "Todas las conexiones vigiladas están en esta pestaña. Al llegar te preguntaré si guardar el viaje en el diario."
+        }
       }
     }
   },

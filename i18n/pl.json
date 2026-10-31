@@ -425,7 +425,8 @@
       "next": "Dalej",
       "finish": "Zakończ",
       "show": "Pokaż samouczek",
-      "whatsNew": "Co nowego"
+      "whatsNew": "Co nowego",
+      "howto": "Jak to zrobić?"
     },
     "guide": {
       "s0": {
@@ -549,6 +550,10 @@
       "s2": {
         "title": "Dzienniczek podróży",
         "text": "Jedziesz tym pociągiem? Zaznacz 🚏 gdzie wsiadasz i 🏁 gdzie wysiadasz — resztę policzymy. Pływający przycisk zapisu pojawi się u dołu ekranu, gdziekolwiek przewiniesz stronę. Dla kursu, który jeszcze nie dotarł do stacji wysiadania, zamiast zapisu zobaczysz „📋 Dodaj do planu” — to wpis do planu podróży w dzienniczku, nie od razu realny przejazd."
+      },
+      "gzm": {
+        "title": "🚌 Autobusy i tramwaje spod stacji",
+        "text": "Przycisk 🚌 przy stacji pokazuje autobusy, tramwaje i trolejbusy ZTM, na które zdążysz po przyjeździe pociągu (z dojściem z peronu). Fioletowe „D” znaczy, że najbliższy przystanek jest dalej niż zwykle — odległość zobaczysz po najechaniu."
       }
     },
     "profil": {
@@ -610,7 +615,7 @@
       },
       "tabs": {
         "title": "🧭 Wszystko o połączeniu w jednym miejscu",
-        "text": "🔎 Szukaj, 🛡️ Pilnowane, 📌 Zapisane i 🕘 Ostatnie — przełączasz jednym kliknięciem. Po przewinięciu pasek zostaje u góry: aktywna zakładka z nazwą, pozostałe jako ikony (nazwa w dymku)."
+        "text": "🚆 Pociąg, 🚆🚌 Pociąg + GZM, 🛡️ Pilnowane, 📌 Zapisane i 🕘 Ostatnie — przełączasz jednym kliknięciem. Po przewinięciu pasek zostaje u góry: aktywna zakładka z nazwą, pozostałe jako ikony (nazwa w dymku)."
       },
       "mine": {
         "title": "🛡️ Pilnowane połączenia",
@@ -619,6 +624,52 @@
       "recent": {
         "title": "🕘 Wyszukiwanie sprzed kilku dni?",
         "text": "Przy wpisie z minionego dnia wybierasz: 🔎 dziś od tej samej godziny (albo jutro, jeśli już minęła) lub 📅 tamten dzień."
+      },
+      "gzm": {
+        "title": "🚆🚌 Pociąg + GZM — od drzwi do drzwi",
+        "text": "Jeden formularz: Skąd, Dokąd, data i godzina. Wpisz stację, przystanek, adres albo 🏠 Dom / 🏢 Praca / 📍 Moja lokalizacja — ułożę podróż pociągiem, autobusem, tramwajem i trolejbusem z dojściem pieszo. ⇅ zamienia kierunek (powrót), a stuknięcie w propozycję pokazuje trasę kursu i gdzie jest teraz pojazd."
+      },
+      "remind": {
+        "title": "⏰ Przypomnienie o wyjściu z domu",
+        "text": "W karcie pilnowanego połączenia zaznacz ⏰ — przypomnę 30 i 15 min przed WYJŚCIEM (odjazd minus Twój czas dojścia). Gdy pociąg się spóźnia, przypomnienie przyjdzie później; przy odwołaniu — od razu. Działa też przy zamkniętej aplikacji (powiadomienia muszą być włączone)."
+      }
+    },
+    "howto": {
+      "ulubione": {
+        "s0": {
+          "title": "1. Wybierz stację",
+          "text": "Wpisz nazwę stacji i kliknij „Pokaż z API” — zobaczysz tablicę odjazdów."
+        },
+        "s1": {
+          "title": "2. ☆ Ulubiona stacja",
+          "text": "Nad tablicą kliknij ☆ — stacja trafi do przycisków na górze strony. Drugie kliknięcie ją usuwa."
+        },
+        "s2": {
+          "title": "3. ★ Ulubiony pociąg",
+          "text": "W kolumnie „Dodaj” przy odjeździe kliknij ★ — pociąg trafi do „Moich pociągów” z aktualnym statusem. Gwiazdkę masz też na stronie biegu pociągu."
+        },
+        "s3": {
+          "title": "4. Tu je znajdziesz",
+          "text": "Wszystkie ulubione pociągi są w „Moich pociągach”, ulubione stacje — w przyciskach na górze. Z profilem są na każdym Twoim urządzeniu."
+        }
+      },
+      "pilnuj": {
+        "s0": {
+          "title": "1. Skąd i dokąd",
+          "text": "Wpisz stację początkową i docelową (możesz też datę i godzinę)."
+        },
+        "s1": {
+          "title": "2. Szukaj",
+          "text": "Kliknij „Szukaj połączeń” — pojawi się lista wyników."
+        },
+        "s2": {
+          "title": "3. 🛡️ Pilnuj",
+          "text": "Przy wybranym wyniku kliknij „🛡️ Pilnuj”. Pilnuję opóźnień: ostrzegę powiadomieniem, gdy przesiadka będzie zagrożona, i podam Plan B."
+        },
+        "s3": {
+          "title": "4. Pilnowane",
+          "text": "Wszystkie pilnowane połączenia są w tej zakładce. Po przyjeździe zapytam, czy zapisać przejazd w dzienniczku."
+        }
       }
     }
   },

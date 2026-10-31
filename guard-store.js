@@ -183,7 +183,7 @@
   }
   // ✅ Jechałem — wpisy (tylko zaznaczone odcinki) do dzienniczka.
   function recordTrip(conn, readings, checked) {
-    var gz = false; try { gz = localStorage.getItem("showVersionBadge") === "1"; } catch (e) {}
+    var gz = true;   // odcinki GZM w dzienniczku — dla wszystkich od v5.25
     var entries = GuardCore.buildJournalEntries(conn, readings, checked, new Date().toISOString(), { gzm: gz });
     var keys = planKeysFor(conn);
     var pull = hasProfile() ? ProfileSync.pull().catch(function () { return null; }) : Promise.resolve(null);

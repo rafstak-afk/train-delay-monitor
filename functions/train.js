@@ -1142,7 +1142,7 @@ function addGzmButtons(){
     if(!ix||!ix.stations)return;
     var byName={},farBy={};ix.stations.forEach(function(x){if(x.s&&x.s.length)byName[normStation(x.n)]=x.id;else if(x.far&&x.far.length)farBy[normStation(x.n)]=x});
     // stacje bez przystanku w zwykłym zasięgu: 🚌 z fioletowym „D” (najbliższy przystanek dalej niż zwykle) — TEST: tylko profil autora
-    var farOn=false;try{farOn=localStorage.getItem('showVersionBadge')==='1'}catch(e){}
+    var farOn=true;   // dla wszystkich od v5.25
     var d=currentTrainData,first=(currentStations[0]||{}).stationName||'';
     currentStations.forEach(function(st,i){
       var id=byName[normStation(st.stationName)],far=null;

@@ -403,8 +403,8 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     var gzmOpen=gq.get('gzm')?{stationId:gq.get('gzm'),arr:gq.get('arr')||null,date:gq.get('date')||null,train:gq.get('orderId')?{orderId:gq.get('orderId'),scheduleId:gq.get('scheduleId')||'',number:gq.get('train')||'',from:gq.get('from')||''}:null}:null;
     gzmView=GzmView.mount($('gzmView'),gzmOpen||{});
     if(gzmOpen){try{history.replaceState(null,'',location.pathname+'#gzm')}catch(e){}}
-    // Nazwy zakładek wyszukiwania: 🚆 Pociąg | 🚆🚌 Pociąg + GZM (obok siebie). TEST: tylko profil autora.
-    if(localStorage.getItem('showVersionBadge')==='1'){
+    // Nazwy zakładek wyszukiwania: 🚆 Pociąg | 🚆🚌 Pociąg + GZM (obok siebie) — dla wszystkich od v5.25.
+    {
       var tS=document.querySelector('.ptab[data-tab="search"]'),tG=$('tabGzm');
       tS.querySelector('.ptab-ico').textContent='🚆';var lS=tS.querySelector('.ptab-lbl');lS.setAttribute('data-i18n','planer.tabTrain');lS.textContent=T('planer.tabTrain');
       tG.querySelector('.ptab-ico').textContent='🚆🚌';var lG=tG.querySelector('.ptab-lbl');lG.setAttribute('data-i18n','planer.tabTrainGzm');lG.textContent=T('planer.tabTrainGzm');

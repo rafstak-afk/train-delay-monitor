@@ -747,7 +747,7 @@
 
   // „Jak dodać do ulubionych / jak pilnować połączenia?” — klikalny samouczek
   // na właściwej stronie (tutorial.js → showHowTo). TEST: tylko profil autora.
-  function howtoOn() { try { return localStorage.getItem("showVersionBadge") === "1"; } catch (e) { return false; } }
+  function howtoOn() { return true; }   // dla wszystkich od v5.25
   var HOWTO_FAV_RE = / (ulubion\w*|gwiazdk\w*|moich pociagow|moje pociagi|zapamietac (stacje|pociag)) /;
   var HOWTO_GUARD_RE = / (pilnow\w*|pilnuj\w*|strazni\w*|obserwowan\w*|przesiadk\w* zagrozon\w*) /;
   var HOWTO_ASK_RE = / (jak|gdzie|co zrobic|pomoc|pomocy|samouczek|instrukcj\w*) /;

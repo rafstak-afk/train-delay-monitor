@@ -425,7 +425,8 @@
       "next": "Next",
       "finish": "Finish",
       "show": "Show the tutorial",
-      "whatsNew": "What's new"
+      "whatsNew": "What's new",
+      "howto": "How to do it?"
     },
     "guide": {
       "s0": {
@@ -549,6 +550,10 @@
       "s2": {
         "title": "Travel journal",
         "text": "Riding this train? Mark 🚏 where you board and 🏁 where you get off — we'll work out the rest. A floating save button appears at the bottom of the screen wherever you scroll. For a service that hasn't reached your exit station yet, instead of saving you'll see “📋 Add to plan” — an entry in the journal's travel plan, not a real trip yet."
+      },
+      "gzm": {
+        "title": "🚌 Buses and trams near the station",
+        "text": "The 🚌 button at a station shows ZTM buses, trams and trolleybuses you can catch after the train arrives (including the walk from the platform). A purple letter means the nearest stop is farther than usual — hover to see the distance."
       }
     },
     "profil": {
@@ -610,7 +615,7 @@
       },
       "tabs": {
         "title": "🧭 Everything about a connection in one place",
-        "text": "🔎 Search, 🛡️ Guarded, 📌 Saved and 🕘 Recent — switch with one tap. When you scroll, the bar stays at the top: the active tab with its name, the others as icons (name in a tooltip)."
+        "text": "🚆 Train, 🚆🚌 Train + GZM, 🛡️ Guarded, 📌 Saved and 🕘 Recent — one tap to switch. After scrolling the bar stays at the top: the active tab with its name, the others as icons (name in a tooltip)."
       },
       "mine": {
         "title": "🛡️ Guarded connections",
@@ -619,6 +624,52 @@
       "recent": {
         "title": "🕘 A search from a few days ago?",
         "text": "For an entry from a past day you choose: 🔎 today from the same time (or tomorrow if it has passed) or 📅 that day."
+      },
+      "gzm": {
+        "title": "🚆🚌 Train + GZM — door to door",
+        "text": "One form: From, To, date and time. Enter a station, a stop, an address or 🏠 Home / 🏢 Work / 📍 My location — I'll plan the trip by train, bus, tram and trolleybus including walking. ⇅ reverses the direction (return trip); tap a suggestion to see the route and where the vehicle is now."
+      },
+      "remind": {
+        "title": "⏰ Reminder to leave home",
+        "text": "In a guarded connection card tick ⏰ — I'll remind you 30 and 15 min before you LEAVE (departure minus your walking time). If the train is late, the reminder comes later; if it's cancelled — right away. Works with the app closed too (notifications must be on)."
+      }
+    },
+    "howto": {
+      "ulubione": {
+        "s0": {
+          "title": "1. Choose a station",
+          "text": "Type a station name and tap “Show from API” to see the departure board."
+        },
+        "s1": {
+          "title": "2. ☆ Favourite station",
+          "text": "Above the board tap ☆ — the station goes to the buttons at the top. Tap again to remove it."
+        },
+        "s2": {
+          "title": "3. ★ Favourite train",
+          "text": "In the “Add” column next to a departure tap ★ — the train goes to “My trains” with its live status. The star is also on the train route page."
+        },
+        "s3": {
+          "title": "4. Where to find them",
+          "text": "Favourite trains are in “My trains”, favourite stations in the buttons at the top. With a profile they're on all your devices."
+        }
+      },
+      "pilnuj": {
+        "s0": {
+          "title": "1. From and to",
+          "text": "Enter the departure and destination stations (date and time too, if you like)."
+        },
+        "s1": {
+          "title": "2. Search",
+          "text": "Tap “Search connections” — a list of results appears."
+        },
+        "s2": {
+          "title": "3. 🛡️ Guard",
+          "text": "Next to a result tap “🛡️ Guard”. I'll watch delays, warn you with a notification when a change is at risk and suggest Plan B."
+        },
+        "s3": {
+          "title": "4. Guarded",
+          "text": "All guarded connections are in this tab. After arrival I'll ask whether to save the trip in your journal."
+        }
       }
     }
   },
