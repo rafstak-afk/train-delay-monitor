@@ -9,6 +9,7 @@
 // Wynik: tools/gzm/out/ (index.json, stations/<id>.json, raport.json, raport.html)
 // — Action wypycha go na gałąź `gzm-data`. Jeśli coś się nie uda albo walidacja
 // nie przejdzie, out/ NIE jest nadpisywany (najpierw budujemy do out.tmp/).
+import { addFar } from "./far.mjs";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -434,9 +435,12 @@ async function main() {
   // cała sieć na każdy dzień
   if (!only || args.network) {
     fs.mkdirSync(path.join(TMP, "network"), { recursive: true });
+    let farDone = false;
     for (const d of dates) {
       if (!zipsFor(d)) continue;
       const net = await buildNetwork(d, zipsFor);
+      // stacje bez przystanku w zasięgu: najbliższe przystanki do 2,5 km (index.json → far)
+      if (!farDone) { farDone = true; const nf = addFar(index, net); writeJson(path.join(TMP, "index.json"), index); log("dalekie przystanki dla stacji bez słupków:", nf); }
       fs.writeFileSync(path.join(TMP, "network", d + ".json"), JSON.stringify(Object.assign({ v: 1, date: d, generated: gen }, net)));
       log("sieć", d, "kursów", net.trips.length, "przystanków", net.stops.length, "wzorów", net.pats.length);
     }

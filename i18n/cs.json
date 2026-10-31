@@ -921,7 +921,8 @@
     "noIdsHint": "Klikněte na číslo vlaku přímo na naší odjezdové tabuli. Samotné číslo může znamenat více než jeden spoj.",
     "portalBtn": "Otevřít vyhledávání na Portal Pasażera",
     "loadingNote": "Čekám na data PLK. Klid, to není ticho, to je informatika.",
-    "gzmTitle": "Přestupy GZM — autobusy a tramvaje, které stihnete po výstupu z vlaku"
+    "gzmTitle": "Přestupy GZM — autobusy a tramvaje, které stihnete po výstupu z vlaku",
+    "gzmFarTitle": "Nejbližší zastávka ZTM: {s}, {d} od stanice — dál než obvykle"
   },
   "survey": {
     "aria": "Anketa spokojenosti",

@@ -921,7 +921,8 @@
     "noIdsHint": "Kliknij numer pociągu bezpośrednio z naszej tablicy odjazdów. Sam numer może oznaczać więcej niż jeden kurs.",
     "portalBtn": "Otwórz wyszukiwarkę w Portal Pasażera",
     "loadingNote": "Czekam na dane PLK. Spokojnie, to nie cisza, to informatyka.",
-    "gzmTitle": "Przesiadki GZM — autobusy i tramwaje, na które zdążysz po wyjściu z pociągu"
+    "gzmTitle": "Przesiadki GZM — autobusy i tramwaje, na które zdążysz po wyjściu z pociągu",
+    "gzmFarTitle": "Najbliższy przystanek ZTM: {s}, {d} od stacji — dalej niż zwykle"
   },
   "survey": {
     "aria": "Ankieta zadowolenia",

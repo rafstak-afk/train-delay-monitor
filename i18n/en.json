@@ -921,7 +921,8 @@
     "noIdsHint": "Click the train number directly on our departure board. The number alone can mean more than one service.",
     "portalBtn": "Open the search on Portal Pasażera",
     "loadingNote": "Waiting for PLK data. Don't worry, it's not silence, it's computing.",
-    "gzmTitle": "GZM connections — buses and trams you can catch after leaving the train"
+    "gzmTitle": "GZM connections — buses and trams you can catch after leaving the train",
+    "gzmFarTitle": "Nearest ZTM stop: {s}, {d} from the station — farther than usual"
   },
   "survey": {
     "aria": "Satisfaction survey",

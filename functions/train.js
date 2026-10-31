@@ -1140,15 +1140,27 @@ function addGzmButtons(){
   if(!gzmIndexP)gzmIndexP=fetch('/api/gzm-data/index.json').then(function(r){return r.ok?r.json():null}).catch(function(){return null});
   gzmIndexP.then(function(ix){
     if(!ix||!ix.stations)return;
-    var byName={};ix.stations.forEach(function(x){if(x.s&&x.s.length)byName[normStation(x.n)]=x.id});
+    var byName={},farBy={};ix.stations.forEach(function(x){if(x.s&&x.s.length)byName[normStation(x.n)]=x.id;else if(x.far&&x.far.length)farBy[normStation(x.n)]=x});
+    // stacje bez przystanku w zwykłym zasięgu: 🚌 z fioletowym „D” (najbliższy przystanek dalej niż zwykle) — TEST: tylko profil autora
+    var farOn=false;try{farOn=localStorage.getItem('showVersionBadge')==='1'}catch(e){}
     var d=currentTrainData,first=(currentStations[0]||{}).stationName||'';
     currentStations.forEach(function(st,i){
-      var id=byName[normStation(st.stationName)];if(!id||i===0)return;
+      var id=byName[normStation(st.stationName)],far=null;
+      if(!id&&farOn){far=farBy[normStation(st.stationName)];if(far)id=far.id}
+      if(!id||i===0)return;
       var row=document.getElementById('station-'+i),box=row&&row.querySelector('.mark-btns');
       if(!box||box.querySelector('.gzm'))return;
       var m=/(\d{1,2}):(\d{2})/.exec(String(st.plannedArrival||st.plannedTime||st.plannedDeparture||''));
       var p=new URLSearchParams({gzm:String(id),arr:m?(m[1].length<2?'0':'')+m[1]+':'+m[2]:'',date:d.operatingDate||'',orderId:d.orderId||'',scheduleId:d.scheduleId||'',train:d.trainNumber||'',from:first});
       var a=document.createElement('a');a.className='mark-btn gzm';a.href='/planer/?'+p.toString();a.title=T('train.gzmTitle');a.textContent='🚌';
+      if(far){
+        var dm=far.far[0][1],dTxt=dm<950?(Math.round(dm/10)*10)+' m':(Math.round(dm/100)/10).toString().replace('.',',')+' km';
+        a.title=T('train.gzmFarTitle',{s:far.far[0][0],d:dTxt});a.setAttribute('aria-label',a.title);
+        a.style.position='relative';
+        var bd=document.createElement('span');bd.textContent=T('gzm.farLetter');
+        bd.style.cssText='position:absolute;top:-6px;right:-6px;width:16px;height:16px;border-radius:50%;background:#a855f7;color:#fff;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;line-height:1';
+        a.appendChild(bd);
+      }
       box.appendChild(a);
     });
   });

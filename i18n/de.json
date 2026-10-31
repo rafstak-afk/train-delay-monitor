@@ -921,7 +921,8 @@
     "noIdsHint": "Klicke die Zugnummer direkt auf unserer Abfahrtstafel an. Die Nummer allein kann mehr als einen Zug bedeuten.",
     "portalBtn": "Suche im Portal Pasażera öffnen",
     "loadingNote": "Warte auf PLK-Daten. Keine Sorge, das ist keine Stille, das ist Informatik.",
-    "gzmTitle": "GZM-Anschlüsse — Busse und Straßenbahnen, die du nach dem Aussteigen erreichst"
+    "gzmTitle": "GZM-Anschlüsse — Busse und Straßenbahnen, die du nach dem Aussteigen erreichst",
+    "gzmFarTitle": "Nächste ZTM-Haltestelle: {s}, {d} vom Bahnhof — weiter als üblich"
   },
   "survey": {
     "aria": "Zufriedenheitsumfrage",

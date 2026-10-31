@@ -921,7 +921,8 @@
     "noIdsHint": "Pulsa el número del tren directamente en nuestro panel de salidas. El número solo puede corresponder a más de un servicio.",
     "portalBtn": "Abrir el buscador de Portal Pasażera",
     "loadingNote": "Esperando los datos de PLK. Tranquilo, no es silencio, es informática.",
-    "gzmTitle": "Conexiones GZM — autobuses y tranvías que alcanzas al bajar del tren"
+    "gzmTitle": "Conexiones GZM — autobuses y tranvías que alcanzas al bajar del tren",
+    "gzmFarTitle": "Parada ZTM más cercana: {s}, a {d} de la estación; más lejos de lo habitual"
   },
   "survey": {
     "aria": "Encuesta de satisfacción",
