@@ -1193,6 +1193,7 @@
     "ddSt": "estación",
     "ddStop": "parada",
     "ddPl": "mi lugar",
-    "uSwap": "Intercambiar (viaje de vuelta)"
+    "uSwap": "Intercambiar (viaje de vuelta)",
+    "uBusy": "Buscando…"
   }
 }

@@ -11,6 +11,9 @@
   var CSS =
     '.gz .gz-dt{display:flex;gap:10px;width:100%}.gz .gz-dt input{flex:1 1 0;min-width:0;padding:14px!important;border-radius:10px!important;border:0!important;font-size:16px!important;background:#fff!important;color:#102027!important;color-scheme:light}' +
     '.gz .gz-ddw{position:relative}' +
+    '.gz .gz-searching{margin:10px 0;padding:16px 14px;border-radius:12px;border:2px solid #ffd400;background:rgba(255,212,0,.1);color:#ffe8a3;font-size:17px;font-weight:900;text-align:center;animation:gzPulse 1.1s ease-in-out infinite}' +
+    '@keyframes gzPulse{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(255,212,0,.45)}50%{transform:scale(1.035);box-shadow:0 0 22px 4px rgba(255,212,0,.35)}}' +
+    '@media (prefers-reduced-motion:reduce){.gz .gz-searching{animation:none}}' +
     '.gz .gz-stack{position:relative;width:100%;display:flex;flex-direction:column;gap:8px}.gz .gz-stack>.gz-st{width:100%;flex:0 0 auto!important;min-width:0}.gz .gz-stack #gzCFrom,.gz .gz-stack #gzCTo{padding-right:54px}' +
     '.gz .gz-swap{position:absolute;right:10px;top:50%;transform:translateY(-50%);z-index:6;border:1px solid var(--line);background:var(--panel);color:#fff;border-radius:50%;width:38px;height:38px;font-size:16px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.35)}.gz .gz-swap:hover{background:#2a3b4d}' +
     '.gz .gz-dd{display:none;position:absolute;z-index:10000;top:calc(100% + 4px);left:0;right:0;background:#172433;border:1px solid #48627c;border-radius:12px;box-shadow:0 14px 35px rgba(0,0,0,.45);max-height:280px;overflow:auto;text-align:left}' +
@@ -548,6 +551,23 @@
       dd.addEventListener("mousedown", function (e) { e.preventDefault(); });
       dd.addEventListener("click", function (e) { var b = e.target.closest(".gz-dd-item"); if (b) { pick(b.dataset.n); inp.focus(); } });
     }
+    // przewinięcie do pierwszego wyniku (pod przyklejonym paskiem zakładek)
+    function scrollToFirst(box, sel) {
+      var t0 = Date.now();
+      (function poll() {
+        var el = box && box.querySelector(sel || ".gz-dep, .gz-warn, .gz-empty:not(.gz-searching)");
+        if (!el || box.querySelector(".gz-searching")) { if (Date.now() - t0 < 15000) setTimeout(poll, 200); return; }
+        var go = function (beh) { var y = el.getBoundingClientRect().top + window.pageYOffset - 90; window.scrollTo({ top: Math.max(0, y), behavior: beh }); };
+        go("smooth");
+        // płynne przewijanie bywa przerwane (np. doładowanie wyników) — po chwili korekta
+        setTimeout(function () { if (Math.abs(el.getBoundingClientRect().top - 90) > 30) go("auto"); }, 900);
+      })();
+    }
+    function searchBusy(on) {
+      var b = root.querySelector("#gzCGo"); if (!b) return;
+      if (on) { b.dataset.lbl = b.dataset.lbl || b.innerHTML; b.innerHTML = "⏳ " + esc(T("gzm.uBusy", null, "Szukam…")); b.disabled = true; }
+      else if (b.dataset.lbl) { b.innerHTML = b.dataset.lbl; b.disabled = false; }
+    }
     // stacja + puste „Dokąd” → lista odjazdów ze stacji (dawne „Wysiadam z pociągu”)
     function goA(stn, tmin) {
       cfg.stationId = String(stn.id); st.stationId = cfg.stationId; cfg.arr = C.fmt(tmin); cfg.train = null; trainInfo = null; cfg.alighted = false;
@@ -556,6 +576,7 @@
       var ar = root.querySelector("#gzArr"); if (ar) ar.value = cfg.arr;
       var di = root.querySelector("#gzDest"); if (di) di.value = "";
       showMore = 0; setMode("A"); load1();
+      scrollToFirst(root.querySelector("#gzBody"), ".gz-dep, .gz-warn");
     }
     // ===== Adres → współrzędne (OSM Nominatim, tylko po kliknięciu Szukaj; wyniki zapamiętane na urządzeniu) =====
     var GEO = "gzmGeoCacheV2";
@@ -815,7 +836,16 @@
         if ((dSel.max && dSel.value > dSel.max) || dSel.value < date) { res.innerHTML = '<div class="gz-warn">' + esc(T("gzm.uDateRange", { a: dSel.min, b: dSel.max }, "Rozkład GZM mam na dni {a} – {b}.")) + "</div>"; return; }
         date = dSel.value;
       }
-      res.innerHTML = '<div class="gz-empty">' + esc(T("gzm.cSearching", null, "Układam podróż: dojazd, pociąg, dojazd do celu…")) + "</div>";
+      var uniS = uniOn();
+      res.innerHTML = '<div class="gz-empty' + (uniS ? " gz-searching" : "") + '">' + (uniS ? "🔎 " : "") + esc(T("gzm.cSearching", null, "Układam podróż: dojazd, pociąg, dojazd do celu…")) + "</div>";
+      if (uniS) {
+        searchBusy(true);
+        var sr = res.querySelector(".gz-searching"), ry = sr.getBoundingClientRect();
+        if (ry.top < 80 || ry.bottom > window.innerHeight) window.scrollTo({ top: Math.max(0, ry.top + window.pageYOffset - window.innerHeight / 3), behavior: "smooth" });
+        scrollToFirst(res);
+        var stopBusy = setInterval(function () { if (!res.querySelector(".gz-searching")) { clearInterval(stopBusy); searchBusy(false); } }, 200);
+        setTimeout(function () { clearInterval(stopBusy); searchBusy(false); }, 20000);
+      }
       var fromPlace = null, toPlace = null;
       Promise.all([resolvePlace(fromTxt), resolvePlace(toTxt)]).then(function (pp) { fromPlace = pp[0]; toPlace = pp[1]; return Promise.all([getNet(date), getRt()]); }, function (e) {
         var m = String(e && e.message || "");

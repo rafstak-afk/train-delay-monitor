@@ -1193,6 +1193,7 @@
     "ddSt": "stanice",
     "ddStop": "zastávka",
     "ddPl": "moje místo",
-    "uSwap": "Prohodit (zpáteční cesta)"
+    "uSwap": "Prohodit (zpáteční cesta)",
+    "uBusy": "Hledám…"
   }
 }

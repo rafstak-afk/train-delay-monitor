@@ -1193,6 +1193,7 @@
     "ddSt": "Bahnhof",
     "ddStop": "Haltestelle",
     "ddPl": "mein Ort",
-    "uSwap": "Tauschen (Rückfahrt)"
+    "uSwap": "Tauschen (Rückfahrt)",
+    "uBusy": "Suche…"
   }
 }
