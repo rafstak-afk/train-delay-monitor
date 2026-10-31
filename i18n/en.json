@@ -1185,6 +1185,10 @@
     "jMeasured": "measured",
     "uDate": "Date",
     "uDateRange": "I have the GZM timetable for {a} – {b}.",
-    "uSched": "{d} — times from the timetable"
+    "uSched": "{d} — times from the timetable",
+    "jFixed": "your time",
+    "wLoading": "Looking for nearby stations and stops…",
+    "wHead": "Walking time — enter your own if the estimate is off (empty = estimate):",
+    "wPlatform": "platform"
   }
 }

@@ -1185,6 +1185,10 @@
     "jMeasured": "zmierzone",
     "uDate": "Data",
     "uDateRange": "Rozkład GZM mam na dni {a} – {b}.",
-    "uSched": "{d} — godziny wg rozkładu"
+    "uSched": "{d} — godziny wg rozkładu",
+    "jFixed": "Twój czas",
+    "wLoading": "Szukam stacji i przystanków w pobliżu…",
+    "wHead": "Czas dojścia — wpisz swój, jeśli szacunek się nie zgadza (puste = szacunek):",
+    "wPlatform": "peron"
   }
 }

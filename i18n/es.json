@@ -1185,6 +1185,10 @@
     "jMeasured": "medido",
     "uDate": "Fecha",
     "uDateRange": "Tengo el horario de GZM para {a} – {b}.",
-    "uSched": "{d}: horas según el horario"
+    "uSched": "{d}: horas según el horario",
+    "jFixed": "tu tiempo",
+    "wLoading": "Buscando estaciones y paradas cercanas…",
+    "wHead": "Tiempo a pie: escribe el tuyo si la estimación no cuadra (vacío = estimación):",
+    "wPlatform": "andén"
   }
 }

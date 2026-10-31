@@ -202,7 +202,7 @@
     // odcinki podróży: każdy kurs w osobnym wierszu, przejście słowami
     function legsHtml(jn) {
       return '<div class="gz-legs">' + jn.legs.map(function (l) {
-        if (l.type === "walk") return '<div class="gz-walk">' + esc(T("gzm.jWalk", { n: l.min }, "przejście pieszo {n} min")) + (l.measured ? " · " + esc(T("gzm.jMeasured", null, "zmierzone")) : "") + (l.toName && l.fromName && l.fromName.charAt(0) > "~" ? " · " + esc(l.fromName) + " → " + esc(l.toName) : "") + "</div>";
+        if (l.type === "walk") return '<div class="gz-walk">' + esc(T("gzm.jWalk", { n: l.min }, "przejście pieszo {n} min")) + (l.fixed ? " · " + esc(T("gzm.jFixed", null, "Twój czas")) : l.measured ? " · " + esc(T("gzm.jMeasured", null, "zmierzone")) : "") + (l.toName && l.fromName && l.fromName.charAt(0) > "~" ? " · " + esc(l.fromName) + " → " + esc(l.toName) : "") + "</div>";
         var dep = (l.live && l.delay ? '<span class="plan-strike">' + C.fmt(l.depPlan) + "</span> " : "") + C.fmt(l.dep);
         return '<div class="gz-leg"><span class="ln">' + esc(l.line) + '</span><span><span class="tm">' + dep + "</span> " + esc(l.fromName) + "</span>" +
           '<span class="to">→ <b>' + C.fmt(l.arr) + "</b> " + esc(l.toName) + (l.live && l.delay ? " (+" + l.delay + " min)" : "") + "</span></div>";
@@ -360,9 +360,38 @@
           pb.innerHTML = '<div class="gz-chips" style="align-items:center"><span class="gz-sub">' + esc(T("gzm.pFrom", null, "Skąd:")) + "</span>" + chip("dom", "f") + chip("praca", "f") + chip("gps", "f") +
             '<span class="gz-sub" style="margin-left:6px">' + esc(T("gzm.pTo", null, "Dokąd:")) + "</span>" + chip("dom", "t") + chip("praca", "t") + "</div>" +
             '<details class="gz-sub" style="margin:2px 2px 8px"><summary>' + esc(T("gzm.pMine", null, "Moje miejsca")) + "</summary>" +
-            ["dom", "praca"].map(function (k) { return '<div style="margin:6px 0">' + esc(PL_TOK[k]) + ": " + (P[k] ? "✔ " + esc(T("gzm.pSet", null, "ustawione")) + " " : "— ") + '<button type="button" class="gz-chip" data-plset="' + k + '">📍 ' + esc(T("gzm.pSetHere", null, "ustaw tu, gdzie jestem")) + "</button>" + (P[k] ? ' <button type="button" class="gz-chip" data-plclr="' + k + '">✕</button>' : "") + "</div>"; }).join("") +
+            ["dom", "praca"].map(function (k) { return '<div style="margin:6px 0' + (P[k] ? ';padding-bottom:6px;border-bottom:1px solid var(--line)' : '') + '">' + esc(PL_TOK[k]) + ": " + (P[k] ? "✔ " + esc(T("gzm.pSet", null, "ustawione")) + " " : "— ") + '<button type="button" class="gz-chip" data-plset="' + k + '">📍 ' + esc(T("gzm.pSetHere", null, "ustaw tu, gdzie jestem")) + "</button>" + (P[k] ? ' <button type="button" class="gz-chip" data-plclr="' + k + '">✕</button><div data-wbox="' + k + '"></div>' : "") + "</div>"; }).join("") +
             '<div style="font-size:11.5px">' + esc(profOn() ? T("gzm.pNoteProf", null, "Miejsca zapisuję w Twoim profilu — są na każdym urządzeniu z Twoim tokenem. Dojście pieszo liczę do przystanków w promieniu ok. 900 m (i na stację, gdy jest blisko).") : T("gzm.pNote", null, "Miejsca zapisuję tylko na tym urządzeniu (z profilem — na wszystkich). Dojście pieszo liczę do przystanków w promieniu ok. 900 m (i na stację, gdy jest blisko).")) + "</div></details>";
         };
+        // ⏱ czasy dojścia „na sztywno” — lista najbliższych stacji i przystanków miejsca
+        var drawWalks = function (k, box) {
+          var P = load(PLACES, {}), pl = P[k]; if (!pl) { box.innerHTML = ""; return; }
+          box.innerHTML = '<div style="font-size:12px;margin:4px 0">' + esc(T("gzm.wLoading", null, "Szukam stacji i przystanków w pobliżu…")) + "</div>";
+          getNet(warsawNow().date).then(function (net) {
+            var fw = pl.walks || { st: {}, stop: {} }, rows = [];
+            (index.stations || []).map(function (x) { return { x: x, d: havM(pl.lat, pl.lon, x.lat, x.lon) }; }).filter(function (o) { return o.d <= 2000; }).sort(function (a, b) { return a.d - b.d; }).slice(0, 2)
+              .forEach(function (o) { rows.push({ t: "st", n: o.x.n, est: walkMin(o.d) + 2, ic: "🚉 " }); });
+            var seenN = {};
+            var near = []; for (var i = 0; i < net.n; i++) { var d = havM(pl.lat, pl.lon, net.lat[i], net.lon[i]); if (d <= 900) near.push({ n: net.name[i], d: d }); }
+            near.sort(function (a, b) { return a.d - b.d; }).forEach(function (o) { if (seenN[o.n] || Object.keys(seenN).length >= 5) return; seenN[o.n] = 1; rows.push({ t: "stop", n: o.n, est: walkMin(o.d), ic: "🚏 " }); });
+            box.innerHTML = '<div style="font-size:12px;margin:6px 0 2px">' + esc(T("gzm.wHead", null, "Czas dojścia — wpisz swój, jeśli szacunek się nie zgadza (puste = szacunek):")) + "</div>" +
+              rows.map(function (r) {
+                var v = (fw[r.t] || {})[r.n];
+                return '<div style="display:flex;align-items:center;gap:6px;margin:3px 0"><span style="flex:1;min-width:0">' + r.ic + esc(r.n) + (r.t === "st" ? " (" + esc(T("gzm.wPlatform", null, "peron")) + ")" : "") + '</span>' +
+                  '<input type="number" min="1" max="60" inputmode="numeric" data-wk="' + k + '" data-wt="' + r.t + '" data-wn="' + esc(r.n) + '" value="' + (v != null ? v : "") + '" placeholder="~' + r.est + '" style="width:62px;padding:5px;border-radius:7px;border:1px solid var(--line);background:#223244;color:#fff"> min</div>';
+              }).join("");
+          }).catch(function () { box.innerHTML = ""; });
+        };
+        pb.addEventListener("toggle", function (e) { if (e.target.tagName === "DETAILS" && e.target.open) pb.querySelectorAll("[data-wbox]").forEach(function (bx) { drawWalks(bx.dataset.wbox, bx); }); }, true);
+        pb.addEventListener("change", function (e) {
+          var inp = e.target.closest("input[data-wk]"); if (!inp) return;
+          var k = inp.dataset.wk, P = load(PLACES, {}), pl = P[k]; if (!pl) return;
+          var w = pl.walks ? JSON.parse(JSON.stringify(pl.walks)) : { st: {}, stop: {} }; w[inp.dataset.wt] = w[inp.dataset.wt] || {};
+          var val = Math.round(+inp.value);
+          if (inp.value === "" || !(val >= 1 && val <= 60)) delete w[inp.dataset.wt][inp.dataset.wn]; else w[inp.dataset.wt][inp.dataset.wn] = val;
+          putPlace(k, Object.assign({}, pl, { walks: w }));
+          inp.style.borderColor = "#22c55e";
+        });
         drawPlaces();
         syncPlaces().then(function (ch) { if (ch) drawPlaces(); });
         document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") syncPlaces().then(function (ch) { if (ch) drawPlaces(); }); });
@@ -370,7 +399,7 @@
           var b = e.target.closest("button"); if (!b) return;
           if (b.dataset.pl) { c.querySelector(b.dataset.side === "f" ? "#gzCFrom" : "#gzCTo").value = PL_TOK[b.dataset.pl]; return; }
           if (b.dataset.plclr) { putPlace(b.dataset.plclr, null); drawPlaces(); return; }
-          if (b.dataset.plset) { b.disabled = true; b.textContent = "⏳"; gpsNow().then(function (g) { putPlace(b.dataset.plset, { lat: +g.lat.toFixed(6), lon: +g.lon.toFixed(6) }); drawPlaces(); }, function () { b.textContent = "⚠ GPS"; }); }
+          if (b.dataset.plset) { b.disabled = true; b.textContent = "⏳"; gpsNow().then(function (g) { var old = load(PLACES, {})[b.dataset.plset] || {}; putPlace(b.dataset.plset, Object.assign({}, old, { lat: +g.lat.toFixed(6), lon: +g.lon.toFixed(6) })); drawPlaces(); }, function () { b.textContent = "⚠ GPS"; }); }
         });
       }
       c.querySelector("#gzCGo").addEventListener("click", searchC);
@@ -599,7 +628,7 @@
       if (k === "gps") return gpsNow().then(function (g) { return { key: k, label: PL_TOK.gps, lat: g.lat, lon: g.lon }; });
       var pl = load(PLACES, {})[k];
       if (!pl) return Promise.reject(new Error("unset:" + k));
-      return Promise.resolve({ key: k, label: PL_TOK[k], lat: pl.lat, lon: pl.lon });
+      return Promise.resolve({ key: k, label: PL_TOK[k], lat: pl.lat, lon: pl.lon, walks: pl.walks || null });
     }
     // Profil: każde miejsce to osobny klucz (zmiana jednego nie nadpisuje drugiego); null = usunięte.
     var PL_PROF = { dom: "gzmPlaceDom", praca: "gzmPlacePraca" };
@@ -619,7 +648,7 @@
           var v = d[PL_PROF[k]];
           if (v === undefined) { if (P[k]) up[PL_PROF[k]] = P[k]; }
           else if (!v || typeof v.lat !== "number" || typeof v.lon !== "number") { if (P[k]) { delete P[k]; ch = true; } }
-          else if (!P[k] || P[k].lat !== v.lat || P[k].lon !== v.lon) { P[k] = { lat: v.lat, lon: v.lon }; ch = true; }
+          else if (JSON.stringify(P[k] || null) !== JSON.stringify(v)) { P[k] = v; ch = true; }
         });
         if (ch) save(PLACES, P);
         if (Object.keys(up).length) ProfileSync.push(up);
@@ -665,6 +694,14 @@
       pl.stops = out.slice(0, 30); pl.walkSt = {};
       (index.stations || []).forEach(function (x) { var d = havM(pl.lat, pl.lon, x.lat, x.lon); if (d <= rT) pl.walkSt[x.id] = walkMin(d) + 2; });
       Object.keys(ms.sts).forEach(function (k) { pl.walkSt[k] = ms.sts[k]; });
+      var fw = pl.walks || {};
+      Object.keys(fw.st || {}).forEach(function (nm) { var x = stationByName(nm); if (x) pl.walkSt[x.id] = +fw.st[nm]; });
+      Object.keys(fw.stop || {}).forEach(function (nm) {
+        (net.byName[nm] || []).forEach(function (si) {
+          var o = pl.stops.find(function (x) { return x.s === si; });
+          if (o) { o.walk = +fw.stop[nm]; o.fixed = true; o.measured = false; } else pl.stops.push({ s: si, walk: +fw.stop[nm], d: 0, fixed: true });
+        });
+      });
       return pl;
     }
     function searchC() {
@@ -758,11 +795,11 @@
     function withPlaceWalks(jn, fromPl, toPl) {
       if (fromPl) {
         var r0 = jn.legs.find(function (l) { return l.type === "ride"; }), w0 = fromPl.stops.find(function (x) { return x.s === (jn.legs[0].type === "walk" ? jn.legs[0].from : r0.from); });
-        if (w0) { jn.legs.unshift({ type: "walk", min: w0.walk, measured: !!w0.measured, fromName: fromPl.label, toName: S_name(jn.legs[0].type === "walk" ? jn.legs[0].from : r0.from) }); jn.leave = (jn.legs[1].type === "walk" ? r0.dep - jn.legs[1].min : r0.dep) - w0.walk; }
+        if (w0) { jn.legs.unshift({ type: "walk", min: w0.walk, measured: !!w0.measured, fixed: !!w0.fixed, fromName: fromPl.label, toName: S_name(jn.legs[0].type === "walk" ? jn.legs[0].from : r0.from) }); jn.leave = (jn.legs[1].type === "walk" ? r0.dep - jn.legs[1].min : r0.dep) - w0.walk; }
       }
       if (toPl) {
         var last = jn.legs[jn.legs.length - 1], w1 = toPl.stops.find(function (x) { return x.s === last.to; });
-        if (w1) { jn.legs.push({ type: "walk", min: w1.walk, measured: !!w1.measured, fromName: S_name(last.to), toName: toPl.label }); jn.arr += w1.walk; }
+        if (w1) { jn.legs.push({ type: "walk", min: w1.walk, measured: !!w1.measured, fixed: !!w1.fixed, fromName: S_name(last.to), toName: toPl.label }); jn.arr += w1.walk; }
       }
       return jn;
     }

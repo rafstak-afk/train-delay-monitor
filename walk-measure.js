@@ -23,6 +23,27 @@ function wmKind(id) { return WM_KINDS.find(k => k.id === id) || WM_KINDS[0]; }
 function wmShort(k) { return k.label.replace(/^\S+ → \S+ /, '').replace(/^✏️ /, ''); }
 function wmState() { try { return JSON.parse(localStorage.getItem(WM_KEY)) || {}; } catch (e) { return {}; } }
 function wmSave(st) { try { localStorage.setItem(WM_KEY, JSON.stringify(st)); } catch (e) {} }
+// Profil: lista pomiarów pod kluczem walkMeasures. Zmiana = świeży odczyt profilu, jedna operacja, zapis.
+function wmProf() { return !!(window.ProfileSync && ProfileSync.getToken && ProfileSync.getToken()); }
+function wmPullProfile() {
+  if (!wmProf() || !wmEnabled()) return Promise.resolve();
+  return ProfileSync.pull().then(d => {
+    if (!d) return;
+    const st = wmState();
+    if (Array.isArray(d.walkMeasures)) {
+      if (JSON.stringify(d.walkMeasures) !== JSON.stringify(st.results || [])) { st.results = d.walkMeasures; wmSave(st); renderWalkMeasure(); }
+    } else if ((st.results || []).length) ProfileSync.push({ walkMeasures: st.results });
+  }).catch(() => {});
+}
+function wmProfileOp(op) {
+  if (!wmProf()) return;
+  ProfileSync.pull().then(d => {
+    const base = d && Array.isArray(d.walkMeasures) ? d.walkMeasures : (wmState().results || []);
+    const list = op(base.slice());
+    const st = wmState(); st.results = list; wmSave(st); renderWalkMeasure();
+    return ProfileSync.push({ walkMeasures: list });
+  }).catch(() => {});
+}
 function wmEnabled() { try { return localStorage.getItem('showVersionBadge') === '1'; } catch (e) { return false; } }
 function wmFmt(ms) { const s = Math.max(0, Math.round(ms / 1000)); return Math.floor(s / 60) + ' min ' + String(s % 60).padStart(2, '0') + ' s'; }
 function wmGeo() {
@@ -91,18 +112,20 @@ document.addEventListener('click', async e => {
     b.disabled = true; b.textContent = '⏳ zapisuję położenie…';
     const g = await wmGeo();
     const s2 = wmState(); if (!s2.running) return;
-    (s2.results = s2.results || []).push({ at: new Date().toISOString(), kind: s2.running.kind, ms, name, platform: s2.running.platform, from: s2.running.from, to: g });
+    const item = { at: new Date().toISOString(), kind: s2.running.kind, ms, name, platform: s2.running.platform, from: s2.running.from, to: g };
+    (s2.results = s2.results || []).push(item);
+    wmProfileOp(list => list.filter(x => x.at !== item.at).concat([item]));
     if (name) s2.names = [name].concat((s2.names || []).filter(n => n !== name)).slice(0, 12);
     s2.running = null; wmSave(s2);
   }
   else if (b.id === 'wmCancel') { st.running = null; wmSave(st); }
-  else if (b.classList.contains('wm-del')) { if (!confirm('Usunąć ten pomiar?')) return; (st.results || []).splice(+b.dataset.i, 1); wmSave(st); }
+  else if (b.classList.contains('wm-del')) { if (!confirm('Usunąć ten pomiar?')) return; const gone = (st.results || []).splice(+b.dataset.i, 1)[0]; wmSave(st); if (gone) wmProfileOp(list => list.filter(x => x.at !== gone.at)); }
   else if (b.id === 'wmCopy') {
     const txt = 'Pomiary dojścia pieszo:\n' + (st.results || []).map(wmLine).join('\n');
     try { await navigator.clipboard.writeText(txt); b.textContent = '✅ Skopiowano'; setTimeout(renderWalkMeasure, 1500); return; } catch (err) { prompt('Skopiuj wyniki:', txt); }
   }
   renderWalkMeasure();
 });
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') renderWalkMeasure(); });
-setTimeout(renderWalkMeasure, 0);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { renderWalkMeasure(); wmPullProfile(); } });
+setTimeout(() => { renderWalkMeasure(); wmPullProfile(); }, 0);
 })();

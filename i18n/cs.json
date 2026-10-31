@@ -1185,6 +1185,10 @@
     "jMeasured": "změřeno",
     "uDate": "Datum",
     "uDateRange": "Jízdní řád GZM mám na dny {a} – {b}.",
-    "uSched": "{d} — časy podle jízdního řádu"
+    "uSched": "{d} — časy podle jízdního řádu",
+    "jFixed": "váš čas",
+    "wLoading": "Hledám stanice a zastávky v okolí…",
+    "wHead": "Doba chůze — zadejte vlastní, pokud odhad nesedí (prázdné = odhad):",
+    "wPlatform": "nástupiště"
   }
 }
