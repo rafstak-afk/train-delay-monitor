@@ -852,7 +852,8 @@
           if (havM(pl.lat, pl.lon, p.lat, p.lon) > 150) return;
           var lim = Math.max(60, Math.min(q.acc || 60, 100)), bi = -1, bd = 1e9;
           for (var i = 0; i < net.n; i++) { var d = havM(q.lat, q.lon, net.lat[i], net.lon[i]); if (d < bd) { bd = d; bi = i; } }
-          var stopEnd = bi >= 0 && bd <= lim && !(/peron/.test(r.kind || "") && !/stanowisk|przystan/i.test(r.name || ""));
+          // GPS tuż przy przystanku (≤ 35 m) — to przystanek, nawet gdy pomiar opisano jako „peron”
+          var stopEnd = bi >= 0 && (bd <= 35 || (bd <= lim && !(/peron/.test(r.kind || "") && !/stanowisk|przystan/i.test(r.name || ""))));
           if (stopEnd) {
             for (var j = 0; j < net.n; j++) if (net.name[j] === net.name[bi] && havM(q.lat, q.lon, net.lat[j], net.lon[j]) <= 200) stops[j] = Math.min(stops[j] || 1e9, min);
           } else if (/peron/.test(r.kind || "")) {
