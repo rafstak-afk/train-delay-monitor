@@ -1280,6 +1280,21 @@
     "tSched": "by the timetable now between: {a} → {b}",
     "remBtn": "Remind me to leave",
     "remSet": "I'll remind you: {t}",
-    "cAcc2": "Getting to {l} at {t} ({s}) — {n} options"
+    "cAcc2": "Getting to {l} at {t} ({s}) — {n} options",
+    "v2OnTime": "on time",
+    "v2Walk": "walk",
+    "v2XferBus": "Change: {s}, {n} min spare",
+    "v2Guard": "Guard",
+    "v2Hide": "▲ Hide route",
+    "v2Route": "▼ Route",
+    "v2Sub": "leave {a} · arrive {b} · {t} in total",
+    "v2Changes": "changes: {n}",
+    "v2Direct": "no changes",
+    "v2XferPlat": "On the platform ({s}) {t} · {n} min spare before the train",
+    "v2XferEgr": "After the train: {s}, {n} min spare",
+    "v2MoreAcc": "Other ways to the train ({n})",
+    "v2MoreEgr": "Other options after the train ({n})",
+    "v2TrainLive": "train +{n} min (live)",
+    "v2TrainPlan": "train per PLK timetable"
   }
 }

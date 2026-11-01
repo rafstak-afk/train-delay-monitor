@@ -1280,6 +1280,21 @@
     "tSched": "podle jízdního řádu teď mezi: {a} → {b}",
     "remBtn": "Připomenout odchod",
     "remSet": "Připomenu: {t}",
-    "cAcc2": "Dojezd na {l} v {t} ({s}) — {n} možností"
+    "cAcc2": "Dojezd na {l} v {t} ({s}) — {n} možností",
+    "v2OnTime": "včas",
+    "v2Walk": "pěšky",
+    "v2XferBus": "Přestup: {s}, rezerva {n} min",
+    "v2Guard": "Hlídat",
+    "v2Hide": "▲ Skrýt trasu",
+    "v2Route": "▼ Trasa",
+    "v2Sub": "odchod {a} · na místě {b} · cesta {t}",
+    "v2Changes": "přestupy: {n}",
+    "v2Direct": "bez přestupu",
+    "v2XferPlat": "Na nástupišti ({s}) {t} · rezerva {n} min do vlaku",
+    "v2XferEgr": "Po vlaku: {s}, rezerva {n} min",
+    "v2MoreAcc": "Další cesty k vlaku ({n})",
+    "v2MoreEgr": "Další možnosti po vlaku ({n})",
+    "v2TrainLive": "vlak +{n} min (živě)",
+    "v2TrainPlan": "vlak podle jízdního řádu PLK"
   }
 }

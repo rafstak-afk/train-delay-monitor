@@ -1280,6 +1280,21 @@
     "tSched": "según el horario ahora entre: {a} → {b}",
     "remBtn": "Recordarme salir",
     "remSet": "Te avisaré: {t}",
-    "cAcc2": "Llegada al {l} de las {t} ({s}): {n} opciones"
+    "cAcc2": "Llegada al {l} de las {t} ({s}): {n} opciones",
+    "v2OnTime": "puntual",
+    "v2Walk": "a pie",
+    "v2XferBus": "Transbordo: {s}, margen {n} min",
+    "v2Guard": "Vigilar",
+    "v2Hide": "▲ Ocultar recorrido",
+    "v2Route": "▼ Recorrido",
+    "v2Sub": "sal {a} · llegada {b} · en total {t}",
+    "v2Changes": "transbordos: {n}",
+    "v2Direct": "sin transbordos",
+    "v2XferPlat": "En el andén ({s}) {t} · margen {n} min hasta el tren",
+    "v2XferEgr": "Tras el tren: {s}, margen {n} min",
+    "v2MoreAcc": "Otras formas de llegar al tren ({n})",
+    "v2MoreEgr": "Otras opciones tras el tren ({n})",
+    "v2TrainLive": "tren +{n} min (en directo)",
+    "v2TrainPlan": "tren según el horario de PLK"
   }
 }

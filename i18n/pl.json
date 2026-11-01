@@ -1280,6 +1280,21 @@
     "tSched": "wg rozkładu teraz między: {a} → {b}",
     "remBtn": "Przypomnij o wyjściu",
     "remSet": "Przypomnę: {t}",
-    "cAcc2": "Dojazd na {l} o {t} ({s}) — {n} możliwości"
+    "cAcc2": "Dojazd na {l} o {t} ({s}) — {n} możliwości",
+    "v2OnTime": "punktualnie",
+    "v2Walk": "pieszo",
+    "v2XferBus": "Przesiadka: {s}, zapas {n} min",
+    "v2Guard": "Pilnuj",
+    "v2Hide": "▲ Zwiń trasę",
+    "v2Route": "▼ Trasa",
+    "v2Sub": "wyjdź {a} · na miejscu {b} · w drodze {t}",
+    "v2Changes": "przesiadki: {n}",
+    "v2Direct": "bez przesiadek",
+    "v2XferPlat": "Na peronie ({s}) {t} · zapas {n} min do pociągu",
+    "v2XferEgr": "Po pociągu: {s}, zapas {n} min",
+    "v2MoreAcc": "Inne dojazdy na pociąg ({n})",
+    "v2MoreEgr": "Inne możliwości po pociągu ({n})",
+    "v2TrainLive": "pociąg +{n} min (na żywo)",
+    "v2TrainPlan": "pociąg wg rozkładu PLK"
   }
 }

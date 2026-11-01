@@ -1280,6 +1280,21 @@
     "tSched": "laut Fahrplan jetzt zwischen: {a} → {b}",
     "remBtn": "Ans Losgehen erinnern",
     "remSet": "Ich erinnere: {t}",
-    "cAcc2": "Anreise zu {l} um {t} ({s}) — {n} Möglichkeiten"
+    "cAcc2": "Anreise zu {l} um {t} ({s}) — {n} Möglichkeiten",
+    "v2OnTime": "pünktlich",
+    "v2Walk": "zu Fuß",
+    "v2XferBus": "Umstieg: {s}, {n} Min. Puffer",
+    "v2Guard": "Überwachen",
+    "v2Hide": "▲ Verlauf ausblenden",
+    "v2Route": "▼ Verlauf",
+    "v2Sub": "los {a} · an {b} · unterwegs {t}",
+    "v2Changes": "Umstiege: {n}",
+    "v2Direct": "ohne Umstieg",
+    "v2XferPlat": "Am Bahnsteig ({s}) {t} · {n} Min. Puffer zum Zug",
+    "v2XferEgr": "Nach dem Zug: {s}, {n} Min. Puffer",
+    "v2MoreAcc": "Andere Wege zum Zug ({n})",
+    "v2MoreEgr": "Weitere Möglichkeiten nach dem Zug ({n})",
+    "v2TrainLive": "Zug +{n} Min. (live)",
+    "v2TrainPlan": "Zug laut PLK-Fahrplan"
   }
 }

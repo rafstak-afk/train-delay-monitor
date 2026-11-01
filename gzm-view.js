@@ -11,6 +11,13 @@
   var CSS =
     '.gz .gz-dt{display:flex;gap:10px;width:100%}.gz .gz-dt input{flex:1 1 0;min-width:0;padding:14px!important;border-radius:10px!important;border:0!important;font-size:16px!important;background:#fff!important;color:#102027!important;color-scheme:light}' +
     '.gz .gz-ddw{position:relative}' +
+    '.gz .gv .card{margin:10px 0}.gz .gv .c-route{font-size:15px}.gz .gv .c-sub{font-size:13px;margin-top:3px;color:#fff}.gz .gv .c-sub b{color:var(--yellow)}' +
+    '.gz .gv .leg.v2-walk{padding:5px 0}.gz .gv .leg.v2-walk .leg-t{font-weight:400;color:var(--muted);font-size:12.5px}.gz .gv .leg.v2-walk .leg-st{font-size:12.5px}' +
+    '.gz .gv .chip .ct{display:block;font-size:17px;font-weight:900;color:#fff}' +
+    '.gz .gv details.v2-more{margin-top:8px;border-top:1px dashed var(--line);padding-top:6px}.gz .gv details.v2-more summary{cursor:pointer;font-size:13px;font-weight:800;color:var(--cyan)}' +
+    '.gz .gv .c-actions .btn-sm{font-size:12.5px}' +
+    '.gz .gv .v2-dep{cursor:pointer;padding:10px 12px}.gz .gv .v2-dep .c-route{font-size:14.5px}' +
+    '.gz .gv .gz-fav{background:none;border:0;color:var(--yellow);font-size:16px;cursor:pointer;padding:0 2px;vertical-align:middle}' +
     '.gz .gz-far{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#a855f7;color:#fff;font-weight:900;font-size:12px;margin-right:5px;vertical-align:middle;flex:0 0 auto}' +
     '.gz .gz-farbox{margin:10px 0;padding:12px;border:1px solid #a855f7;border-radius:12px;background:rgba(168,85,247,.1);font-size:13.5px;line-height:1.45}' +
     '.gz .gz-farrow{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px}' +
@@ -252,7 +259,9 @@
     function rerender() { if (st.dir === "C" && cState) renderC(); else render(); }
     root.addEventListener("click", function (e) {
       if (!tripExpandOn()) return;
-      var card = e.target.closest(".gz-dep[data-tripx]");
+      var tx = e.target.closest("[data-tx]");
+      if (tx) { var kk = tx.getAttribute("data-tx"); if (tripOpen[kk]) delete tripOpen[kk]; else tripOpen[kk] = true; rerender(); return; }
+      var card = e.target.closest(".gz-dep[data-tripx], .v2-dep[data-tripx]");
       if (!card || e.target.closest("button,a")) return;
       var k = card.getAttribute("data-tripx");
       if (tripOpen[k]) delete tripOpen[k]; else tripOpen[k] = true;
@@ -260,6 +269,7 @@
     });
 
     function depHtml(x, cls, noFav) {
+      if (v2On()) return depHtmlV2(x, cls, noFav);
       var d = x.dep, inMin = Math.round(x.real - nowOn(cfg.date || warsawNow().date));
       var tTxt = (x.live && x.delay) ? '<span class="plan-strike">' + C.fmt(d.min) + "</span> " + C.fmt(x.real) : C.fmt(x.real);
       var stTxt = x.status === "ok" ? "🟢 " + T("gzm.st.ok", null, "zdążysz") : x.status === "tight" ? "🟡 " + T("gzm.st.tight", null, "na styk") : x.status === "cancelled" ? "⚫ " + T("gzm.st.cancelled", null, "odwołany") : "🔴 " + T("gzm.st.missed", null, "nie zdążysz");
@@ -275,6 +285,21 @@
         (tripOpen[tk] ? tripHtml(d.trip, d.date, d.stop.n) : "");
     }
 
+    function depHtmlV2(x, cls, noFav) {
+      var d = x.dep, inMin = Math.round(x.real - nowOn(cfg.date || warsawNow().date));
+      var tTxt = (x.live && x.delay) ? '<span class="plan-strike">' + C.fmt(d.min) + "</span> " + C.fmt(x.real) : C.fmt(x.real);
+      var key = C.favKey(d), isF = (favs[cfg.stationId] || []).indexOf(key) >= 0;
+      var tk = d.trip + "|" + d.date + "|" + d.stop.n, open = !!tripOpen[tk];
+      var walk = x.walk.exact ? x.walk.min : (d.stop.w[0] === d.stop.w[1] ? d.stop.w[1] : d.stop.w[0] + "–" + d.stop.w[1]);
+      var inTxt = inMin > 180 || inMin < -1 ? "" : inMin <= 0 ? T("gzm.now", null, "teraz") : T("gzm.inMin", { n: inMin }, "za {n} min");
+      return '<div class="card v2-dep ' + (V2ST[x.status] || "s-ok") + (cls || "") + '" data-k="' + esc(d.trip + "|" + d.stopIdx) + '" data-tripx="' + esc(tk) + '" title="' + esc(T("gzm.tTap", null, "Stuknij — cały bieg kursu")) + '">' +
+        '<div class="c-head"><div><div class="c-route">' + (TYPE_ICON[d.type] || "🚌") + " " + esc(d.line) + " → " + esc(d.head) +
+        (noFav ? "" : ' <button type="button" class="gz-fav" data-fav="' + esc(key) + '" title="' + esc(T("gzm.favTitle", null, "Ulubiona linia w tym kierunku na tej stacji")) + '">' + (isF ? "★" : "☆") + "</button>") + "</div>" +
+        '<div class="c-date">' + esc(d.stop.n) + " · 🚶 " + esc(walk) + " min" + (d.stop.stairs ? " 🪜" : "") + v2Dl(x.live, x.delay) + "</div>" +
+        (x.arrDest != null ? '<div class="c-sub">🏁 ' + esc(T("gzm.arrDest", { t: C.fmt(x.arrDest), n: x.destName, m: x.travel }, "{t} {n} (jazda {m} min)")) + "</div>" : "") + "</div>" +
+        '<span class="chip ' + (V2ST[x.status] || "s-ok") + '"><span class="ct">' + tTxt + "</span>" + esc(inTxt ? inTxt + " · " : "") + esc(v2StTxt(x.status)) + "</span></div>" +
+        (open ? tripHtml(d.trip, d.date, d.stop.n) : "") + "</div>";
+    }
     function render(keepFocus) {
       var body = root.querySelector("#gzBody"); if (!body || !file) return;
       var date = cfg.date || warsawNow().date, now = nowOn(date);
@@ -485,7 +510,9 @@
         '<div style="font-size:11.5px;margin-top:4px">' + esc(T("gzm.uMoreNote", null, "Okno czasu dotyczy listy odjazdów ze stacji (gdy „Dokąd” jest puste). Gwiazdka ☆ przy odjeździe zapamiętuje ulubioną linię.")) + "</div>";
       var win = a.querySelector("#gzWin"); if (win) more.querySelector("div").appendChild(win.parentNode);
       u.appendChild(more);
-      var wm = document.getElementById("walkMeasure"); if (wm) u.appendChild(wm); // pomiar dojścia pod formularzem
+      var wm = document.getElementById("walkMeasure");
+      if (wm) { if (v2On()) more.appendChild(wm); else u.appendChild(wm); } // pomiar dojścia: v2 — w „⚙️ Więcej opcji”
+      if (v2On()) more.querySelector("summary").textContent = "⚙️ " + T("gzm.uMore", null, "Więcej opcji");
       root.insertBefore(u, a);
       var aBar = a.querySelector(".gz-bar"); if (aBar) aBar.style.display = "none";
       var lbl = function (id, txt) { var l = u.querySelector('label[for="' + id + '"]'); if (l) l.textContent = txt; };
@@ -507,6 +534,7 @@
         if (sm && opts.stationId) { u.querySelector("#gzCFrom").value = sm.n; u.querySelector("#gzCTo").value = ""; if (cfg.arr) u.querySelector("#gzCTime").value = cfg.arr; if (cfg.date && cfg.date >= dIn.min && cfg.date <= dIn.max) dIn.value = cfg.date; }
       }
       ["#gzCFrom", "#gzCTo"].forEach(function (q) { initDd(u.querySelector(q)); });
+      if (v2On()) ["#gzCRes", "#gzBody"].forEach(function (q) { var el = root.querySelector(q); if (el) el.classList.add("gv"); });
       // ⇅ zamiana Skąd ↔ Dokąd (podróż powrotna); gdy oba pola wypełnione — od razu szuka
       var fDiv = u.querySelector("#gzCFrom").closest(".gz-st"), tDiv2 = u.querySelector("#gzCTo").closest(".gz-st"), stack = document.createElement("div");
       stack.className = "gz-stack"; fDiv.parentNode.insertBefore(stack, fDiv); stack.appendChild(fDiv); stack.appendChild(tDiv2);
@@ -1061,6 +1089,106 @@
       }).join("");
       return '<div class="gz-trip">' + html + "</div>";
     }
+    // ===== Wygląd v2: karty jak w „Pilnowanych” (TEST — tylko profil autora) =====
+    function v2On() { try { return localStorage.getItem("showVersionBadge") === "1"; } catch (e) { return false; } }
+    var V2ST = { ok: "s-ok", tight: "s-risk", missed: "s-broken", cancelled: "s-cancelled" };
+    function v2StTxt(st) { return st === "ok" ? "🟢 " + T("gzm.st.ok", null, "zdążysz") : st === "tight" ? "🟡 " + T("gzm.st.tight", null, "na styk") : st === "cancelled" ? "⚫ " + T("gzm.st.cancelled", null, "odwołany") : "🔴 " + T("gzm.st.missed", null, "nie zdążysz"); }
+    function v2Dl(live, delay) {
+      if (!live) return ' <span class="src">' + esc(T("gzm.sched", null, "wg rozkładu")) + "</span>";
+      return ' <span class="dl ' + (delay > 5 ? "vlate" : delay > 0 ? "late" : "ontime") + '">' + esc(delay ? (delay > 0 ? "+" : "") + delay + " min" : T("gzm.v2OnTime", null, "punktualnie")) + "</span>";
+    }
+    function v2Walk(l) {
+      var marks = (l.far ? " " + farBadge() + esc(T("gzm.farDist", { d: kmTxt(l.dist || 0) }, "{d} — dalej niż zwykle")) : "") + (l.fixed ? " · " + esc(T("gzm.jFixed", null, "Twój czas")) : l.measured ? " · " + esc(T("gzm.jMeasured", null, "zmierzone")) : "");
+      var path = l.fromName && l.toName ? esc(l.fromName) + " → " + esc(l.toName) : l.toName ? "→ " + esc(l.toName) : "";
+      return '<div class="leg v2-walk"><div class="leg-t">🚶 ' + l.min + ' min</div><div class="leg-st">' + esc(T("gzm.v2Walk", null, "pieszo")) + (path ? " · " + path : "") + marks + "</div></div>";
+    }
+    function v2Ride(l) {
+      var dep = l.live && l.delay ? '<span class="plan-strike">' + C.fmt(l.depPlan) + "</span> " + C.fmt(l.dep) : C.fmt(l.dep);
+      return '<div class="leg"><div class="leg-t">' + dep + "<small>" + C.fmt(l.arr) + "</small></div><div>" +
+        '<div class="leg-train">' + (TYPE_ICON[l.kind] || "🚌") + " " + esc(l.line) + (l.head ? " → " + esc(l.head) : "") + "</div>" +
+        '<div class="leg-st">' + esc(l.fromName) + " → " + esc(l.toName) + v2Dl(l.live, l.delay) + "</div></div></div>";
+    }
+    function v2Train(l, arrReal) {
+      var lab = ((l.train && l.train.category) || "") + " " + ((l.train && l.train.number) || "") + (l.train && l.train.name ? " " + l.train.name : "");
+      var arr = arrReal != null && C.fmt(arrReal) !== l.alight.time ? '<span class="plan-strike">' + esc(l.alight.time) + "</span> " + C.fmt(arrReal) : esc(l.alight.time);
+      return '<div class="leg"><div class="leg-t">' + esc(l.board.time) + "<small>" + arr + "</small></div><div>" +
+        '<div class="leg-train">🚆 ' + esc(lab.trim()) + "</div>" + '<div class="leg-st">' + esc(l.board.stationName) + " → " + esc(l.alight.stationName) + "</div></div></div>";
+    }
+    function v2Xfer(st, txt) { return '<div class="xfer ' + (V2ST[st] || "s-ok") + '">' + (st === "tight" ? "🟡 " : st === "missed" ? "🔴 " : "🟢 ") + txt + "</div>"; }
+    // odcinki podróży GZM (z przesiadkami między kursami)
+    function v2Journey(jn) {
+      var out = [], prevRide = null, walkBetween = 0;
+      jn.legs.forEach(function (l) {
+        if (l.type === "walk") { if (prevRide) walkBetween += l.min; out.push(v2Walk(l)); return; }
+        if (prevRide) {
+          var slack = l.dep - prevRide.arr - walkBetween, st = slack >= 3 ? "ok" : slack >= 0 ? "tight" : "missed";
+          out.push(v2Xfer(st, esc(T("gzm.v2XferBus", { s: l.fromName, n: slack }, "Przesiadka: {s}, zapas {n} min"))));
+        }
+        out.push(v2Ride(l)); prevRide = l; walkBetween = 0;
+      });
+      return out.join("");
+    }
+    function v2Btn(html) { return html.replace(/class="gz-btn sec"/g, 'class="btn-sm secondary"'); }
+    function v2Foot(i, tKey, open, meta) {
+      return '<div class="c-foot"><span class="c-meta">' + (meta || "") + '</span><span class="c-actions">' +
+        (i != null ? '<button type="button" class="btn-sm secondary" data-guard="' + i + '">🛡️ ' + esc(T("gzm.v2Guard", null, "Pilnuj")) + "</button>" : "") +
+        (i != null ? v2Btn(remBtnHtml(v2Cur[i], i)) : "") +
+        '<button type="button" class="btn-sm secondary" data-tx="' + esc(tKey) + '">' + esc(open ? T("gzm.v2Hide", null, "▲ Zwiń trasę") : T("gzm.v2Route", null, "▼ Trasa")) + "</button></span></div>";
+    }
+    var v2Cur = [];
+    function v2Head(route, sub, st, chip) {
+      return '<div class="c-head"><div><div class="c-route">' + route + '</div><div class="c-sub">' + sub + "</div></div>" +
+        '<span class="chip ' + (V2ST[st] || "s-ok") + '">' + chip + "</span></div>";
+    }
+    function v2Total(min) { if (!(min > 0)) return ""; var h = Math.floor(min / 60), m = min % 60; return (h ? h + " h " : "") + m + " min"; }
+    function v2NetCard(jn, i) {
+      var f0 = jn.legs.find(function (l) { return l.type === "ride"; }), lv = jn.leave != null ? jn.leave : jn.legs[0].type === "walk" ? f0.dep - jn.legs[0].min : jn.dep;
+      var k = jKey(jn), open = !!tripOpen[k];
+      var route = esc(jn.legs[0].fromName) + " → " + esc(jn.legs[jn.legs.length - 1].toName);
+      var sub = esc(T("gzm.v2Sub", { a: C.fmt(lv), b: C.fmt(jn.arr), t: v2Total(jn.arr - lv) }, "wyjdź {a} · na miejscu {b} · w drodze {t}"));
+      var chip = '<span class="ct">' + C.fmt(jn.arr) + "</span>" + esc(jn.transfers ? T("gzm.v2Changes", { n: jn.transfers }, "przesiadki: {n}") : T("gzm.v2Direct", null, "bez przesiadek"));
+      return '<div class="card s-ok">' + v2Head(route, sub, "ok", chip) + v2Journey(jn) + v2Foot(i, k, open, esc(rtOk && cState.date === warsawNow().date ? "● " + T("gzm.liveOn", null, "na żywo") : T("gzm.sched", null, "wg rozkładu"))) + (open ? tripsOfJourney(jn) : "") + "</div>";
+    }
+    function v2TrainCard(x, i, S) {
+      var it = x.it, c = x.c, key = cKey(x.p, it), L = c.latest, tKey = "t|" + key, open = !!tripOpen[tKey];
+      var leave = c.walkA ? c.walkA.leave : L ? (L.jn.leave != null ? L.jn.leave : L.jn.legs[0].type === "walk" ? L.jn.dep - L.jn.legs[0].min : L.jn.dep) : x.dep;
+      var L0 = it.legs || [], st = L && L.status === "tight" ? "tight" : "ok";
+      var fromName = c.walkA ? c.walkA.name : L ? L.jn.legs[0].fromName : (L0[0] && L0[0].board.stationName) || x.p.cb.a.st.n;
+      var e0 = c.egr && c.egr[0], toName = c.walkE ? c.walkE.name : e0 ? e0.legs[e0.legs.length - 1].toName : (L0.length ? L0[L0.length - 1].alight.stationName : x.p.cb.e.st.n);
+      var html = [];
+      if (c.walkA) html.push(v2Walk({ min: c.walkA.min, fromName: c.walkA.name, toName: x.p.cb.a.st.n }));
+      if (L) {
+        html.push(v2Journey(L.jn));
+        html.push(v2Xfer(L.status, esc(T("gzm.v2XferPlat", { s: x.p.cb.a.st.n, t: C.fmt(L.plat), n: L.slack }, "Na peronie ({s}) {t} · zapas {n} min do pociągu"))));
+      }
+      L0.forEach(function (l, j) {
+        if (j > 0) { var p = L0[j - 1], ch = C.hm(l.board.time) - C.hm(p.alight.time); if (ch < 0) ch += 1440; html.push(v2Xfer(ch >= 3 ? "ok" : "tight", esc(T("gzm.tChange", { s: l.board.stationName, n: ch }, "przesiadka: {s}, {n} min")))); }
+        html.push(v2Train(l, j === L0.length - 1 && x.tDelay ? x.arr : null));
+      });
+      if (c.walkE) html.push(v2Walk({ min: c.walkE.min, fromName: L0.length ? L0[L0.length - 1].alight.stationName : "", toName: c.walkE.name }));
+      else if (e0) {
+        var r0 = e0.legs.find(function (l) { return l.type === "ride"; }), wk = 0;
+        e0.legs.some(function (l) { if (l.type === "walk") { wk += l.min; return false; } return true; });
+        var sl = r0 ? r0.dep - x.arr - wk : 0;
+        html.push(v2Xfer(sl >= 3 ? "ok" : sl >= 0 ? "tight" : "missed", esc(T("gzm.v2XferEgr", { s: r0 ? r0.fromName : "", n: sl }, "Po pociągu: {s}, zapas {n} min"))));
+        html.push(v2Journey(e0));
+      }
+      // inne możliwości — schowane
+      var more = "";
+      if (c.acc) {
+        var okA = c.acc.filter(function (y) { return y.status !== "missed"; });
+        if (okA.length > 1) more += '<details class="v2-more"><summary>' + esc(T("gzm.v2MoreAcc", { n: okA.length - 1 }, "Inne dojazdy na pociąg ({n})")) + "</summary>" +
+          okA.filter(function (y) { return y !== L; }).slice(-5).map(function (y) { return jRow(y.jn, "🚉 " + esc(T("gzm.cOnPlatform", { t: C.fmt(y.plat), n: y.slack }, "na peronie {t} · zapas {n} min")), y.status); }).join("") + "</details>";
+      }
+      if (c.egr && c.egr.length > 1) more += '<details class="v2-more"><summary>' + esc(T("gzm.v2MoreEgr", { n: c.egr.length - 1 }, "Inne możliwości po pociągu ({n})")) + "</summary>" +
+        c.egr.slice(1).map(function (y) { return jRow(y, "🏁 " + C.fmt(y.arr) + " " + esc(y.legs[y.legs.length - 1].toName), "ok"); }).join("") +
+        (c.egr.length >= 5 + 5 * ((S.more && S.more[key]) || 0) ? '<button type="button" class="btn-sm secondary" data-cmore="' + esc(key) + '">' + esc(T("gzm.more", null, "Pokaż kolejne 5")) + "</button>" : "") + "</details>";
+      var route = esc(fromName) + " → " + esc(toName);
+      var sub = esc(T("gzm.v2Sub", { a: C.fmt(leave), b: C.fmt(x.final), t: v2Total(x.final - leave) }, "wyjdź {a} · na miejscu {b} · w drodze {t}"));
+      var chip = '<span class="ct">' + C.fmt(x.final) + "</span>" + esc(v2StTxt(st));
+      var meta = x.tDelay ? esc(T("gzm.v2TrainLive", { n: x.tDelay }, "pociąg +{n} min (na żywo)")) : esc(T("gzm.v2TrainPlan", null, "pociąg wg rozkładu PLK"));
+      return '<div class="card ' + V2ST[st] + '">' + v2Head(route, sub, st, chip) + html.join("") + more + v2Foot(i, tKey, open, meta) + (open ? trainRunsHtml(it, S.date) : "") + "</div>";
+    }
     function renderMM() {
       var res = root.querySelector("#gzCRes"), S = cState, now = nowOn(S.date), base = S.live ? Math.max(S.tmin, now) : S.tmin, out = [];
       if ((S.fromPlace || S.toPlace) && !S.fromSt && !S.toSt && !S.netFrom) { S.netFrom = S.fN || []; S.netTo = S.tN || []; }
@@ -1148,6 +1276,7 @@
       var guardOk = !!(window.GuardStore && window.GuardCore && GuardStore.enabled && GuardStore.enabled());
       res.innerHTML = (S.date !== warsawNow().date ? '<div class="gz-live off" style="margin:4px 2px">📅 ' + esc(T("gzm.uSched", { d: S.date }, "{d} — godziny wg rozkładu")) + "</div>" : '<div class="gz-live ' + (rtOk ? "on" : "off") + '" style="margin:4px 2px">' + (rtOk ? "● " + esc(T("gzm.liveOn", null, "na żywo")) : "○ " + esc(T("gzm.liveOff", null, "dane na żywo niedostępne, pokazuję rozkład"))) + "</div>") +
         out.map(function (x, i) {
+          if (v2On()) { v2Cur[i] = x; return x.net ? v2NetCard(x.net, guardOk ? i : null) : v2TrainCard(x, guardOk ? i : null, S); }
           if (x.net) return netCard(x.net, guardOk ? i : null, x);
           var it = x.it, c = x.c, key = cKey(x.p, it);
           var legs = (it.legs || []).map(function (l) { return esc(((l.train && l.train.category) || "") + " " + ((l.train && l.train.number) || "")); }).join(" + ");
