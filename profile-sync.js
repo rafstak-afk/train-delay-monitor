@@ -140,10 +140,13 @@
 
   async function putOnce(token, patch, create) {
     try {
+      const body = JSON.stringify({ token, patch, create: !!create });
       const res = await fetch("/api/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, patch, create: !!create })
+        body,
+        // keepalive: zapis dokończy się także po przejściu na inną stronę (limit przeglądarki ~64 KB)
+        keepalive: body.length < 60000
       });
       let code = null;
       if (!res.ok) {
@@ -162,7 +165,50 @@
   // tworzy rekordu przy zwykłym zapisie: jeśli profilu nie ma (wygasł albo
   // token nigdy nie istniał), a urządzenie już go używało — odtwarzamy go;
   // jeśli nie — porzucamy token.
+  // ---------- kolejka zapisów ----------
+  let pendPatch = null, pendWaiters = [], flushTimer = null, chain = Promise.resolve();
+  function enqueue(patch) {
+    pendPatch = Object.assign(pendPatch || {}, patch);
+    return new Promise(function (res) {
+      pendWaiters.push(res);
+      clearTimeout(flushTimer);
+      flushTimer = setTimeout(flush, 150);
+    });
+  }
+  function flush() {
+    flushTimer = null;
+    if (!pendPatch) return chain;
+    const patch = pendPatch, waiters = pendWaiters;
+    pendPatch = null; pendWaiters = [];
+    chain = chain.then(function () { return pushNow(patch); }).then(
+      function (ok) { waiters.forEach(function (w) { w(ok); }); return ok; },
+      function () { waiters.forEach(function (w) { w(false); }); return false; });
+    return chain;
+  }
+  // Strona się zamyka / chowa: niewysłane zmiany jednym sendBeaconem.
+  function flushBeacon() {
+    if (!pendPatch) return;
+    const token = getToken(); if (!token) return;
+    const patch = pendPatch, waiters = pendWaiters;
+    pendPatch = null; pendWaiters = []; clearTimeout(flushTimer); flushTimer = null;
+    let sent = false;
+    try {
+      if (navigator.sendBeacon) sent = navigator.sendBeacon("/api/profile", new Blob([JSON.stringify({ token, patch, create: false })], { type: "application/json" }));
+    } catch (e) {}
+    if (!sent) { chain = chain.then(function () { return pushNow(patch); }); }
+    waiters.forEach(function (w) { w(true); });
+  }
+  if (typeof window !== "undefined") {
+    window.addEventListener("pagehide", flushBeacon);
+    document.addEventListener("visibilitychange", function () { if (document.visibilityState === "hidden") flushBeacon(); });
+  }
+  // Zwykły zapis: dołącza do kolejki (łączenie + po kolei). Zakładanie profilu — od razu.
   async function push(patch, opts) {
+    if (opts && opts.create) return pushNow(patch, opts);
+    if (!getToken()) return false;
+    return enqueue(patch);
+  }
+  async function pushNow(patch, opts) {
     const token = getToken();
     if (!token) return false;
     lastError = null;
@@ -205,19 +251,10 @@
   function pushBeacon(patch) {
     const token = getToken();
     if (!token) return false;
-    const body = JSON.stringify({ token, patch, create: false });
-    if (typeof navigator !== "undefined" && navigator.sendBeacon) {
-      try {
-        const blob = new Blob([body], { type: "application/json" });
-        if (navigator.sendBeacon("/api/profile", blob)) {
-          markVerified();
-          return true;
-        }
-      } catch (e) {}
-    }
-    // Awaryjnie (stara przeglądarka bez sendBeacon, albo kolejka pełna):
-    // zwykły push, lepsze to niż nic.
-    push(patch);
+    // Do wspólnej kolejki (żeby nie ścigać się z innymi zapisami); przy zamykaniu strony
+    // kolejka i tak wyjdzie sendBeaconem, a trwające zapytanie ma keepalive.
+    enqueue(patch);
+    if (document.visibilityState === "hidden") flushBeacon();
     return true;
   }
 

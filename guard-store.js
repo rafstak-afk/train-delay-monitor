@@ -167,19 +167,33 @@
   }
   // Usunięcie z planu (z „nagrobkiem”, jak w dzienniczku — żeby stary stan
   // profilu nie przywrócił wpisu).
-  function removeFromPlan(keys, remote) {
-    if (!keys.length) return;
+  // Zwraca nowy plan (bez wysyłki) — wysyłamy go razem z resztą w jednym zapisie.
+  function planWithout(keys, remote) {
     var tomb = read(PLAN_REMOVED_KEY, []).filter(function (x) { return keys.indexOf(x.key) < 0; });
     keys.forEach(function (k) { tomb.push({ key: k, at: Date.now() }); });
     write(PLAN_REMOVED_KEY, tomb);
     var base = Array.isArray(remote) ? remote : read(PLAN_KEY, []);
     var next = base.filter(function (e) { return keys.indexOf(e._key) < 0; });
     write(PLAN_KEY, next);
-    pushSafe({ plannedTrips: next });
+    return next;
   }
-  function finishConn(conn) {
-    if (/^plan:/.test(conn.id)) return Promise.resolve();
-    return remove(conn.id);
+  // Pilnowane bez tego połączenia (jak mutate, ale bez wysyłki).
+  function guardedWithout(id, remote) {
+    var base = manual();
+    if (Array.isArray(remote)) {
+      var ids = {}; remote.forEach(function (c) { ids[c.id] = true; });
+      base = prune(remote).concat(base.filter(function (c) { return !ids[c.id] && c._pending; }));
+    }
+    var next = prune(base.filter(function (c) { return c.id !== id; }));
+    next.forEach(function (c) { delete c._pending; });
+    write(LIST_KEY, next);
+    return next;
+  }
+  // Koniec podróży: plan i lista pilnowanych w JEDNYM zapisie (+ ewentualnie dzienniczek).
+  function finishPatch(conn, keys, p, patch) {
+    if (keys.length) patch.plannedTrips = planWithout(keys, p && Array.isArray(p.plannedTrips) ? p.plannedTrips : null);
+    if (!/^plan:/.test(conn.id)) patch.guardedConnections = guardedWithout(conn.id, p && Array.isArray(p.guardedConnections) ? p.guardedConnections : null);
+    if (Object.keys(patch).length) pushSafe(patch);
   }
   // ✅ Jechałem — wpisy (tylko zaznaczone odcinki) do dzienniczka.
   function recordTrip(conn, readings, checked) {
@@ -199,19 +213,14 @@
         if (i >= 0) { e._key = base[i]._key; base[i] = e; } else base.push(e);
       });
       write(JOURNAL_KEY, base);
-      pushSafe({ journalEntries: base });
-      removeFromPlan(keys, p && Array.isArray(p.plannedTrips) ? p.plannedTrips : null);
-      return finishConn(conn);
+      finishPatch(conn, keys, p, { journalEntries: base });
     }).then(function () { return entries.length; });
   }
   // ❌ Nie jechałem — koniec pilnowania, nic do dzienniczka (i wpisy z planu znikają).
   function dismissTrip(conn) {
     var keys = planKeysFor(conn);
-    var pull = keys.length && hasProfile() ? ProfileSync.pull().catch(function () { return null; }) : Promise.resolve(null);
-    return pull.then(function (p) {
-      removeFromPlan(keys, p && Array.isArray(p.plannedTrips) ? p.plannedTrips : null);
-      return finishConn(conn);
-    });
+    var pull = hasProfile() ? ProfileSync.pull().catch(function () { return null; }) : Promise.resolve(null);
+    return pull.then(function (p) { finishPatch(conn, keys, p, {}); });
   }
 
   // Powiadomienia push na TYM urządzeniu (ta sama subskrypcja co alarmy).
