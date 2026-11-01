@@ -1276,6 +1276,7 @@
     "farRow": "{d}, asi {n} min pěšky",
     "farUse": "Odkud: tato zastávka",
     "farHint": "Zadejte i „Kam“ a naplánuji cestu s chůzí k této zastávce.",
-    "farNone": "ZTM sem nejezdí — nejbližší zastávka: {s}, {d} od stanice."
+    "farNone": "ZTM sem nejezdí — nejbližší zastávka: {s}, {d} od stanice.",
+    "tSched": "podle jízdního řádu teď mezi: {a} → {b}"
   }
 }

@@ -212,10 +212,19 @@
         var ago = rtT[4] ? Math.max(0, Math.round((Date.now() / 1000 - rtT[4]) / 60)) : null;
         pos = '<div class="gz-trip-pos">📍 ' + esc(T("gzm.tPos", { s: net.name[seq[nearIdx]] }, "pojazd teraz w pobliżu: {s}")) + (ago != null ? " · " + esc(T("gzm.tAgo", { n: ago }, "{n} min temu")) : "") +
           ' · <a href="https://www.openstreetmap.org/?mlat=' + rtT[2] + "&mlon=" + rtT[3] + "#map=17/" + rtT[2] + "/" + rtT[3] + '" target="_blank" rel="noopener">' + esc(T("gzm.tMap", null, "mapa")) + "</a></div>";
-      } else pos = '<div class="gz-trip-pos" style="color:var(--muted)">' + esc(T("gzm.tNoPos", null, "brak pozycji na żywo — godziny wg rozkładu")) + "</div>";
+      } else {
+        // bez pozycji na żywo: gdzie POWINIEN być wg rozkładu (dziś, w trakcie kursu)
+        var schedIdx = -1, nowT = nowOn(date);
+        if (date === warsawNow().date) seq.forEach(function (sx, i) { if (tr[1] + off[2 * i + 1] <= nowT) schedIdx = i; });
+        var inRun = schedIdx >= 0 && schedIdx < seq.length - 1 && tr[1] <= nowT;
+        if (inRun) { curSeq = schedIdx + 1; nearIdx = -2; }
+        pos = '<div class="gz-trip-pos" style="color:var(--muted)">' + esc(T("gzm.tNoPos", null, "brak pozycji na żywo — godziny wg rozkładu")) +
+          (inRun ? '<br><span style="color:#ffd400">🕒 ' + esc(T("gzm.tSched", { a: net.name[seq[schedIdx]], b: net.name[seq[schedIdx + 1]] }, "wg rozkładu teraz między: {a} → {b}")) + "</span>" : "") + "</div>";
+        var schedBetween = inRun ? schedIdx : -1;
+      }
       var rows = seq.map(function (sx, i) {
         var plan = tr[1] + off[2 * i + 1], nm = net.name[sx];
-        var cls = (curSeq != null && i < curSeq ? " past" : "") + (nm === boardName || (alightName && nm === alightName) ? " me" : "") + (i === nearIdx ? " here" : "");
+        var cls = (curSeq != null && i < curSeq ? " past" : "") + (nm === boardName || (alightName && nm === alightName) ? " me" : "") + (i === nearIdx || (schedBetween != null && schedBetween >= 0 && i === schedBetween) ? " here" : "");
         var t = dl ? '<span class="plan-strike">' + C.fmt(plan) + "</span> " + C.fmt(plan + dl) : C.fmt(plan);
         return '<div class="gz-tr' + cls + '"><div>' + t + "</div><div>" + (i === nearIdx ? "📍 " : "") + esc(nm) + "</div></div>";
       }).join("");

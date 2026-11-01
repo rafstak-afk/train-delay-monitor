@@ -1276,6 +1276,7 @@
     "farRow": "{d}, about {n} min on foot",
     "farUse": "From: this stop",
     "farHint": "Also enter “To” and I'll plan the trip with the walk to this stop.",
-    "farNone": "ZTM does not serve this place — nearest stop: {s}, {d} from the station."
+    "farNone": "ZTM does not serve this place — nearest stop: {s}, {d} from the station.",
+    "tSched": "by the timetable now between: {a} → {b}"
   }
 }

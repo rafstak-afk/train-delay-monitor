@@ -1276,6 +1276,7 @@
     "farRow": "{d}, ok. {n} min pieszo",
     "farUse": "Skąd: ten przystanek",
     "farHint": "Wpisz też „Dokąd”, a ułożę podróż z dojściem do tego przystanku.",
-    "farNone": "ZTM tu nie dojeżdża — najbliższy przystanek: {s}, {d} od stacji."
+    "farNone": "ZTM tu nie dojeżdża — najbliższy przystanek: {s}, {d} od stacji.",
+    "tSched": "wg rozkładu teraz między: {a} → {b}"
   }
 }

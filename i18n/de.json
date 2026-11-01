@@ -1276,6 +1276,7 @@
     "farRow": "{d}, ca. {n} Min. zu Fuß",
     "farUse": "Von: diese Haltestelle",
     "farHint": "Gib auch „Nach“ ein, dann plane ich die Reise mit Fußweg zu dieser Haltestelle.",
-    "farNone": "ZTM fährt hier nicht — nächste Haltestelle: {s}, {d} vom Bahnhof."
+    "farNone": "ZTM fährt hier nicht — nächste Haltestelle: {s}, {d} vom Bahnhof.",
+    "tSched": "laut Fahrplan jetzt zwischen: {a} → {b}"
   }
 }
