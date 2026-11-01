@@ -115,14 +115,6 @@ export async function onRequestGet(context) {
 
   const headers = { "X-API-Key": apiKey, Accept: "application/json" };
   const scheduleTtl = isToday ? CACHE_TTL.SCHEDULES_TODAY : CACHE_TTL.SCHEDULES_FUTURE;
-  // TYMCZASOWA diagnostyka (do usunięcia): surowe dane przystanku z rozkładu skróconego dla jednej stacji
-  if (url.searchParams.get("rawStation")) {
-    const sid = url.searchParams.get("rawStation");
-    const rr = await getJsonCached(`${PLK_BASE}/schedules/shortened?stations=${encodeURIComponent(sid)}&fullRoute=true&dateFrom=${date}&dateTo=${date}`, headers, scheduleTtl);
-    const rt = rr.data?.rt || [];
-    const out = rt.map(q => { const i = (q.st || []).findIndex(z => String(z.id) === String(sid)); return i < 0 ? null : { meta: Object.fromEntries(Object.entries(q).filter(([k]) => k !== "st")), stop: q.st[i], prev: q.st[i - 1] || null, next: q.st[i + 1] || null }; }).filter(Boolean).slice(0, 60);
-    return json({ ok: true, n: rt.length, out });
-  }
   const hasVia = viaNames.length > 0;
 
   const composedKey = composedCacheKey({

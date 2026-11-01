@@ -1277,6 +1277,9 @@
     "farUse": "Von: diese Haltestelle",
     "farHint": "Gib auch „Nach“ ein, dann plane ich die Reise mit Fußweg zu dieser Haltestelle.",
     "farNone": "ZTM fährt hier nicht — nächste Haltestelle: {s}, {d} vom Bahnhof.",
-    "tSched": "laut Fahrplan jetzt zwischen: {a} → {b}"
+    "tSched": "laut Fahrplan jetzt zwischen: {a} → {b}",
+    "remBtn": "Ans Losgehen erinnern",
+    "remSet": "Ich erinnere: {t}",
+    "cAcc2": "Anreise zu {l} um {t} ({s}) — {n} Möglichkeiten"
   }
 }

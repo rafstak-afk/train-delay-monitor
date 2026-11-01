@@ -1277,6 +1277,9 @@
     "farUse": "Skąd: ten przystanek",
     "farHint": "Wpisz też „Dokąd”, a ułożę podróż z dojściem do tego przystanku.",
     "farNone": "ZTM tu nie dojeżdża — najbliższy przystanek: {s}, {d} od stacji.",
-    "tSched": "wg rozkładu teraz między: {a} → {b}"
+    "tSched": "wg rozkładu teraz między: {a} → {b}",
+    "remBtn": "Przypomnij o wyjściu",
+    "remSet": "Przypomnę: {t}",
+    "cAcc2": "Dojazd na {l} o {t} ({s}) — {n} możliwości"
   }
 }

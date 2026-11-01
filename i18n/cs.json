@@ -1277,6 +1277,9 @@
     "farUse": "Odkud: tato zastávka",
     "farHint": "Zadejte i „Kam“ a naplánuji cestu s chůzí k této zastávce.",
     "farNone": "ZTM sem nejezdí — nejbližší zastávka: {s}, {d} od stanice.",
-    "tSched": "podle jízdního řádu teď mezi: {a} → {b}"
+    "tSched": "podle jízdního řádu teď mezi: {a} → {b}",
+    "remBtn": "Připomenout odchod",
+    "remSet": "Připomenu: {t}",
+    "cAcc2": "Dojezd na {l} v {t} ({s}) — {n} možností"
   }
 }

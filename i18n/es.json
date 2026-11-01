@@ -1277,6 +1277,9 @@
     "farUse": "Desde: esta parada",
     "farHint": "Escribe también «Hasta» y planificaré el viaje con el camino a pie a esta parada.",
     "farNone": "ZTM no llega aquí; parada más cercana: {s}, a {d} de la estación.",
-    "tSched": "según el horario ahora entre: {a} → {b}"
+    "tSched": "según el horario ahora entre: {a} → {b}",
+    "remBtn": "Recordarme salir",
+    "remSet": "Te avisaré: {t}",
+    "cAcc2": "Llegada al {l} de las {t} ({s}): {n} opciones"
   }
 }
