@@ -1308,6 +1308,11 @@
     "v3NoTransit": "Hromadnou dopravou to rychlejší nebude nebo v nejbližších hodinách nic nejede — změňte čas.",
     "v3FirstLater": "Nejbližší spojení hromadnou dopravou: odchod až v {t} (níže).",
     "pOnMap": "na mapě",
-    "pNearest": "nejbližší stanice: {s}, {d}"
+    "pNearest": "nejbližší stanice: {s}, {d}",
+    "mapSearch": "Hledat adresu, např. Opolska 5, Tarnowskie Góry",
+    "mapHint": "Posuňte mapu tak, aby 📍 stál na místě: {p}",
+    "mapCancel": "Zrušit",
+    "mapSave": "Uložit zde",
+    "pSetMap": "nastavit na mapě"
   }
 }

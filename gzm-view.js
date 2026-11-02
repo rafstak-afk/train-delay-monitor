@@ -11,6 +11,15 @@
   var CSS =
     '.gz .gz-dt{display:flex;gap:10px;width:100%}.gz .gz-dt input{flex:1 1 0;min-width:0;padding:14px!important;border-radius:10px!important;border:0!important;font-size:16px!important;background:#fff!important;color:#102027!important;color-scheme:light}' +
     '.gz .gz-ddw{position:relative}' +
+    '.gzmap-ov{position:fixed;inset:0;z-index:100020;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;padding:10px}' +
+    '.gzmap-box{background:#1c2833;border:1px solid #34495e;border-radius:14px;width:min(560px,100%);max-height:96vh;display:flex;flex-direction:column;overflow:hidden;color:#fff;font-family:Arial,sans-serif}' +
+    '.gzmap-top{display:flex;gap:6px;padding:10px;align-items:center}.gzmap-top input{flex:1;min-width:0;padding:9px;border-radius:9px;border:1px solid #48627c;background:#223244;color:#fff;font-size:15px}' +
+    '.gzmap-btn{border:0;border-radius:9px;padding:9px 12px;font-weight:800;cursor:pointer;background:#374151;color:#fff;font-size:14px}.gzmap-btn.ok{background:#15803d}.gzmap-btn.pri{background:#0b57d0}' +
+    '.gzmap{position:relative;height:min(60vh,460px);overflow:hidden;background:#aad3df;touch-action:none;cursor:grab}.gzmap img{position:absolute;width:256px;height:256px;user-select:none;-webkit-user-drag:none;pointer-events:none}' +
+    '.gzmap-x{position:absolute;left:50%;top:50%;width:34px;height:34px;margin:-34px 0 0 -17px;font-size:32px;line-height:34px;text-align:center;pointer-events:none;filter:drop-shadow(0 2px 2px rgba(0,0,0,.6))}' +
+    '.gzmap-z{position:absolute;right:8px;top:8px;display:flex;flex-direction:column;gap:6px}.gzmap-z button{width:38px;height:38px;border-radius:9px;border:0;background:#fff;color:#111;font-size:22px;font-weight:900;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.35)}' +
+    '.gzmap-attr{position:absolute;right:4px;bottom:2px;font-size:10.5px;background:rgba(255,255,255,.8);color:#333;padding:1px 4px;border-radius:4px}' +
+    '.gzmap-bot{display:flex;gap:8px;justify-content:space-between;align-items:center;padding:10px;flex-wrap:wrap}.gzmap-bot small{color:#b8c3cf}' +
     '.gz .gz-fardeps{margin:4px 0 2px 26px}.gz .gz-fardep{padding:6px 8px;border-radius:8px;cursor:pointer;font-size:13.5px}.gz .gz-fardep:hover{background:rgba(255,255,255,.05)}' +
     '.gz .gz-gt{cursor:pointer;border-bottom:1px dotted var(--muted);white-space:nowrap}.gz .gz-gt.on{color:var(--cyan);border-bottom-color:var(--cyan)}' +
     '.gz .gv .card{margin:10px 0}.gz .gv .c-route{font-size:15px}.gz .gv .c-sub{font-size:13px;margin-top:3px;color:#fff}.gz .gv .c-sub b{color:var(--yellow)}' +
@@ -451,13 +460,61 @@
           return ' · <a href="https://www.openstreetmap.org/?mlat=' + pl.lat + "&mlon=" + pl.lon + "#map=17/" + pl.lat + "/" + pl.lon + '" target="_blank" rel="noopener" style="color:var(--cyan)">📍 ' + esc(T("gzm.pOnMap", null, "na mapie")) + "</a>" +
             (best ? " · " + esc(T("gzm.pNearest", { s: best.n, d: kmTxt(best.d) }, "najbliższa stacja: {s}, {d}")) : "");
         };
+        // 🗺️ wybór punktu na mapie (kafelki OSM, bez bibliotek)
+        var mapPick = function (k) {
+          var P0 = load(PLACES, {}), cur = P0[k] || P0.dom || { lat: 50.4449, lon: 18.8615 };
+          var z = 16, T2 = 256;
+          var lx = function (lon, zz) { return (lon + 180) / 360 * T2 * Math.pow(2, zz); };
+          var ly = function (lat, zz) { var r = lat * Math.PI / 180; return (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * T2 * Math.pow(2, zz); };
+          var ilon = function (x, zz) { return x / (T2 * Math.pow(2, zz)) * 360 - 180; };
+          var ilat = function (y, zz) { var n = Math.PI - 2 * Math.PI * y / (T2 * Math.pow(2, zz)); return 180 / Math.PI * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n))); };
+          var cx = lx(cur.lon, z), cy = ly(cur.lat, z);
+          var ov = document.createElement("div"); ov.className = "gzmap-ov";
+          ov.innerHTML = '<div class="gzmap-box"><div class="gzmap-top"><input placeholder="' + esc(T("gzm.mapSearch", null, "Szukaj adresu, np. Opolska 5, Tarnowskie Góry")) + '"><button type="button" class="gzmap-btn pri" data-m="find">🔎</button></div>' +
+            '<div class="gzmap"><div class="gzmap-tiles"></div><div class="gzmap-x">📍</div><div class="gzmap-z"><button type="button" data-m="in">+</button><button type="button" data-m="out">−</button></div><div class="gzmap-attr">© OpenStreetMap contributors</div></div>' +
+            '<div class="gzmap-bot"><small>' + esc(T("gzm.mapHint", { p: PL_TOK[k] }, "Przesuń mapę tak, żeby 📍 stała na miejscu: {p}")) + '</small><span style="display:flex;gap:8px"><button type="button" class="gzmap-btn" data-m="cancel">' + esc(T("gzm.mapCancel", null, "Anuluj")) + '</button><button type="button" class="gzmap-btn ok" data-m="save">✔ ' + esc(T("gzm.mapSave", null, "Zapisz tutaj")) + "</button></span></div></div>";
+          document.body.appendChild(ov);
+          var mapEl = ov.querySelector(".gzmap"), tiles = ov.querySelector(".gzmap-tiles");
+          var draw = function () {
+            var w = mapEl.clientWidth, h = mapEl.clientHeight, x0 = cx - w / 2, y0 = cy - h / 2, n = Math.pow(2, z), html = "";
+            for (var tx = Math.floor(x0 / T2); tx <= Math.floor((x0 + w) / T2); tx++) for (var ty = Math.floor(y0 / T2); ty <= Math.floor((y0 + h) / T2); ty++) {
+              if (ty < 0 || ty >= n) continue; var wx = ((tx % n) + n) % n;
+              html += '<img alt="" src="https://tile.openstreetmap.org/' + z + "/" + wx + "/" + ty + '.png" style="left:' + Math.round(tx * T2 - x0) + "px;top:" + Math.round(ty * T2 - y0) + 'px">';
+            }
+            tiles.innerHTML = html;
+          };
+          var zoom = function (dz) { var nz = Math.max(5, Math.min(19, z + dz)); if (nz === z) return; var lat = ilat(cy, z), lon = ilon(cx, z); z = nz; cx = lx(lon, z); cy = ly(lat, z); draw(); };
+          var drag = null;
+          mapEl.addEventListener("pointerdown", function (e) { if (e.target.closest("button")) return; drag = { x: e.clientX, y: e.clientY }; mapEl.setPointerCapture(e.pointerId); mapEl.style.cursor = "grabbing"; });
+          mapEl.addEventListener("pointermove", function (e) { if (!drag) return; cx -= e.clientX - drag.x; cy -= e.clientY - drag.y; drag = { x: e.clientX, y: e.clientY }; draw(); });
+          mapEl.addEventListener("pointerup", function () { drag = null; mapEl.style.cursor = "grab"; });
+          mapEl.addEventListener("wheel", function (e) { e.preventDefault(); zoom(e.deltaY < 0 ? 1 : -1); }, { passive: false });
+          var close = function () { ov.remove(); };
+          var find = function () {
+            var q = ov.querySelector("input").value.trim(); if (!q) return;
+            geocode(q).then(function (g) { if (!g) { ov.querySelector("small").textContent = T("gzm.uNoAddr", { a: q }, "Nie znalazłem adresu „{a}”."); return; } z = 17; cx = lx(g.lon, z); cy = ly(g.lat, z); draw(); });
+          };
+          ov.addEventListener("click", function (e) {
+            if (e.target === ov) return close();
+            var b = e.target.closest("[data-m]"); if (!b) return;
+            var m = b.dataset.m;
+            if (m === "in") zoom(1); else if (m === "out") zoom(-1); else if (m === "cancel") close(); else if (m === "find") find();
+            else if (m === "save") {
+              var old = load(PLACES, {})[k] || {};
+              putPlace(k, Object.assign({}, old, { lat: +ilat(cy, z).toFixed(6), lon: +ilon(cx, z).toFixed(6) }));
+              close(); drawPlaces();
+            }
+          });
+          ov.querySelector("input").addEventListener("keydown", function (e) { if (e.key === "Enter") find(); });
+          requestAnimationFrame(draw);
+        };
         var drawPlaces = function () {
           var P = load(PLACES, {});
           var chip = function (k, side) { return '<button type="button" class="gz-chip" data-pl="' + k + '" data-side="' + side + '">' + esc(PL_TOK[k]) + "</button>"; };
           pb.innerHTML = '<div class="gz-chips" style="align-items:center"><span class="gz-sub">' + esc(T("gzm.pFrom", null, "Skąd:")) + "</span>" + chip("dom", "f") + chip("praca", "f") + chip("gps", "f") +
             '<span class="gz-sub" style="margin-left:6px">' + esc(T("gzm.pTo", null, "Dokąd:")) + "</span>" + chip("dom", "t") + chip("praca", "t") + "</div>" +
             '<details class="gz-sub" style="margin:2px 2px 8px"><summary>' + esc(T("gzm.pMine", null, "Moje miejsca")) + "</summary>" +
-            ["dom", "praca"].map(function (k) { return '<div style="margin:6px 0' + (P[k] ? ';padding-bottom:6px;border-bottom:1px solid var(--line)' : '') + '">' + esc(PL_TOK[k]) + ": " + (P[k] ? "✔ " + esc(T("gzm.pSet", null, "ustawione")) + placeWhere(P[k]) + " " : "— ") + '<button type="button" class="gz-chip" data-plset="' + k + '">📍 ' + esc(T("gzm.pSetHere", null, "ustaw tu, gdzie jestem")) + "</button>" + (P[k] ? ' <button type="button" class="gz-chip" data-plclr="' + k + '">✕</button><div data-wbox="' + k + '"></div>' : "") + "</div>"; }).join("") +
+            ["dom", "praca"].map(function (k) { return '<div style="margin:6px 0' + (P[k] ? ';padding-bottom:6px;border-bottom:1px solid var(--line)' : '') + '">' + esc(PL_TOK[k]) + ": " + (P[k] ? "✔ " + esc(T("gzm.pSet", null, "ustawione")) + placeWhere(P[k]) + " " : "— ") + '<button type="button" class="gz-chip" data-plset="' + k + '">📍 ' + esc(T("gzm.pSetHere", null, "ustaw tu, gdzie jestem")) + "</button>" + (v2On() ? ' <button type="button" class="gz-chip" data-plmap="' + k + '">🗺️ ' + esc(T("gzm.pSetMap", null, "ustaw na mapie")) + "</button>" : "") + (P[k] ? ' <button type="button" class="gz-chip" data-plclr="' + k + '">✕</button><div data-wbox="' + k + '"></div>' : "") + "</div>"; }).join("") +
             '<div style="font-size:11.5px">' + esc(profOn() ? T("gzm.pNoteProf", null, "Miejsca zapisuję w Twoim profilu — są na każdym urządzeniu z Twoim tokenem. Dojście pieszo liczę do przystanków w promieniu ok. 900 m (i na stację, gdy jest blisko).") : T("gzm.pNote", null, "Miejsca zapisuję tylko na tym urządzeniu (z profilem — na wszystkich). Dojście pieszo liczę do przystanków w promieniu ok. 900 m (i na stację, gdy jest blisko).")) + "</div></details>";
         };
         // ⏱ czasy dojścia „na sztywno” — lista najbliższych stacji i przystanków miejsca
@@ -503,6 +560,7 @@
             return;
           }
           if (b.dataset.plclr) { putPlace(b.dataset.plclr, null); drawPlaces(); return; }
+          if (b.dataset.plmap) { mapPick(b.dataset.plmap); return; }
           if (b.dataset.plset) { b.disabled = true; b.textContent = "⏳"; gpsNow().then(function (g) { var old = load(PLACES, {})[b.dataset.plset] || {}; putPlace(b.dataset.plset, Object.assign({}, old, { lat: +g.lat.toFixed(6), lon: +g.lon.toFixed(6) })); drawPlaces(); }, function () { b.textContent = "⚠ GPS"; }); }
         });
       }

@@ -1308,6 +1308,11 @@
     "v3NoTransit": "Komunikacją nie będzie szybciej albo brak połączeń w najbliższych godzinach — zmień godzinę, żeby zobaczyć późniejsze kursy.",
     "v3FirstLater": "Najbliższe połączenie komunikacją: wyjście dopiero o {t} (poniżej).",
     "pOnMap": "na mapie",
-    "pNearest": "najbliższa stacja: {s}, {d}"
+    "pNearest": "najbliższa stacja: {s}, {d}",
+    "mapSearch": "Szukaj adresu, np. Opolska 5, Tarnowskie Góry",
+    "mapHint": "Przesuń mapę tak, żeby 📍 stała na miejscu: {p}",
+    "mapCancel": "Anuluj",
+    "mapSave": "Zapisz tutaj",
+    "pSetMap": "ustaw na mapie"
   }
 }

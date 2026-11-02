@@ -1308,6 +1308,11 @@
     "v3NoTransit": "Mit Bus und Bahn nicht schneller oder in den nächsten Stunden keine Fahrten — ändere die Uhrzeit für spätere.",
     "v3FirstLater": "Nächste Verbindung mit Bus und Bahn: Abfahrt erst um {t} (unten).",
     "pOnMap": "auf der Karte",
-    "pNearest": "nächster Bahnhof: {s}, {d}"
+    "pNearest": "nächster Bahnhof: {s}, {d}",
+    "mapSearch": "Adresse suchen, z. B. Opolska 5, Tarnowskie Góry",
+    "mapHint": "Verschiebe die Karte, bis 📍 auf {p} steht",
+    "mapCancel": "Abbrechen",
+    "mapSave": "Hier speichern",
+    "pSetMap": "auf der Karte festlegen"
   }
 }
