@@ -440,7 +440,7 @@ async function main() {
       if (!zipsFor(d)) continue;
       const net = await buildNetwork(d, zipsFor);
       // stacje bez przystanku w zasięgu: najbliższe przystanki do 2,5 km (index.json → far)
-      if (!farDone) { farDone = true; const nf = addFar(index, net); writeJson(path.join(TMP, "index.json"), index); log("dalekie przystanki dla stacji bez słupków:", nf); }
+      if (!farDone) { farDone = true; const nf = addFar(index, net); writeJson(path.join(TMP, "index.json"), index); writeJson(path.join(TMP, "stop-names.json"), { v: 1, date: d, names: [...new Set(net.names)].sort((x, y) => x.localeCompare(y, "pl")) }); log("dalekie przystanki dla stacji bez słupków:", nf); }
       fs.writeFileSync(path.join(TMP, "network", d + ".json"), JSON.stringify(Object.assign({ v: 1, date: d, generated: gen }, net)));
       log("sieć", d, "kursów", net.trips.length, "przystanków", net.stops.length, "wzorów", net.pats.length);
     }

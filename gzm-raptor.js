@@ -116,17 +116,45 @@
         var pr = par[kk][s]; if (!pr) break;
         if (pr.walk != null) { legs.unshift({ type: "walk", from: pr.walk, to: s, min: pr.w }); s = pr.walk; continue; }
         var pat = j.pats[pr.p], tr = j.trips[pr.trip], d = delayOf(net, pr.trip, rt) || 0, ln = j.lines[pat[0]];
-        legs.unshift({ type: "ride", line: ln[0], kind: TYPE[ln[1]] || "bus", head: ln[2], trip: tr[2], from: pat[1][pr.b], to: pat[1][pr.a], dep: tr[1] + d + pat[2][2 * pr.b + 1], arr: tr[1] + d + pat[2][2 * pr.a], depPlan: tr[1] + pat[2][2 * pr.b + 1], delay: d, live: !!(rt && rt.trips && rt.trips[tr[2]]), stops: pr.a - pr.b });
+        legs.unshift({ type: "ride", line: ln[0], kind: TYPE[ln[1]] || "bus", head: ln[2], trip: tr[2], from: pat[1][pr.b], to: pat[1][pr.a], dep: tr[1] + d + pat[2][2 * pr.b + 1], arr: tr[1] + d + pat[2][2 * pr.a], depPlan: tr[1] + pat[2][2 * pr.b + 1], delay: d, live: !!(rt && rt.trips && rt.trips[tr[2]]), stops: pr.a - pr.b, _p: pr.p, _t: pr.trip, _b: pr.b, _a: pr.a });
         s = pat[1][pr.b]; kk--;
       }
       if (kk > 0) continue;
       // dojście z przystanku startowego (runda 0)
       var p0 = par[0][s]; if (p0 && p0.walk != null) legs.unshift({ type: "walk", from: p0.walk, to: s, min: p0.w });
+      betterBoard(legs, origin, startAt, dep, j);
+      legs.forEach(function (l) { delete l._p; delete l._t; delete l._b; delete l._a; });
       var rides = legs.filter(function (l) { return l.type === "ride"; });
       if (!rides.length) continue;
       out.push({ dep: rides[0].dep, arr: tau[k][bs], arrTotal: bt, transfers: rides.length - 1, legs: legs });
     }
     return out;
+  }
+
+  // Pierwszy przejazd: spośród przystanków startowych leżących na trasie tego samego kursu (przed miejscem wysiadki)
+  // wybierz ten, z którego wychodzi się najpóźniej (godzina odjazdu − dojście); remis → krótsze dojście.
+  function betterBoard(legs, origin, startAt, dep, j) {
+    var ri = legs[0] && legs[0].type === "ride" ? 0 : legs[1] && legs[1].type === "ride" && legs[0].type === "walk" ? 1 : -1;
+    if (ri < 0) return;
+    var L = legs[ri]; if (L._p == null) return;
+    // dojście liczone od godziny wyjścia z wyszukiwania (dep0), nie od startu bieżącego przebiegu
+    var base = startAt && startAt.dep0 != null ? startAt.dep0 : dep;
+    var acc = {}; origin.forEach(function (o) { acc[o] = startAt && startAt[o] != null ? startAt[o] : dep; });
+    dep = base;
+    var pat = j.pats[L._p], seq = pat[1], off = pat[2], fl = pat[3], t0 = j.trips[L._t][1];
+    var curS = ri === 1 ? legs[0].from : seq[L._b];
+    var curAcc = acc[curS] != null ? acc[curS] : dep, curWalk = (curAcc - dep) + (ri === 1 ? legs[0].min : 0);
+    var best = { b: -1, leave: L.dep - curWalk, walk: curWalk };
+    for (var b = 0; b < L._a; b++) {
+      var sb = seq[b]; if (acc[sb] == null || (+fl[b] & 1)) continue;
+      var depB = t0 + L.delay + off[2 * b + 1], w = acc[sb] - dep;
+      if (depB < acc[sb]) continue;                       // nie zdążę na ten przystanek
+      var leave = depB - w;
+      if (leave > best.leave || (leave === best.leave && w < best.walk)) best = { b: b, leave: leave, walk: w };
+    }
+    if (best.b < 0 || (best.b === L._b && ri === 0)) return;
+    L.from = seq[best.b]; L.dep = t0 + L.delay + off[2 * best.b + 1]; L.depPlan = t0 + off[2 * best.b + 1]; L.stops = L._a - best.b; L._b = best.b;
+    if (ri === 1) legs.shift();
   }
 
   // Kilka kolejnych podróży (jak „5 propozycji”): przebiegi od coraz późniejszej godziny.
@@ -156,12 +184,13 @@
     (o.toStops || []).forEach(function (x) { if (typeof x === "number") destSet[x] = 0; else destSet[x.s] = x.walk || 0; });
     if (!origin.length || !Object.keys(destSet).length) return [];
     var K = (o.maxTransfers == null ? 2 : o.maxTransfers) + 1, dep = o.dep != null ? o.dep : Math.min.apply(null, (o.fromStops || []).map(function (x) { return x.t; })), all = [], count = o.count || 5;
+    if (startAt) startAt.dep0 = dep;
     for (var r = 0; r < count * 3 && all.length < count * 2; r++) {
       var res = raptor(net, origin, destSet, dep, K, o.rt, startAt);
       if (!res.length) break;
       res.forEach(function (x) { all.push(x); });
       var first = Math.min.apply(null, res.map(function (x) { return x.dep; }));
-      dep = first + 1;
+      dep = Math.max(dep, first) + 1;
       if (o.maxDep && dep > o.maxDep) break;
     }
     // bez duplikatów i bez podróży zdominowanych (później start i nie wcześniejsza meta przy ≥ przesiadkach)

@@ -68,6 +68,53 @@
     return stationsPromise;
   }
 
+  // ---------- przystanki ZTM GZM, moje miejsca, adresy (planer 🚆🚌) ----------
+  // TEST: tylko profil autora (showVersionBadge). Lista nazw przystanków
+  // (ok. 80 KB, /api/gzm-data/stop-names.json) ładuje się dopiero po pytaniu.
+  function gzChatOn() { try { return localStorage.getItem("showVersionBadge") === "1"; } catch (e) { return false; } }
+  var gzStops = null, gzStopsP = null;
+  function loadStops() {
+    if (!gzChatOn()) return Promise.resolve(null);
+    if (!gzStopsP) gzStopsP = fetch("/api/gzm-data/stop-names.json").then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+      gzStops = ((d && d.names) || []).map(function (n) {
+        var words = fold(n).split(" ").filter(Boolean);
+        // ruchome „e”: Dworzec → Dworca, Kościelec → Kościelca, Wieniec → Wieńca
+        return { name: n, forms: words.map(function (w) { var v = [stemWith(w, ENDINGS_NOM)]; if (/rzec$/.test(w)) v.push(w.slice(0, -4) + "rc"); else if (/iec$/.test(w)) v.push(w.slice(0, -3) + "c"); else if (/ec$/.test(w)) v.push(w.slice(0, -2) + "c"); if (/ek$/.test(w)) v.push(w.slice(0, -2) + "k"); return v; }) };
+      });
+      return gzStops;
+    }).catch(function () { gzStops = []; return gzStops; });
+    return gzStopsP;
+  }
+  function matchStop(phrase) {
+    if (!gzStops || !gzStops.length) return { none: true };
+    var q = fold(phrase).split(" ").filter(Boolean).map(queryForms);
+    if (!q.length) return { none: true };
+    var hits = [];
+    gzStops.forEach(function (s) {
+      if (!q.every(function (qs) { return s.forms.some(function (fs) { return fs.some(function (x) { return qs.some(function (a) { return stemsMatch(a, x); }); }); }); })) return;
+      var eq = s.forms.filter(function (fs) { return q.some(function (qs) { return fs.some(function (x) { return qs.indexOf(x) >= 0; }); }); }).length;
+      hits.push({ s: s, full: eq === s.forms.length && q.length === s.forms.length, eq: eq, extra: s.forms.length - q.length });
+    });
+    if (!hits.length) return { none: true };
+    var full = hits.filter(function (h) { return h.full; });
+    if (full.length === 1) return { exact: full[0].s };
+    if (hits.length === 1) return { exact: hits[0].s };
+    hits.sort(function (a, b) { return (b.full - a.full) || (b.eq - a.eq) || (a.extra - b.extra) || a.s.name.localeCompare(b.s.name, "pl"); });
+    return { options: hits.slice(0, 6).map(function (h) { return h.s; }), full: full.map(function (h) { return h.s; }), more: hits.length > 6 };
+  }
+  var PLACE_LABEL = { dom: "🏠 Dom", praca: "🏢 Praca", gps: "📍 Moja lokalizacja" };
+  function myPlaces() { try { return JSON.parse(localStorage.getItem("gzmPlacesV1") || "{}") || {}; } catch (e) { return {}; } }
+  function placeOf(phrase) {
+    var x = fold(phrase).replace(/^(moj\w*|naszego|nasz\w*) /, "");
+    var k = /^(dom|domu|domem|chaty|chata)$/.test(x) ? "dom" : /^(praca|pracy|prace|robota|roboty|roboty|biuro|biura)$/.test(x) ? "praca" :
+      /^(lokalizacja|lokalizacji|stad|tu|tutaj|tu jestem|miejsca w ktorym jestem)$/.test(x) ? "gps" : null;
+    if (!k) return null;
+    return { gzm: true, place: k, name: PLACE_LABEL[k], unset: k !== "gps" && !myPlaces()[k] };
+  }
+  function looksAddr(phrase) { return /(^|\s)(ul|al|pl|os)\.|(^|\s)(ulica|ulicy|ulice|aleja|alei|plac|placu|osiedle)(\s|$)|\d/i.test(phrase); }
+  function same(a, b) { return !!(a && b) && (a.id && b.id ? a.id === b.id : fold(a.name) === fold(b.name)); }
+  function gzMode() { return !!((st.from && st.from.gzm) || (st.to && st.to.gzm)); }
+
   // Dopasowanie frazy (w dowolnej odmianie) do stacji. Zwraca:
   // {exact: stacja} — jedna pewna; {options: [..]} — kilka, trzeba dopytać;
   // {none: true} — nic.
@@ -160,8 +207,12 @@
   function askStation(kind, question) {
     st.pending = { kind: kind };
     addMsg(question, "bot");
-    var mine = myStations().filter(function (s) { return !(st.from && kind === "to" && s.id === st.from.id); });
-    if (kind === "from" && st.prevFrom) mine = [st.prevFrom].concat(mine.filter(function (s) { return s.id !== st.prevFrom.id; })).slice(0, 6);
+    var mine = myStations().filter(function (s) { return !(st.from && kind === "to" && same(s, st.from)); });
+    if (kind === "from" && st.prevFrom) mine = [st.prevFrom].concat(mine.filter(function (s) { return !same(s, st.prevFrom); })).slice(0, 6);
+    if (gzChatOn() && kind !== "via") {
+      var pl = myPlaces(), pk = ["dom", "praca"].filter(function (k) { return pl[k]; }).concat(kind === "from" ? ["gps"] : []);
+      mine = pk.map(function (k) { return { gzm: true, place: k, name: PLACE_LABEL[k] }; }).filter(function (p) { return !(kind === "to" && same(p, st.from)); }).concat(mine);
+    }
     if (mine.length) stationChips(kind, mine);
   }
   function askTime(question, withTomorrow) {
@@ -313,9 +364,14 @@
       for (var i = 0; i < tokens.length; i++) {
         if (markerTest(fold(tokens[i]))) {
           var words = [];
-          for (var j = i + 1; j < tokens.length && words.length < 5; j++) {
+          for (var j = i + 1; j < tokens.length && words.length < (gzChatOn() ? 7 : 5); j++) {
             var w = fold(tokens[j]);
-            if (!w || MARKERS.test(w) || /^\d/.test(w) || /^(poniedzial|wtor|srod|czwart|piat|sobot|niedziel)/.test(w)) break;
+            // numer domu / „3 Maja” — tylko w trybie przystanków i adresów, gdy dalej stoi słowo albo to adres
+            // „do pracy”, „z domu” — moje miejsce (samo „pracy” jest na liście słów pomijanych: „po pracy”)
+            if (gzChatOn() && !words.length && /^(pracy|domu|prace|praca|dom)$/.test(w) && !/^po$/.test(fold(tokens[i]))) { words.push(tokens[j]); break; }
+            var numOk = gzChatOn() && /^\d{1,3}[a-z]?$/.test(w) && words.length && !/:/.test(tokens[j]) &&
+              (words.some(function (x) { return /^(ul|al|pl|os|ulica|aleja)\.?$/i.test(x); }) || (tokens[j + 1] && /^[A-ZŁŚŻŹĆŃÓĘĄ]/.test(tokens[j + 1]) && !MARKERS.test(fold(tokens[j + 1]))));
+            if (!w || MARKERS.test(w) || (/^\d/.test(w) && !numOk) || /^(poniedzial|wtor|srod|czwart|piat|sobot|niedziel)/.test(w)) break;
             words.push(tokens[j]);
           }
           if (words.length) return words.join(" ");
@@ -326,6 +382,7 @@
     r.from = phraseAfter(function (w) { return w === "z" || w === "ze" || w === "od"; });
     r.to = phraseAfter(function (w) { return w === "do"; });
     r.via = phraseAfter(function (w) { return w === "przez"; });
+    if (gzChatOn() && !r.from && / (stad|z tad|tu jestem|z mojej lokalizacji) /.test(f)) r.from = "moja lokalizacja";
     // „jadę na Zawodzie / na Szombierki” — potocznie cel podróży. Tylko gdy
     // dalej stoi stacja (nie „na przesiadkę”, „na 8”).
     if (!r.to && stations) {
@@ -383,7 +440,7 @@
   // na dowolnym urządzeniu z tym samym profilem rozmowa toczy się dalej
   // (np. „powrót” po wyszukaniu trasy w tamtą stronę).
   var CTX_KEY = "chatContextV1", LOG_MAX = 40, memLog = [], saveTimer = null;
-  function slim(stn) { return stn ? { id: stn.id, name: stn.name } : null; }
+  function slim(stn) { return stn ? (stn.gzm ? { gzm: true, name: stn.name, place: stn.place } : { id: stn.id, name: stn.name }) : null; }
   function ctxNow() {
     return { savedAt: new Date().toISOString(), log: memLog.slice(-LOG_MAX),
       st: { from: slim(st.from), to: slim(st.to), via: slim(st.via), date: st.date, time: st.time, transfer: st.transfer, direct: st.direct, exclude: st.exclude } };
@@ -729,7 +786,7 @@
     // Stare przyciski wyboru (z poprzednich pytań) przestają obowiązywać.
     logEl.querySelectorAll(".ca-opts").forEach(function (b) { b.remove(); });
     addMsg(text, "user");
-    loadStations().then(function () { handle(text); }).catch(function () { addMsg("Nie udało się wczytać listy stacji. Spróbuj ponownie za chwilę.", "bot"); });
+    Promise.all([loadStations(), loadStops()]).then(function () { handle(text); }).catch(function () { addMsg("Nie udało się wczytać listy stacji. Spróbuj ponownie za chwilę.", "bot"); });
   }
 
   // „Powrót” — ta sama trasa w drugą stronę; termin z wypowiedzi albo pytamy.
@@ -1072,8 +1129,46 @@
       var pick = st.pending.options.filter(function (o) { return fold(o.name) === fold(phrase); })[0];
       if (pick) { st[kind] = pick; st.pending = null; return true; }
     }
+    var gzOk = gzChatOn() && kind !== "via";
+    if (gzOk) {
+      var pk = placeOf(phrase);
+      if (pk && pk.unset) {
+        st.pending = { kind: kind };
+        addMsg("Nie masz jeszcze ustawionego miejsca „" + pk.name + "”. Ustaw je w planerze → 🚆🚌 Pociąg + GZM → „Moje miejsca” albo napisz adres lub przystanek.", "bot");
+        return false;
+      }
+      if (pk) { st[kind] = { gzm: true, place: pk.place, name: pk.name }; st.pending = null; return true; }
+      if (st.pending && st.pending.options && fromAnswer) {
+        var pk2 = st.pending.options.filter(function (o) { return fold(o.name) === fold(phrase); })[0];
+        if (pk2) { st[kind] = pk2; st.pending = null; return true; }
+      }
+    }
     var m = matchStation(phrase);
     if (m.exact) { st[kind] = m.exact; st.pending = null; return true; }
+    if (gzOk) {
+      var ms = matchStop(phrase), adr = looksAddr(phrase);
+      if (ms.exact && !adr) { st[kind] = { gzm: true, name: ms.exact.name }; st.pending = null; return true; }
+      if (adr && !ms.exact && !m.options) {
+        st[kind] = { gzm: true, addr: true, name: phrase.trim() }; st.pending = null;
+        addMsg("📍 „" + phrase.trim() + "” traktuję jako adres — przy wyszukiwaniu znajdę go na mapie.", "bot");
+        return true;
+      }
+      if (m.options && !adr) ms = { options: ms.full || [] };
+      if (ms.exact || (ms.options && ms.options.length) || (m.options && adr)) {
+        var list = [];
+        if (ms.exact) list.push({ gzm: true, name: ms.exact.name, ico: "🚏" });
+        (m.options || []).slice(0, 4).forEach(function (x) { list.push({ id: x.id, name: x.name, words: x.words, ico: "🚆" }); });
+        (ms.options || []).forEach(function (x) { if (list.length < 8) list.push({ gzm: true, name: x.name, ico: "🚏" }); });
+        if (adr) list.unshift({ gzm: true, addr: true, name: phrase.trim(), ico: "📍" });
+        st.pending = { kind: kind, options: list };
+        addMsg("„" + phrase + "” — chodzi o stację 🚆, przystanek 🚏 czy adres 📍" + (kind === "from" ? " (skąd)" : " (dokąd)") + "?", "bot");
+        var o2 = list.map(function (x) { return { label: x.ico + " " + x.name, onClick: function () { addMsg(x.name, "user"); var v = Object.assign({}, x); delete v.ico; st[kind] = v; st.pending = null; next(); } }; });
+        if (!adr) o2.push({ label: "📍 To adres", onClick: function () { addMsg("To adres", "user"); st[kind] = { gzm: true, addr: true, name: phrase.trim() }; st.pending = null; next(); } });
+        o2.push({ label: "✏️ Żadne z powyższych — wpiszę jeszcze raz", onClick: function () { addMsg("Żadne z powyższych", "user"); st.pending = { kind: kind }; addMsg("Wpisz jeszcze raz, " + KIND_LABEL[kind] + " — stację, przystanek (np. „Bytom Dworzec”) albo adres (np. „Opolska 5, Tarnowskie Góry”).", "bot"); if (inputEl) inputEl.focus(); } });
+        addOptions(o2);
+        return false;
+      }
+    }
     if (m.options) {
       st.pending = { kind: kind, options: m.options };
       addMsg("„" + phrase + "” — którą stację masz na myśli" + (kind === "via" ? " (przez)" : kind === "from" ? " (skąd)" : " (dokąd)") + "?" + (m.more ? " Jeśli nie ma jej na liście, wpisz pełniejszą nazwę." : ""), "bot");
@@ -1089,7 +1184,13 @@
     }
     st.pending = { kind: kind };
     var sim = similarStations(phrase, 6);
-    if (sim.length) {
+    if (gzOk) {
+      addMsg("Nie znalazłem stacji ani przystanku „" + phrase + "”. Może to adres? Albo chodziło o którąś z tych stacji?", "bot");
+      var o3 = [{ label: "📍 Szukaj jako adres", onClick: function () { addMsg("To adres", "user"); st[kind] = { gzm: true, addr: true, name: phrase.trim() }; st.pending = null; next(); } }];
+      sim.forEach(function (x) { o3.push({ label: x.name, onClick: function () { addMsg(x.name, "user"); st[kind] = x; st.pending = null; next(); } }); });
+      o3.push({ label: "✏️ Wpiszę jeszcze raz", onClick: function () { addMsg("Wpiszę jeszcze raz", "user"); st.pending = { kind: kind }; if (inputEl) inputEl.focus(); } });
+      addOptions(o3);
+    } else if (sim.length) {
       addMsg("Nie znalazłem stacji „" + phrase + "”. Czy chodziło o którąś z tych?", "bot");
       stationChips(kind, sim, "✏️ Żadna — wpiszę jeszcze raz");
     } else {
@@ -1105,7 +1206,7 @@
     }
     if (!st.from) { askStation("from", "Skąd jedziesz? Kliknij albo wpisz nazwę stacji."); return; }
     if (!st.to) { askStation("to", "Dokąd jedziesz? Kliknij albo wpisz nazwę stacji."); return; }
-    if (st.from.id === st.to.id) { st.to = null; askStation("to", "Stacja docelowa jest taka sama jak początkowa. Dokąd jedziesz?"); return; }
+    if (same(st.from, st.to)) { st.to = null; askStation("to", "Cel jest taki sam jak początek. Dokąd jedziesz?"); return; }
     if (st.askCarrierText) { var ct = st.askCarrierText; st.askCarrierText = null; askCarrier("Nie rozpoznałem przewoźnika „" + ct + "”. Którego wykluczyć?"); return; }
     if (st.badTransfer) { st.badTransfer = false; askTransfer("Czas na przesiadkę mogę ustawić tylko na jedną z tych wartości — wybierz:"); return; }
     if (st.needTime) { st.needTime = false; if (!st.time) { askTime("O której godzinie mniej więcej? Kliknij albo napisz np. „7:30”."); return; } }
@@ -1113,7 +1214,34 @@
     summary();
   }
 
+  function summaryGzm() {
+    st.pending = null;
+    var date = st.date || iso(today());
+    var when = (st.date ? plDate(date) : "dziś") + ", " + (st.time ? "od " + st.time : "od teraz");
+    var lines = ["🚆🚌 " + st.from.name + " → " + st.to.name, "📅 " + when, "Pociąg + autobus, tramwaj, trolejbus i dojście pieszo — od drzwi do drzwi."];
+    if (st.via || st.exclude.length || st.transfer != null || st.direct) lines.push("ℹ️ „przez”, przewoźnicy i czas przesiadki działają tylko dla samych stacji — tutaj ich nie użyję.");
+    addMsg(lines.join("\n") + "\n\nSzukać?", "bot");
+    addOptions([
+      { label: "🔎 Szukaj", primary: true, onClick: goGzm },
+      { label: "🔁 Podróż powrotna", onClick: function () { addMsg("Podróż powrotna", "user"); returnTrip(null); } },
+      { label: "↺ Od nowa", onClick: function () { logEl.innerHTML = ""; greet(); } }
+    ]);
+  }
+  function goGzm() {
+    var q = new URLSearchParams();
+    q.set("gzFrom", st.from.name); q.set("gzTo", st.to.name);
+    if (st.date) q.set("date", st.date);
+    if (st.time) q.set("time", st.time);
+    var opening = addMsg("Otwieram planer 🚆🚌 Pociąg + GZM…", "bot");
+    setTimeout(function () { if (opening && opening.classList) opening.classList.add("ca-wait"); }, 1500);
+    if (!(window.ProfileSync && ProfileSync.getToken())) { try { sessionStorage.setItem(ASK_FLAG, "1"); } catch (e) {} }
+    flushCtxToProfile(true);
+    var url = "/planer/?" + q.toString() + "#gzm";
+    location.href = url;
+  }
+
   function summary() {
+    if (gzMode()) { summaryGzm(); return; }
     st.pending = null;
     var date = st.date || iso(today());
     var when = (st.date ? plDate(date) : "dziś") + ", " + (st.time ? "od " + st.time : "od teraz");

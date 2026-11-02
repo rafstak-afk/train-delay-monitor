@@ -487,6 +487,10 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
   // teraz pilnowane (a nie przyszliśmy tu z gotowym wyszukiwaniem).
   if(!tabFromHash()&&guardView&&!new URLSearchParams(location.search).get('from')&&guardView.anyActive())showTab(GUARD_TAB);
   window.addEventListener('hashchange',tabFromHash);
+  // Z czatu „Zapytaj, jak dojechać”: /planer/?gzFrom=…&gzTo=…[&date=&time=] → zakładka 🚆🚌 i od razu szukaj.
+  (function(){var q=new URLSearchParams(location.search),gf=q.get('gzFrom'),gt=q.get('gzTo');if(!gzmView||!(gf||gt))return;
+    try{history.replaceState(null,'',location.pathname+'#gzm')}catch(e){}
+    showTab('gzm');gzmView.rerun({from:gf||'',to:gt||'',date:q.get('date')||null,time:q.get('time')||null});})();
   // „🛡️ Pilnowane” przy wyniku → zakładka z podświetlonym połączeniem (bez przeładowania).
   document.addEventListener('click',function(e){
     var a=e.target.closest('a.itin-guarded');if(!a||!guardView)return;
