@@ -566,6 +566,8 @@
       c.addEventListener("click", function (e) {
         var g = e.target.closest("[data-guard]"); if (g) { guardTrip(g); return; }
         var rb = e.target.closest("[data-remind]"); if (rb) { remindTrip(rb); return; }
+        var sh = e.target.closest("[data-shift]");
+        if (sh) { var tm = +sh.dataset.shift; tm = Math.max(0, Math.min(1439, tm)); var ti = root.querySelector("#gzCTime"); if (ti) ti.value = C.fmt(tm); searchC(); return; }
         var mo = e.target.closest("[data-cmore]"); if (mo && cState) { cState.more[mo.dataset.cmore] = (cState.more[mo.dataset.cmore] || 0) + 1; renderC(); return; }
         var fv = e.target.closest("[data-fav]"); if (fv) e.stopPropagation();
       });
@@ -1505,11 +1507,15 @@
         var rails = out.filter(function (x) { return x.mm; }).sort(function (a, b) { return a.final - b.final; });
         var buses = out.filter(function (x) { return x.net; }).sort(function (a, b) { return a.final - b.final; });
         var bR = rails[0], bB = buses[0], railFirst = bR && (!bB || bR.final <= bB.final + tolOf(bB));
-        out = (railFirst ? rails.concat(buses) : buses.concat(rails)).slice(0, 6);
+        out = (railFirst ? rails.concat(buses) : buses.concat(rails));
+        // dociera dużo później niż najlepsza (ponad 30 min albo ponad połowę czasu podróży) — nie pokazujemy
+        var bestF = Math.min.apply(null, out.map(function (x) { return x.final; }).concat([Infinity]));
+        if (bestF < Infinity) out = out.filter(function (x) { return x.final - bestF <= Math.max(30, 0.5 * (bestF - base)); });
+        out = out.slice(0, 6);
         if (bR && bB) {
           var diff = bR.final - bB.final;
           if (railFirst) bR.why = diff > 0 ? T("gzm.v3WhyRailTol", { n: diff }, "Pociągiem — {n} min później niż samą komunikacją, ale koleją") : T("gzm.v3WhyRailBest", null, "Pociągiem — najszybciej");
-          else bB.why = T("gzm.v3WhyBus", { n: -diff }, "Autobusem/tramwajem — o {n} min szybciej niż z pociągiem");
+          else bB.why = T("gzm.v3WhyBus", { n: diff }, "Autobusem/tramwajem — o {n} min szybciej niż z pociągiem");
         }
         // wariant pieszy: blisko (ten sam węzeł), do 25 min albo szybciej niż komunikacja
         var bestFinal = out.length ? Math.min.apply(null, out.map(function (x) { return x.final; })) : Infinity;
@@ -1568,6 +1574,9 @@
           }
           return accHtml + card + egrHtml;
         }).join("") +
+        (v3 ? '<div style="display:flex;gap:8px;justify-content:space-between;margin:10px 2px">' +
+          '<button type="button" class="btn-sm secondary" data-shift="' + (base - 60) + '">⏮ ' + esc(T("gzm.v3Earlier", null, "Wcześniejsze")) + "</button>" +
+          '<button type="button" class="btn-sm secondary" data-shift="' + (Math.max.apply(null, out.map(function (x) { return x.start; })) + 1) + '">' + esc(T("gzm.v3Later", null, "Późniejsze połączenia")) + " ⏭</button></div>" : "") +
         '<div class="gz-sub" style="margin:6px 2px">' + esc(T("gzm.mmNote", null, "Jedno wyszukiwanie: dojazd i dalsza podróż w całej sieci GZM (do 1 przesiadki), pociągi z planera PLK.")) + "</div>";
       cState.shown = out;
     }

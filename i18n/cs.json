@@ -1314,6 +1314,8 @@
     "mapCancel": "Zrušit",
     "mapSave": "Uložit zde",
     "pSetMap": "nastavit na mapě",
-    "fromOnlyHint": "Zadejte i „Kam“ a naplánuji celou cestu."
+    "fromOnlyHint": "Zadejte i „Kam“ a naplánuji celou cestu.",
+    "v3Earlier": "Dřívější",
+    "v3Later": "Pozdější spojení"
   }
 }

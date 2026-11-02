@@ -1314,6 +1314,8 @@
     "mapCancel": "Cancelar",
     "mapSave": "Guardar aquí",
     "pSetMap": "fijar en el mapa",
-    "fromOnlyHint": "Escribe también «Hasta» para planificar todo el viaje."
+    "fromOnlyHint": "Escribe también «Hasta» para planificar todo el viaje.",
+    "v3Earlier": "Anteriores",
+    "v3Later": "Conexiones posteriores"
   }
 }

@@ -1314,6 +1314,8 @@
     "mapCancel": "Abbrechen",
     "mapSave": "Hier speichern",
     "pSetMap": "auf der Karte festlegen",
-    "fromOnlyHint": "Gib auch „Nach“ ein, um die ganze Reise zu planen."
+    "fromOnlyHint": "Gib auch „Nach“ ein, um die ganze Reise zu planen.",
+    "v3Earlier": "Früher",
+    "v3Later": "Spätere Verbindungen"
   }
 }

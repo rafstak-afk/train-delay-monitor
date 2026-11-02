@@ -1314,6 +1314,8 @@
     "mapCancel": "Anuluj",
     "mapSave": "Zapisz tutaj",
     "pSetMap": "ustaw na mapie",
-    "fromOnlyHint": "Wpisz też „Dokąd”, żeby ułożyć całą podróż."
+    "fromOnlyHint": "Wpisz też „Dokąd”, żeby ułożyć całą podróż.",
+    "v3Earlier": "Wcześniejsze",
+    "v3Later": "Późniejsze połączenia"
   }
 }
