@@ -1298,6 +1298,14 @@
     "v2TrainLive": "Zug +{n} Min. (live)",
     "v2TrainPlan": "Zug laut PLK-Fahrplan",
     "farDeps": "Abfahrten",
-    "farNoDeps": "Keine Abfahrten in den nächsten 2 Stunden."
+    "farNoDeps": "Keine Abfahrten in den nächsten 2 Stunden.",
+    "v3Walk": "Zu Fuß gehen",
+    "v3WalkChip": "{n} Min. zu Fuß",
+    "v3WalkWhy": "{d} Luftlinie — zu Fuß am einfachsten",
+    "v3WhyRailTol": "Mit dem Zug — {n} Min. später als mit Bus/Tram, aber per Bahn",
+    "v3WhyRailBest": "Mit dem Zug — am schnellsten",
+    "v3WhyBus": "Mit Bus/Tram — {n} Min. schneller als mit dem Zug",
+    "v3NoTransit": "Mit Bus und Bahn nicht schneller oder in den nächsten Stunden keine Fahrten — ändere die Uhrzeit für spätere.",
+    "v3FirstLater": "Nächste Verbindung mit Bus und Bahn: Abfahrt erst um {t} (unten)."
   }
 }

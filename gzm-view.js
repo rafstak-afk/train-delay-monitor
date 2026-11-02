@@ -953,7 +953,7 @@
     // przystanki w zasięgu pieszym miejsca (≤ 900 m) + stacje w zasięgu (≤ 1,5 km, + 2 min na peron)
     function placeReach(net, pl) {
       var out = [];
-      var rS = pl.far ? 1500 : 900, rT = pl.far ? 2000 : 1500;
+      var rS = pl.far ? 1500 : 900, rT = pl.far || v2On() ? 2000 : 1500;
       for (var i = 0; i < net.n; i++) { var d = havM(pl.lat, pl.lon, net.lat[i], net.lon[i]); if (d <= rS) out.push({ s: i, walk: walkMin(d), d: d }); }
       var ms = measuredFor(net, pl);
       Object.keys(ms.stops).forEach(function (k) {
@@ -1031,7 +1031,7 @@
             var best = 1e9; (x.s || []).forEach(function (p) { var i = code[p[0]]; if (i != null && star[i] + p[3] < best) best = star[i] + p[3]; });
             if (fromPlace && fromPlace.walkSt[x.id] != null) best = Math.min(best, tmin + fromPlace.walkSt[x.id]);
             return { st: x, plat: best };
-          }).filter(function (x) { return x.plat < 1e8 && (!toSt || x.st.id !== toSt.id); }).sort(function (a, b) { return a.plat - b.plat; }).slice(0, 2).map(function (x) { return x.st; });
+          }).filter(function (x) { return x.plat < 1e8 && (!toSt || x.st.id !== toSt.id); }).sort(function (a, b) { return a.plat - b.plat; }).slice(0, v2On() ? 3 : 2).map(function (x) { return x.st; });
         }
         // stacje przy celu: najbliższe celowi (w linii prostej) stacje z przystankami GZM
         var egrSt;
@@ -1043,7 +1043,7 @@
         }
         var combos = [];
         accSt.forEach(function (a) { egrSt.forEach(function (e) { if (a.id !== e.id) combos.push({ a: { st: a }, e: { st: e } }); }); });
-        combos = combos.slice(0, 3);
+        combos = combos.slice(0, v2On() ? 4 : 3);
         var date2 = date;
         return Promise.all(combos.map(function (cb) {
           var q = new URLSearchParams({ from: cb.a.st.n, to: cb.e.st.n, date: date2, time: C.fmt(tmin), transferMinutes: "3" });
@@ -1205,6 +1205,7 @@
       var route = esc(jn.legs[0].fromName) + " → " + esc(jn.legs[jn.legs.length - 1].toName);
       var sub = esc(T("gzm.v2Sub", { a: C.fmt(lv), b: C.fmt(jn.arr), t: v2Total(jn.arr - lv) }, "wyjdź {a} · na miejscu {b} · w drodze {t}"));
       var chip = '<span class="ct">' + C.fmt(jn.arr) + "</span>" + esc(jn.transfers ? T("gzm.v2Changes", { n: jn.transfers }, "przesiadki: {n}") : T("gzm.v2Direct", null, "bez przesiadek"));
+      var xw = v2Cur[i] && v2Cur[i].why; if (xw) sub += '<br><b>' + esc(xw) + "</b>";
       return '<div class="card s-ok">' + v2Head(route, sub, "ok", chip) + v2Journey(jn) + v2Foot(i, k, open, esc(rtOk && cState.date === warsawNow().date ? "● " + T("gzm.liveOn", null, "na żywo") : T("gzm.sched", null, "wg rozkładu"))) + (open ? tripsOfJourney(jn) : "") + "</div>";
     }
     function v2TrainCard(x, i, S) {
@@ -1244,8 +1245,70 @@
       var route = esc(fromName) + " → " + esc(toName);
       var sub = esc(T("gzm.v2Sub", { a: C.fmt(leave), b: C.fmt(x.final), t: v2Total(x.final - leave) }, "wyjdź {a} · na miejscu {b} · w drodze {t}"));
       var chip = '<span class="ct">' + C.fmt(x.final) + "</span>" + esc(v2StTxt(st));
+      if (x.why) sub += '<br><b>' + esc(x.why) + "</b>";
       var meta = x.tDelay ? esc(T("gzm.v2TrainLive", { n: x.tDelay }, "pociąg +{n} min (na żywo)")) : esc(T("gzm.v2TrainPlan", null, "pociąg wg rozkładu PLK"));
       return '<div class="card ' + V2ST[st] + '">' + v2Head(route, sub, st, chip) + html.join("") + more + v2Foot(i, tKey, open, meta) + (open ? trainRunsHtml(it, S.date) : "") + "</div>";
+    }
+    // ===== Logika v3: pieszo, filtry absurdów, pierwszeństwo kolei (TEST — tylko profil autora) =====
+    var NODE_M = 300;
+    function ptOfStop(i) { return i != null && i >= 0 ? { lat: cState.net.lat[i], lon: cState.net.lon[i] } : null; }
+    function ptOfName(nm) {
+      var stn = stationByName(nm); if (stn) return { lat: stn.lat, lon: stn.lon };
+      var ix = cState.net.byName[nm]; return ix && ix.length ? ptOfStop(ix[0]) : null;
+    }
+    function endPt(S, side) {
+      var pl = side === "s" ? S.fromPlace : S.toPlace, st2 = side === "s" ? S.fromSt : S.toSt, nm = side === "s" ? S.fN : S.tN;
+      if (pl) return { lat: pl.lat, lon: pl.lon };
+      if (st2) return { lat: st2.lat, lon: st2.lon };
+      return nm && nm.length ? ptOfName(nm[0]) : null;
+    }
+    function dM(a, b) { return a && b ? havM(a.lat, a.lon, b.lat, b.lon) : 1e9; }
+    // dojście pieszo start → cel (z czasami na sztywno / zmierzonymi, gdy cel to przystanek przy miejscu)
+    function walkGeo(S) {
+      var a = endPt(S, "s"), b = endPt(S, "e"); if (!a || !b) return null;
+      var d = dM(a, b), w = walkMin(d) + ((S.fromSt || S.toSt) ? 2 : 0);
+      var pick = function (pl, names) { var best = null; (pl && pl.stops || []).forEach(function (x) { if ((names || []).indexOf(cState.net.name[x.s]) >= 0 && (best == null || x.walk < best)) best = x.walk; }); return best; };
+      var fx = pick(S.fromPlace, S.tN) ; if (fx == null) fx = pick(S.toPlace, S.fN);
+      if (fx == null && S.fromPlace && S.toSt && S.fromPlace.walkSt && S.fromPlace.walkSt[S.toSt.id] != null) fx = S.fromPlace.walkSt[S.toSt.id];
+      if (fx == null && S.toPlace && S.fromSt && S.toPlace.walkSt && S.toPlace.walkSt[S.fromSt.id] != null) fx = S.toPlace.walkSt[S.fromSt.id];
+      return { s: a, e: b, dist: d, walk: fx != null ? fx : w };
+    }
+    // kolejne punkty trasy (wsiadania i wysiadania) — do filtrów geometrii
+    function ridePts(jn, out) { jn.legs.forEach(function (l) { if (l.type === "ride") { out.push(ptOfStop(l.from)); out.push(ptOfStop(l.to)); } }); }
+    function routePts(x) {
+      var p = [];
+      if (x.net) { ridePts(x.net, p); return p; }
+      var c = x.c;
+      if (c.latest) ridePts(c.latest.jn, p);
+      (x.it.legs || []).forEach(function (l) { p.push(ptOfName(l.board.stationName)); p.push(ptOfName(l.alight.stationName)); });
+      if (!c.walkE && c.egr && c.egr[0]) ridePts(c.egr[0], p);
+      return p;
+    }
+    function rideCount(x) {
+      if (x.net) return x.net.legs.filter(function (l) { return l.type === "ride"; }).length;
+      var n = (x.it.legs || []).length, c = x.c;
+      if (c.latest) n += c.latest.jn.legs.filter(function (l) { return l.type === "ride"; }).length;
+      if (!c.walkE && c.egr && c.egr[0]) n += c.egr[0].legs.filter(function (l) { return l.type === "ride"; }).length;
+      return n;
+    }
+    function absurd(x, g) {
+      var p = routePts(x).filter(Boolean); if (!p.length) return false;
+      // przejazd przez okolicę celu przed ostatnim odcinkiem (ostatni punkt = wysiadka u celu)
+      for (var i = 0; i < p.length - 1; i++) if (dM(p[i], g.e) <= NODE_M) return "dest";
+      // powrót w okolicę startu po pierwszym wejściu
+      for (var j = 2; j < p.length; j++) if (dM(p[j], g.s) <= NODE_M) return "back";
+      // ten sam węzeł dwa razy (nie sąsiednie punkty — przesiadka wysiadka/wsiadanie to jeden węzeł)
+      for (var a = 0; a < p.length; a++) for (var b2 = a + 2; b2 < p.length; b2++) if (dM(p[a], p[b2]) <= 150) return "loop";
+      var dur = x.final - x.start;
+      if (g.walk >= 5 && dur > 2 * g.walk) return "slow";
+      if (g.dist >= 800) { var len = dM(g.s, p[0]); for (var k = 1; k < p.length; k++) len += dM(p[k - 1], p[k]); len += dM(p[p.length - 1], g.e); if (len > 2.5 * g.dist) return "detour"; }
+      return false;
+    }
+    function v2WalkCard(g, base) {
+      var arr = base + g.walk;
+      var sub = esc(T("gzm.v2Sub", { a: C.fmt(base), b: C.fmt(arr), t: v2Total(g.walk) }, "wyjdź {a} · na miejscu {b} · w drodze {t}"));
+      return '<div class="card s-ok">' + v2Head("🚶 " + esc(T("gzm.v3Walk", null, "Idź pieszo")), sub, "ok", '<span class="ct">' + C.fmt(arr) + "</span>" + esc(T("gzm.v3WalkChip", { n: g.walk }, "{n} min pieszo"))) +
+        '<div class="c-date" style="margin-top:6px">' + esc(T("gzm.v3WalkWhy", { d: kmTxt(g.dist) }, "{d} w linii prostej — pieszo najprościej")) + "</div></div>";
     }
     function renderMM() {
       var res = root.querySelector("#gzCRes"), S = cState, now = nowOn(S.date), base = S.live ? Math.max(S.tmin, now) : S.tmin, out = [];
@@ -1329,10 +1392,46 @@
       });
       // Bez wariantów gorszych pod każdym względem: inny wyrusza nie wcześniej, a dowozi wcześniej
       // (np. tym samym pociągiem dalej przez cel i autobusem z powrotem — wraca się na trasie).
-      out = out.filter(function (x) { return !out.some(function (y) { return y !== x && y.start >= x.start && y.final < x.final; }); }).slice(0, 6);
+      var v3 = v2On(), geo = v3 ? walkGeo(S) : null, walkTop = "";
+      if (v3 && geo) {
+        out = out.filter(function (x) { return !absurd(x, geo); });
+        // dominacja: lepszy = wyrusza nie wcześniej, dociera nie później, nie więcej przesiadek; pociąg chroniony tolerancją
+        var tolOf = function (y) { return Math.max(10, Math.round(0.15 * (y.final - y.start))); };
+        out = out.filter(function (x) {
+          return !out.some(function (y) {
+            if (y === x || y.start < x.start || y.final > x.final || rideCount(y) > rideCount(x)) return false;
+            if (!(y.final < x.final || y.start > x.start || rideCount(y) < rideCount(x))) return false;
+            if (x.mm && !y.mm && x.final <= y.final + tolOf(y)) return false;
+            return true;
+          });
+        });
+        // pierwszeństwo kolei: pociąg na górze, gdy najwyżej ~10 min / 15% później niż najlepsza trasa bez pociągu
+        var rails = out.filter(function (x) { return x.mm; }).sort(function (a, b) { return a.final - b.final; });
+        var buses = out.filter(function (x) { return x.net; }).sort(function (a, b) { return a.final - b.final; });
+        var bR = rails[0], bB = buses[0], railFirst = bR && (!bB || bR.final <= bB.final + tolOf(bB));
+        out = (railFirst ? rails.concat(buses) : buses.concat(rails)).slice(0, 6);
+        if (bR && bB) {
+          var diff = bR.final - bB.final;
+          if (railFirst) bR.why = diff > 0 ? T("gzm.v3WhyRailTol", { n: diff }, "Pociągiem — {n} min później niż samą komunikacją, ale koleją") : T("gzm.v3WhyRailBest", null, "Pociągiem — najszybciej");
+          else bB.why = T("gzm.v3WhyBus", { n: -diff }, "Autobusem/tramwajem — o {n} min szybciej niż z pociągiem");
+        }
+        // wariant pieszy: blisko (ten sam węzeł), do 25 min albo szybciej niż komunikacja
+        var bestFinal = out.length ? Math.min.apply(null, out.map(function (x) { return x.final; })) : Infinity;
+        var firstStart = out.length ? Math.min.apply(null, out.map(function (x) { return x.start; })) : Infinity;
+        if (geo.dist <= NODE_M || geo.walk <= 25 || base + geo.walk <= bestFinal || firstStart > base + 60) {
+          walkTop = v2WalkCard(geo, base);
+          // noc / długa przerwa: najbliższe połączenie dopiero za ponad godzinę
+          if (firstStart > base + 60 && firstStart < Infinity) walkTop += '<div class="gz-sub" style="margin:4px 2px 10px">' + esc(T("gzm.v3FirstLater", { t: C.fmt(firstStart) }, "Najbliższe połączenie komunikacją: wyjście dopiero o {t} (poniżej).")) + "</div>";
+        }
+        if (geo.dist <= NODE_M) out = [];
+      } else out = out.filter(function (x) { return !out.some(function (y) { return y !== x && y.start >= x.start && y.final < x.final; }); }).slice(0, 6);
+      if (!out.length && walkTop) {
+        res.innerHTML = walkTop + (geo && geo.dist > NODE_M ? '<div class="gz-sub" style="margin:6px 2px">' + esc(T("gzm.v3NoTransit", null, "Komunikacją nie będzie szybciej albo brak połączeń w najbliższych godzinach — zmień godzinę, żeby zobaczyć późniejsze kursy.")) + "</div>" : "");
+        cState.shown = []; return;
+      }
       if (!out.length) { res.innerHTML = '<div class="gz-empty">' + esc(T("gzm.cNone", null, "Nie udało się ułożyć podróży w ciągu 2 godzin od wyjścia.")) + "</div>"; return; }
       var guardOk = !!(window.GuardStore && window.GuardCore && GuardStore.enabled && GuardStore.enabled());
-      res.innerHTML = (S.date !== warsawNow().date ? '<div class="gz-live off" style="margin:4px 2px">📅 ' + esc(T("gzm.uSched", { d: S.date }, "{d} — godziny wg rozkładu")) + "</div>" : '<div class="gz-live ' + (rtOk ? "on" : "off") + '" style="margin:4px 2px">' + (rtOk ? "● " + esc(T("gzm.liveOn", null, "na żywo")) : "○ " + esc(T("gzm.liveOff", null, "dane na żywo niedostępne, pokazuję rozkład"))) + "</div>") +
+      res.innerHTML = walkTop + (S.date !== warsawNow().date ? '<div class="gz-live off" style="margin:4px 2px">📅 ' + esc(T("gzm.uSched", { d: S.date }, "{d} — godziny wg rozkładu")) + "</div>" : '<div class="gz-live ' + (rtOk ? "on" : "off") + '" style="margin:4px 2px">' + (rtOk ? "● " + esc(T("gzm.liveOn", null, "na żywo")) : "○ " + esc(T("gzm.liveOff", null, "dane na żywo niedostępne, pokazuję rozkład"))) + "</div>") +
         out.map(function (x, i) {
           if (v2On()) { v2Cur[i] = x; return x.net ? v2NetCard(x.net, guardOk ? i : null) : v2TrainCard(x, guardOk ? i : null, S); }
           if (x.net) return netCard(x.net, guardOk ? i : null, x);

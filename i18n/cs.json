@@ -1298,6 +1298,14 @@
     "v2TrainLive": "vlak +{n} min (živě)",
     "v2TrainPlan": "vlak podle jízdního řádu PLK",
     "farDeps": "Odjezdy",
-    "farNoDeps": "V příštích 2 hodinách žádné odjezdy."
+    "farNoDeps": "V příštích 2 hodinách žádné odjezdy.",
+    "v3Walk": "Jdi pěšky",
+    "v3WalkChip": "{n} min pěšky",
+    "v3WalkWhy": "{d} vzdušnou čarou — pěšky je to nejjednodušší",
+    "v3WhyRailTol": "Vlakem — o {n} min později než autobusem/tramvají, ale po železnici",
+    "v3WhyRailBest": "Vlakem — nejrychleji",
+    "v3WhyBus": "Autobusem/tramvají — o {n} min rychleji než s vlakem",
+    "v3NoTransit": "Hromadnou dopravou to rychlejší nebude nebo v nejbližších hodinách nic nejede — změňte čas.",
+    "v3FirstLater": "Nejbližší spojení hromadnou dopravou: odchod až v {t} (níže)."
   }
 }

@@ -1298,6 +1298,14 @@
     "v2TrainLive": "pociąg +{n} min (na żywo)",
     "v2TrainPlan": "pociąg wg rozkładu PLK",
     "farDeps": "Odjazdy",
-    "farNoDeps": "Brak odjazdów w najbliższych 2 godzinach."
+    "farNoDeps": "Brak odjazdów w najbliższych 2 godzinach.",
+    "v3Walk": "Idź pieszo",
+    "v3WalkChip": "{n} min pieszo",
+    "v3WalkWhy": "{d} w linii prostej — pieszo najprościej",
+    "v3WhyRailTol": "Pociągiem — {n} min później niż samą komunikacją, ale koleją",
+    "v3WhyRailBest": "Pociągiem — najszybciej",
+    "v3WhyBus": "Autobusem/tramwajem — o {n} min szybciej niż z pociągiem",
+    "v3NoTransit": "Komunikacją nie będzie szybciej albo brak połączeń w najbliższych godzinach — zmień godzinę, żeby zobaczyć późniejsze kursy.",
+    "v3FirstLater": "Najbliższe połączenie komunikacją: wyjście dopiero o {t} (poniżej)."
   }
 }
