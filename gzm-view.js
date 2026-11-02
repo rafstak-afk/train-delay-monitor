@@ -740,19 +740,42 @@
     }
     // ===== Adres → współrzędne (OSM Nominatim, tylko po kliknięciu Szukaj; wyniki zapamiętane na urządzeniu) =====
     var GEO = "gzmGeoCacheV2";
-    function looksAddress(txt) { return /\d|,|^\s*(ul\.|al\.|pl\.|os\.)/i.test(txt); }
+    function looksAddress(txt) { return /\d|,|(^|\s)(ul|al|pl|os)\.|(^|\s)(ulica|ulicy|aleja|alei|plac|osiedle)(\s|$)/i.test(txt); }
+    // Nominatim bywa wybredny („ul. Księdza …”, miasto na początku) — próbujemy kilku zapisów, po kolei (max 1 zapytanie/s).
+    function geoVariants(txt) {
+      var t = String(txt).trim(), out = [t];
+      var clean = t.replace(/(^|\s)(ul|al|pl|os)\.\s*/gi, " ").replace(/(^|\s)(ulica|ulicy)\s+/gi, " ")
+        .replace(/(^|\s)(księdza|ks\.|świętego|św\.|generała|gen\.|biskupa|bpa|doktora|dr\.?|profesora|prof\.|marszałka|marsz\.|kardynała|kard\.|króla|majora|mjr\.?|pułkownika|płk\.?)\s+/gi, " ")
+        .replace(/\s+/g, " ").trim();
+      if (clean && clean !== t) out.push(clean);
+      var w = clean.replace(/,/g, " ").split(" ").filter(Boolean);
+      if (clean.indexOf(",") < 0 && w.length >= 3) {
+        out.push(w.slice(2).join(" ") + ", " + w.slice(0, 2).join(" "));   // „Piekary Śląskie Piotra Skargi” → „Piotra Skargi, Piekary Śląskie”
+        out.push(w.slice(1).join(" ") + ", " + w[0]);                      // „Bytom Piłsudskiego 5” → „Piłsudskiego 5, Bytom”
+      }
+      return out.filter(function (x, i) { return out.indexOf(x) === i; }).slice(0, 4);
+    }
+    function geoOnce(q) {
+      var p = new URLSearchParams({ format: "jsonv2", q: q, addressdetails: "1", countrycodes: "pl", viewbox: "18.2,50.75,19.75,49.9", bounded: "1", limit: "1", "accept-language": "pl" });
+      return fetch("https://nominatim.openstreetmap.org/search?" + p, { headers: { Accept: "application/json" } }).then(function (r) { return r.ok ? r.json() : []; }).catch(function () { return []; });
+    }
     function geocode(txt) {
       var key = normName(txt), cache = load(GEO, {});
       if (cache[key]) return Promise.resolve(cache[key]);
-      var q = new URLSearchParams({ format: "jsonv2", q: txt, addressdetails: "1", countrycodes: "pl", viewbox: "18.2,50.75,19.75,49.9", bounded: "1", limit: "1", "accept-language": "pl" });
-      return fetch("https://nominatim.openstreetmap.org/search?" + q, { headers: { Accept: "application/json" } }).then(function (r) { return r.ok ? r.json() : []; }).then(function (j) {
-        if (!j || !j[0]) return null;
-        var ad = j[0].address || {}, street = [ad.road || ad.pedestrian || ad.square || j[0].name || "", ad.house_number || ""].join(" ").trim(), town = ad.city || ad.town || ad.village || ad.suburb || "";
-        var lab = [street, town].filter(Boolean).join(", ") || String(j[0].display_name || txt).split(",").slice(0, 2).join(",");
-        var v = { lat: +(+j[0].lat).toFixed(6), lon: +(+j[0].lon).toFixed(6), label: "📍 " + lab };
-        cache[key] = v; var ks = Object.keys(cache); if (ks.length > 40) delete cache[ks[0]]; save(GEO, cache);
-        return v;
-      }).catch(function () { return null; });
+      var vars = geoVariants(txt), i = 0;
+      var next = function () {
+        if (i >= vars.length) return Promise.resolve(null);
+        var q = vars[i++];
+        return geoOnce(q).then(function (j) {
+          if (!j || !j[0]) return i < vars.length ? new Promise(function (r) { setTimeout(r, 1100); }).then(next) : null;
+          var ad = j[0].address || {}, street = [ad.road || ad.pedestrian || ad.square || j[0].name || "", ad.house_number || ""].join(" ").trim(), town = ad.city || ad.town || ad.village || ad.suburb || "";
+          var lab = [street, town].filter(Boolean).join(", ") || String(j[0].display_name || txt).split(",").slice(0, 2).join(",");
+          var v = { lat: +(+j[0].lat).toFixed(6), lon: +(+j[0].lon).toFixed(6), label: "📍 " + lab };
+          cache[key] = v; var ks = Object.keys(cache); if (ks.length > 40) delete cache[ks[0]]; save(GEO, cache);
+          return v;
+        });
+      };
+      return next();
     }
     function setMode(m) {
       st.dir = m; save(LS, st);
@@ -899,6 +922,11 @@
         if (!g) throw new Error("addr:" + txt);
         return { key: "addr", label: g.label, lat: g.lat, lon: g.lon, far: true };
       });
+      // nie stacja, nie przystanek, nie moje miejsce → spróbuj jeszcze jako adres (zanim powiemy „nie znam”)
+      if (!k && uniOn() && !stationByName(txt)) return getNet(warsawNow().date).then(function (net) {
+        if (netNames(net, txt).length) return null;
+        return geocode(txt).then(function (g) { return g ? { key: "addr", label: g.label, lat: g.lat, lon: g.lon, far: true } : null; });
+      }, function () { return null; });
       if (!k) return Promise.resolve(null);
       if (k === "gps") return gpsNow().then(function (g) { return { key: k, label: PL_TOK.gps, lat: g.lat, lon: g.lon }; });
       var pl = load(PLACES, {})[k];
