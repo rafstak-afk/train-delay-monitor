@@ -1345,7 +1345,7 @@
       var chip = '<span class="ct">' + C.fmt(x.final) + "</span>" + esc(v2StTxt(st));
       if (x.why) sub += '<br><b>' + esc(x.why) + "</b>";
       var meta = x.tDelay ? esc(T("gzm.v2TrainLive", { n: x.tDelay }, "pociąg +{n} min (na żywo)")) : esc(T("gzm.v2TrainPlan", null, "pociąg wg rozkładu PLK"));
-      return '<div class="card ' + V2ST[st] + ' v2-tap" data-cx="' + esc(tKey) + '">' + v2Head(route, sub, st, chip) + html.join("") + more + v2Foot(i, tKey, open, meta) + (open ? trainRunsHtml(it, S.date) : "") + "</div>";
+      return '<div class="card ' + V2ST[st] + ' v2-tap" data-cx="' + esc(tKey) + '">' + v2Head(route, sub, st, chip) + html.join("") + more + v2Foot(i, tKey, open, meta) + (open ? (L ? tripsOfJourney(L.jn) : "") + trainRunsHtml(it, S.date) + (e0 && !c.walkE ? tripsOfJourney(e0) : "") : "")   /* wszystkie kursy: dojazd, pociąg(i), dalej */ + "</div>";
     }
     // ===== Logika v3: pieszo, filtry absurdów, pierwszeństwo kolei (TEST — tylko profil autora) =====
     var NODE_M = 300;
