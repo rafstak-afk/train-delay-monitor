@@ -1243,7 +1243,9 @@
       return '<div class="gz-trip">' + html + "</div>";
     }
     // ===== Wygląd v2: karty jak w „Pilnowanych” (TEST — tylko profil autora) =====
-    function v2On() { try { return localStorage.getItem("showVersionBadge") === "1"; } catch (e) { return false; } }
+    // Nowy wygląd i logika: autor od razu, wszyscy od 2.11.2026 15:00 (czas polski = 14:00 UTC) — wydanie z zegarem, bez ręcznego wypychania.
+    var V2_PUBLIC_AT = Date.parse("2026-11-02T14:00:00Z");
+    function v2On() { if (Date.now() >= V2_PUBLIC_AT) return true; try { return localStorage.getItem("showVersionBadge") === "1"; } catch (e) { return false; } }
     var V2ST = { ok: "s-ok", tight: "s-risk", missed: "s-broken", cancelled: "s-cancelled" };
     function v2StTxt(st) { return st === "ok" ? "🟢 " + T("gzm.st.ok", null, "zdążysz") : st === "tight" ? "🟡 " + T("gzm.st.tight", null, "na styk") : st === "cancelled" ? "⚫ " + T("gzm.st.cancelled", null, "odwołany") : "🔴 " + T("gzm.st.missed", null, "nie zdążysz"); }
     function v2Dl(live, delay) {
