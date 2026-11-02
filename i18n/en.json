@@ -1316,6 +1316,7 @@
     "pSetMap": "set on the map",
     "fromOnlyHint": "Also enter “To” to plan the whole trip.",
     "v3Earlier": "Earlier",
-    "v3Later": "Later connections"
+    "v3Later": "Later connections",
+    "v3LessWalk": "🚶 Least walking: {n} min on foot in total ({d} min later)"
   }
 }

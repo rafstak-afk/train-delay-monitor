@@ -1316,6 +1316,7 @@
     "pSetMap": "nastavit na mapě",
     "fromOnlyHint": "Zadejte i „Kam“ a naplánuji celou cestu.",
     "v3Earlier": "Dřívější",
-    "v3Later": "Pozdější spojení"
+    "v3Later": "Pozdější spojení",
+    "v3LessWalk": "🚶 Nejméně chůze: celkem {n} min pěšky (o {d} min později)"
   }
 }

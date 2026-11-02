@@ -1542,6 +1542,40 @@
         var bestF = Math.min.apply(null, out.map(function (x) { return x.final; }).concat([Infinity]));
         if (bestF < Infinity) out = out.filter(function (x) { return x.final - bestF <= Math.max(30, 0.5 * (bestF - base)); });
         out = out.slice(0, 6);
+        // 🚶 najmniej chodzenia (tylko gdy celem jest adres / moje miejsce)
+        if (S.toPlace && S.toPlace.stops && S.toPlace.stops.length && out.length) {
+          // łączne chodzenie w trasie (wszystkie odcinki pieszo)
+          var jWalk = function (jn) { return jn.legs.reduce(function (a, l) { return a + (l.type === "walk" ? l.min : 0); }, 0); };
+          var totalWalk = function (x) {
+            if (x.net) return jWalk(x.net);
+            var c = x.c || {}, w = (c.walkA ? c.walkA.min : 0) + (c.latest ? jWalk(c.latest.jn) : 0);
+            if (c.walkE) w += c.walkE.min; else if (c.egr && c.egr[0]) w += jWalk(c.egr[0]);
+            return w;
+          };
+          var minW = Math.min.apply(null, S.toPlace.stops.map(function (x) { return x.walk; }));
+          var bestX = out.slice().sort(function (a, b) { return a.final - b.final; })[0], shownW = totalWalk(bestX);
+          if (minW + 3 < shownW) {
+            if (S.lessAt !== rtAt + "|" + base) {
+              S.lessAt = rtAt + "|" + base; S.lessRes = null;
+              // wszystkie stanowiska przystanków najbliżej celu (bez chodzenia między stanowiskami)
+              var nearNames = {}; S.toPlace.stops.forEach(function (x) { if (x.walk <= minW + 1) nearNames[S.net.name[x.s]] = 1; });
+              var nearest = S.toPlace.stops.filter(function (x) { return nearNames[S.net.name[x.s]]; });
+              var fP2 = S.fromNet || S.fromPlace;
+              var o2 = Object.assign(fP2 ? { fromStops: fP2.stops.map(function (x) { return { s: x.s, t: base + x.walk }; }), dep: base } : { from: S.fN, dep: base }, { rt: rt, maxTransfers: 2, count: 6, maxDep: base + 180 });
+              o2.toStops = nearest.map(function (x) { return { s: x.s, walk: x.walk }; });
+              // najmniej chodzenia łącznie; przy remisie — wcześniej na miejscu
+              var lr = GzmRaptor.search(S.net, o2).map(function (jn) { return withPlaceWalks(jn, fP2, S.toPlace); }).sort(function (a, b) { return jWalk(a) - jWalk(b) || a.arr - b.arr; })[0];
+              S.lessRes = lr || null;
+            }
+            var lj = S.lessRes, bestNow = Math.min.apply(null, out.map(function (x) { return x.final; }));
+            if (lj && jWalk(lj) + 3 <= shownW && lj.arr <= bestNow + 15 && !out.some(function (x) { return x.net && jKey(x.net) === jKey(lj); })) {
+              var lx = { net: lj, final: lj.arr, start: lj.leave != null ? lj.leave : lj.dep };
+              var lwm = jWalk(lj);
+              lx.why = T("gzm.v3LessWalk", { n: lwm, d: lj.arr - bestNow }, "🚶 Najmniej chodzenia: łącznie {n} min pieszo (na miejscu {d} min później)");
+              out.splice(1, 0, lx); out = out.slice(0, 6);
+            }
+          }
+        }
         if (bR && bB) {
           var diff = bR.final - bB.final;
           if (railFirst) bR.why = diff > 0 ? T("gzm.v3WhyRailTol", { n: diff }, "Pociągiem — {n} min później niż samą komunikacją, ale koleją") : T("gzm.v3WhyRailBest", null, "Pociągiem — najszybciej");

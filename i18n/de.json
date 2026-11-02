@@ -1316,6 +1316,7 @@
     "pSetMap": "auf der Karte festlegen",
     "fromOnlyHint": "Gib auch „Nach“ ein, um die ganze Reise zu planen.",
     "v3Earlier": "Früher",
-    "v3Later": "Spätere Verbindungen"
+    "v3Later": "Spätere Verbindungen",
+    "v3LessWalk": "🚶 Am wenigsten Fußweg: insgesamt {n} Min. zu Fuß ({d} Min. später)"
   }
 }
