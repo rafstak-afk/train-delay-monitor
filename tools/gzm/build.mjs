@@ -307,7 +307,11 @@ async function buildNetwork(date, zipsFor) {
 // ---------- główny przebieg ----------
 async function main() {
   const start = args.date || warsawToday();
-  const dates = Array.from({ length: CFG.days }, (_, i) => G.addDays(start, i));
+  // co najmniej CFG.days dni, a do tego zawsze NAJBLIŻSZY CAŁY WEEKEND: w sobotę wystarczy sobota+niedziela,
+  // w niedzielę już do następnej niedzieli (sobota za tydzień), w poniedziałek do niedzieli itd.
+  const dow = new Date(start + "T12:00:00Z").getUTCDay(), toSun = dow === 0 ? 7 : 7 - dow;
+  const nDays = CFG.throughWeekend === false ? CFG.days : Math.max(CFG.days, toSun + 1);
+  const dates = Array.from({ length: nDays }, (_, i) => G.addDays(start, i));
   log("dni:", dates.join(", "));
 
   const zips = await fetchZips();

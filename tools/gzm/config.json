@@ -3,6 +3,7 @@
   "packageApi": "https://otwartedane.metropoliagzm.pl/api/3/action/package_show?id=317435cc-0075-4d10-b8ef-6e9b0010e90a",
   "datasetUrl": "https://otwartedane.metropoliagzm.pl/dataset/rozklady-jazdy-i-lokalizacja-przystankow-gtfs-wersja-rozszerzona",
   "days": 3,
+  "throughWeekend": true,
   "candidateRadiusM": 800,
   "maxWalkMin": 8,
   "overpassRadiusM": 1100,
