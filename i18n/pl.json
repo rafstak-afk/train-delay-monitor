@@ -1313,6 +1313,7 @@
     "mapHint": "Przesuń mapę tak, żeby 📍 stała na miejscu: {p}",
     "mapCancel": "Anuluj",
     "mapSave": "Zapisz tutaj",
-    "pSetMap": "ustaw na mapie"
+    "pSetMap": "ustaw na mapie",
+    "fromOnlyHint": "Wpisz też „Dokąd”, żeby ułożyć całą podróż."
   }
 }

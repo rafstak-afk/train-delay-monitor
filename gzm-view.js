@@ -199,13 +199,6 @@
               getRt().catch(function () {}).then(function () { box.innerHTML = stopDepsHtml(stopDeps(net, b.dataset.fardeps, depFrom, 8), depDate); box.hidden = false; });
             });
           });
-          body.addEventListener("click", function (ev) {
-            var row = ev.target.closest("[data-fx]"); if (!row) return;
-            var nx = row.nextElementSibling;
-            if (nx && nx.classList.contains("gz-trip")) { nx.remove(); return; }
-            var p = row.dataset.fx.split("|");
-            row.insertAdjacentHTML("afterend", tripHtml(p[0], p[1], p.slice(2).join("|")));
-          });
           body.querySelectorAll("[data-farfrom]").forEach(function (b) { b.addEventListener("click", function () { var fi = root.querySelector("#gzCFrom"), ti = root.querySelector("#gzCTo"); if (fi) fi.value = b.dataset.farfrom; if (ti) { ti.focus(); ti.scrollIntoView({ block: "center" }); } }); });
         }).catch(function () { body.innerHTML = '<div class="gz-empty">' + esc(T("gzm.noStops", null, "Brak przystanków GZM w pobliżu tej stacji.")) + "</div>"; });
         return;
@@ -975,6 +968,36 @@
           (TYPE_ICON[x.kind] || "🚌") + " <b>" + esc(x.line) + "</b> → " + esc(x.head) + ' <span class="gz-sub">' + esc(inMin <= 0 ? T("gzm.now", null, "teraz") : T("gzm.inMin", { n: inMin }, "za {n} min")) + (x.live ? " · " + esc(T("gzm.liveOn", null, "na żywo")) : "") + "</span></div>";
       }).join("");
     }
+    // rozwijanie odjazdu z listy przystanku ([data-fx] = kurs|data|przystanek)
+    root.addEventListener("click", function (ev) {
+      var row = ev.target.closest("[data-fx]"); if (!row) return;
+      var nx = row.nextElementSibling;
+      if (nx && nx.classList.contains("gz-trip")) { nx.remove(); return; }
+      var p = row.dataset.fx.split("|");
+      if (netP[p[1]] && !netP[p[1]]._net) netP[p[1]].then(function (n) { netP[p[1]]._net = n; });
+      row.insertAdjacentHTML("afterend", tripHtml(p[0], p[1], p.slice(2).join("|")));
+    });
+    // „Skąd” bez „Dokąd”: przystanek, miejsce (🏠/🏢/📍) albo adres → najbliższe odjazdy z przystanków
+    function fromOnlyDeps(fromTxt, tmin, date) {
+      var res = root.querySelector("#gzCRes");
+      res.innerHTML = '<div class="gz-empty gz-searching">🔎 ' + esc(T("gzm.loading", null, "Wczytuję rozkład…")) + "</div>";
+      Promise.all([getNet(date), getRt(), resolvePlace(fromTxt).catch(function () { return null; })]).then(function (r) {
+        var net = r[0], pl = r[2]; if (netP[date]) netP[date]._net = net;
+        var groups = [];
+        if (pl) {
+          placeReach(net, pl);
+          var seenN = {};
+          pl.stops.slice().sort(function (a, b) { return a.walk - b.walk; }).forEach(function (x) { var nm = net.name[x.s]; if (seenN[nm] || groups.length >= 3) return; seenN[nm] = 1; groups.push({ name: nm, walk: x.walk, mark: x.fixed ? T("gzm.jFixed", null, "Twój czas") : x.measured ? T("gzm.jMeasured", null, "zmierzone") : "" }); });
+        } else netNames(net, fromTxt).slice(0, 3).forEach(function (nm) { groups.push({ name: nm, walk: 0 }); });
+        if (!groups.length) { res.innerHTML = '<div class="gz-warn">' + esc(T("gzm.cNoTo", { d: fromTxt }, "Nie znam przystanku „{d}”.")) + "</div>"; return; }
+        res.innerHTML = groups.map(function (g) {
+          var list = stopDeps(net, g.name, tmin + (g.walk || 0), 8);
+          return '<div class="gz-farbox" style="border-color:var(--line);background:var(--panel)"><b>🚏 ' + esc(g.name) + "</b>" + (g.walk ? ' <span class="gz-sub">· 🚶 ' + g.walk + " min" + (g.mark ? " · " + esc(g.mark) : "") + "</span>" : "") +
+            '<div class="gz-fardeps" style="margin-left:0">' + stopDepsHtml(list, date) + "</div></div>";
+        }).join("") + '<div class="gz-sub" style="margin:6px 2px">' + esc(T("gzm.fromOnlyHint", null, "Wpisz też „Dokąd”, żeby ułożyć całą podróż.")) + "</div>";
+        scrollToFirst(res, ".gz-farbox");
+      }).catch(function () { res.innerHTML = '<div class="gz-warn">' + esc(T("gzm.noIndex", null, "Dane GZM są chwilowo niedostępne.")) + "</div>"; });
+    }
     // dla 🛡️ Pilnowanych i innych widoków: trasa kursu GZM (HTML w opakowaniu .gz)
     window.GzmTripHtml = function (tid, date, board, alight) {
       return Promise.all([getNet(date), getRt().catch(function () {})]).then(function (r) { netP[date]._net = r[0]; return '<div class="gz">' + tripHtml(tid, date, board, alight) + "</div>"; });
@@ -1049,6 +1072,7 @@
         var fsU = stationByName(fromTxt);
         if (fsU && !toTxt) { var dU = root.querySelector("#gzCDate"); cfg.date = dU && dU.value && dU.value !== warsawNow().date ? dU.value : null; goA(fsU, tmin); return; }
         setMode("C");
+        if (fromTxt && !toTxt) { fromOnlyDeps(fromTxt, tmin, (root.querySelector("#gzCDate") || {}).value || warsawNow().date); return; }
         if (!fromTxt || !toTxt) { root.querySelector("#gzCRes").innerHTML = '<div class="gz-warn">' + esc(T("gzm.uNeed", null, "Wpisz, skąd i dokąd jedziesz. Samą stację w „Skąd” (puste „Dokąd”) — pokażę odjazdy autobusów i tramwajów spod niej.")) + "</div>"; return; }
       }
       if (!fromTxt || !toTxt || !window.GzmRaptor) return searchCOld();

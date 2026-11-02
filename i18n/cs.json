@@ -1313,6 +1313,7 @@
     "mapHint": "Posuňte mapu tak, aby 📍 stál na místě: {p}",
     "mapCancel": "Zrušit",
     "mapSave": "Uložit zde",
-    "pSetMap": "nastavit na mapě"
+    "pSetMap": "nastavit na mapě",
+    "fromOnlyHint": "Zadejte i „Kam“ a naplánuji celou cestu."
   }
 }
