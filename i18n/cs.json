@@ -1107,7 +1107,8 @@
       "ios": "iPhone: připomenutí se zavřenou aplikací funguje jen po přidání na plochu: Sdílet ⬆️ → „Přidat na plochu“, otevřete z ikony a povolte oznámení.",
       "sound": "Se zavřenou aplikací zazní běžný zvuk oznámení. Android: změníte ho v nastavení oznámení této aplikace.",
       "icsTitle": "Odchod: {d} {from} → {to}"
-    }
+    },
+    "gzmTrip": "Klepněte — trasa spoje a kde je teď"
   },
   "gzm": {
     "title": "🚌 Přestupy GZM",
@@ -1295,6 +1296,8 @@
     "v2MoreAcc": "Další cesty k vlaku ({n})",
     "v2MoreEgr": "Další možnosti po vlaku ({n})",
     "v2TrainLive": "vlak +{n} min (živě)",
-    "v2TrainPlan": "vlak podle jízdního řádu PLK"
+    "v2TrainPlan": "vlak podle jízdního řádu PLK",
+    "farDeps": "Odjezdy",
+    "farNoDeps": "V příštích 2 hodinách žádné odjezdy."
   }
 }

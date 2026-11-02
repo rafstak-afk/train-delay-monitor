@@ -27,6 +27,7 @@
     '.gv .chip.s-broken{background:rgba(255,77,77,.18);color:var(--red)}.gv .chip.s-cancelled{background:#000;color:#fff}.gv .chip.s-done{background:rgba(34,211,238,.15);color:var(--cyan)}' +
     '.gv .leg{display:grid;grid-template-columns:88px minmax(0,1fr);gap:8px;padding:8px 0;border-top:1px solid #2a3a4c;font-size:13.5px}' +
     '.gv .leg:first-of-type{border-top:0}' +
+    '.gv .gv-gzm{cursor:pointer;position:relative;padding-right:18px;border-radius:8px}.gv .gv-gzm:hover{background:rgba(255,255,255,.04)}.gv .gv-gzm::after{content:"▾";position:absolute;right:4px;top:50%;transform:translateY(-50%);color:var(--muted)}' +
     '.gv a.leg{color:inherit;text-decoration:none;border-radius:8px;position:relative;padding-right:18px}' +
     '.gv a.leg:hover{background:rgba(255,255,255,.04)}' +
     '.gv a.leg::after{content:"›";position:absolute;right:4px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:20px}' +
@@ -222,7 +223,7 @@
       var tr = G.trainLabel(l.train) + (l.train && l.train.name ? ' ' + l.train.name : '');
       var d = r && !r.noData;
       var info = !r ? '' : (r.noData ? ' <span class="src">(' + esc(T('guard.status.nodata', null, 'brak danych')) + ')</span>' : (r.cancelled ? ' <b style="color:#fff;background:#000;padding:1px 6px;border-radius:6px">⚫ ' + esc(T('guard.status.cancelled', null, 'pociąg odwołany')) + '</b>' : ''));
-      if (l.mode === "gzm") return '<div class="leg"><div class="leg-t">' + timeHtml(l.board.time, d ? r.delayDep : 0) + '<small>' + timeHtml(l.alight.time, d ? r.delayArr : 0) + '</small></div>' +
+      if (l.mode === "gzm") return '<div class="leg gv-gzm" data-gtrip="' + esc(l.trip) + '" data-gdate="' + esc(date) + '" data-gb="' + esc(l.board.stationName) + '" data-ga="' + esc(l.alight.stationName) + '" role="button" tabindex="0" title="' + esc(T('guard.gzmTrip', null, 'Stuknij — trasa kursu i gdzie jest teraz')) + '"><div class="leg-t">' + timeHtml(l.board.time, d ? r.delayDep : 0) + '<small>' + timeHtml(l.alight.time, d ? r.delayArr : 0) + '</small></div>' +
         '<div><div class="leg-train">' + esc(tr) + info + '</div><div class="leg-st">' + esc(l.board.stationName) + (d ? delayHtml(r.delayDep, r.depSource) : '') + ' → ' + esc(l.alight.stationName) + '</div></div></div>';
       return '<a class="leg" href="' + esc(trainUrl(l, date)) + '" title="' + esc(T('guard.openTrain', null, 'Pokaż cały bieg pociągu')) + '"><div class="leg-t">' + timeHtml(d && r.plannedDep || l.board.time, d ? r.delayDep : 0) + '<small>' + timeHtml(d && r.plannedArr || l.alight.time, d ? r.delayArr : 0) + (l.alight.nextDay ? ' +1' : '') + '</small></div>' +
         '<div><div class="leg-train">' + esc(tr) + info + '</div><div class="leg-st">' + esc(l.board.stationName) + (d ? delayHtml(r.delayDep, r.depSource) : '') + ' → ' + esc(l.alight.stationName) + (d ? delayHtml(r.delayArr, r.arrSource) : '') + '</div></div></a>';
@@ -365,6 +366,16 @@
       if (focusId && shown) { var el = document.getElementById('g-' + focusId); if (el) { el.scrollIntoView({ block: 'center' }); focusId = null; } }
     }
     list.addEventListener('click', function (e) {
+      // odcinek autobusu/tramwaju: rozwiń trasę kursu (z zakładki 🚆🚌 — gzm-view.js)
+      var gl = e.target.closest('[data-gtrip]');
+      if (gl && !e.target.closest('button,a')) {
+        var nx = gl.nextElementSibling;
+        if (nx && nx.classList.contains('gv-gztrip')) { nx.remove(); return; }
+        if (!window.GzmTripHtml) return;
+        var box = document.createElement('div'); box.className = 'gv-gztrip'; box.textContent = '…'; gl.insertAdjacentElement('afterend', box);
+        window.GzmTripHtml(gl.dataset.gtrip, gl.dataset.gdate, gl.dataset.gb, gl.dataset.ga).then(function (h) { box.innerHTML = h; }).catch(function () { box.remove(); });
+        return;
+      }
       var b = e.target.closest('button[data-act]'); if (!b) return;
       var act = b.dataset.act, id = b.dataset.id;
       var c = S.all().find(function (x) { return x.id === id; });

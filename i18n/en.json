@@ -1107,7 +1107,8 @@
       "ios": "iPhone: reminders with the app closed only work after adding it to the Home Screen: Share ⬆️ → “Add to Home Screen”, open it from the icon and allow notifications.",
       "sound": "With the app closed, the phone plays its normal notification sound. Android: you can change it in this app's notification settings.",
       "icsTitle": "Leave: {d} {from} → {to}"
-    }
+    },
+    "gzmTrip": "Tap — route and where it is now"
   },
   "gzm": {
     "title": "🚌 GZM connections",
@@ -1295,6 +1296,8 @@
     "v2MoreAcc": "Other ways to the train ({n})",
     "v2MoreEgr": "Other options after the train ({n})",
     "v2TrainLive": "train +{n} min (live)",
-    "v2TrainPlan": "train per PLK timetable"
+    "v2TrainPlan": "train per PLK timetable",
+    "farDeps": "Departures",
+    "farNoDeps": "No departures in the next 2 hours."
   }
 }

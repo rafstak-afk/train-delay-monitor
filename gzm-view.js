@@ -11,6 +11,8 @@
   var CSS =
     '.gz .gz-dt{display:flex;gap:10px;width:100%}.gz .gz-dt input{flex:1 1 0;min-width:0;padding:14px!important;border-radius:10px!important;border:0!important;font-size:16px!important;background:#fff!important;color:#102027!important;color-scheme:light}' +
     '.gz .gz-ddw{position:relative}' +
+    '.gz .gz-fardeps{margin:4px 0 2px 26px}.gz .gz-fardep{padding:6px 8px;border-radius:8px;cursor:pointer;font-size:13.5px}.gz .gz-fardep:hover{background:rgba(255,255,255,.05)}' +
+    '.gz .gz-gt{cursor:pointer;border-bottom:1px dotted var(--muted);white-space:nowrap}.gz .gz-gt.on{color:var(--cyan);border-bottom-color:var(--cyan)}' +
     '.gz .gv .card{margin:10px 0}.gz .gv .c-route{font-size:15px}.gz .gv .c-sub{font-size:13px;margin-top:3px;color:#fff}.gz .gv .c-sub b{color:var(--yellow)}' +
     '.gz .gv .leg.v2-walk{padding:5px 0}.gz .gv .leg.v2-walk .leg-t{font-weight:400;color:var(--muted);font-size:12.5px}.gz .gv .leg.v2-walk .leg-st{font-size:12.5px}' +
     '.gz .gv .chip .ct{display:block;font-size:17px;font-weight:900;color:#fff}' +
@@ -168,16 +170,33 @@
         if (!uniOn()) { body.innerHTML = '<div class="gz-empty">' + esc(T("gzm.noStops", null, "Brak przystanków GZM w pobliżu tej stacji.")) + "</div>"; return; }
         body.innerHTML = '<div class="gz-empty">' + esc(T("gzm.loading", null, "Wczytuję rozkład…")) + "</div>";
         getNet(cfg.date || warsawNow().date).then(function (net) {
+          if (netP[cfg.date || warsawNow().date]) netP[cfg.date || warsawNow().date]._net = net;   // dla rozwijanych kursów (tripHtml)
           var r = farStops(net, meta), h = '<div class="gz-farbox"><b>' + esc(T("gzm.farHead", { st: meta.n, n: index.maxWalkMin || 8 }, "Przy stacji {st} nie ma przystanku ZTM w zwykłym zasięgu pieszym (do {n} min).")) + "</b>";
           if (r.list.length) {
             h += "<div>" + esc(T("gzm.farNear", null, "Najbliższe przystanki — dalej niż zwykle:")) + "</div>" + r.list.map(function (o) {
               return '<div class="gz-farrow">' + farBadge() + "<b>" + esc(o.name) + "</b> · " + esc(T("gzm.farRow", { d: kmTxt(o.d), n: o.walk }, "{d}, ok. {n} min pieszo")) +
-                ' <button type="button" class="gz-chip" data-farfrom="' + esc(o.name) + '">' + esc(T("gzm.farUse", null, "Skąd: ten przystanek")) + "</button></div>";
+                ' <button type="button" class="gz-chip" data-fardeps="' + esc(o.name) + '">🕒 ' + esc(T("gzm.farDeps", null, "Odjazdy")) + "</button>" +
+                ' <button type="button" class="gz-chip" data-farfrom="' + esc(o.name) + '">' + esc(T("gzm.farUse", null, "Skąd: ten przystanek")) + '</button></div><div class="gz-fardeps" data-for="' + esc(o.name) + '" hidden></div>';
             }).join("") + '<div class="gz-sub" style="margin-top:8px">' + esc(T("gzm.farHint", null, "Wpisz też „Dokąd”, a ułożę podróż z dojściem do tego przystanku.")) + "</div>";
           } else if (r.nearest) {
             h += "<div>" + esc(T("gzm.farNone", { s: r.nearest.name, d: kmTxt(r.nearest.d) }, "ZTM tu nie dojeżdża — najbliższy przystanek: {s}, {d} od stacji.")) + "</div>";
           }
           body.innerHTML = h + "</div>";
+          var depDate = cfg.date || warsawNow().date, depFrom = cfg.arr ? C.hm(cfg.arr) : nowOn(depDate);
+          body.querySelectorAll("[data-fardeps]").forEach(function (b) {
+            b.addEventListener("click", function () {
+              var row = b.closest(".gz-farrow"), box = row && row.nextElementSibling; if (!box || !box.classList.contains("gz-fardeps")) return;   // (bez CSS.escape — w tym pliku „CSS” to zmienna ze stylami)
+              if (!box.hidden) { box.hidden = true; return; }
+              getRt().catch(function () {}).then(function () { box.innerHTML = stopDepsHtml(stopDeps(net, b.dataset.fardeps, depFrom, 8), depDate); box.hidden = false; });
+            });
+          });
+          body.addEventListener("click", function (ev) {
+            var row = ev.target.closest("[data-fx]"); if (!row) return;
+            var nx = row.nextElementSibling;
+            if (nx && nx.classList.contains("gz-trip")) { nx.remove(); return; }
+            var p = row.dataset.fx.split("|");
+            row.insertAdjacentHTML("afterend", tripHtml(p[0], p[1], p.slice(2).join("|")));
+          });
           body.querySelectorAll("[data-farfrom]").forEach(function (b) { b.addEventListener("click", function () { var fi = root.querySelector("#gzCFrom"), ti = root.querySelector("#gzCTo"); if (fi) fi.value = b.dataset.farfrom; if (ti) { ti.focus(); ti.scrollIntoView({ block: "center" }); } }); });
         }).catch(function () { body.innerHTML = '<div class="gz-empty">' + esc(T("gzm.noStops", null, "Brak przystanków GZM w pobliżu tej stacji.")) + "</div>"; });
         return;
@@ -340,7 +359,12 @@
       if (st.mode === "line") {
         all = C.groupByLine(r.items, 3).map(function (g) {
           return '<div class="gz-group"><div class="gz-group-h"><div class="gz-line ' + g.type + '">' + esc(g.line) + "<small>" + TYPE_ICON[g.type] + '</small></div><div class="gz-dir">→ ' + esc(g.head) + "</div></div>" +
-            '<div class="gz-group-times">' + g.items.map(function (x) { return "<b>" + C.fmt(x.real) + "</b> " + (x.status === "tight" ? "🟡" : "🟢") + " " + esc(x.dep.stop.n.replace(file.name.split(" ")[0] + " ", "")); }).join(" · ") + "</div></div>";
+            '<div class="gz-group-times">' + g.items.map(function (x) {
+              var tk = x.dep.trip + "|" + x.dep.date + "|" + x.dep.stop.n;
+              return '<span class="gz-gt' + (tripOpen[tk] ? " on" : "") + '" data-tx="' + esc(tk) + '" role="button" tabindex="0" title="' + esc(T("gzm.tTap", null, "Stuknij — cały bieg kursu")) + '"><b>' + C.fmt(x.real) + "</b> " + (x.status === "tight" ? "🟡" : "🟢") + " " + esc(x.dep.stop.n.replace(file.name.split(" ")[0] + " ", "")) + "</span>";
+            }).join(" · ") + "</div>" +
+            // rozwinięte kursy tej linii (stuknięcie w godzinę)
+            g.items.map(function (x) { var tk = x.dep.trip + "|" + x.dep.date + "|" + x.dep.stop.n; return tripOpen[tk] ? tripHtml(x.dep.trip, x.dep.date, x.dep.stop.n) : ""; }).join("") + "</div>";
         }).join("");
       } else {
         all = r.items.filter(function (x) { return x.status !== "missed"; }).map(function (x) { return depHtml(x); }).join("");
@@ -615,7 +639,7 @@
     function scrollToFirst(box, sel) {
       var t0 = Date.now();
       (function poll() {
-        var el = box && box.querySelector(sel || ".gz-dep, .gz-warn, .gz-empty:not(.gz-searching)");
+        var el = box && box.querySelector(sel || ".card, .gz-dep, .gz-warn, .gz-empty:not(.gz-searching)");
         if (!el || box.querySelector(".gz-searching")) { if (Date.now() - t0 < 15000) setTimeout(poll, 200); return; }
         var go = function (beh) { var y = el.getBoundingClientRect().top + window.pageYOffset - 90; window.scrollTo({ top: Math.max(0, y), behavior: beh }); };
         go("smooth");
@@ -856,6 +880,40 @@
       list.forEach(function (o) { o.walk = walkMin(o.d); });
       return { list: list, nearest: best };
     }
+    var NET_KIND = { 0: "tram", 3: "bus", 11: "trolley", 800: "trolley" };
+    function stopDeps(net, name, fromMin, limit) {
+      if (!net._patTrips) { net._patTrips = {}; net.j.trips.forEach(function (t) { (net._patTrips[t[0]] = net._patTrips[t[0]] || []).push(t); }); }
+      var idx = {}; (net.byName[name] || []).forEach(function (si) { idx[si] = 1; });
+      var out = [];
+      net.j.pats.forEach(function (pat, pi) {
+        var seq = pat[1], off = pat[2], flags = String(pat[3] || "");
+        for (var i = 0; i < seq.length - 1; i++) {
+          if (!idx[seq[i]]) continue;
+          if ((+flags.charAt(i) || 0) & 1) continue;   // tu nie wsiada się
+          var ln = net.j.lines[pat[0]] || ["?", 3, ""];
+          (net._patTrips[pi] || []).forEach(function (tr) {
+            var plan = tr[1] + off[2 * i + 1], rtT = rt && rt.trips && rt.trips[tr[2]], dl = rtT && rtT[1] !== "X" ? Math.round((rtT[1] || 0) / 60) : 0;
+            if (plan + dl < fromMin - 1 || plan > fromMin + 120) return;
+            out.push({ trip: tr[2], line: ln[0], kind: NET_KIND[ln[1]] || "bus", head: ln[2], plan: plan, real: plan + dl, live: !!rtT, delay: dl, stop: net.name[seq[i]] });
+          });
+        }
+      });
+      out.sort(function (a, b) { return a.real - b.real; });
+      return out.slice(0, limit || 8);
+    }
+    function stopDepsHtml(list, date) {
+      if (!list.length) return '<div class="gz-sub" style="margin:6px 0">' + esc(T("gzm.farNoDeps", null, "Brak odjazdów w najbliższych 2 godzinach.")) + "</div>";
+      var now = nowOn(date);
+      return list.map(function (x) {
+        var tk = x.trip + "|" + date + "|" + x.stop, inMin = Math.round(x.real - now);
+        return '<div class="gz-fardep" data-fx="' + esc(tk) + '" role="button" tabindex="0"><b>' + (x.live && x.delay ? '<span class="plan-strike">' + C.fmt(x.plan) + "</span> " : "") + C.fmt(x.real) + "</b> " +
+          (TYPE_ICON[x.kind] || "🚌") + " <b>" + esc(x.line) + "</b> → " + esc(x.head) + ' <span class="gz-sub">' + esc(inMin <= 0 ? T("gzm.now", null, "teraz") : T("gzm.inMin", { n: inMin }, "za {n} min")) + (x.live ? " · " + esc(T("gzm.liveOn", null, "na żywo")) : "") + "</span></div>";
+      }).join("");
+    }
+    // dla 🛡️ Pilnowanych i innych widoków: trasa kursu GZM (HTML w opakowaniu .gz)
+    window.GzmTripHtml = function (tid, date, board, alight) {
+      return Promise.all([getNet(date), getRt().catch(function () {})]).then(function (r) { netP[date]._net = r[0]; return '<div class="gz">' + tripHtml(tid, date, board, alight) + "</div>"; });
+    };
     function kmTxt(m) { return m < 950 ? Math.round(m / 10) * 10 + " m" : (Math.round(m / 100) / 10).toString().replace(".", ",") + " km"; }
     function farBadge() { return '<span class="gz-far" title="' + esc(T("gzm.farTitle", null, "Dalej niż zwykle — przystanek ZTM poza typowym dojściem od stacji")) + '">' + esc(T("gzm.farLetter", null, "D")) + "</span>"; }
     // stacja jako punkt startu/celu: słupki w zasięgu albo (gdy brak) najbliższe przystanki „D”

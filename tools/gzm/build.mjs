@@ -153,7 +153,7 @@ function assign(stations, stopsByCode, cache, overrides) {
   for (const st of stations) {
     const ov = overrides[String(st.id)] || {};
     const remove = new Set(ov.remove || []);
-    const codes = new Set((st.candidates || []).filter(code => { const e = cache.entries[st.id + "|" + code]; return e && e.max <= CFG.maxWalkMin; }));
+    const codes = new Set((st.candidates || []).filter(code => { const e = cache.entries[st.id + "|" + code]; return e && e.min <= CFG.maxWalkMin; }));   // najkrótsze dojście ≤ limitu (zakres min–max widać przy przystanku)
     for (const c of ov.add || []) codes.add(c);
     for (const c of remove) codes.delete(c);
     st.stops = [...codes].map(code => {

@@ -1107,7 +1107,8 @@
       "ios": "iPhone: Erinnerungen bei geschlossener App nur nach „Zum Home-Bildschirm“: Teilen ⬆️ → „Zum Home-Bildschirm“, über das Symbol öffnen und Mitteilungen erlauben.",
       "sound": "Bei geschlossener App spielt das Telefon den normalen Mitteilungston. Android: änderbar in den Benachrichtigungseinstellungen dieser App.",
       "icsTitle": "Losgehen: {d} {from} → {to}"
-    }
+    },
+    "gzmTrip": "Tippen — Fahrtverlauf und aktuelle Position"
   },
   "gzm": {
     "title": "🚌 GZM-Anschlüsse",
@@ -1295,6 +1296,8 @@
     "v2MoreAcc": "Andere Wege zum Zug ({n})",
     "v2MoreEgr": "Weitere Möglichkeiten nach dem Zug ({n})",
     "v2TrainLive": "Zug +{n} Min. (live)",
-    "v2TrainPlan": "Zug laut PLK-Fahrplan"
+    "v2TrainPlan": "Zug laut PLK-Fahrplan",
+    "farDeps": "Abfahrten",
+    "farNoDeps": "Keine Abfahrten in den nächsten 2 Stunden."
   }
 }

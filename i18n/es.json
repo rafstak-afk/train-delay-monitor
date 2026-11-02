@@ -1107,7 +1107,8 @@
       "ios": "iPhone: con la app cerrada solo funciona si la añades a la pantalla de inicio: Compartir ⬆️ → «Añadir a pantalla de inicio», ábrela desde el icono y permite notificaciones.",
       "sound": "Con la app cerrada suena el tono normal de notificaciones. Android: puedes cambiarlo en los ajustes de notificaciones de esta app.",
       "icsTitle": "Salida: {d} {from} → {to}"
-    }
+    },
+    "gzmTrip": "Toca: recorrido y dónde está ahora"
   },
   "gzm": {
     "title": "🚌 Conexiones GZM",
@@ -1295,6 +1296,8 @@
     "v2MoreAcc": "Otras formas de llegar al tren ({n})",
     "v2MoreEgr": "Otras opciones tras el tren ({n})",
     "v2TrainLive": "tren +{n} min (en directo)",
-    "v2TrainPlan": "tren según el horario de PLK"
+    "v2TrainPlan": "tren según el horario de PLK",
+    "farDeps": "Salidas",
+    "farNoDeps": "No hay salidas en las próximas 2 horas."
   }
 }

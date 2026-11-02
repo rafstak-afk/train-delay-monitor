@@ -1107,7 +1107,8 @@
       "ios": "iPhone: przypomnienie przy zamkniętej aplikacji przyjdzie tylko, gdy dodasz ją do ekranu początkowego: Udostępnij ⬆️ → „Do ekranu początkowego”, otwórz z ikony i zezwól na powiadomienia.",
       "sound": "Przy zamkniętej aplikacji gra zwykły dźwięk powiadomienia telefonu. Android: dźwięk możesz zmienić w ustawieniach powiadomień tej aplikacji.",
       "icsTitle": "Wyjście: {d} {from} → {to}"
-    }
+    },
+    "gzmTrip": "Stuknij — trasa kursu i gdzie jest teraz"
   },
   "gzm": {
     "title": "🚌 Przesiadki GZM",
@@ -1295,6 +1296,8 @@
     "v2MoreAcc": "Inne dojazdy na pociąg ({n})",
     "v2MoreEgr": "Inne możliwości po pociągu ({n})",
     "v2TrainLive": "pociąg +{n} min (na żywo)",
-    "v2TrainPlan": "pociąg wg rozkładu PLK"
+    "v2TrainPlan": "pociąg wg rozkładu PLK",
+    "farDeps": "Odjazdy",
+    "farNoDeps": "Brak odjazdów w najbliższych 2 godzinach."
   }
 }

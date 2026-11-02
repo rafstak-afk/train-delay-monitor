@@ -1,4 +1,16 @@
 {
+  "73312": {
+    "note": "Katowice: Kopernika Dworzec (8–9 min przez przejście podziemne) — zgłoszenie użytkownika 2.11.2026",
+    "add": [
+      "2469011-01601"
+    ],
+    "walk": {
+      "2469011-01601": [
+        8,
+        9
+      ]
+    }
+  },
   "73619": {
     "note": "Katowice Zawodzie: przystanek Zawodzie Ośrodek Sportowy (tramwaje + autobusy) tuż przy stacji — OSM prowadzi okrężnie (10–11 min), w rzeczywistości ok. 250–280 m. Zgłoszenie użytkownika 31.10.",
     "add": [
