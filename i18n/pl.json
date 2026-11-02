@@ -1306,6 +1306,8 @@
     "v3WhyRailBest": "Pociągiem — najszybciej",
     "v3WhyBus": "Autobusem/tramwajem — o {n} min szybciej niż z pociągiem",
     "v3NoTransit": "Komunikacją nie będzie szybciej albo brak połączeń w najbliższych godzinach — zmień godzinę, żeby zobaczyć późniejsze kursy.",
-    "v3FirstLater": "Najbliższe połączenie komunikacją: wyjście dopiero o {t} (poniżej)."
+    "v3FirstLater": "Najbliższe połączenie komunikacją: wyjście dopiero o {t} (poniżej).",
+    "pOnMap": "na mapie",
+    "pNearest": "najbliższa stacja: {s}, {d}"
   }
 }

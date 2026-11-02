@@ -1306,6 +1306,8 @@
     "v3WhyRailBest": "By train — fastest",
     "v3WhyBus": "By bus/tram — {n} min faster than with a train",
     "v3NoTransit": "Public transport won't be faster or there are no services in the coming hours — change the time to see later ones.",
-    "v3FirstLater": "Nearest public transport connection: leave only at {t} (below)."
+    "v3FirstLater": "Nearest public transport connection: leave only at {t} (below).",
+    "pOnMap": "on the map",
+    "pNearest": "nearest station: {s}, {d}"
   }
 }

@@ -1306,6 +1306,8 @@
     "v3WhyRailBest": "Mit dem Zug — am schnellsten",
     "v3WhyBus": "Mit Bus/Tram — {n} Min. schneller als mit dem Zug",
     "v3NoTransit": "Mit Bus und Bahn nicht schneller oder in den nächsten Stunden keine Fahrten — ändere die Uhrzeit für spätere.",
-    "v3FirstLater": "Nächste Verbindung mit Bus und Bahn: Abfahrt erst um {t} (unten)."
+    "v3FirstLater": "Nächste Verbindung mit Bus und Bahn: Abfahrt erst um {t} (unten).",
+    "pOnMap": "auf der Karte",
+    "pNearest": "nächster Bahnhof: {s}, {d}"
   }
 }

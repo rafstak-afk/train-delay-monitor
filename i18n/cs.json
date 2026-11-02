@@ -1306,6 +1306,8 @@
     "v3WhyRailBest": "Vlakem — nejrychleji",
     "v3WhyBus": "Autobusem/tramvají — o {n} min rychleji než s vlakem",
     "v3NoTransit": "Hromadnou dopravou to rychlejší nebude nebo v nejbližších hodinách nic nejede — změňte čas.",
-    "v3FirstLater": "Nejbližší spojení hromadnou dopravou: odchod až v {t} (níže)."
+    "v3FirstLater": "Nejbližší spojení hromadnou dopravou: odchod až v {t} (níže).",
+    "pOnMap": "na mapě",
+    "pNearest": "nejbližší stanice: {s}, {d}"
   }
 }

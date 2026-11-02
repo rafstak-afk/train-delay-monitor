@@ -1306,6 +1306,8 @@
     "v3WhyRailBest": "En tren: lo más rápido",
     "v3WhyBus": "En autobús/tranvía: {n} min más rápido que con tren",
     "v3NoTransit": "En transporte público no será más rápido o no hay servicios en las próximas horas; cambia la hora para ver otros.",
-    "v3FirstLater": "Próxima conexión en transporte público: salida a las {t} (abajo)."
+    "v3FirstLater": "Próxima conexión en transporte público: salida a las {t} (abajo).",
+    "pOnMap": "en el mapa",
+    "pNearest": "estación más cercana: {s}, {d}"
   }
 }
