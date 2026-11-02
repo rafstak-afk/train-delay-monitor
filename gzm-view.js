@@ -1283,6 +1283,9 @@
         '<button type="button" class="btn-sm secondary" data-tx="' + esc(tKey) + '">' + esc(open ? T("gzm.v2Hide", null, "▲ Zwiń trasę") : T("gzm.v2Route", null, "▼ Trasa")) + "</button></span></div>";
     }
     var v2Cur = [];
+    // rozwinięte sekcje „Inne dojazdy…” — przetrwają odświeżanie wyników (co kilka sekund)
+    var moreOpen = {};
+    root.addEventListener("toggle", function (e) { var d = e.target; if (d && d.dataset && d.dataset.mk) { if (d.open) moreOpen[d.dataset.mk] = 1; else delete moreOpen[d.dataset.mk]; } }, true);
     function v2Head(route, sub, st, chip) {
       return '<div class="c-head"><div><div class="c-route">' + route + '</div><div class="c-sub">' + sub + "</div></div>" +
         '<span class="chip ' + (V2ST[st] || "s-ok") + '">' + chip + "</span></div>";
@@ -1325,10 +1328,10 @@
       var more = "";
       if (c.acc) {
         var okA = c.acc.filter(function (y) { return y.status !== "missed"; });
-        if (okA.length > 1) more += '<details class="v2-more"><summary>' + esc(T("gzm.v2MoreAcc", { n: okA.length - 1 }, "Inne dojazdy na pociąg ({n})")) + "</summary>" +
+        if (okA.length > 1) more += '<details class="v2-more" data-mk="a|' + esc(key) + '"' + (moreOpen["a|" + key] ? " open" : "") + "><summary>" + esc(T("gzm.v2MoreAcc", { n: okA.length - 1 }, "Inne dojazdy na pociąg ({n})")) + "</summary>" +
           okA.filter(function (y) { return y !== L; }).slice(-5).map(function (y) { return jRow(y.jn, "🚉 " + esc(T("gzm.cOnPlatform", { t: C.fmt(y.plat), n: y.slack }, "na peronie {t} · zapas {n} min")), y.status); }).join("") + "</details>";
       }
-      if (c.egr && c.egr.length > 1) more += '<details class="v2-more"><summary>' + esc(T("gzm.v2MoreEgr", { n: c.egr.length - 1 }, "Inne możliwości po pociągu ({n})")) + "</summary>" +
+      if (c.egr && c.egr.length > 1) more += '<details class="v2-more" data-mk="e|' + esc(key) + '"' + (moreOpen["e|" + key] ? " open" : "") + "><summary>" + esc(T("gzm.v2MoreEgr", { n: c.egr.length - 1 }, "Inne możliwości po pociągu ({n})")) + "</summary>" +
         c.egr.slice(1).map(function (y) { return jRow(y, "🏁 " + C.fmt(y.arr) + " " + esc(y.legs[y.legs.length - 1].toName), "ok"); }).join("") +
         (c.egr.length >= 5 + 5 * ((S.more && S.more[key]) || 0) ? '<button type="button" class="btn-sm secondary" data-cmore="' + esc(key) + '">' + esc(T("gzm.more", null, "Pokaż kolejne 5")) + "</button>" : "") + "</details>";
       var route = esc(fromName) + " → " + esc(toName);
