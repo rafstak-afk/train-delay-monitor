@@ -88,6 +88,7 @@
   function mount(root, opts) {
     opts = opts || {};
     var G = window.GuardCore, S = window.GuardStore;
+    try { if (localStorage.getItem("showVersionBadge") === "1" && G && G.setSoftMargin) G.setSoftMargin(true); } catch (e) {}
     if (!document.getElementById('guard-view-css')) {
       var st = document.createElement('style'); st.id = 'guard-view-css'; st.textContent = STYLE; document.head.appendChild(st);
     }

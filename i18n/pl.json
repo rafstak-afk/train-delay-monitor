@@ -1336,6 +1336,7 @@
     "paceSlow": "🐢 spokojne",
     "noStairs": "♿ Unikaj schodów (wózek, wózek dziecięcy)",
     "noStairsNote": "Wybieram drogę bez schodów, gdy mapa ją zna (windy, pochylnie). ⚠️ przy przystanku = z części peronów tylko po schodach.",
-    "stairsWarn": "Z części peronów albo w ogóle tylko po schodach"
+    "stairsWarn": "Z części peronów albo w ogóle tylko po schodach",
+    "crossTitle": "Na trasie: przejścia ze światłami {s}, bez świateł {z}, przez tory {r} (czekanie na światłach wliczone)"
   }
 }

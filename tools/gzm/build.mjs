@@ -103,7 +103,7 @@ async function computeWalks(stations, stopsByCode, cache) {
     const cands = [...stopsByCode.values()].map(s => ({ s, straight: Math.round(W.haversine(st, s)) })).filter(x => x.straight <= CFG.candidateRadiusM);
     st.candidates = cands.map(c => c.s.code);
     // brak wpisu albo wpis sprzed liczenia trasy bez schodów (pole „ns”) → policz
-    const missing = cands.filter(c => { const e = cache.entries[st.id + "|" + c.s.code]; return !e || (/^osm/.test(e.src || "") && !("ns" in e)); });
+    const missing = cands.filter(c => { const e = cache.entries[st.id + "|" + c.s.code]; return !e || (/^osm/.test(e.src || "") && (!("ns" in e) || !("cx" in e))); });
     if (!cands.length || (!missing.length && !args["full-walk"])) continue;
     log(`dojścia: ${st.name} (${cands.length} kandydatów, nowych ${missing.length})`);
     let g = null, plats = [], err = null;
@@ -130,7 +130,7 @@ async function computeWalks(stations, stopsByCode, cache) {
         const mins = res.map(r => Math.max(2, Math.ceil(r.s / 60)));
         const best = res.reduce((a, b) => a.s < b.s ? a : b);
         const p = W.pathTo(g, per[best.i], best.id);
-        Object.assign(e, { src: plats[0] && plats[0].approx ? "osm-stacja" : "osm", m: Math.round(best.m), min: Math.min(...mins), max: Math.max(...mins), byPlat: Object.fromEntries(res.map((r, k) => [r.plat || String(k + 1), mins[k]])), obst: p.obstacles, pts: simplify(p.pts.concat([[+c.s.lat.toFixed(6), +c.s.lon.toFixed(6)]])) });
+        Object.assign(e, { src: plats[0] && plats[0].approx ? "osm-stacja" : "osm", m: Math.round(best.m), min: Math.min(...mins), max: Math.max(...mins), byPlat: Object.fromEntries(res.map((r, k) => [r.plat || String(k + 1), mins[k]])), obst: p.obstacles, cx: p.cx, sig: p.sig, rx: p.rail, pts: simplify(p.pts.concat([[+c.s.lat.toFixed(6), +c.s.lon.toFixed(6)]])) });
         if (best.m > CFG.suspiciousRatio * Math.max(c.straight, 40)) e.check = "trasa ponad " + CFG.suspiciousRatio + "× dłuższa niż prosto";
         // bez schodów: [min, max] minut albo null (nie da się / mapa nie zna takiej drogi)
         const resNS = perNS.map(b => W.reachPoint(g, b, c.s, 60)).filter(Boolean);
@@ -167,7 +167,7 @@ function assign(stations, stopsByCode, cache, overrides) {
       const s = stopsByCode.get(code); if (!s) return null;
       const e = cache.entries[st.id + "|" + code] || { straight: Math.round(W.haversine(st, s)), src: "override" };
       const w = ov.walk && ov.walk[code];
-      return { code, id: s.id, name: s.name, lat: s.lat, lon: s.lon, url: s.url, types: s.types, byPlat: w ? undefined : e.byPlat, min: w ? w[0] : e.min, max: w ? w[1] : e.max, ns: w ? undefined : e.ns, nsPart: w ? undefined : e.nsPart, stairs: (e.obst || []).includes("schody") || undefined, src: w ? "override" : e.src };
+      return { code, id: s.id, name: s.name, lat: s.lat, lon: s.lon, url: s.url, types: s.types, byPlat: w ? undefined : e.byPlat, min: w ? w[0] : e.min, max: w ? w[1] : e.max, ns: w ? undefined : e.ns, nsPart: w ? undefined : e.nsPart, cx: w ? undefined : e.cx, sig: w ? undefined : e.sig, rx: w ? undefined : e.rx, stairs: (e.obst || []).includes("schody") || undefined, src: w ? "override" : e.src };
     }).filter(Boolean).sort((a, b) => a.min - b.min || a.max - b.max || a.name.localeCompare(b.name, "pl"));
   }
 }
@@ -392,7 +392,7 @@ async function main() {
       }
     });
     for (const d of dates) { days[d].sort((a, b) => a[0] - b[0]); totalDeps += days[d].length; }
-    const file = { v: 1, id: st.id, name: st.name, generated: gen, range: index.range, stops: st.stops.map(s => ({ c: s.code, n: s.name, lat: s.lat, lon: s.lon, w: [s.min, s.max], p: s.byPlat, stairs: s.stairs, ns: s.ns, nsPart: s.nsPart, u: s.url, src: s.src })), lines, days, ds: dsNames, pt: pats };
+    const file = { v: 1, id: st.id, name: st.name, generated: gen, range: index.range, stops: st.stops.map(s => ({ c: s.code, n: s.name, lat: s.lat, lon: s.lon, w: [s.min, s.max], p: s.byPlat, stairs: s.stairs, ns: s.ns, nsPart: s.nsPart, cx: s.cx || undefined, sig: s.sig || undefined, rx: s.rx || undefined, u: s.url, src: s.src })), lines, days, ds: dsNames, pt: pats };
     const txt = JSON.stringify(file);
     if (st.stops.length) {
       fs.mkdirSync(path.join(TMP, "stations"), { recursive: true });

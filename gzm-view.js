@@ -320,7 +320,7 @@
       return '<div class="card v2-dep ' + (V2ST[x.status] || "s-ok") + (cls || "") + '" data-k="' + esc(d.trip + "|" + d.stopIdx) + '" data-tripx="' + esc(tk) + '" title="' + esc(T("gzm.tTap", null, "Stuknij — cały bieg kursu")) + '">' +
         '<div class="c-head"><div><div class="c-route">' + (TYPE_ICON[d.type] || "🚌") + " " + esc(d.line) + " → " + esc(d.head) +
         (noFav ? "" : ' <button type="button" class="gz-fav" data-fav="' + esc(key) + '" title="' + esc(T("gzm.favTitle", null, "Ulubiona linia w tym kierunku na tej stacji")) + '">' + (isF ? "★" : "☆") + "</button>") + "</div>" +
-        '<div class="c-date">' + esc(d.stop.n) + " · 🚶 " + esc(walk) + " min" + (d.stop.stairs ? " 🪜" : "") + (x.walk.warn ? ' <span title="' + esc(T("gzm.stairsWarn", null, "Z części peronów albo w ogóle tylko po schodach")) + '">⚠️♿</span>' : "") + v2Dl(x.live, x.delay) + "</div>" +
+        '<div class="c-date">' + esc(d.stop.n) + " · 🚶 " + esc(walk) + " min" + (d.stop.stairs ? " 🪜" : "") + (modesOn() ? crossIcons(d.stop) : "") + (x.walk.warn ? ' <span title="' + esc(T("gzm.stairsWarn", null, "Z części peronów albo w ogóle tylko po schodach")) + '">⚠️♿</span>' : "") + v2Dl(x.live, x.delay) + "</div>" +
         (x.arrDest != null ? '<div class="c-sub">🏁 ' + esc(T("gzm.arrDest", { t: C.fmt(x.arrDest), n: x.destName, m: x.travel }, "{t} {n} (jazda {m} min)")) + "</div>" : "") + "</div>" +
         '<span class="chip ' + (V2ST[x.status] || "s-ok") + '"><span class="ct">' + tTxt + "</span>" + esc(inTxt ? inTxt + " · " : "") + esc(v2StTxt(x.status)) + "</span></div>" +
         (open ? tripHtml(d.trip, d.date, d.stop.n) : "") + "</div>";
@@ -1006,6 +1006,14 @@
       }
       return { min: PACE[p.pace] === 1 ? m : Math.max(1, Math.round(m * PACE[p.pace])), warn: warn };
     };
+    // 🚦 przejścia ze światłami, 🚸 bez świateł, 🛤️ przez tory — na trasie peron → przystanek
+    function crossIcons(s) {
+      var z = (s.cx || 0) - (s.sig || 0), out = "";
+      if (s.sig) out += " 🚦" + (s.sig > 1 ? s.sig : "");
+      if (z > 0) out += " 🚸" + (z > 1 ? z : "");
+      if (s.rx) out += " 🛤️";
+      return out ? '<span title="' + esc(T("gzm.crossTitle", { s: s.sig || 0, z: Math.max(0, z), r: s.rx || 0 }, "Na trasie: przejścia ze światłami {s}, bez świateł {z}, przez tory {r} (czekanie na światłach wliczone)")) + '">' + out + "</span>" : "";
+    }
     function exclOf() { var m = modes(), e = null; ["bus", "tram", "trolley"].forEach(function (k) { if (!m[k]) { e = e || {}; e[k] = 1; } }); return e; }
     function modesHtml() {
       var m = modes(), L = { train: T("gzm.mTrain", null, "🚆 Pociąg"), bus: T("gzm.mBus", null, "🚌 Autobus"), tram: T("gzm.mTram", null, "🚋 Tramwaj"), trolley: T("gzm.mTrolley", null, "🚎 Trolejbus") };

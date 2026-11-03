@@ -1336,6 +1336,7 @@
     "paceSlow": "🐢 gemütlich",
     "noStairs": "♿ Treppen meiden (Rollstuhl, Kinderwagen)",
     "noStairsNote": "Ich wähle einen stufenlosen Weg, wenn die Karte ihn kennt (Aufzüge, Rampen). ⚠️ an der Haltestelle = von manchen Bahnsteigen nur über Treppen.",
-    "stairsWarn": "Von manchen oder allen Bahnsteigen nur über Treppen"
+    "stairsWarn": "Von manchen oder allen Bahnsteigen nur über Treppen",
+    "crossTitle": "Unterwegs: Übergänge mit Ampel {s}, ohne Ampel {z}, über Gleise {r} (Wartezeit an Ampeln eingerechnet)"
   }
 }

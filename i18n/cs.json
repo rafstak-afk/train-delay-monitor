@@ -1336,6 +1336,7 @@
     "paceSlow": "🐢 pomalé",
     "noStairs": "♿ Vyhnout se schodům (vozík, kočárek)",
     "noStairsNote": "Volím cestu bez schodů, když ji mapa zná (výtahy, rampy). ⚠️ u zastávky = z některých nástupišť jen po schodech.",
-    "stairsWarn": "Z některých nebo všech nástupišť jen po schodech"
+    "stairsWarn": "Z některých nebo všech nástupišť jen po schodech",
+    "crossTitle": "Na trase: přechody se semafory {s}, bez semaforů {z}, přes koleje {r} (čekání na semaforech započteno)"
   }
 }

@@ -1336,6 +1336,7 @@
     "paceSlow": "🐢 relaxed",
     "noStairs": "♿ Avoid stairs (wheelchair, pram)",
     "noStairsNote": "I pick a step-free route when the map knows one (lifts, ramps). ⚠️ at a stop = stairs only from some platforms.",
-    "stairsWarn": "Stairs only, from some or all platforms"
+    "stairsWarn": "Stairs only, from some or all platforms",
+    "crossTitle": "On the way: crossings with lights {s}, without lights {z}, over tracks {r} (waiting at lights included)"
   }
 }

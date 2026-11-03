@@ -1336,6 +1336,7 @@
     "paceSlow": "🐢 tranquilo",
     "noStairs": "♿ Evitar escaleras (silla de ruedas, carrito)",
     "noStairsNote": "Elijo un camino sin escaleras cuando el mapa lo conoce (ascensores, rampas). ⚠️ en una parada = solo con escaleras desde algunos andenes.",
-    "stairsWarn": "Solo con escaleras desde algunos o todos los andenes"
+    "stairsWarn": "Solo con escaleras desde algunos o todos los andenes",
+    "crossTitle": "En el camino: pasos con semáforo {s}, sin semáforo {z}, sobre vías {r} (espera en semáforos incluida)"
   }
 }

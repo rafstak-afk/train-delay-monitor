@@ -12,6 +12,10 @@
   var PLATFORM_EXTRA = 2;  // inny peron przyjazdu i odjazdu na przesiadce
   var STATION_EXTRA = 5;   // przesiadka między różnymi stacjami (dworzec ↔ przystanek)
   var SAFE_MARGIN = 5;     // 🟢 dopiero od minimum + 5 min zapasu
+  // Nowa reguła (TEST: profil autora, potem dla wszystkich): bez opóźnienia przesiadka z zapasem ≥ potrzebnego to 🟢;
+  // zapas bezpieczeństwa = samo opóźnienie pociągu A (najwyżej SAFE_MARGIN) — bo opóźnienia zwykle rosną.
+  var SOFT_MARGIN = false;
+  function setSoftMargin(v) { SOFT_MARGIN = !!v; }
   var RANK = { ok: 0, nodata: 1, risk: 2, broken: 3, cancelled: 4 };
   var MAX_ACTIVE = 5;      // tyle połączeń naraz pilnujemy w tle (limity PLK)
 
@@ -166,10 +170,11 @@
     out.delayA = dA; out.delayB = dB; out.delaySourceA = rA.arrSource; out.delaySourceB = rB.depSource;
     out.slack = plannedSlack + dB - dA;
     out.slackWithoutB = plannedSlack - dA;
-    out.onlyThanksToB = dB > 0 && out.slackWithoutB < need + SAFE_MARGIN && out.slack >= need;
+    var margin = SOFT_MARGIN ? Math.min(SAFE_MARGIN, Math.max(0, dA)) : SAFE_MARGIN;
+    out.onlyThanksToB = dB > 0 && out.slackWithoutB < need + margin && out.slack >= need;
     out.etaA = fmt(plannedA + dA);
     if (out.slack < need) out.status = "broken";
-    else if (out.slack < need + SAFE_MARGIN || out.onlyThanksToB) out.status = "risk";
+    else if (out.slack < need + margin || out.onlyThanksToB) out.status = "risk";
     else out.status = "ok";
     // B już odjechał, a A jeszcze nie dojechał — po przesiadce.
     if (rB.boarded && !rA.arrived && out.status !== "ok") out.status = "broken";
@@ -492,7 +497,7 @@
     lastArrMin: lastArrMin, buildJournalEntries: buildJournalEntries, remindMessage: remindMessage,
     altOrigin: altOrigin, altQuery: altQuery, pickAlternatives: pickAlternatives, altText: altText,
     norm: norm, hm: hm, fmt: fmt, connectionId: connectionId, fromItinerary: fromItinerary, fromPlannedTrips: fromPlannedTrips,
-    timeWindow: timeWindow, isActive: isActive, readLeg: readLeg, evalTransfer: evalTransfer, evaluate: evaluate,
+    timeWindow: timeWindow, isActive: isActive, readLeg: readLeg, evalTransfer: evalTransfer, evaluate: evaluate, setSoftMargin: setSoftMargin,
     rising: rising, shouldNotify: shouldNotify, message: message, tx: tx, trainLabel: trainLabel
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;

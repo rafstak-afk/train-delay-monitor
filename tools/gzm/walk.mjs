@@ -11,6 +11,18 @@ export const OVERPASS = "https://overpass-api.de/api/interpreter";
 export const UA = "czy-zdaze-gzm-build/1.0 (rafstak@gmail.com)";
 export const WALK_SPEED = 1.2;          // m/s
 export const STEP_PENALTY_S = 60;       // +1 min za każde schody / przejście podziemne / kładkę
+export const SIGNAL_PENALTY_S = 30;     // średnie czekanie na zielone światło dla pieszych
+
+// Przejście w węźle / na drodze OSM: "sig" (ze światłami), "zebra" (bez), "rail" (przez tory) albo null
+function hasSignals(t) { return t.crossing === "traffic_signals" || t["crossing:signals"] === "yes" || /^(pelican|toucan|puffin|pegasus)$/.test(t.crossing_ref || ""); }
+export function nodeCross(t) {
+  if (!t) return null;
+  if (t.railway === "crossing") return "rail";
+  if (t.highway === "crossing") return hasSignals(t) ? "sig" : "zebra";
+  if (t.highway === "traffic_signals" && /crossing|both/.test(t.traffic_signals || "crossing")) return "sig";
+  return null;
+}
+function wayCross(t) { return t.footway === "crossing" || t.highway === "crossing" ? (hasSignals(t) ? "sig" : "zebra") : t.railway === "crossing" ? "rail" : null; }
 
 const EXCLUDED_HW = new Set(["motorway", "motorway_link", "trunk_link", "construction", "proposed", "raceway", "bus_guideway"]);
 
@@ -121,7 +133,7 @@ export function buildGraph(osm) {
     const relP = relPlatform.get(el.id);
     if (!relP && !walkable(el.tags)) continue;
     const t = el.tags || {}, idx = ways.length;
-    ways.push({ id: el.id, obstacle: obstacle(t), name: t.name || "" });
+    ways.push({ id: el.id, obstacle: obstacle(t), name: t.name || "", cross: wayCross(t) });
     for (let i = 1; i < el.nodes.length; i++) link(el.nodes[i - 1], el.nodes[i], idx);
     if (relP) relP.nodeIds.push(...el.nodes);
     else if (isTrainPlatform(t)) platforms.push({ ref: platformRef(t), nodeIds: el.nodes.slice(), id: "w" + el.id });
@@ -169,7 +181,10 @@ export function dijkstra(g, startIds, maxS = 1200, opts = {}) {
       // kara za przeszkodę raz na „zdarzenie”: wejście na schody / do tunelu / na
       // kładkę z drogi innego rodzaju (kolejne odcinki tego samego tunelu się nie sumują)
       const prevObst = cur.prevWay >= 0 ? g.ways[cur.prevWay].obstacle : null;
-      const pen = way.obstacle && way.obstacle !== prevObst ? STEP_PENALTY_S : 0;
+      let pen = way.obstacle && way.obstacle !== prevObst ? STEP_PENALTY_S : 0;
+      const toCross = nodeCross((g.nodes.get(to) || {}).tags);
+      if (toCross === "sig") pen += SIGNAL_PENALTY_S;
+      else if (way.cross === "sig" && cur.prevWay !== w && nodeCross((g.nodes.get(id) || {}).tags) !== "sig") pen += SIGNAL_PENALTY_S;
       const ns = s + d / WALK_SPEED + pen;
       const nb = best.get(to);
       if (!nb || ns < nb.s) { best.set(to, { s: ns, m: cur.m + d, prev: id, prevWay: w }); push(ns, to); }
@@ -190,7 +205,20 @@ export function pathTo(g, best, endId) {
   }
   seq.reverse();
   const obstacles = seq.filter((o, i) => o && o !== seq[i - 1]);
-  return { pts: pts.reverse(), obstacles };
+  // przejścia: węzły z oznaczeniem + odcinki „footway=crossing” (każda droga raz, jeśli jej węzły nie są oznaczone)
+  const cnt = { sig: 0, zebra: 0, rail: 0 }, seenWay = new Set();
+  let id2 = endId;
+  while (id2 != null) {
+    const b = best.get(id2), nc = nodeCross((g.nodes.get(id2) || {}).tags);
+    if (nc) cnt[nc]++;
+    else if (b.prevWay >= 0 && g.ways[b.prevWay].cross && !seenWay.has(b.prevWay)) {
+      const prevNc = b.prev != null ? nodeCross((g.nodes.get(b.prev) || {}).tags) : null;
+      if (!prevNc) { cnt[g.ways[b.prevWay].cross]++; seenWay.add(b.prevWay); }
+    }
+    if (b.prevWay >= 0 && nc) seenWay.add(b.prevWay);
+    id2 = b.prev;
+  }
+  return { pts: pts.reverse(), obstacles, cx: cnt.sig + cnt.zebra, sig: cnt.sig, rail: cnt.rail };
 }
 
 // Najtańsze dojście do punktu (przystanku): spośród węzłów osiągalnych z peronu
