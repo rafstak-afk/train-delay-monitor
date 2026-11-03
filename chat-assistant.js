@@ -72,6 +72,9 @@
   // Dla wszystkich od v5.48. Lista nazw przystanków (ok. 80 KB, /api/gzm-data/stop-names.json)
   // ładuje się dopiero po pytaniu; gdy jej jeszcze nie ma — nazwy z dzisiejszego pliku sieci.
   function gzChatOn() { return true; }
+  // TEST: „w Tarnowskich Górach” po adresie — tylko profil autora, dla wszystkich od 3.11.2026 14:30
+  function cityFixOn() { if (Date.now() >= Date.parse("2026-11-03T13:30:00Z")) return true; try { return localStorage.getItem("showVersionBadge") === "1"; } catch (e) { return false; } }
+
   var gzStops = null, gzStopsP = null;
   function loadStops() {
     if (!gzChatOn()) return Promise.resolve(null);
@@ -374,9 +377,23 @@
             // „do pracy”, „z domu” — moje miejsce (samo „pracy” jest na liście słów pomijanych: „po pracy”)
             if (gzChatOn() && !words.length && /^(pracy|domu|prace|praca|dom)$/.test(w) && !/^po$/.test(fold(tokens[i]))) { words.push(tokens[j]); break; }
             var numOk = gzChatOn() && /^\d{1,3}[a-z]?$/.test(w) && words.length && !/:/.test(tokens[j]) &&
-              (words.some(function (x) { return /^(ul|al|pl|os|ulica|aleja)\.?$/i.test(x); }) || (tokens[j + 1] && /^[A-ZŁŚŻŹĆŃÓĘĄ]/.test(tokens[j + 1]) && !MARKERS.test(fold(tokens[j + 1]))));
+              (words.some(function (x) { return /^(ul|al|pl|os|ulica|aleja)\.?$/i.test(x); }) || (tokens[j + 1] && /^[A-ZŁŚŻŹĆŃÓĘĄ]/.test(tokens[j + 1]) && !MARKERS.test(fold(tokens[j + 1]))) ||
+              (cityFixOn() && ((tokens[j + 1] && /^(w|we)$/.test(fold(tokens[j + 1])) && tokens[j + 2] && /^[A-ZŁŚŻŹĆŃÓĘĄ]/.test(tokens[j + 2])) || !tokens[j + 1])));
             if (!w || MARKERS.test(w) || (/^\d/.test(w) && !numOk) || /^(poniedzial|wtor|srod|czwart|piat|sobot|niedziel)/.test(w)) break;
             words.push(tokens[j]);
+          }
+          // adres + „w Tarnowskich Górach” / „we Wrocławiu” → „ul. Kościuszki 5, Tarnowskie Góry” (miasto w mianowniku ze słownika stacji)
+          if (cityFixOn() && words.length && looksAddr(words.join(" ")) && tokens[j] && /^(w|we)$/.test(fold(tokens[j]))) {
+            var cw = [];
+            for (var k = j + 1; k < tokens.length && cw.length < 3; k++) {
+              var x = fold(tokens[k]);
+              if (!x || MARKERS.test(x) || /^d/.test(x) || /^(poniedzial|wtor|srod|czwart|piat|sobot|niedziel)/.test(x)) break;
+              cw.push(tokens[k]);
+            }
+            if (cw.length) {
+              var cm = stations ? matchStation(cw.join(" ")) : { none: true }, city = cm.exact ? cm.exact.name : cm.options ? cm.options[0].name : cw.join(" ");
+              return words.join(" ") + ", " + city;
+            }
           }
           if (words.length) return words.join(" ");
         }

@@ -753,7 +753,11 @@
         out.push(w.slice(2).join(" ") + ", " + w.slice(0, 2).join(" "));   // „Piekary Śląskie Piotra Skargi” → „Piotra Skargi, Piekary Śląskie”
         out.push(w.slice(1).join(" ") + ", " + w[0]);                      // „Bytom Piłsudskiego 5” → „Piłsudskiego 5, Bytom”
       }
-      return out.filter(function (x, i) { return out.indexOf(x) === i; }).slice(0, 4);
+      // ulica w dopełniaczu („Dworcowej 3”, „Wolności”) → mianownik („Dworcowa 3”)
+      var nom = clean.replace(/([A-Za-zżźćńółęąśŻŹĆŃÓŁĘĄŚ]{3,}?)(owej|skiej|ckiej|nej|iej)(?=[\s,]|$)/g, function (m0, st, en) { return st + ({ owej: "owa", skiej: "ska", ckiej: "cka", nej: "na", iej: "ia" })[en]; });
+      var cfOn = Date.now() >= Date.parse("2026-11-03T13:30:00Z"); try { cfOn = cfOn || localStorage.getItem("showVersionBadge") === "1"; } catch (e) {}
+      if (cfOn && nom !== clean) out.splice(2, 0, nom);
+      return out.filter(function (x, i) { return out.indexOf(x) === i; }).slice(0, 5);
     }
     function geoOnce(q) {
       var p = new URLSearchParams({ format: "jsonv2", q: q, addressdetails: "1", countrycodes: "pl", viewbox: "18.2,50.75,19.75,49.9", bounded: "1", limit: "1", "accept-language": "pl" });
