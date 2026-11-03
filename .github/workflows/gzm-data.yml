@@ -8,10 +8,9 @@ name: gzm-data
 # piesze z OpenStreetMap (~2–3 h). Gdy budowanie albo walidacja się nie uda,
 # gałąź gzm-data zostaje bez zmian (poprzednie dane działają dalej).
 
+# Uruchamia ją Cloudflare Worker push-tick-cron (zegar GitHuba spóźniał się o 6–8 h):
+#  codziennie 6:00 czasu polskiego, 1. dnia miesiąca 2:00 z full_walk=true. Można też ręcznie.
 on:
-  schedule:
-    - cron: "0 5 * * *"      # 6:00 czasu zimowego (7:00 letniego)
-    - cron: "0 1 1 * *"      # 1. dnia miesiąca: pełne przeliczenie dojść
   workflow_dispatch:
     inputs:
       full_walk:

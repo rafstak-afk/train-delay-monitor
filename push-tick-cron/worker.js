@@ -1,7 +1,9 @@
 // „Budzik” serwera (Cloudflare Worker z Cron Trigger) — co minutę:
 //  • /api/remind-tick — przypomnienia o wyjściu z domu (lekkie: tylko profile z indeksu przypomnień),
 //  • /api/push-tick — co 5 minut, jak dotąd (alarmy opóźnień, obserwowane stacje, strażnik przesiadek).
-// Cała logika zostaje w funkcjach Pages; ten Worker tylko je wywołuje.
+//  • codziennie o 6:00 czasu polskiego — uruchamia aktualizację rozkładów GZM (GitHub Action gzm-data);
+//    1. dnia miesiąca o 2:00 — pełne przeliczenie dojść pieszych. Zegar GitHuba spóźniał się o 6–8 h.
+// Cała logika zostaje w funkcjach Pages / w Action; ten Worker tylko je wywołuje.
 
 const ORIGIN = "https://train-delay-monitor1.pages.dev";
 
@@ -10,11 +12,32 @@ async function call(env, path) {
   console.log(path + ":", res.status, (await res.text()).slice(0, 300));
 }
 
+const REPO = "rafstak-afk/train-delay-monitor";
+
+// Godzina i dzień miesiąca w Warszawie (sam przelicza czas letni/zimowy).
+function warsaw(ts) {
+  const p = Object.fromEntries(new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Warsaw", day: "numeric", hour: "numeric", minute: "numeric", hourCycle: "h23" }).formatToParts(new Date(ts)).map(x => [x.type, x.value]));
+  return { day: +p.day, hour: +p.hour, minute: +p.minute };
+}
+
+async function dispatchGzm(env, fullWalk) {
+  if (!env.GITHUB_TOKEN) { console.log("gzm-data: brak sekretu GITHUB_TOKEN"); return; }
+  const res = await fetch(`https://api.github.com/repos/${REPO}/actions/workflows/gzm-data.yml/dispatches`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${env.GITHUB_TOKEN}`, Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "push-tick-cron" },
+    body: JSON.stringify({ ref: "main", inputs: { full_walk: fullWalk ? "true" : "false" } })
+  });
+  console.log("gzm-data dispatch" + (fullWalk ? " (full_walk)" : "") + ":", res.status, (await res.text()).slice(0, 200));
+}
+
 export default {
   async scheduled(event, env, ctx) {
     const minute = new Date(event.scheduledTime).getUTCMinutes();
     const jobs = [call(env, "/api/remind-tick")];
     if (minute % 5 === 0) jobs.push(call(env, "/api/push-tick"));
+    const w = warsaw(event.scheduledTime);
+    if (w.hour === 6 && w.minute === 0) jobs.push(dispatchGzm(env, false));
+    if (w.day === 1 && w.hour === 2 && w.minute === 0) jobs.push(dispatchGzm(env, true));
     ctx.waitUntil(Promise.allSettled(jobs));
   },
 
