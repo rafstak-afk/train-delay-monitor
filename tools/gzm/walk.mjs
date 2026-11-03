@@ -69,7 +69,9 @@ export async function fetchOverpass(query, tries = 3) {
 export function isTrainPlatform(tags) {
   if (!tags) return false;
   if (tags.tram === "yes" || tags.bus === "yes" || tags.trolleybus === "yes" || tags.light_rail === "yes" || tags.train === "no") return false;
-  if (tags.proposed || tags["disused:railway"] || tags["gtfs:stop_id"]) return false;
+  // gtfs:stop_id mają słupki GZM, ale też perony PKP PLK (np. Chorzów Batory: gtfs:stop_id=73106, train=yes) — te zostają
+  const rail = tags.train === "yes" || /PKP|PLK|Polskie Linie Kolejowe/i.test([tags.operator, tags["operator:short"]].join(" "));
+  if (tags.proposed || tags["disused:railway"] || (tags["gtfs:stop_id"] && !rail)) return false;
   // kolejki wąskotorowe / muzealne i perony nieczynne
   if (/wąskotor|waskotor|stowarzyszenie|muzeum/i.test([tags.operator, tags.name, tags.network].join(" ")) || /nieczynn/i.test(tags.note || "") || tags.usage === "tourism") return false;
   if (/dt$/i.test(tags.ref || "") || /dt$/i.test(tags.local_ref || "")) return false;

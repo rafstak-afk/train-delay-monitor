@@ -111,7 +111,7 @@ async function computeWalks(stations, stopsByCode, cache) {
     const cands = [...stopsByCode.values()].map(s => ({ s, straight: Math.round(W.haversine(st, s)) })).filter(x => x.straight <= CFG.candidateRadiusM);
     st.candidates = cands.map(c => c.s.code);
     // brak wpisu albo wpis sprzed liczenia trasy bez schodów (pole „ns”) → policz
-    const missing = cands.filter(c => { const e = cache.entries[st.id + "|" + c.s.code]; return !e || (/^osm/.test(e.src || "") && (!("ns" in e) || !("cx" in e))); });
+    const missing = cands.filter(c => { const e = cache.entries[st.id + "|" + c.s.code]; return !e || (/^osm/.test(e.src || "") && (!("ns" in e) || !("cx" in e))) || ((e.src === "osm-stacja" || e.src === "fallback") && e.pv !== 2); });
     if (!cands.length || (!missing.length && !args["full-walk"])) continue;
     log(`dojścia: ${st.name} (${cands.length} kandydatów, nowych ${missing.length})`);
     let g = null, plats = [], err = null;
@@ -133,7 +133,7 @@ async function computeWalks(stations, stopsByCode, cache) {
     cache.stations[st.id] = { at: new Date().toISOString(), platforms: plats.map(p => ({ ref: p.ref, c: p.center && [+p.center.lat.toFixed(6), +p.center.lon.toFixed(6)] })), error: err };
     for (const c of (args["full-walk"] ? cands : missing)) {
       const res = per.map((b, i) => { const r = W.reachPoint(g, b, c.s, 60); return r && Object.assign(r, { plat: plats[i].ref, i }); }).filter(Boolean);
-      const e = { straight: c.straight, at: new Date().toISOString().slice(0, 10) };
+      const e = { straight: c.straight, at: new Date().toISOString().slice(0, 10), pv: 2 };   // pv 2: perony PKP z gtfs:stop_id rozpoznawane
       if (res.length) {
         const mins = res.map(r => Math.max(2, Math.ceil(r.s / 60)));
         const best = res.reduce((a, b) => a.s < b.s ? a : b);
