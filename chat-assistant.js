@@ -361,7 +361,7 @@
   // ---------- parser jednej wypowiedzi ----------
   // Zwraca {from, to, via, date, time, transfer, direct, exclude[], vague[]}
   // — tylko to, co faktycznie padło. Frazy stacji jako surowy tekst (do dopasowania).
-  var MARKERS = /^(z|ze|od|do|przez|bez|o|około|okolo|ok|po|w|we|jutro|dzis|dzisiaj|pojutrze|rano|wieczorem|wieczor|poludniu|popoludniu|i|oraz|a|tylko|minut|minuty|min|przesiadk\w*|na|jak|chce|chcialbym|chcialabym|jechac|pojechac|dojechac|dostac|sie|pociagiem|prosze|szukam|polaczenia|polaczenie|teraz|zaraz|najblizszym|najblizszy|pierwsz\w*|ostatni\w*|wpol|pol|polnocy|jade|jedziemy|jedzie|jedziesz|wracam|wracamy|kolacji|obiedzie|sniadaniu|pracy|szkole|najwczesniej\w*|najpozniej\w*|polaczen\w*|bezposredn\w*|kurs\w*|pociag\w*|godz\w*|potem|jakie|jaki|mam|mozna|czy)$/;
+  var MARKERS = /^(z|ze|od|do|przez|bez|o|około|okolo|ok|po|w|we|jutro|dzis|dzisiaj|pojutrze|rano|wieczorem|wieczor|poludniu|popoludniu|i|oraz|a|tylko|minut|minuty|min|przesiadk\w*|na|jak|chce|chcialbym|chcialabym|jechac|pojechac|dojechac|dojsc|dojde|dotrzec|isc|pojsc|dostac|sie|pociagiem|prosze|szukam|polaczenia|polaczenie|teraz|zaraz|najblizszym|najblizszy|pierwsz\w*|ostatni\w*|wpol|pol|polnocy|jade|jedziemy|jedzie|jedziesz|wracam|wracamy|kolacji|obiedzie|sniadaniu|pracy|szkole|najwczesniej\w*|najpozniej\w*|polaczen\w*|bezposredn\w*|kurs\w*|pociag\w*|godz\w*|potem|jakie|jaki|mam|mozna|czy)$/;
   // Godzina słowami (forma po „o/po/od/około”): „siedemnastej”, „wpół do
   // ósmej”, „dwudziestej pierwszej trzydzieści”, „północy”. Bez znacznika
   // („pierwsze połączenie”) to NIE jest godzina.
@@ -871,6 +871,7 @@
       startNewRoute(); st.wizard = true; next();
     } }];
     if (howtoOn()) o.push({ label: "❓ Jak to zrobić?", onClick: function () { addMsg("Jak to zrobić?", "user"); addMsg("Mogę pokazać na stronie, co kliknąć:", "bot"); howtoOffer(null); } });
+    if (faqOn()) o.push({ label: "💡 Jak to działa?", onClick: function () { addMsg("Jak to działa?", "user"); faqMenu("Chętnie wyjaśnię, jak liczę i szukam. Wybierz temat albo zapytaj własnymi słowami:"); } });
     addOptions(o);
   }
   function restoreOrGreet() {
@@ -933,6 +934,63 @@
     if (window.showHowTo) window.showHowTo(topic);
     else location.href = (topic === "pilnuj" ? "/planer/" : "/") + "?jak=" + topic;
   }
+  // ---------- 💡 Jak to działa? — pytania o serwis (TEST: profil autora) ----------
+  function faqOn() { try { return localStorage.getItem("showVersionBadge") === "1"; } catch (e) { return false; } }
+  var FAQ = [
+    { id: "best", label: "💡 Najlepsze połączenie dla mnie",
+      re: / (najlepsz\w*|lepsz\w* polaczen\w*|porad\w*|wskazowk\w*|co (moge|mam|powinienem|powinnam) (zrobic|ustawic)|podzialac|optymal\w*|dopasowac|trafn\w*) /,
+      a: "💡 Jak dostać najlepsze połączenie dla siebie:\n1. Ustaw 🏠 Dom i 🏢 Pracę (planer 🚆🚌 → 🎛️ Moje preferencje → Moje miejsca) — liczę wtedy od Twoich drzwi.\n2. Zmierz raz swoje dojście (⚙️ Więcej opcji → zmierz dojście) albo wpisz czas „na sztywno” przy miejscu — to najbardziej poprawia trafność.\n3. Ustaw tempo chodzenia (🏃 szybkie / 🚶 zwykłe / 🐢 spokojne) i ♿ „Unikaj schodów”, jeśli trzeba.\n4. Odznacz środki transportu, których nie chcesz (np. bez tramwajów).\n5. ☆ przy odjeździe = ulubiona linia w tym kierunku — propozycje pokażą tylko ją.\n6. ⏮ / ⏭ — wcześniejsze i późniejsze połączenia; w planerze pociągów ⚡ i 🔁 pokazują szybszą alternatywę.\n7. Wybrane połączenie: 🛡️ Pilnuj + ⏰ przypomnienie — powiem, kiedy wyjść i czy przesiadka jest zagrożona." },
+    { id: "walk", label: "🚶 Jak liczysz dojście",
+      re: / (dojsc\w*|dojdz\w*|dojscie|pieszo|chodzen\w*|chodzi\w*|marsz\w*|z peronu|od peronu|tempo|schod\w*|swiatl\w*) /,
+      a: "🚶 Dojście liczę po prawdziwej sieci chodników z mapy OpenStreetMap — od peronu (albo Twojego adresu / Domu) do słupka przystanku.\n• tempo 1,2 m/s (ok. 4,3 km/h); 🏃 szybkie −20%, 🐢 spokojne +30% (🎛️ Moje preferencje),\n• +1 min za schody, przejście podziemne albo kładkę,\n• +30 s za każde przejście ze światłami 🚦,\n• przy stacji zakres „od–do”, bo zależy od peronu,\n• ♿ „Unikaj schodów” wybiera drogę przez windę lub pochylnię, a ⚠️ ostrzega, gdy jej nie ma.\nTwoje pomiary i czasy wpisane „na sztywno” mają pierwszeństwo przed wyliczeniem. Litera „B” = mapa nie zna drogi, czas jest szacunkowy." },
+    { id: "search", label: "🔎 Jak wyszukuję połączenia",
+      re: / (wyszuk\w*|szukasz|szuka|algorytm\w*|ukladasz|liczysz polaczen\w*|kolejnosc\w*|propozycj\w*|dlaczego (ta|ten|taka|takie|to) (trasa|polaczeni\w*|wynik\w*)|najmniej chodzenia|raptor) /,
+      a: "🔎 Jak szukam:\n• Pociągi — z planera PKP PLK (rozkład i opóźnienia), autobusy, tramwaje i trolejbusy — z rozkładu ZTM GZM.\n• W 🚆🚌 Pociąg + GZM: liczę dojazd do kilku najbliższych stacji, pytam PLK o pociągi między nimi i dokładam dalszą drogę komunikacją albo pieszo. Równolegle szukam trasy samą komunikacją (do 2 przesiadek).\n• Odrzucam trasy bez sensu (cofanie się, wielkie objazdy) i gorsze od innych (wcześniejsze wyjście, a nie wcześniej na miejscu).\n• Pociąg idzie na górę, gdy jest najwyżej ok. 10 min / 15% wolniejszy — linijka przy wyniku mówi, co zdecydowało.\n• Do pierwszego autobusu czy tramwaju wsiadasz tam, skąd wychodzisz najpóźniej i najmniej chodzisz.\n• Gdy celem jest adres, pokazuję też „🚶 Najmniej chodzenia”." },
+    { id: "data", label: "📂 Skąd mam dane",
+      re: / (dane|danych|skad (wiesz|bierzesz|masz|sa)|aktualiz\w*|zrodl\w*|licencj\w*|gtfs|openstreetmap|osm|plk) /,
+      a: "📂 Skąd dane:\n• pociągi — PKP Polskie Linie Kolejowe (rozkład i prognozy opóźnień),\n• autobusy, tramwaje, trolejbusy — otwarte dane ZTM GZM (GTFS, licencja CC BY 4.0); nowy rozkład co dzień o 6:00, zawsze z najbliższym weekendem,\n• pozycje pojazdów na żywo — strumień GTFS-RT ZTM,\n• dojścia, schody, światła — mapa OpenStreetMap,\n• adresy — wyszukiwarka Nominatim (OpenStreetMap),\n• dostępność stacji — link do Katalogu Stacji PKP PLK." },
+    { id: "live", label: "● Na żywo i opóźnienia",
+      re: / (na zywo|opozni\w*|prognoz\w*|spozni\w*|gdzie jest (autobus|tramwaj|pociag|pojazd)|wg rozkladu|przekreslon\w*) /,
+      a: "● na żywo — ZTM podaje, gdzie jest pojazd i ile ma opóźnienia; przenoszę to na kolejne przystanki. Pociągi: prognoza PLK.\n„wg rozkładu” — dla tego kursu nie ma teraz danych na żywo.\nPrzekreślona godzina to planowa, obok — rzeczywista. Wyniki odświeżam same co kilka sekund." },
+    { id: "status", label: "🟢🟡🔴 Co znaczą kolory",
+      re: / (zdazysz|na styk|zagrozon\w*|kolor\w*|zielon\w*|zolt\w*|czerwon\w*|status\w*|zerwan\w*) /,
+      a: "🟢 zdążysz — zapas większy niż potrzebny czas,\n🟡 na styk / zagrożona — zapas ledwo wystarcza albo pociąg już się spóźnia i może zjeść resztę,\n🔴 nie zdążysz / zerwana — po opóźnieniu zabraknie czasu.\nNa przesiadkę liczę 3 min (+2 przy zmianie peronu, więcej przy zmianie stacji), a z autobusem czy tramwajem — Twój czas dojścia. Bez opóźnień przesiadka z wystarczającym zapasem jest 🟢." },
+    { id: "remind", label: "⏰ Przypomnienia",
+      re: / (przypomn\w*|wyjsc\w* z domu|kiedy wyjsc|budzik\w*|powiadom\w*|push) /,
+      a: "⏰ Przypomnienie o wyjściu: 30 i 15 min przed WYJŚCIEM (odjazd minus Twoje dojście). Gdy pociąg się spóźnia, przypomnienie przychodzi później; przy odwołaniu — od razu. Włączasz je przy połączeniu w 🛡️ Pilnowane (⏰). Powiadomienia o zagrożonej przesiadce przychodzą tylko przy zmianie sytuacji." },
+    { id: "symbols", label: "🔤 Co znaczą oznaczenia",
+      re: / (liter\w*|oznacz\w*|ikon\w*|symbol\w*|co znaczy|co oznacza|kropk\w*) /,
+      a: "🔤 Oznaczenia:\n• D (fioletowe) — przystanek dalej niż zwykle od stacji,\n• B (pomarańczowe) — brak danych o drodze z peronu, czas szacunkowy; stuknij, żeby nam pomóc,\n• 🪜 schody, ⚠️♿ — z części peronów tylko po schodach,\n• 🚦 przejście ze światłami, 🚸 bez świateł, 🛤️ przez tory,\n• ★ / ☆ — ulubiona linia,\n• ● na żywo / ○ wg rozkładu,\n• 🔴 kropka przy „Moje preferencje” — ustawienia inne niż domyślne." },
+    { id: "privacy", label: "👤 Profil i prywatność",
+      re: / (profil\w*|token\w*|prywatn\w*|osobow\w*|rodo|zapisujesz|przechowujesz|urzadzen\w*) /,
+      a: "👤 Bez profilu wszystko zostaje tylko w tej przeglądarce. Z profilem (anonimowy token, bez imienia i e-maila) ulubione, miejsca, pilnowane połączenia i ustawienia inne niż domyślne są na każdym Twoim urządzeniu. Szczegóły — w zakładce 🔒 RODO na stronie kontaktu." }
+  ];
+  var FAQ_Q = / (jak|jakie|jaki|dlaczego|czemu|skad|co|czy|ile|po co|kiedy|w jaki sposob|wyjasnij|opowiedz|powiedz) /;
+  function faqTopics(f) { return FAQ.filter(function (t) { return t.re.test(" " + f + " "); }); }
+  function faqMenu(title) {
+    addMsg(title || "O co chcesz zapytać? Możesz też napisać własnymi słowami, np. „jak liczysz dojście?”.", "bot");
+    addOptions(FAQ.map(function (t) { return { label: t.label, onClick: function () { addMsg(t.label, "user"); faqAnswer(t); } }; }));
+  }
+  function faqAnswer(t) {
+    addMsg(t.a, "bot");
+    var more = FAQ.filter(function (x) { return x !== t; }).slice(0, 3);
+    addOptions(more.map(function (x) { return { label: x.label, onClick: function () { addMsg(x.label, "user"); faqAnswer(x); } }; })
+      .concat([{ label: "💡 Inne pytanie", onClick: function () { addMsg("Inne pytanie", "user"); faqMenu(); } }, { label: "🚆 Szukam połączenia", onClick: function () { addMsg("Szukam połączenia", "user"); logEl.innerHTML = ""; greet(); } }]));
+  }
+  // pytanie o serwis (a nie trasa „z X do Y”)
+  function faq(text, f) {
+    if (!faqOn()) return false;
+    var ask = /\?/.test(text) || FAQ_Q.test(" " + f + " ") || / (jak to dziala|co umiesz|wyjasnij) /.test(" " + f + " ");
+    if (!ask) return false;
+    // to jednak trasa: „z X do Y” albo „do <stacja/przystanek>” („jak dojść do Rynku”)
+    var p = parse(text), known = function (x) { return x && (matchStation(x).exact || matchStop(x).exact); };
+    if ((p.from && p.to) || known(p.to) || known(p.from)) return false;
+    if (/ (jak to dziala|co umiesz|jak dziala serwis|jak dziala aplikacj\w*) /.test(" " + f + " ")) { faqMenu("Chętnie wyjaśnię. Wybierz temat albo zapytaj własnymi słowami:"); return true; }
+    var hits = faqTopics(f); if (!hits.length) return false;
+    faqAnswer(hits[0]);
+    if (hits.length > 1) addOptions(hits.slice(1, 3).map(function (x) { return { label: "Także: " + x.label, onClick: function () { addMsg(x.label, "user"); faqAnswer(x); } }; }));
+    return true;
+  }
   function howto(f) {
     if (!howtoOn() || !HOWTO_ASK_RE.test(" " + f + " ")) return false;
     var fav = HOWTO_FAV_RE.test(" " + f + " "), grd = HOWTO_GUARD_RE.test(" " + f + " ");
@@ -944,6 +1002,7 @@
   }
   function handle(text) {
     var f = fold(text);
+    if (!st.pending && !/ (ulubion\w*|gwiazdk\w*|pilnow\w*|pilnuj\w*|adres\w*) /.test(" " + f + " ") && faq(text, f)) return;
     if (!st.pending && howto(f)) return;
     if (RETURN_RE.test(" " + f + " ")) return returnTrip(text);
     // odpowiedź pisana na pytanie z przyciskami („tak”, „nie, to mój cel”…)
