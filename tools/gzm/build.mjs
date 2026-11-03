@@ -35,8 +35,16 @@ const readJson = (f, d) => { try { return JSON.parse(fs.readFileSync(f, "utf8"))
 const writeJson = (f, o, pretty) => { fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, JSON.stringify(o, null, pretty ? 1 : 0)); };
 
 // ---------- A. pliki ZIP z portalu ----------
+// Portal ZTM czasem chwilowo nie odpowiada (np. w trakcie publikacji nowych plików) — 3 próby co 30 s.
+async function fetchRetry(url, opts, what) {
+  for (let i = 1; ; i++) {
+    try { const r = await fetch(url, opts); if (r.ok || i >= 3) return r; log(what + ": HTTP " + r.status + ", ponawiam (" + i + "/3)"); }
+    catch (e) { if (i >= 3) throw e; log(what + ": " + (e.message || e) + ", ponawiam (" + i + "/3)"); }
+    await new Promise(r => setTimeout(r, 30000));
+  }
+}
 async function fetchZips() {
-  const res = await fetch(CFG.packageApi, { headers: { "User-Agent": W.UA } });
+  const res = await fetchRetry(CFG.packageApi, { headers: { "User-Agent": W.UA } }, "API portalu");
   if (!res.ok) throw new Error("API portalu: HTTP " + res.status);
   const j = await res.json();
   const list = j.result.resources.filter(r => /\.zip$/i.test(r.url || "") || (r.format || "").toUpperCase() === "ZIP");
@@ -44,7 +52,7 @@ async function fetchZips() {
     const f = path.join(ZIPS, r.name.replace(/[^\w.-]+/g, "_"));
     if (fs.existsSync(f) && fs.statSync(f).size > 1000) continue;
     log("pobieram", r.name);
-    const z = await fetch(r.url, { headers: { "User-Agent": W.UA } });
+    const z = await fetchRetry(r.url, { headers: { "User-Agent": W.UA } }, r.name);
     if (!z.ok) throw new Error(r.name + ": HTTP " + z.status);
     fs.writeFileSync(f + ".part", Buffer.from(await z.arrayBuffer()));
     fs.renameSync(f + ".part", f);
