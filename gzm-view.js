@@ -770,7 +770,7 @@
       }
       // ulica w dopełniaczu („Dworcowej 3”, „Wolności”) → mianownik („Dworcowa 3”)
       var nom = clean.replace(/([A-Za-zżźćńółęąśŻŹĆŃÓŁĘĄŚ]{3,}?)(owej|skiej|ckiej|nej|iej)(?=[\s,]|$)/g, function (m0, st, en) { return st + ({ owej: "owa", skiej: "ska", ckiej: "cka", nej: "na", iej: "ia" })[en]; });
-      var cfOn = Date.now() >= Date.parse("2026-11-03T13:30:00Z"); try { cfOn = cfOn || localStorage.getItem("showVersionBadge") === "1"; } catch (e) {}
+      var cfOn = Date.now() >= Date.parse("2099-01-01T00:00:00Z"); try { cfOn = cfOn || localStorage.getItem("showVersionBadge") === "1"; } catch (e) {}
       if (cfOn && nom !== clean) out.splice(2, 0, nom);
       return out.filter(function (x, i) { return out.indexOf(x) === i; }).slice(0, 5);
     }
@@ -1627,7 +1627,7 @@
         var bestFinal = out.length ? Math.min.apply(null, out.map(function (x) { return x.final; })) : Infinity;
         var firstStart = out.length ? Math.min.apply(null, out.map(function (x) { return x.start; })) : Infinity;
         // TEST (autor; wszyscy od 3.11 14:30): marsz najwyżej 60 min — bez tego brak wyników (bestFinal = ∞) dawał „Idź pieszo” 4 h
-        var walkCap = Date.now() >= Date.parse("2026-11-03T13:30:00Z"); try { walkCap = walkCap || localStorage.getItem("showVersionBadge") === "1"; } catch (e) {}
+        var walkCap = Date.now() >= Date.parse("2099-01-01T00:00:00Z"); try { walkCap = walkCap || localStorage.getItem("showVersionBadge") === "1"; } catch (e) {}
         if ((geo.dist <= NODE_M || geo.walk <= 25 || base + geo.walk <= bestFinal || firstStart > base + 60) && (!walkCap || geo.dist <= NODE_M || geo.walk <= 60)) {
           walkTop = v2WalkCard(geo, base);
           // noc / długa przerwa: najbliższe połączenie dopiero za ponad godzinę

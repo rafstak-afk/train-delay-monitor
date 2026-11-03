@@ -975,7 +975,7 @@ function renderFromCache() {
 // dzienny limit zapisów KV), jeden zapis przy „Gotowe” albo przy wyjściu ze strony.
 let reorderMode = false, reorderDirty = false;
 // TEST: tylko profil autora; dla wszystkich automatycznie od 3.11.2026 14:30 (czasu polskiego)
-const REORDER_PUBLIC_AT = Date.parse('2026-11-03T13:30:00Z');
+const REORDER_PUBLIC_AT = Date.parse('2099-01-01T00:00:00Z');
 function reorderV2() { if (Date.now() >= REORDER_PUBLIC_AT) return true; try { return localStorage.getItem('showVersionBadge') === '1'; } catch (e) { return false; } }
 function renderReorderBar() {
   const bar = document.getElementById('reorderBar');
