@@ -155,7 +155,7 @@ export function nearestNode(g, p, maxM = 80) {
 
 // Dijkstra z wielu startów (wszystkie węzły peronu) — koszt w sekundach
 // (droga / prędkość + kara za przeszkody). Zwraca mapę id → {s, prev, prevWay, m}.
-export function dijkstra(g, startIds, maxS = 1200) {
+export function dijkstra(g, startIds, maxS = 1200, opts = {}) {
   const best = new Map(), heap = [];
   const push = (s, id) => { heap.push([s, id]); let i = heap.length - 1; while (i > 0) { const p = (i - 1) >> 1; if (heap[p][0] <= heap[i][0]) break; [heap[p], heap[i]] = [heap[i], heap[p]]; i = p; } };
   const pop = () => { const top = heap[0], last = heap.pop(); if (heap.length) { heap[0] = last; let i = 0; for (;;) { const l = 2 * i + 1, r = l + 1; let m = i; if (l < heap.length && heap[l][0] < heap[m][0]) m = l; if (r < heap.length && heap[r][0] < heap[m][0]) m = r; if (m === i) break; [heap[m], heap[i]] = [heap[i], heap[m]]; i = m; } } return top; };
@@ -165,6 +165,7 @@ export function dijkstra(g, startIds, maxS = 1200) {
     const cur = best.get(id); if (!cur || s > cur.s || s > maxS) continue;
     for (const [to, d, w] of g.adj.get(id) || []) {
       const way = g.ways[w];
+      if (opts.noSteps && way.obstacle === "schody") continue;   // trasa bez schodów (wózek): windy i pochylnie zostają
       // kara za przeszkodę raz na „zdarzenie”: wejście na schody / do tunelu / na
       // kładkę z drogi innego rodzaju (kolejne odcinki tego samego tunelu się nie sumują)
       const prevObst = cur.prevWay >= 0 ? g.ways[cur.prevWay].obstacle : null;

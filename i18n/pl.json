@@ -1329,6 +1329,13 @@
     "mBus": "🚌 Autobus",
     "mTram": "🚋 Tramwaj",
     "mTrolley": "🚎 Trolejbus",
-    "modesMin": "Zostaw zaznaczony co najmniej jeden środek transportu."
+    "modesMin": "Zostaw zaznaczony co najmniej jeden środek transportu.",
+    "paceLbl": "Tempo chodzenia:",
+    "paceFast": "🏃 szybkie",
+    "paceNormal": "🚶 zwykłe",
+    "paceSlow": "🐢 spokojne",
+    "noStairs": "♿ Unikaj schodów (wózek, wózek dziecięcy)",
+    "noStairsNote": "Wybieram drogę bez schodów, gdy mapa ją zna (windy, pochylnie). ⚠️ przy przystanku = z części peronów tylko po schodach.",
+    "stairsWarn": "Z części peronów albo w ogóle tylko po schodach"
   }
 }

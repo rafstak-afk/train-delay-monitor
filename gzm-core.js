@@ -32,8 +32,14 @@
   // Czas dojścia do przystanku: z konkretnego peronu, jeśli go znamy i mamy
   // dla niego wynik; inaczej ostrożnie — od najdalszego peronu (górna granica).
   function walkFor(stop, platform) {
-    if (platform != null && stop.p && stop.p[String(platform)] != null) return { min: stop.p[String(platform)], exact: true };
-    return { min: stop.w[1], exact: false };
+    var r = (platform != null && stop.p && stop.p[String(platform)] != null) ? { min: stop.p[String(platform)], exact: true } : { min: stop.w[1], exact: false };
+    // tempo chodzenia / bez schodów (gzm-view.js → window.GzmWalkAdj); bez nich — jak dotąd
+    if (typeof window !== "undefined" && window.GzmWalkAdj) {
+      var a = window.GzmWalkAdj(r.min, stop.ns, stop.nsPart);
+      if (a.min !== r.min) { r.min = a.min; r.exact = true; }
+      if (a.warn) r.warn = a.warn;
+    }
+    return r;
   }
 
   // Dane na żywo (z /api/gzm-rt): opóźnienie kursu przenosimy na kolejne

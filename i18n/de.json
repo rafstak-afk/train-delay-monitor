@@ -1329,6 +1329,13 @@
     "mBus": "🚌 Bus",
     "mTram": "🚋 Straßenbahn",
     "mTrolley": "🚎 Oberleitungsbus",
-    "modesMin": "Lass mindestens ein Verkehrsmittel ausgewählt."
+    "modesMin": "Lass mindestens ein Verkehrsmittel ausgewählt.",
+    "paceLbl": "Gehtempo:",
+    "paceFast": "🏃 schnell",
+    "paceNormal": "🚶 normal",
+    "paceSlow": "🐢 gemütlich",
+    "noStairs": "♿ Treppen meiden (Rollstuhl, Kinderwagen)",
+    "noStairsNote": "Ich wähle einen stufenlosen Weg, wenn die Karte ihn kennt (Aufzüge, Rampen). ⚠️ an der Haltestelle = von manchen Bahnsteigen nur über Treppen.",
+    "stairsWarn": "Von manchen oder allen Bahnsteigen nur über Treppen"
   }
 }

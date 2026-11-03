@@ -1329,6 +1329,13 @@
     "mBus": "🚌 Autobus",
     "mTram": "🚋 Tramvaj",
     "mTrolley": "🚎 Trolejbus",
-    "modesMin": "Ponechte vybraný alespoň jeden dopravní prostředek."
+    "modesMin": "Ponechte vybraný alespoň jeden dopravní prostředek.",
+    "paceLbl": "Tempo chůze:",
+    "paceFast": "🏃 rychlé",
+    "paceNormal": "🚶 běžné",
+    "paceSlow": "🐢 pomalé",
+    "noStairs": "♿ Vyhnout se schodům (vozík, kočárek)",
+    "noStairsNote": "Volím cestu bez schodů, když ji mapa zná (výtahy, rampy). ⚠️ u zastávky = z některých nástupišť jen po schodech.",
+    "stairsWarn": "Z některých nebo všech nástupišť jen po schodech"
   }
 }

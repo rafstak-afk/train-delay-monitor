@@ -102,7 +102,8 @@ async function computeWalks(stations, stopsByCode, cache) {
   for (const st of stations) {
     const cands = [...stopsByCode.values()].map(s => ({ s, straight: Math.round(W.haversine(st, s)) })).filter(x => x.straight <= CFG.candidateRadiusM);
     st.candidates = cands.map(c => c.s.code);
-    const missing = cands.filter(c => !cache.entries[st.id + "|" + c.s.code]);
+    // brak wpisu albo wpis sprzed liczenia trasy bez schodów (pole „ns”) → policz
+    const missing = cands.filter(c => { const e = cache.entries[st.id + "|" + c.s.code]; return !e || (/^osm/.test(e.src || "") && !("ns" in e)); });
     if (!cands.length || (!missing.length && !args["full-walk"])) continue;
     log(`dojścia: ${st.name} (${cands.length} kandydatów, nowych ${missing.length})`);
     let g = null, plats = [], err = null;
@@ -120,6 +121,7 @@ async function computeWalks(stations, stopsByCode, cache) {
     } catch (e) { err = String(e.message || e); }
     osmSeconds += (Date.now() - t0) / 1000;
     const per = plats.map(p => W.dijkstra(g, p.startIds, 1500));
+    const perNS = g ? plats.map(p => W.dijkstra(g, p.startIds, 1800, { noSteps: true })) : [];
     cache.stations[st.id] = { at: new Date().toISOString(), platforms: plats.map(p => ({ ref: p.ref, c: p.center && [+p.center.lat.toFixed(6), +p.center.lon.toFixed(6)] })), error: err };
     for (const c of (args["full-walk"] ? cands : missing)) {
       const res = per.map((b, i) => { const r = W.reachPoint(g, b, c.s, 60); return r && Object.assign(r, { plat: plats[i].ref, i }); }).filter(Boolean);
@@ -130,6 +132,11 @@ async function computeWalks(stations, stopsByCode, cache) {
         const p = W.pathTo(g, per[best.i], best.id);
         Object.assign(e, { src: plats[0] && plats[0].approx ? "osm-stacja" : "osm", m: Math.round(best.m), min: Math.min(...mins), max: Math.max(...mins), byPlat: Object.fromEntries(res.map((r, k) => [r.plat || String(k + 1), mins[k]])), obst: p.obstacles, pts: simplify(p.pts.concat([[+c.s.lat.toFixed(6), +c.s.lon.toFixed(6)]])) });
         if (best.m > CFG.suspiciousRatio * Math.max(c.straight, 40)) e.check = "trasa ponad " + CFG.suspiciousRatio + "× dłuższa niż prosto";
+        // bez schodów: [min, max] minut albo null (nie da się / mapa nie zna takiej drogi)
+        const resNS = perNS.map(b => W.reachPoint(g, b, c.s, 60)).filter(Boolean);
+        const minsNS = resNS.map(r => Math.max(2, Math.ceil(r.s / 60)));
+        e.ns = resNS.length ? [Math.min(...minsNS), Math.max(...minsNS)] : null;
+        if (resNS.length && resNS.length < res.length) e.nsPart = 1;   // z części peronów tylko po schodach
       } else {
         const fm = Math.max(2, Math.ceil(c.straight * CFG.fallbackFactor / W.WALK_SPEED / 60));
         Object.assign(e, { src: "fallback", m: Math.round(c.straight * CFG.fallbackFactor), min: fm, max: fm, obst: [], check: err ? "błąd OSM: " + err : (plats.length ? "brak trasy pieszej z peronu" : "brak peronów w OSM") });
@@ -160,7 +167,7 @@ function assign(stations, stopsByCode, cache, overrides) {
       const s = stopsByCode.get(code); if (!s) return null;
       const e = cache.entries[st.id + "|" + code] || { straight: Math.round(W.haversine(st, s)), src: "override" };
       const w = ov.walk && ov.walk[code];
-      return { code, id: s.id, name: s.name, lat: s.lat, lon: s.lon, url: s.url, types: s.types, byPlat: w ? undefined : e.byPlat, min: w ? w[0] : e.min, max: w ? w[1] : e.max, stairs: (e.obst || []).includes("schody") || undefined, src: w ? "override" : e.src };
+      return { code, id: s.id, name: s.name, lat: s.lat, lon: s.lon, url: s.url, types: s.types, byPlat: w ? undefined : e.byPlat, min: w ? w[0] : e.min, max: w ? w[1] : e.max, ns: w ? undefined : e.ns, nsPart: w ? undefined : e.nsPart, stairs: (e.obst || []).includes("schody") || undefined, src: w ? "override" : e.src };
     }).filter(Boolean).sort((a, b) => a.min - b.min || a.max - b.max || a.name.localeCompare(b.name, "pl"));
   }
 }
@@ -385,7 +392,7 @@ async function main() {
       }
     });
     for (const d of dates) { days[d].sort((a, b) => a[0] - b[0]); totalDeps += days[d].length; }
-    const file = { v: 1, id: st.id, name: st.name, generated: gen, range: index.range, stops: st.stops.map(s => ({ c: s.code, n: s.name, lat: s.lat, lon: s.lon, w: [s.min, s.max], p: s.byPlat, stairs: s.stairs, u: s.url, src: s.src })), lines, days, ds: dsNames, pt: pats };
+    const file = { v: 1, id: st.id, name: st.name, generated: gen, range: index.range, stops: st.stops.map(s => ({ c: s.code, n: s.name, lat: s.lat, lon: s.lon, w: [s.min, s.max], p: s.byPlat, stairs: s.stairs, ns: s.ns, nsPart: s.nsPart, u: s.url, src: s.src })), lines, days, ds: dsNames, pt: pats };
     const txt = JSON.stringify(file);
     if (st.stops.length) {
       fs.mkdirSync(path.join(TMP, "stations"), { recursive: true });
@@ -418,7 +425,7 @@ async function main() {
       for (const d of dates) aDays[d].sort((a, b) => a[0] - b[0]);
       fs.writeFileSync(path.join(TMP, "stations", st.id + "-arr.json"), JSON.stringify({ v: 1, id: st.id, name: st.name, generated: gen, range: index.range, stops: st.stops.map(s => ({ c: s.code, n: s.name, w: [s.min, s.max] })), lines: aLines, us: usNames, up: ups, days: aDays }));
     }
-    index.stations.push({ id: st.id, n: st.name, lat: +st.lat.toFixed(6), lon: +st.lon.toFixed(6), s: st.stops.map(s => [s.code, s.n || s.name, s.min, s.max]) });
+    index.stations.push({ id: st.id, n: st.name, lat: +st.lat.toFixed(6), lon: +st.lon.toFixed(6), s: st.stops.map(s => [s.code, s.n || s.name, s.min, s.max, s.ns === undefined ? -2 : s.ns === null ? -1 : s.ns[1], s.nsPart ? 1 : 0]) });
   }
   writeJson(path.join(TMP, "index.json"), index);
   // przystanek → stacje, do których z niego dojedziesz bez przesiadki (z najkrótszym czasem jazdy)

@@ -58,7 +58,8 @@
     for (var k = 0; k <= K; k++) { tau.push(new Float64Array(n).fill(INF)); walkL.push(new Uint8Array(n)); par.push(new Array(n)); }
     origin.forEach(function (s) { var t0s = startAt && startAt[s] != null ? Math.max(startAt[s], dep) : dep; tau[0][s] = t0s; star[s] = t0s; marked.add(s); });
     // dojście z przystanku startowego do pobliskich słupków
-    Array.from(marked).forEach(function (s) { var f = net.foot[s]; for (var q = 0; q < f.length; q += 2) { var o = f[q], tt = tau[0][s] + f[q + 1]; if (tt < tau[0][o]) { tau[0][o] = tt; star[o] = tt; walkL[0][o] = 1; par[0][o] = { walk: s, w: f[q + 1] }; marked.add(o); } } });
+    var PC = net._pace || 1, FW = function (x) { return PC === 1 ? x : Math.max(1, Math.round(x * PC)); };
+    Array.from(marked).forEach(function (s) { var f = net.foot[s]; for (var q = 0; q < f.length; q += 2) { var o = f[q], tt = tau[0][s] + FW(f[q + 1]); if (tt < tau[0][o]) { tau[0][o] = tt; star[o] = tt; walkL[0][o] = 1; par[0][o] = { walk: s, w: f[q + 1] }; marked.add(o); } } });
     var bestDest = INF;
     for (k = 1; k <= K; k++) {
       var Q = new Map();
@@ -98,8 +99,8 @@
         if (walkL[k][s]) return;
         var f = net.foot[s];
         for (var q = 0; q < f.length; q += 2) {
-          var o = f[q], tt = tau[k][s] + f[q + 1];
-          if (tt < star[o] && tt < bestDest) { tau[k][o] = tt; star[o] = tt; walkL[k][o] = 1; par[k][o] = { walk: s, w: f[q + 1] }; marked.add(o); if (destSet[o] != null) bestDest = Math.min(bestDest, tt + destSet[o]); }
+          var o = f[q], tt = tau[k][s] + FW(f[q + 1]);
+          if (tt < star[o] && tt < bestDest) { tau[k][o] = tt; star[o] = tt; walkL[k][o] = 1; par[k][o] = { walk: s, w: FW(f[q + 1]) }; marked.add(o); if (destSet[o] != null) bestDest = Math.min(bestDest, tt + destSet[o]); }
         }
       });
       if (!marked.size) break;

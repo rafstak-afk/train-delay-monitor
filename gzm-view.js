@@ -320,7 +320,7 @@
       return '<div class="card v2-dep ' + (V2ST[x.status] || "s-ok") + (cls || "") + '" data-k="' + esc(d.trip + "|" + d.stopIdx) + '" data-tripx="' + esc(tk) + '" title="' + esc(T("gzm.tTap", null, "Stuknij — cały bieg kursu")) + '">' +
         '<div class="c-head"><div><div class="c-route">' + (TYPE_ICON[d.type] || "🚌") + " " + esc(d.line) + " → " + esc(d.head) +
         (noFav ? "" : ' <button type="button" class="gz-fav" data-fav="' + esc(key) + '" title="' + esc(T("gzm.favTitle", null, "Ulubiona linia w tym kierunku na tej stacji")) + '">' + (isF ? "★" : "☆") + "</button>") + "</div>" +
-        '<div class="c-date">' + esc(d.stop.n) + " · 🚶 " + esc(walk) + " min" + (d.stop.stairs ? " 🪜" : "") + v2Dl(x.live, x.delay) + "</div>" +
+        '<div class="c-date">' + esc(d.stop.n) + " · 🚶 " + esc(walk) + " min" + (d.stop.stairs ? " 🪜" : "") + (x.walk.warn ? ' <span title="' + esc(T("gzm.stairsWarn", null, "Z części peronów albo w ogóle tylko po schodach")) + '">⚠️♿</span>' : "") + v2Dl(x.live, x.delay) + "</div>" +
         (x.arrDest != null ? '<div class="c-sub">🏁 ' + esc(T("gzm.arrDest", { t: C.fmt(x.arrDest), n: x.destName, m: x.travel }, "{t} {n} (jazda {m} min)")) + "</div>" : "") + "</div>" +
         '<span class="chip ' + (V2ST[x.status] || "s-ok") + '"><span class="ct">' + tTxt + "</span>" + esc(inTxt ? inTxt + " · " : "") + esc(v2StTxt(x.status)) + "</span></div>" +
         (open ? tripHtml(d.trip, d.date, d.stop.n) : "") + "</div>";
@@ -617,6 +617,17 @@
         var mWrap = document.createElement("div"); mWrap.className = "gz-modes"; mWrap.innerHTML = modesHtml();
         dWrap.parentNode.insertBefore(mWrap, dWrap.nextSibling);
         mWrap.addEventListener("change", function (ev) {
+          var pc = ev.target.closest("input[data-pace], input[data-nostairs]");
+          if (pc) {
+            var wp = walkPrefs();
+            if (pc.dataset.pace) wp.pace = pc.dataset.pace; else wp.noStairs = pc.checked;
+            save(WP_LS, wp);
+            if (profOn()) ProfileSync.push({ gzmWalkPrefs: wp });
+            mWrap.innerHTML = modesHtml();
+            var fA = root.querySelector("#gzCFrom"), rA = root.querySelector("#gzCRes");
+            if (fA && fA.value.trim() && rA && rA.innerHTML.trim()) searchC();
+            return;
+          }
           var cb = ev.target.closest("input[data-mode]"); if (!cb) return;
           var m = modes(); m[cb.dataset.mode] = cb.checked;
           if (!m.train && !m.bus && !m.tram && !m.trolley) { cb.checked = true; m[cb.dataset.mode] = true; var r0 = root.querySelector("#gzCRes"); if (r0) r0.innerHTML = '<div class="gz-warn">' + esc(T("gzm.modesMin", null, "Zostaw zaznaczony co najmniej jeden środek transportu.")) + "</div>"; return; }
@@ -982,17 +993,39 @@
     var MODES_LS = "gzmModesV1", MODE_KIND = { 0: "tram", 3: "bus", 11: "trolley" };
     function modesOn() { try { return localStorage.getItem("showVersionBadge") === "1"; } catch (e) { return false; } }
     function modes() { var m = { train: true, bus: true, tram: true, trolley: true }; if (!modesOn()) return m; var v = load(MODES_LS, null); if (v && typeof v === "object") Object.keys(m).forEach(function (k) { if (v[k] === false) m[k] = false; }); return m; }
+    var WP_LS = "gzmWalkPrefsV1", PACE = { fast: 0.8, normal: 1, slow: 1.3 };
+    function walkPrefs() { var d = { pace: "normal", noStairs: false }; if (!modesOn()) return d; var v = load(WP_LS, null); if (v && typeof v === "object") { if (PACE[v.pace]) d.pace = v.pace; d.noStairs = !!v.noStairs; } return d; }
+    function paceF() { return PACE[walkPrefs().pace]; }
+    // min = dojście z mapy; ns = bez schodów ([min,max] | liczba | null/-1 = tylko po schodach | -2/undefined = nie wiadomo)
+    window.GzmWalkAdj = function (min, ns, part) {
+      var p = walkPrefs(), m = min, warn = "";
+      if (p.noStairs) {
+        if (ns === null || ns === -1) warn = "stairs";
+        else if (Array.isArray(ns)) { m = Math.max(m, ns[1]); if (part) warn = "part"; }
+        else if (typeof ns === "number" && ns >= 0) { m = Math.max(m, ns); if (part) warn = "part"; }
+      }
+      return { min: PACE[p.pace] === 1 ? m : Math.max(1, Math.round(m * PACE[p.pace])), warn: warn };
+    };
     function exclOf() { var m = modes(), e = null; ["bus", "tram", "trolley"].forEach(function (k) { if (!m[k]) { e = e || {}; e[k] = 1; } }); return e; }
     function modesHtml() {
       var m = modes(), L = { train: T("gzm.mTrain", null, "🚆 Pociąg"), bus: T("gzm.mBus", null, "🚌 Autobus"), tram: T("gzm.mTram", null, "🚋 Tramwaj"), trolley: T("gzm.mTrolley", null, "🚎 Trolejbus") };
       return '<span class="gz-modes-l">' + esc(T("gzm.modesLbl", null, "Środki transportu:")) + "</span>" + ["train", "bus", "tram", "trolley"].map(function (k) {
         return '<label class="gz-mode"><input type="checkbox" data-mode="' + k + '"' + (m[k] ? " checked" : "") + "> " + esc(L[k]) + "</label>";
-      }).join("");
+      }).join("") + walkPrefsHtml();
+    }
+    function walkPrefsHtml() {
+      var p = walkPrefs(), L = { fast: T("gzm.paceFast", null, "🏃 szybkie"), normal: T("gzm.paceNormal", null, "🚶 zwykłe"), slow: T("gzm.paceSlow", null, "🐢 spokojne") };
+      return '<span class="gz-modes-l">' + esc(T("gzm.paceLbl", null, "Tempo chodzenia:")) + "</span>" + ["fast", "normal", "slow"].map(function (k) {
+        return '<label class="gz-mode"><input type="radio" name="gzPace" data-pace="' + k + '"' + (p.pace === k ? " checked" : "") + "> " + esc(L[k]) + "</label>";
+      }).join("") + '<label class="gz-mode"><input type="checkbox" data-nostairs="1"' + (p.noStairs ? " checked" : "") + "> " + esc(T("gzm.noStairs", null, "♿ Unikaj schodów (wózek, wózek dziecięcy)")) + "</label>" +
+        (p.noStairs ? '<span class="gz-modes-l">' + esc(T("gzm.noStairsNote", null, "Wybieram drogę bez schodów, gdy mapa ją zna (windy, pochylnie). ⚠️ przy przystanku = z części peronów tylko po schodach.")) + "</span>" : "");
     }
     function applyProfileModes(d) {
-      if (!modesOn() || !d || !d.gzmModes || typeof d.gzmModes !== "object") return false;
-      if (JSON.stringify(load(MODES_LS, null)) === JSON.stringify(d.gzmModes)) return false;
-      save(MODES_LS, d.gzmModes);
+      if (!modesOn() || !d) return false;
+      var chg = false;
+      if (d.gzmWalkPrefs && typeof d.gzmWalkPrefs === "object" && JSON.stringify(load(WP_LS, null)) !== JSON.stringify(d.gzmWalkPrefs)) { save(WP_LS, d.gzmWalkPrefs); chg = true; }
+      if (d.gzmModes && typeof d.gzmModes === "object" && JSON.stringify(load(MODES_LS, null)) !== JSON.stringify(d.gzmModes)) { save(MODES_LS, d.gzmModes); chg = true; }
+      if (!chg) return false;
       var box = root.querySelector(".gz-modes"); if (box) box.innerHTML = modesHtml();
       return true;
     }
@@ -1088,7 +1121,7 @@
     }
     function havM(a, b, c, d) { var R = 6371000, t = Math.PI / 180, x = Math.pow(Math.sin((c - a) * t / 2), 2) + Math.cos(a * t) * Math.cos(c * t) * Math.pow(Math.sin((d - b) * t / 2), 2); return 2 * R * Math.asin(Math.sqrt(x)); }
     // ×1,15 na kluczenie ulicami, 1,2 m/s (pomiary autora 31.10: dom → stanowisko 432 m w 5:49, peron → dom 572 m w 10:08)
-    function walkMin(m) { return Math.max(1, Math.ceil(m * 1.15 / 1.2 / 60)); }
+    function walkMin(m) { return Math.max(1, Math.ceil(m * 1.15 / 1.2 / 60 * paceF())); }
     // Zmierzone dojścia (pomiar w planerze, walkMeasureV1): jeden koniec ≤ 150 m od miejsca, drugi przy przystanku
     // (ten sam przystanek — wszystkie stanowiska tej nazwy w pobliżu) albo przy stacji (pomiar „peron”).
     function measuredFor(net, pl) {
@@ -1176,7 +1209,7 @@
         throw "handled";
       }).then(function (r) {
         var net = r[0], code = GzmRaptor.byCode(net);
-        net._excl = exclOf();
+        net._excl = exclOf(); net._pace = paceF();
         if (fromPlace) placeReach(net, fromPlace);
         if (toPlace) placeReach(net, toPlace);
         var fromSt = fromPlace ? null : stationByName(fromTxt), toSt = toPlace ? null : stationByName(toTxt);
@@ -1192,7 +1225,7 @@
         else {
           var star = GzmRaptor.reachAll(net, fromPlace ? { fromStops: fromPlace.stops.map(function (x) { return { s: x.s, t: tmin + x.walk }; }), dep: tmin, rt: rt, maxTransfers: 1 } : { from: fN, dep: tmin, rt: rt, maxTransfers: 1 }) || [];
           accSt = (index.stations || []).filter(function (x) { return (x.s && x.s.length) || (fromPlace && fromPlace.walkSt[x.id] != null); }).map(function (x) {
-            var best = 1e9; (x.s || []).forEach(function (p) { var i = code[p[0]]; if (i != null && star[i] + p[3] < best) best = star[i] + p[3]; });
+            var best = 1e9; (x.s || []).forEach(function (p) { var i = code[p[0]], pw = poleWalk(p).min; if (i != null && star[i] + pw < best) best = star[i] + pw; });
             if (fromPlace && fromPlace.walkSt[x.id] != null) best = Math.min(best, tmin + fromPlace.walkSt[x.id]);
             return { st: x, plat: best };
           }).filter(function (x) { return x.plat < 1e8 && (!toSt || x.st.id !== toSt.id); }).sort(function (a, b) { return a.plat - b.plat; }).slice(0, v2On() ? 3 : 2).map(function (x) { return x.st; });
@@ -1223,7 +1256,11 @@
       }).catch(function (e) { if (e !== "handled") searchCOld(); });
     }
     // słupki stacji: indeks w sieci + dojście peron ↔ słupek (górna granica)
-    function polesOf(stn) { var out = []; (stn.s || []).forEach(function (p) { var i = cState.code[p[0]]; if (i != null) out.push({ s: i, walk: p[3] }); }); return out; }
+    function poleWalk(p) { return window.GzmWalkAdj(p[3], p[4] == null || p[4] === -2 ? undefined : p[4], p[5]); }
+    function polesOf(stn) { var out = []; (stn.s || []).forEach(function (p) { var i = cState.code[p[0]]; if (i == null) return; var a = poleWalk(p); out.push({ s: i, walk: a.min, warn: a.warn }); });
+      if (walkPrefs().noStairs && out.some(function (x) { return x.warn !== "stairs"; })) out = out.filter(function (x) { return x.warn !== "stairs"; });
+      return out; }
+    function polesOfOld(stn) { var out = []; (stn.s || []).forEach(function (p) { var i = cState.code[p[0]]; if (i != null) out.push({ s: i, walk: p[3] }); }); return out; }
     // wiersz podróży GZM (może mieć przesiadki), z dopiskiem i statusem
     function jRow(jn, extra, status) {
       if (tripExpandOn()) return jRow2(jn, extra, status);
