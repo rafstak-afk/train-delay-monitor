@@ -125,6 +125,81 @@
   }
   function cleanAddr(t) { return String(t).replace(/\b\d{2}-\d{3}\b/g, " ").replace(/\s+,/g, ",").replace(/(,\s*)+/g, ", ").replace(/\s+/g, " ").replace(/^[\s,]+|[\s,]+$/g, ""); }
   var ADDR_HELP = "📍 Adres wpisz tak: ulica, numer domu i miasto — np. „Opolska 5, Tarnowskie Góry”, a w zdaniu: „z Opolskiej 5 w Tarnowskich Górach do Hercena 1 w Katowicach”. Kod pocztowy możesz pominąć. Gdy adresu nie znajdę, w planerze 🚆🚌 → „Moje miejsca” ustaw punkt 🗺️ na mapie i zapisz go jako 🏠 Dom albo 🏢 Pracę.";
+  // ---------- kompletność adresu: ulica + numer + miejscowość ----------
+  var townSet = null;
+  function towns() {
+    if (townSet) return townSet;
+    townSet = {};
+    var add = function (n) { var w = fold(n).split(" ").filter(Boolean); if (w[0] && w[0].length >= 3) townSet[w[0]] = 1; if (w.length >= 2) townSet[w[0] + " " + w[1]] = 1; };
+    (stations || []).forEach(function (x) { add(x.name); });
+    (gzStops || []).forEach(function (x) { add(x.name); });
+    return townSet;
+  }
+  // { street, num, town } — części rozpoznane w tekście adresu
+  function addrParts(t) {
+    var raw = String(t).replace(/(^|\s)(ul|al|pl|os)\.\s*/gi, " ").trim();
+    var parts = raw.split(",").map(function (x) { return x.trim(); }).filter(Boolean);
+    var words = parts.join(" ").split(/\s+/).filter(Boolean);
+    // numer domu: liczba (z literą) NIE przed słowem z wielkiej litery („1 Maja”, „3 Maja”, „11 Listopada” to ulice)
+    var num = null;
+    words.forEach(function (w, i) { if (/^\d{1,3}[a-zA-Z]?(\/\d{1,3})?$/.test(w) && !(i + 1 < words.length && /^[A-ZŁŚŻŹĆŃÓĘĄ]/.test(words[i + 1]) && i === 0)) num = w; });
+    if (num == null && /^\d{1,3}[a-zA-Z]?$/.test(words[words.length - 1] || "")) num = words[words.length - 1];
+    // miejscowość: część po przecinku albo znana nazwa miejscowości na początku / końcu
+    var town = null, T = towns(), fw = words.map(function (w) { return fold(w); });
+    if (parts.length >= 2) town = parts[parts.length - 1];
+    else {
+      for (var n = 2; n >= 1 && !town; n--) {
+        if (fw.length > n && T[fw.slice(-n).join(" ")]) town = words.slice(-n).join(" ");
+        else if (fw.length > n && T[fw.slice(0, n).join(" ")]) town = words.slice(0, n).join(" ");
+      }
+    }
+    var street = words.filter(function (w) { return w !== num && !(town && town.split(/\s+/).indexOf(w) >= 0); }).join(" ").replace(/,/g, "").trim();
+    return { street: street, num: num, town: town };
+  }
+  // Ustawia adres jako początek/cel albo — gdy czegoś brakuje — dopytuje. true = gotowe.
+  function setAddr(kind, phrase) {
+    var name = cleanAddr(phrase), p = addrParts(name);
+    // „Kopienica 5” (wieś bez ulic) też jest kompletnym adresem
+    if (!cityFixOn() || (p.num && p.town) || /bez numeru/i.test(name) && p.town) {
+      st[kind] = { gzm: true, addr: true, name: name.replace(/\s*\(?bez numeru\)?/i, "") }; st.pending = null;
+      addMsg("📍 „" + st[kind].name + "” traktuję jako adres — przy wyszukiwaniu znajdę go na mapie.", "bot");
+      return true;
+    }
+    var side = kind === "from" ? " (skąd)" : " (dokąd)";
+    if (!p.street && !p.num) {
+      st.pending = { kind: "addrfix", side: kind, base: name, need: "street" };
+      addMsg("📍 Brakuje mi nazwy ulicy w adresie „" + name + "”" + side + ". Napisz ulicę z numerem, np. „Opolska 5”.", "bot");
+      return false;
+    }
+    if (!p.town) {
+      st.pending = { kind: "addrfix", side: kind, base: name, need: "town" };
+      addMsg("📍 W jakiej miejscowości jest „" + name + "”" + side + "? Kliknij albo wpisz.", "bot");
+      var other = st[kind === "from" ? "to" : "from"], seen = {}, chips = [];
+      var addChip = function (tn) { if (!tn || seen[fold(tn)] || chips.length >= 5) return; seen[fold(tn)] = 1; chips.push(tn); };
+      if (other && other.name && !other.place) { var op = other.addr ? addrParts(other.name).town : other.name.split(" ").slice(0, other.name.indexOf("Góry") > 0 || other.name.indexOf("Śląsk") > 0 ? 2 : 1).join(" "); addChip(op); }
+      myStations().forEach(function (x) { addChip(x.name.split(" ").slice(0, /Góry|Śląsk|Górnicza|Wielkie|Mazowiecki/.test(x.name) ? 2 : 1).join(" ")); });
+      addOptions(chips.map(function (tn) { return { label: tn, onClick: function () { addMsg(tn, "user"); fixAddr(tn); } }; }));
+      return false;
+    }
+    st.pending = { kind: "addrfix", side: kind, base: name, need: "num", parts: p };
+    addMsg("📍 Jaki numer domu przy „" + p.street + "” (" + p.town + ")" + side + "? Wpisz numer albo kliknij „Bez numeru” — wtedy szukam samej ulicy.", "bot");
+    addOptions([{ label: "Bez numeru", onClick: function () { addMsg("Bez numeru", "user"); fixAddr("bez numeru"); } }]);
+    return false;
+  }
+  // odpowiedź na dopytanie o brakującą część adresu
+  function fixAddr(text) {
+    var pd = st.pending; if (!pd || pd.kind !== "addrfix") return;
+    var t = String(text).trim(), nm;
+    if (pd.need === "town") {
+      var mt = stations ? matchStation(t) : { none: true };
+      var town = mt.exact ? mt.exact.name.split(" ").slice(0, /Góry|Śląsk|Górnicza|Wielkie|Mazowiecki/.test(mt.exact.name) ? 2 : 1).join(" ") : t.replace(/^(w|we)\s+/i, "");
+      nm = pd.base + ", " + town;
+    } else if (pd.need === "num") {
+      if (/bez numeru/i.test(t)) nm = pd.base + " (bez numeru)";
+      else { var mnum = t.match(/\d{1,3}[a-zA-Z]?(\/\d{1,3})?/); if (!mnum) { addMsg("Nie widzę numeru. Wpisz np. „5” albo „12a” — albo kliknij „Bez numeru”.", "bot"); return; } nm = pd.parts.street + " " + mnum[0] + ", " + pd.parts.town; }
+    } else nm = t + (addrParts(pd.base).town ? ", " + addrParts(pd.base).town : "");
+    if (setAddr(pd.side, nm)) next();
+  }
   function looksAddr(phrase) { return /(^|\s)(ul|al|pl|os)\.|(^|\s)(ulica|ulicy|ulice|aleja|alei|plac|placu|osiedle)(\s|$)|\d/i.test(phrase); }
   function same(a, b) { return !!(a && b) && (a.id && b.id ? a.id === b.id : fold(a.name) === fold(b.name)); }
   function gzMode() { return !!((st.from && st.from.gzm) || (st.to && st.to.gzm)); }
@@ -921,6 +996,7 @@
         return resolveStation(st.pending.kind, text, true) && next();
       }
     }
+    if (st.pending && st.pending.kind === "addrfix") { fixAddr(text); return; }
     if (st.pending && st.pending.kind === "carrier") {
       var c0 = matchCarrier(text);
       if (c0) { addExclude(c0); st.pending = null; return next(); }
@@ -1189,9 +1265,7 @@
       var ms = matchStop(phrase), adr = looksAddr(phrase);
       if (ms.exact && !adr) { st[kind] = { gzm: true, name: ms.exact.name }; st.pending = null; return true; }
       if (adr && !ms.exact && !m.options) {
-        st[kind] = { gzm: true, addr: true, name: phrase.trim() }; st.pending = null;
-        addMsg("📍 „" + phrase.trim() + "” traktuję jako adres — przy wyszukiwaniu znajdę go na mapie.", "bot");
-        return true;
+        return setAddr(kind, phrase);
       }
       if (m.options && !adr) ms = { options: ms.full || [] };
       if (ms.exact || (ms.options && ms.options.length) || (m.options && adr)) {
@@ -1202,8 +1276,8 @@
         if (adr) list.unshift({ gzm: true, addr: true, name: phrase.trim(), ico: "📍" });
         st.pending = { kind: kind, options: list };
         addMsg("„" + phrase + "” — chodzi o stację 🚆, przystanek 🚏 czy adres 📍" + (kind === "from" ? " (skąd)" : " (dokąd)") + "?", "bot");
-        var o2 = list.map(function (x) { return { label: x.ico + " " + x.name, onClick: function () { addMsg(x.name, "user"); var v = Object.assign({}, x); delete v.ico; st[kind] = v; st.pending = null; next(); } }; });
-        if (!adr) o2.push({ label: "📍 To adres", onClick: function () { addMsg("To adres", "user"); st[kind] = { gzm: true, addr: true, name: phrase.trim() }; st.pending = null; next(); } });
+        var o2 = list.map(function (x) { return { label: x.ico + " " + x.name, onClick: function () { addMsg(x.name, "user"); var v = Object.assign({}, x); delete v.ico; if (v.addr) { if (setAddr(kind, v.name)) next(); return; } st[kind] = v; st.pending = null; next(); } }; });
+        if (!adr) o2.push({ label: "📍 To adres", onClick: function () { addMsg("To adres", "user"); if (setAddr(kind, phrase)) next(); } });
         o2.push({ label: "✏️ Żadne z powyższych — wpiszę jeszcze raz", onClick: function () { addMsg("Żadne z powyższych", "user"); st.pending = { kind: kind }; addMsg("Wpisz jeszcze raz, " + KIND_LABEL[kind] + " — stację, przystanek (np. „Bytom Dworzec”) albo adres (np. „Opolska 5, Tarnowskie Góry”).", "bot"); if (inputEl) inputEl.focus(); } });
         addOptions(o2);
         return false;
@@ -1226,7 +1300,7 @@
     var sim = similarStations(phrase, 6);
     if (gzOk) {
       addMsg("Nie znalazłem stacji ani przystanku „" + phrase + "”. Może to adres? Albo chodziło o którąś z tych stacji?" + (cityFixOn() ? "\n\n" + ADDR_HELP : ""), "bot");
-      var o3 = [{ label: "📍 Szukaj jako adres", onClick: function () { addMsg("To adres", "user"); st[kind] = { gzm: true, addr: true, name: phrase.trim() }; st.pending = null; next(); } }];
+      var o3 = [{ label: "📍 Szukaj jako adres", onClick: function () { addMsg("To adres", "user"); if (setAddr(kind, phrase)) next(); } }];
       sim.forEach(function (x) { o3.push({ label: x.name, onClick: function () { addMsg(x.name, "user"); st[kind] = x; st.pending = null; next(); } }); });
       o3.push({ label: "✏️ Wpiszę jeszcze raz", onClick: function () { addMsg("Wpiszę jeszcze raz", "user"); st.pending = { kind: kind }; if (inputEl) inputEl.focus(); } });
       addOptions(o3);
