@@ -976,10 +976,13 @@ function renderFromCache() {
 // Tryb „↕️ Zmień kolejność”: przesuwanie tylko lokalnie (bez zapisu do profilu po każdym kliknięciu —
 // dzienny limit zapisów KV), jeden zapis przy „Gotowe” albo przy wyjściu ze strony.
 let reorderMode = false, reorderDirty = false;
+// TEST: tylko profil autora; dla wszystkich automatycznie od 3.11.2026 14:30 (czasu polskiego)
+const REORDER_PUBLIC_AT = Date.parse('2026-11-03T13:30:00Z');
+function reorderV2() { if (Date.now() >= REORDER_PUBLIC_AT) return true; try { return localStorage.getItem('showVersionBadge') === '1'; } catch (e) { return false; } }
 function renderReorderBar() {
   const bar = document.getElementById('reorderBar');
   if (!bar) return;
-  if (currentTrains.length < 2 && !reorderMode) { bar.innerHTML = ''; return; }
+  if (!reorderV2() || (currentTrains.length < 2 && !reorderMode)) { bar.innerHTML = ''; return; }
   bar.innerHTML = reorderMode
     ? '<button class="rb-btn done" onclick="toggleReorder()">' + escapeHtml(I18n.t('mojePociagi.reorderDone')) + '</button><span class="rb-hint">' + escapeHtml(I18n.t('mojePociagi.reorderHint')) + '</span>'
     : '<button class="rb-btn" onclick="toggleReorder()">' + escapeHtml(I18n.t('mojePociagi.reorderBtn')) + '</button>';
@@ -996,6 +999,14 @@ function flushReorder() {
   saveTrains(currentTrains);
 }
 async function moveTrain(index, direction) {
+  if (!reorderMode) {   // stara wersja (małe strzałki) — zapis od razu
+    const target = currentTrains[index];
+    if (!target) return;
+    const id = trainIdentity(target);
+    await mutateTrains(list => { const i = list.findIndex(t => trainIdentity(t) === id), k = i + direction; if (i < 0 || k < 0 || k >= list.length) return list; list.splice(k, 0, list.splice(i, 1)[0]); return list; });
+    renderFromCache();
+    return;
+  }
   const j = index + direction;
   if (!currentTrains[index] || j < 0 || j >= currentTrains.length) return;
   currentTrains.splice(j, 0, currentTrains.splice(index, 1)[0]);
@@ -1035,6 +1046,7 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 async function deleteTrain(index) {
   const target = currentTrains[index];
   if (!target) return;
+  if (!reorderV2()) { const id0 = trainIdentity(target); await mutateTrains(list => list.filter(t => trainIdentity(t) !== id0)); renderFromCache(); return; }
   flushDelete();                                   // poprzednie usunięcie — już na stałe
   await syncTrainsFromProfile();
   const id = trainIdentity(target);
@@ -1200,6 +1212,7 @@ function renderCard(item, index, row) {
         <div class="mobile-side">
           <div class="mobile-platform">${escapeHtml(platform)}</div>
           <div class="mobile-track">${track ? escapeHtml(I18n.t('index.table.trackWithPrefix',{track})) : ''}</div>
+          ${!reorderV2() ? `<div class="reorder-row" onclick="event.stopPropagation();"><button class="reorder-btn" title="${escapeHtml(I18n.t('mojePociagi.moveUp'))}" onclick="moveTrain(${index}, -1)" ${index === 0 ? 'disabled' : ''}>▲</button><button class="reorder-btn" title="${escapeHtml(I18n.t('mojePociagi.moveDown'))}" onclick="moveTrain(${index}, 1)">▼</button></div>` : ''}
           ${reorderMode ? '' : `<button class="btn-cal mt-star star-filled" title="${escapeHtml(I18n.t('index.myTrains.removeTitle'))}" onclick="event.stopPropagation();deleteTrain(${index})">★</button>`}
         </div>
         <div class="status-line">${statusText}</div>
