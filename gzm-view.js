@@ -1009,7 +1009,7 @@
       return { min: PACE[p.pace] === 1 ? m : Math.max(1, Math.round(m * PACE[p.pace])), warn: warn };
     };
     // „B” — brak danych o drodze z peronu (TEST: profil autora)
-    function nodOn() { try { return localStorage.getItem("showVersionBadge") === "1"; } catch (e) { return false; } }
+    function nodOn() { return true; }   // dla wszystkich od v5.58
     function nodBadge(s) {
       if (s.ns !== undefined && s.src !== "fallback" && s.src !== "osm-stacja") return "";   // brak danych albo perony nieznane (liczone od punktu stacji)
       var st = (index.stations || []).find(function (x) { return x.id === +cfg.stationId; }) || {};
