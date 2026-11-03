@@ -111,7 +111,8 @@ async function computeWalks(stations, stopsByCode, cache) {
     const cands = [...stopsByCode.values()].map(s => ({ s, straight: Math.round(W.haversine(st, s)) })).filter(x => x.straight <= CFG.candidateRadiusM);
     st.candidates = cands.map(c => c.s.code);
     // brak wpisu albo wpis sprzed liczenia trasy bez schodów (pole „ns”) → policz
-    const missing = cands.filter(c => { const e = cache.entries[st.id + "|" + c.s.code]; return !e || (/^osm/.test(e.src || "") && (!("ns" in e) || !("cx" in e))) || ((e.src === "osm-stacja" || e.src === "fallback") && e.pv !== 2); });
+    const forced = args["walk-stations"] && String(args["walk-stations"]).split(",").includes(String(st.id));
+    const missing = forced ? cands : cands.filter(c => { const e = cache.entries[st.id + "|" + c.s.code]; return !e || (/^osm/.test(e.src || "") && (!("ns" in e) || !("cx" in e))) || ((e.src === "osm-stacja" || e.src === "fallback") && (e.pv || 0) < 3); });
     if (!cands.length || (!missing.length && !args["full-walk"])) continue;
     log(`dojścia: ${st.name} (${cands.length} kandydatów, nowych ${missing.length})`);
     let g = null, plats = [], err = null;
@@ -121,6 +122,16 @@ async function computeWalks(stations, stopsByCode, cache) {
       osmCalls++;
       g = W.buildGraph(osm);
       plats = g.platforms.filter(p => p.center && W.haversine(p.center, st) < 450);
+      // szerzej: railway=platform tuż przy stacji albo oznaczony numerem stacji PLK (gtfs:stop_id), nawet bez train=yes
+      const extra = (g.loose || []).filter(p => p.center && (W.haversine(p.center, st) <= W.LOOSE_PLATFORM_M || (p.tags && String(p.tags["gtfs:stop_id"] || "") === String(st.id) && W.haversine(p.center, st) < 450)));
+      // luźne perony tylko gdy ścisłych nie ma albo gdy noszą numer stacji PLK (bez dokładania przypadkowych obok działających)
+      const extraOk = extra.filter(p => !plats.some(q => q.id === p.id) && (!plats.length || (p.tags && String(p.tags["gtfs:stop_id"] || "") === String(st.id))));
+      plats = plats.concat(extraOk);
+      // perony-wyspy dociągnięte do najbliższej drogi pieszej (≤ 50 m, odcinek przybliżony)
+      // dociągamy tylko, gdy WSZYSTKIE perony są wyspami (mapa nie zna żadnego wejścia) — inaczej liczymy od połączonych
+      // peronów, bez zgadywania skrótów (wyspa między torami mogłaby „przeskoczyć” tory)
+      let snaps = 0; if (plats.length && plats.every(p => W.isIsland(g, p))) for (const p of plats) snaps += W.snapIsland(g, p);
+      if (snaps) log(`  ${st.name}: dociągnięte perony-wyspy (${snaps} odc.)`);
       // Mała stacja bez peronów w OSM: start z sieci pieszej w promieniu 120 m od punktu stacji.
       if (!plats.length) {
         const near = [...g.adj.keys()].filter(id => W.haversine(g.nodes.get(id), st) <= 120);
@@ -133,12 +144,12 @@ async function computeWalks(stations, stopsByCode, cache) {
     cache.stations[st.id] = { at: new Date().toISOString(), platforms: plats.map(p => ({ ref: p.ref, c: p.center && [+p.center.lat.toFixed(6), +p.center.lon.toFixed(6)] })), error: err };
     for (const c of (args["full-walk"] ? cands : missing)) {
       const res = per.map((b, i) => { const r = W.reachPoint(g, b, c.s, 60); return r && Object.assign(r, { plat: plats[i].ref, i }); }).filter(Boolean);
-      const e = { straight: c.straight, at: new Date().toISOString().slice(0, 10), pv: 2 };   // pv 2: perony PKP z gtfs:stop_id rozpoznawane
+      const e = { straight: c.straight, at: new Date().toISOString().slice(0, 10), pv: 3 };   // pv 3: + perony-wyspy dociągane, luźne perony przy stacji
       if (res.length) {
         const mins = res.map(r => Math.max(2, Math.ceil(r.s / 60)));
         const best = res.reduce((a, b) => a.s < b.s ? a : b);
         const p = W.pathTo(g, per[best.i], best.id);
-        Object.assign(e, { src: plats[0] && plats[0].approx ? "osm-stacja" : "osm", m: Math.round(best.m), min: Math.min(...mins), max: Math.max(...mins), byPlat: Object.fromEntries(res.map((r, k) => [r.plat || String(k + 1), mins[k]])), obst: p.obstacles, cx: p.cx, sig: p.sig, rx: p.rail, pts: simplify(p.pts.concat([[+c.s.lat.toFixed(6), +c.s.lon.toFixed(6)]])) });
+        Object.assign(e, { src: plats[0] && plats[0].approx ? "osm-stacja" : "osm", m: Math.round(best.m), min: Math.min(...mins), max: Math.max(...mins), byPlat: Object.fromEntries(res.map((r, k) => [r.plat || String(k + 1), mins[k]])), obst: p.obstacles, cx: p.cx, sig: p.sig, rx: p.rail, apx: p.approxM || undefined, pts: simplify(p.pts.concat([[+c.s.lat.toFixed(6), +c.s.lon.toFixed(6)]])) });
         if (best.m > CFG.suspiciousRatio * Math.max(c.straight, 40)) e.check = "trasa ponad " + CFG.suspiciousRatio + "× dłuższa niż prosto";
         // bez schodów: [min, max] minut albo null (nie da się / mapa nie zna takiej drogi)
         const resNS = perNS.map(b => W.reachPoint(g, b, c.s, 60)).filter(Boolean);
