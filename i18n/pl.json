@@ -632,7 +632,7 @@
       },
       "gzm": {
         "title": "🚆🚌 Pociąg + GZM — od drzwi do drzwi",
-        "text": "Jeden formularz: Skąd, Dokąd, data i godzina. Wpisz stację, przystanek, adres albo 🏠 Dom / 🏢 Praca / 📍 Moja lokalizacja — ułożę podróż pociągiem, autobusem, tramwajem i trolejbusem z dojściem pieszo. ⇅ zamienia kierunek (powrót), a stuknięcie w propozycję pokazuje trasę kursu i gdzie jest teraz pojazd."
+        "text": "Jeden formularz: Skąd, Dokąd, data i godzina. Wpisz stację, przystanek, adres albo 🏠 Dom / 🏢 Praca / 📍 Moja lokalizacja — ułożę podróż pociągiem, autobusem, tramwajem i trolejbusem z dojściem pieszo. ⇅ zamienia kierunek (powrót), a stuknięcie w propozycję pokazuje trasę kursu i gdzie jest teraz pojazd. Adres wpisz jako: ulica, numer i miasto, np. „Opolska 5, Tarnowskie Góry” — kod pocztowy niepotrzebny. Gdy adresu nie ma na mapie, ustaw punkt 🗺️ w „Moje miejsca”."
       },
       "remind": {
         "title": "⏰ Przypomnienie o wyjściu z domu",
@@ -1028,7 +1028,8 @@
     "clearYes": "Tak, wyczyść",
     "clearNo": "Nie, zostaw",
     "clearKept": "OK, historia zostaje.",
-    "cleared": "Historia rozmowy została wyczyszczona."
+    "cleared": "Historia rozmowy została wyczyszczona.",
+    "greetingAddr": "📍 Zamiast stacji możesz wpisać przystanek albo adres: ulica, numer i miasto, np. „z Opolskiej 5 w Tarnowskich Górach do Hercena 1, Katowice”. Kod pocztowy niepotrzebny."
   },
   "guard": {
     "pageTitle": "Pilnowane połączenia",

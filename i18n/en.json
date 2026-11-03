@@ -632,7 +632,7 @@
       },
       "gzm": {
         "title": "🚆🚌 Train + GZM — door to door",
-        "text": "One form: From, To, date and time. Enter a station, a stop, an address or 🏠 Home / 🏢 Work / 📍 My location — I'll plan the trip by train, bus, tram and trolleybus including walking. ⇅ reverses the direction (return trip); tap a suggestion to see the route and where the vehicle is now."
+        "text": "One form: From, To, date and time. Enter a station, a stop, an address or 🏠 Home / 🏢 Work / 📍 My location — I'll plan the trip by train, bus, tram and trolleybus including walking. ⇅ reverses the direction (return trip); tap a suggestion to see the route and where the vehicle is now. Type an address as: street, number and town, e.g. “Opolska 5, Tarnowskie Góry” — no postcode needed. If the map can't find it, set the point 🗺️ in “My places”."
       },
       "remind": {
         "title": "⏰ Reminder to leave home",
@@ -1028,7 +1028,8 @@
     "clearYes": "Yes, clear it",
     "clearNo": "No, keep it",
     "clearKept": "OK, the history stays.",
-    "cleared": "The conversation history has been cleared."
+    "cleared": "The conversation history has been cleared.",
+    "greetingAddr": "📍 Instead of a station you can type a stop or an address: street, number and town, e.g. “from Opolska 5, Tarnowskie Góry to Hercena 1, Katowice”. No postcode needed."
   },
   "guard": {
     "pageTitle": "Guarded connections",

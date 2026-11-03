@@ -632,7 +632,7 @@
       },
       "gzm": {
         "title": "🚆🚌 Zug + GZM — von Tür zu Tür",
-        "text": "Ein Formular: Von, Nach, Datum und Uhrzeit. Gib einen Bahnhof, eine Haltestelle, eine Adresse oder 🏠 Zuhause / 🏢 Arbeit / 📍 Mein Standort ein — ich plane die Reise mit Zug, Bus, Straßenbahn und Oberleitungsbus samt Fußweg. ⇅ kehrt die Richtung um (Rückfahrt); tippe auf einen Vorschlag für Fahrtverlauf und aktuelle Position."
+        "text": "Ein Formular: Von, Nach, Datum und Uhrzeit. Gib einen Bahnhof, eine Haltestelle, eine Adresse oder 🏠 Zuhause / 🏢 Arbeit / 📍 Mein Standort ein — ich plane die Reise mit Zug, Bus, Straßenbahn und Oberleitungsbus samt Fußweg. ⇅ kehrt die Richtung um (Rückfahrt); tippe auf einen Vorschlag für Fahrtverlauf und aktuelle Position. Adresse so eingeben: Straße, Hausnummer und Ort, z. B. „Opolska 5, Tarnowskie Góry“ – ohne Postleitzahl. Findet die Karte sie nicht, setze den Punkt 🗺️ unter „Meine Orte“."
       },
       "remind": {
         "title": "⏰ Erinnerung ans Losgehen",
@@ -1028,7 +1028,8 @@
     "clearYes": "Ja, löschen",
     "clearNo": "Nein, behalten",
     "clearKept": "OK, der Verlauf bleibt.",
-    "cleared": "Der Gesprächsverlauf wurde gelöscht."
+    "cleared": "Der Gesprächsverlauf wurde gelöscht.",
+    "greetingAddr": "📍 Statt eines Bahnhofs kannst du eine Haltestelle oder eine Adresse eingeben: Straße, Hausnummer und Ort, z. B. „von Opolska 5, Tarnowskie Góry nach Hercena 1, Katowice“. Postleitzahl nicht nötig."
   },
   "guard": {
     "pageTitle": "Überwachte Verbindungen",

@@ -632,7 +632,7 @@
       },
       "gzm": {
         "title": "🚆🚌 Tren + GZM: puerta a puerta",
-        "text": "Un solo formulario: Desde, Hasta, fecha y hora. Escribe una estación, una parada, una dirección o 🏠 Casa / 🏢 Trabajo / 📍 Mi ubicación y planificaré el viaje en tren, autobús, tranvía y trolebús con los tramos a pie. ⇅ invierte el sentido (vuelta); toca una propuesta para ver el recorrido y dónde está ahora el vehículo."
+        "text": "Un solo formulario: Desde, Hasta, fecha y hora. Escribe una estación, una parada, una dirección o 🏠 Casa / 🏢 Trabajo / 📍 Mi ubicación y planificaré el viaje en tren, autobús, tranvía y trolebús con los tramos a pie. ⇅ invierte el sentido (vuelta); toca una propuesta para ver el recorrido y dónde está ahora el vehículo. Escribe la dirección así: calle, número y ciudad, p. ej. «Opolska 5, Tarnowskie Góry», sin código postal. Si el mapa no la encuentra, marca el punto 🗺️ en «Mis lugares»."
       },
       "remind": {
         "title": "⏰ Recordatorio para salir de casa",
@@ -1028,7 +1028,8 @@
     "clearYes": "Sí, borrar",
     "clearNo": "No, mantener",
     "clearKept": "De acuerdo, el historial se mantiene.",
-    "cleared": "Se ha borrado el historial de la conversación."
+    "cleared": "Se ha borrado el historial de la conversación.",
+    "greetingAddr": "📍 En vez de una estación puedes escribir una parada o una dirección: calle, número y ciudad, p. ej. «de Opolska 5, Tarnowskie Góry a Hercena 1, Katowice». No hace falta el código postal."
   },
   "guard": {
     "pageTitle": "Conexiones vigiladas",

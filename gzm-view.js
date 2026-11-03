@@ -1588,7 +1588,9 @@
         // wariant pieszy: blisko (ten sam węzeł), do 25 min albo szybciej niż komunikacja
         var bestFinal = out.length ? Math.min.apply(null, out.map(function (x) { return x.final; })) : Infinity;
         var firstStart = out.length ? Math.min.apply(null, out.map(function (x) { return x.start; })) : Infinity;
-        if (geo.dist <= NODE_M || geo.walk <= 25 || base + geo.walk <= bestFinal || firstStart > base + 60) {
+        // TEST (autor; wszyscy od 3.11 14:30): marsz najwyżej 60 min — bez tego brak wyników (bestFinal = ∞) dawał „Idź pieszo” 4 h
+        var walkCap = Date.now() >= Date.parse("2026-11-03T13:30:00Z"); try { walkCap = walkCap || localStorage.getItem("showVersionBadge") === "1"; } catch (e) {}
+        if ((geo.dist <= NODE_M || geo.walk <= 25 || base + geo.walk <= bestFinal || firstStart > base + 60) && (!walkCap || geo.dist <= NODE_M || geo.walk <= 60)) {
           walkTop = v2WalkCard(geo, base);
           // noc / długa przerwa: najbliższe połączenie dopiero za ponad godzinę
           if (firstStart > base + 60 && firstStart < Infinity) walkTop += '<div class="gz-sub" style="margin:4px 2px 10px">' + esc(T("gzm.v3FirstLater", { t: C.fmt(firstStart) }, "Najbliższe połączenie komunikacją: wyjście dopiero o {t} (poniżej).")) + "</div>";

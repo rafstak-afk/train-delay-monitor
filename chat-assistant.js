@@ -118,6 +118,13 @@
     if (!k) return null;
     return { gzm: true, place: k, name: PLACE_LABEL[k], unset: k !== "gps" && !myPlaces()[k] };
   }
+  // Wyraźny adres w odpowiedzi: kod pocztowy, „ul.”, przecinek z numerem albo „Słowo 12a”
+  function addrLike(t) {
+    return /\b\d{2}-\d{3}\b/.test(t) || /(^|\s)(ul|al|pl|os)\./i.test(t) || (/,/.test(t) && /\d/.test(t)) ||
+      /[A-Za-zżźćńółęąśŻŹĆŃÓŁĘĄŚ]{3,}\s+\d{1,3}[a-zA-Z]?(\s|,|$)/.test(t);
+  }
+  function cleanAddr(t) { return String(t).replace(/\b\d{2}-\d{3}\b/g, " ").replace(/\s+,/g, ",").replace(/(,\s*)+/g, ", ").replace(/\s+/g, " ").replace(/^[\s,]+|[\s,]+$/g, ""); }
+  var ADDR_HELP = "📍 Adres wpisz tak: ulica, numer domu i miasto — np. „Opolska 5, Tarnowskie Góry”, a w zdaniu: „z Opolskiej 5 w Tarnowskich Górach do Hercena 1 w Katowicach”. Kod pocztowy możesz pominąć. Gdy adresu nie znajdę, w planerze 🚆🚌 → „Moje miejsca” ustaw punkt 🗺️ na mapie i zapisz go jako 🏠 Dom albo 🏢 Pracę.";
   function looksAddr(phrase) { return /(^|\s)(ul|al|pl|os)\.|(^|\s)(ulica|ulicy|ulice|aleja|alei|plac|placu|osiedle)(\s|$)|\d/i.test(phrase); }
   function same(a, b) { return !!(a && b) && (a.id && b.id ? a.id === b.id : fold(a.name) === fold(b.name)); }
   function gzMode() { return !!((st.from && st.from.gzm) || (st.to && st.to.gzm)); }
@@ -349,6 +356,10 @@
       if (dd.getDate() === +dm[1]) r.date = iso(dd);
     }
     var mn = f.match(/ (\d{1,2}) (stycz\w*|lut\w*|marc\w*|kwie\w*|maj\w*|czerw\w*|lip\w*|sierp\w*|wrzes\w*|pazdziernik\w*|listopad\w*|grud\w*)/);
+    if (mn && cityFixOn()) {
+      var aft = f.slice(mn.index + mn[0].length), bef = f.slice(0, mn.index + 1);
+      if (/^ \d{1,3}[a-z]?( |$)/.test(aft) || /(^| )(z|ze|do|ul|al|pl|ulica|ulicy)\s*$/.test(bef)) mn = null;
+    }
     if (mn) {
       var mi = MONTHS.findIndex(function (p) { return mn[2].indexOf(p) === 0; });
       var y2 = today().getFullYear(); var dd2 = new Date(y2, mi, +mn[1], 12);
@@ -367,6 +378,9 @@
 
     // stacje — frazy po „z/ze/od”, „do”, „przez”
     var tokens = text.replace(/[,;!?]/g, " ").split(/\s+/).filter(Boolean);
+    // po którym słowie stał przecinek („Hercena 1, Katowice”) — żeby adres zachował zapis
+    var commaAfter = {};
+    (function () { var k = -1; text.replace(/[;!?]/g, " ").replace(/,/g, " , ").split(/\s+/).filter(Boolean).forEach(function (t) { if (t === ",") { if (k >= 0) commaAfter[k] = 1; } else k++; }); })();
     function phraseAfter(markerTest) {
       for (var i = 0; i < tokens.length; i++) {
         if (markerTest(fold(tokens[i]))) {
@@ -376,12 +390,15 @@
             // numer domu / „3 Maja” — tylko w trybie przystanków i adresów, gdy dalej stoi słowo albo to adres
             // „do pracy”, „z domu” — moje miejsce (samo „pracy” jest na liście słów pomijanych: „po pracy”)
             if (gzChatOn() && !words.length && /^(pracy|domu|prace|praca|dom)$/.test(w) && !/^po$/.test(fold(tokens[i]))) { words.push(tokens[j]); break; }
-            var numOk = gzChatOn() && /^\d{1,3}[a-z]?$/.test(w) && words.length && !/:/.test(tokens[j]) &&
+            if (cityFixOn() && /^\d{2}-\d{3}$/.test(tokens[j])) { if (words.length && !/,$/.test(words[words.length - 1])) words[words.length - 1] += ","; continue; }
+            var leadNum = cityFixOn() && !words.length && /^\d{1,2}$/.test(w) && tokens[j + 1] && /^[A-ZŁŚŻŹĆŃÓĘĄ]/.test(tokens[j + 1]) && !MARKERS.test(fold(tokens[j + 1]));
+            var numOk = leadNum || gzChatOn() && /^\d{1,3}[a-z]?$/.test(w) && words.length && !/:/.test(tokens[j]) &&
               (words.some(function (x) { return /^(ul|al|pl|os|ulica|aleja)\.?$/i.test(x); }) || (tokens[j + 1] && /^[A-ZŁŚŻŹĆŃÓĘĄ]/.test(tokens[j + 1]) && !MARKERS.test(fold(tokens[j + 1]))) ||
-              (cityFixOn() && ((tokens[j + 1] && /^(w|we)$/.test(fold(tokens[j + 1])) && tokens[j + 2] && /^[A-ZŁŚŻŹĆŃÓĘĄ]/.test(tokens[j + 2])) || !tokens[j + 1])));
+              (cityFixOn() && ((tokens[j + 1] && /^(w|we)$/.test(fold(tokens[j + 1])) && tokens[j + 2] && /^[A-ZŁŚŻŹĆŃÓĘĄ]/.test(tokens[j + 2])) || !tokens[j + 1] || /^\d{2}-\d{3}$/.test(tokens[j + 1]))));
             if (!w || MARKERS.test(w) || (/^\d/.test(w) && !numOk) || /^(poniedzial|wtor|srod|czwart|piat|sobot|niedziel)/.test(w)) break;
-            words.push(tokens[j]);
+            words.push(tokens[j] + (cityFixOn() && commaAfter[j] ? "," : ""));
           }
+          if (cityFixOn() && words.length) words[words.length - 1] = words[words.length - 1].replace(/,$/, "");
           // adres + „w Tarnowskich Górach” / „we Wrocławiu” → „ul. Kościuszki 5, Tarnowskie Góry” (miasto w mianowniku ze słownika stacji)
           if (cityFixOn() && words.length && looksAddr(words.join(" ")) && tokens[j] && /^(w|we)$/.test(fold(tokens[j]))) {
             var cw = [];
@@ -769,7 +786,7 @@
   function greet() {
     resetState();
     memLog = [];
-    addMsg(T("chat.greeting"), "bot");
+    addMsg(T("chat.greeting") + (cityFixOn() ? "\n\n" + T("chat.greetingAddr") : ""), "bot");
     offerWizard();
   }
   // Kreator od zera — dla tych, którzy wolą klikać niż pisać zdania.
@@ -844,6 +861,7 @@
   function howto(f) {
     if (!howtoOn() || !HOWTO_ASK_RE.test(" " + f + " ")) return false;
     var fav = HOWTO_FAV_RE.test(" " + f + " "), grd = HOWTO_GUARD_RE.test(" " + f + " ");
+    if (cityFixOn() && / adres\w* /.test(" " + f + " ")) { addMsg(ADDR_HELP, "bot"); return true; }
     if (fav && !grd) { addMsg("Ulubione stacje dodajesz gwiazdką ☆ nad tablicą odjazdów, a ulubione pociągi — gwiazdką ★ przy odjeździe. Pokazać krok po kroku?", "bot"); howtoOffer("ulubione"); return true; }
     if (grd && !fav) { addMsg("Połączenie pilnujesz z planera: wyszukaj je i przy wyniku kliknij 🛡️ Pilnuj. Pokazać krok po kroku?", "bot"); howtoOffer("pilnuj"); return true; }
     if (/ (pomoc|pomocy|samouczek|instrukcj\w*|co umiesz) /.test(" " + f + " ") || (fav && grd)) { addMsg("W czym pomóc? Mogę pokazać na stronie, co kliknąć:", "bot"); howtoOffer(null); return true; }
@@ -886,6 +904,7 @@
       // Odpowiedź na pytanie o stację. Sama nazwa → tam, o co pytaliśmy.
       // Dwie stacje („tarnowskie góry lublin główny”) → cała trasa.
       // Nazwa z dodatkami („Bytom jutro o 7”) → niżej, przez parse (answerKind).
+      if (cityFixOn() && st.pending.kind !== "via" && addrLike(text)) return resolveStation(st.pending.kind, cleanAddr(text), true) && next();
       var pa = parse(text);
       var extras = pa.date || pa.time || pa.direct || pa.transfer != null || pa.exclude.length || pa.vague.length;
       if (!extras) {
@@ -1206,7 +1225,7 @@
     st.pending = { kind: kind };
     var sim = similarStations(phrase, 6);
     if (gzOk) {
-      addMsg("Nie znalazłem stacji ani przystanku „" + phrase + "”. Może to adres? Albo chodziło o którąś z tych stacji?", "bot");
+      addMsg("Nie znalazłem stacji ani przystanku „" + phrase + "”. Może to adres? Albo chodziło o którąś z tych stacji?" + (cityFixOn() ? "\n\n" + ADDR_HELP : ""), "bot");
       var o3 = [{ label: "📍 Szukaj jako adres", onClick: function () { addMsg("To adres", "user"); st[kind] = { gzm: true, addr: true, name: phrase.trim() }; st.pending = null; next(); } }];
       sim.forEach(function (x) { o3.push({ label: x.name, onClick: function () { addMsg(x.name, "user"); st[kind] = x; st.pending = null; next(); } }); });
       o3.push({ label: "✏️ Wpiszę jeszcze raz", onClick: function () { addMsg("Wpiszę jeszcze raz", "user"); st.pending = { kind: kind }; if (inputEl) inputEl.focus(); } });
@@ -1225,8 +1244,8 @@
       var q = st.queue.shift();
       if (!resolveStation(q.kind, q.phrase)) return; // dopytanie — po wyborze next() wraca tutaj
     }
-    if (!st.from) { askStation("from", "Skąd jedziesz? Kliknij albo wpisz nazwę stacji."); return; }
-    if (!st.to) { askStation("to", "Dokąd jedziesz? Kliknij albo wpisz nazwę stacji."); return; }
+    if (!st.from) { askStation("from", cityFixOn() ? "Skąd jedziesz? Kliknij albo wpisz stację, przystanek albo adres (ulica, numer, miasto)." : "Skąd jedziesz? Kliknij albo wpisz nazwę stacji."); return; }
+    if (!st.to) { askStation("to", cityFixOn() ? "Dokąd jedziesz? Kliknij albo wpisz stację, przystanek albo adres (ulica, numer, miasto — np. „Hercena 1, Katowice”)." : "Dokąd jedziesz? Kliknij albo wpisz nazwę stacji."); return; }
     if (same(st.from, st.to)) { st.to = null; askStation("to", "Cel jest taki sam jak początek. Dokąd jedziesz?"); return; }
     if (st.askCarrierText) { var ct = st.askCarrierText; st.askCarrierText = null; askCarrier("Nie rozpoznałem przewoźnika „" + ct + "”. Którego wykluczyć?"); return; }
     if (st.badTransfer) { st.badTransfer = false; askTransfer("Czas na przesiadkę mogę ustawić tylko na jedną z tych wartości — wybierz:"); return; }

@@ -632,7 +632,7 @@
       },
       "gzm": {
         "title": "🚆🚌 Vlak + GZM — ode dveří ke dveřím",
-        "text": "Jeden formulář: Odkud, Kam, datum a čas. Zadejte stanici, zastávku, adresu nebo 🏠 Domov / 🏢 Práce / 📍 Moje poloha — naplánuji cestu vlakem, autobusem, tramvají i trolejbusem včetně chůze. ⇅ otočí směr (zpáteční cesta); klepnutím na návrh uvidíte trasu spoje a kde je teď vozidlo."
+        "text": "Jeden formulář: Odkud, Kam, datum a čas. Zadejte stanici, zastávku, adresu nebo 🏠 Domov / 🏢 Práce / 📍 Moje poloha — naplánuji cestu vlakem, autobusem, tramvají i trolejbusem včetně chůze. ⇅ otočí směr (zpáteční cesta); klepnutím na návrh uvidíte trasu spoje a kde je teď vozidlo. Adresu zadejte jako: ulice, číslo a město, např. „Opolska 5, Tarnowskie Góry“ – bez PSČ. Když ji mapa nenajde, nastavte bod 🗺️ v „Moje místa“."
       },
       "remind": {
         "title": "⏰ Připomenutí odchodu z domu",
@@ -1028,7 +1028,8 @@
     "clearYes": "Ano, vymazat",
     "clearNo": "Ne, ponechat",
     "clearKept": "Dobře, historie zůstává.",
-    "cleared": "Historie konverzace byla vymazána."
+    "cleared": "Historie konverzace byla vymazána.",
+    "greetingAddr": "📍 Místo stanice můžete napsat zastávku nebo adresu: ulice, číslo a město, např. „z Opolska 5, Tarnowskie Góry do Hercena 1, Katowice“. PSČ není potřeba."
   },
   "guard": {
     "pageTitle": "Hlídaná spojení",
