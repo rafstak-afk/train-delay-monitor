@@ -1343,6 +1343,9 @@
     "nodLetter": "S",
     "nodTitle": "Sin datos del camino del andén a esta parada: el tiempo es estimado. Toca para saber más.",
     "nodBody": "El mapa OpenStreetMap no conoce el camino del andén a esta parada (andenes o paso sin dibujar). Estimamos en línea recta y no sabemos nada de escaleras, ascensores ni semáforos.",
-    "nodAsk": "✉️ ¿Conoces el lugar? Dinos cuántos minutos se tarda y si hay escaleras"
+    "nodAsk": "✉️ ¿Conoces el lugar? Dinos cuántos minutos se tarda y si hay escaleras",
+    "prefs": "Mis preferencias",
+    "prefsChanged": "Ajustes distintos de los predeterminados",
+    "prefsWithout": "sin"
   }
 }

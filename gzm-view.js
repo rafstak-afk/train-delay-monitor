@@ -28,6 +28,7 @@
     '.gz .gv .chip .ct{display:block;font-size:17px;font-weight:900;color:#fff}' +
     '.gz .gv details.v2-more{margin-top:8px;border-top:1px dashed var(--line);padding-top:6px}.gz .gv details.v2-more summary{cursor:pointer;font-size:13px;font-weight:800;color:var(--cyan)}' +
     '.gz .gv .c-actions .btn-sm{font-size:12.5px}' +
+    '.gz .gv .v2-gtimes{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.gz .gv .v2-gtimes .chip{cursor:pointer;font-size:11.5px;text-align:center;min-width:72px}.gz .gv .v2-gtimes .chip .ct{font-size:15px}.gz .gv .v2-gtimes .chip.on{outline:2px solid var(--cyan)}' +
     '.gz .gv .v2-dep{cursor:pointer;padding:10px 12px}.gz .gv .v2-dep .c-route{font-size:14.5px}' +
     '.gz .gv .gz-fav{background:none;border:0;color:var(--yellow);font-size:16px;cursor:pointer;padding:0 2px;vertical-align:middle}' +
     '.gz .gz-nod{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:#f39c12;color:#111;font-weight:900;font-size:11px;margin-left:5px;cursor:pointer;vertical-align:middle}' +
@@ -366,6 +367,13 @@
       var all;
       if (st.mode === "line") {
         all = C.groupByLine(r.items, 3).map(function (g) {
+          // v2: linia jako karta (jak „Zdążysz na”), godziny jako stukane plakietki
+          if (v2On()) return '<div class="card s-ok" style="padding:10px 12px"><div class="c-route">' + (TYPE_ICON[g.type] || "🚌") + " " + esc(g.line) + " → " + esc(g.head) + '</div><div class="v2-gtimes">' +
+            g.items.map(function (x) {
+              var tk = x.dep.trip + "|" + x.dep.date + "|" + x.dep.stop.n;
+              return '<span class="chip ' + (V2ST[x.status] || "s-ok") + (tripOpen[tk] ? " on" : "") + '" data-tx="' + esc(tk) + '" role="button" tabindex="0" title="' + esc(T("gzm.tTap", null, "Stuknij — cały bieg kursu")) + '"><span class="ct">' + C.fmt(x.real) + "</span>" + esc(x.dep.stop.n.replace(file.name.split(" ")[0] + " ", "")) + (x.live && x.delay ? " · " + (x.delay > 0 ? "+" : "") + x.delay : "") + "</span>";
+            }).join("") + "</div>" +
+            g.items.map(function (x) { var tk = x.dep.trip + "|" + x.dep.date + "|" + x.dep.stop.n; return tripOpen[tk] ? tripHtml(x.dep.trip, x.dep.date, x.dep.stop.n) : ""; }).join("") + "</div>";
           return '<div class="gz-group"><div class="gz-group-h"><div class="gz-line ' + g.type + '">' + esc(g.line) + "<small>" + TYPE_ICON[g.type] + '</small></div><div class="gz-dir">→ ' + esc(g.head) + "</div></div>" +
             '<div class="gz-group-times">' + g.items.map(function (x) {
               var tk = x.dep.trip + "|" + x.dep.date + "|" + x.dep.stop.n;
@@ -610,22 +618,26 @@
       // data i godzina jak na tablicy głównej: dwa pola obok siebie, bez etykiet
       var tIn = u.querySelector("#gzCTime"), tDiv = tIn.parentNode, dWrap = document.createElement("div");
       dWrap.className = "gz-dt";
-      if (!document.getElementById("gzModesCss")) { var mcss = document.createElement("style"); mcss.id = "gzModesCss"; mcss.textContent = ".gz-modes{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin:2px 2px 10px;font-size:13.5px}.gz-modes-l{color:var(--muted,#9fb0cf);font-size:12.5px;width:100%}.gz-mode{display:inline-flex;align-items:center;gap:5px;cursor:pointer;padding:6px 10px;border:1px solid var(--line,#34495e);border-radius:10px;background:var(--panel,#1c2833)}.gz-mode input{width:18px;height:18px;margin:0;accent-color:#2ecc71}"; document.head.appendChild(mcss); }
+      if (!document.getElementById("gzModesCss")) { var mcss = document.createElement("style"); mcss.id = "gzModesCss"; mcss.textContent = ".gz-dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#e74c3c;vertical-align:middle;margin-left:4px;box-shadow:0 0 0 2px rgba(231,76,60,.25)}.gz-prefs > summary{cursor:pointer}.gz-modes{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin:2px 2px 10px;font-size:13.5px}.gz-modes-l{color:var(--muted,#9fb0cf);font-size:12.5px;width:100%}.gz-mode{display:inline-flex;align-items:center;gap:5px;cursor:pointer;padding:6px 10px;border:1px solid var(--line,#34495e);border-radius:10px;background:var(--panel,#1c2833)}.gz-mode input{width:18px;height:18px;margin:0;accent-color:#2ecc71}"; document.head.appendChild(mcss); }
       dWrap.innerHTML = '<input id="gzCDate" type="date" autocomplete="off" aria-label="' + esc(T("gzm.uDate", null, "Data")) + '" title="' + esc(T("gzm.uDate", null, "Data")) + '">';
       tIn.setAttribute("aria-label", T("gzm.uWhen", null, "Kiedy")); tIn.title = T("gzm.uWhen", null, "Kiedy");
       dWrap.appendChild(tIn);
       tDiv.parentNode.insertBefore(dWrap, tDiv); tDiv.remove();
       if (modesOn()) {
-        var mWrap = document.createElement("div"); mWrap.className = "gz-modes"; mWrap.innerHTML = modesHtml();
-        dWrap.parentNode.insertBefore(mWrap, dWrap.nextSibling);
+        var pBox = document.createElement("details"); pBox.className = "gz-prefs gz-sub"; pBox.style.margin = "0 2px 8px";
+        pBox.innerHTML = "<summary>" + prefsHead() + "</summary>";
+        var mWrap = document.createElement("div"); mWrap.className = "gz-modes"; mWrap.style.marginTop = "8px"; mWrap.innerHTML = modesHtml();
+        pBox.appendChild(mWrap);
+        if (more && more.parentNode) more.parentNode.insertBefore(pBox, more); else dWrap.parentNode.insertBefore(pBox, dWrap.nextSibling);
+        var refreshHead = function () { pBox.querySelector("summary").innerHTML = prefsHead(); };
         mWrap.addEventListener("change", function (ev) {
           var pc = ev.target.closest("input[data-pace], input[data-nostairs]");
           if (pc) {
             var wp = walkPrefs();
             if (pc.dataset.pace) wp.pace = pc.dataset.pace; else wp.noStairs = pc.checked;
-            save(WP_LS, wp);
-            if (profOn()) ProfileSync.push({ gzmWalkPrefs: wp });
-            mWrap.innerHTML = modesHtml();
+            if (defWalk(wp)) { try { localStorage.removeItem(WP_LS); } catch (e) {} } else save(WP_LS, wp);
+            if (profOn()) ProfileSync.push({ gzmWalkPrefs: defWalk(wp) ? null : wp });   // do profilu tylko inne niż domyślne
+            mWrap.innerHTML = modesHtml(); refreshHead();
             var fA = root.querySelector("#gzCFrom"), rA = root.querySelector("#gzCRes");
             if (fA && fA.value.trim() && rA && rA.innerHTML.trim()) searchC();
             return;
@@ -633,8 +645,9 @@
           var cb = ev.target.closest("input[data-mode]"); if (!cb) return;
           var m = modes(); m[cb.dataset.mode] = cb.checked;
           if (!m.train && !m.bus && !m.tram && !m.trolley) { cb.checked = true; m[cb.dataset.mode] = true; var r0 = root.querySelector("#gzCRes"); if (r0) r0.innerHTML = '<div class="gz-warn">' + esc(T("gzm.modesMin", null, "Zostaw zaznaczony co najmniej jeden środek transportu.")) + "</div>"; return; }
-          save(MODES_LS, m);
-          if (profOn()) ProfileSync.push({ gzmModes: m });
+          if (defModes(m)) { try { localStorage.removeItem(MODES_LS); } catch (e) {} } else save(MODES_LS, m);
+          if (profOn()) ProfileSync.push({ gzmModes: defModes(m) ? null : m });   // do profilu tylko inne niż domyślne
+          refreshHead();
           // są wyniki → od razu przelicz z nowym filtrem
           var f0 = root.querySelector("#gzCFrom"), r1 = root.querySelector("#gzCRes");
           if (f0 && f0.value.trim() && r1 && r1.innerHTML.trim()) searchC();
@@ -1039,6 +1052,20 @@
         return '<label class="gz-mode"><input type="checkbox" data-mode="' + k + '"' + (m[k] ? " checked" : "") + "> " + esc(L[k]) + "</label>";
       }).join("") + walkPrefsHtml();
     }
+    function defModes(m) { return m.train && m.bus && m.tram && m.trolley; }
+    function defWalk(p) { return p.pace === "normal" && !p.noStairs; }
+    function prefsSummary() {
+      var m = modes(), p = walkPrefs(), bits = [], L = { train: T("gzm.mTrain", null, "🚆 Pociąg"), bus: T("gzm.mBus", null, "🚌 Autobus"), tram: T("gzm.mTram", null, "🚋 Tramwaj"), trolley: T("gzm.mTrolley", null, "🚎 Trolejbus") };
+      var off = ["train", "bus", "tram", "trolley"].filter(function (k) { return !m[k]; });
+      if (off.length) bits.push(T("gzm.prefsWithout", null, "bez") + ": " + off.map(function (k) { return L[k]; }).join(", "));
+      if (p.pace !== "normal") bits.push(T(p.pace === "fast" ? "gzm.paceFast" : "gzm.paceSlow", null, p.pace === "fast" ? "🏃 szybkie" : "🐢 spokojne"));
+      if (p.noStairs) bits.push("♿");
+      return bits;
+    }
+    function prefsHead() {
+      var bits = prefsSummary();
+      return "🎛️ " + esc(T("gzm.prefs", null, "Moje preferencje")) + (bits.length ? ' <span class="gz-dot" title="' + esc(T("gzm.prefsChanged", null, "Ustawienia inne niż domyślne")) + '"></span> <span class="gz-sub" style="font-weight:400">' + esc(bits.join(" · ")) + "</span>" : "");
+    }
     function walkPrefsHtml() {
       var p = walkPrefs(), L = { fast: T("gzm.paceFast", null, "🏃 szybkie"), normal: T("gzm.paceNormal", null, "🚶 zwykłe"), slow: T("gzm.paceSlow", null, "🐢 spokojne") };
       return '<span class="gz-modes-l">' + esc(T("gzm.paceLbl", null, "Tempo chodzenia:")) + "</span>" + ["fast", "normal", "slow"].map(function (k) {
@@ -1050,9 +1077,12 @@
       if (!modesOn() || !d) return false;
       var chg = false;
       if (d.gzmWalkPrefs && typeof d.gzmWalkPrefs === "object" && JSON.stringify(load(WP_LS, null)) !== JSON.stringify(d.gzmWalkPrefs)) { save(WP_LS, d.gzmWalkPrefs); chg = true; }
+      else if (d.gzmWalkPrefs === null && load(WP_LS, null)) { try { localStorage.removeItem(WP_LS); } catch (e) {} chg = true; }
       if (d.gzmModes && typeof d.gzmModes === "object" && JSON.stringify(load(MODES_LS, null)) !== JSON.stringify(d.gzmModes)) { save(MODES_LS, d.gzmModes); chg = true; }
+      else if (d.gzmModes === null && load(MODES_LS, null)) { try { localStorage.removeItem(MODES_LS); } catch (e) {} chg = true; }
       if (!chg) return false;
       var box = root.querySelector(".gz-modes"); if (box) box.innerHTML = modesHtml();
+      var sm = root.querySelector(".gz-prefs > summary"); if (sm) sm.innerHTML = prefsHead();
       return true;
     }
     var FAR_MAX = 2500;

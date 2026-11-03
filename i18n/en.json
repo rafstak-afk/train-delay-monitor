@@ -1343,6 +1343,9 @@
     "nodLetter": "U",
     "nodTitle": "No data about the way from the platform to this stop — the time is an estimate. Tap to learn more.",
     "nodBody": "The OpenStreetMap map doesn't know the way from the platform to this stop (platforms or the passage aren't drawn). We estimate the walk in a straight line and know nothing about stairs, lifts or traffic lights.",
-    "nodAsk": "✉️ Know this place? Tell us how many minutes it takes and whether there are stairs"
+    "nodAsk": "✉️ Know this place? Tell us how many minutes it takes and whether there are stairs",
+    "prefs": "My preferences",
+    "prefsChanged": "Settings differ from the defaults",
+    "prefsWithout": "without"
   }
 }

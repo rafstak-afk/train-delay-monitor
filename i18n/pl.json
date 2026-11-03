@@ -1343,6 +1343,9 @@
     "nodLetter": "B",
     "nodTitle": "Brak danych o drodze z peronu na ten przystanek — czas jest szacunkowy. Stuknij, żeby dowiedzieć się więcej.",
     "nodBody": "Mapa OpenStreetMap nie zna drogi z peronu na ten przystanek (brak narysowanych peronów albo przejścia). Czas dojścia szacujemy w linii prostej, a o schodach, windach i światłach nic nie wiemy.",
-    "nodAsk": "✉️ Znasz to miejsce? Napisz, ile minut się idzie i czy są schody"
+    "nodAsk": "✉️ Znasz to miejsce? Napisz, ile minut się idzie i czy są schody",
+    "prefs": "Moje preferencje",
+    "prefsChanged": "Ustawienia inne niż domyślne",
+    "prefsWithout": "bez"
   }
 }

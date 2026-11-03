@@ -1343,6 +1343,9 @@
     "nodLetter": "N",
     "nodTitle": "Nemáme údaje o cestě z nástupiště na tuto zastávku — čas je odhad. Klepněte pro víc.",
     "nodBody": "Mapa OpenStreetMap nezná cestu z nástupiště na tuto zastávku (nástupiště nebo průchod nejsou zakreslené). Chůzi odhadujeme vzdušnou čarou a o schodech, výtazích a semaforech nic nevíme.",
-    "nodAsk": "✉️ Znáte to místo? Napište, kolik minut se jde a jestli jsou schody"
+    "nodAsk": "✉️ Znáte to místo? Napište, kolik minut se jde a jestli jsou schody",
+    "prefs": "Moje předvolby",
+    "prefsChanged": "Nastavení se liší od výchozího",
+    "prefsWithout": "bez"
   }
 }

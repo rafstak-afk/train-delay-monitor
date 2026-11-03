@@ -1343,6 +1343,9 @@
     "nodLetter": "U",
     "nodTitle": "Keine Daten zum Weg vom Bahnsteig zu dieser Haltestelle — die Zeit ist geschätzt. Tippen für mehr.",
     "nodBody": "Die OpenStreetMap-Karte kennt den Weg vom Bahnsteig zu dieser Haltestelle nicht (Bahnsteige oder Durchgang nicht eingezeichnet). Wir schätzen die Luftlinie und wissen nichts über Treppen, Aufzüge oder Ampeln.",
-    "nodAsk": "✉️ Kennst du den Ort? Schreib uns, wie viele Minuten es dauert und ob es Treppen gibt"
+    "nodAsk": "✉️ Kennst du den Ort? Schreib uns, wie viele Minuten es dauert und ob es Treppen gibt",
+    "prefs": "Meine Einstellungen",
+    "prefsChanged": "Abweichend von den Standardeinstellungen",
+    "prefsWithout": "ohne"
   }
 }
