@@ -73,7 +73,7 @@
   // ładuje się dopiero po pytaniu; gdy jej jeszcze nie ma — nazwy z dzisiejszego pliku sieci.
   function gzChatOn() { return true; }
   // TEST: „w Tarnowskich Górach” po adresie — tylko profil autora, dla wszystkich od 3.11.2026 14:30
-  function cityFixOn() { if (Date.now() >= Date.parse("2099-01-01T00:00:00Z")) return true; try { return localStorage.getItem("showVersionBadge") === "1"; } catch (e) { return false; } }
+  function cityFixOn() { return true; }   // dla wszystkich od v5.56 (3.11.2026)
 
   var gzStops = null, gzStopsP = null;
   function loadStops() {

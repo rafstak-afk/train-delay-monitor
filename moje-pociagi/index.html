@@ -976,7 +976,7 @@ function renderFromCache() {
 let reorderMode = false, reorderDirty = false;
 // TEST: tylko profil autora; dla wszystkich automatycznie od 3.11.2026 14:30 (czasu polskiego)
 const REORDER_PUBLIC_AT = Date.parse('2099-01-01T00:00:00Z');
-function reorderV2() { if (Date.now() >= REORDER_PUBLIC_AT) return true; try { return localStorage.getItem('showVersionBadge') === '1'; } catch (e) { return false; } }
+function reorderV2() { return true; }   // dla wszystkich od v5.56 (3.11.2026)
 function renderReorderBar() {
   const bar = document.getElementById('reorderBar');
   if (!bar) return;

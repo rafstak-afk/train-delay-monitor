@@ -14,7 +14,7 @@
   var SAFE_MARGIN = 5;     // 🟢 dopiero od minimum + 5 min zapasu
   // Nowa reguła (TEST: profil autora, potem dla wszystkich): bez opóźnienia przesiadka z zapasem ≥ potrzebnego to 🟢;
   // zapas bezpieczeństwa = samo opóźnienie pociągu A (najwyżej SAFE_MARGIN) — bo opóźnienia zwykle rosną.
-  var SOFT_MARGIN = false;
+  var SOFT_MARGIN = true;   // dla wszystkich (także powiadomienia z serwera) od v5.56
   function setSoftMargin(v) { SOFT_MARGIN = !!v; }
   var RANK = { ok: 0, nodata: 1, risk: 2, broken: 3, cancelled: 4 };
   var MAX_ACTIVE = 5;      // tyle połączeń naraz pilnujemy w tle (limity PLK)
