@@ -519,9 +519,8 @@
         var drawPlaces = function () {
           var P = load(PLACES, {});
           var chip = function (k, side) { return '<button type="button" class="gz-chip" data-pl="' + k + '" data-side="' + side + '">' + esc(PL_TOK[k]) + "</button>"; };
-          pb.innerHTML = '<div class="gz-chips" style="align-items:center"><span class="gz-sub">' + esc(T("gzm.pFrom", null, "Skąd:")) + "</span>" + chip("dom", "f") + chip("praca", "f") + chip("gps", "f") +
-            '<span class="gz-sub" style="margin-left:6px">' + esc(T("gzm.pTo", null, "Dokąd:")) + "</span>" + chip("dom", "t") + chip("praca", "t") + "</div>" +
-            '<details class="gz-sub" style="margin:2px 2px 8px"><summary>' + esc(T("gzm.pMine", null, "Moje miejsca")) + "</summary>" +
+          // przyciski 🏠/🏢/📍 pokazujemy dopiero po kliknięciu w pole Skąd / Dokąd (plRow)
+          pb.innerHTML = '<details class="gz-sub" style="margin:2px 2px 8px"><summary>' + esc(T("gzm.pMine", null, "Moje miejsca")) + "</summary>" +
             ["dom", "praca"].map(function (k) { return '<div style="margin:6px 0' + (P[k] ? ';padding-bottom:6px;border-bottom:1px solid var(--line)' : '') + '">' + esc(PL_TOK[k]) + ": " + (P[k] ? "✔ " + esc(T("gzm.pSet", null, "ustawione")) + placeWhere(P[k]) + " " : "— ") + '<button type="button" class="gz-chip" data-plset="' + k + '">📍 ' + esc(T("gzm.pSetHere", null, "ustaw tu, gdzie jestem")) + "</button>" + (v2On() ? ' <button type="button" class="gz-chip" data-plmap="' + k + '">🗺️ ' + esc(T("gzm.pSetMap", null, "ustaw na mapie")) + "</button>" : "") + (P[k] ? ' <button type="button" class="gz-chip" data-plclr="' + k + '">✕</button><div data-wbox="' + k + '"></div>' : "") + "</div>"; }).join("") +
             '<div style="font-size:11.5px">' + esc(profOn() ? T("gzm.pNoteProf", null, "Miejsca zapisuję w Twoim profilu — są na każdym urządzeniu z Twoim tokenem. Dojście pieszo liczę do przystanków w promieniu ok. 900 m (i na stację, gdy jest blisko).") : T("gzm.pNote", null, "Miejsca zapisuję tylko na tym urządzeniu (z profilem — na wszystkich). Dojście pieszo liczę do przystanków w promieniu ok. 900 m (i na stację, gdy jest blisko).")) + "</div></details>";
         };
@@ -555,6 +554,32 @@
           inp.style.borderColor = "#22c55e";
         });
         drawPlaces();
+        // wiersz 🏠 Dom / 🏢 Praca / 📍 Moja lokalizacja pod polami — tylko dla aktywnego pola
+        var plRow = function (side) {
+          var r = root.querySelector("#gzPlRow");
+          if (!r) {
+            r = document.createElement("div"); r.id = "gzPlRow"; r.className = "gz-chips"; r.style.cssText = "align-items:center;margin:0 2px 8px";
+            var anchor = root.querySelector(".gz-dt"), host = anchor ? anchor.parentNode : root.querySelector("#gzCTo").closest(".gz-st").parentNode;
+            host.insertBefore(r, anchor || null);
+            r.addEventListener("mousedown", function (e) { e.preventDefault(); });   // nie zabieraj fokusu polu
+            r.addEventListener("click", function (e) {
+              var b = e.target.closest("button[data-pl]"); if (!b) return;
+              var fIn = root.querySelector("#gzCFrom"), tIn2 = root.querySelector("#gzCTo"), me = b.dataset.side === "f" ? fIn : tIn2, other = me === fIn ? tIn2 : fIn;
+              me.value = PL_TOK[b.dataset.pl]; r.style.display = "none";
+              me.style.boxShadow = "0 0 0 2px #22c55e"; setTimeout(function () { me.style.boxShadow = ""; }, 900);
+              if (other.value.trim()) searchC(); else other.focus();
+            });
+          }
+          var chip = function (k) { return '<button type="button" class="gz-chip" data-pl="' + k + '" data-side="' + side + '">' + esc(PL_TOK[k]) + "</button>"; };
+          r.innerHTML = '<span class="gz-sub">' + esc(side === "f" ? T("gzm.pFrom", null, "Skąd:") : T("gzm.pTo", null, "Dokąd:")) + "</span>" + chip("dom") + chip("praca") + (side === "f" ? chip("gps") : "");
+          r.style.display = "";
+        };
+        root.addEventListener("focusin", function (e) { if (e.target.id === "gzCFrom") plRow("f"); else if (e.target.id === "gzCTo") plRow("t"); });
+        document.addEventListener("click", function (e) {
+          var r = root.querySelector("#gzPlRow"); if (!r || r.style.display === "none") return;
+          if (r.contains(e.target) || e.target.id === "gzCFrom" || e.target.id === "gzCTo") return;
+          r.style.display = "none";
+        });
         syncPlaces().then(function (ch) { if (ch) drawPlaces(); });
         document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") syncPlaces().then(function (ch) { if (ch) drawPlaces(); }); });
         pb.addEventListener("click", function (e) {
@@ -630,6 +655,9 @@
         var mWrap = document.createElement("div"); mWrap.className = "gz-modes"; mWrap.style.marginTop = "8px"; mWrap.innerHTML = modesHtml();
         pBox.appendChild(mWrap);
         if (more && more.parentNode) more.parentNode.insertBefore(pBox, more); else dWrap.parentNode.insertBefore(pBox, dWrap.nextSibling);
+        // w środku: środki transportu i tempo, potem „Moje miejsca” i „⚙️ Więcej opcji” (okno czasu, pomiar dojścia)
+        var pbEl = root.querySelector("#gzPlaces"); if (pbEl) { pbEl.style.marginTop = "6px"; pBox.appendChild(pbEl); }
+        if (more) pBox.appendChild(more);
         var refreshHead = function () { pBox.querySelector("summary").innerHTML = prefsHead(); };
         mWrap.addEventListener("change", function (ev) {
           var pc = ev.target.closest("input[data-pace], input[data-nostairs]");
@@ -1067,7 +1095,7 @@
     }
     function prefsHead() {
       var bits = prefsSummary();
-      return "🎛️ " + esc(T("gzm.prefs", null, "Moje preferencje")) + (bits.length ? ' <span class="gz-dot" title="' + esc(T("gzm.prefsChanged", null, "Ustawienia inne niż domyślne")) + '"></span> <span class="gz-sub" style="font-weight:400">' + esc(bits.join(" · ")) + "</span>" : "");
+      return "🎛️ " + esc(T("gzm.prefs", null, "Moje preferencje")) + (bits.length ? ' <span class="gz-dot" title="' + esc(T("gzm.prefsChanged", null, "Ustawienia inne niż domyślne") + ": " + bits.join(" · ")) + '"></span>' : "");
     }
     function walkPrefsHtml() {
       var p = walkPrefs(), L = { fast: T("gzm.paceFast", null, "🏃 szybkie"), normal: T("gzm.paceNormal", null, "🚶 zwykłe"), slow: T("gzm.paceSlow", null, "🐢 spokojne") };
