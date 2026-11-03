@@ -884,7 +884,9 @@
     "rodoTitle": "🔒 GDPR a soukromí",
     "rodo1": "Neukládáme IP adresy ani žádné osobní údaje. Jediná výjimka: při vytváření nového profilu se IP adresa na chvíli převede na nevratný otisk (hash), výhradně za účelem omezení počtu profilů vytvořených z jednoho místa během jednoho dne — ze samotného otisku nelze adresu zjistit a po 2 dnech se automaticky smaže.",
     "rodo2": "Pokud si vytvoříte <a href=\"/profil/\">profil</a> — dobrovolně, bez přihlášení a bez zadání e-mailu —, uchováváme pod jeho tokenem výhradně vaše vlastní nastavení: oblíbené stanice, oblíbené vlaky a oblíbené trasy v cestovním deníku. Nic víc: žádné jméno, adresu ani historii prohlížení.",
-    "rodoReviewNote": "Překlad polského originálu — ke kontrole provozovatelem; rozhodující je polské znění."
+    "rodoReviewNote": "Překlad polského originálu — ke kontrole provozovatelem; rozhodující je polské znění.",
+    "kindPlace": "📍 Znám to místo (cesta z nástupiště)",
+    "placeTpl": "Stanice: {station}\nZastávka: {stop}\nKolik minut z nástupiště na zastávku (z kterého nástupiště?): \nSchody / výtah / rampa: \nPřechody (se semaforem?): \nDalší poznámky: "
   },
   "profilePrompt": {
     "title": "Mít to na každém zařízení?",
@@ -1337,6 +1339,10 @@
     "noStairs": "♿ Vyhnout se schodům (vozík, kočárek)",
     "noStairsNote": "Volím cestu bez schodů, když ji mapa zná (výtahy, rampy). ⚠️ u zastávky = z některých nástupišť jen po schodech.",
     "stairsWarn": "Z některých nebo všech nástupišť jen po schodech",
-    "crossTitle": "Na trase: přechody se semafory {s}, bez semaforů {z}, přes koleje {r} (čekání na semaforech započteno)"
+    "crossTitle": "Na trase: přechody se semafory {s}, bez semaforů {z}, přes koleje {r} (čekání na semaforech započteno)",
+    "nodLetter": "N",
+    "nodTitle": "Nemáme údaje o cestě z nástupiště na tuto zastávku — čas je odhad. Klepněte pro víc.",
+    "nodBody": "Mapa OpenStreetMap nezná cestu z nástupiště na tuto zastávku (nástupiště nebo průchod nejsou zakreslené). Chůzi odhadujeme vzdušnou čarou a o schodech, výtazích a semaforech nic nevíme.",
+    "nodAsk": "✉️ Znáte to místo? Napište, kolik minut se jde a jestli jsou schody"
   }
 }

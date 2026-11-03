@@ -884,7 +884,9 @@
     "rodoTitle": "🔒 GDPR and privacy",
     "rodo1": "We don't store IP addresses or any personal data. The only exception: when a new profile is created, the IP address is briefly turned into an irreversible hash, solely to limit the number of profiles created from one place within a day — the hash itself can't be used to recover the address and is deleted automatically after 2 days.",
     "rodo2": "If you create a <a href=\"/profil/\">profile</a> — voluntarily, without logging in or giving an e-mail — we store under its token only your own settings: favorite stations, favorite trains and favorite routes in the travel journal. Nothing else: no name, address or browsing history.",
-    "rodoReviewNote": "Translation of the Polish source text — to be reviewed by the site owner; the Polish version prevails."
+    "rodoReviewNote": "Translation of the Polish source text — to be reviewed by the site owner; the Polish version prevails.",
+    "kindPlace": "📍 I know this place (walk from the platform)",
+    "placeTpl": "Station: {station}\nStop: {stop}\nMinutes from the platform to the stop (which platform?): \nStairs / lift / ramp on the way: \nPedestrian crossings (with lights?): \nOther notes: "
   },
   "profilePrompt": {
     "title": "Keep this on every device?",
@@ -1337,6 +1339,10 @@
     "noStairs": "♿ Avoid stairs (wheelchair, pram)",
     "noStairsNote": "I pick a step-free route when the map knows one (lifts, ramps). ⚠️ at a stop = stairs only from some platforms.",
     "stairsWarn": "Stairs only, from some or all platforms",
-    "crossTitle": "On the way: crossings with lights {s}, without lights {z}, over tracks {r} (waiting at lights included)"
+    "crossTitle": "On the way: crossings with lights {s}, without lights {z}, over tracks {r} (waiting at lights included)",
+    "nodLetter": "U",
+    "nodTitle": "No data about the way from the platform to this stop — the time is an estimate. Tap to learn more.",
+    "nodBody": "The OpenStreetMap map doesn't know the way from the platform to this stop (platforms or the passage aren't drawn). We estimate the walk in a straight line and know nothing about stairs, lifts or traffic lights.",
+    "nodAsk": "✉️ Know this place? Tell us how many minutes it takes and whether there are stairs"
   }
 }

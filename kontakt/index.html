@@ -65,6 +65,7 @@ textarea{min-height:140px;resize:vertical;line-height:1.4}
       <option value="Pomysł" data-i18n="kontakt.kindIdea">💡 Pomysł / propozycja</option>
       <option value="Pytanie" data-i18n="kontakt.kindQuestion">❓ Pytanie</option>
       <option value="Inne" data-i18n="kontakt.kindOther">✉️ Inne</option>
+      <option value="Znam to miejsce" data-i18n="kontakt.kindPlace">📍 Znam to miejsce (dojście z peronu)</option>
     </select>
 
     <label for="msg" data-i18n="kontakt.msg">Treść</label>
@@ -137,6 +138,13 @@ textarea{min-height:140px;resize:vertical;line-height:1.4}
     return text;
   }
   function subject(){return '[Czy zdążę] '+$('kind').value}
+  // /kontakt/?kind=place&station=…&stop=… — z litery „B” w planerze: szablon o dojściu z peronu
+  (window.I18n?I18n.ready:Promise.resolve()).then(function(){
+    var q=new URLSearchParams(location.search);if(q.get('kind')!=='place')return;
+    $('kind').value='Znam to miejsce';
+    if(!$('msg').value.trim())$('msg').value=T('kontakt.placeTpl').replace('{station}',q.get('station')||'').replace('{stop}',q.get('stop')||'');
+    try{$('msg').dispatchEvent(new Event('input'))}catch(e){}
+  });
   function mailHref(){
     return 'mailto:'+TO+'?subject='+encodeURIComponent(subject())+'&body='+encodeURIComponent(buildBody());
   }

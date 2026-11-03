@@ -884,7 +884,9 @@
     "rodoTitle": "🔒 RGPD y privacidad",
     "rodo1": "No guardamos direcciones IP ni ningún dato personal. La única excepción: al crear un perfil nuevo, la dirección IP se convierte brevemente en un resumen irreversible (hash), únicamente para limitar el número de perfiles creados desde un mismo lugar en un día; a partir del hash no se puede recuperar la dirección y se borra automáticamente a los 2 días.",
     "rodo2": "Si creas un <a href=\"/profil/\">perfil</a> (de forma voluntaria, sin iniciar sesión ni dar un correo), guardamos con su token únicamente tus propios ajustes: estaciones favoritas, trenes favoritos y rutas favoritas del diario de viajes. Nada más: ni nombre, ni dirección, ni historial de navegación.",
-    "rodoReviewNote": "Traducción del original polaco, pendiente de revisión por el responsable; prevalece la versión polaca."
+    "rodoReviewNote": "Traducción del original polaco, pendiente de revisión por el responsable; prevalece la versión polaca.",
+    "kindPlace": "📍 Conozco el lugar (camino desde el andén)",
+    "placeTpl": "Estación: {station}\nParada: {stop}\nMinutos del andén a la parada (¿qué andén?): \nEscaleras / ascensor / rampa: \nPasos de peatones (¿con semáforo?): \nOtras notas: "
   },
   "profilePrompt": {
     "title": "¿Tenerlo en todos tus dispositivos?",
@@ -1337,6 +1339,10 @@
     "noStairs": "♿ Evitar escaleras (silla de ruedas, carrito)",
     "noStairsNote": "Elijo un camino sin escaleras cuando el mapa lo conoce (ascensores, rampas). ⚠️ en una parada = solo con escaleras desde algunos andenes.",
     "stairsWarn": "Solo con escaleras desde algunos o todos los andenes",
-    "crossTitle": "En el camino: pasos con semáforo {s}, sin semáforo {z}, sobre vías {r} (espera en semáforos incluida)"
+    "crossTitle": "En el camino: pasos con semáforo {s}, sin semáforo {z}, sobre vías {r} (espera en semáforos incluida)",
+    "nodLetter": "S",
+    "nodTitle": "Sin datos del camino del andén a esta parada: el tiempo es estimado. Toca para saber más.",
+    "nodBody": "El mapa OpenStreetMap no conoce el camino del andén a esta parada (andenes o paso sin dibujar). Estimamos en línea recta y no sabemos nada de escaleras, ascensores ni semáforos.",
+    "nodAsk": "✉️ ¿Conoces el lugar? Dinos cuántos minutos se tarda y si hay escaleras"
   }
 }

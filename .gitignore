@@ -16,3 +16,4 @@ tools/gzm/.cache/
 tools/gzm/out/
 tools/gzm/out.tmp/
 tools/gzm/out.only/
+tools/gzm/out.pub/

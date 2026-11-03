@@ -884,7 +884,9 @@
     "rodoTitle": "🔒 RODO i prywatność",
     "rodo1": "Nie zapisujemy adresów IP ani żadnych danych osobowych. Jedyny wyjątek: przy zakładaniu nowego profilu adres IP jest na chwilę zamieniany na nieodwracalny skrót (hash), wyłącznie po to, by ograniczyć liczbę profili zakładanych z jednego miejsca w ciągu doby — sam skrót nie pozwala odtworzyć adresu i znika automatycznie po 2 dniach.",
     "rodo2": "Jeśli założysz <a href=\"/profil/\">profil</a> — dobrowolnie, bez logowania, bez podawania e-maila — pod jego tokenem przechowujemy wyłącznie Twoje własne ustawienia: ulubione stacje, ulubione pociągi oraz ulubione trasy w dzienniczku podróży. Nic poza tym: żadnego imienia, adresu ani historii przeglądania.",
-    "rodoReviewNote": "PL = tekst źródłowy (wiążący)"
+    "rodoReviewNote": "PL = tekst źródłowy (wiążący)",
+    "kindPlace": "📍 Znam to miejsce (dojście z peronu)",
+    "placeTpl": "Stacja: {station}\nPrzystanek: {stop}\nIle minut idzie się z peronu na przystanek (z którego peronu?): \nSchody / winda / pochylnia po drodze: \nPrzejścia dla pieszych (ze światłami?): \nInne uwagi: "
   },
   "profilePrompt": {
     "title": "Zachować to na każdym urządzeniu?",
@@ -1337,6 +1339,10 @@
     "noStairs": "♿ Unikaj schodów (wózek, wózek dziecięcy)",
     "noStairsNote": "Wybieram drogę bez schodów, gdy mapa ją zna (windy, pochylnie). ⚠️ przy przystanku = z części peronów tylko po schodach.",
     "stairsWarn": "Z części peronów albo w ogóle tylko po schodach",
-    "crossTitle": "Na trasie: przejścia ze światłami {s}, bez świateł {z}, przez tory {r} (czekanie na światłach wliczone)"
+    "crossTitle": "Na trasie: przejścia ze światłami {s}, bez świateł {z}, przez tory {r} (czekanie na światłach wliczone)",
+    "nodLetter": "B",
+    "nodTitle": "Brak danych o drodze z peronu na ten przystanek — czas jest szacunkowy. Stuknij, żeby dowiedzieć się więcej.",
+    "nodBody": "Mapa OpenStreetMap nie zna drogi z peronu na ten przystanek (brak narysowanych peronów albo przejścia). Czas dojścia szacujemy w linii prostej, a o schodach, windach i światłach nic nie wiemy.",
+    "nodAsk": "✉️ Znasz to miejsce? Napisz, ile minut się idzie i czy są schody"
   }
 }

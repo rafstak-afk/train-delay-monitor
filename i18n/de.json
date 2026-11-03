@@ -884,7 +884,9 @@
     "rodoTitle": "🔒 DSGVO und Datenschutz",
     "rodo1": "Wir speichern weder IP-Adressen noch personenbezogene Daten. Einzige Ausnahme: Beim Erstellen eines neuen Profils wird die IP-Adresse kurzzeitig in einen nicht umkehrbaren Hash umgewandelt, ausschließlich um die Zahl der Profile zu begrenzen, die von einem Ort aus innerhalb eines Tages erstellt werden — aus dem Hash lässt sich die Adresse nicht wiederherstellen, und er wird nach 2 Tagen automatisch gelöscht.",
     "rodo2": "Wenn du ein <a href=\"/profil/\">Profil</a> erstellst — freiwillig, ohne Anmeldung und ohne Angabe einer E-Mail —, speichern wir unter seinem Token ausschließlich deine eigenen Einstellungen: Lieblingsbahnhöfe, Lieblingszüge und Lieblingsstrecken im Reisetagebuch. Sonst nichts: keinen Namen, keine Adresse, keinen Browserverlauf.",
-    "rodoReviewNote": "Übersetzung des polnischen Originals — vom Betreiber zu prüfen; maßgeblich ist die polnische Fassung."
+    "rodoReviewNote": "Übersetzung des polnischen Originals — vom Betreiber zu prüfen; maßgeblich ist die polnische Fassung.",
+    "kindPlace": "📍 Ich kenne den Ort (Weg vom Bahnsteig)",
+    "placeTpl": "Bahnhof: {station}\nHaltestelle: {stop}\nMinuten vom Bahnsteig zur Haltestelle (welcher Bahnsteig?): \nTreppen / Aufzug / Rampe unterwegs: \nFußgängerüberwege (mit Ampel?): \nSonstiges: "
   },
   "profilePrompt": {
     "title": "Auf jedem Gerät behalten?",
@@ -1337,6 +1339,10 @@
     "noStairs": "♿ Treppen meiden (Rollstuhl, Kinderwagen)",
     "noStairsNote": "Ich wähle einen stufenlosen Weg, wenn die Karte ihn kennt (Aufzüge, Rampen). ⚠️ an der Haltestelle = von manchen Bahnsteigen nur über Treppen.",
     "stairsWarn": "Von manchen oder allen Bahnsteigen nur über Treppen",
-    "crossTitle": "Unterwegs: Übergänge mit Ampel {s}, ohne Ampel {z}, über Gleise {r} (Wartezeit an Ampeln eingerechnet)"
+    "crossTitle": "Unterwegs: Übergänge mit Ampel {s}, ohne Ampel {z}, über Gleise {r} (Wartezeit an Ampeln eingerechnet)",
+    "nodLetter": "U",
+    "nodTitle": "Keine Daten zum Weg vom Bahnsteig zu dieser Haltestelle — die Zeit ist geschätzt. Tippen für mehr.",
+    "nodBody": "Die OpenStreetMap-Karte kennt den Weg vom Bahnsteig zu dieser Haltestelle nicht (Bahnsteige oder Durchgang nicht eingezeichnet). Wir schätzen die Luftlinie und wissen nichts über Treppen, Aufzüge oder Ampeln.",
+    "nodAsk": "✉️ Kennst du den Ort? Schreib uns, wie viele Minuten es dauert und ob es Treppen gibt"
   }
 }

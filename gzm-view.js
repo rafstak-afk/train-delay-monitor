@@ -30,6 +30,8 @@
     '.gz .gv .c-actions .btn-sm{font-size:12.5px}' +
     '.gz .gv .v2-dep{cursor:pointer;padding:10px 12px}.gz .gv .v2-dep .c-route{font-size:14.5px}' +
     '.gz .gv .gz-fav{background:none;border:0;color:var(--yellow);font-size:16px;cursor:pointer;padding:0 2px;vertical-align:middle}' +
+    '.gz .gz-nod{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:#f39c12;color:#111;font-weight:900;font-size:11px;margin-left:5px;cursor:pointer;vertical-align:middle}' +
+    '.gz .gz-nodbox{margin:6px 0;padding:10px 12px;border:1px solid #f39c12;border-radius:10px;background:rgba(243,156,18,.1);font-size:13px;line-height:1.45}.gz .gz-nodbox a{display:inline-block;margin-top:6px;font-weight:700;color:#ffd400}' +
     '.gz .gz-far{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#a855f7;color:#fff;font-weight:900;font-size:12px;margin-right:5px;vertical-align:middle;flex:0 0 auto}' +
     '.gz .gz-farbox{margin:10px 0;padding:12px;border:1px solid #a855f7;border-radius:12px;background:rgba(168,85,247,.1);font-size:13.5px;line-height:1.45}' +
     '.gz .gz-farrow{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px}' +
@@ -320,7 +322,7 @@
       return '<div class="card v2-dep ' + (V2ST[x.status] || "s-ok") + (cls || "") + '" data-k="' + esc(d.trip + "|" + d.stopIdx) + '" data-tripx="' + esc(tk) + '" title="' + esc(T("gzm.tTap", null, "Stuknij — cały bieg kursu")) + '">' +
         '<div class="c-head"><div><div class="c-route">' + (TYPE_ICON[d.type] || "🚌") + " " + esc(d.line) + " → " + esc(d.head) +
         (noFav ? "" : ' <button type="button" class="gz-fav" data-fav="' + esc(key) + '" title="' + esc(T("gzm.favTitle", null, "Ulubiona linia w tym kierunku na tej stacji")) + '">' + (isF ? "★" : "☆") + "</button>") + "</div>" +
-        '<div class="c-date">' + esc(d.stop.n) + " · 🚶 " + esc(walk) + " min" + (d.stop.stairs ? " 🪜" : "") + (modesOn() ? crossIcons(d.stop) : "") + (x.walk.warn ? ' <span title="' + esc(T("gzm.stairsWarn", null, "Z części peronów albo w ogóle tylko po schodach")) + '">⚠️♿</span>' : "") + v2Dl(x.live, x.delay) + "</div>" +
+        '<div class="c-date">' + esc(d.stop.n) + " · 🚶 " + esc(walk) + " min" + (d.stop.stairs ? " 🪜" : "") + (modesOn() ? crossIcons(d.stop) : "") + (nodOn() ? nodBadge(d.stop) : "") + (x.walk.warn ? ' <span title="' + esc(T("gzm.stairsWarn", null, "Z części peronów albo w ogóle tylko po schodach")) + '">⚠️♿</span>' : "") + v2Dl(x.live, x.delay) + "</div>" +
         (x.arrDest != null ? '<div class="c-sub">🏁 ' + esc(T("gzm.arrDest", { t: C.fmt(x.arrDest), n: x.destName, m: x.travel }, "{t} {n} (jazda {m} min)")) + "</div>" : "") + "</div>" +
         '<span class="chip ' + (V2ST[x.status] || "s-ok") + '"><span class="ct">' + tTxt + "</span>" + esc(inTxt ? inTxt + " · " : "") + esc(v2StTxt(x.status)) + "</span></div>" +
         (open ? tripHtml(d.trip, d.date, d.stop.n) : "") + "</div>";
@@ -1006,6 +1008,22 @@
       }
       return { min: PACE[p.pace] === 1 ? m : Math.max(1, Math.round(m * PACE[p.pace])), warn: warn };
     };
+    // „B” — brak danych o drodze z peronu (TEST: profil autora)
+    function nodOn() { try { return localStorage.getItem("showVersionBadge") === "1"; } catch (e) { return false; } }
+    function nodBadge(s) {
+      if (s.ns !== undefined && s.src !== "fallback" && s.src !== "osm-stacja") return "";   // brak danych albo perony nieznane (liczone od punktu stacji)
+      var st = (index.stations || []).find(function (x) { return x.id === +cfg.stationId; }) || {};
+      return ' <span class="gz-nod" role="button" tabindex="0" data-nod="' + esc((st.n || "") + "|" + s.n) + '" title="' + esc(T("gzm.nodTitle", null, "Brak danych o drodze z peronu na ten przystanek — czas jest szacunkowy. Stuknij, żeby dowiedzieć się więcej.")) + '">' + esc(T("gzm.nodLetter", null, "B")) + "</span>";
+    }
+    root.addEventListener("click", function (ev) {
+      var b = ev.target.closest("[data-nod]"); if (!b) return;
+      ev.stopPropagation(); ev.preventDefault();
+      var host = b.closest(".card, .gz-dep, div"), nx = host && host.nextElementSibling;
+      if (nx && nx.classList.contains("gz-nodbox")) { nx.remove(); return; }
+      var p = b.dataset.nod.split("|"), q = new URLSearchParams({ kind: "place", station: p[0], stop: p.slice(1).join("|") });
+      host.insertAdjacentHTML("afterend", '<div class="gz-nodbox">' + esc(T("gzm.nodBody", null, "Mapa OpenStreetMap nie zna drogi z peronu na ten przystanek (brak narysowanych peronów albo przejścia). Czas dojścia szacujemy w linii prostej, a o schodach, windach i światłach nic nie wiemy.")) +
+        '<br><a href="/kontakt/?' + esc(q.toString()) + '">' + esc(T("gzm.nodAsk", null, "✉️ Znasz to miejsce? Napisz, ile minut się idzie i czy są schody")) + "</a></div>");
+    }, true);
     // 🚦 przejścia ze światłami, 🚸 bez świateł, 🛤️ przez tory — na trasie peron → przystanek
     function crossIcons(s) {
       var z = (s.cx || 0) - (s.sig || 0), out = "";
