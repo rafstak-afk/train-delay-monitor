@@ -69,13 +69,17 @@
   }
 
   // ---------- przystanki ZTM GZM, moje miejsca, adresy (planer 🚆🚌) ----------
-  // TEST: tylko profil autora (showVersionBadge). Lista nazw przystanków
-  // (ok. 80 KB, /api/gzm-data/stop-names.json) ładuje się dopiero po pytaniu.
-  function gzChatOn() { try { return localStorage.getItem("showVersionBadge") === "1"; } catch (e) { return false; } }
+  // Dla wszystkich od v5.48. Lista nazw przystanków (ok. 80 KB, /api/gzm-data/stop-names.json)
+  // ładuje się dopiero po pytaniu; gdy jej jeszcze nie ma — nazwy z dzisiejszego pliku sieci.
+  function gzChatOn() { return true; }
   var gzStops = null, gzStopsP = null;
   function loadStops() {
     if (!gzChatOn()) return Promise.resolve(null);
-    if (!gzStopsP) gzStopsP = fetch("/api/gzm-data/stop-names.json").then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+    var j1 = function (u) { return fetch(u).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }); };
+    if (!gzStopsP) gzStopsP = j1("/api/gzm-data/stop-names.json").then(function (d) {
+      if (d && d.names) return d;
+      return j1("/api/gzm-data/network/" + iso(today()) + ".json").then(function (n) { return n && n.names ? { names: n.names.filter(function (x, i, a) { return a.indexOf(x) === i; }) } : null; });
+    }).then(function (d) {
       gzStops = ((d && d.names) || []).map(function (n) {
         var words = fold(n).split(" ").filter(Boolean);
         // ruchome „e”: Dworzec → Dworca, Kościelec → Kościelca, Wieniec → Wieńca

@@ -260,8 +260,6 @@ h1{ margin:0; font-size:20px; }
   </div>
   <div style="display:flex; gap:8px;">
     <a class="refresh" href="/dziennik/" style="text-decoration:none; display:inline-flex; align-items:center;" title="Dzienniczek podróży" data-i18n-attr="title:mojePociagi.journalLinkTitle">📓</a>
-    <a class="refresh" href="/profil/" style="text-decoration:none; display:inline-flex; align-items:center;">👤</a>
-    <button class="refresh danger" id="clearBtn" title="Usuń wszystkie pociągi z listy" data-i18n-attr="title:mojePociagi.clearBtnTitle"><span data-i18n="mojePociagi.clearBtn">🗑️ Wyczyść</span></button>
     <button class="refresh btn-alert" id="alertButton" onclick="toggleDelayAlerts()">Alarm: OFF</button>
     <button class="refresh" id="refreshBtn" data-i18n="mojePociagi.refreshBtn">↻ ODŚWIEŻ</button>
   </div>
@@ -1342,7 +1340,7 @@ document.getElementById('addTrainForm').addEventListener('submit', async (e) => 
 });
 
 document.getElementById('refreshBtn').addEventListener('click', init);
-document.getElementById('clearBtn').addEventListener('click', clearAllTrains);
+
 
 // Przerysowanie z juz pobranych danych (bez zapytan sieciowych) przy
 // zmianie jezyka - statusText/odznaki w kartach sa budowane przez JS
