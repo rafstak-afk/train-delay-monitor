@@ -1323,6 +1323,12 @@
     "fromOnlyHint": "Wpisz też „Dokąd”, żeby ułożyć całą podróż.",
     "v3Earlier": "Wcześniejsze",
     "v3Later": "Późniejsze połączenia",
-    "v3LessWalk": "🚶 Najmniej chodzenia: łącznie {n} min pieszo (na miejscu {d} min później)"
+    "v3LessWalk": "🚶 Najmniej chodzenia: łącznie {n} min pieszo (na miejscu {d} min później)",
+    "modesLbl": "Środki transportu:",
+    "mTrain": "🚆 Pociąg",
+    "mBus": "🚌 Autobus",
+    "mTram": "🚋 Tramwaj",
+    "mTrolley": "🚎 Trolejbus",
+    "modesMin": "Zostaw zaznaczony co najmniej jeden środek transportu."
   }
 }

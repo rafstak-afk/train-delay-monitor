@@ -608,10 +608,25 @@
       // data i godzina jak na tablicy głównej: dwa pola obok siebie, bez etykiet
       var tIn = u.querySelector("#gzCTime"), tDiv = tIn.parentNode, dWrap = document.createElement("div");
       dWrap.className = "gz-dt";
+      if (!document.getElementById("gzModesCss")) { var mcss = document.createElement("style"); mcss.id = "gzModesCss"; mcss.textContent = ".gz-modes{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin:2px 2px 10px;font-size:13.5px}.gz-modes-l{color:var(--muted,#9fb0cf);font-size:12.5px;width:100%}.gz-mode{display:inline-flex;align-items:center;gap:5px;cursor:pointer;padding:6px 10px;border:1px solid var(--line,#34495e);border-radius:10px;background:var(--panel,#1c2833)}.gz-mode input{width:18px;height:18px;margin:0;accent-color:#2ecc71}"; document.head.appendChild(mcss); }
       dWrap.innerHTML = '<input id="gzCDate" type="date" autocomplete="off" aria-label="' + esc(T("gzm.uDate", null, "Data")) + '" title="' + esc(T("gzm.uDate", null, "Data")) + '">';
       tIn.setAttribute("aria-label", T("gzm.uWhen", null, "Kiedy")); tIn.title = T("gzm.uWhen", null, "Kiedy");
       dWrap.appendChild(tIn);
       tDiv.parentNode.insertBefore(dWrap, tDiv); tDiv.remove();
+      if (modesOn()) {
+        var mWrap = document.createElement("div"); mWrap.className = "gz-modes"; mWrap.innerHTML = modesHtml();
+        dWrap.parentNode.insertBefore(mWrap, dWrap.nextSibling);
+        mWrap.addEventListener("change", function (ev) {
+          var cb = ev.target.closest("input[data-mode]"); if (!cb) return;
+          var m = modes(); m[cb.dataset.mode] = cb.checked;
+          if (!m.train && !m.bus && !m.tram && !m.trolley) { cb.checked = true; m[cb.dataset.mode] = true; var r0 = root.querySelector("#gzCRes"); if (r0) r0.innerHTML = '<div class="gz-warn">' + esc(T("gzm.modesMin", null, "Zostaw zaznaczony co najmniej jeden środek transportu.")) + "</div>"; return; }
+          save(MODES_LS, m);
+          if (profOn()) ProfileSync.push({ gzmModes: m });
+          // są wyniki → od razu przelicz z nowym filtrem
+          var f0 = root.querySelector("#gzCFrom"), r1 = root.querySelector("#gzCRes");
+          if (f0 && f0.value.trim() && r1 && r1.innerHTML.trim()) searchC();
+        });
+      }
       var dIn = dWrap.querySelector("#gzCDate"); dIn.min = rg[0] > today ? rg[0] : today; dIn.max = rg[1] || today; dIn.value = today;
       tIn.setAttribute("autocomplete", "off"); tIn.value = C.fmt(warsawNow().min);
       lbl("gzCFrom", T("gzm.uFrom", null, "Skąd")); lbl("gzCTo", T("gzm.uTo", null, "Dokąd (puste = odjazdy ze stacji)")); lbl("gzCTime", T("gzm.uWhen", null, "Kiedy"));
@@ -950,6 +965,7 @@
       if (!profOn() || !ProfileSync.pull) return Promise.resolve(false);
       return ProfileSync.pull().then(function (d) {
         if (!d) return false;
+        applyProfileModes(d);
         var P = load(PLACES, {}), up = {}, ch = false;
         Object.keys(PL_PROF).forEach(function (k) {
           var v = d[PL_PROF[k]];
@@ -961,6 +977,24 @@
         if (Object.keys(up).length) ProfileSync.push(up);
         return ch;
       }).catch(function () { return false; });
+    }
+    // ---------- środki transportu (filtr wyszukiwania) — TEST: tylko profil autora ----------
+    var MODES_LS = "gzmModesV1", MODE_KIND = { 0: "tram", 3: "bus", 11: "trolley" };
+    function modesOn() { try { return localStorage.getItem("showVersionBadge") === "1"; } catch (e) { return false; } }
+    function modes() { var m = { train: true, bus: true, tram: true, trolley: true }; if (!modesOn()) return m; var v = load(MODES_LS, null); if (v && typeof v === "object") Object.keys(m).forEach(function (k) { if (v[k] === false) m[k] = false; }); return m; }
+    function exclOf() { var m = modes(), e = null; ["bus", "tram", "trolley"].forEach(function (k) { if (!m[k]) { e = e || {}; e[k] = 1; } }); return e; }
+    function modesHtml() {
+      var m = modes(), L = { train: T("gzm.mTrain", null, "🚆 Pociąg"), bus: T("gzm.mBus", null, "🚌 Autobus"), tram: T("gzm.mTram", null, "🚋 Tramwaj"), trolley: T("gzm.mTrolley", null, "🚎 Trolejbus") };
+      return '<span class="gz-modes-l">' + esc(T("gzm.modesLbl", null, "Środki transportu:")) + "</span>" + ["train", "bus", "tram", "trolley"].map(function (k) {
+        return '<label class="gz-mode"><input type="checkbox" data-mode="' + k + '"' + (m[k] ? " checked" : "") + "> " + esc(L[k]) + "</label>";
+      }).join("");
+    }
+    function applyProfileModes(d) {
+      if (!modesOn() || !d || !d.gzmModes || typeof d.gzmModes !== "object") return false;
+      if (JSON.stringify(load(MODES_LS, null)) === JSON.stringify(d.gzmModes)) return false;
+      save(MODES_LS, d.gzmModes);
+      var box = root.querySelector(".gz-modes"); if (box) box.innerHTML = modesHtml();
+      return true;
     }
     var FAR_MAX = 2500;
     function farStops(net, x) {
@@ -987,6 +1021,7 @@
           if (!idx[seq[i]]) continue;
           if ((+flags.charAt(i) || 0) & 1) continue;   // tu nie wsiada się
           var ln = net.j.lines[pat[0]] || ["?", 3, ""];
+          if (net._excl && net._excl[MODE_KIND[ln[1]] || "bus"]) continue;
           (net._patTrips[pi] || []).forEach(function (tr) {
             var plan = tr[1] + off[2 * i + 1], rtT = rt && rt.trips && rt.trips[tr[2]], dl = rtT && rtT[1] !== "X" ? Math.round((rtT[1] || 0) / 60) : 0;
             if (plan + dl < fromMin - 1 || plan > fromMin + 120) return;
@@ -1021,6 +1056,7 @@
       res.innerHTML = '<div class="gz-empty gz-searching">🔎 ' + esc(T("gzm.loading", null, "Wczytuję rozkład…")) + "</div>";
       Promise.all([getNet(date), getRt(), resolvePlace(fromTxt).catch(function () { return null; })]).then(function (r) {
         var net = r[0], pl = r[2]; if (netP[date]) netP[date]._net = net;
+        net._excl = exclOf();
         var groups = [];
         if (pl) {
           placeReach(net, pl);
@@ -1140,6 +1176,7 @@
         throw "handled";
       }).then(function (r) {
         var net = r[0], code = GzmRaptor.byCode(net);
+        net._excl = exclOf();
         if (fromPlace) placeReach(net, fromPlace);
         if (toPlace) placeReach(net, toPlace);
         var fromSt = fromPlace ? null : stationByName(fromTxt), toSt = toPlace ? null : stationByName(toTxt);
@@ -1171,6 +1208,7 @@
         var combos = [];
         accSt.forEach(function (a) { egrSt.forEach(function (e) { if (a.id !== e.id) combos.push({ a: { st: a }, e: { st: e } }); }); });
         combos = combos.slice(0, v2On() ? 4 : 3);
+        if (!modes().train) combos = [];   // pociąg odznaczony — bez zapytań do PLK
         var date2 = date;
         return Promise.all(combos.map(function (cb) {
           var q = new URLSearchParams({ from: cb.a.st.n, to: cb.e.st.n, date: date2, time: C.fmt(tmin), transferMinutes: "3" });

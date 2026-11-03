@@ -1323,6 +1323,12 @@
     "fromOnlyHint": "Also enter “To” to plan the whole trip.",
     "v3Earlier": "Earlier",
     "v3Later": "Later connections",
-    "v3LessWalk": "🚶 Least walking: {n} min on foot in total ({d} min later)"
+    "v3LessWalk": "🚶 Least walking: {n} min on foot in total ({d} min later)",
+    "modesLbl": "Means of transport:",
+    "mTrain": "🚆 Train",
+    "mBus": "🚌 Bus",
+    "mTram": "🚋 Tram",
+    "mTrolley": "🚎 Trolleybus",
+    "modesMin": "Keep at least one means of transport selected."
   }
 }

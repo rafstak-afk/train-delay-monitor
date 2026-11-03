@@ -66,6 +66,7 @@
       marked = new Set();
       Q.forEach(function (pos0, p) {
         var pat = j.pats[p], seq = pat[1], off = pat[2], fl = pat[3], trips = net.patTrips[p];
+        if (net._excl && net._excl[TYPE[j.lines[pat[0]][1]] || "bus"]) return;   // odznaczony środek transportu
         var trip = -1, t0 = 0, dl = 0, bPos = -1;
         for (var i = pos0; i < seq.length; i++) {
           var s = seq[i];

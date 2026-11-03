@@ -1323,6 +1323,12 @@
     "fromOnlyHint": "Escribe también «Hasta» para planificar todo el viaje.",
     "v3Earlier": "Anteriores",
     "v3Later": "Conexiones posteriores",
-    "v3LessWalk": "🚶 Menos a pie: {n} min caminando en total ({d} min más tarde)"
+    "v3LessWalk": "🚶 Menos a pie: {n} min caminando en total ({d} min más tarde)",
+    "modesLbl": "Medios de transporte:",
+    "mTrain": "🚆 Tren",
+    "mBus": "🚌 Autobús",
+    "mTram": "🚋 Tranvía",
+    "mTrolley": "🚎 Trolebús",
+    "modesMin": "Deja marcado al menos un medio de transporte."
   }
 }
