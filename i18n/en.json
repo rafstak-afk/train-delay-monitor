@@ -48,7 +48,12 @@
     "moveDown": "Move down",
     "emptyList": "You don't have any trains on your list yet.<br>Add your first one in the form below 👇",
     "loadError": "Error loading data: {message}. Try refreshing.",
-    "confirmClearAll": "Remove all trains from the list? This can't be undone."
+    "confirmClearAll": "Remove all trains from the list? This can't be undone.",
+    "reorderBtn": "↕️ Reorder",
+    "reorderDone": "✅ Done",
+    "reorderHint": "Move trains with the ▲▼ arrows. Stars are hidden meanwhile so nothing gets removed by mistake.",
+    "removedToast": "Removed {train} from favourites",
+    "undo": "↩️ Undo"
   },
   "index": {
     "trainWord": "train",

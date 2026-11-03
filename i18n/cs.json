@@ -48,7 +48,12 @@
     "moveDown": "Posunout dolů",
     "emptyList": "Zatím nemáte v seznamu žádné vlaky.<br>Přidejte první ve formuláři níže 👇",
     "loadError": "Chyba při načítání dat: {message}. Zkuste obnovit.",
-    "confirmClearAll": "Odebrat všechny vlaky ze seznamu? Tuto akci nelze vrátit."
+    "confirmClearAll": "Odebrat všechny vlaky ze seznamu? Tuto akci nelze vrátit.",
+    "reorderBtn": "↕️ Změnit pořadí",
+    "reorderDone": "✅ Hotovo",
+    "reorderHint": "Vlaky posouvejte šipkami ▲▼. Hvězdičky jsou mezitím skryté, aby se nic neodstranilo omylem.",
+    "removedToast": "{train} odebrán z oblíbených",
+    "undo": "↩️ Zpět"
   },
   "index": {
     "trainWord": "vlak",

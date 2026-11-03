@@ -48,7 +48,12 @@
     "moveDown": "Przesuń niżej",
     "emptyList": "Nie masz jeszcze żadnych pociągów na liście.<br>Dodaj pierwszy w formularzu poniżej 👇",
     "loadError": "Błąd ładowania danych: {message}. Spróbuj odświeżyć.",
-    "confirmClearAll": "Usunąć wszystkie pociągi z listy? Tej operacji nie da się cofnąć."
+    "confirmClearAll": "Usunąć wszystkie pociągi z listy? Tej operacji nie da się cofnąć.",
+    "reorderBtn": "↕️ Zmień kolejność",
+    "reorderDone": "✅ Gotowe",
+    "reorderHint": "Przesuwaj pociągi strzałkami ▲▼. Gwiazdki są na ten czas ukryte, żeby niczego nie usunąć przez pomyłkę.",
+    "removedToast": "Usunięto {train} z ulubionych",
+    "undo": "↩️ Cofnij"
   },
   "index": {
     "trainWord": "pociąg",

@@ -48,7 +48,12 @@
     "moveDown": "Nach unten",
     "emptyList": "Du hast noch keine Züge auf deiner Liste.<br>Füge den ersten im Formular unten hinzu 👇",
     "loadError": "Fehler beim Laden der Daten: {message}. Versuche zu aktualisieren.",
-    "confirmClearAll": "Alle Züge von der Liste entfernen? Dies kann nicht rückgängig gemacht werden."
+    "confirmClearAll": "Alle Züge von der Liste entfernen? Dies kann nicht rückgängig gemacht werden.",
+    "reorderBtn": "↕️ Reihenfolge ändern",
+    "reorderDone": "✅ Fertig",
+    "reorderHint": "Verschiebe Züge mit den Pfeilen ▲▼. Die Sterne sind währenddessen ausgeblendet, damit nichts versehentlich entfernt wird.",
+    "removedToast": "{train} aus den Favoriten entfernt",
+    "undo": "↩️ Rückgängig"
   },
   "index": {
     "trainWord": "Zug",

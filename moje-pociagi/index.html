@@ -220,6 +220,15 @@ h1{ margin:0; font-size:20px; }
 .reorder-row{display:flex;gap:3px}
 .reorder-btn{font-size:11px;padding:2px 6px;background:transparent;border:1px solid #34495e;border-radius:6px;color:#dbeafe;cursor:pointer}
 .reorder-btn:disabled{opacity:.3;cursor:default}
+.reorder-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 8px}
+.reorder-bar .rb-btn{font-size:14px;font-weight:700;padding:9px 14px;border-radius:10px;border:1px solid #34495e;background:#1c2833;color:#dbeafe;cursor:pointer}
+.reorder-bar .rb-btn.done{background:#1f6f43;border-color:#2ecc71;color:#fff}
+.reorder-bar .rb-hint{font-size:12px;color:#9fb0cf;flex:1;min-width:180px}
+.reorder-row.big{gap:10px;margin-top:6px}
+.reorder-row.big .reorder-btn{font-size:20px;min-width:48px;min-height:44px;padding:4px 10px;border-radius:10px;border-color:#5dade2;background:#1a3a5c}
+.reordering .row-clickable{cursor:default;outline:1px dashed #34495e}
+.undo-bar{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:9999;display:flex;align-items:center;gap:14px;background:#111c2b;color:#fff;border:1px solid #5dade2;border-radius:12px;padding:10px 14px;box-shadow:0 6px 24px rgba(0,0,0,.5);font-size:14px;max-width:92vw}
+.undo-bar button{font-size:15px;font-weight:700;background:#ffd400;color:#0b1b3a;border:0;border-radius:8px;padding:8px 14px;cursor:pointer}
 .status-line{grid-column:1/-1;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.1);font-size:12.5px;color:var(--muted)}
 .last-station{font-size:15px;font-weight:800;color:#fff}
 .last-time{font-size:15px;font-weight:800}
@@ -259,6 +268,7 @@ h1{ margin:0; font-size:20px; }
 </header>
 
 <div id="delayAlertBox" class="alert-box"></div>
+<div id="reorderBar" class="reorder-bar"></div>
 <main id="list" class="list"></main>
 
 <section class="add-form">
@@ -953,7 +963,8 @@ function maybeScrollToNow() {
 function renderFromCache() {
   const container = document.getElementById('list');
   container.innerHTML = currentTrains.length ? currentTrains.map((item, idx) => renderCard(item, idx, lastRows[idx])).join('') : emptyListHtml();
-  maybeScrollToNow();
+  renderReorderBar();
+  if (!reorderMode) maybeScrollToNow();
   reconcileStuckTimers();
 }
 
@@ -962,28 +973,83 @@ function renderFromCache() {
 // potrzebują) obiektu zdarzenia — wcześniej sygnatura zakładała `e` jako
 // pierwszy argument, mimo że HTML przekazywał tylko (index, direction) /
 // (index), co przy kliknięciu rzucało błędem i przycisk nic nie robił.
-async function moveTrain(index, direction) {
-  const target = currentTrains[index];
-  if (!target) return;
-  const id = trainIdentity(target);
-  await mutateTrains(list => {
-    const i = list.findIndex(t => trainIdentity(t) === id);
-    const j = i + direction;
-    if (i < 0 || j < 0 || j >= list.length) return list;
-    list.splice(j, 0, list.splice(i, 1)[0]);
-    return list;
-  });
+// Tryb „↕️ Zmień kolejność”: przesuwanie tylko lokalnie (bez zapisu do profilu po każdym kliknięciu —
+// dzienny limit zapisów KV), jeden zapis przy „Gotowe” albo przy wyjściu ze strony.
+let reorderMode = false, reorderDirty = false;
+function renderReorderBar() {
+  const bar = document.getElementById('reorderBar');
+  if (!bar) return;
+  if (currentTrains.length < 2 && !reorderMode) { bar.innerHTML = ''; return; }
+  bar.innerHTML = reorderMode
+    ? '<button class="rb-btn done" onclick="toggleReorder()">' + escapeHtml(I18n.t('mojePociagi.reorderDone')) + '</button><span class="rb-hint">' + escapeHtml(I18n.t('mojePociagi.reorderHint')) + '</span>'
+    : '<button class="rb-btn" onclick="toggleReorder()">' + escapeHtml(I18n.t('mojePociagi.reorderBtn')) + '</button>';
+}
+async function toggleReorder() {
+  if (!reorderMode) { await syncTrainsFromProfile(); reorderMode = true; reorderDirty = false; }
+  else { reorderMode = false; flushReorder(); }
+  document.body.classList.toggle('reordering', reorderMode);
   renderFromCache();
 }
+function flushReorder() {
+  if (!reorderDirty) return;
+  reorderDirty = false;
+  saveTrains(currentTrains);
+}
+async function moveTrain(index, direction) {
+  const j = index + direction;
+  if (!currentTrains[index] || j < 0 || j >= currentTrains.length) return;
+  currentTrains.splice(j, 0, currentTrains.splice(index, 1)[0]);
+  lastRows.splice(j, 0, lastRows.splice(index, 1)[0]);
+  reorderDirty = true;
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(currentTrains)); } catch (e) {}
+  renderFromCache();
+  const card = document.getElementById('card-' + j);
+  if (card && card.scrollIntoView) card.scrollIntoView({ block: 'nearest' });
+}
+// Usunięcie gwiazdką: od razu znika z listy, przez 6 s można cofnąć; do profilu zapisujemy dopiero potem.
+let undoState = null;
+function flushDelete() {
+  if (!undoState) return;
+  clearTimeout(undoState.timer);
+  undoState = null;
+  const bar = document.getElementById('undoBar'); if (bar) bar.remove();
+  if (window.ProfileSync) ProfileSync.push({ trains: currentTrains });
+}
+function undoDelete() {
+  if (!undoState) return;
+  const u = undoState;
+  clearTimeout(u.timer); undoState = null;
+  const bar = document.getElementById('undoBar'); if (bar) bar.remove();
+  if (!currentTrains.some(t => trainIdentity(t) === trainIdentity(u.item))) {
+    const at = Math.min(u.index, currentTrains.length);
+    currentTrains.splice(at, 0, u.item); lastRows.splice(at, 0, u.row);
+  }
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(currentTrains)); } catch (e) {}
+  renderFromCache();
+}
+window.addEventListener('pagehide', () => { flushDelete(); flushReorder(); });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') { flushDelete(); flushReorder(); } });
 
 // Bez potwierdzenia — ta sama, od razu działająca logika co gwiazdka
 // (odznaczenie ulubionego) na tablicy głównej.
 async function deleteTrain(index) {
   const target = currentTrains[index];
   if (!target) return;
+  flushDelete();                                   // poprzednie usunięcie — już na stałe
+  await syncTrainsFromProfile();
   const id = trainIdentity(target);
-  await mutateTrains(list => list.filter(t => trainIdentity(t) !== id));
+  const i = currentTrains.findIndex(t => trainIdentity(t) === id);
+  if (i < 0) { renderFromCache(); return; }
+  const row = lastRows[i];
+  currentTrains.splice(i, 1); lastRows.splice(i, 1);
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(currentTrains)); } catch (e) {}
   renderFromCache();
+  undoState = { item: target, row, index: i, timer: setTimeout(flushDelete, 6000) };
+  const label = [row && row.category, target.trainNum].filter(Boolean).join(' ');
+  const bar = document.createElement('div');
+  bar.id = 'undoBar'; bar.className = 'undo-bar'; bar.setAttribute('role', 'status');
+  bar.innerHTML = '<span>' + escapeHtml(I18n.t('mojePociagi.removedToast', { train: label })) + '</span><button onclick="undoDelete()">' + escapeHtml(I18n.t('mojePociagi.undo')) + '</button>';
+  document.body.appendChild(bar);
 }
 
 function goDetails(station, number, courseQuery) {
@@ -1121,7 +1187,7 @@ function renderCard(item, index, row) {
   const detailsUrl = buildDetailsUrl(item, row, destStation);
 
   return `
-    <div id="card-${index}" class="row-clickable${cancelled ? ' train-cancelled' : ''}" onclick="window.location.href='${detailsUrl}'" style="background:#1c2833;border-radius:12px;margin-bottom:8px;padding:10px;border:1px solid var(--border);">
+    <div id="card-${index}" class="row-clickable${cancelled ? ' train-cancelled' : ''}" onclick="if(!reorderMode)window.location.href='${detailsUrl}'" style="background:#1c2833;border-radius:12px;margin-bottom:8px;padding:10px;border:1px solid var(--border);">
       <div class="mobile-layout">
         <div class="mobile-time">${timeCellHtml(d, tc, d.delay, delayText, cancelled)}</div>
         <div class="mobile-dcol">${delayColHtml(d, cancelled)}</div>
@@ -1134,13 +1200,13 @@ function renderCard(item, index, row) {
         <div class="mobile-side">
           <div class="mobile-platform">${escapeHtml(platform)}</div>
           <div class="mobile-track">${track ? escapeHtml(I18n.t('index.table.trackWithPrefix',{track})) : ''}</div>
-          <div class="reorder-row" onclick="event.stopPropagation();">
-            <button class="reorder-btn" title="${escapeHtml(I18n.t('mojePociagi.moveUp'))}" onclick="moveTrain(${index}, -1)" ${index === 0 ? 'disabled' : ''}>▲</button>
-            <button class="reorder-btn" title="${escapeHtml(I18n.t('mojePociagi.moveDown'))}" onclick="moveTrain(${index}, 1)">▼</button>
-          </div>
-          <button class="btn-cal mt-star star-filled" title="${escapeHtml(I18n.t('index.myTrains.removeTitle'))}" onclick="event.stopPropagation();deleteTrain(${index})">★</button>
+          ${reorderMode ? '' : `<button class="btn-cal mt-star star-filled" title="${escapeHtml(I18n.t('index.myTrains.removeTitle'))}" onclick="event.stopPropagation();deleteTrain(${index})">★</button>`}
         </div>
         <div class="status-line">${statusText}</div>
+        ${reorderMode ? `<div class="reorder-row big" style="grid-column:1/-1;justify-content:flex-end" onclick="event.stopPropagation();">
+            <button class="reorder-btn" title="${escapeHtml(I18n.t('mojePociagi.moveUp'))}" aria-label="${escapeHtml(I18n.t('mojePociagi.moveUp'))}" onclick="moveTrain(${index}, -1)" ${index === 0 ? 'disabled' : ''}>▲</button>
+            <button class="reorder-btn" title="${escapeHtml(I18n.t('mojePociagi.moveDown'))}" aria-label="${escapeHtml(I18n.t('mojePociagi.moveDown'))}" onclick="moveTrain(${index}, 1)" ${index === currentTrains.length - 1 ? 'disabled' : ''}>▼</button>
+          </div>` : ''}
       </div>
     </div>
   `;
@@ -1169,7 +1235,8 @@ async function init() {
   clearAllStuckTimers();
 
   container.innerHTML = currentTrains.length ? currentTrains.map((item, idx) => renderCard(item, idx, null)).join('') : emptyListHtml();
-  maybeScrollToNow();
+  renderReorderBar();
+  if (!reorderMode) maybeScrollToNow();
 
   function paintCard(idx, item, row) {
     if (gen !== initGen) return; // nowsze odświeżanie już trwa

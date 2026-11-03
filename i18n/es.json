@@ -48,7 +48,12 @@
     "moveDown": "Bajar",
     "emptyList": "Todavía no tienes trenes en tu lista.<br>Añade el primero en el formulario de abajo 👇",
     "loadError": "Error al cargar los datos: {message}. Prueba a actualizar.",
-    "confirmClearAll": "¿Quitar todos los trenes de la lista? No se puede deshacer."
+    "confirmClearAll": "¿Quitar todos los trenes de la lista? No se puede deshacer.",
+    "reorderBtn": "↕️ Cambiar orden",
+    "reorderDone": "✅ Listo",
+    "reorderHint": "Mueve los trenes con las flechas ▲▼. Las estrellas se ocultan mientras tanto para no borrar nada por error.",
+    "removedToast": "{train} eliminado de favoritos",
+    "undo": "↩️ Deshacer"
   },
   "index": {
     "trainWord": "tren",
