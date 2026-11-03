@@ -1347,6 +1347,9 @@
     "prefs": "Moje předvolby",
     "prefsChanged": "Nastavení se liší od výchozího",
     "prefsWithout": "bez",
-    "plkCatalog": "ℹ️ Přístupnost stanice (PKP PLK)"
+    "plkCatalog": "ℹ️ Přístupnost stanice (PKP PLK)",
+    "noResTrainOnly": "Hledáte jen vlaky — k nádraží a od něj pak počítám jen chůzi (do cca 2 km). Start nebo cíl je dál od nádraží, takže bez autobusu či tramvaje se tam nedostanete.",
+    "noResModes": "Vypnuto v předvolbách: {m}. Bez nich jsem trasu nenašel.",
+    "modesAllBtn": "🚆🚌 Zapnout všechny dopravní prostředky a hledat"
   }
 }

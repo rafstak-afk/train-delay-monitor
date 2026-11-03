@@ -1347,6 +1347,9 @@
     "prefs": "Moje preferencje",
     "prefsChanged": "Ustawienia inne niż domyślne",
     "prefsWithout": "bez",
-    "plkCatalog": "ℹ️ Dostępność stacji (PKP PLK)"
+    "plkCatalog": "ℹ️ Dostępność stacji (PKP PLK)",
+    "noResTrainOnly": "Szukasz tylko pociągów — do stacji i od stacji liczę wtedy wyłącznie dojście pieszo (najwyżej ok. 2 km). Start albo cel jest dalej od stacji, więc bez autobusu lub tramwaju nie da się tam dotrzeć.",
+    "noResModes": "Wyłączone w preferencjach: {m}. Bez nich nie znalazłem trasy.",
+    "modesAllBtn": "🚆🚌 Włącz wszystkie środki transportu i szukaj"
   }
 }

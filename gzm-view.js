@@ -1097,6 +1097,22 @@
       var bits = prefsSummary();
       return "🎛️ " + esc(T("gzm.prefs", null, "Moje preferencje")) + (bits.length ? ' <span class="gz-dot" title="' + esc(T("gzm.prefsChanged", null, "Ustawienia inne niż domyślne") + ": " + bits.join(" · ")) + '"></span>' : "");
     }
+    // brak wyników przy odznaczonych środkach transportu — wyjaśnienie + przycisk „włącz wszystkie”
+    function noResModes() {
+      var m = modes(); if (defModes(m)) return "";
+      var L = { train: T("gzm.mTrain", null, "🚆 Pociąg"), bus: T("gzm.mBus", null, "🚌 Autobus"), tram: T("gzm.mTram", null, "🚋 Tramwaj"), trolley: T("gzm.mTrolley", null, "🚎 Trolejbus") };
+      var off = ["train", "bus", "tram", "trolley"].filter(function (k) { return !m[k]; }).map(function (k) { return L[k]; }).join(", ");
+      var txt = m.train && !m.bus && !m.tram && !m.trolley ? T("gzm.noResTrainOnly", null, "Szukasz tylko pociągów — do stacji i od stacji liczę wtedy wyłącznie dojście pieszo (najwyżej ok. 2 km). Start albo cel jest dalej od stacji, więc bez autobusu lub tramwaju nie da się tam dotrzeć.") : T("gzm.noResModes", { m: off }, "Wyłączone w preferencjach: {m}. Bez nich nie znalazłem trasy.");
+      return '<div class="gz-warn" style="margin-top:8px">🎛️ ' + esc(txt) + '<div style="margin-top:8px"><button type="button" class="gz-btn" data-modesall="1">' + esc(T("gzm.modesAllBtn", null, "🚆🚌 Włącz wszystkie środki transportu i szukaj")) + "</button></div></div>";
+    }
+    root.addEventListener("click", function (ev) {
+      if (!ev.target.closest("[data-modesall]")) return;
+      try { localStorage.removeItem(MODES_LS); } catch (e) {}
+      if (profOn()) ProfileSync.push({ gzmModes: null });
+      var box = root.querySelector(".gz-modes"); if (box) box.innerHTML = modesHtml();
+      var sm = root.querySelector(".gz-prefs > summary"); if (sm) sm.innerHTML = prefsHead();
+      searchC();
+    });
     function walkPrefsHtml() {
       var p = walkPrefs(), L = { fast: T("gzm.paceFast", null, "🏃 szybkie"), normal: T("gzm.paceNormal", null, "🚶 zwykłe"), slow: T("gzm.paceSlow", null, "🐢 spokojne") };
       return '<span class="gz-modes-l">' + esc(T("gzm.paceLbl", null, "Tempo chodzenia:")) + "</span>" + ["fast", "normal", "slow"].map(function (k) {
@@ -1763,7 +1779,7 @@
         res.innerHTML = walkTop + (geo && geo.dist > NODE_M ? '<div class="gz-sub" style="margin:6px 2px">' + esc(T("gzm.v3NoTransit", null, "Komunikacją nie będzie szybciej albo brak połączeń w najbliższych godzinach — zmień godzinę, żeby zobaczyć późniejsze kursy.")) + "</div>" : "");
         cState.shown = []; return;
       }
-      if (!out.length) { res.innerHTML = '<div class="gz-empty">' + esc(T("gzm.cNone", null, "Nie udało się ułożyć podróży w ciągu 2 godzin od wyjścia.")) + "</div>"; return; }
+      if (!out.length) { res.innerHTML = '<div class="gz-empty">' + esc(T("gzm.cNone", null, "Nie udało się ułożyć podróży w ciągu 2 godzin od wyjścia.")) + "</div>" + noResModes(); return; }
       var guardOk = !!(window.GuardStore && window.GuardCore && GuardStore.enabled && GuardStore.enabled());
       res.innerHTML = walkTop + (S.date !== warsawNow().date ? '<div class="gz-live off" style="margin:4px 2px">📅 ' + esc(T("gzm.uSched", { d: S.date }, "{d} — godziny wg rozkładu")) + "</div>" : '<div class="gz-live ' + (rtOk ? "on" : "off") + '" style="margin:4px 2px">' + (rtOk ? "● " + esc(T("gzm.liveOn", null, "na żywo")) : "○ " + esc(T("gzm.liveOff", null, "dane na żywo niedostępne, pokazuję rozkład"))) + "</div>") +
         out.map(function (x, i) {
@@ -1983,7 +1999,7 @@
       out.sort(function (a, b) { return a.final - b.final || b.start - a.start; });
       var seen = new Set();
       out = out.filter(function (x) { var k = (x.net ? "n|" + x.net.legs.map(function (l) { return l.trip || l.min; }).join(">") + "|" : "") + (x.hub ? "h|" + x.o.a.trip + "|" : "") + x.final + "|" + x.it.departureTime + "|" + x.p.cb.a.st.id; if (seen.has(k)) return false; seen.add(k); return true; }).slice(0, 5);
-      if (!out.length) { res.innerHTML = '<div class="gz-empty">' + esc(T("gzm.cNone", null, "Nie udało się ułożyć podróży w ciągu 2 godzin od wyjścia.")) + "</div>"; return; }
+      if (!out.length) { res.innerHTML = '<div class="gz-empty">' + esc(T("gzm.cNone", null, "Nie udało się ułożyć podróży w ciągu 2 godzin od wyjścia.")) + "</div>" + noResModes(); return; }
       var guardOk = !!(window.GuardStore && window.GuardCore && GuardStore.enabled && GuardStore.enabled());
       res.innerHTML = '<div class="gz-live ' + (rtOk ? "on" : "off") + '" style="margin:4px 2px">' + (rtOk ? "● " + esc(T("gzm.liveOn", null, "na żywo")) : "○ " + esc(T("gzm.liveOff", null, "dane na żywo niedostępne, pokazuję rozkład"))) + "</div>" +
         out.map(function (x, i) {
