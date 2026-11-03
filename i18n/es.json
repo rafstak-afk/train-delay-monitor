@@ -1346,6 +1346,7 @@
     "nodAsk": "✉️ ¿Conoces el lugar? Dinos cuántos minutos se tarda y si hay escaleras",
     "prefs": "Mis preferencias",
     "prefsChanged": "Ajustes distintos de los predeterminados",
-    "prefsWithout": "sin"
+    "prefsWithout": "sin",
+    "plkCatalog": "ℹ️ Accesibilidad de la estación (PKP PLK)"
   }
 }

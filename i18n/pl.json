@@ -1346,6 +1346,7 @@
     "nodAsk": "✉️ Znasz to miejsce? Napisz, ile minut się idzie i czy są schody",
     "prefs": "Moje preferencje",
     "prefsChanged": "Ustawienia inne niż domyślne",
-    "prefsWithout": "bez"
+    "prefsWithout": "bez",
+    "plkCatalog": "ℹ️ Dostępność stacji (PKP PLK)"
   }
 }

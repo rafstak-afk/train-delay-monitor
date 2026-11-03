@@ -1346,6 +1346,7 @@
     "nodAsk": "✉️ Know this place? Tell us how many minutes it takes and whether there are stairs",
     "prefs": "My preferences",
     "prefsChanged": "Settings differ from the defaults",
-    "prefsWithout": "without"
+    "prefsWithout": "without",
+    "plkCatalog": "ℹ️ Station accessibility (PKP PLK)"
   }
 }

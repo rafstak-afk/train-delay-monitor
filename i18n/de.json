@@ -1346,6 +1346,7 @@
     "nodAsk": "✉️ Kennst du den Ort? Schreib uns, wie viele Minuten es dauert und ob es Treppen gibt",
     "prefs": "Meine Einstellungen",
     "prefsChanged": "Abweichend von den Standardeinstellungen",
-    "prefsWithout": "ohne"
+    "prefsWithout": "ohne",
+    "plkCatalog": "ℹ️ Barrierefreiheit des Bahnhofs (PKP PLK)"
   }
 }

@@ -1346,6 +1346,7 @@
     "nodAsk": "✉️ Znáte to místo? Napište, kolik minut se jde a jestli jsou schody",
     "prefs": "Moje předvolby",
     "prefsChanged": "Nastavení se liší od výchozího",
-    "prefsWithout": "bez"
+    "prefsWithout": "bez",
+    "plkCatalog": "ℹ️ Přístupnost stanice (PKP PLK)"
   }
 }

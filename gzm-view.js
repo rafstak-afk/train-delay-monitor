@@ -31,6 +31,7 @@
     '.gz .gv .v2-gtimes{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.gz .gv .v2-gtimes .chip{cursor:pointer;font-size:11.5px;text-align:center;min-width:72px}.gz .gv .v2-gtimes .chip .ct{font-size:15px}.gz .gv .v2-gtimes .chip.on{outline:2px solid var(--cyan)}' +
     '.gz .gv .v2-dep{cursor:pointer;padding:10px 12px}.gz .gv .v2-dep .c-route{font-size:14.5px}' +
     '.gz .gv .gz-fav{background:none;border:0;color:var(--yellow);font-size:16px;cursor:pointer;padding:0 2px;vertical-align:middle}' +
+    '.gz .gz-plk{font-size:12.5px;font-weight:700;color:var(--cyan,#5dade2);text-decoration:none;white-space:nowrap}.gz .gz-plk:hover{text-decoration:underline}' +
     '.gz .gz-nod{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:#f39c12;color:#111;font-weight:900;font-size:11px;margin-left:5px;cursor:pointer;vertical-align:middle}' +
     '.gz .gz-nodbox{margin:6px 0;padding:10px 12px;border:1px solid #f39c12;border-radius:10px;background:rgba(243,156,18,.1);font-size:13px;line-height:1.45}.gz .gz-nodbox a{display:inline-block;margin-top:6px;font-weight:700;color:#ffd400}' +
     '.gz .gz-far{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#a855f7;color:#fff;font-weight:900;font-size:12px;margin-right:5px;vertical-align:middle;flex:0 0 auto}' +
@@ -346,7 +347,7 @@
       if (destTxt && (!destNames || !destNames.length)) warn += '<div class="gz-warn">' + esc(T("gzm.destNone", { d: destTxt }, "Z tej stacji nic nie dojeżdża bez przesiadki do „{d}”.")) + "</div>";
       if (age > 3) warn += '<div class="gz-warn">⚠️ ' + esc(T("gzm.stale", { d: Math.floor(age) }, "Rozkład GZM ma {d} dni — może być nieaktualny.")) + "</div>";
       if (!file.days[date]) warn += '<div class="gz-warn">⚠️ ' + esc(T("gzm.outOfRange", null, "Ten dzień jest poza zakresem pobranego rozkładu GZM.")) + "</div>";
-      var head = '<div class="gz-head"><b>🚉 ' + esc(file.name) + "</b>" +
+      var head = '<div class="gz-head"><b>🚉 ' + esc(file.name) + "</b> " + plkLink(file.name) +
         '<div class="gz-sub">' + (trainInfo ? esc(T("gzm.trainArr", { plan: C.fmt(trainInfo.plan), real: C.fmt(trainInfo.plan + trainInfo.delay), d: trainInfo.delay }, "Pociąg: przyjazd {plan}" + (trainInfo.delay ? " → {real} (+{d} min)" : ""))) + (trainInfo.platform ? " · " + esc(T("gzm.platform", { p: trainInfo.platform }, "peron {p}")) : "") + " · " : "") +
         esc(cfg.alighted || arr <= now ? T("gzm.fromNow", null, "liczę od teraz + dojście z peronu") : T("gzm.fromArr", { t: C.fmt(arr) }, "liczę od przyjazdu {t} + dojście z peronu")) + "</div>" +
         '<div class="gz-live ' + (rtOk ? "on" : "off") + '">' + (rtOk ? "● " + esc(T("gzm.liveOn", null, "na żywo")) : "○ " + esc(T("gzm.liveOff", null, "dane na żywo niedostępne, pokazuję rozkład"))) + "</div>" +
@@ -1021,6 +1022,8 @@
       }
       return { min: PACE[p.pace] === 1 ? m : Math.max(1, Math.round(m * PACE[p.pace])), warn: warn };
     };
+    // Katalog Stacji PKP PLK (Portal Pasażera): dostępność, windy, pochylnie
+    function plkLink(name) { return name ? '<a class="gz-plk" href="https://portalpasazera.pl/KatalogStacji/Index?stacja=' + encodeURIComponent(name) + '" target="_blank" rel="noopener">' + esc(T("gzm.plkCatalog", null, "ℹ️ Dostępność stacji (PKP PLK)")) + "</a>" : ""; }
     // „B” — brak danych o drodze z peronu (TEST: profil autora)
     function nodOn() { return true; }   // dla wszystkich od v5.58
     function nodBadge(s) {
@@ -1035,7 +1038,7 @@
       if (nx && nx.classList.contains("gz-nodbox")) { nx.remove(); return; }
       var p = b.dataset.nod.split("|"), q = new URLSearchParams({ kind: "place", station: p[0], stop: p.slice(1).join("|") });
       host.insertAdjacentHTML("afterend", '<div class="gz-nodbox">' + esc(T("gzm.nodBody", null, "Mapa OpenStreetMap nie zna drogi z peronu na ten przystanek (brak narysowanych peronów albo przejścia). Czas dojścia szacujemy w linii prostej, a o schodach, windach i światłach nic nie wiemy.")) +
-        '<br><a href="/kontakt/?' + esc(q.toString()) + '">' + esc(T("gzm.nodAsk", null, "✉️ Znasz to miejsce? Napisz, ile minut się idzie i czy są schody")) + "</a></div>");
+        '<br>' + plkLink(p[0]) + '<br><a href="/kontakt/?' + esc(q.toString()) + '">' + esc(T("gzm.nodAsk", null, "✉️ Znasz to miejsce? Napisz, ile minut się idzie i czy są schody")) + "</a></div>");
     }, true);
     // 🚦 przejścia ze światłami, 🚸 bez świateł, 🛤️ przez tory — na trasie peron → przystanek
     function crossIcons(s) {
