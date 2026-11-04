@@ -1076,6 +1076,10 @@
       if (s.rx) out += " 🛤️";
       return out ? '<span title="' + esc(T("gzm.crossTitle", { s: s.sig || 0, z: Math.max(0, z), r: s.rx || 0 }, "Na trasie: przejścia ze światłami {s}, bez świateł {z}, przez tory {r} (czekanie na światłach wliczone)")) + '">' + out + "</span>" : "";
     }
+    // „tylko pociągi”: do stacji i od stacji wyłącznie pieszo — wtedy dalej: 3 km w linii prostej (ok. 3,5 km drogą, ~45 min).
+    // TEST: profil autora (showVersionBadge); dla wszystkich po decyzji.
+    var TRAIN_ONLY_M = 3000;
+    function trainOnlyFar() { var m = modes(); if (!(m.train && !m.bus && !m.tram && !m.trolley)) return false; try { return localStorage.getItem("showVersionBadge") === "1"; } catch (e) { return false; } }
     function exclOf() { var m = modes(), e = null; ["bus", "tram", "trolley"].forEach(function (k) { if (!m[k]) { e = e || {}; e[k] = 1; } }); return e; }
     function modesHtml() {
       var m = modes(), L = { train: T("gzm.mTrain", null, "🚆 Pociąg"), bus: T("gzm.mBus", null, "🚌 Autobus"), tram: T("gzm.mTram", null, "🚋 Tramwaj"), trolley: T("gzm.mTrolley", null, "🚎 Trolejbus") };
@@ -1102,7 +1106,7 @@
       var m = modes(); if (defModes(m)) return "";
       var L = { train: T("gzm.mTrain", null, "🚆 Pociąg"), bus: T("gzm.mBus", null, "🚌 Autobus"), tram: T("gzm.mTram", null, "🚋 Tramwaj"), trolley: T("gzm.mTrolley", null, "🚎 Trolejbus") };
       var off = ["train", "bus", "tram", "trolley"].filter(function (k) { return !m[k]; }).map(function (k) { return L[k]; }).join(", ");
-      var txt = m.train && !m.bus && !m.tram && !m.trolley ? T("gzm.noResTrainOnly", null, "Szukasz tylko pociągów — do stacji i od stacji liczę wtedy wyłącznie dojście pieszo (najwyżej ok. 2 km). Start albo cel jest dalej od stacji, więc bez autobusu lub tramwaju nie da się tam dotrzeć.") : T("gzm.noResModes", { m: off }, "Wyłączone w preferencjach: {m}. Bez nich nie znalazłem trasy.");
+      var txt = m.train && !m.bus && !m.tram && !m.trolley ? T("gzm.noResTrainOnly", { km: trainOnlyFar() ? "3,5" : "2" }, "Szukasz tylko pociągów — do stacji i od stacji liczę wtedy wyłącznie dojście pieszo (najwyżej ok. {km} km). Start albo cel jest dalej od stacji, więc bez autobusu lub tramwaju nie da się tam dotrzeć.") : T("gzm.noResModes", { m: off }, "Wyłączone w preferencjach: {m}. Bez nich nie znalazłem trasy.");
       return '<div class="gz-warn" style="margin-top:8px">🎛️ ' + esc(txt) + '<div style="margin-top:8px"><button type="button" class="gz-btn" data-modesall="1">' + esc(T("gzm.modesAllBtn", null, "🚆🚌 Włącz wszystkie środki transportu i szukaj")) + "</button></div></div>";
     }
     root.addEventListener("click", function (ev) {
@@ -1251,7 +1255,7 @@
     // przystanki w zasięgu pieszym miejsca (≤ 900 m) + stacje w zasięgu (≤ 1,5 km, + 2 min na peron)
     function placeReach(net, pl) {
       var out = [];
-      var rS = pl.far ? 1500 : 900, rT = pl.far || v2On() ? 2000 : 1500;
+      var rS = pl.far ? 1500 : 900, rT = trainOnlyFar() ? TRAIN_ONLY_M : pl.far || v2On() ? 2000 : 1500;
       for (var i = 0; i < net.n; i++) { var d = havM(pl.lat, pl.lon, net.lat[i], net.lon[i]); if (d <= rS) out.push({ s: i, walk: walkMin(d), d: d }); }
       var ms = measuredFor(net, pl);
       Object.keys(ms.stops).forEach(function (k) {

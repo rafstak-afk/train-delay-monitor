@@ -1352,7 +1352,7 @@
     "prefsChanged": "Abweichend von den Standardeinstellungen",
     "prefsWithout": "ohne",
     "plkCatalog": "ℹ️ Barrierefreiheit des Bahnhofs (PKP PLK)",
-    "noResTrainOnly": "Du suchst nur Züge — zum und vom Bahnhof rechne ich dann nur Fußwege (bis ca. 2 km). Start oder Ziel liegt weiter vom Bahnhof entfernt, ohne Bus oder Straßenbahn ist es nicht erreichbar.",
+    "noResTrainOnly": "Du suchst nur Züge — zum und vom Bahnhof rechne ich dann nur Fußwege (bis ca. {km} km). Start oder Ziel liegt weiter vom Bahnhof entfernt, ohne Bus oder Straßenbahn ist es nicht erreichbar.",
     "noResModes": "In den Einstellungen ausgeschaltet: {m}. Ohne sie habe ich keine Route gefunden.",
     "modesAllBtn": "🚆🚌 Alle Verkehrsmittel einschalten und suchen"
   }

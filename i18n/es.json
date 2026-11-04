@@ -1352,7 +1352,7 @@
     "prefsChanged": "Ajustes distintos de los predeterminados",
     "prefsWithout": "sin",
     "plkCatalog": "ℹ️ Accesibilidad de la estación (PKP PLK)",
-    "noResTrainOnly": "Buscas solo trenes: hasta la estación y desde ella cuento entonces solo el trayecto a pie (hasta unos 2 km). El origen o el destino está más lejos de una estación, así que sin autobús ni tranvía no se puede llegar.",
+    "noResTrainOnly": "Buscas solo trenes: hasta la estación y desde ella cuento entonces solo el trayecto a pie (hasta unos {km} km). El origen o el destino está más lejos de una estación, así que sin autobús ni tranvía no se puede llegar.",
     "noResModes": "Desactivado en tus preferencias: {m}. Sin ellos no encontré ruta.",
     "modesAllBtn": "🚆🚌 Activar todos los medios de transporte y buscar"
   }

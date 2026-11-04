@@ -1352,7 +1352,7 @@
     "prefsChanged": "Settings differ from the defaults",
     "prefsWithout": "without",
     "plkCatalog": "ℹ️ Station accessibility (PKP PLK)",
-    "noResTrainOnly": "You are searching trains only — to and from the station I then count walking only (up to about 2 km). Your start or destination is farther from a station, so it can’t be reached without a bus or tram.",
+    "noResTrainOnly": "You are searching trains only — to and from the station I then count walking only (up to about {km} km). Your start or destination is farther from a station, so it can’t be reached without a bus or tram.",
     "noResModes": "Turned off in your preferences: {m}. Without them I found no route.",
     "modesAllBtn": "🚆🚌 Turn on all means of transport and search"
   }
