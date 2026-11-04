@@ -934,8 +934,8 @@
     if (window.showHowTo) window.showHowTo(topic);
     else location.href = (topic === "pilnuj" ? "/planer/" : "/") + "?jak=" + topic;
   }
-  // ---------- 💡 Jak to działa? — pytania o serwis (TEST: profil autora) ----------
-  function faqOn() { try { return localStorage.getItem("showVersionBadge") === "1"; } catch (e) { return false; } }
+  // ---------- 💡 Jak to działa? — pytania o serwis (dla wszystkich od v5.65) ----------
+  function faqOn() { return true; }
   var FAQ = [
     { id: "best", label: "💡 Najlepsze połączenie dla mnie",
       re: / (najlepsz\w*|lepsz\w* polaczen\w*|porad\w*|wskazowk\w*|co (moge|mam|powinienem|powinnam) (zrobic|ustawic)|podzialac|optymal\w*|dopasowac|trafn\w*) /,
