@@ -448,6 +448,10 @@
       }
     },
     "index": {
+      "install": {
+        "title": "📲 Nainstalujte na obrazovku",
+        "text": "📲 Přidejte „Czy zdążę?“ na obrazovku jako běžnou aplikaci — otevře se jedním klepnutím, bez lišty prohlížeče. Na iPhonu fungují upozornění na zpoždění až potom.\n• Android (Chrome): nabídka ⋮ → „Přidat na plochu“ nebo „Nainstalovat aplikaci“.\n• iPhone / iPad (Safari): Sdílet □↑ → „Přidat na plochu“ → Přidat.\n• Počítač (Chrome / Edge): ikona instalace ⊕ v adresním řádku nebo nabídka ⋮ → „Nainstalovat Czy zdążę?“ (v Edge: Aplikace → Nainstalovat tento web jako aplikaci)."
+      },
       "s0": {
         "title": "Začněte tady",
         "text": "Zadejte název libovolné stanice a podívejte se na její odjezdy. Stačí i samotná čtvrť, např. „Załęże“ — nabídnu celý název."

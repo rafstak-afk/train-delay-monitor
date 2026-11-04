@@ -36,6 +36,7 @@
       id: "index",
       match: function (p) { return p === "/" || p === "/index.html"; },
       steps: [
+        { id: "install", sel: "h1", title: "📲 Zainstaluj na ekranie", text: "📲 Dodaj „Czy zdążę?” do ekranu jak zwykłą aplikację — otworzysz ją jednym dotknięciem, bez paska przeglądarki. Na iPhonie dopiero wtedy działają powiadomienia o opóźnieniach.\n• Android (Chrome): menu ⋮ → „Dodaj do ekranu głównego” albo „Zainstaluj aplikację”.\n• iPhone / iPad (Safari): przycisk Udostępnij □↑ → „Do ekranu początkowego” → Dodaj.\n• Komputer (Chrome / Edge): ikona instalacji ⊕ w pasku adresu albo menu ⋮ → „Zainstaluj Czy zdążę?” (w Edge: Aplikacje → Zainstaluj tę witrynę jako aplikację)." },
         { sel: ".search-box", title: "Zacznij tutaj", text: "Wpisz nazwę dowolnej stacji, żeby sprawdzić jej odjazdy." },
         { sel: ".btn-api", title: "Żywa tablica", text: "Kliknij „Pokaż z API”, żeby zobaczyć odjazdy z realnymi opóźnieniami, nie tylko planem." },
         { sel: "#stationButtons", title: "Ulubione stacje", text: "Twoje przypięte stacje. Dodaj własne gwiazdką ☆ przy tablicy poniżej." },
@@ -301,6 +302,7 @@
     const prog = tr("tutorial.ui.progress", "Krok " + (index + 1) + " z " + currentSteps.length, { n: index + 1, total: currentSteps.length });
     tooltipEl.querySelector("#spotProgress").textContent = mode === "howto" ? tr("tutorial.ui.howto", "Jak to zrobić?") + " · " + prog : mode === "news" ? tr("tutorial.ui.whatsNew", "Co nowego") + " · " + prog : prog;
     tooltipEl.querySelector("#spotTitle").textContent = (mode === "news" && step.def.highlight ? "⭐ " : "") + tr(step.def.k + ".title", step.def.title);
+    tooltipEl.querySelector("#spotText").style.whiteSpace = "pre-line";   // punkty instrukcji w osobnych liniach
     tooltipEl.querySelector("#spotText").textContent = tr(step.def.k + ".text", step.def.text);
     tooltipEl.querySelector("#spotSkip").textContent = tr("tutorial.ui.skip", "Pomiń");
     tooltipEl.querySelector("#spotBack").textContent = tr("tutorial.ui.back", "Wstecz");

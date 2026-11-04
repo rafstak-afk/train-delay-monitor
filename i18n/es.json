@@ -448,6 +448,10 @@
       }
     },
     "index": {
+      "install": {
+        "title": "📲 Instálala en tu pantalla",
+        "text": "📲 Añade «Czy zdążę?» a tu pantalla como una app normal: se abre con un toque, sin barra del navegador. En iPhone, los avisos de retrasos solo funcionan después de esto.\n• Android (Chrome): menú ⋮ → «Añadir a pantalla de inicio» o «Instalar aplicación».\n• iPhone / iPad (Safari): Compartir □↑ → «Añadir a pantalla de inicio» → Añadir.\n• Ordenador (Chrome / Edge): icono de instalar ⊕ en la barra de direcciones o menú ⋮ → «Instalar Czy zdążę?» (en Edge: Aplicaciones → Instalar este sitio como aplicación)."
+      },
       "s0": {
         "title": "Empieza aquí",
         "text": "Escribe el nombre de cualquier estación para ver sus salidas. También basta con el barrio, p. ej. «Załęże»: te sugeriré el nombre completo."

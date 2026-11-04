@@ -448,6 +448,10 @@
       }
     },
     "index": {
+      "install": {
+        "title": "📲 Zainstaluj na ekranie",
+        "text": "📲 Dodaj „Czy zdążę?” do ekranu jak zwykłą aplikację — otworzysz ją jednym dotknięciem, bez paska przeglądarki. Na iPhonie dopiero wtedy działają powiadomienia o opóźnieniach.\n• Android (Chrome): menu ⋮ → „Dodaj do ekranu głównego” albo „Zainstaluj aplikację”.\n• iPhone / iPad (Safari): przycisk Udostępnij □↑ → „Do ekranu początkowego” → Dodaj.\n• Komputer (Chrome / Edge): ikona instalacji ⊕ w pasku adresu albo menu ⋮ → „Zainstaluj Czy zdążę?” (w Edge: Aplikacje → Zainstaluj tę witrynę jako aplikację)."
+      },
       "s0": {
         "title": "Zacznij tutaj",
         "text": "Wpisz nazwę dowolnej stacji, żeby sprawdzić jej odjazdy. Wystarczy też sama dzielnica, np. „Załęże” — podpowiem pełną nazwę."

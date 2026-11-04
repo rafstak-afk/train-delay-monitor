@@ -448,6 +448,10 @@
       }
     },
     "index": {
+      "install": {
+        "title": "📲 Auf dem Bildschirm installieren",
+        "text": "📲 Füge „Czy zdążę?“ wie eine normale App zum Bildschirm hinzu — mit einem Tippen geöffnet, ohne Browserleiste. Auf dem iPhone funktionieren Verspätungsbenachrichtigungen erst danach.\n• Android (Chrome): Menü ⋮ → „Zum Startbildschirm hinzufügen“ oder „App installieren“.\n• iPhone / iPad (Safari): Teilen □↑ → „Zum Home-Bildschirm“ → Hinzufügen.\n• Computer (Chrome / Edge): Installationssymbol ⊕ in der Adressleiste oder Menü ⋮ → „Czy zdążę? installieren“ (in Edge: Apps → Diese Website als App installieren)."
+      },
       "s0": {
         "title": "Hier anfangen",
         "text": "Gib den Namen eines beliebigen Bahnhofs ein, um seine Abfahrten zu sehen. Auch nur ein Stadtteil genügt, z. B. „Załęże“ — ich schlage den vollen Namen vor."

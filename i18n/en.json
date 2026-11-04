@@ -448,6 +448,10 @@
       }
     },
     "index": {
+      "install": {
+        "title": "📲 Install on your screen",
+        "text": "📲 Add “Czy zdążę?” to your screen like a regular app — one tap to open, no browser bar. On iPhone, delay notifications work only after this.\n• Android (Chrome): menu ⋮ → “Add to Home screen” or “Install app”.\n• iPhone / iPad (Safari): Share □↑ → “Add to Home Screen” → Add.\n• Computer (Chrome / Edge): the install icon ⊕ in the address bar or menu ⋮ → “Install Czy zdążę?” (in Edge: Apps → Install this site as an app)."
+      },
       "s0": {
         "title": "Start here",
         "text": "Type the name of any station to check its departures. A district alone works too, e.g. „Załęże” — I'll suggest the full name."
