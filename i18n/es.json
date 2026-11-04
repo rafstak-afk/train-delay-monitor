@@ -983,6 +983,12 @@
     "noIdsHint": "Pulsa el número del tren directamente en nuestro panel de salidas. El número solo puede corresponder a más de un servicio.",
     "portalBtn": "Abrir el buscador de Portal Pasażera",
     "loadingNote": "Esperando los datos de PLK. Tranquilo, no es silencio, es informática.",
+    "plkDown": "PLK no responde en este momento — reintento automáticamente cada minuto.",
+    "plkLastTry": "Último intento: {t}. El problema está en el servidor de PKP PLK, no en tu teléfono.",
+    "plkSlow": "PLK responde más lento de lo habitual — sigo esperando…",
+    "plkGiveUp": "PLK sigue sin responder. Inténtalo de nuevo más tarde.",
+    "plkRetryNow": "🔄 Intentar ahora",
+    "plkStale": "PLK no responde en este momento — muestro datos de las {t} y reintento automáticamente (último intento {now}).",
     "gzmTitle": "Conexiones GZM — autobuses y tranvías que alcanzas al bajar del tren",
     "gzmFarTitle": "Parada ZTM más cercana: {s}, a {d} de la estación; más lejos de lo habitual"
   },

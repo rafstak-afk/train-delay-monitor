@@ -21,16 +21,26 @@ const ROUTE_CACHE_TTL = 21600;
 const DISRUPTIONS_CACHE_TTL = 600;
 
 async function plkGet(path, apiKey, cacheTtl = 0) {
-  const res = await fetch(PLK_BASE + path, {
-    headers: {
-      "X-API-Key": apiKey,
-      "Accept": "application/json"
-    },
-    ...(cacheTtl ? { cf: { cacheTtlByStatus: { "200-299": cacheTtl, "300-599": -1 }, cacheEverything: true } } : {})
-  });
+  // PLK potrafi nie odpowiadać wcale — bez limitu strona „czekała na dane” bez końca
+  let res;
+  try {
+    res = await fetch(PLK_BASE + path, {
+      headers: {
+        "X-API-Key": apiKey,
+        "Accept": "application/json"
+      },
+      signal: AbortSignal.timeout(12000),
+      ...(cacheTtl ? { cf: { cacheTtlByStatus: { "200-299": cacheTtl, "300-599": -1 }, cacheEverything: true } } : {})
+    });
+  } catch (e) {
+    const err = new Error(e && e.name === "TimeoutError" ? "PLK nie odpowiada (12 s)" : "PLK niedostępny");
+    err.plkDown = true; throw err;
+  }
 
   if (!res.ok) {
-    throw new Error(`PLK HTTP ${res.status}`);
+    const err = new Error(`PLK HTTP ${res.status}`);
+    if (res.status >= 500 || res.status === 429) err.plkDown = true;
+    throw err;
   }
 
   return res.json();
@@ -382,6 +392,6 @@ export async function onRequestGet(context) {
       ...(url.searchParams.get("withDisruptionTypes") === "1" ? { disruptionTypes: disruptionDict } : {})
     });
   } catch (err) {
-    return json({ error: err.message, route: [] }, 502);
+    return json({ error: err.message, plkDown: !!err.plkDown, route: [] }, 502);
   }
 }

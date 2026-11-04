@@ -983,6 +983,12 @@
     "noIdsHint": "Klicke die Zugnummer direkt auf unserer Abfahrtstafel an. Die Nummer allein kann mehr als einen Zug bedeuten.",
     "portalBtn": "Suche im Portal Pasażera öffnen",
     "loadingNote": "Warte auf PLK-Daten. Keine Sorge, das ist keine Stille, das ist Informatik.",
+    "plkDown": "PLK antwortet gerade nicht — ich versuche es jede Minute automatisch erneut.",
+    "plkLastTry": "Letzter Versuch: {t}. Das Problem liegt beim Server von PKP PLK, nicht bei deinem Handy.",
+    "plkSlow": "PLK antwortet langsamer als sonst — ich warte weiter…",
+    "plkGiveUp": "PLK antwortet weiterhin nicht. Bitte später erneut versuchen.",
+    "plkRetryNow": "🔄 Jetzt versuchen",
+    "plkStale": "PLK antwortet gerade nicht — ich zeige Daten von {t} und versuche es automatisch erneut (letzter Versuch {now}).",
     "gzmTitle": "GZM-Anschlüsse — Busse und Straßenbahnen, die du nach dem Aussteigen erreichst",
     "gzmFarTitle": "Nächste ZTM-Haltestelle: {s}, {d} vom Bahnhof — weiter als üblich"
   },

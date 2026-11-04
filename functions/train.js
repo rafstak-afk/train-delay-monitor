@@ -1016,10 +1016,37 @@ async function syncTypicalTripsFromProfile(){
 function scheduleAutoRefresh(train,opts){
   if(autoRefreshTimer)clearInterval(autoRefreshTimer);
   autoRefreshTimer=setInterval(()=>{
-    fetchAndRenderTrain(train,opts).catch(()=>{});
+    fetchAndRenderTrain(train,opts).then(function(){setStatus('')}).catch(function(e){
+      // dane już są na ekranie — mówimy, z której są godziny; kolejna próba przy następnym odświeżeniu
+      if(isPlkDownErr(e)&&lastTrainFetchAt){const d=new Date(lastTrainFetchAt);setStatus(T('train.plkStale',{t:String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'),now:clockNow()}))}
+    });
   },AUTO_REFRESH_MS);
 }
 
+// PLK nie odpowiada: czytelny komunikat + automatyczne ponawianie co minutę (tylko gdy strona jest widoczna),
+// z godziną ostatniej próby. Najwyżej 20 prób, potem prośba o spróbowanie później.
+let plkRetryTimer=null,plkRetryN=0;
+function clockNow(){const d=new Date();return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0')}
+function isPlkDownErr(e){return !!(e&&(e.plkDown||e.name==='AbortError'||e.name==='TimeoutError'||/Failed to fetch|NetworkError|Load failed/i.test(String(e.message||''))))}
+function showPlkDown(train,opts){
+  if(plkRetryTimer)clearTimeout(plkRetryTimer);
+  const give=plkRetryN>=20;
+  document.getElementById('content').innerHTML='<div class="panel"><div class="loader"><div class="train-loader"><div class="track"></div><div class="train-dot">🚆</div></div><strong>'+esc(T(give?'train.plkGiveUp':'train.plkDown'))+'</strong></div><div class="copy-note">'+esc(T('train.plkLastTry',{t:clockNow()}))+'</div><div style="margin-top:8px"><button type="button" class="btn-small" id="plkRetryNow">'+esc(T('train.plkRetryNow'))+'</button></div></div>';
+  setStatus(T(give?'train.plkGiveUp':'train.plkDown'));
+  const again=function(){
+    if(plkRetryTimer)clearTimeout(plkRetryTimer);plkRetryTimer=null;plkRetryN++;loading(train);
+    fetchAndRenderTrain(train,opts).then(function(){plkRetryN=0;setStatus('')}).catch(function(e){
+      if(isPlkDownErr(e))showPlkDown(train,opts);
+      else document.getElementById('content').innerHTML='<div class="panel err">'+esc(T('train.fetchFailed',{msg:e.message}))+'</div>';
+    });
+  };
+  document.getElementById('plkRetryNow').onclick=function(){plkRetryN=0;again()};
+  if(give)return;
+  plkRetryTimer=setTimeout(function(){
+    if(document.visibilityState==='hidden'){document.addEventListener('visibilitychange',function v(){if(document.visibilityState!=='hidden'){document.removeEventListener('visibilitychange',v);again()}});return}
+    again();
+  },60000);
+}
 async function fetchAndRenderTrain(train,opts){
   const q=new URLSearchParams();
   q.set('scheduleId',opts.schedule);
@@ -1040,10 +1067,16 @@ async function fetchAndRenderTrain(train,opts){
 
     try{
       const url='/api/train-details?'+q.toString()+'&_retry='+attempt;
-      const r=await fetch(url,{
-        headers:{Accept:'application/json'},
-        cache:'no-store'
-      });
+      // po 15 s bez odpowiedzi — informacja, że PLK odpowiada wolno; po 40 s rezygnujemy z tej próby
+      const slowT=setTimeout(function(){const n=document.querySelector('#content .copy-note');if(n)n.textContent=T('train.plkSlow')},15000);
+      let r;
+      try{
+        r=await fetch(url,{
+          headers:{Accept:'application/json'},
+          cache:'no-store',
+          signal:AbortSignal.timeout?AbortSignal.timeout(40000):undefined
+        });
+      }finally{clearTimeout(slowT)}
 
       const text=await r.text();
       let data=null;
@@ -1070,7 +1103,9 @@ async function fetchAndRenderTrain(train,opts){
         ('HTTP '+r.status);
 
       if(attempt===delays.length-1){
-        throw new Error(message);
+        const err=new Error(message);
+        if((data&&data.plkDown)||r.status>=500)err.plkDown=true;
+        throw err;
       }
     }catch(e){
       if(attempt===delays.length-1)throw e;
@@ -1078,7 +1113,7 @@ async function fetchAndRenderTrain(train,opts){
   }
 }
 
-async function loadTrain(){const train=qs('train');if(!train){setStatus(T('train.openHint'));return}setStatus(T('train.fetching'));loading(train);const idp=detailsParams();let schedule=idp.get('scheduleId')||idp.get('scheduledId');let order=idp.get('orderId');try{if(!schedule||!order){const found=await findCourseFromOpenedContext(train,idp);if(found){await fetchAndRenderTrain(train,found);return}renderFallback(train,T('train.needLink'));return}await fetchAndRenderTrain(train,{schedule,order,trainOrderId:idp.get('trainOrderId'),station:idp.get('station'),date:idp.get('date')||todayIso()})}catch(e){document.getElementById('content').innerHTML='<div class="panel err">'+esc(T('train.fetchFailed',{msg:e.message}))+'</div>';setStatus(T('train.fetchFailedStatus'))}}
+async function loadTrain(){const train=qs('train');if(!train){setStatus(T('train.openHint'));return}setStatus(T('train.fetching'));loading(train);const idp=detailsParams();let schedule=idp.get('scheduleId')||idp.get('scheduledId');let order=idp.get('orderId');try{if(!schedule||!order){const found=await findCourseFromOpenedContext(train,idp);if(found){await fetchAndRenderTrain(train,found);return}renderFallback(train,T('train.needLink'));return}const o1={schedule,order,trainOrderId:idp.get('trainOrderId'),station:idp.get('station'),date:idp.get('date')||todayIso()};try{await fetchAndRenderTrain(train,o1)}catch(e1){if(isPlkDownErr(e1)){showPlkDown(train,o1);return}throw e1}}catch(e){document.getElementById('content').innerHTML='<div class="panel err">'+esc(T('train.fetchFailed',{msg:e.message}))+'</div>';setStatus(T('train.fetchFailedStatus'))}}
 function renderTrain(train,data){
   const stations=Array.isArray(data.route)?data.route:[];
   // Zaznaczenia wsiadania/wysiadania resetujemy tylko przy faktycznie

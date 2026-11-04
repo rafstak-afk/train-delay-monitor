@@ -983,6 +983,12 @@
     "noIdsHint": "Kliknij numer pociągu bezpośrednio z naszej tablicy odjazdów. Sam numer może oznaczać więcej niż jeden kurs.",
     "portalBtn": "Otwórz wyszukiwarkę w Portal Pasażera",
     "loadingNote": "Czekam na dane PLK. Spokojnie, to nie cisza, to informatyka.",
+    "plkDown": "PLK chwilowo nie odpowiada — ponawiam automatycznie co minutę.",
+    "plkLastTry": "Ostatnia próba: {t}. To problem po stronie serwera PKP PLK, nie Twojego telefonu.",
+    "plkSlow": "PLK odpowiada wolniej niż zwykle — czekam dalej…",
+    "plkGiveUp": "PLK nadal nie odpowiada. Spróbuj ponownie za jakiś czas.",
+    "plkRetryNow": "🔄 Spróbuj teraz",
+    "plkStale": "PLK chwilowo nie odpowiada — pokazuję dane z {t}, ponawiam automatycznie (ostatnia próba {now}).",
     "gzmTitle": "Przesiadki GZM — autobusy i tramwaje, na które zdążysz po wyjściu z pociągu",
     "gzmFarTitle": "Najbliższy przystanek ZTM: {s}, {d} od stacji — dalej niż zwykle"
   },
