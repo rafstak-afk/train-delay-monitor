@@ -1,0 +1,80 @@
+name: otp-walk
+
+# OpenTripPlanner — jednorazowe (ręczne) sprawdzenie dojść pieszych tam, gdzie nasz graf z OSM
+# nie znalazł drogi z peronu (litera „B” / czas szacunkowy). Bez stałego serwera, 0 zł.
+# Wycina z mapy Śląska (Geofabrik) tylko okolice tych stacji, buduje graf ulic OTP,
+# pyta o każdą parę peron → słupek i zapisuje RAPORT (artefakt + podsumowanie).
+# Niczego nie zmienia w danych produkcyjnych (gałąź gzm-data i walk-cache.json bez zmian).
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  otp:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      OTP_VERSION: 2.10.0
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Pary do sprawdzenia
+        run: |
+          git fetch --depth 1 origin gzm-data
+          NET=$(git ls-tree --name-only FETCH_HEAD network/ | sort | head -1)
+          git show FETCH_HEAD:$NET > /tmp/network.json
+          node tools/gzm/otp-walk.mjs pairs /tmp/network.json
+
+      - name: Mapa (wycinek Śląska) i OTP
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq osmium-tool > /dev/null
+          mkdir -p /tmp/otp
+          curl -sSL -o /tmp/slaskie.osm.pbf https://download.geofabrik.de/europe/poland/slaskie-latest.osm.pbf
+          i=0; parts=""
+          while read -r bb; do
+            [ -z "$bb" ] && continue
+            i=$((i+1)); osmium extract -b "$bb" /tmp/slaskie.osm.pbf -o /tmp/part$i.osm.pbf --overwrite; parts="$parts /tmp/part$i.osm.pbf"
+          done < tools/gzm/out/otp-bbox.txt
+          osmium merge $parts -o /tmp/otp/area.osm.pbf --overwrite
+          ls -la /tmp/otp
+          curl -sSL -o /tmp/otp.jar https://repo1.maven.org/maven2/org/opentripplanner/otp-shaded/$OTP_VERSION/otp-shaded-$OTP_VERSION.jar
+
+      - name: Graf ulic i serwer OTP
+        run: |
+          java -Xmx6G -jar /tmp/otp.jar --build --save /tmp/otp
+          nohup java -Xmx6G -jar /tmp/otp.jar --load --port 8080 /tmp/otp > /tmp/otp-server.log 2>&1 &
+          for i in $(seq 1 90); do
+            if curl -sf -o /dev/null -X POST -H 'Content-Type: application/json' -d '{"query":"{__typename}"}' http://localhost:8080/otp/gtfs/v1; then echo "OTP gotowy"; exit 0; fi
+            sleep 2
+          done
+          tail -50 /tmp/otp-server.log; exit 1
+
+      - name: Zapytania peron → słupek
+        run: |
+          node tools/gzm/otp-walk.mjs query http://localhost:8080
+          cat tools/gzm/out/otp-walk.md >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: otp-walk
+          path: |
+            tools/gzm/out/otp-walk.json
+            tools/gzm/out/otp-walk.md
+            tools/gzm/out/otp-pairs.json
+            /tmp/otp-server.log
+          if-no-files-found: ignore
