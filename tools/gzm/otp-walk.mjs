@@ -38,8 +38,17 @@ if (cmd === "pairs") {
   const net = JSON.parse(fs.readFileSync(arg, "utf8"));
   const byCode = {}; net.stops.forEach(s => { if (s[3]) byCode[s[3]] = { c: [s[1], s[2]], n: net.names[s[0]] }; });
   const pairs = [], bad = new Set();
-  for (const [k, v] of Object.entries(cache.entries)) if (v.src === "fallback") bad.add(k.split("|")[0]);
-  for (const [k, v] of Object.entries(cache.entries)) {
+  // OTP_CUSTOM="stacja:peron:prefiks_słupka" (np. 73312:2:2469011-001) — tylko wskazane pary zamiast „B”
+  const custom = process.env.OTP_CUSTOM ? process.env.OTP_CUSTOM.split(":") : null;
+  if (custom) {
+    const [cst, cref, cpre] = custom, plat = ((cache.stations[cst] || {}).platforms || []).filter(p => p.c && (!cref || String(p.ref).split(";").includes(cref)));
+    for (const [code, s] of Object.entries(byCode)) if (code.startsWith(cpre)) {
+      const v = cache.entries[cst + "|" + code] || {}, our = cref && v.byPlat && v.byPlat[cref] != null ? v.byPlat[cref] : v.min;
+      pairs.push({ st: cst, code, stop: s.n, to: s.c, ctrl: false, our: { src: v.src || "brak", min: our, max: cref ? our : v.max, m: v.m }, from: plat.map(p => ({ ref: p.ref, c: p.c })) });
+    }
+  }
+  if (!custom) for (const [k, v] of Object.entries(cache.entries)) if (v.src === "fallback") bad.add(k.split("|")[0]);
+  for (const [k, v] of (custom ? [] : Object.entries(cache.entries))) {
     const [st, code] = k.split("|"), s = byCode[code], plat = (cache.stations[st] || {}).platforms || [];
     if (!s || !bad.has(st) || !plat.length) continue;
     const ctrl = v.src === "osm";
@@ -98,6 +107,6 @@ if (cmd === "query") {
   }
   fs.writeFileSync(path.join(OUT, "otp-walk.json"), JSON.stringify(res));
   const md = ["| Stacja | Przystanek | | Nasze | OTP | Dociągnięcie |", "|---|---|---|---|---|---|"].concat(res.map(r =>
-    `| ${r.st} | ${r.stop} (${r.code}) | ${r.ctrl ? "kontrola" : "**B / szac.**"} | ${r.our.min}–${r.our.max} min, ${r.our.m || "?"} m | ${r.otp ? r.otp.min + "–" + r.otp.max + " min, " + r.otp.m + " m" : "brak"} | ${r.otp ? "≤ " + r.otp.linkMax + " m" : ""} |`));
+    `| ${r.st} | ${r.stop} (${r.code}) | ${r.ctrl ? "kontrola" : process.env.OTP_CUSTOM ? "sprawdzane" : "**B / szac.**"} | ${r.our.min}–${r.our.max} min, ${r.our.m || "?"} m | ${r.otp ? r.otp.min + "–" + r.otp.max + " min, " + r.otp.m + " m" : "brak"} | ${r.otp ? "≤ " + r.otp.linkMax + " m" : ""} |`));
   fs.writeFileSync(path.join(OUT, "otp-walk.md"), md.join("\n") + "\n");
 }

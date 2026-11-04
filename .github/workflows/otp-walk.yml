@@ -7,6 +7,11 @@ name: otp-walk
 # Niczego nie zmienia w danych produkcyjnych (gałąź gzm-data i walk-cache.json bez zmian).
 on:
   workflow_dispatch:
+    inputs:
+      custom:
+        description: "Tylko wskazane pary: stacja:peron:prefiks_słupka (np. 73312:2:2469011-001). Puste = dojścia z „B”."
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -37,7 +42,7 @@ jobs:
           git fetch --depth 1 origin gzm-data
           NET=$(git ls-tree --name-only FETCH_HEAD network/ | sort | head -1)
           git show FETCH_HEAD:$NET > /tmp/network.json
-          node tools/gzm/otp-walk.mjs pairs /tmp/network.json
+          OTP_CUSTOM="${{ inputs.custom }}" node tools/gzm/otp-walk.mjs pairs /tmp/network.json
 
       - name: Mapa (wycinek Śląska) i OTP
         run: |
@@ -65,7 +70,7 @@ jobs:
 
       - name: Zapytania peron → słupek
         run: |
-          node tools/gzm/otp-walk.mjs query http://localhost:8080
+          OTP_CUSTOM="${{ inputs.custom }}" node tools/gzm/otp-walk.mjs query http://localhost:8080
           cat tools/gzm/out/otp-walk.md >> "$GITHUB_STEP_SUMMARY"
 
       - uses: actions/upload-artifact@v4
