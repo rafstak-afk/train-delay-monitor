@@ -579,7 +579,7 @@ function buildPlannedEntry(data,stations,boardIdx,alightIdx,tripMeta){
     plannedArrival:a.plannedArrival||a.plannedTime,
     tripLabel:tripMeta?tripMetaName(tripMeta):'',
     legNumber:tripMeta?tripMeta.legNumber:null,
-    distanceKm:tripMeta?tripMetaKm(tripMeta):null,
+    distanceKm:tripMeta?tripMetaKm(tripMeta):kmFromJournal(b.stationName,a.stationName),
     scheduleId:data.scheduleId,
     orderId:data.orderId,
     _key:journeyKey(data.operatingDate,data.scheduleId,data.orderId,b.stationName,a.stationName),
@@ -642,6 +642,20 @@ function tripMetaKm(tripMeta){
   if(!tripMeta.trip.leg2&&tripMeta.trip.distanceKm)return Number(tripMeta.trip.distanceKm);
   return null;
 }
+// Km „zapamiętane raz”: bez trasy typowej bierzemy km z ostatniego wpisu dzienniczka z tą samą parą stacji
+// (w obie strony). TEST: profil autora (showVersionBadge).
+function kmFromJournal(board,alight){
+  try{if(localStorage.getItem('showVersionBadge')!=='1')return null}catch(e){return null}
+  const b=normStation(board),a=normStation(alight);let best=null;
+  getJournalEntries().forEach(function(e){
+    if(!e||e.distanceKm==null||e.distanceKm===''||e.mode==='gzm')return;
+    const eb=normStation(e.boardStation),ea=normStation(e.alightStation);
+    if(!((eb===b&&ea===a)||(eb===a&&ea===b)))return;
+    const at=String(e.date||'')+String(e.createdAt||'');
+    if(!best||at>best.at)best={at:at,km:Number(e.distanceKm)};
+  });
+  return best&&isFinite(best.km)?best.km:null;
+}
 function buildJournalEntry(data,stations,boardIdx,alightIdx,tripMeta){
   const b=stations[boardIdx],a=stations[alightIdx];
   const plannedDep=b.plannedDeparture||b.plannedTime;
@@ -665,7 +679,7 @@ function buildJournalEntry(data,stations,boardIdx,alightIdx,tripMeta){
     tripType:tripMeta?tripMeta.id:'inna',
     tripLabel:tripMeta?tripMetaName(tripMeta):'',
     legNumber:tripMeta?tripMeta.legNumber:null,
-    distanceKm:tripMeta?tripMetaKm(tripMeta):null,
+    distanceKm:tripMeta?tripMetaKm(tripMeta):kmFromJournal(b.stationName,a.stationName),
     scheduleId:data.scheduleId,
     orderId:data.orderId,
     _key:journeyKey(data.operatingDate,data.scheduleId,data.orderId,b.stationName,a.stationName),
@@ -941,7 +955,7 @@ function openManualSaveForm(){
   if(!overlay)return;
   // Odcinek trasy typowej podstawia swoją nazwę i km jako punkt wyjścia do zmian.
   const meta=typicalMetaForMarks();
-  const km=meta?tripMetaKm(meta):null;
+  const km=meta?tripMetaKm(meta):(markBoardIdx!=null&&markAlightIdx!=null&&currentStations[markBoardIdx]&&currentStations[markAlightIdx]?kmFromJournal(currentStations[markBoardIdx].stationName,currentStations[markAlightIdx].stationName):null);
   document.getElementById('manualTripName').value=meta?tripMetaName(meta):'';
   document.getElementById('manualTripKm').value=km!=null?String(km).replace('.',','):'';
   overlay.classList.add('open');

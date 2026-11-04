@@ -198,7 +198,9 @@
   // ✅ Jechałem — wpisy (tylko zaznaczone odcinki) do dzienniczka.
   function recordTrip(conn, readings, checked) {
     var gz = true;   // odcinki GZM w dzienniczku — dla wszystkich od v5.25
-    var entries = GuardCore.buildJournalEntries(conn, readings, checked, new Date().toISOString(), { gzm: gz });
+    // km z ulubionych tras / poprzednich wpisów — TEST: profil autora
+    var kmOpt = false; try { kmOpt = localStorage.getItem("showVersionBadge") === "1"; } catch (e) {}
+    var entries = GuardCore.buildJournalEntries(conn, readings, checked, new Date().toISOString(), kmOpt ? { gzm: gz, trips: read("dziennikTrasyTypowe", null), journal: read(JOURNAL_KEY, []) } : { gzm: gz });
     var keys = planKeysFor(conn);
     var pull = hasProfile() ? ProfileSync.pull().catch(function () { return null; }) : Promise.resolve(null);
     return pull.then(function (p) {

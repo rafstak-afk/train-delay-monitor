@@ -388,9 +388,37 @@
   // (checked[i] === false = pominąć). Godziny rzeczywiste = plan + opóźnienie
   // z danych PLK (potwierdzone albo ostatnia prognoza). Format jak w dzienniczku.
   // opts.gzm — także odcinki GZM (autobus/tramwaj/trolejbus): linia jako numer, ikona jako kategoria, godziny z rozkładu + opóźnienie GZM na żywo.
+  // Kilometry odcinka „zapamiętane raz”: najpierw ulubione trasy z dzienniczka (odcinek z tą samą parą stacji,
+  // w obie strony), potem ostatni wpis dzienniczka z tą parą stacji i wpisanymi km.
+  function kmFor(board, alight, trips, journal) {
+    var n = function (s) { return String(s || "").trim().toLowerCase(); }, b = n(board), a = n(alight);
+    if (!b || !a) return null;
+    var list = Array.isArray(trips) ? trips : trips && typeof trips === "object" ? ["domPraca", "pracaDom"].filter(function (id) { return trips[id]; }).map(function (id) { var t = Object.assign({}, trips[id]); t.id = t.id || id; return t; }) : [];
+    for (var pass = 0; pass < 2; pass++) for (var i = 0; i < list.length; i++) {
+      var t = list[i]; if (!t) continue;
+      var legs = t.leg1 ? [t.leg1, t.leg2] : [{ board: t.board, alight: t.alight }];
+      for (var j = 0; j < legs.length; j++) {
+        var l = legs[j]; if (!l || !l.board || !l.alight) continue;
+        var hit = pass === 0 ? n(l.board) === b && n(l.alight) === a : n(l.board) === a && n(l.alight) === b;
+        if (!hit) continue;
+        var km = l.distanceKm != null && l.distanceKm !== "" ? Number(l.distanceKm) : !t.leg2 && t.distanceKm ? Number(t.distanceKm) : null;
+        if (km != null && isFinite(km)) return { km: km, trip: pass === 0 ? t : null, legNumber: j + 1, src: "trasa" };
+      }
+    }
+    var best = null;
+    (Array.isArray(journal) ? journal : []).forEach(function (e) {
+      if (!e || e.distanceKm == null || e.distanceKm === "" || e.mode === "gzm") return;
+      var eb = n(e.boardStation), ea = n(e.alightStation);
+      if (!((eb === b && ea === a) || (eb === a && ea === b))) return;
+      var at = String(e.date || "") + String(e.createdAt || "");
+      if (!best || at > best.at) best = { at: at, km: Number(e.distanceKm) };
+    });
+    return best && isFinite(best.km) ? { km: best.km, trip: null, src: "dzienniczek" } : null;
+  }
   function buildJournalEntries(conn, readings, checked, nowIso, opts) {
     var legs = conn.legs || [];
     var lc = function (s) { return String(s || "").trim().toLowerCase(); };
+    var kmOn = opts && (opts.trips || opts.journal);
     var dur = function (a, b) { var x = hm(a), y = hm(b); if (x == null || y == null) return null; var d = y - x; if (d < 0) d += 1440; return d; };
     var out = [];
     legs.forEach(function (leg, i) {
@@ -422,7 +450,17 @@
         _key: [conn.date, isG ? "gzm" : (leg.scheduleId || ""), isG ? String(leg.trip || "") : (leg.orderId || ""), lc(leg.board.stationName), lc(leg.alight.stationName)].join("|"),
         createdAt: nowIso || new Date().toISOString()
       });
+      if (kmOn && !isG) {
+        var k = kmFor(leg.board.stationName, leg.alight.stationName, opts.trips, opts.journal), e = out[out.length - 1];
+        if (k) { e.distanceKm = k.km; e._kt = k.trip; e._kl = k.legNumber; }
+      }
     });
+    // wszystkie odcinki pociągiem to odcinki TEJ SAMEJ ulubionej trasy → jej nazwa i typ (jak przy zapisie z biegu pociągu)
+    if (kmOn) {
+      var tr = out.filter(function (e) { return e.mode !== "gzm"; }), t0 = tr.length && tr[0]._kt;
+      if (t0 && tr.every(function (e) { return e._kt === t0; })) tr.forEach(function (e) { e.tripType = t0.id || "inna"; e.tripLabel = t0.name || "trasa"; e.legNumber = t0.leg2 ? e._kl : null; });
+      out.forEach(function (e) { delete e._kt; delete e._kl; });
+    }
     return out;
   }
   var REMIND = {
@@ -494,7 +532,7 @@
   var api = {
     REM_DEFAULTS: REM_DEFAULTS, remindMins: remindMins, remindPlan: remindPlan, remindShift: remindShift, remindText: remindText, remindIcs: remindIcs,
     DEFAULTS: DEFAULTS, RANK: RANK, MAX_ACTIVE: MAX_ACTIVE,
-    lastArrMin: lastArrMin, buildJournalEntries: buildJournalEntries, remindMessage: remindMessage,
+    lastArrMin: lastArrMin, buildJournalEntries: buildJournalEntries, kmFor: kmFor, remindMessage: remindMessage,
     altOrigin: altOrigin, altQuery: altQuery, pickAlternatives: pickAlternatives, altText: altText,
     norm: norm, hm: hm, fmt: fmt, connectionId: connectionId, fromItinerary: fromItinerary, fromPlannedTrips: fromPlannedTrips,
     timeWindow: timeWindow, isActive: isActive, readLeg: readLeg, evalTransfer: evalTransfer, evaluate: evaluate, setSoftMargin: setSoftMargin,
