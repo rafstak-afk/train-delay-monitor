@@ -1077,9 +1077,9 @@
       return out ? '<span title="' + esc(T("gzm.crossTitle", { s: s.sig || 0, z: Math.max(0, z), r: s.rx || 0 }, "Na trasie: przejścia ze światłami {s}, bez świateł {z}, przez tory {r} (czekanie na światłach wliczone)")) + '">' + out + "</span>" : "";
     }
     // „tylko pociągi”: do stacji i od stacji wyłącznie pieszo — wtedy dalej: 3 km w linii prostej (ok. 3,5 km drogą, ~45 min).
-    // TEST: profil autora (showVersionBadge); dla wszystkich po decyzji.
+    // dla wszystkich od v5.68
     var TRAIN_ONLY_M = 3000;
-    function trainOnlyFar() { var m = modes(); if (!(m.train && !m.bus && !m.tram && !m.trolley)) return false; try { return localStorage.getItem("showVersionBadge") === "1"; } catch (e) { return false; } }
+    function trainOnlyFar() { var m = modes(); return !!(m.train && !m.bus && !m.tram && !m.trolley); }
     function exclOf() { var m = modes(), e = null; ["bus", "tram", "trolley"].forEach(function (k) { if (!m[k]) { e = e || {}; e[k] = 1; } }); return e; }
     function modesHtml() {
       var m = modes(), L = { train: T("gzm.mTrain", null, "🚆 Pociąg"), bus: T("gzm.mBus", null, "🚌 Autobus"), tram: T("gzm.mTram", null, "🚋 Tramwaj"), trolley: T("gzm.mTrolley", null, "🚎 Trolejbus") };

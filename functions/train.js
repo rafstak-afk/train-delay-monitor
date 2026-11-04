@@ -643,9 +643,8 @@ function tripMetaKm(tripMeta){
   return null;
 }
 // Km „zapamiętane raz”: bez trasy typowej bierzemy km z ostatniego wpisu dzienniczka z tą samą parą stacji
-// (w obie strony). TEST: profil autora (showVersionBadge).
+// (w obie strony). Dla wszystkich od v5.68.
 function kmFromJournal(board,alight){
-  try{if(localStorage.getItem('showVersionBadge')!=='1')return null}catch(e){return null}
   const b=normStation(board),a=normStation(alight);let best=null;
   getJournalEntries().forEach(function(e){
     if(!e||e.distanceKm==null||e.distanceKm===''||e.mode==='gzm')return;
