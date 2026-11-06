@@ -253,6 +253,8 @@ export async function onRequestGet(context) {
     return json({ error: "Brak klucza PLK_API_KEY/PDP_API_KEY", route: [] }, 500);
   }
 
+  let opsError = null;
+  const startedAt = Date.now();
   try {
     const [routeData, operationData, stationNames] = await Promise.all([
       plkGet(
@@ -263,7 +265,7 @@ export async function onRequestGet(context) {
       plkGet(
         `/operations/train/${encodeURIComponent(scheduleId)}/${encodeURIComponent(orderId)}/${encodeURIComponent(operatingDate)}`,
         apiKey
-      ).catch(() => null),
+      ).catch((e) => { opsError = String((e && e.message) || e); return null; }),
       getStationNameMap(apiKey)
     ]);
 
@@ -380,6 +382,18 @@ export async function onRequestGet(context) {
       trainNumber: route.nationalNumber || trainNum,
       delay: currentDelay,
       totalDelay: currentDelay,
+      // diagnostyka: czy przyszła część „ruch pociągu” z PLK, ile stacji potwierdził, kiedy PLK wygenerował dane
+      diag: {
+        operatingDate,
+        opsOk: !!operationData,
+        opsError,
+        opsStations: opStations.length,
+        opsGeneratedAt: (operationData && operationData.generatedAt) || null,
+        routeStations: routeStations.length,
+        confirmed: stops.filter(x => x.status === "confirmed").length,
+        ms: Date.now() - startedAt,
+        at: new Date().toISOString()
+      },
       status: operation.trainStatus || "",
       isFinished,
       lastConfirmedStation: confirmed?.station || "",

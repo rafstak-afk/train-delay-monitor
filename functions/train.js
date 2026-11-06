@@ -1047,6 +1047,52 @@ function showPlkDown(train,opts){
     again();
   },60000);
 }
+// Stan danych biegu: kurs z innego dnia / PLK nie podał ruchu / PLK przestał aktualizować — komunikat nad trasą,
+// „Zapytaj PLK ponownie”, „Kopiuj diagnostykę”; przy braku ruchu ponawianie co minutę (najwyżej 10 razy).
+let opsRetryTimer=null,opsRetryN=0,lastDiag=null;
+function hmToMin(t){const m=String(t||'').match(/(\d{1,2}):(\d{2})/);return m?Number(m[1])*60+Number(m[2]):null}
+function trainHealth(train,opts,data){
+  if(opsRetryTimer){clearTimeout(opsRetryTimer);opsRetryTimer=null}
+  const d=data.diag||{},today=todayIso(),date=opts.date||today,route=Array.isArray(data.route)?data.route:[];
+  const conf=route.filter(s=>s.status==='confirmed'),last=conf[conf.length-1];
+  const now=new Date(),nowMin=now.getHours()*60+now.getMinutes();
+  let kind=null,msg='';
+  if(date!==today){kind='date';msg=T('train.hDate',{d:date})}
+  else if(d.opsOk===false){kind='ops';msg=T('train.hOps',{t:clockNow()})}
+  else if(!data.isFinished){
+    // pierwsza niepotwierdzona stacja, której planowy czas minął o > 10 min (z doliczonym ostatnim opóźnieniem)
+    const dl=last&&typeof last.delay==='number'?last.delay:0;
+    const lastIdx=last?route.indexOf(last):-1;
+    const late=route.slice(lastIdx+1).find(s=>{const p=hmToMin(s.plannedArrival||s.plannedTime||s.plannedDeparture);return p!=null&&p+dl+10<nowMin&&nowMin-p<720});
+    if(late)kind='stale',msg=last?T('train.hStale',{s:last.stationName,t:(last.actualTime||last.plannedTime||'')}):T('train.hStaleNone',{s:late.stationName});
+  }
+  lastDiag={url:location.pathname+location.search,train:train,scheduleId:opts.schedule,orderId:opts.order,date:date,today:today,kind:kind,diag:d,confirmed:conf.length,stations:route.length,lastConfirmed:last?last.stationName+' '+(last.actualTime||''):null,status:data.status||'',checkedAt:new Date().toISOString()};
+  const box=document.createElement('div');
+  box.className='panel';box.id='trainHealth';
+  box.style.cssText='border:1px solid '+(kind?'#f59e0b':'rgba(255,255,255,.12)')+';margin-bottom:10px;font-size:14px';
+  let h='';
+  if(kind){
+    h+='<div style="font-weight:700;margin-bottom:6px">'+(kind==='date'?'ℹ️ ':'⚠️ ')+esc(msg)+'</div>';
+    if(kind==='date'){const u=new URLSearchParams(location.search);u.set('date',today);h+='<a class="btn-small" href="?'+esc(u.toString())+'">'+esc(T('train.hToday'))+'</a> '}
+    else h+='<button type="button" class="btn-small" id="hRetry">'+esc(T('train.hRetry'))+'</button> ';
+  }
+  h+='<button type="button" class="btn-small" id="hDiag">'+esc(T('train.hDiagBtn'))+'</button>';
+  if(!kind)h='<div style="display:flex;justify-content:flex-end">'+h+'</div>';
+  box.innerHTML=h;
+  const c=document.getElementById('content');if(!c)return;
+  const old=document.getElementById('trainHealth');if(old)old.remove();
+  c.insertBefore(box,c.firstChild);
+  if(!kind)box.style.border='0',box.style.background='transparent',box.style.padding='0';
+  const again=function(){opsRetryN++;fetchAndRenderTrain(train,opts).catch(function(e){if(isPlkDownErr(e))showPlkDown(train,opts)})};
+  const rb=document.getElementById('hRetry');if(rb)rb.onclick=function(){rb.disabled=true;rb.textContent=T('train.hRetrying');opsRetryN=0;again()};
+  document.getElementById('hDiag').onclick=function(){
+    const txt=JSON.stringify(lastDiag,null,1);
+    const done=function(){const b=document.getElementById('hDiag');if(b)b.textContent=T('train.hDiagCopied')};
+    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(done,function(){prompt('',txt)});else prompt('',txt);
+  };
+  if(kind==='ops'&&opsRetryN<10)opsRetryTimer=setTimeout(function(){if(document.visibilityState!=='hidden')again()},60000);
+  if(!kind)opsRetryN=0;
+}
 async function fetchAndRenderTrain(train,opts){
   const q=new URLSearchParams();
   q.set('scheduleId',opts.schedule);
@@ -1089,6 +1135,7 @@ async function fetchAndRenderTrain(train,opts){
 
       if(r.ok && data && !data.error){
         renderTrain(train,data);
+        try{trainHealth(train,opts,data)}catch(e){}
         try{if(window.Survey)Survey.action()}catch(e){}
         scheduleAutoRefresh(train,opts);
         saveLastTrainContext(train,data);
