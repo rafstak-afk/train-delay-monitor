@@ -116,7 +116,7 @@ export async function onRequest(context) {
 
     const schedulesPath =
       "/schedules?stations=" + encodeURIComponent(stationId) +
-      "&dateFrom=" + date + "&dateTo=" + date + "&pageSize=500";
+      "&dateFrom=" + date + "&dateTo=" + date;   // bez pageSize — jak tablica odjazdów; pageSize=500 ucinał duże stacje (Katowice ~700 kursów)
 
     const schedData = await plkFetch(schedulesPath, key, SCHEDULES_CACHE_TTL);
 
