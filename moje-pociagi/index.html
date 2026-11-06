@@ -715,6 +715,7 @@ function clearCachedCourse(trainNum, station) {
   } catch (e) {}
 }
 
+const relookedUp = new Set();
 // Fallback: Pobieranie identyfikatorów i stanu biegu po samym numerze pociągu z PLK
 async function fetchTrainByNumber(trainNum, station, _isRetry) {
   try {
@@ -771,6 +772,12 @@ async function fetchTrainByNumber(trainNum, station, _isRetry) {
     if (!data) return null;
     // PLK nie ma danych o ruchu dla wybranego kursu (np. drugie zlecenie o tym samym numerze) — spróbuj kolejnego
     if (data.diag && data.diag.opsOk === false) {
+      // kurs wzięty z pamięci (np. zapamiętany zły kurs) — raz na otwarcie strony wyszukaj go od nowa
+      if (cached && !_isRetry && !relookedUp.has(trainNum + "|" + station)) {
+        relookedUp.add(trainNum + "|" + station);
+        clearCachedCourse(trainNum, station);
+        return fetchTrainByNumber(trainNum, station, true);
+      }
       for (const alt of alternatives.slice(0, 2)) {
         const q2 = new URLSearchParams({ train: trainNum, station: station, scheduleId: alt.scheduleId || scheduleId, orderId: alt.orderId });
         if (alt.trainOrderId) q2.set("trainOrderId", alt.trainOrderId);
