@@ -691,7 +691,7 @@ function todayKeyForCache() {
 }
 
 function courseCacheKey(trainNum, station) {
-  return 'courseCache:' + todayKeyForCache() + ':' + trainNum + ':' + station;
+  return 'courseCache2:' + todayKeyForCache() + ':' + trainNum + ':' + station;
 }
 
 function getCachedCourse(trainNum, station) {
@@ -721,8 +721,10 @@ async function fetchTrainByNumber(trainNum, station, _isRetry) {
     let scheduleId = "";
     let orderId = "";
     let trainOrderId = "";
+    let alternatives = [];
 
     const cached = !_isRetry && getCachedCourse(trainNum, station);
+    if (cached && Array.isArray(cached.alternatives)) alternatives = cached.alternatives;
 
     if (cached && cached.scheduleId && cached.orderId) {
       scheduleId = cached.scheduleId;
@@ -737,8 +739,9 @@ async function fetchTrainByNumber(trainNum, station, _isRetry) {
             scheduleId = lData.scheduleId || "";
             orderId = lData.orderId || "";
             trainOrderId = lData.trainOrderId || "";
+            alternatives = Array.isArray(lData.alternatives) ? lData.alternatives : [];
             if (scheduleId && orderId) {
-              setCachedCourse(trainNum, station, { scheduleId, orderId, trainOrderId });
+              setCachedCourse(trainNum, station, { scheduleId, orderId, trainOrderId, alternatives });
             }
           }
         }
@@ -764,8 +767,24 @@ async function fetchTrainByNumber(trainNum, station, _isRetry) {
       }
       return null;
     }
-    const data = await res.json();
+    let data = await res.json();
     if (!data) return null;
+    // PLK nie ma danych o ruchu dla wybranego kursu (np. drugie zlecenie o tym samym numerze) — spróbuj kolejnego
+    if (data.diag && data.diag.opsOk === false) {
+      for (const alt of alternatives.slice(0, 2)) {
+        const q2 = new URLSearchParams({ train: trainNum, station: station, scheduleId: alt.scheduleId || scheduleId, orderId: alt.orderId });
+        if (alt.trainOrderId) q2.set("trainOrderId", alt.trainOrderId);
+        try {
+          const r2 = await fetchWithTimeout(`/api/train-details?${q2.toString()}`, { cache: "no-store" });
+          const d2 = r2.ok ? await r2.json() : null;
+          if (d2 && d2.diag && d2.diag.opsOk) {
+            data = d2;
+            setCachedCourse(trainNum, station, { scheduleId: alt.scheduleId || scheduleId, orderId: alt.orderId, trainOrderId: alt.trainOrderId || "", alternatives: [] });
+            break;
+          }
+        } catch (_) {}
+      }
+    }
 
     let lastSt = data.lastConfirmedStation || data.lastStation || data.lastLocation;
     

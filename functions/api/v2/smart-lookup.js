@@ -138,11 +138,20 @@ export async function onRequest(context) {
       }, 200);
     }
 
-    let bestCourse = matches[0];
-    if (planTime && matches.length > 1) {
-      const matchByTime = matches.find(item => JSON.stringify(item).includes(planTime));
-      if (matchByTime) bestCourse = matchByTime;
-    }
+    // Kilka kursów o tym numerze (np. IC MATEJKO w Katowicach: dwa zlecenia, tylko jedno ma dane o ruchu) —
+    // najpierw ten z ODJAZDEM z tej stacji (tak jak tablica odjazdów), potem zgodny z godziną. Pozostałe
+    // zwracamy jako alternatywy, żeby klient mógł spróbować kolejnego, gdy PLK nie ma dla wybranego ruchu.
+    const rank = r => {
+      const st = (r.stations || []).find(s => Number(s.stationId) === Number(stationId));
+      let p = 0;
+      if (st && st.departureTime) p += 2;
+      if (planTime && JSON.stringify(r).includes(planTime)) p += 4;
+      return p;
+    };
+    const ranked = matches.map((r, i) => ({ r, i, p: rank(r) })).sort((a, b) => b.p - a.p || a.i - b.i).map(x => x.r);
+    const bestCourse = ranked[0];
+    const alternatives = ranked.slice(1).filter(r => r.orderId && r.orderId !== bestCourse.orderId)
+      .map(r => ({ scheduleId: r.scheduleId || "", orderId: r.orderId, trainOrderId: r.trainOrderId || "" }));
 
     return json({
       ok: true,
@@ -151,6 +160,7 @@ export async function onRequest(context) {
       scheduleId: bestCourse.scheduleId || "",
       orderId: bestCourse.orderId || "",
       trainOrderId: bestCourse.trainOrderId || "",
+      alternatives,
       station: stationName,
       stationId,
       date: date
