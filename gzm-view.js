@@ -259,7 +259,7 @@
         var plan = tr[1] + off[2 * i + 1], nm = net.name[sx];
         var cls = (curSeq != null && i < curSeq ? " past" : "") + (nm === boardName || (alightName && nm === alightName) ? " me" : "") + (i === nearIdx || (schedBetween != null && schedBetween >= 0 && i === schedBetween) ? " here" : "");
         var t = dl ? '<span class="plan-strike">' + C.fmt(plan) + "</span> " + C.fmt(plan + dl) : C.fmt(plan);
-        return '<div class="gz-tr' + cls + '"><div>' + t + "</div><div>" + (i === nearIdx ? "📍 " : "") + esc(nm) + "</div></div>";
+        return '<div class="gz-tr' + cls + '"><div>' + t + "</div><div>" + (i === nearIdx ? "📍 " : "") + esc(nm + stTag(net.j.stops[sx][3])) + "</div></div>";
       }).join("");
       return inner ? pos + rows : '<div class="gz-trip">' + pos + rows + "</div>";
     }
@@ -278,8 +278,8 @@
       return '<div class="gz-legs">' + jn.legs.map(function (l) {
         if (l.type === "walk") return '<div class="gz-walk">' + (l.far ? farBadge() : "") + esc(T("gzm.jWalk", { n: l.min }, "przejście pieszo {n} min")) + (l.far ? " · " + esc(T("gzm.farDist", { d: kmTxt(l.dist || 0) }, "{d} — dalej niż zwykle")) : "") + (l.fixed ? " · " + esc(T("gzm.jFixed", null, "Twój czas")) : l.measured ? " · " + esc(T("gzm.jMeasured", null, "zmierzone")) : "") + (l.toName && l.fromName && l.fromName.charAt(0) > "~" ? " · " + esc(l.fromName) + " → " + esc(l.toName) : "") + "</div>";
         var dep = (l.live && l.delay ? '<span class="plan-strike">' + C.fmt(l.depPlan) + "</span> " : "") + C.fmt(l.dep);
-        return '<div class="gz-leg"><span class="ln">' + esc(l.line) + '</span><span><span class="tm">' + dep + "</span> " + esc(l.fromName) + "</span>" +
-          '<span class="to">→ <b>' + C.fmt(l.arr) + "</b> " + esc(l.toName) + (l.live && l.delay ? " (+" + l.delay + " min)" : "") + "</span></div>";
+        return '<div class="gz-leg"><span class="ln">' + esc(l.line) + '</span><span><span class="tm">' + dep + "</span> " + esc(l.fromName + stTag(l.fromCode)) + "</span>" +
+          '<span class="to">→ <b>' + C.fmt(l.arr) + "</b> " + esc(l.toName + stTag(l.toCode)) + (l.live && l.delay ? " (+" + l.delay + " min)" : "") + "</span></div>";
       }).join("") + "</div>";
     }
     function rerender() { if (st.dir === "C" && cState) renderC(); else render(); }
@@ -308,7 +308,7 @@
       return '<div class="gz-dep ' + x.status + (cls || "") + '" data-k="' + esc(d.trip + "|" + d.stopIdx) + '"' + (tripExpandOn() ? ' data-tripx="' + esc(tk) + '" title="' + esc(T("gzm.tTap", null, "Stuknij — cały bieg kursu")) + '"' : "") + '>' +
         '<div class="gz-line ' + d.type + '">' + esc(d.line) + "<small>" + TYPE_ICON[d.type] + "</small></div>" +
         '<div class="gz-main"><div class="gz-dir">→ ' + esc(d.head) + ' ' + (noFav ? "" : '<button type="button" class="gz-fav" data-fav="' + esc(key) + '" title="' + esc(T("gzm.favTitle", null, "Ulubiona linia w tym kierunku na tej stacji")) + '">' + (isF ? "★" : "☆") + "</button>") + "</div>" +
-        '<div class="gz-stop">' + esc(d.stop.n) + " · 🚶 " + esc(x.walk.exact ? x.walk.min : (d.stop.w[0] === d.stop.w[1] ? d.stop.w[1] : d.stop.w[0] + "–" + d.stop.w[1])) + " min" + (d.stop.stairs ? " 🪜" : "") + " · " + esc(liveTxt) + "</div>" +
+        '<div class="gz-stop">' + esc(d.stop.n + stTag(d.stop.c)) + " · 🚶 " + esc(x.walk.exact ? x.walk.min : (d.stop.w[0] === d.stop.w[1] ? d.stop.w[1] : d.stop.w[0] + "–" + d.stop.w[1])) + " min" + (d.stop.stairs ? " 🪜" : "") + " · " + esc(liveTxt) + "</div>" +
         (x.arrDest != null ? '<div class="gz-stop" style="color:#fff">🏁 ' + esc(T("gzm.arrDest", { t: C.fmt(x.arrDest), n: x.destName, m: x.travel }, "{t} {n} (jazda {m} min)")) + "</div>" : "") +        "</div>" +
         '<div class="gz-right"><div class="gz-t">' + tTxt + '</div><div class="gz-in">' + (inMin > 180 || inMin < -1 ? "" : inMin <= 0 ? esc(T("gzm.now", null, "teraz")) : esc(T("gzm.inMin", { n: inMin }, "za {n} min"))) + '</div><div class="gz-in gz-st-' + x.status + '">' + esc(stTxt) + "</div></div></div>" +
         (tripOpen[tk] ? tripHtml(d.trip, d.date, d.stop.n) : "");
@@ -324,7 +324,7 @@
       return '<div class="card v2-dep ' + (V2ST[x.status] || "s-ok") + (cls || "") + '" data-k="' + esc(d.trip + "|" + d.stopIdx) + '" data-tripx="' + esc(tk) + '" title="' + esc(T("gzm.tTap", null, "Stuknij — cały bieg kursu")) + '">' +
         '<div class="c-head"><div><div class="c-route">' + (TYPE_ICON[d.type] || "🚌") + " " + esc(d.line) + " → " + esc(d.head) +
         (noFav ? "" : ' <button type="button" class="gz-fav" data-fav="' + esc(key) + '" title="' + esc(T("gzm.favTitle", null, "Ulubiona linia w tym kierunku na tej stacji")) + '">' + (isF ? "★" : "☆") + "</button>") + "</div>" +
-        '<div class="c-date">' + esc(d.stop.n) + " · 🚶 " + esc(walk) + " min" + (d.stop.stairs ? " 🪜" : "") + (modesOn() ? crossIcons(d.stop) : "") + (nodOn() ? nodBadge(d.stop) : "") + (x.walk.warn ? ' <span title="' + esc(T("gzm.stairsWarn", null, "Z części peronów albo w ogóle tylko po schodach")) + '">⚠️♿</span>' : "") + v2Dl(x.live, x.delay) + "</div>" +
+        '<div class="c-date">' + esc(d.stop.n + stTag(d.stop.c)) + " · 🚶 " + esc(walk) + " min" + (d.stop.stairs ? " 🪜" : "") + (modesOn() ? crossIcons(d.stop) : "") + (nodOn() ? nodBadge(d.stop) : "") + (x.walk.warn ? ' <span title="' + esc(T("gzm.stairsWarn", null, "Z części peronów albo w ogóle tylko po schodach")) + '">⚠️♿</span>' : "") + v2Dl(x.live, x.delay) + "</div>" +
         (x.arrDest != null ? '<div class="c-sub">🏁 ' + esc(T("gzm.arrDest", { t: C.fmt(x.arrDest), n: x.destName, m: x.travel }, "{t} {n} (jazda {m} min)")) + "</div>" : "") + "</div>" +
         '<span class="chip ' + (V2ST[x.status] || "s-ok") + '"><span class="ct">' + tTxt + "</span>" + esc(inTxt ? inTxt + " · " : "") + esc(v2StTxt(x.status)) + "</span></div>" +
         (open ? tripHtml(d.trip, d.date, d.stop.n) : "") + "</div>";
@@ -372,13 +372,13 @@
           if (v2On()) return '<div class="card s-ok" style="padding:10px 12px"><div class="c-route">' + (TYPE_ICON[g.type] || "🚌") + " " + esc(g.line) + " → " + esc(g.head) + '</div><div class="v2-gtimes">' +
             g.items.map(function (x) {
               var tk = x.dep.trip + "|" + x.dep.date + "|" + x.dep.stop.n;
-              return '<span class="chip ' + (V2ST[x.status] || "s-ok") + (tripOpen[tk] ? " on" : "") + '" data-tx="' + esc(tk) + '" role="button" tabindex="0" title="' + esc(T("gzm.tTap", null, "Stuknij — cały bieg kursu")) + '"><span class="ct">' + C.fmt(x.real) + "</span>" + esc(x.dep.stop.n.replace(file.name.split(" ")[0] + " ", "")) + (x.live && x.delay ? " · " + (x.delay > 0 ? "+" : "") + x.delay : "") + "</span>";
+              return '<span class="chip ' + (V2ST[x.status] || "s-ok") + (tripOpen[tk] ? " on" : "") + '" data-tx="' + esc(tk) + '" role="button" tabindex="0" title="' + esc(T("gzm.tTap", null, "Stuknij — cały bieg kursu")) + '"><span class="ct">' + C.fmt(x.real) + "</span>" + esc(x.dep.stop.n.replace(file.name.split(" ")[0] + " ", "") + stTag(x.dep.stop.c)) + (x.live && x.delay ? " · " + (x.delay > 0 ? "+" : "") + x.delay : "") + "</span>";
             }).join("") + "</div>" +
             g.items.map(function (x) { var tk = x.dep.trip + "|" + x.dep.date + "|" + x.dep.stop.n; return tripOpen[tk] ? tripHtml(x.dep.trip, x.dep.date, x.dep.stop.n) : ""; }).join("") + "</div>";
           return '<div class="gz-group"><div class="gz-group-h"><div class="gz-line ' + g.type + '">' + esc(g.line) + "<small>" + TYPE_ICON[g.type] + '</small></div><div class="gz-dir">→ ' + esc(g.head) + "</div></div>" +
             '<div class="gz-group-times">' + g.items.map(function (x) {
               var tk = x.dep.trip + "|" + x.dep.date + "|" + x.dep.stop.n;
-              return '<span class="gz-gt' + (tripOpen[tk] ? " on" : "") + '" data-tx="' + esc(tk) + '" role="button" tabindex="0" title="' + esc(T("gzm.tTap", null, "Stuknij — cały bieg kursu")) + '"><b>' + C.fmt(x.real) + "</b> " + (x.status === "tight" ? "🟡" : "🟢") + " " + esc(x.dep.stop.n.replace(file.name.split(" ")[0] + " ", "")) + "</span>";
+              return '<span class="gz-gt' + (tripOpen[tk] ? " on" : "") + '" data-tx="' + esc(tk) + '" role="button" tabindex="0" title="' + esc(T("gzm.tTap", null, "Stuknij — cały bieg kursu")) + '"><b>' + C.fmt(x.real) + "</b> " + (x.status === "tight" ? "🟡" : "🟢") + " " + esc(x.dep.stop.n.replace(file.name.split(" ")[0] + " ", "") + stTag(x.dep.stop.c)) + "</span>";
             }).join(" · ") + "</div>" +
             // rozwinięte kursy tej linii (stuknięcie w godzinę)
             g.items.map(function (x) { var tk = x.dep.trip + "|" + x.dep.date + "|" + x.dep.stop.n; return tripOpen[tk] ? tripHtml(x.dep.trip, x.dep.date, x.dep.stop.n) : ""; }).join("") + "</div>";
@@ -1101,6 +1101,15 @@
       var bits = prefsSummary();
       return "🎛️ " + esc(T("gzm.prefs", null, "Moje preferencje")) + (bits.length ? ' <span class="gz-dot" title="' + esc(T("gzm.prefsChanged", null, "Ustawienia inne niż domyślne") + ": " + bits.join(" · ")) + '"></span>' : "");
     }
+    // odjazdy z przystanku przy odznaczonych środkach transportu: co jest ukryte + „pokaż wszystkie”
+    function depsModesNote(anyDep) {
+      var m = modes(); if (defModes(m)) return "";
+      var L = { bus: T("gzm.mBus", null, "🚌 Autobus"), tram: T("gzm.mTram", null, "🚋 Tramwaj"), trolley: T("gzm.mTrolley", null, "🚎 Trolejbus") };
+      var off = ["bus", "tram", "trolley"].filter(function (k) { return !m[k]; }).map(function (k) { return L[k]; }).join(", ");
+      if (!off) return "";
+      return '<div class="' + (anyDep ? "gz-sub" : "gz-warn") + '" style="margin:8px 2px">🎛️ ' + esc(T("gzm.depsModesOff", { m: off }, "Nie pokazuję: {m} — tak masz ustawione w Moich preferencjach.")) +
+        ' <button type="button" class="gz-btn' + (anyDep ? " sec" : "") + '" data-modesall="1" style="margin-top:6px">' + esc(T("gzm.depsModesAll", null, "Pokaż wszystkie środki transportu")) + "</button></div>";
+    }
     // brak wyników przy odznaczonych środkach transportu — wyjaśnienie + przycisk „włącz wszystkie”
     function noResModes() {
       var m = modes(); if (defModes(m)) return "";
@@ -1151,6 +1160,10 @@
       return { list: list, nearest: best };
     }
     var NET_KIND = { 0: "tram", 3: "bus", 11: "trolley", 800: "trolley" };
+    // Numer stanowiska (słupka) z kodu ZTM: 2469011-00105 → „05”, 2466011-07601t → „01t”. TEST: profil autora.
+    function standOn() { try { return localStorage.getItem("showVersionBadge") === "1"; } catch (e) { return false; } }
+    function standOf(code) { var m = String(code || "").split("-")[1]; return m && m.length >= 5 ? m.slice(3) : ""; }
+    function stTag(code) { if (!standOn()) return ""; var s = standOf(code); return s ? " · " + T("gzm.stand", { n: s }, "stan. {n}") : ""; }
     function stopDeps(net, name, fromMin, limit) {
       if (!net._patTrips) { net._patTrips = {}; net.j.trips.forEach(function (t) { (net._patTrips[t[0]] = net._patTrips[t[0]] || []).push(t); }); }
       var idx = {}; (net.byName[name] || []).forEach(function (si) { idx[si] = 1; });
@@ -1165,7 +1178,7 @@
           (net._patTrips[pi] || []).forEach(function (tr) {
             var plan = tr[1] + off[2 * i + 1], rtT = rt && rt.trips && rt.trips[tr[2]], dl = rtT && rtT[1] !== "X" ? Math.round((rtT[1] || 0) / 60) : 0;
             if (plan + dl < fromMin - 1 || plan > fromMin + 120) return;
-            out.push({ trip: tr[2], line: ln[0], kind: NET_KIND[ln[1]] || "bus", head: ln[2], plan: plan, real: plan + dl, live: !!rtT, delay: dl, stop: net.name[seq[i]] });
+            out.push({ trip: tr[2], line: ln[0], kind: NET_KIND[ln[1]] || "bus", head: ln[2], plan: plan, real: plan + dl, live: !!rtT, delay: dl, stop: net.name[seq[i]], code: net.j.stops[seq[i]][3] });
           });
         }
       });
@@ -1175,6 +1188,15 @@
     function stopDepsHtml(list, date) {
       if (!list.length) return '<div class="gz-sub" style="margin:6px 0">' + esc(T("gzm.farNoDeps", null, "Brak odjazdów w najbliższych 2 godzinach.")) + "</div>";
       var now = nowOn(date);
+      if (standOn()) return list.map(function (x) {
+        var tk = x.trip + "|" + date + "|" + x.stop, inMin = Math.round(x.real - now);
+        var tTxt = (x.live && x.delay ? '<span class="plan-strike">' + C.fmt(x.plan) + "</span> " : "") + C.fmt(x.real);
+        var inTxt = inMin > 180 || inMin < -1 ? "" : inMin <= 0 ? T("gzm.now", null, "teraz") : T("gzm.inMin", { n: inMin }, "za {n} min");
+        return '<div class="card v2-dep s-ok" data-fx="' + esc(tk) + '" role="button" tabindex="0" title="' + esc(T("gzm.tTap", null, "Stuknij — cały bieg kursu")) + '">' +
+          '<div class="c-head"><div><div class="c-route">' + (TYPE_ICON[x.kind] || "🚌") + " " + esc(x.line) + " → " + esc(x.head) + "</div>" +
+          '<div class="c-date">' + esc(x.stop + stTag(x.code)) + v2Dl(x.live, x.delay) + "</div></div>" +
+          '<span class="chip s-ok"><span class="ct">' + tTxt + "</span>" + esc(inTxt) + "</span></div></div>";
+      }).join("");
       return list.map(function (x) {
         var tk = x.trip + "|" + date + "|" + x.stop, inMin = Math.round(x.real - now);
         return '<div class="gz-fardep" data-fx="' + esc(tk) + '" role="button" tabindex="0"><b>' + (x.live && x.delay ? '<span class="plan-strike">' + C.fmt(x.plan) + "</span> " : "") + C.fmt(x.real) + "</b> " +
@@ -1204,11 +1226,12 @@
           pl.stops.slice().sort(function (a, b) { return a.walk - b.walk; }).forEach(function (x) { var nm = net.name[x.s]; if (seenN[nm] || groups.length >= 3) return; seenN[nm] = 1; groups.push({ name: nm, walk: x.walk, mark: x.fixed ? T("gzm.jFixed", null, "Twój czas") : x.measured ? T("gzm.jMeasured", null, "zmierzone") : "" }); });
         } else netNames(net, fromTxt).slice(0, 3).forEach(function (nm) { groups.push({ name: nm, walk: 0 }); });
         if (!groups.length) { res.innerHTML = '<div class="gz-warn">' + esc(T("gzm.cNoTo", { d: fromTxt }, "Nie znam przystanku „{d}”.")) + "</div>"; return; }
+        var anyDep = false;
         res.innerHTML = groups.map(function (g) {
-          var list = stopDeps(net, g.name, tmin + (g.walk || 0), 8);
+          var list = stopDeps(net, g.name, tmin + (g.walk || 0), 8); if (list.length) anyDep = true;
           return '<div class="gz-farbox" style="border-color:var(--line);background:var(--panel)"><b>🚏 ' + esc(g.name) + "</b>" + (g.walk ? ' <span class="gz-sub">· 🚶 ' + g.walk + " min" + (g.mark ? " · " + esc(g.mark) : "") + "</span>" : "") +
             '<div class="gz-fardeps" style="margin-left:0">' + stopDepsHtml(list, date) + "</div></div>";
-        }).join("") + '<div class="gz-sub" style="margin:6px 2px">' + esc(T("gzm.fromOnlyHint", null, "Wpisz też „Dokąd”, żeby ułożyć całą podróż.")) + "</div>";
+        }).join("") + (standOn() ? depsModesNote(anyDep) : "") + '<div class="gz-sub" style="margin:6px 2px">' + esc(T("gzm.fromOnlyHint", null, "Wpisz też „Dokąd”, żeby ułożyć całą podróż.")) + "</div>";
         scrollToFirst(res, ".gz-farbox");
       }).catch(function () { res.innerHTML = '<div class="gz-warn">' + esc(T("gzm.noIndex", null, "Dane GZM są chwilowo niedostępne.")) + "</div>"; });
     }
@@ -1475,7 +1498,7 @@
       var dep = l.live && l.delay ? '<span class="plan-strike">' + C.fmt(l.depPlan) + "</span> " + C.fmt(l.dep) : C.fmt(l.dep);
       return '<div class="leg"><div class="leg-t">' + dep + "<small>" + C.fmt(l.arr) + "</small></div><div>" +
         '<div class="leg-train">' + (TYPE_ICON[l.kind] || "🚌") + " " + esc(l.line) + (l.head ? " → " + esc(l.head) : "") + "</div>" +
-        '<div class="leg-st">' + esc(l.fromName) + " → " + esc(l.toName) + v2Dl(l.live, l.delay) + "</div></div></div>";
+        '<div class="leg-st">' + esc(l.fromName + stTag(l.fromCode)) + " → " + esc(l.toName + stTag(l.toCode)) + v2Dl(l.live, l.delay) + "</div></div></div>";
     }
     function v2Train(l, arrReal) {
       var lab = ((l.train && l.train.category) || "") + " " + ((l.train && l.train.number) || "") + (l.train && l.train.name ? " " + l.train.name : "");
