@@ -1165,6 +1165,10 @@
     function standOf(code) { var m = String(code || "").split("-")[1]; return m && m.length >= 5 ? m.slice(3) : ""; }
     function stTag(code) { if (!standOn()) return ""; var s = standOf(code); return s ? " · " + T("gzm.stand", { n: s }, "stan. {n}") : ""; }
     function stopDeps(net, name, fromMin, limit) {
+      return stopDepsWin(net, name, fromMin - 1, fromMin + 120, true).slice(0, limit || 8);
+    }
+    // wszystkie odjazdy z przystanku w oknie [lo, hi] (godzina rzeczywista; planF — górna granica wg planu)
+    function stopDepsWin(net, name, lo, hi, planHi) {
       if (!net._patTrips) { net._patTrips = {}; net.j.trips.forEach(function (t) { (net._patTrips[t[0]] = net._patTrips[t[0]] || []).push(t); }); }
       var idx = {}; (net.byName[name] || []).forEach(function (si) { idx[si] = 1; });
       var out = [];
@@ -1177,13 +1181,13 @@
           if (net._excl && net._excl[MODE_KIND[ln[1]] || "bus"]) continue;
           (net._patTrips[pi] || []).forEach(function (tr) {
             var plan = tr[1] + off[2 * i + 1], rtT = rt && rt.trips && rt.trips[tr[2]], dl = rtT && rtT[1] !== "X" ? Math.round((rtT[1] || 0) / 60) : 0;
-            if (plan + dl < fromMin - 1 || plan > fromMin + 120) return;
+            if (plan + dl < lo || (planHi ? plan : plan + dl) > hi) return;
             out.push({ trip: tr[2], line: ln[0], kind: NET_KIND[ln[1]] || "bus", head: ln[2], plan: plan, real: plan + dl, live: !!rtT, delay: dl, stop: net.name[seq[i]], code: net.j.stops[seq[i]][3] });
           });
         }
       });
       out.sort(function (a, b) { return a.real - b.real; });
-      return out.slice(0, limit || 8);
+      return out;
     }
     function stopDepsHtml(list, date) {
       if (!list.length) return '<div class="gz-sub" style="margin:6px 0">' + esc(T("gzm.farNoDeps", null, "Brak odjazdów w najbliższych 2 godzinach.")) + "</div>";
@@ -1227,14 +1231,36 @@
         } else netNames(net, fromTxt).slice(0, 3).forEach(function (nm) { groups.push({ name: nm, walk: 0 }); });
         if (!groups.length) { res.innerHTML = '<div class="gz-warn">' + esc(T("gzm.cNoTo", { d: fromTxt }, "Nie znam przystanku „{d}”.")) + "</div>"; return; }
         var anyDep = false;
-        res.innerHTML = groups.map(function (g) {
-          var list = stopDeps(net, g.name, tmin + (g.walk || 0), 8); if (list.length) anyDep = true;
-          return '<div class="gz-farbox" style="border-color:var(--line);background:var(--panel)"><b>🚏 ' + esc(g.name) + "</b>" + (g.walk ? ' <span class="gz-sub">· 🚶 ' + g.walk + " min" + (g.mark ? " · " + esc(g.mark) : "") + "</span>" : "") +
-            '<div class="gz-fardeps" style="margin-left:0">' + stopDepsHtml(list, date) + "</div></div>";
+        depBoxes = groups.map(function (g) {
+          var t0 = tmin + (g.walk || 0), all = stopDepsWin(net, g.name, t0 - 360, t0 + 480);
+          var a = 0; while (a < all.length && all[a].real < t0 - 1) a++;
+          var b = a; while (b < all.length && b - a < 8 && all[b].plan <= t0 + 120) b++;
+          if (b > a) anyDep = true;
+          return { g: g, all: all, a: a, b: b, date: date };
+        });
+        res.innerHTML = depBoxes.map(function (bx, i) {
+          var g = bx.g;
+          return '<div class="gz-farbox" data-depbox="' + i + '" style="border-color:var(--line);background:var(--panel)"><b>🚏 ' + esc(g.name) + "</b>" + (g.walk ? ' <span class="gz-sub">· 🚶 ' + g.walk + " min" + (g.mark ? " · " + esc(g.mark) : "") + "</span>" : "") +
+            '<div class="gz-fardeps" style="margin-left:0">' + depBoxInner(bx) + "</div></div>";
         }).join("") + (standOn() ? depsModesNote(anyDep) : "") + '<div class="gz-sub" style="margin:6px 2px">' + esc(T("gzm.fromOnlyHint", null, "Wpisz też „Dokąd”, żeby ułożyć całą podróż.")) + "</div>";
         scrollToFirst(res, ".gz-farbox");
       }).catch(function () { res.innerHTML = '<div class="gz-warn">' + esc(T("gzm.noIndex", null, "Dane GZM są chwilowo niedostępne.")) + "</div>"; });
     }
+    var depBoxes = [];
+    function depBoxInner(bx) {
+      var btn = function (dir, key, def) { return '<button type="button" class="gz-btn sec" data-depmore="' + dir + '" style="margin:6px 0;width:100%">' + esc(T(key, null, def)) + "</button>"; };
+      return (bx.a > 0 ? btn("up", "gzm.depsEarlier", "⬆ Wcześniejsze odjazdy") : "") +
+        stopDepsHtml(bx.all.slice(bx.a, bx.b), bx.date) +
+        (bx.b < bx.all.length ? btn("down", "gzm.depsLater", "⬇ Późniejsze odjazdy") : "");
+    }
+    root.addEventListener("click", function (ev) {
+      var b = ev.target.closest("[data-depmore]"); if (!b) return;
+      var box = b.closest("[data-depbox]"), bx = box && depBoxes[+box.getAttribute("data-depbox")]; if (!bx) return;
+      ev.preventDefault();
+      if (b.getAttribute("data-depmore") === "up") bx.a = Math.max(0, bx.a - 8); else bx.b = Math.min(bx.all.length, bx.b + 8);
+      var inner = box.querySelector(".gz-fardeps"); inner.innerHTML = depBoxInner(bx);
+      if (window.I18n && I18n.apply) try { I18n.apply(inner); } catch (e) {}
+    });
     // dla 🛡️ Pilnowanych i innych widoków: trasa kursu GZM (HTML w opakowaniu .gz)
     window.GzmTripHtml = function (tid, date, board, alight) {
       return Promise.all([getNet(date), getRt().catch(function () {})]).then(function (r) { netP[date]._net = r[0]; return '<div class="gz">' + tripHtml(tid, date, board, alight) + "</div>"; });

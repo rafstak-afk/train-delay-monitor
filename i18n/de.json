@@ -1328,6 +1328,8 @@
     "v2TrainPlan": "Zug laut PLK-Fahrplan",
     "farDeps": "Abfahrten",
     "farNoDeps": "Keine Abfahrten in den nächsten 2 Stunden.",
+    "depsEarlier": "⬆ Frühere Abfahrten",
+    "depsLater": "⬇ Spätere Abfahrten",
     "stand": "Steig {n}",
     "depsModesOff": "Nicht angezeigt: {m} — so ist es in deinen Einstellungen festgelegt.",
     "depsModesAll": "Alle Verkehrsmittel anzeigen",

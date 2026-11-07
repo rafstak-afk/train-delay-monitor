@@ -1328,6 +1328,8 @@
     "v2TrainPlan": "train per PLK timetable",
     "farDeps": "Departures",
     "farNoDeps": "No departures in the next 2 hours.",
+    "depsEarlier": "⬆ Earlier departures",
+    "depsLater": "⬇ Later departures",
     "stand": "stand {n}",
     "depsModesOff": "Not shown: {m} — that's how your preferences are set.",
     "depsModesAll": "Show all modes of transport",

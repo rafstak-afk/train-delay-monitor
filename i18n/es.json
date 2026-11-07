@@ -1328,6 +1328,8 @@
     "v2TrainPlan": "tren según el horario de PLK",
     "farDeps": "Salidas",
     "farNoDeps": "No hay salidas en las próximas 2 horas.",
+    "depsEarlier": "⬆ Salidas anteriores",
+    "depsLater": "⬇ Salidas posteriores",
     "stand": "andén {n}",
     "depsModesOff": "No se muestran: {m} — así lo tienes en tus preferencias.",
     "depsModesAll": "Mostrar todos los medios de transporte",

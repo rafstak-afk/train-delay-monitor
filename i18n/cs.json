@@ -1328,6 +1328,8 @@
     "v2TrainPlan": "vlak podle jízdního řádu PLK",
     "farDeps": "Odjezdy",
     "farNoDeps": "V příštích 2 hodinách žádné odjezdy.",
+    "depsEarlier": "⬆ Dřívější odjezdy",
+    "depsLater": "⬇ Pozdější odjezdy",
     "stand": "stan. {n}",
     "depsModesOff": "Nezobrazuji: {m} — tak to máš nastavené v předvolbách.",
     "depsModesAll": "Zobrazit všechny dopravní prostředky",

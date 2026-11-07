@@ -1328,6 +1328,8 @@
     "v2TrainPlan": "pociąg wg rozkładu PLK",
     "farDeps": "Odjazdy",
     "farNoDeps": "Brak odjazdów w najbliższych 2 godzinach.",
+    "depsEarlier": "⬆ Wcześniejsze odjazdy",
+    "depsLater": "⬇ Późniejsze odjazdy",
     "stand": "stan. {n}",
     "depsModesOff": "Nie pokazuję: {m} — tak masz ustawione w Moich preferencjach.",
     "depsModesAll": "Pokaż wszystkie środki transportu",
