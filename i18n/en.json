@@ -984,6 +984,8 @@
     "portalBtn": "Open the search on Portal Pasażera",
     "loadingNote": "Waiting for PLK data. Don't worry, it's not silence, it's computing.",
     "plkDown": "PLK is not responding right now — retrying automatically every minute.",
+    "plk429": "PLK is temporarily limiting requests — retrying in a minute.",
+    "hOps429": "PLK is temporarily limiting requests — retrying in a minute (last try {t}).",
     "plkLastTry": "Last attempt: {t}. The problem is on the PKP PLK server side, not your phone.",
     "plkSlow": "PLK is responding more slowly than usual — still waiting…",
     "plkGiveUp": "PLK is still not responding. Please try again later.",

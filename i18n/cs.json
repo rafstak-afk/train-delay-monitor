@@ -984,6 +984,8 @@
     "portalBtn": "Otevřít vyhledávání na Portal Pasażera",
     "loadingNote": "Čekám na data PLK. Klid, to není ticho, to je informatika.",
     "plkDown": "PLK momentálně neodpovídá — automaticky to zkouším každou minutu.",
+    "plk429": "PLK dočasně omezuje dotazy — zkusím to znovu za minutu.",
+    "hOps429": "PLK dočasně omezuje dotazy — zkusím to znovu za minutu (poslední pokus {t}).",
     "plkLastTry": "Poslední pokus: {t}. Problém je na straně serveru PKP PLK, ne ve tvém telefonu.",
     "plkSlow": "PLK odpovídá pomaleji než obvykle — čekám dál…",
     "plkGiveUp": "PLK stále neodpovídá. Zkus to prosím později.",

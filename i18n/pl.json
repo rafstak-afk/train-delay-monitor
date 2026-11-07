@@ -984,6 +984,8 @@
     "portalBtn": "Otwórz wyszukiwarkę w Portal Pasażera",
     "loadingNote": "Czekam na dane PLK. Spokojnie, to nie cisza, to informatyka.",
     "plkDown": "PLK chwilowo nie odpowiada — ponawiam automatycznie co minutę.",
+    "plk429": "PLK chwilowo ogranicza zapytania — ponawiam za minutę.",
+    "hOps429": "PLK chwilowo ogranicza zapytania — ponawiam za minutę (ostatnia próba {t}).",
     "plkLastTry": "Ostatnia próba: {t}. To problem po stronie serwera PKP PLK, nie Twojego telefonu.",
     "plkSlow": "PLK odpowiada wolniej niż zwykle — czekam dalej…",
     "plkGiveUp": "PLK nadal nie odpowiada. Spróbuj ponownie za jakiś czas.",

@@ -1028,15 +1028,15 @@ function scheduleAutoRefresh(train,opts){
 let plkRetryTimer=null,plkRetryN=0;
 function clockNow(){const d=new Date();return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0')}
 function isPlkDownErr(e){return !!(e&&(e.plkDown||e.name==='AbortError'||e.name==='TimeoutError'||/Failed to fetch|NetworkError|Load failed/i.test(String(e.message||''))))}
-function showPlkDown(train,opts){
+function showPlkDown(train,opts,err){
   if(plkRetryTimer)clearTimeout(plkRetryTimer);
-  const give=plkRetryN>=20;
-  document.getElementById('content').innerHTML='<div class="panel"><div class="loader"><div class="train-loader"><div class="track"></div><div class="train-dot">🚆</div></div><strong>'+esc(T(give?'train.plkGiveUp':'train.plkDown'))+'</strong></div><div class="copy-note">'+esc(T('train.plkLastTry',{t:clockNow()}))+'</div><div style="margin-top:8px"><button type="button" class="btn-small" id="plkRetryNow">'+esc(T('train.plkRetryNow'))+'</button></div></div>';
-  setStatus(T(give?'train.plkGiveUp':'train.plkDown'));
+  const give=plkRetryN>=20,downKey=err&&/429/.test(String(err.message||''))?'train.plk429':'train.plkDown';
+  document.getElementById('content').innerHTML='<div class="panel"><div class="loader"><div class="train-loader"><div class="track"></div><div class="train-dot">🚆</div></div><strong>'+esc(T(give?'train.plkGiveUp':downKey))+'</strong></div><div class="copy-note">'+esc(T('train.plkLastTry',{t:clockNow()}))+'</div><div style="margin-top:8px"><button type="button" class="btn-small" id="plkRetryNow">'+esc(T('train.plkRetryNow'))+'</button></div></div>';
+  setStatus(T(give?'train.plkGiveUp':downKey));
   const again=function(){
     if(plkRetryTimer)clearTimeout(plkRetryTimer);plkRetryTimer=null;plkRetryN++;loading(train);
     fetchAndRenderTrain(train,opts).then(function(){plkRetryN=0;setStatus('')}).catch(function(e){
-      if(isPlkDownErr(e))showPlkDown(train,opts);
+      if(isPlkDownErr(e))showPlkDown(train,opts,e);
       else document.getElementById('content').innerHTML='<div class="panel err">'+esc(T('train.fetchFailed',{msg:e.message}))+'</div>';
     });
   };
@@ -1058,7 +1058,7 @@ function trainHealth(train,opts,data){
   const now=new Date(),nowMin=now.getHours()*60+now.getMinutes();
   let kind=null,msg='';
   if(date!==today){kind='date';msg=T('train.hDate',{d:date})}
-  else if(d.opsOk===false){kind='ops';msg=T('train.hOps',{t:clockNow()})}
+  else if(d.opsOk===false){kind='ops';msg=/429/.test(String(d.opsError||''))?T('train.hOps429',{t:clockNow()}):T('train.hOps',{t:clockNow()})}
   else if(!data.isFinished){
     // pierwsza niepotwierdzona stacja, której planowy czas minął o > 10 min (z doliczonym ostatnim opóźnieniem)
     const dl=last&&typeof last.delay==='number'?last.delay:0;
@@ -1083,7 +1083,7 @@ function trainHealth(train,opts,data){
   const old=document.getElementById('trainHealth');if(old)old.remove();
   c.insertBefore(box,c.firstChild);
   if(!kind)box.style.border='0',box.style.background='transparent',box.style.padding='0';
-  const again=function(){opsRetryN++;fetchAndRenderTrain(train,opts).catch(function(e){if(isPlkDownErr(e))showPlkDown(train,opts)})};
+  const again=function(){opsRetryN++;fetchAndRenderTrain(train,opts).catch(function(e){if(isPlkDownErr(e))showPlkDown(train,opts,e)})};
   const rb=document.getElementById('hRetry');if(rb)rb.onclick=function(){rb.disabled=true;rb.textContent=T('train.hRetrying');opsRetryN=0;again()};
   document.getElementById('hDiag').onclick=function(){
     const txt=JSON.stringify(lastDiag,null,1);
@@ -1160,7 +1160,7 @@ async function fetchAndRenderTrain(train,opts){
   }
 }
 
-async function loadTrain(){const train=qs('train');if(!train){setStatus(T('train.openHint'));return}setStatus(T('train.fetching'));loading(train);const idp=detailsParams();let schedule=idp.get('scheduleId')||idp.get('scheduledId');let order=idp.get('orderId');try{if(!schedule||!order){const found=await findCourseFromOpenedContext(train,idp);if(found){await fetchAndRenderTrain(train,found);return}renderFallback(train,T('train.needLink'));return}const o1={schedule,order,trainOrderId:idp.get('trainOrderId'),station:idp.get('station'),date:idp.get('date')||todayIso()};try{await fetchAndRenderTrain(train,o1)}catch(e1){if(isPlkDownErr(e1)){showPlkDown(train,o1);return}throw e1}}catch(e){document.getElementById('content').innerHTML='<div class="panel err">'+esc(T('train.fetchFailed',{msg:e.message}))+'</div>';setStatus(T('train.fetchFailedStatus'))}}
+async function loadTrain(){const train=qs('train');if(!train){setStatus(T('train.openHint'));return}setStatus(T('train.fetching'));loading(train);const idp=detailsParams();let schedule=idp.get('scheduleId')||idp.get('scheduledId');let order=idp.get('orderId');try{if(!schedule||!order){const found=await findCourseFromOpenedContext(train,idp);if(found){await fetchAndRenderTrain(train,found);return}renderFallback(train,T('train.needLink'));return}const o1={schedule,order,trainOrderId:idp.get('trainOrderId'),station:idp.get('station'),date:idp.get('date')||todayIso()};try{await fetchAndRenderTrain(train,o1)}catch(e1){if(isPlkDownErr(e1)){showPlkDown(train,o1,e1);return}throw e1}}catch(e){document.getElementById('content').innerHTML='<div class="panel err">'+esc(T('train.fetchFailed',{msg:e.message}))+'</div>';setStatus(T('train.fetchFailedStatus'))}}
 function renderTrain(train,data){
   const stations=Array.isArray(data.route)?data.route:[];
   // Zaznaczenia wsiadania/wysiadania resetujemy tylko przy faktycznie
