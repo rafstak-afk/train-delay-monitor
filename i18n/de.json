@@ -985,6 +985,8 @@
     "loadingNote": "Warte auf PLK-Daten. Keine Sorge, das ist keine Stille, das ist Informatik.",
     "plkDown": "PLK antwortet gerade nicht — ich versuche es jede Minute automatisch erneut.",
     "plk429": "PLK begrenzt gerade die Anfragen — neuer Versuch in einer Minute.",
+    "plk429Soon": "PLK begrenzt gerade die Anfragen — neuer Versuch in 15 s.",
+    "hOps429Soon": "PLK begrenzt gerade die Anfragen — neuer Versuch in 15 s (letzter Versuch {t}).",
     "hOps429": "PLK begrenzt gerade die Anfragen — neuer Versuch in einer Minute (letzter Versuch {t}).",
     "plkLastTry": "Letzter Versuch: {t}. Das Problem liegt beim Server von PKP PLK, nicht bei deinem Handy.",
     "plkSlow": "PLK antwortet langsamer als sonst — ich warte weiter…",

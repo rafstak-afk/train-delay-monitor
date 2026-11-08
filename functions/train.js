@@ -1030,7 +1030,7 @@ function clockNow(){const d=new Date();return String(d.getHours()).padStart(2,'0
 function isPlkDownErr(e){return !!(e&&(e.plkDown||e.name==='AbortError'||e.name==='TimeoutError'||/Failed to fetch|NetworkError|Load failed/i.test(String(e.message||''))))}
 function showPlkDown(train,opts,err){
   if(plkRetryTimer)clearTimeout(plkRetryTimer);
-  const give=plkRetryN>=20,downKey=err&&/429/.test(String(err.message||''))?'train.plk429':'train.plkDown';
+  const is429=!!(err&&/429/.test(String(err.message||''))),soon=is429&&plkRetryN===0,give=plkRetryN>=20,downKey=soon?'train.plk429Soon':is429?'train.plk429':'train.plkDown';
   document.getElementById('content').innerHTML='<div class="panel"><div class="loader"><div class="train-loader"><div class="track"></div><div class="train-dot">🚆</div></div><strong>'+esc(T(give?'train.plkGiveUp':downKey))+'</strong></div><div class="copy-note">'+esc(T('train.plkLastTry',{t:clockNow()}))+'</div><div style="margin-top:8px"><button type="button" class="btn-small" id="plkRetryNow">'+esc(T('train.plkRetryNow'))+'</button></div></div>';
   setStatus(T(give?'train.plkGiveUp':downKey));
   const again=function(){
@@ -1045,7 +1045,7 @@ function showPlkDown(train,opts,err){
   plkRetryTimer=setTimeout(function(){
     if(document.visibilityState==='hidden'){document.addEventListener('visibilitychange',function v(){if(document.visibilityState!=='hidden'){document.removeEventListener('visibilitychange',v);again()}});return}
     again();
-  },60000);
+  },soon?15000:60000);
 }
 // Stan danych biegu: kurs z innego dnia / PLK nie podał ruchu / PLK przestał aktualizować — komunikat nad trasą,
 // „Zapytaj PLK ponownie”, „Kopiuj diagnostykę”; przy braku ruchu ponawianie co minutę (najwyżej 10 razy).
@@ -1056,9 +1056,9 @@ function trainHealth(train,opts,data){
   const d=data.diag||{},today=todayIso(),date=opts.date||today,route=Array.isArray(data.route)?data.route:[];
   const conf=route.filter(s=>s.status==='confirmed'),last=conf[conf.length-1];
   const now=new Date(),nowMin=now.getHours()*60+now.getMinutes();
-  let kind=null,msg='';
+  let kind=null,msg='',ops429=false;
   if(date!==today){kind='date';msg=T('train.hDate',{d:date})}
-  else if(d.opsOk===false){kind='ops';msg=/429/.test(String(d.opsError||''))?T('train.hOps429',{t:clockNow()}):T('train.hOps',{t:clockNow()})}
+  else if(d.opsOk===false){kind='ops';ops429=/429/.test(String(d.opsError||''));msg=T(ops429?(opsRetryN===0?'train.hOps429Soon':'train.hOps429'):'train.hOps',{t:clockNow()})}
   else if(!data.isFinished){
     // pierwsza niepotwierdzona stacja, której planowy czas minął o > 10 min (z doliczonym ostatnim opóźnieniem)
     const dl=last&&typeof last.delay==='number'?last.delay:0;
@@ -1090,7 +1090,7 @@ function trainHealth(train,opts,data){
     const done=function(){const b=document.getElementById('hDiag');if(b)b.textContent=T('train.hDiagCopied')};
     if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(done,function(){prompt('',txt)});else prompt('',txt);
   };
-  if(kind==='ops'&&opsRetryN<10)opsRetryTimer=setTimeout(function(){if(document.visibilityState!=='hidden')again()},60000);
+  if(kind==='ops'&&opsRetryN<10)opsRetryTimer=setTimeout(function(){if(document.visibilityState!=='hidden')again()},ops429&&opsRetryN===0?15000:60000);
   if(!kind)opsRetryN=0;
 }
 async function fetchAndRenderTrain(train,opts){

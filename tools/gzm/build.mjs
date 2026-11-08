@@ -35,12 +35,14 @@ const readJson = (f, d) => { try { return JSON.parse(fs.readFileSync(f, "utf8"))
 const writeJson = (f, o, pretty) => { fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, JSON.stringify(o, null, pretty ? 1 : 0)); };
 
 // ---------- A. pliki ZIP z portalu ----------
-// Portal ZTM czasem chwilowo nie odpowiada (np. w trakcie publikacji nowych plików) — 3 próby co 30 s.
+// Portal ZTM czasem nie odpowiada przez kilka minut (5.11 i 8.11 o 6:00) — 7 prób w ciągu ok. 15 min.
+const RETRY_WAIT_S = [30, 60, 120, 180, 240, 300];
 async function fetchRetry(url, opts, what) {
+  const max = RETRY_WAIT_S.length + 1;
   for (let i = 1; ; i++) {
-    try { const r = await fetch(url, opts); if (r.ok || i >= 3) return r; log(what + ": HTTP " + r.status + ", ponawiam (" + i + "/3)"); }
-    catch (e) { if (i >= 3) throw e; log(what + ": " + (e.message || e) + ", ponawiam (" + i + "/3)"); }
-    await new Promise(r => setTimeout(r, 30000));
+    try { const r = await fetch(url, opts); if (r.ok || i >= max) return r; log(what + ": HTTP " + r.status + ", ponawiam (" + i + "/" + max + ")"); }
+    catch (e) { if (i >= max) throw e; log(what + ": " + (e.message || e) + ", ponawiam (" + i + "/" + max + ")"); }
+    await new Promise(r => setTimeout(r, RETRY_WAIT_S[i - 1] * 1000));
   }
 }
 async function fetchZips() {
