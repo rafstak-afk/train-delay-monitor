@@ -1183,7 +1183,8 @@
     }
     var NET_KIND = { 0: "tram", 3: "bus", 11: "trolley", 800: "trolley" };
     // Numer stanowiska (słupka) z kodu ZTM: 2469011-00105 → „05”, 2466011-07601t → „01t”. TEST: profil autora.
-    function standOn() { try { return localStorage.getItem("showVersionBadge") === "1"; } catch (e) { return false; } }
+    function standOn() { return true; }   // dla wszystkich od v5.79
+    function authorOn() { try { return localStorage.getItem("showVersionBadge") === "1"; } catch (e) { return false; } }
     function standOf(code) { var m = String(code || "").split("-")[1]; return m && m.length >= 5 ? m.slice(3) : ""; }
     function stTag(code) { if (!standOn()) return ""; var s = standOf(code); return s ? " · " + T("gzm.stand", { n: s }, "stan. {n}") : ""; }
     function stopDeps(net, name, fromMin, limit) {
@@ -1689,6 +1690,10 @@
       if (g.dist >= 800) { var len = dM(g.s, p[0]); for (var k = 1; k < p.length; k++) len += dM(p[k - 1], p[k]); len += dM(p[p.length - 1], g.e); if (len > 2.5 * g.dist) return "detour"; }
       return false;
     }
+    root.addEventListener("click", function (ev) {
+      if (!ev.target.closest("[data-forcetransit]") || !cState) return;
+      cState.forceTransit = true; renderMM();
+    });
     function v2WalkCard(g, base) {
       var arr = base + g.walk;
       var sub = esc(T("gzm.v2Sub", { a: C.fmt(base), b: C.fmt(arr), t: v2Total(g.walk) }, "wyjdź {a} · na miejscu {b} · w drodze {t}"));
@@ -1779,7 +1784,7 @@
       // (np. tym samym pociągiem dalej przez cel i autobusem z powrotem — wraca się na trasie).
       var v3 = v2On(), geo = v3 ? walkGeo(S) : null, walkTop = "";
       if (v3 && geo) {
-        out = out.filter(function (x) { return !absurd(x, geo); });
+        if (!S.forceTransit) out = out.filter(function (x) { return !absurd(x, geo); });
         // dominacja: lepszy = wyrusza nie wcześniej, dociera nie później, nie więcej przesiadek; pociąg chroniony tolerancją
         var tolOf = function (y) { return Math.max(10, Math.round(0.15 * (y.final - y.start))); };
         out = out.filter(function (x) {
@@ -1845,10 +1850,11 @@
         var walkCap = true;   // dla wszystkich od v5.56
         if ((geo.dist <= NODE_M || geo.walk <= 25 || base + geo.walk <= bestFinal || firstStart > base + 60) && (!walkCap || geo.dist <= NODE_M || geo.walk <= 60)) {
           walkTop = v2WalkCard(geo, base);
+          if (authorOn() && !S.forceTransit) walkTop += '<div style="margin:0 2px 10px"><button type="button" class="gz-btn sec" data-forcetransit="1">🚌 Szukaj mimo to komunikacją</button></div>';
           // noc / długa przerwa: najbliższe połączenie dopiero za ponad godzinę
           if (firstStart > base + 60 && firstStart < Infinity) walkTop += '<div class="gz-sub" style="margin:4px 2px 10px">' + esc(T("gzm.v3FirstLater", { t: C.fmt(firstStart) }, "Najbliższe połączenie komunikacją: wyjście dopiero o {t} (poniżej).")) + "</div>";
         }
-        if (geo.dist <= NODE_M) out = [];
+        if (geo.dist <= NODE_M && !S.forceTransit) out = [];
       } else out = out.filter(function (x) { return !out.some(function (y) { return y !== x && y.start >= x.start && y.final < x.final; }); }).slice(0, 6);
       if (!out.length && walkTop) {
         res.innerHTML = walkTop + (geo && geo.dist > NODE_M ? '<div class="gz-sub" style="margin:6px 2px">' + esc(T("gzm.v3NoTransit", null, "Komunikacją nie będzie szybciej albo brak połączeń w najbliższych godzinach — zmień godzinę, żeby zobaczyć późniejsze kursy.")) + "</div>" : "");

@@ -161,6 +161,7 @@ export async function onRequest(context) {
       orderId: bestCourse.orderId || "",
       trainOrderId: bestCourse.trainOrderId || "",
       alternatives,
+      stationTime: (() => { const st = (bestCourse.stations || []).find(s => Number(s.stationId) === Number(stationId)); return st ? (st.departureTime || st.arrivalTime || "") : ""; })(),
       station: stationName,
       stationId,
       date: date
