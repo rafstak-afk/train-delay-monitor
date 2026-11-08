@@ -12,6 +12,10 @@ on:
         description: "Tylko wskazane pary: stacja:peron:prefiks_słupka (np. 73312:2:2469011-001). Puste = dojścia z „B”."
         type: string
         default: ""
+      all:
+        description: "Wszystkie pary stacja–słupek w GZM (raport porównawczy)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -42,7 +46,7 @@ jobs:
           git fetch --depth 1 origin gzm-data
           NET=$(git ls-tree --name-only FETCH_HEAD network/ | sort | head -1)
           git show FETCH_HEAD:$NET > /tmp/network.json
-          OTP_CUSTOM="${{ inputs.custom }}" node tools/gzm/otp-walk.mjs pairs /tmp/network.json
+          OTP_ALL="${{ inputs.all && '1' || '0' }}" OTP_CUSTOM="${{ inputs.custom }}" node tools/gzm/otp-walk.mjs pairs /tmp/network.json
 
       - name: Mapa (wycinek Śląska) i OTP
         run: |

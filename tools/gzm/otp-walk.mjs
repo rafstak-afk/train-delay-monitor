@@ -47,13 +47,15 @@ if (cmd === "pairs") {
       pairs.push({ st: cst, code, stop: s.n, to: s.c, ctrl: false, our: { src: v.src || "brak", min: our, max: cref ? our : v.max, m: v.m }, from: plat.map(p => ({ ref: p.ref, c: p.c })) });
     }
   }
+  // OTP_ALL=1 — wszystkie pary stacja–słupek w GZM (raport porównawczy, TODO 22)
+  const all = process.env.OTP_ALL === "1";
   if (!custom) for (const [k, v] of Object.entries(cache.entries)) if (v.src === "fallback") bad.add(k.split("|")[0]);
   for (const [k, v] of (custom ? [] : Object.entries(cache.entries))) {
     const [st, code] = k.split("|"), s = byCode[code], plat = (cache.stations[st] || {}).platforms || [];
-    if (!s || !bad.has(st) || !plat.length) continue;
+    if (!s || (!all && !bad.has(st)) || !plat.length) continue;
     const ctrl = v.src === "osm";
-    if (ctrl && pairs.filter(p => p.st === st && p.ctrl).length >= 3) continue;
-    if (!ctrl && v.src !== "fallback") continue;
+    if (!all && ctrl && pairs.filter(p => p.st === st && p.ctrl).length >= 3) continue;
+    if (!all && !ctrl && v.src !== "fallback") continue;
     pairs.push({ st, code, stop: s.n, to: s.c, ctrl, our: { src: v.src, min: v.min, max: v.max, m: v.m },
       from: plat.filter(p => p.c).map(p => ({ ref: p.ref, c: p.c })) });
   }
