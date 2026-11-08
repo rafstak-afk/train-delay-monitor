@@ -984,12 +984,34 @@
       if (n === normName(T("gzm.pGps", null, "Moja lokalizacja")) || n === "moja lokalizacja" || n === "tu jestem") return "gps";
       return null;
     }
-    function gpsNow() {
+    // Najpierw dokładny GPS (10 s), a gdy nie zdąży lub nie ma sygnału — lokalizacja przybliżona z sieci/Wi-Fi (8 s).
+    // Błąd niesie przyczynę: gps:none / gps:denied / gps:unavail / gps:timeout (komunikat w gpsErrHtml).
+    function gpsTry(high, ms, maxAge) {
       return new Promise(function (res, rej) {
-        if (!navigator.geolocation) return rej(new Error("gps"));
-        navigator.geolocation.getCurrentPosition(function (p) { res({ lat: p.coords.latitude, lon: p.coords.longitude, acc: p.coords.accuracy }); }, function () { rej(new Error("gps")); }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 30000 });
+        navigator.geolocation.getCurrentPosition(function (p) { res({ lat: p.coords.latitude, lon: p.coords.longitude, acc: p.coords.accuracy, approx: !high }); }, rej, { enableHighAccuracy: high, timeout: ms, maximumAge: maxAge });
       });
     }
+    function gpsNow() {
+      if (!navigator.geolocation) return Promise.reject(new Error("gps:none"));
+      var fail = function (e) { return new Error(e && e.code === 1 ? "gps:denied" : e && e.code === 3 ? "gps:timeout" : "gps:unavail"); };
+      return gpsTry(true, 10000, 30000).catch(function (e) {
+        if (e && e.code === 1) throw fail(e);
+        return gpsTry(false, 8000, 120000).catch(function (e2) { throw fail(e2); });
+      });
+    }
+    function gpsErrHtml(m) {
+      var why = String(m || "").split(":")[1];
+      var txt = why === "denied" ? T("gzm.pGpsDenied", null, "Przeglądarka nie ma zgody na lokalizację. Włącz ją w ustawieniach tej strony i spróbuj ponownie.") :
+        why === "timeout" ? T("gzm.pGpsTimeout", null, "Telefon nie zdążył ustalić położenia. Spróbuj ponownie albo wpisz przystanek.") :
+        why === "none" ? T("gzm.pGpsNone", null, "Ta przeglądarka nie udostępnia lokalizacji. Wpisz przystanek albo adres.") :
+        why === "unavail" ? T("gzm.pGpsUnavail", null, "Telefon nie podał położenia. Sprawdź, czy lokalizacja jest włączona, albo wpisz przystanek.") :
+        T("gzm.pGpsErr", null, "Nie udało się odczytać lokalizacji GPS (zgoda w przeglądarce?).");
+      return '<div class="gz-warn">' + esc(txt) + (why === "none" ? "" : '<div style="margin-top:8px"><button type="button" class="gz-btn" data-gpsretry="1">' + esc(T("gzm.pGpsRetry", null, "🔄 Spróbuj ponownie")) + "</button></div>") + "</div>";
+    }
+    root.addEventListener("click", function (ev) {
+      if (!ev.target.closest("[data-gpsretry]")) return;
+      var go = root.querySelector("#gzCGo"); if (go) go.click();
+    });
     function resolvePlace(txt) {
       var k = placeKey(txt);
       if (!k && uniOn() && !stationByName(txt) && looksAddress(txt)) return geocode(txt).then(function (g) {
@@ -1002,7 +1024,7 @@
         return geocode(txt).then(function (g) { return g ? { key: "addr", label: g.label, lat: g.lat, lon: g.lon, far: true } : null; });
       }, function () { return null; });
       if (!k) return Promise.resolve(null);
-      if (k === "gps") return gpsNow().then(function (g) { return { key: k, label: PL_TOK.gps, lat: g.lat, lon: g.lon }; });
+      if (k === "gps") return gpsNow().then(function (g) { return { key: k, label: PL_TOK.gps + (g.approx ? " (" + T("gzm.pGpsApprox", null, "przybliżona") + ")" : ""), lat: g.lat, lon: g.lon }; });
       var pl = load(PLACES, {})[k];
       if (!pl) return Promise.reject(new Error("unset:" + k));
       return Promise.resolve({ key: k, label: PL_TOK[k], lat: pl.lat, lon: pl.lon, walks: pl.walks || null });
@@ -1220,7 +1242,7 @@
     function fromOnlyDeps(fromTxt, tmin, date) {
       var res = root.querySelector("#gzCRes");
       res.innerHTML = '<div class="gz-empty gz-searching">🔎 ' + esc(T("gzm.loading", null, "Wczytuję rozkład…")) + "</div>";
-      Promise.all([getNet(date), getRt(), resolvePlace(fromTxt).catch(function () { return null; })]).then(function (r) {
+      Promise.all([getNet(date), getRt(), resolvePlace(fromTxt).catch(function (e) { if (/^gps/.test(String(e && e.message))) throw e; return null; })]).then(function (r) {
         var net = r[0], pl = r[2]; if (netP[date]) netP[date]._net = net;
         net._excl = exclOf();
         var groups = [];
@@ -1244,7 +1266,7 @@
             '<div class="gz-fardeps" style="margin-left:0">' + depBoxInner(bx) + "</div></div>";
         }).join("") + (standOn() ? depsModesNote(anyDep) : "") + '<div class="gz-sub" style="margin:6px 2px">' + esc(T("gzm.fromOnlyHint", null, "Wpisz też „Dokąd”, żeby ułożyć całą podróż.")) + "</div>";
         scrollToFirst(res, ".gz-farbox");
-      }).catch(function () { res.innerHTML = '<div class="gz-warn">' + esc(T("gzm.noIndex", null, "Dane GZM są chwilowo niedostępne.")) + "</div>"; });
+      }).catch(function (e) { res.innerHTML = /^gps/.test(String(e && e.message)) ? gpsErrHtml(e.message) : '<div class="gz-warn">' + esc(T("gzm.noIndex", null, "Dane GZM są chwilowo niedostępne.")) + "</div>"; });
     }
     var depBoxes = [];
     function depBoxInner(bx) {
@@ -1361,7 +1383,7 @@
       Promise.all([resolvePlace(fromTxt), resolvePlace(toTxt)]).then(function (pp) { fromPlace = pp[0]; toPlace = pp[1]; return Promise.all([getNet(date), getRt()]); }, function (e) {
         var m = String(e && e.message || "");
         if (m.indexOf("addr:") === 0) { res.innerHTML = '<div class="gz-warn">' + esc(T("gzm.uNoAddr", { a: m.slice(5) }, "Nie znalazłem adresu „{a}” (szukam na Śląsku). Dopisz miasto, np. „Opolska 5, Tarnowskie Góry”.")) + "</div>"; throw "handled"; }
-        res.innerHTML = '<div class="gz-warn">' + esc(m.indexOf("unset:") === 0 ? T("gzm.pUnset", { p: PL_TOK[m.slice(6)] }, "Najpierw ustaw miejsce {p} — poniżej, w „Moje miejsca”.") : T("gzm.pGpsErr", null, "Nie udało się odczytać lokalizacji GPS (zgoda w przeglądarce?).")) + "</div>";
+        res.innerHTML = m.indexOf("unset:") === 0 ? '<div class="gz-warn">' + esc(T("gzm.pUnset", { p: PL_TOK[m.slice(6)] }, "Najpierw ustaw miejsce {p} — poniżej, w „Moje miejsca”.")) + "</div>" : gpsErrHtml(m);
         throw "handled";
       }).then(function (r) {
         var net = r[0], code = GzmRaptor.byCode(net);
