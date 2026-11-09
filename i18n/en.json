@@ -985,6 +985,7 @@
     "loadingNote": "Waiting for PLK data. Don't worry, it's not silence, it's computing.",
     "plkDown": "PLK is not responding right now — retrying automatically every minute.",
     "plk429": "PLK is temporarily limiting requests — retrying in a minute.",
+    "dataFrom": "Data from {t}",
     "plk429Soon": "PLK is temporarily limiting requests — retrying in 15 s.",
     "hOps429Soon": "PLK is temporarily limiting requests — retrying in 15 s (last try {t}).",
     "hOps429": "PLK is temporarily limiting requests — retrying in a minute (last try {t}).",

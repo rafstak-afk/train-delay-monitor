@@ -985,6 +985,7 @@
     "loadingNote": "Czekam na dane PLK. Spokojnie, to nie cisza, to informatyka.",
     "plkDown": "PLK chwilowo nie odpowiada — ponawiam automatycznie co minutę.",
     "plk429": "PLK chwilowo ogranicza zapytania — ponawiam za minutę.",
+    "dataFrom": "Dane z {t}",
     "plk429Soon": "PLK chwilowo ogranicza zapytania — ponawiam za 15 s.",
     "hOps429Soon": "PLK chwilowo ogranicza zapytania — ponawiam za 15 s (ostatnia próba {t}).",
     "hOps429": "PLK chwilowo ogranicza zapytania — ponawiam za minutę (ostatnia próba {t}).",

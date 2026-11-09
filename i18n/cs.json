@@ -985,6 +985,7 @@
     "loadingNote": "Čekám na data PLK. Klid, to není ticho, to je informatika.",
     "plkDown": "PLK momentálně neodpovídá — automaticky to zkouším každou minutu.",
     "plk429": "PLK dočasně omezuje dotazy — zkusím to znovu za minutu.",
+    "dataFrom": "Data z {t}",
     "plk429Soon": "PLK dočasně omezuje dotazy — zkusím to znovu za 15 s.",
     "hOps429Soon": "PLK dočasně omezuje dotazy — zkusím to znovu za 15 s (poslední pokus {t}).",
     "hOps429": "PLK dočasně omezuje dotazy — zkusím to znovu za minutu (poslední pokus {t}).",

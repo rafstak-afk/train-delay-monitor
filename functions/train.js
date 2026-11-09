@@ -437,7 +437,7 @@ async function findCourseFromOpenedContext(train,idp){
   if(!schedule||!order)return null;
   return {dep:hit,schedule,order,trainOrderId:hit.trainOrderId||hit.trainOrderID||'',station:station||data.station?.name||'',stationId:stationId||data.station?.id||'',date};
 }
-const AUTO_REFRESH_MS=5*60*1000;
+const AUTO_REFRESH_MS=5*60*1000,RUNNING_REFRESH_MS=2*60*1000,RETURN_REFRESH_MS=60*1000;
 let autoRefreshTimer=null;
 let lastTrainFetchAt=0;
 let lastTrainArgs=null;
@@ -1030,12 +1030,25 @@ async function syncTypicalTripsFromProfile(){
 function scheduleAutoRefresh(train,opts){
   if(autoRefreshTimer)clearInterval(autoRefreshTimer);
   autoRefreshTimer=setInterval(()=>{
+    if(document.visibilityState==='hidden'||!autoRefreshDue(currentTrainData,Date.now()-lastTrainFetchAt))return;
     fetchAndRenderTrain(train,opts).then(function(){setStatus('')}).catch(function(e){
       // dane już są na ekranie — mówimy, z której są godziny; kolejna próba przy następnym odświeżeniu
       if(isPlkDownErr(e)&&lastTrainFetchAt){const d=new Date(lastTrainFetchAt);setStatus(T('train.plkStale',{t:String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'),now:clockNow()}))}
     });
-  },AUTO_REFRESH_MS);
+  },30000);
 }
+// Jadący pociąg (jest potwierdzona stacja, nie dojechał) co 2 min, pociąg przed odjazdem co 5 min, po dojeździe wcale.
+function autoRefreshDue(data,age){
+  if(data&&data.isFinished)return false;
+  const running=!!(data&&Array.isArray(data.route)&&data.route.some(s=>s.status==='confirmed'));
+  return age>=(running?RUNNING_REFRESH_MS:AUTO_REFRESH_MS);
+}
+// Powrót do otwartej karty: telefon usypia zegary, więc dane starsze niż minuta dociągamy od razu.
+function refreshOnReturn(){
+  if(!lastTrainArgs||(currentTrainData&&currentTrainData.isFinished)||Date.now()-lastTrainFetchAt<RETURN_REFRESH_MS)return;
+  fetchAndRenderTrain(...lastTrainArgs).then(function(){setStatus('')}).catch(function(){});
+}
+document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')refreshOnReturn()});
 
 // PLK nie odpowiada: czytelny komunikat + automatyczne ponawianie co minutę (tylko gdy strona jest widoczna),
 // z godziną ostatniej próby. Najwyżej 20 prób, potem prośba o spróbowanie później.
@@ -1090,8 +1103,9 @@ function trainHealth(train,opts,data){
     if(kind==='date'){const u=new URLSearchParams(location.search);u.set('date',today);h+='<a class="btn-small" href="?'+esc(u.toString())+'">'+esc(T('train.hToday'))+'</a> '}
     else h+='<button type="button" class="btn-small" id="hRetry">'+esc(T('train.hRetry'))+'</button> ';
   }
+  h+='<span style="font-size:12px;opacity:.7;margin-right:8px">'+esc(T('train.dataFrom',{t:clockNow().slice(0,5)}))+'</span>';
   h+='<button type="button" class="btn-small" id="hDiag">'+esc(T('train.hDiagBtn'))+'</button>';
-  if(!kind)h='<div style="display:flex;justify-content:flex-end">'+h+'</div>';
+  if(!kind)h='<div style="display:flex;justify-content:flex-end;align-items:center">'+h+'</div>';
   box.innerHTML=h;
   const c=document.getElementById('content');if(!c)return;
   const old=document.getElementById('trainHealth');if(old)old.remove();
@@ -1367,7 +1381,7 @@ document.addEventListener('DOMContentLoaded',function(){
 // okna. Gdy dane są starsze niż AUTO_REFRESH_MS, dociągamy je od razu.
 // Zmiana języka: przerysowujemy bieg z już pobranych danych (bez zapytania do PLK).
 window.addEventListener('langchange',function(){if(currentTrainData&&lastTrainArgs){renderTrain(lastTrainArgs[0],currentTrainData)}});
-window.addEventListener('pageshow',function(e){if(e.persisted&&lastTrainArgs&&Date.now()-lastTrainFetchAt>AUTO_REFRESH_MS){fetchAndRenderTrain(...lastTrainArgs).catch(()=>{})}});
+window.addEventListener('pageshow',function(e){if(e.persisted)refreshOnReturn()});
 </script>
 </body>
 </html>`;
