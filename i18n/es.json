@@ -1385,5 +1385,23 @@
     "noResTrainOnly": "Buscas solo trenes: hasta la estación y desde ella cuento entonces solo el trayecto a pie (hasta unos {km} km). El origen o el destino está más lejos de una estación, así que sin autobús ni tranvía no se puede llegar.",
     "noResModes": "Desactivado en tus preferencias: {m}. Sin ellos no encontré ruta.",
     "modesAllBtn": "🚆🚌 Activar todos los medios de transporte y buscar"
+  },
+  "tt": {
+    "title": "Nuevo horario de trenes desde el 13 de diciembre",
+    "summary": "Tus trenes: {miss} sin este número · {ch} con hora nueva · {same} sin cambios",
+    "summaryUnknown": "{n} sin comprobar",
+    "details": "Ver detalles",
+    "hide": "Ocultar",
+    "checking": "Comprobando tus trenes en el nuevo horario (desde el 13.12)…",
+    "searching": "Buscando…",
+    "missing": "no encontrado con este número",
+    "unknown": "no se pudo comprobar",
+    "nearBtn": "Ver salidas de esta estación a esta hora (14.12)",
+    "nearNote": "Salidas más cercanas, comprueba la dirección:",
+    "nearFail": "No se pudieron cargar las salidas.",
+    "otherTime": "otra hora del día, comprueba si es el mismo tren",
+    "onlySat": "no encontrado el lunes 14.12, circula el sábado",
+    "onlySun": "no encontrado el lunes 14.12, circula el domingo",
+    "note": "«No encontrado con este número» no significa que el tren desaparezca: puede tener un número nuevo y PLK puede seguir completando el horario. Tu lista no cambia hasta que la cambies tú."
   }
 }

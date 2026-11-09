@@ -1385,5 +1385,23 @@
     "noResTrainOnly": "You are searching trains only — to and from the station I then count walking only (up to about {km} km). Your start or destination is farther from a station, so it can’t be reached without a bus or tram.",
     "noResModes": "Turned off in your preferences: {m}. Without them I found no route.",
     "modesAllBtn": "🚆🚌 Turn on all means of transport and search"
+  },
+  "tt": {
+    "title": "New train timetable from 13 December",
+    "summary": "Your trains: {miss} without this number · {ch} with a new time · {same} unchanged",
+    "summaryUnknown": "{n} not checked",
+    "details": "Show details",
+    "hide": "Hide",
+    "checking": "Checking your trains in the new timetable (from 13.12)…",
+    "searching": "Searching…",
+    "missing": "not found under this number",
+    "unknown": "could not be checked",
+    "nearBtn": "Show departures from this station around this time (14.12)",
+    "nearNote": "Nearest departures, please check the direction:",
+    "nearFail": "Could not load departures.",
+    "otherTime": "different time of day, check that it is the same train",
+    "onlySat": "not found on Monday 14.12, runs on Saturday",
+    "onlySun": "not found on Monday 14.12, runs on Sunday",
+    "note": "“Not found under this number” does not mean the train is gone: it may have a new number, and PLK may still be completing the timetable. Your list stays as it is until you change it."
   }
 }

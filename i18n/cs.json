@@ -1385,5 +1385,23 @@
     "noResTrainOnly": "Hledáte jen vlaky — k nádraží a od něj pak počítám jen chůzi (do cca {km} km). Start nebo cíl je dál od nádraží, takže bez autobusu či tramvaje se tam nedostanete.",
     "noResModes": "Vypnuto v předvolbách: {m}. Bez nich jsem trasu nenašel.",
     "modesAllBtn": "🚆🚌 Zapnout všechny dopravní prostředky a hledat"
+  },
+  "tt": {
+    "title": "Od 13. prosince nový jízdní řád",
+    "summary": "Tvoje vlaky: {miss} bez tohoto čísla · {ch} s novým časem · {same} beze změny",
+    "summaryUnknown": "{n} neověřeno",
+    "details": "Zobrazit podrobnosti",
+    "hide": "Skrýt",
+    "checking": "Kontroluji tvoje vlaky v novém jízdním řádu (od 13.12)…",
+    "searching": "Hledám…",
+    "missing": "pod tímto číslem nenalezen",
+    "unknown": "nepodařilo se ověřit",
+    "nearBtn": "Zobrazit odjezdy z této stanice v tuto dobu (14.12)",
+    "nearNote": "Nejbližší odjezdy, směr si ověř sám:",
+    "nearFail": "Odjezdy se nepodařilo načíst.",
+    "otherTime": "jiná denní doba, ověř, zda jde o stejný vlak",
+    "onlySat": "v pondělí 14.12 nenalezen, jede v sobotu",
+    "onlySun": "v pondělí 14.12 nenalezen, jede v neděli",
+    "note": "„Pod tímto číslem nenalezen“ neznamená, že vlak nepojede: mohl dostat nové číslo a PLK může jízdní řád ještě doplňovat. Tvůj seznam zůstane, dokud ho nezměníš."
   }
 }

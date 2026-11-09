@@ -1385,5 +1385,23 @@
     "noResTrainOnly": "Szukasz tylko pociągów — do stacji i od stacji liczę wtedy wyłącznie dojście pieszo (najwyżej ok. {km} km). Start albo cel jest dalej od stacji, więc bez autobusu lub tramwaju nie da się tam dotrzeć.",
     "noResModes": "Wyłączone w preferencjach: {m}. Bez nich nie znalazłem trasy.",
     "modesAllBtn": "🚆🚌 Włącz wszystkie środki transportu i szukaj"
+  },
+  "tt": {
+    "title": "Od 13 grudnia nowy rozkład jazdy",
+    "summary": "Twoje pociągi: {miss} bez tego numeru · {ch} ze zmianą godziny · {same} bez zmian",
+    "summaryUnknown": "{n} niesprawdzone",
+    "details": "Pokaż szczegóły",
+    "hide": "Ukryj",
+    "checking": "Sprawdzam Twoje pociągi w nowym rozkładzie (od 13.12)…",
+    "searching": "Szukam…",
+    "missing": "nie ma pod tym numerem",
+    "unknown": "nie udało się sprawdzić",
+    "nearBtn": "Pokaż odjazdy z tej stacji o tej porze (14.12)",
+    "nearNote": "Najbliższe odjazdy, kierunek sprawdź sam:",
+    "nearFail": "Nie udało się pobrać odjazdów.",
+    "otherTime": "inna pora dnia, sprawdź, czy to ten sam pociąg",
+    "onlySat": "w poniedziałek 14.12 nie znalazłem, jeździ w sobotę",
+    "onlySun": "w poniedziałek 14.12 nie znalazłem, jeździ w niedzielę",
+    "note": "„Nie ma pod tym numerem” nie znaczy, że pociągu nie będzie: mógł dostać nowy numer, a PLK może jeszcze uzupełniać rozkład. Twoja lista się nie zmienia, dopóki sam jej nie zmienisz."
   }
 }

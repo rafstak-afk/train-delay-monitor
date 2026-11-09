@@ -1385,5 +1385,23 @@
     "noResTrainOnly": "Du suchst nur Züge — zum und vom Bahnhof rechne ich dann nur Fußwege (bis ca. {km} km). Start oder Ziel liegt weiter vom Bahnhof entfernt, ohne Bus oder Straßenbahn ist es nicht erreichbar.",
     "noResModes": "In den Einstellungen ausgeschaltet: {m}. Ohne sie habe ich keine Route gefunden.",
     "modesAllBtn": "🚆🚌 Alle Verkehrsmittel einschalten und suchen"
+  },
+  "tt": {
+    "title": "Neuer Fahrplan ab 13. Dezember",
+    "summary": "Deine Züge: {miss} ohne diese Nummer · {ch} mit neuer Zeit · {same} unverändert",
+    "summaryUnknown": "{n} nicht geprüft",
+    "details": "Details anzeigen",
+    "hide": "Ausblenden",
+    "checking": "Deine Züge werden im neuen Fahrplan geprüft (ab 13.12)…",
+    "searching": "Suche…",
+    "missing": "unter dieser Nummer nicht gefunden",
+    "unknown": "konnte nicht geprüft werden",
+    "nearBtn": "Abfahrten von diesem Bahnhof zu dieser Zeit anzeigen (14.12)",
+    "nearNote": "Nächste Abfahrten, bitte Richtung prüfen:",
+    "nearFail": "Abfahrten konnten nicht geladen werden.",
+    "otherTime": "andere Tageszeit, prüfe, ob es derselbe Zug ist",
+    "onlySat": "am Montag 14.12 nicht gefunden, fährt am Samstag",
+    "onlySun": "am Montag 14.12 nicht gefunden, fährt am Sonntag",
+    "note": "„Unter dieser Nummer nicht gefunden“ heißt nicht, dass der Zug entfällt: Er kann eine neue Nummer haben, und PLK ergänzt den Fahrplan womöglich noch. Deine Liste bleibt, bis du sie änderst."
   }
 }

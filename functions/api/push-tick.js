@@ -487,6 +487,19 @@ async function checkDisruptionTypes(env, origin, today, summary) {
   return changes;
 }
 
+// Zmiana rocznego rozkładu: jedno powiadomienie 12.12.2026 o 18:00 (TODO 39 p. 2). Wyzwala je sam moment —
+// push-tick chodzi co 5 min, więc jeden przebieg; bez zapisów KV i bez zapytań do PLK.
+const TT_NOTICE = {
+  pl: ["🗓️ Jutro nowy rozkład jazdy", "Część pociągów zmienia godziny albo numery. Sprawdź „Moje pociągi”."],
+  en: ["🗓️ New timetable tomorrow", "Some trains change times or numbers. Check “My trains”."],
+  de: ["🗓️ Morgen neuer Fahrplan", "Manche Züge ändern Zeiten oder Nummern. Prüfe „Meine Züge“."],
+  cs: ["🗓️ Zítra nový jízdní řád", "Některé vlaky mění časy nebo čísla. Zkontroluj „Moje vlaky“."],
+  es: ["🗓️ Mañana nuevo horario", "Algunos trenes cambian de hora o de número. Revisa «Mis trenes»."],
+  uk: ["🗓️ Завтра новий розклад", "Деякі поїзди змінюють час або номери. Перевір «Мої поїзди»."]
+};
+function ttNoticeDue(now, nowMinutes) { return now.date === "2026-12-12" && nowMinutes >= 1080 && nowMinutes < 1085; }
+function ttNoticePayload(lang) { const m = TT_NOTICE[lang] || TT_NOTICE.pl; return { title: m[0], body: m[1], url: "/moje-pociagi/" }; }
+
 function disruptionTypesPayload(changes) {
   return {
     title: "🆕 Nowe typy utrudnień PLK",
@@ -669,6 +682,12 @@ export async function onRequestPost(context) {
         }
       }
       const trains = Array.isArray(profile.trains) ? profile.trains : [];
+      if (ttNoticeDue(now, nowMinutes) && profile.alarmEnabled && trains.length) {
+        for (const sub of subs) {
+          try { await sendPush(env, sub, ttNoticePayload(typeof profile.language === "string" ? profile.language : "pl")); summary.pushSent++; }
+          catch (e) { summary.errors.push(`${token} push (nowy rozkład): ${e.message}`); }
+        }
+      }
       const watchedStations = (Array.isArray(profile.watchedStations) ? profile.watchedStations : [])
         .filter(Boolean).slice(0, MAX_WATCHED_STATIONS);
 
