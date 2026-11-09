@@ -405,6 +405,20 @@ function renderDelayCol(s){
 }
 function loading(train){document.getElementById('content').innerHTML='<div class="panel"><div class="loader"><div class="train-loader"><div class="track"></div><div class="train-dot">🚆</div></div><strong>'+esc(T('train.loading',{train:train}))+'</strong></div><div class="copy-note">'+esc(T('train.loadingNote'))+'</div></div>'}
 
+// Link bez identyfikatorów kursu (np. karta w „Moich pociągach” stuknięta w trakcie ładowania): sami szukamy kursu
+// po numerze i stacji, tak jak robi to lista. Przy błędzie wracamy do przeszukania tablicy stacji.
+async function lookupCourseByNumber(train,idp){
+  const station=idp.get('station')||'';
+  if(!station)return null;
+  const date=idp.get('date')||todayIso();
+  try{
+    setStatus(T('train.searchingCourse',{train:train,date:date}));
+    const r=await fetch('/api/v2/smart-lookup?'+new URLSearchParams({train:train,station:station,date:date}).toString(),{headers:{Accept:'application/json'}});
+    const j=await r.json();
+    if(!j||!j.ok||!j.scheduleId||!j.orderId)return null;
+    return {schedule:j.scheduleId,order:j.orderId,trainOrderId:j.trainOrderId||'',station:station,stationId:idp.get('stationId')||j.stationId||'',date:date};
+  }catch(e){return null}
+}
 async function findCourseFromOpenedContext(train,idp){
   const station=idp.get('station')||qs('station')||'';
   const stationId=idp.get('stationId')||qs('stationId')||'';
@@ -1160,7 +1174,7 @@ async function fetchAndRenderTrain(train,opts){
   }
 }
 
-async function loadTrain(){const train=qs('train');if(!train){setStatus(T('train.openHint'));return}setStatus(T('train.fetching'));loading(train);const idp=detailsParams();let schedule=idp.get('scheduleId')||idp.get('scheduledId');let order=idp.get('orderId');try{if(!schedule||!order){const found=await findCourseFromOpenedContext(train,idp);if(found){await fetchAndRenderTrain(train,found);return}renderFallback(train,T('train.needLink'));return}const o1={schedule,order,trainOrderId:idp.get('trainOrderId'),station:idp.get('station'),date:idp.get('date')||todayIso()};try{await fetchAndRenderTrain(train,o1)}catch(e1){if(isPlkDownErr(e1)){showPlkDown(train,o1,e1);return}throw e1}}catch(e){document.getElementById('content').innerHTML='<div class="panel err">'+esc(T('train.fetchFailed',{msg:e.message}))+'</div>';setStatus(T('train.fetchFailedStatus'))}}
+async function loadTrain(){const train=qs('train');if(!train){setStatus(T('train.openHint'));return}setStatus(T('train.fetching'));loading(train);const idp=detailsParams();let schedule=idp.get('scheduleId')||idp.get('scheduledId');let order=idp.get('orderId');try{if(!schedule||!order){const found=await lookupCourseByNumber(train,idp)||await findCourseFromOpenedContext(train,idp);if(found){try{await fetchAndRenderTrain(train,found)}catch(e2){if(isPlkDownErr(e2)){showPlkDown(train,found,e2);return}throw e2}return}renderFallback(train,T('train.needLink'));return}const o1={schedule,order,trainOrderId:idp.get('trainOrderId'),station:idp.get('station'),date:idp.get('date')||todayIso()};try{await fetchAndRenderTrain(train,o1)}catch(e1){if(isPlkDownErr(e1)){showPlkDown(train,o1,e1);return}throw e1}}catch(e){document.getElementById('content').innerHTML='<div class="panel err">'+esc(T('train.fetchFailed',{msg:e.message}))+'</div>';setStatus(T('train.fetchFailedStatus'))}}
 function renderTrain(train,data){
   const stations=Array.isArray(data.route)?data.route:[];
   // Zaznaczenia wsiadania/wysiadania resetujemy tylko przy faktycznie
