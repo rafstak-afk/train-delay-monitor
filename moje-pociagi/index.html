@@ -985,6 +985,29 @@ function maybeScrollToNow() {
 
 // Pomiar dojścia pieszo przeniesiony do planera (/walk-measure.js, zakładka Pociąg + GZM).
 
+function staggerOn() { try { return localStorage.getItem('showVersionBadge') === '1'; } catch (e) { return false; } }
+// Najwyżej n zadań naraz; z kolejki rusza to o najniższej randze. Opcjonalnie dopiero po starcie `after`.
+function requestGate(n, after) {
+  let active = 0, open = !after; const queue = [];
+  const pump = () => {
+    if (!open) return;
+    queue.sort((a, b) => a.rank - b.rank);
+    while (active < n && queue.length) {
+      const job = queue.shift(); active++;
+      Promise.resolve().then(job.run).then(job.res, job.rej).finally(() => { active--; pump(); });
+    }
+  };
+  if (after) after.then(() => { open = true; pump(); });
+  return (rank, run) => new Promise((res, rej) => { queue.push({ rank, run, res, rej }); pump(); });
+}
+// Im bliżej teraz (w obie strony, do 2 h wstecz — pociąg może jeszcze jechać), tym wcześniej.
+function nearNowRank(item) {
+  const m = String(item.planTime || '').match(/^(\d{1,2}):(\d{2})$/); if (!m) return 9999;
+  const now = new Date(); let d = +m[1] * 60 + +m[2] - (now.getHours() * 60 + now.getMinutes());
+  if (d < -720) d += 1440; else if (d > 720) d -= 1440;
+  return d >= -120 ? Math.abs(d) : 5000 + Math.abs(d);
+}
+
 function renderFromCache() {
   const container = document.getElementById('list');
   container.innerHTML = currentTrains.length ? currentTrains.map((item, idx) => renderCard(item, idx, lastRows[idx])).join('') : emptyListHtml();
@@ -1292,7 +1315,12 @@ async function init() {
     // stacje odpowiedzą — każda rusza w stronę renderu, gdy tylko dostanie
     // dane dla SWOJEJ stacji.
     const stations = [...new Set(currentTrains.map(t => t.station))];
-    const stationPromises = new Map(stations.map(st => [st, fetchStationDepartures(st)]));
+    // TEST (profil autora, TODO 41): zapytania rozłożone w czasie, żeby nie wywoływać PLK 429 — tablice po 2,
+    // a szczegóły po 3 naraz, od pociągów najbliższych teraz; kolejny rusza, gdy skończy się któryś z trzech.
+    const staggered = staggerOn();
+    const boardGate = staggered ? requestGate(2) : null;
+    const stationPromises = new Map(stations.map(st => [st, staggered ? boardGate(0, () => fetchStationDepartures(st)) : fetchStationDepartures(st)]));
+    const detailGate = staggered ? requestGate(3, Promise.race([Promise.allSettled([...stationPromises.values()]), new Promise(r => setTimeout(r, 12000))])) : null;
 
     // Każda karta aktualizuje się w DOM niezależnie, gdy tylko jej dane są
     // gotowe — zamiast czekać, aż WSZYSTKIE karty się rozstrzygną, zanim
@@ -1321,7 +1349,7 @@ async function init() {
         // faktycznie jest ("Planowany odjazd" zamiast "Ostatnio: ...").
         // Dzięki cache'owi ID kursu w localStorage to zwykle jedno
         // dodatkowe, szybkie zapytanie.
-        const richRow = await fetchTrainByNumber(item.trainNum, item.station);
+        const richRow = staggered ? await detailGate(nearNowRank(item), () => fetchTrainByNumber(item.trainNum, item.station)) : await fetchTrainByNumber(item.trainNum, item.station);
         const finalRow = richRow ? { ...matchedRow, ...richRow } : matchedRow;
 
         paintCard(idx, item, finalRow);
