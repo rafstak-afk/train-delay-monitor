@@ -1229,6 +1229,9 @@ function renderTrain(train,data){
     let state='future',txt=T('train.bBefore'),badge='future';
     if(s.status==='confirmed'){
       state=(i===passedIdx?'current':'passed');txt=(i===passedIdx?T('train.bLast'):T('train.bPassed'));badge=state;
+    }else if(passedIdx>=0&&i<passedIdx){
+      // pociąg jest już na dalszej stacji, a PLK tej nie potwierdził (TODO 44) — „minięta”, nie „brak info”
+      state='passed';txt=T('train.bPassedNoConf');badge='info';
     }else{
       const t=toMin(s.actualTime||s.plannedTime);
       if(t!=null&&t>=nm){

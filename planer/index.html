@@ -1239,13 +1239,19 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     saveSavedResultsList(getSavedResults().filter(function(e){return e._key!==key}));
     renderSavedPanel();
   }
+  // Nowy roczny rozkład od 13.12.2026 (numer rozkładu PLK 2027): wynik zapisany wcześniej na dzień po zmianie — ostrzeżenie.
+  function savedOldTimetable(e){
+    var d=String((e&&e.query&&e.query.date)||'');
+    return d>='2026-12-13'&&((e.snapshot&&e.snapshot.legs)||[]).some(function(l){return l&&l.scheduleId&&+l.scheduleId<2027});
+  }
   function renderSavedPanel(){
     var list=getSavedResults();
     updateMine();
     var el=$('savedList');
     if(!list.length){el.innerHTML=(myGuardN&&!splitTabs)?'':'<div class="empty">'+escapeHtml(T(guardOn?'planer.myEmpty':'planer.savedEmpty'))+'</div>';return}
     el.innerHTML=list.slice().reverse().map(function(e){
-      return itineraryHtml(e.snapshot,{savedKey:e._key,savedAt:e.createdAt});
+      return (savedOldTimetable(e)?'<div class="itin-old-tt" style="margin:10px 0 -4px;padding:8px 10px;border:1px solid #f59e0b;border-radius:10px;color:#fbbf24;font-size:13px">🗓️ '+escapeHtml(T('planer.oldTt'))+' <button type="button" class="btn-sm secondary itin-fresh" data-saved-key="'+escapeHtml(e._key)+'">'+escapeHtml(T('planer.oldTtSearch'))+'</button></div>':'')+
+        itineraryHtml(e.snapshot,{savedKey:e._key,savedAt:e.createdAt});
     }).join('');
   }
   $('savedList').addEventListener('click',function(e){

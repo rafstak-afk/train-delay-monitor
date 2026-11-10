@@ -281,6 +281,8 @@
     "stationDropdownAll": "Todas las estaciones"
   },
   "planer": {
+    "oldTt": "Guardado con el horario antiguo (antes del 13.12). Las horas y los trenes pueden haber cambiado.",
+    "oldTtSearch": "🔄 Buscar de nuevo",
     "pageTitle": "Planificador de viajes",
     "back": "← Panel",
     "title": "🧭 Planificador de viajes",
@@ -967,7 +969,7 @@
     "lastConfirmed": "Última estación confirmada",
     "disruptionTitle": "⚠️ Motivo del retraso / cancelación",
     "legendSummary": "ⓘ Cómo leer el estado de las estaciones",
-    "legendText": "«Pasada» solo cuando la API lo confirma. Si ya pasó la hora pero la API no confirma la estación, mostramos «SIN DATOS DE LA API».",
+    "legendText": "«Pasada» solo cuando la API lo confirma. Si ya pasó la hora pero la API no confirma la estación, mostramos «SIN DATOS DE LA API». «Pasada sin confirmar»: el tren ya está más adelante, pero PLK no confirmó esta estación.",
     "colTime": "Hora",
     "colDelay": "Retr.",
     "colStation": "Estación",
@@ -977,6 +979,7 @@
     "bPassed": "pasada",
     "bNext": "siguiente",
     "bNoInfo": "SIN DATOS DE LA API",
+    "bPassedNoConf": "pasada sin confirmar",
     "boardHere": "Subo aquí",
     "alightHere": "Bajo aquí",
     "track": "vía {track}",

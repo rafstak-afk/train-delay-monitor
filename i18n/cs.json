@@ -281,6 +281,8 @@
     "stationDropdownAll": "Všechny stanice"
   },
   "planer": {
+    "oldTt": "Uloženo podle starého jízdního řádu (před 13.12). Časy a vlaky se mohly změnit.",
+    "oldTtSearch": "🔄 Hledat znovu",
     "pageTitle": "Plánovač cest",
     "back": "← Tabule",
     "title": "🧭 Plánovač cest",
@@ -967,7 +969,7 @@
     "lastConfirmed": "Poslední potvrzená stanice",
     "disruptionTitle": "⚠️ Důvod zpoždění / zrušení",
     "legendSummary": "ⓘ Jak číst stavy stanic",
-    "legendText": "„Projeto“ jen při potvrzení API. Když čas už uplynul, ale API stanici nepotvrdí, zobrazíme „BEZ INFO Z API“.",
+    "legendText": "„Projeto“ jen při potvrzení API. Když čas už uplynul, ale API stanici nepotvrdí, zobrazíme „BEZ INFO Z API“. „Minuta“: vlak je už dál, ale PLK tuto stanici nepotvrdil.",
     "colTime": "Čas",
     "colDelay": "Zpož.",
     "colStation": "Stanice",
@@ -977,6 +979,7 @@
     "bPassed": "projeto",
     "bNext": "další",
     "bNoInfo": "BEZ INFO Z API",
+    "bPassedNoConf": "minuta",
     "boardHere": "Tady nastupuji",
     "alightHere": "Tady vystupuji",
     "track": "kol. {track}",

@@ -281,6 +281,8 @@
     "stationDropdownAll": "All stations"
   },
   "planer": {
+    "oldTt": "Saved under the old timetable (before 13.12). Times and trains may have changed.",
+    "oldTtSearch": "🔄 Search again",
     "pageTitle": "Journey planner",
     "back": "← Board",
     "title": "🧭 Journey planner",
@@ -967,7 +969,7 @@
     "lastConfirmed": "Last confirmed station",
     "disruptionTitle": "⚠️ Reason for the delay / cancellation",
     "legendSummary": "ⓘ How to read station statuses",
-    "legendText": "“Passed” only when the API confirms it. If the time has passed but the API doesn't confirm the station, we show “NO API INFO”.",
+    "legendText": "“Passed” only when the API confirms it. If the time has passed but the API doesn't confirm the station, we show “NO API INFO”. “Passed”: the train is already further on, but PLK did not confirm this station.",
     "colTime": "Time",
     "colDelay": "Delay",
     "colStation": "Station",
@@ -977,6 +979,7 @@
     "bPassed": "passed",
     "bNext": "next",
     "bNoInfo": "NO API INFO",
+    "bPassedNoConf": "passed",
     "boardHere": "I board here",
     "alightHere": "I get off here",
     "track": "track {track}",

@@ -281,6 +281,8 @@
     "stationDropdownAll": "Alle Bahnhöfe"
   },
   "planer": {
+    "oldTt": "Nach dem alten Fahrplan gespeichert (vor dem 13.12). Zeiten und Züge können sich geändert haben.",
+    "oldTtSearch": "🔄 Erneut suchen",
     "pageTitle": "Reiseplaner",
     "back": "← Tafel",
     "title": "🧭 Reiseplaner",
@@ -967,7 +969,7 @@
     "lastConfirmed": "Zuletzt bestätigter Bahnhof",
     "disruptionTitle": "⚠️ Grund der Verspätung / des Ausfalls",
     "legendSummary": "ⓘ So liest du die Bahnhofsstatus",
-    "legendText": "„Passiert“ nur bei Bestätigung durch die API. Ist die Zeit vorbei, die API bestätigt den Bahnhof aber nicht, zeigen wir „KEINE API-INFO“.",
+    "legendText": "„Passiert“ nur bei Bestätigung durch die API. Ist die Zeit vorbei, die API bestätigt den Bahnhof aber nicht, zeigen wir „KEINE API-INFO“. „Vorbei“: Der Zug ist schon weiter, aber PLK hat diesen Bahnhof nicht bestätigt.",
     "colTime": "Zeit",
     "colDelay": "Vsp.",
     "colStation": "Bahnhof",
@@ -977,6 +979,7 @@
     "bPassed": "passiert",
     "bNext": "nächster",
     "bNoInfo": "KEINE API-INFO",
+    "bPassedNoConf": "vorbei",
     "boardHere": "Hier steige ich ein",
     "alightHere": "Hier steige ich aus",
     "track": "Gl. {track}",

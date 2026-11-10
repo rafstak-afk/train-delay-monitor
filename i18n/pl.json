@@ -281,6 +281,8 @@
     "stationDropdownAll": "Wszystkie stacje"
   },
   "planer": {
+    "oldTt": "Zapisane według starego rozkładu (przed 13.12). Godziny i pociągi mogą być już inne.",
+    "oldTtSearch": "🔄 Szukaj ponownie",
     "pageTitle": "Planer podróży",
     "back": "← Tablica",
     "title": "🧭 Planer podróży",
@@ -967,7 +969,7 @@
     "lastConfirmed": "Ostatnia potwierdzona stacja",
     "disruptionTitle": "⚠️ Przyczyna opóźnienia / odwołania",
     "legendSummary": "ⓘ Jak czytać statusy stacji",
-    "legendText": "„Zaliczona” tylko przy potwierdzeniu API. Gdy czas już minął, a API nie potwierdza stacji, pokazujemy „BRAK INFO Z API”.",
+    "legendText": "„Zaliczona” tylko przy potwierdzeniu API. Gdy czas już minął, a API nie potwierdza stacji, pokazujemy „BRAK INFO Z API”. „Minięta”: pociąg jest już na dalszej stacji, ale PLK nie potwierdził tej.",
     "colTime": "Godz.",
     "colDelay": "Opóźn.",
     "colStation": "Stacja",
@@ -977,6 +979,7 @@
     "bPassed": "zaliczona",
     "bNext": "następna",
     "bNoInfo": "BRAK INFO Z API",
+    "bPassedNoConf": "minięta",
     "boardHere": "Tu wsiadam",
     "alightHere": "Tu wysiadam",
     "track": "tor {track}",
