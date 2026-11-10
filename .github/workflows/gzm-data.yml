@@ -9,7 +9,7 @@ name: gzm-data
 # gałąź gzm-data zostaje bez zmian (poprzednie dane działają dalej).
 
 # Uruchamia ją Cloudflare Worker push-tick-cron (zegar GitHuba spóźniał się o 6–8 h):
-#  codziennie 6:00 czasu polskiego, 1. dnia miesiąca 2:00 z full_walk=true. Można też ręcznie.
+#  codziennie 7:00 czasu polskiego, 1. dnia miesiąca 2:00 z full_walk=true. Można też ręcznie.
 on:
   workflow_dispatch:
     inputs:
