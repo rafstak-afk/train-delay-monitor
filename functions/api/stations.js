@@ -151,6 +151,17 @@ export async function onRequestGet(context) {
     )
   ];
 
+  // ?all=1 — cały słownik stacji PLK jako [[id, nazwa]] (do odświeżania data/stations-pl.json, pkt 39 TODO)
+  if (url.searchParams.get('all') === '1') {
+    try {
+      const dictionary = await getDictionary(apiKey);
+      const list = extractArray(dictionary.data).map(row => [stationId(row), stationName(row)]).filter(([id, name]) => id && name);
+      return json({ ok: true, count: list.length, cache: dictionary.cache, stations: list });
+    } catch (error) {
+      return json({ ok: false, error: 'Nie udało się pobrać słownika stacji', details: error.message }, 502);
+    }
+  }
+
   if (!requested.length) {
     return json({
       ok: false,
