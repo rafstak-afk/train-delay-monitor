@@ -222,12 +222,15 @@ function savePlannedTrips(list){
   if(window.ProfileSync){if(ProfileSync.pushBeacon)ProfileSync.pushBeacon({plannedTrips:list});else ProfileSync.push({plannedTrips:list})}
   return true;
 }
+// Nowy roczny rozkład od 13.12.2026: wpis planu z kursem starego rozkładu (2026) na dzień po zmianie — ostrzeżenie + planer.
+function planOldTimetable(e){return String(e.date||'')>='2026-12-13'&&e.scheduleId&&+e.scheduleId<2027}
 function planEntryHtml(e){
   const dateFmt=(()=>{const p=String(e.date||'').split('-');return p.length===3?p[2]+'.'+p[1]+'.'+p[0]:e.date})();
   const trainLabel=[e.category,e.trainNumber].filter(Boolean).join(' ')||'—';
   return `<div class="plan-entry" data-key="${escapeHtml(e._key)}">
     <div class="entry-top"><span class="entry-date">${escapeHtml(dateFmt)}${planGuard[e._key]?'<a class="plan-guard" href="/planer/?gid='+encodeURIComponent(planGuard[e._key])+'#pilnowane" title="'+escapeHtml(T('dziennik.guardedTitle'))+'">'+escapeHtml(T('dziennik.guarded'))+'</a>':''}</span><span class="entry-train">${escapeHtml(trainLabel)}</span></div>
     <div class="plan-entry-route">${escapeHtml(e.boardStation)} → ${escapeHtml(e.alightStation)}</div>
+    ${planOldTimetable(e)?'<div class="plan-entry-route" style="color:#fbbf24">🗓️ '+escapeHtml(T('dziennik.oldTt'))+' <a href="/planer/?'+escapeHtml(new URLSearchParams({from:e.boardStation||'',to:e.alightStation||'',date:e.date||'',time:String(e.plannedDeparture||'').slice(0,5)}).toString())+'">'+escapeHtml(T('dziennik.findNew'))+'</a></div>':''}
     <div class="entry-times">
       <span>${escapeHtml(T('dziennik.departure'))}: <b>${escapeHtml(e.plannedDeparture||'—')}</b></span>
       <span>${escapeHtml(T('dziennik.arrival'))}: <b>${escapeHtml(e.plannedArrival||'—')}</b></span>

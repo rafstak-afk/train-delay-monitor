@@ -683,6 +683,8 @@
     }
   },
   "dziennik": {
+    "oldTt": "Nach dem alten Fahrplan gespeichert (vor dem 13.12). Dieser Zug fährt vielleicht zu einer anderen Zeit oder gar nicht.",
+    "findNew": "🔎 Neue Verbindung suchen",
     "pageTitle": "Reisetagebuch",
     "back": "← Tafel",
     "title": "📓 Reisetagebuch",
@@ -1058,6 +1060,8 @@
     "greetingAddr": "📍 Statt eines Bahnhofs kannst du eine Haltestelle oder eine Adresse eingeben: Straße, Hausnummer und Ort, z. B. „von Opolska 5, Tarnowskie Góry nach Hercena 1, Katowice“. Postleitzahl nicht nötig."
   },
   "guard": {
+    "oldTt": "Nach dem alten Fahrplan gespeichert (vor dem 13.12). Dieser Zug fährt vielleicht zu einer anderen Zeit oder gar nicht.",
+    "findNew": "🔎 Neue Verbindung suchen",
     "pageTitle": "Überwachte Verbindungen",
     "back": "← Tafel",
     "title": "🛡️ Überwachte Verbindungen",

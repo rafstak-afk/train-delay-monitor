@@ -683,6 +683,8 @@
     }
   },
   "dziennik": {
+    "oldTt": "Uloženo podle starého jízdního řádu (před 13.12). Tento vlak může jet v jiný čas nebo vůbec.",
+    "findNew": "🔎 Najít nové spojení",
     "pageTitle": "Cestovní deník",
     "back": "← Tabule",
     "title": "📓 Cestovní deník",
@@ -1058,6 +1060,8 @@
     "greetingAddr": "📍 Místo stanice můžete napsat zastávku nebo adresu: ulice, číslo a město, např. „z Opolska 5, Tarnowskie Góry do Hercena 1, Katowice“. PSČ není potřeba."
   },
   "guard": {
+    "oldTt": "Uloženo podle starého jízdního řádu (před 13.12). Tento vlak může jet v jiný čas nebo vůbec.",
+    "findNew": "🔎 Najít nové spojení",
     "pageTitle": "Hlídaná spojení",
     "back": "← Tabule",
     "title": "🛡️ Hlídaná spojení",

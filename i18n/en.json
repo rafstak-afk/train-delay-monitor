@@ -683,6 +683,8 @@
     }
   },
   "dziennik": {
+    "oldTt": "Saved under the old timetable (before 13.12). This train may run at a different time or not at all.",
+    "findNew": "🔎 Find a new connection",
     "pageTitle": "Travel journal",
     "back": "← Board",
     "title": "📓 Travel journal",
@@ -1058,6 +1060,8 @@
     "greetingAddr": "📍 Instead of a station you can type a stop or an address: street, number and town, e.g. “from Opolska 5, Tarnowskie Góry to Hercena 1, Katowice”. No postcode needed."
   },
   "guard": {
+    "oldTt": "Saved under the old timetable (before 13.12). This train may run at a different time or not at all.",
+    "findNew": "🔎 Find a new connection",
     "pageTitle": "Guarded connections",
     "back": "← Board",
     "title": "🛡️ Guarded connections",

@@ -683,6 +683,8 @@
     }
   },
   "dziennik": {
+    "oldTt": "Guardado con el horario antiguo (antes del 13.12). Este tren puede circular a otra hora o no circular.",
+    "findNew": "🔎 Buscar una nueva conexión",
     "pageTitle": "Diario de viajes",
     "back": "← Panel",
     "title": "📓 Diario de viajes",
@@ -1058,6 +1060,8 @@
     "greetingAddr": "📍 En vez de una estación puedes escribir una parada o una dirección: calle, número y ciudad, p. ej. «de Opolska 5, Tarnowskie Góry a Hercena 1, Katowice». No hace falta el código postal."
   },
   "guard": {
+    "oldTt": "Guardado con el horario antiguo (antes del 13.12). Este tren puede circular a otra hora o no circular.",
+    "findNew": "🔎 Buscar una nueva conexión",
     "pageTitle": "Conexiones vigiladas",
     "back": "← Panel",
     "title": "🛡️ Conexiones vigiladas",

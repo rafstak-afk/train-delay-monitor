@@ -305,6 +305,16 @@
     }
     setInterval(remLocalTick, 20000); setTimeout(remLocalTick, 3000);
 
+    // Nowy roczny rozkład od 13.12.2026 (numer rozkładu PLK 2027): kurs zapisany wcześniej (rozkład 2026) na dzień po zmianie
+    // może już nie jechać — ostrzeżenie i „Znajdź nowe połączenie” (planer z tą samą trasą, dniem i godziną).
+    var TT_NEW = { date: "2026-12-13", sched: 2027 };
+    function oldTimetable(c) {
+      return String(c.date || "") >= TT_NEW.date && (c.legs || []).some(function (l) { return l.mode !== "gzm" && l.scheduleId && +l.scheduleId < TT_NEW.sched; });
+    }
+    function findNewUrl(c) {
+      var l0 = c.legs[0], ln = c.legs[c.legs.length - 1];
+      return "/planer/?" + new URLSearchParams({ from: l0.board.stationName, to: ln.alight.stationName, date: c.date, time: String(l0.board.time || "").slice(0, 5) }).toString();
+    }
     function cardHtml(c) {
       var r = results[c.id] || { status: 'nodata' };
       var s = r.status;
@@ -315,6 +325,8 @@
           return timeHtml(ok0 && l0.plannedDep || c.legs[0].board.time, ok0 ? l0.delayDep : 0) + ' → ' + timeHtml(okn && ln.plannedArr || c.legs[c.legs.length - 1].alight.time, okn ? ln.delayArr : 0);
         })() + '</div></div>' +
         '<span class="chip s-' + s + '">' + EMO[s] + ' ' + esc(statusText(s)) + '</span></div>';
+      if (oldTimetable(c)) html += '<div class="waiting">🗓️ ' + esc(T('guard.oldTt', null, 'Zapisane według starego rozkładu (przed 13.12). Ten pociąg może jechać o innej godzinie albo wcale.')) +
+        ' <a class="btn-sm secondary" href="' + esc(findNewUrl(c)) + '">' + esc(T('guard.findNew', null, '🔎 Znajdź nowe połączenie')) + '</a></div>';
       c.legs.forEach(function (l, i) {
         html += legHtml(l, r.legs ? r.legs[i] : null, c.date);
         if (i < c.legs.length - 1 && r.transfers && r.transfers[i]) html += xferHtml(r.transfers[i], r.rising && r.worst === i);

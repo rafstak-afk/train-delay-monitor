@@ -683,6 +683,8 @@
     }
   },
   "dziennik": {
+    "oldTt": "Zapisane według starego rozkładu (przed 13.12). Ten pociąg może jechać o innej godzinie albo wcale.",
+    "findNew": "🔎 Znajdź nowe połączenie",
     "pageTitle": "Dzienniczek podróży",
     "back": "← Tablica",
     "title": "📓 Dzienniczek podróży",
@@ -1058,6 +1060,8 @@
     "greetingAddr": "📍 Zamiast stacji możesz wpisać przystanek albo adres: ulica, numer i miasto, np. „z Opolskiej 5 w Tarnowskich Górach do Hercena 1, Katowice”. Kod pocztowy niepotrzebny."
   },
   "guard": {
+    "oldTt": "Zapisane według starego rozkładu (przed 13.12). Ten pociąg może jechać o innej godzinie albo wcale.",
+    "findNew": "🔎 Znajdź nowe połączenie",
     "pageTitle": "Pilnowane połączenia",
     "back": "← Tablica",
     "title": "🛡️ Pilnowane połączenia",
