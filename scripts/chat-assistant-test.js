@@ -189,7 +189,9 @@ test("brak stacji początkowej → pytanie, poprzednia tylko jako propozycja", a
   const st = c.state();
   expectEmpty(st, "from"); expectStation(st, "to", "Bytom");
   expectSaid(c, "Skąd jedziesz?");
-  expect(c.options()[0] === "Katowice", "pierwsza propozycja powinna być poprzednią stacją: " + c.options().join(" | "));
+  // „📍 Moja lokalizacja” może być pierwsza (decyzja 10.11); poprzednia stacja — pierwsza ze stacji
+  const stOpts = c.options().filter(o => !/^📍|^✏️/.test(o));
+  expect(stOpts[0] === "Katowice", "pierwsza stacja w propozycjach powinna być poprzednią: " + c.options().join(" | "));
 });
 
 test("sama nowa data nie zmienia po cichu trasy z nierozpoznanymi słowami", async () => {
