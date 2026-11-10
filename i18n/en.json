@@ -1392,6 +1392,17 @@
     "modesAllBtn": "🚆🚌 Turn on all means of transport and search"
   },
   "tt": {
+    "swapLater": "Replace from 13.12",
+    "swapNow": "Replace",
+    "fixLater": "Update time from 13.12",
+    "fixNow": "Update time",
+    "pendingSwap": "On 13.12 I'll replace it with {train} ({time})",
+    "pendingFix": "On 13.12 I'll change the time to {time}",
+    "pendingCount": "Changes planned for 13.12: {n}",
+    "undo": "Undo",
+    "applied": "Trains changed on your list: {n}",
+    "noteSwapLater": "I'll apply the chosen changes the first time you open this list on or after 13.12, because the old timetable runs until then.",
+    "noteSwapNow": "The change applies immediately on all your devices.",
     "title": "New train timetable from 13 December",
     "summary": "Your trains: {miss} without this number · {ch} with a new time · {same} unchanged",
     "summaryUnknown": "{n} not checked",

@@ -1392,6 +1392,17 @@
     "modesAllBtn": "🚆🚌 Activar todos los medios de transporte y buscar"
   },
   "tt": {
+    "swapLater": "Sustituir desde el 13.12",
+    "swapNow": "Sustituir",
+    "fixLater": "Corregir la hora desde el 13.12",
+    "fixNow": "Corregir la hora",
+    "pendingSwap": "El 13.12 lo sustituiré por {train} ({time})",
+    "pendingFix": "El 13.12 cambiaré la hora a {time}",
+    "pendingCount": "Cambios previstos para el 13.12: {n}",
+    "undo": "Deshacer",
+    "applied": "Trenes cambiados en tu lista: {n}",
+    "noteSwapLater": "Aplicaré los cambios elegidos la primera vez que abras esta lista a partir del 13.12, porque hasta entonces sigue el horario antiguo.",
+    "noteSwapNow": "El cambio se aplica al instante en todos tus dispositivos.",
     "title": "Nuevo horario de trenes desde el 13 de diciembre",
     "summary": "Tus trenes: {miss} sin este número · {ch} con hora nueva · {same} sin cambios",
     "summaryUnknown": "{n} sin comprobar",

@@ -1392,6 +1392,17 @@
     "modesAllBtn": "🚆🚌 Zapnout všechny dopravní prostředky a hledat"
   },
   "tt": {
+    "swapLater": "Nahradit od 13.12",
+    "swapNow": "Nahradit",
+    "fixLater": "Upravit čas od 13.12",
+    "fixNow": "Upravit čas",
+    "pendingSwap": "13.12 ho nahradím vlakem {train} ({time})",
+    "pendingFix": "13.12 změním čas na {time}",
+    "pendingCount": "Změny naplánované na 13.12: {n}",
+    "undo": "Zpět",
+    "applied": "Změněné vlaky na seznamu: {n}",
+    "noteSwapLater": "Vybrané změny provedu při prvním otevření tohoto seznamu od 13.12, protože do té doby platí starý jízdní řád.",
+    "noteSwapNow": "Změna platí hned na všech tvých zařízeních.",
     "title": "Od 13. prosince nový jízdní řád",
     "summary": "Tvoje vlaky: {miss} bez tohoto čísla · {ch} s novým časem · {same} beze změny",
     "summaryUnknown": "{n} neověřeno",

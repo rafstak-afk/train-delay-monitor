@@ -1392,6 +1392,17 @@
     "modesAllBtn": "🚆🚌 Alle Verkehrsmittel einschalten und suchen"
   },
   "tt": {
+    "swapLater": "Ab 13.12 ersetzen",
+    "swapNow": "Ersetzen",
+    "fixLater": "Zeit ab 13.12 anpassen",
+    "fixNow": "Zeit anpassen",
+    "pendingSwap": "Am 13.12 ersetze ich ihn durch {train} ({time})",
+    "pendingFix": "Am 13.12 ändere ich die Zeit auf {time}",
+    "pendingCount": "Für den 13.12 geplante Änderungen: {n}",
+    "undo": "Rückgängig",
+    "applied": "Geänderte Züge auf deiner Liste: {n}",
+    "noteSwapLater": "Die gewählten Änderungen führe ich beim ersten Öffnen dieser Liste ab dem 13.12 aus, weil bis dahin der alte Fahrplan gilt.",
+    "noteSwapNow": "Die Änderung gilt sofort auf allen deinen Geräten.",
     "title": "Neuer Fahrplan ab 13. Dezember",
     "summary": "Deine Züge: {miss} ohne diese Nummer · {ch} mit neuer Zeit · {same} unverändert",
     "summaryUnknown": "{n} nicht geprüft",
