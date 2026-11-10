@@ -1404,5 +1404,17 @@
     "onlySat": "no encontrado el lunes 14.12, circula el sábado",
     "onlySun": "no encontrado el lunes 14.12, circula el domingo",
     "note": "«No encontrado con este número» no significa que el tren desaparezca: puede tener un número nuevo y PLK puede seguir completando el horario. Tu lista no cambia hasta que la cambies tú."
+  },
+  "wm": {
+    "title": "Medir el trayecto a pie",
+    "kind": "andén → parada",
+    "intro": "Elige el andén, pulsa Inicio en el andén y Parar en la parada. Solo se guarda el tiempo, sin ubicación.",
+    "platform": "andén {p}",
+    "platformAny": "andén ?",
+    "start": "▶ Inicio — bajo del tren",
+    "stop": "⏹ Estoy en la parada",
+    "namePh": "Nombre de la parada",
+    "cancel": "Cancelar",
+    "send": "Enviar el último resultado"
   }
 }

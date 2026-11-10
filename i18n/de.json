@@ -1404,5 +1404,17 @@
     "onlySat": "am Montag 14.12 nicht gefunden, fährt am Samstag",
     "onlySun": "am Montag 14.12 nicht gefunden, fährt am Sonntag",
     "note": "„Unter dieser Nummer nicht gefunden“ heißt nicht, dass der Zug entfällt: Er kann eine neue Nummer haben, und PLK ergänzt den Fahrplan womöglich noch. Deine Liste bleibt, bis du sie änderst."
+  },
+  "wm": {
+    "title": "Fußweg messen",
+    "kind": "Bahnsteig → Haltestelle",
+    "intro": "Wähle den Bahnsteig, tippe auf dem Bahnsteig auf Start und an der Haltestelle auf Stopp. Gespeichert wird nur die Zeit, kein Standort.",
+    "platform": "Bahnsteig {p}",
+    "platformAny": "Bahnsteig ?",
+    "start": "▶ Start — steige aus",
+    "stop": "⏹ Bin an der Haltestelle",
+    "namePh": "Name der Haltestelle",
+    "cancel": "Abbrechen",
+    "send": "Letztes Ergebnis senden"
   }
 }

@@ -142,7 +142,7 @@ textarea{min-height:140px;resize:vertical;line-height:1.4}
   (window.I18n?I18n.ready:Promise.resolve()).then(function(){
     var q=new URLSearchParams(location.search);if(q.get('kind')!=='place')return;
     $('kind').value='Znam to miejsce';
-    if(!$('msg').value.trim())$('msg').value=T('kontakt.placeTpl').replace('{station}',q.get('station')||'').replace('{stop}',q.get('stop')||'');
+    if(!$('msg').value.trim())$('msg').value=T('kontakt.placeTpl').replace('{station}',q.get('station')||'').replace('{stop}',q.get('stop')||'')+(q.get('res')?'\n⏱️ '+q.get('res'):'');
     try{$('msg').dispatchEvent(new Event('input'))}catch(e){}
   });
   function mailHref(){

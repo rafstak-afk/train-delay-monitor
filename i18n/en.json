@@ -1404,5 +1404,17 @@
     "onlySat": "not found on Monday 14.12, runs on Saturday",
     "onlySun": "not found on Monday 14.12, runs on Sunday",
     "note": "“Not found under this number” does not mean the train is gone: it may have a new number, and PLK may still be completing the timetable. Your list stays as it is until you change it."
+  },
+  "wm": {
+    "title": "Measure the walk",
+    "kind": "platform → stop",
+    "intro": "Choose the platform, tap Start on the platform and Stop at the stop. Only the time is saved, no location.",
+    "platform": "platform {p}",
+    "platformAny": "platform ?",
+    "start": "▶ Start — getting off",
+    "stop": "⏹ I'm at the stop",
+    "namePh": "Stop name",
+    "cancel": "Cancel",
+    "send": "Send latest result"
   }
 }

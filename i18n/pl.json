@@ -1404,5 +1404,17 @@
     "onlySat": "w poniedziałek 14.12 nie znalazłem, jeździ w sobotę",
     "onlySun": "w poniedziałek 14.12 nie znalazłem, jeździ w niedzielę",
     "note": "„Nie ma pod tym numerem” nie znaczy, że pociągu nie będzie: mógł dostać nowy numer, a PLK może jeszcze uzupełniać rozkład. Twoja lista się nie zmienia, dopóki sam jej nie zmienisz."
+  },
+  "wm": {
+    "title": "Pomiar dojścia pieszo",
+    "kind": "peron → przystanek",
+    "intro": "Wybierz peron, stuknij Start na peronie i Stop na przystanku. Zapisuję tylko czas, bez lokalizacji.",
+    "platform": "peron {p}",
+    "platformAny": "peron ?",
+    "start": "▶ Start — wysiadam",
+    "stop": "⏹ Jestem na przystanku",
+    "namePh": "Nazwa przystanku",
+    "cancel": "Anuluj",
+    "send": "Wyślij ostatni wynik"
   }
 }

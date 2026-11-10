@@ -1404,5 +1404,17 @@
     "onlySat": "v pondělí 14.12 nenalezen, jede v sobotu",
     "onlySun": "v pondělí 14.12 nenalezen, jede v neděli",
     "note": "„Pod tímto číslem nenalezen“ neznamená, že vlak nepojede: mohl dostat nové číslo a PLK může jízdní řád ještě doplňovat. Tvůj seznam zůstane, dokud ho nezměníš."
+  },
+  "wm": {
+    "title": "Měření pěší cesty",
+    "kind": "nástupiště → zastávka",
+    "intro": "Vyber nástupiště, klepni na Start na nástupišti a na Stop na zastávce. Ukládá se jen čas, bez polohy.",
+    "platform": "nástupiště {p}",
+    "platformAny": "nástupiště ?",
+    "start": "▶ Start — vystupuji",
+    "stop": "⏹ Jsem na zastávce",
+    "namePh": "Název zastávky",
+    "cancel": "Zrušit",
+    "send": "Odeslat poslední výsledek"
   }
 }

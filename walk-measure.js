@@ -1,4 +1,5 @@
-// Pomiar dojścia pieszo (TEST — tylko profil autora). Przeniesione z Moich pociągów do planera (zakładka 🚆🚌 Pociąg + GZM).
+// Pomiar dojścia pieszo: dla każdego z profilem (od v5.85) tylko peron → przystanek, bez GPS i bez zapisu w profilu;
+// pełne narzędzie (GPS, inne trasy, synchronizacja) — profil autora. Przeniesione z Moich pociągów do planera (zakładka 🚆🚌 Pociąg + GZM).
 // Wymaga na stronie <div id="walkMeasure"></div>. Wyniki w localStorage walkMeasureV1 (te same co wcześniej).
 (function () {
 function wmEsc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[c]; }); }
@@ -19,6 +20,9 @@ const WM_KINDS = [
 const WM_START = { peron: '▶ Start — wysiadam', dom: '▶ Wychodzę z domu', praca: '▶ Wychodzę z pracy', start: '▶ Start' };
 const WM_STOP = { przystanek: '⏹ Jestem na przystanku', peron: '⏹ Jestem na peronie', dom: '⏹ Jestem w domu', praca: '⏹ Jestem w pracy', meta: '⏹ Meta' };
 const WM_NAMEPH = { przystanek: 'Nazwa przystanku (opcjonalnie)', peron: 'Stacja (opcjonalnie)', dom: 'Notatka (opcjonalnie)', praca: 'Notatka (opcjonalnie)', meta: 'Dokąd (opcjonalnie)' };
+function wmAuthor() { try { return localStorage.getItem('showVersionBadge') === '1'; } catch (e) { return false; } }
+function wmKinds() { return wmAuthor() ? WM_KINDS : WM_KINDS.slice(0, 1); }
+function wmT(key, def, params) { try { if (window.I18n && I18n.t) { const v = I18n.t('wm.' + key, params); if (v && v !== 'wm.' + key) return v; } } catch (e) {} return def; }
 function wmKind(id) { return WM_KINDS.find(k => k.id === id) || WM_KINDS[0]; }
 function wmShort(k) { return k.label.replace(/^\S+ → \S+ /, '').replace(/^✏️ /, ''); }
 function wmState() { try { return JSON.parse(localStorage.getItem(WM_KEY)) || {}; } catch (e) { return {}; } }
@@ -26,7 +30,7 @@ function wmSave(st) { try { localStorage.setItem(WM_KEY, JSON.stringify(st)); } 
 // Profil: lista pomiarów pod kluczem walkMeasures. Zmiana = świeży odczyt profilu, jedna operacja, zapis.
 function wmProf() { return !!(window.ProfileSync && ProfileSync.getToken && ProfileSync.getToken()); }
 function wmPullProfile() {
-  if (!wmProf() || !wmEnabled()) return Promise.resolve();
+  if (!wmProf() || !wmAuthor()) return Promise.resolve();
   return ProfileSync.pull().then(d => {
     if (!d) return;
     const st = wmState();
@@ -36,7 +40,7 @@ function wmPullProfile() {
   }).catch(() => {});
 }
 function wmProfileOp(op) {
-  if (!wmProf()) return;
+  if (!wmProf() || !wmAuthor()) return;
   ProfileSync.pull().then(d => {
     const base = d && Array.isArray(d.walkMeasures) ? d.walkMeasures : (wmState().results || []);
     const list = op(base.slice());
@@ -44,9 +48,10 @@ function wmProfileOp(op) {
     return ProfileSync.push({ walkMeasures: list });
   }).catch(() => {});
 }
-function wmEnabled() { try { return localStorage.getItem('showVersionBadge') === '1'; } catch (e) { return false; } }
+function wmEnabled() { return wmAuthor() || wmProf(); }
 function wmFmt(ms) { const s = Math.max(0, Math.round(ms / 1000)); return Math.floor(s / 60) + ' min ' + String(s % 60).padStart(2, '0') + ' s'; }
 function wmGeo() {
+  if (!wmAuthor()) return Promise.resolve(null);
   return new Promise(res => {
     if (!navigator.geolocation) return res(null);
     let done = false;
@@ -60,6 +65,8 @@ function wmWhen(at) { return new Date(at).toLocaleString('pl-PL', { day: '2-digi
 function wmLine(r) {
   return wmWhen(r.at) + ' · ' + wmShort(wmKind(r.kind)) + ' · ' + (r.platform ? 'peron ' + r.platform + ' · ' : '') + (r.name || '—') + ' · ' + wmFmt(r.ms) + ' · start ' + wmGeoTxt(r.from) + ' → meta ' + wmGeoTxt(r.to);
 }
+// Formularz kontaktu z gotowym szablonem; bez GPS — użytkownik sam decyduje o wysłaniu.
+function wmSendUrl(r) { return '/kontakt/?' + new URLSearchParams({ kind: 'place', station: '', stop: r.name || '', res: wmFmt(r.ms) + (r.platform ? ', ' + wmT('platform', 'peron {p}', { p: r.platform }) : '') }).toString(); }
 let wmTimer = null;
 const WM_BTN = 'border:0;border-radius:10px;color:#fff;font-weight:800;padding:9px 12px;font-size:13.5px;cursor:pointer;';
 const WM_CHIP = on => 'border:1px solid ' + (on ? '#0b57d0' : '#34495e') + ';background:' + (on ? '#173055' : '#223244') + ';color:#fff;border-radius:16px;padding:6px 11px;font-size:12.5px;cursor:pointer';
@@ -70,27 +77,27 @@ function renderWalkMeasure() {
   const st = wmState(), results = st.results || [], names = st.names || [];
   const open = st.open || !!st.running;
   const head = '<button type="button" id="wmToggle" style="all:unset;cursor:pointer;display:flex;justify-content:space-between;width:100%;font-weight:900;font-size:15px">' +
-    '<span>⏱️ Pomiar dojścia pieszo' + (st.running ? ' · <span id="wmClockMini">' + wmFmt(Date.now() - st.running.start) + '</span>' : (results.length ? ' (' + results.length + ')' : '')) + '</span><span>' + (open ? '▴' : '▾') + '</span></button>';
+    '<span>⏱️ ' + wmEsc(wmT('title', 'Pomiar dojścia pieszo')) + (st.running ? ' · <span id="wmClockMini">' + wmFmt(Date.now() - st.running.start) + '</span>' : (results.length ? ' (' + results.length + ')' : '')) + '</span><span>' + (open ? '▴' : '▾') + '</span></button>';
   let body = '';
   if (open && st.running) {
     const K = wmKind(st.running.kind);
     body = '<div style="font-size:32px;font-weight:900;margin:6px 0" id="wmClock">' + wmFmt(Date.now() - st.running.start) + '</div>' +
-      '<div style="color:#b8c3cf;font-size:12.5px">' + wmEsc(K.label) + (st.running.platform ? ' · peron ' + wmEsc(st.running.platform) : '') + ' · start: ' + wmEsc(wmGeoTxt(st.running.from)) + '</div>' +
-      '<input id="wmName" placeholder="' + wmEsc(WM_NAMEPH[K.to]) + '" list="wmNames" style="width:100%;margin-top:8px;padding:10px;border-radius:9px;border:1px solid #34495e;background:#223244;color:#fff;font-size:15px">' +
+      '<div style="color:#b8c3cf;font-size:12.5px">' + wmEsc(wmAuthor() ? K.label : wmT('kind', K.label)) + (st.running.platform ? ' · ' + wmEsc(wmT('platform', 'peron {p}', { p: st.running.platform })) : '') + (wmAuthor() ? ' · start: ' + wmEsc(wmGeoTxt(st.running.from)) : '') + '</div>' +
+      '<input id="wmName" placeholder="' + wmEsc(wmAuthor() ? WM_NAMEPH[K.to] : wmT('namePh', WM_NAMEPH[K.to])) + '" list="wmNames" style="width:100%;margin-top:8px;padding:10px;border-radius:9px;border:1px solid #34495e;background:#223244;color:#fff;font-size:15px">' +
       '<datalist id="wmNames">' + names.map(n => '<option value="' + wmEsc(n) + '">').join('') + '</datalist>' +
       (names.length ? '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">' + names.slice(0, 6).map(n => '<button type="button" class="wm-name" data-n="' + wmEsc(n) + '" style="' + WM_CHIP(false) + '">' + wmEsc(n) + '</button>').join('') + '</div>' : '') +
-      '<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button type="button" id="wmStop" style="' + WM_BTN + 'background:#15803d;font-size:15px;padding:11px 14px">' + wmEsc(WM_STOP[K.to]) + '</button>' +
-      '<button type="button" id="wmCancel" style="' + WM_BTN + 'background:#4b5563">Anuluj</button></div>';
+      '<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button type="button" id="wmStop" style="' + WM_BTN + 'background:#15803d;font-size:15px;padding:11px 14px">' + wmEsc(wmAuthor() ? WM_STOP[K.to] : wmT('stop', WM_STOP[K.to])) + '</button>' +
+      '<button type="button" id="wmCancel" style="' + WM_BTN + 'background:#4b5563">' + wmEsc(wmT('cancel', 'Anuluj')) + '</button></div>';
   } else if (open) {
     const K = wmKind(st.kind), withPlat = K.from === 'peron' || K.to === 'peron';
-    body = '<div style="color:#d8e2ee;font-size:13px;line-height:1.45;margin-top:6px">Wybierz, co mierzysz, kliknij <b>Start</b> na początku i <b>Stop</b> na końcu. Zapiszę czas i położenie z GPS.</div>' +
-      '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">' + WM_KINDS.map(k => '<button type="button" class="wm-kind" data-k="' + k.id + '" style="' + WM_CHIP(k.id === K.id) + '">' + wmEsc(k.label) + '</button>').join('') + '</div>' +
-      (withPlat ? '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">' + ['', '1', '2', '3', '4', '5'].map(p => '<button type="button" class="wm-plat" data-p="' + p + '" style="' + WM_CHIP((st.platform || '') === p) + '">' + (p ? 'peron ' + p : 'peron ?') + '</button>').join('') + '</div>' : '') +
-      '<div style="margin-top:10px"><button type="button" id="wmStart" style="' + WM_BTN + 'background:#0b57d0;font-size:15px;padding:11px 16px">' + wmEsc(WM_START[K.from]) + '</button></div>';
+    body = '<div style="color:#d8e2ee;font-size:13px;line-height:1.45;margin-top:6px">' + (wmAuthor() ? 'Wybierz, co mierzysz, kliknij <b>Start</b> na początku i <b>Stop</b> na końcu. Zapiszę czas i położenie z GPS.' : wmEsc(wmT('intro', 'Wybierz peron, stuknij Start na peronie i Stop na przystanku. Zapisuję tylko czas, bez lokalizacji.'))) + '</div>' +
+      (wmKinds().length > 1 ? '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">' + wmKinds().map(k => '<button type="button" class="wm-kind" data-k="' + k.id + '" style="' + WM_CHIP(k.id === K.id) + '">' + wmEsc(k.label) + '</button>').join('') + '</div>' : '') +
+      (withPlat ? '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">' + ['', '1', '2', '3', '4', '5'].map(p => '<button type="button" class="wm-plat" data-p="' + p + '" style="' + WM_CHIP((st.platform || '') === p) + '">' + (p ? wmT('platform', 'peron {p}', { p: p }) : wmT('platformAny', 'peron ?')) + '</button>').join('') + '</div>' : '') +
+      '<div style="margin-top:10px"><button type="button" id="wmStart" style="' + WM_BTN + 'background:#0b57d0;font-size:15px;padding:11px 16px">' + wmEsc(wmAuthor() ? WM_START[K.from] : wmT('start', WM_START[K.from])) + '</button></div>';
   }
   if (open && results.length) {
     body += '<div style="margin-top:10px;font-size:12.5px;line-height:1.5">' + results.slice().reverse().map((r, i) => '<div style="border-top:1px solid #2a3a4c;padding:4px 0">✅ ' + wmEsc(wmShort(wmKind(r.kind))) + (r.name ? ': <b>' + wmEsc(r.name) + '</b>' : '') + ' — <b>' + wmFmt(r.ms) + '</b>' + (r.platform ? ' · peron ' + wmEsc(r.platform) : '') + ' <span style="color:#b8c3cf">· ' + wmEsc(wmWhen(r.at)) + (r.from && r.to ? '' : ' · bez GPS') + '</span> <button type="button" class="wm-del" data-i="' + (results.length - 1 - i) + '" style="border:0;background:none;color:#ff4d4d;cursor:pointer">✕</button></div>').join('') + '</div>' +
-      '<div style="margin-top:8px"><button type="button" id="wmCopy" style="' + WM_BTN + 'background:#4b5563">📋 Kopiuj wyniki</button></div>';
+      '<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap"><a href="' + wmEsc(wmSendUrl(results[results.length - 1])) + '" style="' + WM_BTN + 'background:#0b57d0;text-decoration:none">📤 ' + wmEsc(wmT('send', 'Wyślij ostatni wynik')) + '</a>' + (wmAuthor() ? '<button type="button" id="wmCopy" style="' + WM_BTN + 'background:#4b5563">📋 Kopiuj wyniki</button>' : '') + '</div>';
   }
   box.innerHTML = '<div style="background:rgba(255,212,0,.07);border:1px solid ' + (st.running ? '#ffd400' : '#6b5d1a') + ';border-radius:12px;padding:10px 12px;margin:0 0 12px">' + head + body + '</div>';
   if (st.running) wmTimer = setInterval(() => { const ms = Date.now() - (wmState().running || { start: Date.now() }).start; ['wmClock', 'wmClockMini'].forEach(id => { const c = document.getElementById(id); if (c) c.textContent = wmFmt(ms); }); }, 1000);
