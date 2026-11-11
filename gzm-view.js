@@ -603,10 +603,10 @@
         if (window.NearestStations) {
           var nearStep = 0;
           NearestStations.mount(c.querySelector(".gz-bar"), function (s) {
-            var inp = c.querySelector(nearStep === 0 ? "#gzCFrom" : "#gzCTo"); if (!inp) return null;
+            var inp = root.querySelector(nearStep === 0 ? "#gzCFrom" : "#gzCTo") || document.getElementById(nearStep === 0 ? "gzCFrom" : "gzCTo"); if (!inp) return null;
             inp.value = s.name; try { inp.dispatchEvent(new Event("input", { bubbles: true })); } catch (e) {}
             if (nearStep === 0) { nearStep = 1; return T("near.pickTo", null, "Teraz wybierz stację „Dokąd” (albo wpisz ją sam)"); }
-            nearStep = 0; c.querySelector("#gzCGo").click(); return null;
+            nearStep = 0; var go = root.querySelector("#gzCGo") || document.getElementById("gzCGo"); if (go) go.click(); return null;
           }, { title: function () { nearStep = 0; return T("near.pickFrom", null, "Wybierz stację „Skąd”"); } });
         }
       } catch (e) {}
