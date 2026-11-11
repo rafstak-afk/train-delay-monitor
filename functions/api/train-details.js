@@ -226,13 +226,44 @@ function normalizeStationText(value) {
   return String(value || "").trim().toLowerCase();
 }
 
+const SCHEDULES_CACHE_TTL = 21600;
+function normTrainNo(v) { const s = String(v ?? "").trim(); return s ? s.replace(/^0+(?=\d)/, "") : ""; }
+function routeHasTrain(r, want) {
+  return [r.nationalNumber, r.trainNumber, r.commercialTrainNumber, ...(Array.isArray(r.stations) ? r.stations.flatMap(s => [s.arrivalTrainNumber, s.departureTrainNumber]) : [])]
+    .some(v => normTrainNo(v) === want);
+}
+// Inny kurs tego samego pociągu z danymi o ruchu (najwyżej 2 stacje × 1 rozkład + 2 próby ruchu).
+async function findAltCourse(route, { trainNum, trainOrderId, scheduleId, orderId, operatingDate }, apiKey) {
+  const sts = Array.isArray(route.stations) ? route.stations : [];
+  const ids = [...new Set([sts[0] && sts[0].stationId, sts[sts.length - 1] && sts[sts.length - 1].stationId].filter(Boolean))];
+  const want = normTrainNo(trainNum), seen = new Set([String(orderId)]);
+  let tries = 0;
+  for (const sid of ids) {
+    let data = null;
+    try { data = await plkGet(`/schedules?stations=${encodeURIComponent(sid)}&dateFrom=${operatingDate}&dateTo=${operatingDate}`, apiKey, SCHEDULES_CACHE_TTL); } catch (e) { continue; }
+    const routes = Array.isArray(data && data.routes) ? data.routes : [];
+    const cands = routes.filter(r => r.orderId && !seen.has(String(r.orderId)) && ((trainOrderId && String(r.trainOrderId) === String(trainOrderId)) || (want && routeHasTrain(r, want))));
+    for (const r of cands) {
+      seen.add(String(r.orderId));
+      if (++tries > 2) return null;
+      const sch = r.scheduleId || scheduleId;
+      try {
+        const ops = await plkGet(`/operations/train/${encodeURIComponent(sch)}/${encodeURIComponent(r.orderId)}/${encodeURIComponent(operatingDate)}`, apiKey);
+        if (ops) return { scheduleId: String(sch), orderId: String(r.orderId), operationData: ops };
+      } catch (e) {}
+    }
+  }
+  return null;
+}
+
 export async function onRequestGet(context) {
   const { request, env } = context;
   const url = new URL(request.url);
 
   const trainNum = url.searchParams.get("train") || "";
-  const scheduleId = url.searchParams.get("scheduleId") || "";
-  const orderId = url.searchParams.get("orderId") || "";
+  let scheduleId = url.searchParams.get("scheduleId") || "";
+  let orderId = url.searchParams.get("orderId") || "";
+  let altFrom = null;
   const trainOrderId = url.searchParams.get("trainOrderId") || "";
 
   const operatingDate =
@@ -256,7 +287,7 @@ export async function onRequestGet(context) {
   let opsError = null;
   const startedAt = Date.now();
   try {
-    const [routeData, operationData, stationNames] = await Promise.all([
+    let [routeData, operationData, stationNames] = await Promise.all([
       plkGet(
         `/schedules/route/${encodeURIComponent(scheduleId)}/${encodeURIComponent(orderId)}`,
         apiKey,
@@ -269,7 +300,14 @@ export async function onRequestGet(context) {
       getStationNameMap(apiKey)
     ]);
 
-    const route = routeData?.route || routeData || {};
+    let route = routeData?.route || routeData || {};
+    if (!operationData && /404/.test(String(opsError || "")) && operatingDate === todayWarsaw()) {
+      const alt = await findAltCourse(route, { trainNum, trainOrderId, scheduleId, orderId, operatingDate }, apiKey).catch(() => null);
+      if (alt) {
+        altFrom = orderId; scheduleId = alt.scheduleId; orderId = alt.orderId; operationData = alt.operationData; opsError = null;
+        try { const rd = await plkGet(`/schedules/route/${encodeURIComponent(scheduleId)}/${encodeURIComponent(orderId)}`, apiKey, ROUTE_CACHE_TTL); route = rd?.route || rd || route; } catch (e) {}
+      }
+    }
     const operation = operationData?.operation || operationData || {};
 
     // Przyczyna opóźnienia/odwołania z PLK (np. "Awaria taboru"), dociągana
@@ -387,6 +425,7 @@ export async function onRequestGet(context) {
         operatingDate,
         opsOk: !!operationData,
         opsError,
+        altFrom,
         opsStations: opStations.length,
         opsGeneratedAt: (operationData && operationData.generatedAt) || null,
         routeStations: routeStations.length,
