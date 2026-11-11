@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Notatka dla Claude</title>
+<style>
+:root{--bg:#101820;--panel:#1c2833;--card:#223244;--line:#34495e;--muted:#b8c3cf;--blue:#0b57d0}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#fff;padding:18px}
+.wrap{max-width:720px;margin:0 auto}
+a.back{display:inline-block;margin-bottom:10px;color:var(--muted);text-decoration:none;font-size:14px}
+h1{font-size:24px;margin:6px 0 4px}
+.sub{color:var(--muted);font-size:13px;margin-bottom:14px;line-height:1.4}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin:12px 0}
+textarea{width:100%;min-height:160px;padding:10px;border-radius:9px;border:1px solid var(--line);background:var(--card);color:#fff;font-size:16px;font-family:inherit;line-height:1.4}
+.thumbs{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.thumbs div{position:relative}
+.thumbs img{width:86px;height:86px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+.thumbs button{position:absolute;top:-6px;right:-6px;width:24px;height:24px;border-radius:50%;border:0;background:#dc3545;color:#fff;font-weight:900;cursor:pointer}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.btn{border:0;border-radius:10px;padding:11px 16px;font-size:15px;font-weight:800;cursor:pointer;color:#fff;background:var(--blue)}
+.btn.sec{background:#4b5563}
+.msg{margin-top:10px;font-size:14px}
+.sent div{border-top:1px solid var(--line);padding:6px 0;font-size:13px;color:#d8e2ee}
+</style>
+</head>
+<body>
+<div class="wrap">
+<a class="back" href="/">← Strona główna</a>
+<h1>📝 Notatka dla Claude</h1>
+<div class="sub">Tylko w Twoim profilu autora. Wpis i zdjęcia trafiają do Claude, który przy następnej rozmowie przeniesie je do notatek i odpisze. Napisz mu potem: „dodałem notatkę”.</div>
+<div id="denied" class="panel" style="display:none">Ta strona jest dostępna tylko w profilu autora.</div>
+<div id="form" class="panel" style="display:none">
+  <textarea id="text" placeholder="Co się stało, gdzie, o której? Możesz też wkleić diagnostykę."></textarea>
+  <div class="thumbs" id="thumbs"></div>
+  <div class="row">
+    <label class="btn sec" style="display:inline-block">📷 Dodaj zdjęcia<input id="files" type="file" accept="image/*" multiple style="display:none"></label>
+    <button class="btn" id="send" type="button">📤 Wyślij</button>
+  </div>
+  <div class="msg" id="msg"></div>
+</div>
+<div class="panel sent" id="sentBox" style="display:none"><b>Wysłane z tego telefonu</b><div id="sent"></div></div>
+</div>
+<script src="/profile-sync.js"></script>
+<script>
+(function () {
+  var MAX = 6, images = [];
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  var author = false, token = "";
+  try { author = localStorage.getItem("showVersionBadge") === "1"; token = window.ProfileSync && ProfileSync.getToken ? ProfileSync.getToken() : ""; } catch (e) {}
+  if (!author || !token) { $("denied").style.display = "block"; return; }
+  $("form").style.display = "block";
+  // zdjęcia zmniejszone w telefonie (dłuższy bok 1600 px, JPEG) — szybciej i mniej danych
+  function shrink(file) {
+    return new Promise(function (res, rej) {
+      var img = new Image(), url = URL.createObjectURL(file);
+      img.onload = function () {
+        var s = Math.min(1, 1600 / Math.max(img.width, img.height)), c = document.createElement("canvas");
+        c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
+        res(c.toDataURL("image/jpeg", 0.82));
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); rej(new Error("img")); };
+      img.src = url;
+    });
+  }
+  function drawThumbs() {
+    $("thumbs").innerHTML = images.map(function (d, i) { return '<div><img src="' + d + '" alt=""><button type="button" data-del="' + i + '">×</button></div>'; }).join("");
+  }
+  $("thumbs").onclick = function (e) { var b = e.target.closest("[data-del]"); if (b) { images.splice(+b.getAttribute("data-del"), 1); drawThumbs(); } };
+  $("files").onchange = async function () {
+    var fs = [].slice.call(this.files || []).slice(0, MAX - images.length);
+    for (var i = 0; i < fs.length; i++) { try { images.push(await shrink(fs[i])); } catch (e) {} }
+    this.value = ""; drawThumbs();
+  };
+  function sentList() { try { return JSON.parse(localStorage.getItem("authorNotesSent") || "[]"); } catch (e) { return []; } }
+  function drawSent() {
+    var l = sentList(); $("sentBox").style.display = l.length ? "block" : "none";
+    $("sent").innerHTML = l.slice(-10).reverse().map(function (x) { return "<div>" + esc(new Date(x.at).toLocaleString("pl-PL")) + " · " + esc(x.text.slice(0, 80) || "—") + (x.images ? " · 📷 " + x.images : "") + "</div>"; }).join("");
+  }
+  drawSent();
+  $("send").onclick = async function () {
+    var text = $("text").value.trim(), b = this;
+    if (!text && !images.length) { $("msg").textContent = "Napisz coś albo dodaj zdjęcie."; return; }
+    b.disabled = true; $("msg").textContent = "Wysyłam…";
+    try {
+      var r = await fetch("/api/author-note", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token: token, text: text, images: images }) });
+      var j = await r.json();
+      if (!j.ok) throw new Error(j.error || ("HTTP " + r.status));
+      var l = sentList(); l.push({ at: j.at, text: text, images: images.length }); localStorage.setItem("authorNotesSent", JSON.stringify(l.slice(-30)));
+      $("text").value = ""; images = []; drawThumbs(); drawSent();
+      $("msg").textContent = "✅ Wysłane. Napisz Claude: „dodałem notatkę”.";
+    } catch (e) { $("msg").textContent = "Nie udało się wysłać: " + e.message; }
+    b.disabled = false;
+  };
+})();
+</script>
+</body>
+</html>

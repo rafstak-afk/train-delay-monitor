@@ -33,7 +33,8 @@
     { href: "/planer/#pilnowane", key: "common.burger.guard", fallback: "🛡️ Pilnowane połączenia" },
     { href: "/jak-dziala/", key: "common.burger.howItWorks", fallback: "📖 Jak działa aplikacja" },
     { href: "/kontakt/", key: "common.burger.contact", fallback: "💬 Uwagi i kontakt" },
-    { href: "/kontakt/#rodo", key: "common.burger.rodo", fallback: "🔒 RODO i prywatność" }
+    { href: "/kontakt/#rodo", key: "common.burger.rodo", fallback: "🔒 RODO i prywatność" },
+    { href: "/notatka/", key: "common.burger.authorNote", fallback: "📝 Notatka dla Claude", requiresBeta: true }
   ];
 
   function escapeAttr(s) {
