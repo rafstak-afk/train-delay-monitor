@@ -1033,11 +1033,18 @@
       var best = {};
       for (var i = 0; i < net.n; i++) { var d = NearestStations.km(pl.lat, pl.lon, net.lat[i], net.lon[i]); if (d <= 5 && (!best[net.name[i]] || d < best[net.name[i]])) best[net.name[i]] = d; }
       var extra = Object.keys(best).map(function (n) { return { name: n, km: best[n], kind: "stop" }; }).sort(function (a, b) { return a.km - b.km; }).slice(0, 3);
-      NearestStations.render(res.querySelector(".gz-near"), { lat: pl.lat, lon: pl.lon, extra: extra, title: " ", onPick: function (s) {
-        var inp = root.querySelector(sel), go = root.querySelector("#gzCGo"); if (!inp) return;
-        inp.value = s.name; try { inp.dispatchEvent(new Event("input", { bubbles: true })); } catch (e) {}
-        if (go) go.click();
-      } });
+      // jak w planerze: po wyborze tej strony, gdy druga („Dokąd”/„Skąd”) jest pusta albo to też „Moja lokalizacja”, pytamy i o nią
+      var box = res.querySelector(".gz-near"), asked = false;
+      function set(q, name) { var inp = root.querySelector(q); if (!inp) return; inp.value = name; try { inp.dispatchEvent(new Event("input", { bubbles: true })); } catch (e) {} }
+      function step(q, title) {
+        NearestStations.render(box, { lat: pl.lat, lon: pl.lon, extra: extra, title: title, onPick: function (s) {
+          set(q, s.name);
+          var otherQ = q === "#gzCFrom" ? "#gzCTo" : "#gzCFrom", other = root.querySelector(otherQ), ov = other ? other.value.trim() : "";
+          if (!asked && (!ov || placeKey(ov) === "gps")) { asked = true; step(otherQ, T(otherQ === "#gzCTo" ? "near.pickTo" : "near.pickFrom", null, otherQ === "#gzCTo" ? "Teraz wybierz stację „Dokąd” (albo wpisz ją sam)" : "Wybierz stację „Skąd”")); return; }
+          var go = root.querySelector("#gzCGo"); if (go) go.click();
+        } });
+      }
+      step(sel, " ");
     }
     function resolvePlace(txt) {
       var k = placeKey(txt);
