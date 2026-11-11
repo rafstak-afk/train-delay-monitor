@@ -155,7 +155,8 @@ export async function onRequestGet(context) {
   if (url.searchParams.get('all') === '1') {
     try {
       const dictionary = await getDictionary(apiKey);
-      const list = extractArray(dictionary.data).map(row => [stationId(row), stationName(row)]).filter(([id, name]) => id && name);
+      const geo = url.searchParams.get('geo') === '1';
+      const list = extractArray(dictionary.data).map(row => geo ? [stationId(row), stationName(row), row.latitude ?? null, row.longitude ?? null] : [stationId(row), stationName(row)]).filter(([id, name]) => id && name);
       if (url.searchParams.get('raw') === '1') return json({ ok: true, sample: extractArray(dictionary.data).slice(0, 3) });
       return json({ ok: true, count: list.length, cache: dictionary.cache, stations: list });
     } catch (error) {
