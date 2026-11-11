@@ -37,6 +37,19 @@ function connectionsOf(profile) {
   return list;
 }
 
+// Zapisany kurs innego dnia (numery kursów zmieniają się między dniami, zgłoszenie #16): gdy PLK nie podał danych o ruchu,
+// kurs na ten dzień po numerze i stacji wsiadania (smart-lookup) i drugie pytanie. Bez zmiany — pierwsza odpowiedź.
+async function trainDetailsForDay(origin, leg, date) {
+  const num = (leg.train && leg.train.number) || "";
+  const d = await fetchJson(origin, "/api/train-details?" + new URLSearchParams({ scheduleId: leg.scheduleId || "", orderId: leg.orderId, operatingDate: date, train: num }));
+  const st = leg.board && leg.board.stationName;
+  if (!d || !d.diag || d.diag.opsOk !== false || !num || !st) return d;
+  const j = await fetchJson(origin, "/api/v2/smart-lookup?" + new URLSearchParams({ train: num, station: st, date }));
+  if (!j || !j.ok || !j.orderId || String(j.orderId) === String(leg.orderId)) return d;
+  const d2 = await fetchJson(origin, "/api/train-details?" + new URLSearchParams({ scheduleId: j.scheduleId, orderId: j.orderId, operatingDate: date, train: num }));
+  return d2 && d2.diag && d2.diag.opsOk ? d2 : d;
+}
+
 export async function onRequestPost(context) {
   const { request, env } = context;
   if (!env.USER_PROFILES || !env.VAPID_PRIVATE_KEY || !env.PUSH_TICK_SECRET) return json({ ok: false, error: "config" }, 500);
@@ -57,8 +70,7 @@ export async function onRequestPost(context) {
     const k = leg.scheduleId + "|" + leg.orderId + "|" + date;
     if (!trainCache.has(k)) {
       sum.plk++;
-      const q = new URLSearchParams({ scheduleId: leg.scheduleId || "", orderId: leg.orderId, operatingDate: date, train: (leg.train && leg.train.number) || "" });
-      trainCache.set(k, fetchJson(origin, "/api/train-details?" + q));
+      trainCache.set(k, trainDetailsForDay(origin, leg, date));
     }
     const d = await trainCache.get(k);
     return d ? G.readLeg(leg, d) : null;

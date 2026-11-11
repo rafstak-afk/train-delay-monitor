@@ -137,9 +137,17 @@
       var c = cache[k];
       if (c && Date.now() - c.at < 50000) return Promise.resolve(c.data);
       var qs = new URLSearchParams({ scheduleId: leg.scheduleId, orderId: leg.orderId, operatingDate: date, train: (leg.train && leg.train.number) || '' });
-      return fetch('/api/train-details?' + qs.toString(), { headers: { Accept: 'application/json' }, cache: 'no-store' })
-        .then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; })
-        .then(function (d) { cache[k] = { at: Date.now(), data: d }; return d; });
+      var get = function (q) { return fetch('/api/train-details?' + q.toString(), { headers: { Accept: 'application/json' }, cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }); };
+      return get(qs).then(function (d) {
+        // zapisany kurs innego dnia (numery kursów zmieniają się między dniami) — kurs na ten dzień po numerze i stacji
+        var num = leg.train && leg.train.number, st = leg.board && leg.board.stationName;
+        if (!d || !d.diag || d.diag.opsOk !== false || !num || !st) return d;
+        return fetch('/api/v2/smart-lookup?' + new URLSearchParams({ train: num, station: st, date: date }).toString(), { cache: 'no-store' })
+          .then(function (r) { return r.json(); }).then(function (j) {
+            if (!j || !j.ok || !j.orderId || String(j.orderId) === String(leg.orderId)) return d;
+            return get(new URLSearchParams({ scheduleId: j.scheduleId, orderId: j.orderId, operatingDate: date, train: num })).then(function (d2) { return d2 && d2.diag && d2.diag.opsOk ? d2 : d; });
+          }).catch(function () { return d; });
+      }).then(function (d) { cache[k] = { at: Date.now(), data: d }; return d; });
     }
 
     function refresh() {

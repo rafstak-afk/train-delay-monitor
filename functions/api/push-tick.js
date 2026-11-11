@@ -550,6 +550,18 @@ function activeGuardConnections(profile, now, nowMinutes) {
 }
 // Ten sam pociąg (kurs + dzień) odpytujemy raz na przebieg, nawet jeśli jest
 // w kilku połączeniach albo profilach.
+// Zapisany kurs innego dnia (numery kursów zmieniają się między dniami, zgłoszenie #16): gdy PLK nie podał danych o ruchu,
+// kurs na ten dzień po numerze i stacji wsiadania (smart-lookup) i drugie pytanie. Bez zmiany — pierwsza odpowiedź.
+async function trainDetailsForDay(origin, leg, date) {
+  const num = (leg.train && leg.train.number) || "";
+  const d = await fetchJson(origin, "/api/train-details?" + new URLSearchParams({ scheduleId: leg.scheduleId || "", orderId: leg.orderId, operatingDate: date, train: num }));
+  const st = leg.board && leg.board.stationName;
+  if (!d || !d.diag || d.diag.opsOk !== false || !num || !st) return d;
+  const j = await fetchJson(origin, "/api/v2/smart-lookup?" + new URLSearchParams({ train: num, station: st, date }));
+  if (!j || !j.ok || !j.orderId || String(j.orderId) === String(leg.orderId)) return d;
+  const d2 = await fetchJson(origin, "/api/train-details?" + new URLSearchParams({ scheduleId: j.scheduleId, orderId: j.orderId, operatingDate: date, train: num }));
+  return d2 && d2.diag && d2.diag.opsOk ? d2 : d;
+}
 function guardTrainFetcher(origin) {
   const cache = new Map();
   let gzmRt = null;   // dane na żywo GZM — raz na przebieg (i tak z pamięci podręcznej 20 s)
@@ -560,8 +572,7 @@ function guardTrainFetcher(origin) {
     }
     const k = leg.scheduleId + "|" + leg.orderId + "|" + date;
     if (!cache.has(k)) {
-      const q = new URLSearchParams({ scheduleId: leg.scheduleId, orderId: leg.orderId, operatingDate: date, train: (leg.train && leg.train.number) || "" });
-      cache.set(k, fetchJson(origin, "/api/train-details?" + q.toString()));
+      cache.set(k, trainDetailsForDay(origin, leg, date));
     }
     return cache.get(k);
   };
