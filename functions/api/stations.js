@@ -156,6 +156,7 @@ export async function onRequestGet(context) {
     try {
       const dictionary = await getDictionary(apiKey);
       const list = extractArray(dictionary.data).map(row => [stationId(row), stationName(row)]).filter(([id, name]) => id && name);
+      if (url.searchParams.get('raw') === '1') return json({ ok: true, sample: extractArray(dictionary.data).slice(0, 3) });
       return json({ ok: true, count: list.length, cache: dictionary.cache, stations: list });
     } catch (error) {
       return json({ ok: false, error: 'Nie udało się pobrać słownika stacji', details: error.message }, 502);
