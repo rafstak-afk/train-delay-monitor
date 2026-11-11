@@ -35,12 +35,20 @@
       box.onclick = function (ev) { var b = ev.target.closest("[data-near]"); if (b && o.onPick) o.onPick(items[+b.getAttribute("data-near")]); };
     });
   }
-  function mount(after, onPick) {
+  // opts.buttonIn — przycisk jako pierwszy w podanym rzędzie przycisków (np. na tablicy przed „Otwórz PLK”), lista pod `after`
+  function mount(after, onPick, opts) {
     if (!after || !after.parentNode) return;
+    opts = opts || {};
     var wrap = document.createElement("div"); wrap.className = "near-stations"; wrap.style.cssText = "max-width:900px;margin:6px auto;padding:0 4px";
-    wrap.innerHTML = '<button type="button" class="near-btn" style="border:1px solid #34495e;background:#1c2833;color:#fff;border-radius:999px;padding:7px 12px;font-size:13px;cursor:pointer">' + esc(t("btn", null, "📍 Najbliższe stacje")) + '</button><div class="near-list"></div>';
+    var label = esc(t("btn", null, "📍 Najbliższe stacje"));
+    wrap.innerHTML = (opts.buttonIn ? "" : '<button type="button" class="near-btn" style="border:1px solid #34495e;background:#1c2833;color:#fff;border-radius:999px;padding:7px 12px;font-size:13px;cursor:pointer">' + label + "</button>") + '<div class="near-list"></div>';
     after.parentNode.insertBefore(wrap, after.nextSibling);
     var btn = wrap.querySelector(".near-btn"), list = wrap.querySelector(".near-list");
+    if (opts.buttonIn) {
+      btn = document.createElement("button"); btn.type = "button"; btn.className = "near-btn " + (opts.buttonClass || "");
+      btn.setAttribute("data-i18n", "near.btn"); btn.innerHTML = label; if (opts.buttonStyle) btn.style.cssText = opts.buttonStyle;
+      opts.buttonIn.insertBefore(btn, opts.buttonIn.firstChild);
+    }
     btn.onclick = function () {
       if (list.innerHTML) { list.innerHTML = ""; return; }
       list.innerHTML = '<div style="opacity:.75;font-size:13px;margin:6px 0">' + esc(t("locating", null, "Ustalam położenie…")) + "</div>";
