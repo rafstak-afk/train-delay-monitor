@@ -59,7 +59,14 @@ jobs:
           git add tools/gzm/walk-cache.json tools/gzm/stations-osm.json
           if ! git diff --cached --quiet; then
             git commit -m "gzm: pamięć dojść pieszych ($(date -u +%F))"
-            git push origin HEAD:main || echo "::warning::nie udało się zapisać walk-cache (ktoś zmienił main) — przeliczy się następnym razem"
+            # main mógł się zmienić w trakcie (pełne przeliczenie trwa ~3 h) — wtedy zapis na świeżym main w osobnym katalogu
+            if ! git push origin HEAD:main; then
+              git fetch --depth 1 origin main && git worktree add -f /tmp/main-fresh FETCH_HEAD &&
+              cp tools/gzm/walk-cache.json tools/gzm/stations-osm.json /tmp/main-fresh/tools/gzm/ &&
+              (cd /tmp/main-fresh && git add tools/gzm/walk-cache.json tools/gzm/stations-osm.json &&
+                { git diff --cached --quiet || git commit -m "gzm: pamięć dojść pieszych ($(date -u +%F))"; } && git push origin HEAD:main) ||
+              echo "::warning::nie udało się zapisać walk-cache — przeliczy się następnym razem"
+            fi
           fi
 
       - name: Publikacja na gałęzi gzm-data (jeden commit, bez historii)
