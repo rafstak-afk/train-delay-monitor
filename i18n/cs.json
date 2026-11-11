@@ -1434,5 +1434,15 @@
     "namePh": "Název zastávky",
     "cancel": "Zrušit",
     "send": "Odeslat poslední výsledek"
+  },
+  "near": {
+    "btn": "📍 Nejbližší stanice",
+    "title": "Nejbližší stanice (vzdušnou čarou)",
+    "titlePlace": "Nejbližší stanice a zastávky od tohoto místa",
+    "searching": "Hledám nejbližší stanice…",
+    "locating": "Zjišťuji polohu…",
+    "none": "Žádné stanice do {km} km.",
+    "denied": "Prohlížeč nemá oprávnění k poloze.",
+    "gpsErr": "Polohu se nepodařilo zjistit. Zkus to znovu."
   }
 }

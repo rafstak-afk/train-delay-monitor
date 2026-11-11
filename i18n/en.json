@@ -1434,5 +1434,15 @@
     "namePh": "Stop name",
     "cancel": "Cancel",
     "send": "Send latest result"
+  },
+  "near": {
+    "btn": "📍 Nearest stations",
+    "title": "Nearest stations (straight line)",
+    "titlePlace": "Nearest stations and stops from this place",
+    "searching": "Looking for the nearest stations…",
+    "locating": "Finding your location…",
+    "none": "No stations within {km} km.",
+    "denied": "The browser has no permission to use your location.",
+    "gpsErr": "Could not find your location. Try again."
   }
 }

@@ -1434,5 +1434,15 @@
     "namePh": "Nombre de la parada",
     "cancel": "Cancelar",
     "send": "Enviar el último resultado"
+  },
+  "near": {
+    "btn": "📍 Estaciones cercanas",
+    "title": "Estaciones más cercanas (en línea recta)",
+    "titlePlace": "Estaciones y paradas más cercanas a este lugar",
+    "searching": "Buscando las estaciones más cercanas…",
+    "locating": "Buscando tu ubicación…",
+    "none": "No hay estaciones en {km} km.",
+    "denied": "El navegador no tiene permiso para usar tu ubicación.",
+    "gpsErr": "No se pudo obtener tu ubicación. Inténtalo de nuevo."
   }
 }

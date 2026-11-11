@@ -1434,5 +1434,15 @@
     "namePh": "Name der Haltestelle",
     "cancel": "Abbrechen",
     "send": "Letztes Ergebnis senden"
+  },
+  "near": {
+    "btn": "📍 Nächste Bahnhöfe",
+    "title": "Nächste Bahnhöfe (Luftlinie)",
+    "titlePlace": "Nächste Bahnhöfe und Haltestellen von diesem Ort",
+    "searching": "Suche die nächsten Bahnhöfe…",
+    "locating": "Standort wird ermittelt…",
+    "none": "Keine Bahnhöfe im Umkreis von {km} km.",
+    "denied": "Der Browser darf deinen Standort nicht verwenden.",
+    "gpsErr": "Standort konnte nicht ermittelt werden. Versuche es erneut."
   }
 }

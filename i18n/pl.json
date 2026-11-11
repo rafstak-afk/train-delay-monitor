@@ -1434,5 +1434,15 @@
     "namePh": "Nazwa przystanku",
     "cancel": "Anuluj",
     "send": "Wyślij ostatni wynik"
+  },
+  "near": {
+    "btn": "📍 Najbliższe stacje",
+    "title": "Najbliższe stacje (w linii prostej)",
+    "titlePlace": "Najbliższe stacje i przystanki od tego miejsca",
+    "searching": "Szukam najbliższych stacji…",
+    "locating": "Ustalam położenie…",
+    "none": "Brak stacji w promieniu {km} km.",
+    "denied": "Przeglądarka nie ma zgody na lokalizację.",
+    "gpsErr": "Nie udało się ustalić położenia. Spróbuj ponownie."
   }
 }

@@ -1012,6 +1012,20 @@
       if (!ev.target.closest("[data-gpsretry]")) return;
       var go = root.querySelector("#gzCGo"); if (go) go.click();
     });
+    // Miejsce dalej niż 900 m od przystanku i stacji (TODO 51): zamiast ślepej uliczki — najbliższe stacje PLK i przystanki GZM
+    // z odległością w linii prostej; wybór wpisuje je w pole i od razu szuka.
+    function farPlace(res, net, pl, sel) {
+      res.innerHTML = '<div class="gz-warn">' + esc(T("gzm.pFar", null, "W pobliżu tego miejsca nie ma przystanku GZM ani stacji (900 m).")) + '</div><div class="gz-near"></div>';
+      if (!window.NearestStations || pl.lat == null) return;
+      var best = {};
+      for (var i = 0; i < net.n; i++) { var d = NearestStations.km(pl.lat, pl.lon, net.lat[i], net.lon[i]); if (d <= 5 && (!best[net.name[i]] || d < best[net.name[i]])) best[net.name[i]] = d; }
+      var extra = Object.keys(best).map(function (n) { return { name: n, km: best[n], kind: "stop" }; }).sort(function (a, b) { return a.km - b.km; }).slice(0, 3);
+      NearestStations.render(res.querySelector(".gz-near"), { lat: pl.lat, lon: pl.lon, extra: extra, title: T("near.titlePlace", null, "Najbliższe stacje i przystanki od tego miejsca"), onPick: function (s) {
+        var inp = root.querySelector(sel), go = root.querySelector("#gzCGo"); if (!inp) return;
+        inp.value = s.name; try { inp.dispatchEvent(new Event("input", { bubbles: true })); } catch (e) {}
+        if (go) go.click();
+      } });
+    }
     function resolvePlace(txt) {
       var k = placeKey(txt);
       if (!k && uniOn() && !stationByName(txt) && looksAddress(txt)) return geocode(txt).then(function (g) {
@@ -1393,8 +1407,8 @@
         if (toPlace) placeReach(net, toPlace);
         var fromSt = fromPlace ? null : stationByName(fromTxt), toSt = toPlace ? null : stationByName(toTxt);
         var fN = fromSt || fromPlace ? (fromPlace ? [] : null) : netNames(net, fromTxt), tN = toSt || toPlace ? (toPlace ? [] : null) : netNames(net, toTxt);
-        if (fromPlace && !fromPlace.stops.length && !Object.keys(fromPlace.walkSt).length) { res.innerHTML = '<div class="gz-warn">' + esc(T("gzm.pFar", null, "W pobliżu tego miejsca nie ma przystanku GZM ani stacji (900 m).")) + "</div>"; return; }
-        if (toPlace && !toPlace.stops.length && !Object.keys(toPlace.walkSt).length) { res.innerHTML = '<div class="gz-warn">' + esc(T("gzm.pFar", null, "W pobliżu tego miejsca nie ma przystanku GZM ani stacji (900 m).")) + "</div>"; return; }
+        if (fromPlace && !fromPlace.stops.length && !Object.keys(fromPlace.walkSt).length) { farPlace(res, net, fromPlace, "#gzCFrom"); return; }
+        if (toPlace && !toPlace.stops.length && !Object.keys(toPlace.walkSt).length) { farPlace(res, net, toPlace, "#gzCTo"); return; }
         if (!fromSt && !fromPlace && !fN.length) { res.innerHTML = '<div class="gz-warn">' + esc(T("gzm.cNoTo", { d: fromTxt }, "Nie znam przystanku „{d}”.")) + "</div>"; return; }
         if (!toSt && !toPlace && !tN.length) { res.innerHTML = '<div class="gz-warn">' + esc(T("gzm.cNoTo", { d: toTxt }, "Nie znam przystanku „{d}”.")) + "</div>"; return; }
         var withStops = (index.stations || []).filter(function (x) { return x.s && x.s.length; });
