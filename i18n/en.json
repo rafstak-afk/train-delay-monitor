@@ -1437,6 +1437,8 @@
     "send": "Send latest result"
   },
   "near": {
+    "farFrom": "The nearest station or stop is more than about 900 m on foot. Choose where you start:",
+    "farTo": "The nearest station or stop is more than about 900 m on foot. Choose where you are going:",
     "pickFrom": "Choose the “From” station",
     "pickTo": "Now choose the “To” station (or type it)",
     "btn": "📍 Nearest stations",

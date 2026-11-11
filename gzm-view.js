@@ -598,6 +598,18 @@
         });
       }
       c.querySelector("#gzCGo").addEventListener("click", searchC);
+      // 📍 Najbliższe stacje (jak w planerze PLK): najpierw „Skąd”, potem „Dokąd”, potem od razu szuka
+      try {
+        if (window.NearestStations) {
+          var nearStep = 0;
+          NearestStations.mount(c.querySelector(".gz-bar"), function (s) {
+            var inp = c.querySelector(nearStep === 0 ? "#gzCFrom" : "#gzCTo"); if (!inp) return null;
+            inp.value = s.name; try { inp.dispatchEvent(new Event("input", { bubbles: true })); } catch (e) {}
+            if (nearStep === 0) { nearStep = 1; return T("near.pickTo", null, "Teraz wybierz stację „Dokąd” (albo wpisz ją sam)"); }
+            nearStep = 0; c.querySelector("#gzCGo").click(); return null;
+          }, { title: function () { nearStep = 0; return T("near.pickFrom", null, "Wybierz stację „Skąd”"); } });
+        }
+      } catch (e) {}
       ["#gzCFrom", "#gzCTo"].forEach(function (q) { c.querySelector(q).addEventListener("keydown", function (e) { if (e.key === "Enter") searchC(); }); });
       c.addEventListener("click", function (e) {
         var g = e.target.closest("[data-guard]"); if (g) { guardTrip(g); return; }
@@ -1015,12 +1027,13 @@
     // Miejsce dalej niż 900 m od przystanku i stacji (TODO 51): zamiast ślepej uliczki — najbliższe stacje PLK i przystanki GZM
     // z odległością w linii prostej; wybór wpisuje je w pole i od razu szuka.
     function farPlace(res, net, pl, sel) {
-      res.innerHTML = '<div class="gz-warn">' + esc(T("gzm.pFar", null, "W pobliżu tego miejsca nie ma przystanku GZM ani stacji (900 m).")) + '</div><div class="gz-near"></div>';
+      var isFrom = sel === "#gzCFrom";
+      res.innerHTML = '<div class="gz-sub" style="margin:6px 2px">' + esc(T(isFrom ? "near.farFrom" : "near.farTo", null, isFrom ? "Najbliższa stacja albo przystanek jest dalej niż ok. 900 m pieszo. Wybierz, skąd jedziesz:" : "Najbliższa stacja albo przystanek jest dalej niż ok. 900 m pieszo. Wybierz, dokąd jedziesz:")) + '</div><div class="gz-near"></div>';
       if (!window.NearestStations || pl.lat == null) return;
       var best = {};
       for (var i = 0; i < net.n; i++) { var d = NearestStations.km(pl.lat, pl.lon, net.lat[i], net.lon[i]); if (d <= 5 && (!best[net.name[i]] || d < best[net.name[i]])) best[net.name[i]] = d; }
       var extra = Object.keys(best).map(function (n) { return { name: n, km: best[n], kind: "stop" }; }).sort(function (a, b) { return a.km - b.km; }).slice(0, 3);
-      NearestStations.render(res.querySelector(".gz-near"), { lat: pl.lat, lon: pl.lon, extra: extra, title: T("near.titlePlace", null, "Najbliższe stacje i przystanki od tego miejsca"), onPick: function (s) {
+      NearestStations.render(res.querySelector(".gz-near"), { lat: pl.lat, lon: pl.lon, extra: extra, title: " ", onPick: function (s) {
         var inp = root.querySelector(sel), go = root.querySelector("#gzCGo"); if (!inp) return;
         inp.value = s.name; try { inp.dispatchEvent(new Event("input", { bubbles: true })); } catch (e) {}
         if (go) go.click();

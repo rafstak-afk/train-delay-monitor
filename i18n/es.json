@@ -1437,6 +1437,8 @@
     "send": "Enviar el último resultado"
   },
   "near": {
+    "farFrom": "La estación o parada más cercana está a más de unos 900 m a pie. Elige desde dónde sales:",
+    "farTo": "La estación o parada más cercana está a más de unos 900 m a pie. Elige adónde vas:",
     "pickFrom": "Elige la estación «Desde»",
     "pickTo": "Ahora elige la estación «Hasta» (o escríbela)",
     "btn": "📍 Estaciones cercanas",

@@ -1437,6 +1437,8 @@
     "send": "Odeslat poslední výsledek"
   },
   "near": {
+    "farFrom": "Nejbližší stanice nebo zastávka je pěšky dál než asi 900 m. Vyber, odkud jedeš:",
+    "farTo": "Nejbližší stanice nebo zastávka je pěšky dál než asi 900 m. Vyber, kam jedeš:",
     "pickFrom": "Vyber stanici „Odkud“",
     "pickTo": "Teď vyber stanici „Kam“ (nebo ji napiš)",
     "btn": "📍 Nejbližší stanice",

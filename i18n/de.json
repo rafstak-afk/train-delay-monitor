@@ -1437,6 +1437,8 @@
     "send": "Letztes Ergebnis senden"
   },
   "near": {
+    "farFrom": "Der nächste Bahnhof oder die nächste Haltestelle ist mehr als ca. 900 m zu Fuß entfernt. Wähle, wo du startest:",
+    "farTo": "Der nächste Bahnhof oder die nächste Haltestelle ist mehr als ca. 900 m zu Fuß entfernt. Wähle dein Ziel:",
     "pickFrom": "Wähle den Startbahnhof „Von“",
     "pickTo": "Wähle jetzt den Zielbahnhof „Nach“ (oder tippe ihn ein)",
     "btn": "📍 Nächste Bahnhöfe",
