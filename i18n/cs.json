@@ -1437,6 +1437,8 @@
     "send": "Odeslat poslední výsledek"
   },
   "near": {
+    "pickFrom": "Vyber stanici „Odkud“",
+    "pickTo": "Teď vyber stanici „Kam“ (nebo ji napiš)",
     "btn": "📍 Nejbližší stanice",
     "title": "Nejbližší stanice (vzdušnou čarou)",
     "titlePlace": "Nejbližší stanice a zastávky od tohoto místa",

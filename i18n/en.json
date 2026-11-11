@@ -1437,6 +1437,8 @@
     "send": "Send latest result"
   },
   "near": {
+    "pickFrom": "Choose the “From” station",
+    "pickTo": "Now choose the “To” station (or type it)",
     "btn": "📍 Nearest stations",
     "title": "Nearest stations (straight line)",
     "titlePlace": "Nearest stations and stops from this place",

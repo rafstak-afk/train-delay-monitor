@@ -1437,6 +1437,8 @@
     "send": "Letztes Ergebnis senden"
   },
   "near": {
+    "pickFrom": "Wähle den Startbahnhof „Von“",
+    "pickTo": "Wähle jetzt den Zielbahnhof „Nach“ (oder tippe ihn ein)",
     "btn": "📍 Nächste Bahnhöfe",
     "title": "Nächste Bahnhöfe (Luftlinie)",
     "titlePlace": "Nächste Bahnhöfe und Haltestellen von diesem Ort",

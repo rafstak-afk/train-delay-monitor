@@ -1593,7 +1593,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     return refreshFromProfile();
   }).then(applyUrlParams);
   // 📍 Najbliższe stacje (TODO 51) — pod polami Skąd/Dokąd, wybór wpisuje stację w „Skąd”
-  try{if(window.NearestStations){var stk=document.querySelector('[data-view="search"] .station-stack');NearestStations.mount(stk,function(s){selected.from={id:s.id||'',name:s.name};$('fromInput').value=s.name;updateClearVisibility(document.querySelector('.field-clear[data-side="from"]'),$('fromInput'))})}}catch(e){}
+  try{if(window.NearestStations){var stk=document.querySelector('[data-view="search"] .station-stack');var nearStep=0;NearestStations.mount(stk,function(s){var side=nearStep===0?'from':'to';selected[side]={id:s.id||'',name:s.name};$(side+'Input').value=s.name;updateClearVisibility(document.querySelector('.field-clear[data-side="'+side+'"]'),$(side+'Input'));if(nearStep===0){nearStep=1;return T('near.pickTo')}nearStep=0;return null},{title:function(){return T('near.pickFrom')}})}}catch(e){}
   // Zmiana języka: przerysowujemy wszystko, co budował JS (statyczne
   // napisy z data-i18n przełącza samo i18n.js).
   window.addEventListener('langchange',function(){

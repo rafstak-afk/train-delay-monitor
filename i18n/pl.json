@@ -1437,6 +1437,8 @@
     "send": "Wyślij ostatni wynik"
   },
   "near": {
+    "pickFrom": "Wybierz stację „Skąd”",
+    "pickTo": "Teraz wybierz stację „Dokąd” (albo wpisz ją sam)",
     "btn": "📍 Najbliższe stacje",
     "title": "Najbliższe stacje (w linii prostej)",
     "titlePlace": "Najbliższe stacje i przystanki od tego miejsca",

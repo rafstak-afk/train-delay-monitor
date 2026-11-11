@@ -52,7 +52,15 @@
     btn.onclick = function () {
       if (list.innerHTML) { list.innerHTML = ""; return; }
       list.innerHTML = '<div style="opacity:.75;font-size:13px;margin:6px 0">' + esc(t("locating", null, "Ustalam położenie…")) + "</div>";
-      locate().then(function (g) { return render(list, { lat: g.lat, lon: g.lon, onPick: function (s) { list.innerHTML = ""; onPick(s); } }); })
+      // onPick może zwrócić tekst nagłówka — wtedy lista zostaje otwarta do kolejnego wyboru (planer: najpierw „Skąd”, potem „Dokąd”)
+      locate().then(function (g) {
+        var pick = function (s) {
+          var next = onPick(s);
+          if (!next) { list.innerHTML = ""; return; }
+          render(list, { lat: g.lat, lon: g.lon, title: next, onPick: pick });
+        };
+        return render(list, { lat: g.lat, lon: g.lon, title: typeof opts.title === "function" ? opts.title() : opts.title, onPick: pick });
+      })
         .catch(function (e) { list.innerHTML = '<div style="margin:6px 0;color:#fbbf24">' + esc(e && e.code === 1 ? t("denied", null, "Przeglądarka nie ma zgody na lokalizację.") : t("gpsErr", null, "Nie udało się ustalić położenia. Spróbuj ponownie.")) + "</div>"; });
     };
   }
