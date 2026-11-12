@@ -639,7 +639,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     });
     $(side+'Dropdown').addEventListener('click',function(e){
       // 📍 Najbliższe stacje — lista w tym samym okienku; po wyborze „Skąd” przejście do pustego „Dokąd”
-      if(e.target.closest('[data-near-open]')){var dd=this;NearestStations.openIn(dd,function(s){selected[side]={id:s.id||'',name:s.name};$(side+'Input').value=s.name;updateClearVisibility(clearBtn,$(side+'Input'));hideDropdown(side);if(side==='from'&&!$('toInput').value.trim())$('toInput').focus()});return}
+      if(e.target.closest('[data-near-open]')){e.stopPropagation();var dd=this;NearestStations.openIn(dd,function(s){selected[side]={id:s.id||'',name:s.name};$(side+'Input').value=s.name;updateClearVisibility(clearBtn,$(side+'Input'));hideDropdown(side);if(side==='from'&&!$('toInput').value.trim())$('toInput').focus()});return}
       var btn=e.target.closest('.station-dd-item');
       if(!btn)return;
       selected[side]={id:btn.dataset.id,name:btn.dataset.name};

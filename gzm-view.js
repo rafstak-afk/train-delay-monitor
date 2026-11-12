@@ -771,7 +771,7 @@
       dd.addEventListener("click", function (e) {
         // 📍 Najbliższe stacje — lista w tym samym okienku; po wyborze „Skąd” przejście do pustego „Dokąd”
         if (e.target.closest("[data-near-open]")) {
-          nearBusy = true;
+          e.stopPropagation(); nearBusy = true;
           NearestStations.openIn(dd, function (s) {
             nearBusy = false; pick(s.name);
             try { inp.dispatchEvent(new Event("input", { bubbles: true })); } catch (er) {}
