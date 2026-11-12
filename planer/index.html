@@ -558,7 +558,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     var tier=function(n){return /(^|\s)(g[łl][óo]wn\w*|centraln\w*)(\s|$)/i.test(n)?0:(String(n).trim().indexOf(' ')<0?1:2)};
     // Lista z lokalnej wyszukiwarki (StationSuggest) ma już własną kolejność.
     if(!keepOrder)stations=stations.map(function(s,i){return{s:s,i:i,t:tier(s.name||'')}}).sort(function(a,b){return a.t-b.t||a.i-b.i}).map(function(x){return x.s});
-    el.innerHTML=stations.map(function(s){
+    el.innerHTML=(window.NearestStations?NearestStations.optionHtml('station-dd-item'):'')+stations.map(function(s){
       return '<button type="button" class="station-dd-item" data-id="'+escapeHtml(s.id)+'" data-name="'+escapeHtml(s.name)+'"><span class="station-dd-name">'+escapeHtml(s.name)+'</span><span class="station-dd-id">'+escapeHtml(s.id)+'</span></button>';
     }).join('');
     el.classList.add('open');
@@ -627,6 +627,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     $(side+'Input').addEventListener('focus',function(){
       var q=this.value.trim();
       if(q.length>=2)fetchStations(side,q);
+      else if(window.NearestStations){var dd=$(side+'Dropdown');dd.innerHTML=NearestStations.optionHtml('station-dd-item');dd.classList.add('open')}
     });
     // Enter: zatwierdza stację i od razu szuka (z bieżącymi ustawieniami);
     // w "Skąd" przy pustym "Dokąd" najpierw przechodzi do "Dokąd".
@@ -637,6 +638,8 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
       });
     });
     $(side+'Dropdown').addEventListener('click',function(e){
+      // 📍 Najbliższe stacje — lista w tym samym okienku; po wyborze „Skąd” przejście do pustego „Dokąd”
+      if(e.target.closest('[data-near-open]')){var dd=this;NearestStations.openIn(dd,function(s){selected[side]={id:s.id||'',name:s.name};$(side+'Input').value=s.name;updateClearVisibility(clearBtn,$(side+'Input'));hideDropdown(side);if(side==='from'&&!$('toInput').value.trim())$('toInput').focus()});return}
       var btn=e.target.closest('.station-dd-item');
       if(!btn)return;
       selected[side]={id:btn.dataset.id,name:btn.dataset.name};
@@ -1592,8 +1595,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     loadCarriers();
     return refreshFromProfile();
   }).then(applyUrlParams);
-  // 📍 Najbliższe stacje (TODO 51) — pod polami Skąd/Dokąd, wybór wpisuje stację w „Skąd”
-  try{if(window.NearestStations){var stk=document.querySelector('[data-view="search"] .station-stack');var nearStep=0;NearestStations.mount(stk,function(s){var side=nearStep===0?'from':'to';selected[side]={id:s.id||'',name:s.name};$(side+'Input').value=s.name;updateClearVisibility(document.querySelector('.field-clear[data-side="'+side+'"]'),$(side+'Input'));if(nearStep===0){nearStep=1;return T('near.pickTo')}nearStep=0;return null},{title:function(){return T('near.pickFrom')}})}}catch(e){}
+
   // Zmiana języka: przerysowujemy wszystko, co budował JS (statyczne
   // napisy z data-i18n przełącza samo i18n.js).
   window.addEventListener('langchange',function(){

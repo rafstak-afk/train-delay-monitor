@@ -598,18 +598,6 @@
         });
       }
       c.querySelector("#gzCGo").addEventListener("click", searchC);
-      // 📍 Najbliższe stacje (jak w planerze PLK): najpierw „Skąd”, potem „Dokąd”, potem od razu szuka
-      try {
-        if (window.NearestStations) {
-          var nearStep = 0;
-          NearestStations.mount(c.querySelector(".gz-bar"), function (s) {
-            var inp = root.querySelector(nearStep === 0 ? "#gzCFrom" : "#gzCTo") || document.getElementById(nearStep === 0 ? "gzCFrom" : "gzCTo"); if (!inp) return null;
-            inp.value = s.name; try { inp.dispatchEvent(new Event("input", { bubbles: true })); } catch (e) {}
-            if (nearStep === 0) { nearStep = 1; return T("near.pickTo", null, "Teraz wybierz stację „Dokąd” (albo wpisz ją sam)"); }
-            nearStep = 0; var go = root.querySelector("#gzCGo") || document.getElementById("gzCGo"); if (go) go.click(); return null;
-          }, { title: function () { nearStep = 0; return T("near.pickFrom", null, "Wybierz stację „Skąd”"); } });
-        }
-      } catch (e) {}
       ["#gzCFrom", "#gzCTo"].forEach(function (q) { c.querySelector(q).addEventListener("keydown", function (e) { if (e.key === "Enter") searchC(); }); });
       c.addEventListener("click", function (e) {
         var g = e.target.closest("[data-guard]"); if (g) { guardTrip(g); return; }
@@ -750,22 +738,23 @@
       var w = document.createElement("div"); w.className = "gz-ddw"; inp.parentNode.insertBefore(w, inp); w.appendChild(inp);
       var dd = document.createElement("div"); dd.className = "gz-dd"; w.appendChild(dd);
       var KIND = { st: T("gzm.ddSt", null, "stacja"), stop: T("gzm.ddStop", null, "przystanek"), pl: T("gzm.ddPl", null, "moje miejsce") };
-      var timer = null;
-      function close() { dd.classList.remove("open"); dd.innerHTML = ""; }
+      var timer = null, nearBusy = false;
+      function close() { if (nearBusy) return; dd.classList.remove("open"); dd.innerHTML = ""; }
+      var nearOpt = function () { return window.NearestStations ? NearestStations.optionHtml("gz-dd-item") : ""; };
       function show() {
         var q = inp.value.trim();
-        if (q.length < 2) { close(); return; }
+        if (q.length < 2) { if (nearOpt() && document.activeElement === inp) { dd.innerHTML = nearOpt(); dd.classList.add("open"); } else close(); return; }
         ddList().then(function () {
           if (inp.value.trim() !== q) return;
           var m = ddMatch(q);
           if (!m.length || (m.length === 1 && m[0].n === q)) { close(); return; }
-          dd.innerHTML = m.map(function (x) { return '<button type="button" class="gz-dd-item" data-n="' + esc(x.n) + '"><span class="gz-dd-name">' + esc(x.n) + '</span><span class="gz-dd-kind">' + esc(KIND[x.k]) + "</span></button>"; }).join("");
+          dd.innerHTML = nearOpt() + m.map(function (x) { return '<button type="button" class="gz-dd-item" data-n="' + esc(x.n) + '"><span class="gz-dd-name">' + esc(x.n) + '</span><span class="gz-dd-kind">' + esc(KIND[x.k]) + "</span></button>"; }).join("");
           dd.classList.add("open");
         });
       }
       function pick(n) { inp.value = n; close(); }
       inp.addEventListener("input", function () { clearTimeout(timer); timer = setTimeout(show, 150); });
-      inp.addEventListener("focus", function () { if (inp.value.trim().length >= 2) show(); });
+      inp.addEventListener("focus", function () { show(); });
       inp.addEventListener("blur", function () { setTimeout(close, 180); });
       // ↓/↑ zaznaczenie, Enter wybiera (wyszukiwanie uruchamia dotychczasowy Enter), Esc zamyka
       inp.addEventListener("keydown", function (e) {
@@ -779,7 +768,19 @@
         else if (e.key === "Escape") close();
       }, true);
       dd.addEventListener("mousedown", function (e) { e.preventDefault(); });
-      dd.addEventListener("click", function (e) { var b = e.target.closest(".gz-dd-item"); if (b) { pick(b.dataset.n); inp.focus(); } });
+      dd.addEventListener("click", function (e) {
+        // 📍 Najbliższe stacje — lista w tym samym okienku; po wyborze „Skąd” przejście do pustego „Dokąd”
+        if (e.target.closest("[data-near-open]")) {
+          nearBusy = true;
+          NearestStations.openIn(dd, function (s) {
+            nearBusy = false; pick(s.name);
+            try { inp.dispatchEvent(new Event("input", { bubbles: true })); } catch (er) {}
+            var to = root.querySelector("#gzCTo"); if (inp.id === "gzCFrom" && to && !to.value.trim()) to.focus();
+          });
+          return;
+        }
+        var b = e.target.closest(".gz-dd-item"); if (b) { pick(b.dataset.n); inp.focus(); }
+      });
     }
     // przewinięcie do pierwszego wyniku (pod przyklejonym paskiem zakładek)
     function scrollToFirst(box, sel) {
