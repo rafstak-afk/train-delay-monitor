@@ -639,7 +639,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     });
     $(side+'Dropdown').addEventListener('click',function(e){
       // 📍 Najbliższe stacje — lista w tym samym okienku; po wyborze „Skąd” przejście do pustego „Dokąd”
-      if(e.target.closest('[data-near-open]')){e.stopPropagation();var dd=this;NearestStations.openIn(dd,function(s){selected[side]={id:s.id||'',name:s.name};$(side+'Input').value=s.name;updateClearVisibility(clearBtn,$(side+'Input'));hideDropdown(side);if(side==='from'&&!$('toInput').value.trim())$('toInput').focus()});return}
+      if(e.target.closest('[data-near-open]')){e.stopPropagation();var dd=this,otherSide=side==='from'?'to':'from';NearestStations.openIn(dd,function(s){selected[side]={id:s.id||'',name:s.name};$(side+'Input').value=s.name;updateClearVisibility(clearBtn,$(side+'Input'));hideDropdown(side);if(side==='from'&&!$('toInput').value.trim())$('toInput').focus()},null,(selected[otherSide]&&selected[otherSide].name)||$(otherSide+'Input').value);return}
       var btn=e.target.closest('.station-dd-item');
       if(!btn)return;
       selected[side]={id:btn.dataset.id,name:btn.dataset.name};
@@ -1461,6 +1461,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     var from=selected.from.name||$('fromInput').value.trim();
     var to=selected.to.name||$('toInput').value.trim();
     if(!from||!to){$('resultsStatus').className='status err';$('resultsStatus').textContent=T('planer.enterStations');return}
+    if(from.trim().toLowerCase()===to.trim().toLowerCase()){$('resultsStatus').className='status err';$('resultsStatus').textContent=T('near.samePlace');return}
 
     hideDropdown('from');hideDropdown('to');
     viaRows.forEach(function(r){hideDropdown(r.key)});

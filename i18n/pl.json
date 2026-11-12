@@ -1437,6 +1437,7 @@
     "send": "Wyślij ostatni wynik"
   },
   "near": {
+    "samePlace": "Skąd i Dokąd to to samo miejsce — wybierz inny cel.",
     "btnPlain": "Najbliższe stacje",
     "farFrom": "Najbliższa stacja albo przystanek jest dalej niż ok. 900 m pieszo. Wybierz, skąd jedziesz:",
     "farTo": "Najbliższa stacja albo przystanek jest dalej niż ok. 900 m pieszo. Wybierz, dokąd jedziesz:",

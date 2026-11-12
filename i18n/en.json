@@ -1437,6 +1437,7 @@
     "send": "Send latest result"
   },
   "near": {
+    "samePlace": "From and To are the same place — choose another destination.",
     "btnPlain": "Nearest stations",
     "farFrom": "The nearest station or stop is more than about 900 m on foot. Choose where you start:",
     "farTo": "The nearest station or stop is more than about 900 m on foot. Choose where you are going:",

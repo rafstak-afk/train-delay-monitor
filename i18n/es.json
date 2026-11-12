@@ -1437,6 +1437,7 @@
     "send": "Enviar el último resultado"
   },
   "near": {
+    "samePlace": "Desde y Hasta son el mismo lugar — elige otro destino.",
     "btnPlain": "Estaciones cercanas",
     "farFrom": "La estación o parada más cercana está a más de unos 900 m a pie. Elige desde dónde sales:",
     "farTo": "La estación o parada más cercana está a más de unos 900 m a pie. Elige adónde vas:",

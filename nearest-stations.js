@@ -24,8 +24,10 @@
   // extra: [{ name, km, kind: "stop" }] — np. przystanki GZM z planera; onPick({ id, name, kind })
   function render(box, o) {
     box.innerHTML = '<div style="opacity:.75;font-size:13px;margin:6px 0">' + esc(t("searching", null, "Szukam najbliższych stacji…")) + "</div>";
-    return near(o.lat, o.lon, 6, 60).then(function (st) {
-      var items = st.map(function (s) { return { id: s.id, name: s.name, km: s.km, kind: "station" }; }).concat(o.extra || []).sort(function (a, b) { return a.km - b.km; });
+    return near(o.lat, o.lon, o.exclude ? 7 : 6, 60).then(function (st) {
+      var skip = String(o.exclude || "").trim().toLowerCase();
+      var items = st.map(function (s) { return { id: s.id, name: s.name, km: s.km, kind: "station" }; }).concat(o.extra || []).sort(function (a, b) { return a.km - b.km; })
+        .filter(function (s) { return !skip || s.name.toLowerCase() !== skip; });
       if (!items.length) { box.innerHTML = '<div style="margin:6px 0">' + esc(t("none", { km: 60 }, "Brak stacji w promieniu 60 km.")) + "</div>"; return; }
       box.innerHTML = '<div style="font-weight:700;margin:8px 0 4px">' + esc(o.title || t("title", null, "Najbliższe stacje (w linii prostej)")) + "</div>" +
         items.map(function (s, i) {
@@ -68,9 +70,9 @@
   function optionHtml(cls) {
     return '<button type="button" class="' + (cls || "") + ' near-opt" data-near-open="1" style="font-weight:700"><span>📍</span> <span>' + esc(t("btnPlain", null, "Najbliższe stacje")) + "</span></button>";
   }
-  function openIn(box, onPick, title) {
+  function openIn(box, onPick, title, exclude) {
     box.innerHTML = '<div style="opacity:.75;font-size:13px;margin:8px">' + esc(t("locating", null, "Ustalam położenie…")) + "</div>";
-    return locate().then(function (g) { return render(box, { lat: g.lat, lon: g.lon, title: title, onPick: onPick }); })
+    return locate().then(function (g) { return render(box, { lat: g.lat, lon: g.lon, title: title, exclude: exclude, onPick: onPick }); })
       .catch(function (e) { box.innerHTML = '<div style="margin:8px;color:#fbbf24">' + esc(e && e.code === 1 ? t("denied", null, "Przeglądarka nie ma zgody na lokalizację.") : t("gpsErr", null, "Nie udało się ustalić położenia. Spróbuj ponownie.")) + "</div>"; });
   }
   window.NearestStations = { mount: mount, render: render, near: near, locate: locate, km: km, optionHtml: optionHtml, openIn: openIn };

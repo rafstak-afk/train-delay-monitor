@@ -772,11 +772,12 @@
         // 📍 Najbliższe stacje — lista w tym samym okienku; po wyborze „Skąd” przejście do pustego „Dokąd”
         if (e.target.closest("[data-near-open]")) {
           e.stopPropagation(); nearBusy = true;
+          var otherInp = root.querySelector(inp.id === "gzCFrom" ? "#gzCTo" : "#gzCFrom");
           NearestStations.openIn(dd, function (s) {
             nearBusy = false; pick(s.name);
             try { inp.dispatchEvent(new Event("input", { bubbles: true })); } catch (er) {}
             var to = root.querySelector("#gzCTo"); if (inp.id === "gzCFrom" && to && !to.value.trim()) to.focus();
-          });
+          }, null, otherInp ? otherInp.value : "");
           return;
         }
         var b = e.target.closest(".gz-dd-item"); if (b) { pick(b.dataset.n); inp.focus(); }
@@ -1385,6 +1386,9 @@
     }
     function searchC() {
       var fromTxt = root.querySelector("#gzCFrom").value.trim(), toTxt = root.querySelector("#gzCTo").value.trim();
+      if (fromTxt && toTxt && fromTxt.toLowerCase() === toTxt.toLowerCase() && placeKey(fromTxt) !== "gps") {
+        root.querySelector("#gzCRes").innerHTML = '<div class="gz-warn">' + esc(T("near.samePlace", null, "Skąd i Dokąd to to samo miejsce — wybierz inny cel.")) + "</div>"; return;
+      }
       var tmin = C.hm(root.querySelector("#gzCTime").value) || Math.floor(warsawNow().min);
       st.cFrom = fromTxt; st.cTo = toTxt; save(LS, st);
       if (uniOn()) {
