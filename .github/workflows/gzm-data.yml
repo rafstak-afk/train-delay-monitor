@@ -71,6 +71,7 @@ jobs:
 
       - name: Publikacja na gałęzi gzm-data (jeden commit, bez historii)
         run: |
+          cp tools/gzm/LICENCJE.md tools/gzm/out/LICENCJE.md   # ODbL (OpenStreetMap) i CC BY 4.0 (ZTM GZM)
           cd tools/gzm/out
           git init -q -b gzm-data
           git config user.name "gzm-data bot"
