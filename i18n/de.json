@@ -895,7 +895,8 @@
     "rodo2": "Wenn du ein <a href=\"/profil/\">Profil</a> erstellst — freiwillig, ohne Anmeldung und ohne Angabe einer E-Mail —, speichern wir unter seinem Token ausschließlich deine eigenen Einstellungen: Lieblingsbahnhöfe, Lieblingszüge und Lieblingsstrecken im Reisetagebuch. Sonst nichts: keinen Namen, keine Adresse, keinen Browserverlauf.",
     "rodoReviewNote": "Übersetzung des polnischen Originals — vom Betreiber zu prüfen; maßgeblich ist die polnische Fassung.",
     "kindPlace": "📍 Ich kenne den Ort (Weg vom Bahnsteig)",
-    "placeTpl": "Bahnhof: {station}\nHaltestelle: {stop}\nMinuten vom Bahnsteig zur Haltestelle (welcher Bahnsteig?): \nTreppen / Aufzug / Rampe unterwegs: \nFußgängerüberwege (mit Ampel?): \nSonstiges: "
+    "placeTpl": "Bahnhof: {station}\nHaltestelle: {stop}\nMinuten vom Bahnsteig zur Haltestelle (welcher Bahnsteig?): \nTreppen / Aufzug / Rampe unterwegs: \nFußgängerüberwege (mit Ampel?): \nSonstiges: ",
+    "placePublic": "Gehzeit-Messungen sind öffentlich: Die gesendete Zeit, der Bahnhof und die Wegbeschreibung können in den Daten der App veröffentlicht werden (ohne deine persönlichen Daten)."
   },
   "profilePrompt": {
     "title": "Auf jedem Gerät behalten?",
@@ -1427,7 +1428,7 @@
   "wm": {
     "title": "Fußweg messen",
     "kind": "Bahnsteig → Haltestelle",
-    "intro": "Wähle den Bahnsteig, tippe auf dem Bahnsteig auf Start und an der Haltestelle auf Stopp. Gespeichert wird nur die Zeit, kein Standort.",
+    "intro": "Wähle den Bahnsteig, tippe auf dem Bahnsteig auf Start und an der Haltestelle auf Stopp. Gespeichert wird nur die Zeit, kein Standort. Ein gesendetes Ergebnis ist öffentlich.",
     "platform": "Bahnsteig {p}",
     "platformAny": "Bahnsteig ?",
     "start": "▶ Start — steige aus",

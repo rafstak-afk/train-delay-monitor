@@ -895,7 +895,8 @@
     "rodo2": "If you create a <a href=\"/profil/\">profile</a> — voluntarily, without logging in or giving an e-mail — we store under its token only your own settings: favorite stations, favorite trains and favorite routes in the travel journal. Nothing else: no name, address or browsing history.",
     "rodoReviewNote": "Translation of the Polish source text — to be reviewed by the site owner; the Polish version prevails.",
     "kindPlace": "📍 I know this place (walk from the platform)",
-    "placeTpl": "Station: {station}\nStop: {stop}\nMinutes from the platform to the stop (which platform?): \nStairs / lift / ramp on the way: \nPedestrian crossings (with lights?): \nOther notes: "
+    "placeTpl": "Station: {station}\nStop: {stop}\nMinutes from the platform to the stop (which platform?): \nStairs / lift / ramp on the way: \nPedestrian crossings (with lights?): \nOther notes: ",
+    "placePublic": "Walking measurements are publicly available: the time, station and route description you send may be published in the app's data (without your personal data)."
   },
   "profilePrompt": {
     "title": "Keep this on every device?",
@@ -1427,7 +1428,7 @@
   "wm": {
     "title": "Measure the walk",
     "kind": "platform → stop",
-    "intro": "Choose the platform, tap Start on the platform and Stop at the stop. Only the time is saved, no location.",
+    "intro": "Choose the platform, tap Start on the platform and Stop at the stop. Only the time is saved, no location. A sent result is publicly available.",
     "platform": "platform {p}",
     "platformAny": "platform ?",
     "start": "▶ Start — getting off",

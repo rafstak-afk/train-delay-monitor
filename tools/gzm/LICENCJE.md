@@ -17,4 +17,4 @@ Rozkłady jazdy, przystanki i linie (pliki sieci i stacji na gałęzi `gzm-data`
 
 ## Pomiary w terenie
 
-Czasy w `station-overrides.json` to pomiary w terenie autora aplikacji i zgłoszenia użytkowników, udostępniane na licencji ODbL 1.0 razem z bazą dojść.
+Czasy w `station-overrides.json` to pomiary w terenie autora aplikacji i zgłoszenia użytkowników. Są **powszechnie dostępne**: każdy może z nich korzystać bez pytania o zgodę. Ponieważ łączymy je z bazą dojść z OpenStreetMap, udostępniamy je razem z nią na licencji ODbL 1.0. Użytkownik przed wysłaniem pomiaru widzi informację, że zostanie on udostępniony publicznie (bez danych osobowych — tylko stacja, przystanek, czas i opis drogi).

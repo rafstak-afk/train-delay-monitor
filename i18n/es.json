@@ -895,7 +895,8 @@
     "rodo2": "Si creas un <a href=\"/profil/\">perfil</a> (de forma voluntaria, sin iniciar sesión ni dar un correo), guardamos con su token únicamente tus propios ajustes: estaciones favoritas, trenes favoritos y rutas favoritas del diario de viajes. Nada más: ni nombre, ni dirección, ni historial de navegación.",
     "rodoReviewNote": "Traducción del original polaco, pendiente de revisión por el responsable; prevalece la versión polaca.",
     "kindPlace": "📍 Conozco el lugar (camino desde el andén)",
-    "placeTpl": "Estación: {station}\nParada: {stop}\nMinutos del andén a la parada (¿qué andén?): \nEscaleras / ascensor / rampa: \nPasos de peatones (¿con semáforo?): \nOtras notas: "
+    "placeTpl": "Estación: {station}\nParada: {stop}\nMinutos del andén a la parada (¿qué andén?): \nEscaleras / ascensor / rampa: \nPasos de peatones (¿con semáforo?): \nOtras notas: ",
+    "placePublic": "Las mediciones a pie son públicas: el tiempo, la estación y la descripción del camino que envíes pueden publicarse en los datos de la aplicación (sin tus datos personales)."
   },
   "profilePrompt": {
     "title": "¿Tenerlo en todos tus dispositivos?",
@@ -1427,7 +1428,7 @@
   "wm": {
     "title": "Medir el trayecto a pie",
     "kind": "andén → parada",
-    "intro": "Elige el andén, pulsa Inicio en el andén y Parar en la parada. Solo se guarda el tiempo, sin ubicación.",
+    "intro": "Elige el andén, pulsa Inicio en el andén y Parar en la parada. Solo se guarda el tiempo, sin ubicación. El resultado enviado es público.",
     "platform": "andén {p}",
     "platformAny": "andén ?",
     "start": "▶ Inicio — bajo del tren",

@@ -895,7 +895,8 @@
     "rodo2": "Jeśli założysz <a href=\"/profil/\">profil</a> — dobrowolnie, bez logowania, bez podawania e-maila — pod jego tokenem przechowujemy wyłącznie Twoje własne ustawienia: ulubione stacje, ulubione pociągi oraz ulubione trasy w dzienniczku podróży. Nic poza tym: żadnego imienia, adresu ani historii przeglądania.",
     "rodoReviewNote": "PL = tekst źródłowy (wiążący)",
     "kindPlace": "📍 Znam to miejsce (dojście z peronu)",
-    "placeTpl": "Stacja: {station}\nPrzystanek: {stop}\nIle minut idzie się z peronu na przystanek (z którego peronu?): \nSchody / winda / pochylnia po drodze: \nPrzejścia dla pieszych (ze światłami?): \nInne uwagi: "
+    "placeTpl": "Stacja: {station}\nPrzystanek: {stop}\nIle minut idzie się z peronu na przystanek (z którego peronu?): \nSchody / winda / pochylnia po drodze: \nPrzejścia dla pieszych (ze światłami?): \nInne uwagi: ",
+    "placePublic": "Pomiary dojść są powszechnie dostępne: wysłany czas, stacja i opis drogi mogą zostać opublikowane w danych aplikacji (bez Twoich danych osobowych)."
   },
   "profilePrompt": {
     "title": "Zachować to na każdym urządzeniu?",
@@ -1427,7 +1428,7 @@
   "wm": {
     "title": "Pomiar dojścia pieszo",
     "kind": "peron → przystanek",
-    "intro": "Wybierz peron, stuknij Start na peronie i Stop na przystanku. Zapisuję tylko czas, bez lokalizacji.",
+    "intro": "Wybierz peron, stuknij Start na peronie i Stop na przystanku. Zapisuję tylko czas, bez lokalizacji. Wysłany wynik jest powszechnie dostępny.",
     "platform": "peron {p}",
     "platformAny": "peron ?",
     "start": "▶ Start — wysiadam",

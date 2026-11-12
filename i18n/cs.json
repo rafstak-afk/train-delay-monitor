@@ -895,7 +895,8 @@
     "rodo2": "Pokud si vytvoříte <a href=\"/profil/\">profil</a> — dobrovolně, bez přihlášení a bez zadání e-mailu —, uchováváme pod jeho tokenem výhradně vaše vlastní nastavení: oblíbené stanice, oblíbené vlaky a oblíbené trasy v cestovním deníku. Nic víc: žádné jméno, adresu ani historii prohlížení.",
     "rodoReviewNote": "Překlad polského originálu — ke kontrole provozovatelem; rozhodující je polské znění.",
     "kindPlace": "📍 Znám to místo (cesta z nástupiště)",
-    "placeTpl": "Stanice: {station}\nZastávka: {stop}\nKolik minut z nástupiště na zastávku (z kterého nástupiště?): \nSchody / výtah / rampa: \nPřechody (se semaforem?): \nDalší poznámky: "
+    "placeTpl": "Stanice: {station}\nZastávka: {stop}\nKolik minut z nástupiště na zastávku (z kterého nástupiště?): \nSchody / výtah / rampa: \nPřechody (se semaforem?): \nDalší poznámky: ",
+    "placePublic": "Měření pěších cest jsou veřejně dostupná: odeslaný čas, stanice a popis cesty mohou být zveřejněny v datech aplikace (bez tvých osobních údajů)."
   },
   "profilePrompt": {
     "title": "Mít to na každém zařízení?",
@@ -1427,7 +1428,7 @@
   "wm": {
     "title": "Měření pěší cesty",
     "kind": "nástupiště → zastávka",
-    "intro": "Vyber nástupiště, klepni na Start na nástupišti a na Stop na zastávce. Ukládá se jen čas, bez polohy.",
+    "intro": "Vyber nástupiště, klepni na Start na nástupišti a na Stop na zastávce. Ukládá se jen čas, bez polohy. Odeslaný výsledek je veřejně dostupný.",
     "platform": "nástupiště {p}",
     "platformAny": "nástupiště ?",
     "start": "▶ Start — vystupuji",
