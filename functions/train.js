@@ -1078,6 +1078,18 @@ function showPlkDown(train,opts,err){
 // „Zapytaj PLK ponownie”, „Kopiuj diagnostykę”; przy braku ruchu ponawianie co minutę (najwyżej 10 razy).
 let opsRetryTimer=null,opsRetryN=0,lastDiag=null;
 function hmToMin(t){const m=String(t||'').match(/(\d{1,2}):(\d{2})/);return m?Number(m[1])*60+Number(m[2]):null}
+// Automatyczna diagnostyka (TODO 31): przy „brak danych o ruchu”, „PLK nie aktualizuje” albo ≥ 2 stacjach „BRAK INFO”
+// telefon raz na pociąg i dzień wysyła krótki raport bez danych osobowych; serwer sprawdza i zapisuje (najwyżej 40 na dobę).
+function autoDiag(train,opts,kind,route,last,nowMin,date,today,d){
+  if(date!==today)return;
+  const lastIdx=last?route.indexOf(last):-1,dl=last&&typeof last.delay==='number'?last.delay:0;
+  const noInfo=route.slice(lastIdx+1).filter(s=>{const p=hmToMin(s.plannedArrival||s.plannedTime||s.plannedDeparture);return p!=null&&p+dl+3<nowMin&&nowMin-p<720}).length;
+  const k=kind==='ops'?'ops':kind==='stale'?'stale':(noInfo>=2?'noinfo':null);
+  if(!k)return;
+  const key='diagSent:'+today+':'+train;
+  try{if(localStorage.getItem(key))return;localStorage.setItem(key,'1')}catch(e){return}
+  fetch('/api/diag-report',{method:'POST',keepalive:true,headers:{'Content-Type':'application/json'},body:JSON.stringify({train:train,kind:k,station:opts.station||'',scheduleId:opts.schedule||'',orderId:opts.order||'',date:date,noInfo:noInfo,lastConfirmed:last?last.stationName+' '+(last.actualTime||''):'',diag:d,v:'6.04'})}).catch(function(){});
+}
 function trainHealth(train,opts,data){
   if(opsRetryTimer){clearTimeout(opsRetryTimer);opsRetryTimer=null}
   const d=data.diag||{},today=todayIso(),date=opts.date||today,route=Array.isArray(data.route)?data.route:[];
@@ -1094,6 +1106,7 @@ function trainHealth(train,opts,data){
     if(late)kind='stale',msg=last?T('train.hStale',{s:last.stationName,t:(last.actualTime||last.plannedTime||'')}):T('train.hStaleNone',{s:late.stationName});
   }
   lastDiag={url:location.pathname+location.search,train:train,scheduleId:opts.schedule,orderId:opts.order,date:date,today:today,kind:kind,diag:d,confirmed:conf.length,stations:route.length,lastConfirmed:last?last.stationName+' '+(last.actualTime||''):null,status:data.status||'',checkedAt:new Date().toISOString()};
+  try{autoDiag(train,opts,kind,route,last,nowMin,date,today,d)}catch(e){}
   const box=document.createElement('div');
   box.className='panel';box.id='trainHealth';
   box.style.cssText='border:1px solid '+(kind?'#f59e0b':'rgba(255,255,255,.12)')+';margin-bottom:10px;font-size:14px';

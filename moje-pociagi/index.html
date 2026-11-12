@@ -985,7 +985,7 @@ function maybeScrollToNow() {
 
 // Pomiar dojścia pieszo przeniesiony do planera (/walk-measure.js, zakładka Pociąg + GZM).
 
-function staggerOn() { try { return localStorage.getItem('showVersionBadge') === '1'; } catch (e) { return false; } }
+function staggerOn() { return true; }   // dla wszystkich od v6.04 (TODO 41)
 // Najwyżej n zadań naraz; z kolejki rusza to o najniższej randze. Opcjonalnie dopiero po starcie `after`.
 function requestGate(n, after) {
   let active = 0, open = !after; const queue = [];

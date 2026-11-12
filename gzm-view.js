@@ -1889,7 +1889,7 @@
         var walkCap = true;   // dla wszystkich od v5.56
         if ((geo.dist <= NODE_M || geo.walk <= 25 || base + geo.walk <= bestFinal || firstStart > base + 60) && (!walkCap || geo.dist <= NODE_M || geo.walk <= 60)) {
           walkTop = v2WalkCard(geo, base);
-          if (authorOn() && !S.forceTransit) walkTop += '<div style="margin:0 2px 10px"><button type="button" class="gz-btn sec" data-forcetransit="1">🚌 Szukaj mimo to komunikacją</button></div>';
+          if (!S.forceTransit) walkTop += '<div style="margin:0 2px 10px"><button type="button" class="gz-btn sec" data-forcetransit="1">🚌 Szukaj mimo to komunikacją</button></div>';
           // noc / długa przerwa: najbliższe połączenie dopiero za ponad godzinę
           if (firstStart > base + 60 && firstStart < Infinity) walkTop += '<div class="gz-sub" style="margin:4px 2px 10px">' + esc(T("gzm.v3FirstLater", { t: C.fmt(firstStart) }, "Najbliższe połączenie komunikacją: wyjście dopiero o {t} (poniżej).")) + "</div>";
         }

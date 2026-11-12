@@ -1,6 +1,6 @@
 {
   "73312": {
-    "note": "Katowice: Kopernika Dworzec (8–9 min przez przejście podziemne) — zgłoszenie użytkownika 2.11.2026",
+    "note": "Katowice: Kopernika Dworzec (8–9 min przez przejście podziemne) — zgłoszenie użytkownika 2.11.2026; pomiar autora 4.11.2026 6:18: peron 2 (wyjście od pl. Andrzeja) → Katowice Andrzeja Dworzec słupek 01: 4 min 20 s (5 min)",
     "add": [
       "2469011-01601"
     ],
@@ -9,6 +9,11 @@
         8,
         9
       ]
+    },
+    "walkPlat": {
+      "2469011-00101": {
+        "2": 5
+      }
     }
   },
   "73619": {

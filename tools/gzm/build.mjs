@@ -187,7 +187,10 @@ function assign(stations, stopsByCode, cache, overrides) {
     st.stops = [...codes].map(code => {
       const s = stopsByCode.get(code); if (!s) return null;
       const e = cache.entries[st.id + "|" + code] || { straight: Math.round(W.haversine(st, s)), src: "override" };
-      const w = ov.walk && ov.walk[code];
+      let w = ov.walk && ov.walk[code];
+      // walkPlat: pomiar w terenie z wybranych peronów — podmiana tylko tych peronów w byPlat, zakres min–max od nowa
+      const wp = ov.walkPlat && ov.walkPlat[code];
+      if (!w && wp && e.byPlat) { const bp = Object.assign({}, e.byPlat, wp), v = Object.values(bp); return { code, id: s.id, name: s.name, lat: s.lat, lon: s.lon, url: s.url, types: s.types, byPlat: bp, min: Math.min(...v), max: Math.max(...v), ns: e.ns, src: "measured" }; }
       return { code, id: s.id, name: s.name, lat: s.lat, lon: s.lon, url: s.url, types: s.types, byPlat: w ? undefined : e.byPlat, min: w ? w[0] : e.min, max: w ? w[1] : e.max, ns: w ? undefined : e.ns, nsPart: w ? undefined : e.nsPart, cx: w ? undefined : e.cx, sig: w ? undefined : e.sig, rx: w ? undefined : e.rx, stairs: (e.obst || []).includes("schody") || undefined, src: w ? "override" : e.src };
     }).filter(Boolean).sort((a, b) => a.min - b.min || a.max - b.max || a.name.localeCompare(b.name, "pl"));
   }
