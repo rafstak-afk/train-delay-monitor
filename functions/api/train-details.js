@@ -242,7 +242,9 @@ async function findAltCourse(route, { trainNum, trainOrderId, scheduleId, orderI
     let data = null;
     try { data = await plkGet(`/schedules?stations=${encodeURIComponent(sid)}&dateFrom=${operatingDate}&dateTo=${operatingDate}`, apiKey, SCHEDULES_CACHE_TTL); } catch (e) { continue; }
     const routes = Array.isArray(data && data.routes) ? data.routes : [];
-    const cands = routes.filter(r => r.orderId && !seen.has(String(r.orderId)) && ((trainOrderId && String(r.trainOrderId) === String(trainOrderId)) || (want && routeHasTrain(r, want))));
+    // trainOrderId z linku bywa błędny (= orderId); prawdziwy bierzemy z tego samego rozkładu stacji (wpis z naszym orderId)
+    const toIds = new Set([trainOrderId, ...routes.filter(r => String(r.orderId) === String(orderId)).map(r => r.trainOrderId)].filter(Boolean).map(String));
+    const cands = routes.filter(r => r.orderId && !seen.has(String(r.orderId)) && ((r.trainOrderId && toIds.has(String(r.trainOrderId))) || (want && routeHasTrain(r, want))));
     for (const r of cands) {
       seen.add(String(r.orderId));
       if (++tries > 2) return null;
