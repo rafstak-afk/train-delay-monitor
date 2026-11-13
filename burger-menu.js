@@ -34,7 +34,8 @@
     { href: "/jak-dziala/", key: "common.burger.howItWorks", fallback: "📖 Jak działa aplikacja" },
     { href: "/kontakt/", key: "common.burger.contact", fallback: "💬 Uwagi i kontakt" },
     { href: "/kontakt/#rodo", key: "common.burger.rodo", fallback: "🔒 RODO i prywatność" },
-    { href: "/notatka/", key: "common.burger.authorNote", fallback: "📝 Notatka dla Claude", requiresBeta: true }
+    { href: "/notatka/", key: "common.burger.authorNote", fallback: "📝 Notatka dla Claude", requiresBeta: true },
+    { href: "/lista/", key: "common.burger.todoList", fallback: "📋 Moja lista TO DO", requiresBeta: true }
   ];
 
   function escapeAttr(s) {

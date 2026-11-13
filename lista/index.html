@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Moja lista TO DO</title>
+<style>
+:root{--bg:#101820;--panel:#1c2833;--card:#223244;--line:#34495e;--muted:#b8c3cf;--blue:#0b57d0;--ok:#16a34a;--warn:#f59e0b}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#fff;padding:14px}
+.wrap{max-width:760px;margin:0 auto}
+a{color:#8ab4f8}
+a.back{display:inline-block;margin-bottom:8px;color:var(--muted);text-decoration:none;font-size:14px}
+h1{font-size:23px;margin:4px 0}
+.sub{color:var(--muted);font-size:13px;line-height:1.4;margin-bottom:10px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;margin:10px 0}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+input[type=search]{flex:1;min-width:160px;padding:10px;border-radius:9px;border:1px solid var(--line);background:var(--card);color:#fff;font-size:16px}
+.btn{border:0;border-radius:10px;padding:9px 13px;font-size:14px;font-weight:800;cursor:pointer;color:#fff;background:var(--blue)}
+.btn.sec{background:#4b5563}.btn.ok{background:var(--ok)}.btn.sm{padding:7px 10px;font-size:13px}
+details.sec{margin:10px 0}
+details.sec>summary{cursor:pointer;font-weight:900;font-size:17px;padding:10px 4px;list-style:none}
+details.sec>summary::before{content:"▸ ";color:var(--muted)}details.sec[open]>summary::before{content:"▾ "}
+.it{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:8px 0}
+.it .hd{display:flex;gap:8px;align-items:flex-start}
+.it .no{font-weight:900;color:#ffd400;min-width:34px}
+.it .tx{flex:1;font-size:14px;line-height:1.45;white-space:pre-wrap;word-break:break-word}
+.it .tx.cut{max-height:4.4em;overflow:hidden;-webkit-mask-image:linear-gradient(#000 60%,transparent)}
+.it .more{color:#8ab4f8;font-size:13px;cursor:pointer;margin:4px 0 0 42px;display:inline-block}
+.it .acts{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 0 42px}
+.pend{margin:6px 0 0 42px;font-size:12px;color:var(--warn)}
+.ask{border-left:3px solid var(--warn)}
+textarea{width:100%;min-height:90px;margin-top:8px;padding:9px;border-radius:9px;border:1px solid var(--line);background:#16212c;color:#fff;font-size:15px;font-family:inherit}
+.msg{font-size:13px;margin-top:6px}
+code{background:#0f1720;padding:0 4px;border-radius:4px;font-size:12px}
+.hid{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+<a class="back" href="/">← Strona główna</a>
+<h1>📋 Moja lista TO DO</h1>
+<div class="sub">Tylko w Twoim profilu autora. Odpowiedzi, zamknięcia i nowe zadania trafiają do notatek na GitHubie (etykieta „z listy”). Claude przenosi je do listy przy następnej rozmowie — do tego czasu przy zadaniu widać „⏳ czeka na Claude”.</div>
+<div id="denied" class="panel hid">Ta strona jest dostępna tylko w profilu autora.</div>
+<div id="nokey" class="panel hid">⚙️ Brakuje klucza GitHub w Cloudflare (sekret <code>NOTES_GH_TOKEN</code>). Instrukcję ma Claude — napisz mu „lista: klucz”.</div>
+<div id="app" class="hid">
+  <div class="panel bar">
+    <input type="search" id="q" placeholder="Szukaj: numer albo słowo">
+    <button class="btn ok" id="newBtn" type="button">➕ Nowe zadanie</button>
+    <button class="btn sec" id="reload" type="button">⟳</button>
+  </div>
+  <div class="panel hid" id="newBox">
+    <b>Nowe zadanie</b>
+    <textarea id="newText" placeholder="Co trzeba zrobić? Pierwsza linia będzie tytułem."></textarea>
+    <div class="bar" style="margin-top:8px"><button class="btn" id="newSend" type="button">📤 Wyślij do Claude</button><button class="btn sec" id="newCancel" type="button">Anuluj</button></div>
+    <div class="msg" id="newMsg"></div>
+  </div>
+  <div class="msg" id="state">Wczytuję listę…</div>
+  <div id="list"></div>
+</div>
+</div>
+<script src="/profile-sync.js"></script>
+<script>
+(function () {
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  var author = false, token = "", data = null;
+  try { author = localStorage.getItem("showVersionBadge") === "1"; token = window.ProfileSync && ProfileSync.getToken ? ProfileSync.getToken() : ""; } catch (e) {}
+  if (!author || !token) { $("denied").classList.remove("hid"); return; }
+  $("app").classList.remove("hid");
+  var REPO = "https://github.com/rafstak-afk/czy-zdaze-notatki/";
+  function md(s) {
+    var h = esc(s);
+    h = h.replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/`([^`]+)`/g, "<code>$1</code>");
+    h = h.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, function (_, t, u) {
+      if (/^https?:/.test(u)) return '<a href="' + u + '" target="_blank" rel="noopener">' + t + "</a>";
+      if (/^\.\.\/\.\.\/issues/.test(u)) u = REPO + u.replace(/^\.\.\/\.\.\//, "");
+      else u = REPO + "blob/main/" + u.replace(/^\.\//, "");
+      return '<a href="' + u + '" target="_blank" rel="noopener">' + t + "</a>";
+    });
+    h = h.replace(/\[zgłoszenie #(\d+)\]|zgłoszenie #(\d+)/g, function (m, a, b) { var n = a || b; return '<a href="' + REPO + "issues/" + n + '" target="_blank" rel="noopener">' + m.replace(/^\[|\]$/g, "") + "</a>"; });
+    return h;
+  }
+  async function call(body) {
+    body.token = token;
+    var r = await fetch("/api/todo", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    var j = await r.json().catch(function () { return { ok: false, error: "HTTP " + r.status }; });
+    return j;
+  }
+  function openKey(i) { return "todoListOpen" + i; }
+  function render() {
+    if (!data) return;
+    var q = $("q").value.trim().toLowerCase();
+    var pend = {}; (data.pending || []).forEach(function (p) { if (p.n) (pend[p.n] = pend[p.n] || []).push(p); });
+    var closedSec = function (t) { return /^3\./.test(t); };
+    $("list").innerHTML = data.sections.map(function (s, si) {
+      var items = s.items.filter(function (it) { return !q || String(it.n) === q || it.text.toLowerCase().indexOf(q) >= 0; });
+      if (q && !items.length) return "";
+      var open = q ? true : (localStorage.getItem(openKey(si)) != null ? localStorage.getItem(openKey(si)) === "1" : !closedSec(s.title));
+      var isClosed = closedSec(s.title), isAsk = /^2\./.test(s.title);
+      return '<details class="sec" data-si="' + si + '"' + (open ? " open" : "") + "><summary>" + esc(s.title) + "</summary>" + items.map(function (it) {
+        var long = it.text.length > 230 || it.text.split("\n").length > 3;
+        var p = pend[it.n] || [];
+        return '<div class="it' + (isAsk ? " ask" : "") + '" data-n="' + it.n + '"><div class="hd"><div class="no">' + it.n + '.</div><div class="tx' + (long ? " cut" : "") + '">' + md(it.text) + "</div></div>" +
+          (long ? '<span class="more" data-more>więcej ▾</span>' : "") +
+          (p.length ? '<div class="pend">⏳ czeka na Claude: ' + p.map(function (x) { return '<a href="' + esc(x.url) + '" target="_blank" rel="noopener">' + esc(x.title.replace(/^\[TODO \d+\] /, "")) + "</a>"; }).join(", ") + "</div>" : "") +
+          '<div class="acts">' + (isClosed
+            ? '<button class="btn sm sec" data-act="reopen">↩️ Otwórz ponownie</button><button class="btn sm sec" data-act="comment">📝 Komentarz</button>'
+            : '<button class="btn sm" data-act="reply">💬 Odpowiedz</button><button class="btn sm ok" data-act="close">✅ Zamknij</button>') +
+          '</div><div class="form hid"><textarea placeholder=""></textarea><div class="bar" style="margin-top:6px"><button class="btn sm" data-send>📤 Wyślij do Claude</button><button class="btn sm sec" data-cancel>Anuluj</button></div><div class="msg"></div></div></div>';
+      }).join("") + "</details>";
+    }).join("") || '<div class="panel">Nic nie znaleziono.</div>';
+  }
+  var PH = { reply: "Twoja odpowiedź albo decyzja dla Claude…", close: "Krótko: dlaczego zamykamy (możesz zostawić puste)…", reopen: "Co jeszcze trzeba zrobić?", comment: "Komentarz…" };
+  $("list").addEventListener("toggle", function (e) { var d = e.target; if (d.matches && d.matches("details.sec") && !$("q").value.trim()) localStorage.setItem(openKey(d.getAttribute("data-si")), d.open ? "1" : "0"); }, true);
+  $("list").addEventListener("click", async function (e) {
+    var it = e.target.closest(".it"); if (!it) return;
+    if (e.target.closest("[data-more]")) { var tx = it.querySelector(".tx"); var cut = tx.classList.toggle("cut"); e.target.textContent = cut ? "więcej ▾" : "mniej ▴"; return; }
+    var form = it.querySelector(".form"), ta = form.querySelector("textarea"), msg = form.querySelector(".msg");
+    var a = e.target.closest("[data-act]");
+    if (a) { form.setAttribute("data-kind", a.getAttribute("data-act")); ta.placeholder = PH[a.getAttribute("data-act")]; form.classList.remove("hid"); msg.textContent = ""; ta.focus(); return; }
+    if (e.target.closest("[data-cancel]")) { form.classList.add("hid"); return; }
+    var s = e.target.closest("[data-send]"); if (!s) return;
+    var kind = form.getAttribute("data-kind"), text = ta.value.trim();
+    if ((kind === "reply" || kind === "comment") && !text) { msg.textContent = "Napisz coś."; return; }
+    s.disabled = true; msg.textContent = "Wysyłam…";
+    var j = await call({ action: "move", kind: kind, n: it.getAttribute("data-n"), text: text });
+    s.disabled = false;
+    if (!j.ok) { msg.textContent = "Nie udało się: " + (j.error || "błąd"); return; }
+    ta.value = ""; form.classList.add("hid");
+    (data.pending = data.pending || []).push({ n: it.getAttribute("data-n"), title: { reply: "💬 Odpowiedź", close: "✅ Zamknij", reopen: "↩️ Otwórz ponownie", comment: "📝 Komentarz" }[kind], url: j.url });
+    render();
+  });
+  $("q").oninput = render;
+  $("newBtn").onclick = function () { $("newBox").classList.toggle("hid"); $("newText").focus(); };
+  $("newCancel").onclick = function () { $("newBox").classList.add("hid"); };
+  $("newSend").onclick = async function () {
+    var t = $("newText").value.trim(); if (!t) { $("newMsg").textContent = "Napisz, co trzeba zrobić."; return; }
+    this.disabled = true; $("newMsg").textContent = "Wysyłam…";
+    var j = await call({ action: "move", kind: "new", text: t }); this.disabled = false;
+    if (!j.ok) { $("newMsg").textContent = "Nie udało się: " + (j.error || "błąd"); return; }
+    $("newText").value = ""; $("newMsg").innerHTML = '✅ Wysłane (<a href="' + esc(j.url) + '" target="_blank" rel="noopener">zgłoszenie #' + j.number + "</a>). Claude nada mu numer przy następnej rozmowie.";
+  };
+  async function load() {
+    $("state").textContent = "Wczytuję listę…";
+    var j = await call({ action: "list" });
+    if (!j.ok) { if (j.error === "nokey") { $("nokey").classList.remove("hid"); $("app").classList.add("hid"); return; } $("state").textContent = "Nie udało się wczytać: " + (j.error || "błąd"); return; }
+    data = j;
+    var cnt = j.sections.map(function (s) { return s.items.length; }).join(" · ");
+    $("state").innerHTML = "Zadań w sekcjach: " + cnt + (j.pending && j.pending.length ? " · ⏳ " + j.pending.length + " czeka na Claude" : "") + ' · <a href="' + REPO + 'blob/main/TODO.md" target="_blank" rel="noopener">TODO.md na GitHubie</a>';
+    render();
+  }
+  $("reload").onclick = load;
+  load();
+})();
+</script>
+</body>
+</html>
