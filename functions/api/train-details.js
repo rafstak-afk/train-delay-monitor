@@ -233,7 +233,7 @@ function routeHasTrain(r, want) {
     .some(v => normTrainNo(v) === want);
 }
 // Inny kurs tego samego pociągu z danymi o ruchu (najwyżej 2 stacje × 1 rozkład + 2 próby ruchu).
-async function findAltCourse(route, { trainNum, trainOrderId, scheduleId, orderId, operatingDate, boardId }, apiKey, dbg = []) {
+async function findAltCourse(route, { trainNum, trainOrderId, scheduleId, orderId, operatingDate, boardId, toOut }, apiKey, dbg = []) {
   const sts = Array.isArray(route.stations) ? route.stations : [];
   // najpierw stacja, z której otwarto pociąg (tam tablica pokazuje oba kursy — 37100 SPODEK, Tarnowskie Góry), potem krańcowe
   const ids = [...new Set([boardId, sts[0] && sts[0].stationId, sts[sts.length - 1] && sts[sts.length - 1].stationId].filter(Boolean).map(String))].slice(0, 2);
@@ -241,10 +241,11 @@ async function findAltCourse(route, { trainNum, trainOrderId, scheduleId, orderI
   let tries = 0;
   for (const sid of ids) {
     let data = null;
-    try { data = await plkGet(`/schedules?dateFrom=${operatingDate}&dateTo=${operatingDate}&stations=${encodeURIComponent(sid)}`, apiKey, 300);   // świeży rozkład (5 min): PLK dodaje kursy w ciągu dnia (37100 SPODEK 13.11) } catch (e) { dbg.push(sid + ":err " + String(e && e.message || e).slice(0, 30)); continue; }
+    try { data = await plkGet(`/schedules?dateFrom=${operatingDate}&dateTo=${operatingDate}&stations=${encodeURIComponent(sid)}`, apiKey, 300); /* świeży rozkład (5 min): PLK dodaje kursy w ciągu dnia (37100 SPODEK 13.11) */ } catch (e) { dbg.push(sid + ":err " + String(e && e.message || e).slice(0, 30)); continue; }
     const routes = Array.isArray(data && data.routes) ? data.routes : [];
     // trainOrderId z linku bywa błędny (= orderId); prawdziwy bierzemy z tego samego rozkładu stacji (wpis z naszym orderId)
     const toIds = new Set([trainOrderId, ...routes.filter(r => String(r.orderId) === String(orderId)).map(r => r.trainOrderId)].filter(Boolean).map(String));
+    if (toOut) for (const t of toIds) toOut.add(t);
     const cands = routes.filter(r => r.orderId && !seen.has(String(r.orderId)) && ((r.trainOrderId && toIds.has(String(r.trainOrderId))) || (want && routeHasTrain(r, want))));
     dbg.push(sid + ":routes " + routes.length + " self " + routes.some(r => String(r.orderId) === String(orderId)) + " to " + [...toIds].join("/") + " cands " + cands.map(r => r.orderId).join("/"));
     for (const r of cands) {
@@ -310,7 +311,23 @@ export async function onRequestGet(context) {
       const stP = url.searchParams.get("station") || "", stIdP = url.searchParams.get("stationId") || "";
       let boardId = stIdP;
       if (!boardId && stP && stationNames) { const low = stP.toLowerCase(); for (const s of (Array.isArray(route.stations) ? route.stations : [])) { const nm = stationNames.get(String(s.stationId)) || stationNames.get(Number(s.stationId)) || ""; if (String(nm).toLowerCase() === low) { boardId = s.stationId; break; } } }
-      const alt = await findAltCourse(route, { trainNum, trainOrderId, scheduleId, orderId, operatingDate, boardId }, apiKey, altDbg).catch(e => { altDbg.push("x " + String(e && e.message || e).slice(0, 40)); return null; });
+      const toOut = new Set();
+      let alt = await findAltCourse(route, { trainNum, trainOrderId, scheduleId, orderId, operatingDate, boardId, toOut }, apiKey, altDbg).catch(e => { altDbg.push("x " + String(e && e.message || e).slice(0, 40)); return null; });
+      // Ostatnia próba: tablica stacji (ta sama, którą widzi użytkownik; PLK potrafi trzymać kurs pod innym ID stacji —
+      // 37100/37101 SPODEK w Tarnowskich Górach 13.11). Dopasowanie po trainOrderId; tablica jest w pamięci podręcznej.
+      if (!alt && stP && toOut.size) {
+        try {
+          const dq = new URLSearchParams({ station: stP, date: operatingDate, time: "00:00", limit: "300" });
+          const dj = await (await fetch(new URL("/api/departures?" + dq.toString(), request.url))).json();
+          const row = (Array.isArray(dj.departures) ? dj.departures : []).find(d => d.orderId && String(d.orderId) !== String(orderId) && toOut.has(String(d.trainOrderId)));
+          altDbg.push("board " + (row ? row.orderId : "-"));
+          if (row) {
+            const sch = String(row.scheduleId || scheduleId);
+            const ops = await plkGet(`/operations/train/${encodeURIComponent(sch)}/${encodeURIComponent(row.orderId)}/${encodeURIComponent(operatingDate)}`, apiKey).catch(e => { altDbg.push("board ops " + String(e && e.message || e).slice(0, 30)); return null; });
+            if (ops) alt = { scheduleId: sch, orderId: String(row.orderId), operationData: ops };
+          }
+        } catch (e) { altDbg.push("board x " + String(e && e.message || e).slice(0, 30)); }
+      }
       if (alt) {
         altFrom = orderId; scheduleId = alt.scheduleId; orderId = alt.orderId; operationData = alt.operationData; opsError = null;
         try { const rd = await plkGet(`/schedules/route/${encodeURIComponent(scheduleId)}/${encodeURIComponent(orderId)}`, apiKey, ROUTE_CACHE_TTL); route = rd?.route || rd || route; } catch (e) {}
