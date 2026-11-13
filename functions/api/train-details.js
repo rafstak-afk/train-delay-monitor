@@ -241,7 +241,7 @@ async function findAltCourse(route, { trainNum, trainOrderId, scheduleId, orderI
   let tries = 0;
   for (const sid of ids) {
     let data = null;
-    try { data = await plkGet(`/schedules?stations=${encodeURIComponent(sid)}&dateFrom=${operatingDate}&dateTo=${operatingDate}`, apiKey, SCHEDULES_CACHE_TTL); } catch (e) { dbg.push(sid + ":err " + String(e && e.message || e).slice(0, 30)); continue; }
+    try { data = await plkGet(`/schedules?dateFrom=${operatingDate}&dateTo=${operatingDate}&stations=${encodeURIComponent(sid)}`, apiKey, 300);   // świeży rozkład (5 min): PLK dodaje kursy w ciągu dnia (37100 SPODEK 13.11) } catch (e) { dbg.push(sid + ":err " + String(e && e.message || e).slice(0, 30)); continue; }
     const routes = Array.isArray(data && data.routes) ? data.routes : [];
     // trainOrderId z linku bywa błędny (= orderId); prawdziwy bierzemy z tego samego rozkładu stacji (wpis z naszym orderId)
     const toIds = new Set([trainOrderId, ...routes.filter(r => String(r.orderId) === String(orderId)).map(r => r.trainOrderId)].filter(Boolean).map(String));
