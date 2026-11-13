@@ -233,18 +233,19 @@ function routeHasTrain(r, want) {
     .some(v => normTrainNo(v) === want);
 }
 // Inny kurs tego samego pociągu z danymi o ruchu (najwyżej 2 stacje × 1 rozkład + 2 próby ruchu).
-async function findAltCourse(route, { trainNum, trainOrderId, scheduleId, orderId, operatingDate }, apiKey) {
+async function findAltCourse(route, { trainNum, trainOrderId, scheduleId, orderId, operatingDate }, apiKey, dbg = []) {
   const sts = Array.isArray(route.stations) ? route.stations : [];
   const ids = [...new Set([sts[0] && sts[0].stationId, sts[sts.length - 1] && sts[sts.length - 1].stationId].filter(Boolean))];
   const want = normTrainNo(trainNum), seen = new Set([String(orderId)]);
   let tries = 0;
   for (const sid of ids) {
     let data = null;
-    try { data = await plkGet(`/schedules?stations=${encodeURIComponent(sid)}&dateFrom=${operatingDate}&dateTo=${operatingDate}`, apiKey, SCHEDULES_CACHE_TTL); } catch (e) { continue; }
+    try { data = await plkGet(`/schedules?stations=${encodeURIComponent(sid)}&dateFrom=${operatingDate}&dateTo=${operatingDate}`, apiKey, SCHEDULES_CACHE_TTL); } catch (e) { dbg.push(sid + ":err " + String(e && e.message || e).slice(0, 30)); continue; }
     const routes = Array.isArray(data && data.routes) ? data.routes : [];
     // trainOrderId z linku bywa błędny (= orderId); prawdziwy bierzemy z tego samego rozkładu stacji (wpis z naszym orderId)
     const toIds = new Set([trainOrderId, ...routes.filter(r => String(r.orderId) === String(orderId)).map(r => r.trainOrderId)].filter(Boolean).map(String));
     const cands = routes.filter(r => r.orderId && !seen.has(String(r.orderId)) && ((r.trainOrderId && toIds.has(String(r.trainOrderId))) || (want && routeHasTrain(r, want))));
+    dbg.push(sid + ":routes " + routes.length + " self " + routes.some(r => String(r.orderId) === String(orderId)) + " to " + [...toIds].join("/") + " cands " + cands.map(r => r.orderId).join("/"));
     for (const r of cands) {
       seen.add(String(r.orderId));
       if (++tries > 2) return null;
@@ -252,7 +253,7 @@ async function findAltCourse(route, { trainNum, trainOrderId, scheduleId, orderI
       try {
         const ops = await plkGet(`/operations/train/${encodeURIComponent(sch)}/${encodeURIComponent(r.orderId)}/${encodeURIComponent(operatingDate)}`, apiKey);
         if (ops) return { scheduleId: String(sch), orderId: String(r.orderId), operationData: ops };
-      } catch (e) {}
+      } catch (e) { dbg.push(r.orderId + ":" + String(e && e.message || e).slice(0, 30)); }
     }
   }
   return null;
@@ -287,6 +288,7 @@ export async function onRequestGet(context) {
   }
 
   let opsError = null;
+  const altDbg = [];
   const startedAt = Date.now();
   try {
     let [routeData, operationData, stationNames] = await Promise.all([
@@ -304,7 +306,7 @@ export async function onRequestGet(context) {
 
     let route = routeData?.route || routeData || {};
     if (!operationData && /404/.test(String(opsError || "")) && operatingDate === todayWarsaw()) {
-      const alt = await findAltCourse(route, { trainNum, trainOrderId, scheduleId, orderId, operatingDate }, apiKey).catch(() => null);
+      const alt = await findAltCourse(route, { trainNum, trainOrderId, scheduleId, orderId, operatingDate }, apiKey, altDbg).catch(e => { altDbg.push("x " + String(e && e.message || e).slice(0, 40)); return null; });
       if (alt) {
         altFrom = orderId; scheduleId = alt.scheduleId; orderId = alt.orderId; operationData = alt.operationData; opsError = null;
         try { const rd = await plkGet(`/schedules/route/${encodeURIComponent(scheduleId)}/${encodeURIComponent(orderId)}`, apiKey, ROUTE_CACHE_TTL); route = rd?.route || rd || route; } catch (e) {}
@@ -427,7 +429,7 @@ export async function onRequestGet(context) {
         operatingDate,
         opsOk: !!operationData,
         opsError,
-        altFrom,
+        altFrom, altDbg: altDbg.length ? altDbg : undefined,
         opsStations: opStations.length,
         opsGeneratedAt: (operationData && operationData.generatedAt) || null,
         routeStations: routeStations.length,
