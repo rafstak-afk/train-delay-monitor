@@ -54,7 +54,7 @@ export async function onRequestPost({ request, env }) {
     if ((kind === "reply" || kind === "new" || kind === "comment") && !text) return json({ ok: false, error: "Pusty wpis" }, 400);
     const title = (kind === "new" ? "" : "[TODO " + n + "] ") + KINDS[kind] + (kind === "new" ? ": " + text.split("\n")[0].slice(0, 70) : "");
     const r = await gh(env, "/issues", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title, body: (text || "(bez komentarza)") + "\n\n— z „📋 Moja lista” w aplikacji", labels: ["z listy", "nowe"] }) });
-    if (!r.ok) return json({ ok: false, error: "GitHub " + r.status }, 502);
+    if (!r.ok) return json({ ok: false, error: r.status === 403 || r.status === 404 ? "klucz GitHub nie ma uprawnienia Issues: Read and write (GitHub " + r.status + ")" : "GitHub " + r.status }, 502);
     const j = await r.json();
     return json({ ok: true, number: j.number, url: j.html_url });
   }
