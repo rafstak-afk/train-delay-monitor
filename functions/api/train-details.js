@@ -233,9 +233,10 @@ function routeHasTrain(r, want) {
     .some(v => normTrainNo(v) === want);
 }
 // Inny kurs tego samego pociągu z danymi o ruchu (najwyżej 2 stacje × 1 rozkład + 2 próby ruchu).
-async function findAltCourse(route, { trainNum, trainOrderId, scheduleId, orderId, operatingDate }, apiKey, dbg = []) {
+async function findAltCourse(route, { trainNum, trainOrderId, scheduleId, orderId, operatingDate, boardId }, apiKey, dbg = []) {
   const sts = Array.isArray(route.stations) ? route.stations : [];
-  const ids = [...new Set([sts[0] && sts[0].stationId, sts[sts.length - 1] && sts[sts.length - 1].stationId].filter(Boolean))];
+  // najpierw stacja, z której otwarto pociąg (tam tablica pokazuje oba kursy — 37100 SPODEK, Tarnowskie Góry), potem krańcowe
+  const ids = [...new Set([boardId, sts[0] && sts[0].stationId, sts[sts.length - 1] && sts[sts.length - 1].stationId].filter(Boolean).map(String))].slice(0, 2);
   const want = normTrainNo(trainNum), seen = new Set([String(orderId)]);
   let tries = 0;
   for (const sid of ids) {
@@ -306,7 +307,10 @@ export async function onRequestGet(context) {
 
     let route = routeData?.route || routeData || {};
     if (!operationData && /404/.test(String(opsError || "")) && operatingDate === todayWarsaw()) {
-      const alt = await findAltCourse(route, { trainNum, trainOrderId, scheduleId, orderId, operatingDate }, apiKey, altDbg).catch(e => { altDbg.push("x " + String(e && e.message || e).slice(0, 40)); return null; });
+      const stP = url.searchParams.get("station") || "", stIdP = url.searchParams.get("stationId") || "";
+      let boardId = stIdP;
+      if (!boardId && stP && stationNames) { const low = stP.toLowerCase(); for (const s of (Array.isArray(route.stations) ? route.stations : [])) { const nm = stationNames.get(String(s.stationId)) || stationNames.get(Number(s.stationId)) || ""; if (String(nm).toLowerCase() === low) { boardId = s.stationId; break; } } }
+      const alt = await findAltCourse(route, { trainNum, trainOrderId, scheduleId, orderId, operatingDate, boardId }, apiKey, altDbg).catch(e => { altDbg.push("x " + String(e && e.message || e).slice(0, 40)); return null; });
       if (alt) {
         altFrom = orderId; scheduleId = alt.scheduleId; orderId = alt.orderId; operationData = alt.operationData; opsError = null;
         try { const rd = await plkGet(`/schedules/route/${encodeURIComponent(scheduleId)}/${encodeURIComponent(orderId)}`, apiKey, ROUTE_CACHE_TTL); route = rd?.route || rd || route; } catch (e) {}
