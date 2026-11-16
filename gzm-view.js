@@ -1157,9 +1157,9 @@
       }).join("") + walkPrefsHtml() + hideHtml();
     }
     function defModes(m) { return m.train && m.bus && m.tram && m.trolley; }
-    // Ukryte linie (TODO 16): lista nazw linii, np. ["M3","6"]; na razie tylko profil autora
+    // Ukryte linie (TODO 16): lista nazw linii, np. ["M3","6"]; dla wszystkich od v6.17
     var HIDE_LS = "gzmHideLinesV1";
-    function hiddenLines() { if (!authorOn()) return []; var v = load(HIDE_LS, null); return Array.isArray(v) ? v.filter(function (x) { return typeof x === "string" && x; }).slice(0, 30) : []; }
+    function hiddenLines() { if (!modesOn()) return []; var v = load(HIDE_LS, null); return Array.isArray(v) ? v.filter(function (x) { return typeof x === "string" && x; }).slice(0, 30) : []; }
     function hideOf() { var h = hiddenLines(), o = null; h.forEach(function (x) { o = o || {}; o[x.toUpperCase()] = 1; }); return o; }
     function setHidden(list) {
       var seen = {}, l = list.map(function (x) { return String(x).trim().toUpperCase().replace(/\s+/g, ""); }).filter(function (x) { if (!x || x.length > 8 || seen[x]) return false; seen[x] = 1; return true; }).slice(0, 30);
@@ -1168,7 +1168,7 @@
       return l;
     }
     function hideHtml() {
-      if (!authorOn()) return "";
+      if (!modesOn()) return "";
       var h = hiddenLines();
       return '<div class="gz-hide" style="margin-top:8px"><span class="gz-modes-l">' + esc(T("gzm.hideLbl", null, "🚫 Nie pokazuj linii:")) + "</span> " +
         h.map(function (x) { return '<button type="button" class="gz-btn sec" data-unhide="' + esc(x) + '" style="padding:4px 9px;margin:2px">' + esc(x) + " ✕</button>"; }).join("") +
