@@ -32,7 +32,8 @@ async function probe(path, key) {
     });
 
     const contentType = res.headers.get('content-type') || '';
-    const text = await res.text();
+    // prywatność: dane właściciela klucza (nazwa, organizacja, e-mail) nie wychodzą w publicznej odpowiedzi
+    const text = (await res.text()).replace(/"(contactEmail|organization|name)"\s*:\s*"[^"]*"/g, '"$1":"—"');
     const base = classifyStatus(res.status, text);
 
     let body = null;
@@ -83,6 +84,13 @@ export async function onRequest(context) {
       human: 'Brak klucza API',
       details: 'Brak zmiennej środowiskowej PLK_API_KEY albo PDP_API_KEY w Cloudflare Pages.'
     }, 500);
+  }
+
+  // ?mode=counter — lekki odczyt licznika zapytań (1 zapytanie, bez ciężkiego /apikey/usage) dla monitoringu co godzinę (TODO 32)
+  if (new URL(context.request.url).searchParams.get('mode') === 'counter') {
+    const c = await probe('/apikey/info', key);
+    const d = c.body && c.body.data || {};
+    return json({ ok: !!c.ok, http: c.http, at: new Date().toISOString(), totalRequests: d.totalRequests ?? null, lastUsedAt: d.lastUsedAt || null, hourlyRateLimit: d.hourlyRateLimit ?? null, dailyRateLimit: d.dailyRateLimit ?? null });
   }
 
   const checks = await Promise.all([
