@@ -18,6 +18,20 @@ const CORS_JSON = {
 
 const TOKEN_RE = /^[A-Z0-9]{16}$/;
 
+// Indeks profili z subskrypcją push (TODO 8, etap 4): posortowana lista tokenów w kluczu "push:index".
+// push-tick co 5 min czyta tylko te profile zamiast listować całe KV; raz na godzinę pełne listowanie odbudowuje indeks.
+const PUSH_INDEX_KEY = "push:index";
+async function setPushIndex(env, token, has) {
+  let idx = null;
+  try { idx = JSON.parse((await env.USER_PROFILES.get(PUSH_INDEX_KEY)) || "null"); } catch (e) {}
+  if (!Array.isArray(idx)) return; // brak indeksu — odbuduje go najbliższe pełne przejście push-tick
+  const on = idx.includes(token);
+  if (on === !!has) return;
+  const next = has ? [...idx, token].sort() : idx.filter(t => t !== token);
+  await env.USER_PROFILES.put(PUSH_INDEX_KEY, JSON.stringify(next));
+}
+
+
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: CORS_JSON });
 }
@@ -109,5 +123,6 @@ export async function onRequest(context) {
     metadata: { createdAt: profile.createdAt, updatedAt: profile.updatedAt }
   });
 
+  try { await setPushIndex(env, token, profile.pushSubscriptions.length > 0); } catch (e) {}
   return json({ ok: true, count: profile.pushSubscriptions.length });
 }

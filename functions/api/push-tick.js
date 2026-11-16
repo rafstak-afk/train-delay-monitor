@@ -20,6 +20,20 @@ import GuardCoreMod from "../../guard-core.js";
 const GuardCore = (GuardCoreMod && GuardCoreMod.evaluate) ? GuardCoreMod : globalThis.GuardCore;
 
 const TOKEN_RE = /^[A-Z0-9]{16}$/;
+
+// Indeks profili z subskrypcją push (TODO 8, etap 4): posortowana lista tokenów w kluczu "push:index".
+// push-tick co 5 min czyta tylko te profile zamiast listować całe KV; raz na godzinę pełne listowanie odbudowuje indeks.
+const PUSH_INDEX_KEY = "push:index";
+async function setPushIndex(env, token, has) {
+  let idx = null;
+  try { idx = JSON.parse((await env.USER_PROFILES.get(PUSH_INDEX_KEY)) || "null"); } catch (e) {}
+  if (!Array.isArray(idx)) return; // brak indeksu — odbuduje go najbliższe pełne przejście push-tick
+  const on = idx.includes(token);
+  if (on === !!has) return;
+  const next = has ? [...idx, token].sort() : idx.filter(t => t !== token);
+  await env.USER_PROFILES.put(PUSH_INDEX_KEY, JSON.stringify(next));
+}
+
 const ADMIN_CONTACT = "mailto:rafstak@gmail.com";
 const PROFILE_TTL_SECONDS = 60 * 60 * 24 * 180;
 const MAX_WATCHED_STATIONS = 5;
@@ -667,14 +681,24 @@ export async function onRequestPost(context) {
   try { dtChanges = await checkDisruptionTypes(env, origin, warsawNow().date, summary); }
   catch (e) { summary.errors.push(`disruption-types: ${e.message}`); }
 
-  let cursor;
-  do {
-    const page = await env.USER_PROFILES.list({ cursor });
-    cursor = page.cursor;
+  // Lista profili: z indeksu (co 5 min) albo pełne listowanie KV (minuta 0 każdej godziny lub brak indeksu).
+  let idxNow = null;
+  try { idxNow = JSON.parse((await env.USER_PROFILES.get(PUSH_INDEX_KEY)) || "null"); } catch (e) {}
+  const fullPass = !Array.isArray(idxNow) || new Date().getUTCMinutes() < 5 || new URL(request.url).searchParams.get("full") === "1";
+  let tokens = [];
+  if (fullPass) {
+    let cur;
+    do {
+      const page = await env.USER_PROFILES.list({ cursor: cur });
+      for (const k of page.keys) if (TOKEN_RE.test(k.name)) tokens.push(k.name); // pomija klucze limitu, stanu itp.
+      cur = page.list_complete ? null : page.cursor;
+    } while (cur);
+  } else tokens = idxNow;
+  summary.source = fullPass ? "list" : "index";
+  const withSubs = [];
 
-    for (const entry of page.keys) {
-      const token = entry.name;
-      if (!TOKEN_RE.test(token)) continue; // pomija klucze limitu tworzenia profili (profilecreate:...)
+  {
+    for (const token of tokens) {
 
       let profile;
       try {
@@ -686,6 +710,7 @@ export async function onRequestPost(context) {
       if (!profile) continue;
 
       const subs = Array.isArray(profile.pushSubscriptions) ? profile.pushSubscriptions : [];
+      if (subs.length) withSubs.push(token);
       if (dtChanges && profile.showVersion === true) {
         for (const sub of subs) {
           try { await sendPush(env, sub, disruptionTypesPayload(dtChanges)); summary.pushSent++; }
@@ -774,9 +799,17 @@ export async function onRequestPost(context) {
           expirationTtl: PROFILE_TTL_SECONDS,
           metadata: { createdAt: profile.createdAt, updatedAt: profile.updatedAt }
         });
+        if (!subsNow.length) { const i = withSubs.indexOf(token); if (i >= 0) withSubs.splice(i, 1); if (!fullPass) { try { await setPushIndex(env, token, false); } catch (e) {} } }
       }
     }
-  } while (cursor);
+  }
+
+  // Pełne przejście: zapis indeksu tylko gdy się zmienił (najwyżej 1 zapis KV na godzinę).
+  if (fullPass) {
+    const next = [...new Set(withSubs)].sort();
+    if (JSON.stringify(next) !== JSON.stringify(idxNow)) { await env.USER_PROFILES.put(PUSH_INDEX_KEY, JSON.stringify(next)); summary.indexWritten = next.length; }
+  }
+  summary.profilesTotal = tokens.length;
 
   return json({ ok: true, ...summary });
 }
