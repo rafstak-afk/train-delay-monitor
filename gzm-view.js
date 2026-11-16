@@ -659,6 +659,17 @@
         var pbEl = root.querySelector("#gzPlaces"); if (pbEl) { pbEl.style.marginTop = "6px"; pBox.appendChild(pbEl); }
         if (more) pBox.appendChild(more);
         var refreshHead = function () { pBox.querySelector("summary").innerHTML = prefsHead(); };
+        var hideRedo = function () {
+          mWrap.innerHTML = modesHtml(); refreshHead();
+          var fH = root.querySelector("#gzCFrom"), rH = root.querySelector("#gzCRes");
+          if (fH && fH.value.trim() && rH && rH.innerHTML.trim()) searchC();
+        };
+        mWrap.addEventListener("click", function (ev) {
+          var un = ev.target.closest("[data-unhide]");
+          if (un) { setHidden(hiddenLines().filter(function (x) { return x !== un.getAttribute("data-unhide"); })); hideRedo(); return; }
+          if (ev.target.closest("[data-hideadd]")) { var inp = mWrap.querySelector("#gzHideIn"); if (inp && inp.value.trim()) { setHidden(hiddenLines().concat(inp.value.split(/[ ,;]+/))); hideRedo(); } }
+        });
+        mWrap.addEventListener("keydown", function (ev) { if (ev.key === "Enter" && ev.target.id === "gzHideIn") { ev.preventDefault(); var b = mWrap.querySelector("[data-hideadd]"); if (b) b.click(); } });
         mWrap.addEventListener("change", function (ev) {
           var pc = ev.target.closest("input[data-pace], input[data-nostairs]");
           if (pc) {
@@ -1143,9 +1154,27 @@
       var m = modes(), L = { train: T("gzm.mTrain", null, "🚆 Pociąg"), bus: T("gzm.mBus", null, "🚌 Autobus"), tram: T("gzm.mTram", null, "🚋 Tramwaj"), trolley: T("gzm.mTrolley", null, "🚎 Trolejbus") };
       return '<span class="gz-modes-l">' + esc(T("gzm.modesLbl", null, "Środki transportu:")) + "</span>" + ["train", "bus", "tram", "trolley"].map(function (k) {
         return '<label class="gz-mode"><input type="checkbox" data-mode="' + k + '"' + (m[k] ? " checked" : "") + "> " + esc(L[k]) + "</label>";
-      }).join("") + walkPrefsHtml();
+      }).join("") + walkPrefsHtml() + hideHtml();
     }
     function defModes(m) { return m.train && m.bus && m.tram && m.trolley; }
+    // Ukryte linie (TODO 16): lista nazw linii, np. ["M3","6"]; na razie tylko profil autora
+    var HIDE_LS = "gzmHideLinesV1";
+    function hiddenLines() { if (!authorOn()) return []; var v = load(HIDE_LS, null); return Array.isArray(v) ? v.filter(function (x) { return typeof x === "string" && x; }).slice(0, 30) : []; }
+    function hideOf() { var h = hiddenLines(), o = null; h.forEach(function (x) { o = o || {}; o[x.toUpperCase()] = 1; }); return o; }
+    function setHidden(list) {
+      var seen = {}, l = list.map(function (x) { return String(x).trim().toUpperCase().replace(/\s+/g, ""); }).filter(function (x) { if (!x || x.length > 8 || seen[x]) return false; seen[x] = 1; return true; }).slice(0, 30);
+      if (l.length) save(HIDE_LS, l); else { try { localStorage.removeItem(HIDE_LS); } catch (e) {} }
+      if (profOn()) ProfileSync.push({ gzmHideLines: l.length ? l : null });
+      return l;
+    }
+    function hideHtml() {
+      if (!authorOn()) return "";
+      var h = hiddenLines();
+      return '<div class="gz-hide" style="margin-top:8px"><span class="gz-modes-l">' + esc(T("gzm.hideLbl", null, "🚫 Nie pokazuj linii:")) + "</span> " +
+        h.map(function (x) { return '<button type="button" class="gz-btn sec" data-unhide="' + esc(x) + '" style="padding:4px 9px;margin:2px">' + esc(x) + " ✕</button>"; }).join("") +
+        '<input type="text" id="gzHideIn" maxlength="8" placeholder="' + esc(T("gzm.hidePh", null, "np. M3")) + '" style="width:80px;margin:2px 4px;padding:5px 7px;border-radius:7px;border:1px solid #34495e;background:#16212c;color:#fff">' +
+        '<button type="button" class="gz-btn" data-hideadd="1" style="padding:4px 10px">' + esc(T("gzm.hideAdd", null, "Dodaj")) + "</button></div>";
+    }
     function defWalk(p) { return p.pace === "normal" && !p.noStairs; }
     function prefsSummary() {
       var m = modes(), p = walkPrefs(), bits = [], L = { train: T("gzm.mTrain", null, "🚆 Pociąg"), bus: T("gzm.mBus", null, "🚌 Autobus"), tram: T("gzm.mTram", null, "🚋 Tramwaj"), trolley: T("gzm.mTrolley", null, "🚎 Trolejbus") };
@@ -1153,6 +1182,7 @@
       if (off.length) bits.push(T("gzm.prefsWithout", null, "bez") + ": " + off.map(function (k) { return L[k]; }).join(", "));
       if (p.pace !== "normal") bits.push(T(p.pace === "fast" ? "gzm.paceFast" : "gzm.paceSlow", null, p.pace === "fast" ? "🏃 szybkie" : "🐢 spokojne"));
       if (p.noStairs) bits.push("♿");
+      var hl = hiddenLines(); if (hl.length) bits.push("🚫 " + hl.join(", "));
       return bits;
     }
     function prefsHead() {
@@ -1196,6 +1226,8 @@
       var chg = false;
       if (d.gzmWalkPrefs && typeof d.gzmWalkPrefs === "object" && JSON.stringify(load(WP_LS, null)) !== JSON.stringify(d.gzmWalkPrefs)) { save(WP_LS, d.gzmWalkPrefs); chg = true; }
       else if (d.gzmWalkPrefs === null && load(WP_LS, null)) { try { localStorage.removeItem(WP_LS); } catch (e) {} chg = true; }
+      if (Array.isArray(d.gzmHideLines) && JSON.stringify(load(HIDE_LS, null)) !== JSON.stringify(d.gzmHideLines)) { save(HIDE_LS, d.gzmHideLines); chg = true; }
+      else if (d.gzmHideLines === null && load(HIDE_LS, null)) { try { localStorage.removeItem(HIDE_LS); } catch (e) {} chg = true; }
       if (d.gzmModes && typeof d.gzmModes === "object" && JSON.stringify(load(MODES_LS, null)) !== JSON.stringify(d.gzmModes)) { save(MODES_LS, d.gzmModes); chg = true; }
       else if (d.gzmModes === null && load(MODES_LS, null)) { try { localStorage.removeItem(MODES_LS); } catch (e) {} chg = true; }
       if (!chg) return false;
@@ -1281,7 +1313,7 @@
       res.innerHTML = '<div class="gz-empty gz-searching">🔎 ' + esc(T("gzm.loading", null, "Wczytuję rozkład…")) + "</div>";
       Promise.all([getNet(date), getRt(), resolvePlace(fromTxt).catch(function (e) { if (/^gps/.test(String(e && e.message))) throw e; return null; })]).then(function (r) {
         var net = r[0], pl = r[2]; if (netP[date]) netP[date]._net = net;
-        net._excl = exclOf();
+        net._excl = exclOf(); net._hide = hideOf();
         var groups = [];
         if (pl) {
           placeReach(net, pl);
@@ -1427,7 +1459,7 @@
         throw "handled";
       }).then(function (r) {
         var net = r[0], code = GzmRaptor.byCode(net);
-        net._excl = exclOf(); net._pace = paceF();
+        net._excl = exclOf(); net._hide = hideOf(); net._pace = paceF();
         if (fromPlace) placeReach(net, fromPlace);
         if (toPlace) placeReach(net, toPlace);
         var fromSt = fromPlace ? null : stationByName(fromTxt), toSt = toPlace ? null : stationByName(toTxt);
