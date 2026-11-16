@@ -1000,7 +1000,28 @@
     if (/ (pomoc|pomocy|samouczek|instrukcj\w*|co umiesz) /.test(" " + f + " ") || (fav && grd)) { addMsg("W czym pomóc? Mogę pokazać na stronie, co kliknąć:", "bot"); howtoOffer(null); return true; }
     return false;
   }
+  // Licznik użyć (TODO 9): lokalnie, jeden zbiorczy wpis dziennie wysyłany następnego dnia (bez danych osobowych).
+  function chatStatToday() { return new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Warsaw" }).format(new Date()); }
+  function chatStatFlush() {
+    try {
+      var s = JSON.parse(localStorage.getItem("chatStat") || "null"), d = chatStatToday();
+      if (s && s.date && s.date < d && s.n > 0) {
+        localStorage.removeItem("chatStat");
+        fetch("/api/chat-stat", { method: "POST", keepalive: true, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ date: s.date, n: s.n }) }).catch(function () {});
+      } else if (s && s.date && s.date < d) localStorage.removeItem("chatStat");
+    } catch (e) {}
+  }
+  function chatStatCount() {
+    try {
+      chatStatFlush();
+      var d = chatStatToday(), s = JSON.parse(localStorage.getItem("chatStat") || "null");
+      if (!s || s.date !== d) s = { date: d, n: 0 };
+      s.n++; localStorage.setItem("chatStat", JSON.stringify(s));
+    } catch (e) {}
+  }
+  try { setTimeout(chatStatFlush, 4000); } catch (e) {}
   function handle(text) {
+    chatStatCount();
     var f = fold(text);
     if (!st.pending && !/ (ulubion\w*|gwiazdk\w*|pilnow\w*|pilnuj\w*|adres\w*) /.test(" " + f + " ") && faq(text, f)) return;
     if (!st.pending && howto(f)) return;

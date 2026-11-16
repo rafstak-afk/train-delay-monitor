@@ -73,8 +73,17 @@ export async function onRequest(context) {
     pages++;
   } while (cursor && pages < 50); // bezpiecznik — przy hobbystycznej skali to i tak nigdy nie zadziała
 
+  // Czat 💬 (TODO 9): ostatnie 30 dni z kluczy chatstat:<data> — {devices, questions}
+  const chat = {};
+  try {
+    const cl = await env.USER_PROFILES.list({ prefix: "chatstat:", limit: 1000 });
+    const recent = cl.keys.map(k => k.name).sort().slice(-30);
+    for (const k of recent) { try { chat[k.slice(9)] = JSON.parse((await env.USER_PROFILES.get(k)) || "null"); } catch (e) {} }
+  } catch (e) {}
+
   return json({
     ok: true,
-    stats: { total, active7, active30, createdLast7, createdLast30, unknownMeta }
+    stats: { total, active7, active30, createdLast7, createdLast30, unknownMeta },
+    chat
   });
 }
