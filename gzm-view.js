@@ -98,6 +98,18 @@
   function normName(x) { return String(x || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ł/g, "l").trim(); }
   function T(k, p, fb) { if (window.I18n) { var v = I18n.t(k, p); if (v !== k) return v; } return fb != null ? fb.replace(/\{(\w+)\}/g, function (_, n) { return p && p[n] != null ? p[n] : ""; }) : k; }
   function esc(v) { return String(v == null ? "" : v).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  // /api/planner z ponowieniem: pierwsze zapytanie na „zimnym” serwerze potrafi przekroczyć limit procesora Cloudflare
+  // (błąd 1102 → HTTP 503, odpowiedź nie-JSON). Bez ponowienia trasa przepadała po cichu (TODO 64: „cofanie się”).
+  function plannerFetch(q, n) {
+    n = n || 0;
+    return fetch("/api/planner?" + q, { headers: { Accept: "application/json" } }).then(function (r) {
+      return r.json().catch(function () { return null; }).then(function (j) {
+        if ((!r.ok || !j) && !(j && j.error) && n < 2) return new Promise(function (ok) { setTimeout(ok, n ? 3000 : 1200); }).then(function () { return plannerFetch(q, n + 1); });
+        if (!j) throw new Error("planner " + r.status);
+        return j;
+      });
+    });
+  }
   function load(k, d) { try { return JSON.parse(localStorage.getItem(k)) || d; } catch (e) { return d; } }
   function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
   function warsawNow() {
@@ -960,7 +972,7 @@
               var rides = C.ridesToStation({ arrFile: af, origin: names, date: date, fromMin: tmin, maxMin: 120, rt: rt });
               if (!rides.length) return null;
               var q = new URLSearchParams({ from: sx.n, to: to, date: date, time: C.fmt(rides[0].platform), transferMinutes: "3" });
-              return fetch("/api/planner?" + q, { headers: { Accept: "application/json" } }).then(function (r) { return r.json(); }).then(function (pl) {
+              return plannerFetch(q).then(function (pl) {
                 var its = (pl && pl.itineraries) || [];
                 var trains = its.map(function (it) {
                   var dep = C.hm(it.departureTime), arr = C.hm(it.arrivalTime);
@@ -1539,7 +1551,7 @@
         var date2 = date;
         return Promise.all(combos.map(function (cb) {
           var q = new URLSearchParams({ from: cb.a.st.n, to: cb.e.st.n, date: date2, time: C.fmt(tmin), transferMinutes: "3" });
-          return fetch("/api/planner?" + q, { headers: { Accept: "application/json" } }).then(function (x) { return x.json(); }).then(function (pl) {
+          return plannerFetch(q).then(function (pl) {
             return { cb: cb, its: (pl && pl.itineraries) || [], query: pl && pl.query };
           }).catch(function () { return null; });
         })).then(function (parts) {
@@ -2074,7 +2086,7 @@
             var rides = files[0] ? C.ridesToStation({ arrFile: files[0], origin: fromNames, date: date, fromMin: tmin, maxMin: 120, rt: rt }) : null;
             if (files[0] && !rides.length) return null;
             var q = new URLSearchParams({ from: cb.a.st.n, to: cb.e.st.n, date: date, time: C.fmt(rides ? rides[0].platform : tmin), transferMinutes: "3" });
-            return fetch("/api/planner?" + q, { headers: { Accept: "application/json" } }).then(function (x) { return x.json(); }).then(function (pl) {
+            return plannerFetch(q).then(function (pl) {
               return { cb: cb, accFile: files[0], egrFile: files[1], its: (pl && pl.itineraries) || [], query: pl && pl.query };
             });
           }).catch(function () { return null; });
