@@ -392,6 +392,8 @@
     "searching": "Buscando conexiones...",
     "retrying": "Buscando conexiones... (reintentando, el servidor necesitó más tiempo)",
     "serverError": "Error al buscar conexiones (servidor: {status}). Inténtalo de nuevo en un momento.",
+    "serverBusy": "El servidor de búsqueda está sobrecargado temporalmente (código {status}). Lo intenté varias veces sin éxito: vuelve a intentarlo en un minuto. No es un problema de tu teléfono ni de internet, y tus búsquedas guardadas están a salvo.",
+    "retryBtn": "🔄 Reintentar",
     "apiFail": "No se pudo conectar con la API.",
     "partialRefining": "Los resultados están incompletos: busco de nuevo para completarlos…",
     "partialWarn": "Los resultados pueden estar incompletos: pulsa otra vez «🔎 Buscar conexiones» para completarlos.",

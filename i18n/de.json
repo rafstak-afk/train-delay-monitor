@@ -392,6 +392,8 @@
     "searching": "Suche Verbindungen...",
     "retrying": "Suche Verbindungen... (neuer Versuch, der Server brauchte mehr Zeit)",
     "serverError": "Fehler bei der Verbindungssuche (Server: {status}). Versuche es gleich noch einmal.",
+    "serverBusy": "Der Suchserver ist vorübergehend überlastet (Code {status}). Mehrere Versuche sind fehlgeschlagen — versuche es in einer Minute erneut. Das liegt nicht an deinem Handy oder Internet, gespeicherte Suchen bleiben erhalten.",
+    "retryBtn": "🔄 Erneut versuchen",
     "apiFail": "Verbindung zur API fehlgeschlagen.",
     "partialRefining": "Die Ergebnisse sind unvollständig — ich suche erneut, um sie zu ergänzen…",
     "partialWarn": "Die Ergebnisse sind möglicherweise unvollständig — klicke noch einmal auf „🔎 Verbindungen suchen“, um sie zu ergänzen.",

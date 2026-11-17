@@ -1522,7 +1522,9 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
             btn.disabled=false;
             $('resultsStatus').className='status err';
             // Błąd z kodem z serwera — tłumaczony; bez kodu: tekst serwera albo ogólny.
-            $('resultsStatus').textContent=res.data.code?T('planer.err.'+res.data.code,res.data.params||{}):(res.data.error||T('planer.serverError',{status:res.status}));
+            var busy=!res.data.code&&!res.data.error&&(res.status===502||res.status===503||res.status===504||(res.status>=520&&res.status<=530));
+            $('resultsStatus').textContent=res.data.code?T('planer.err.'+res.data.code,res.data.params||{}):(res.data.error||(busy?T('planer.serverBusy',{status:res.status}):T('planer.serverError',{status:res.status})));
+            if(busy){var rb=document.createElement('button');rb.type='button';rb.className='btn';rb.style.cssText='display:block;margin-top:8px';rb.textContent=T('planer.retryBtn');rb.onclick=function(){btn.click()};$('resultsStatus').appendChild(rb)}
             scrollToResults();
             return;
           }

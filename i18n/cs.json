@@ -392,6 +392,8 @@
     "searching": "Hledám spojení...",
     "retrying": "Hledám spojení... (zkouším znovu, server potřeboval více času)",
     "serverError": "Chyba při hledání spojení (server: {status}). Zkuste to za chvíli znovu.",
+    "serverBusy": "Vyhledávací server je dočasně přetížený (kód {status}). Několik pokusů selhalo — zkus to za minutu. Není to problém tvého telefonu ani internetu a uložená hledání jsou v bezpečí.",
+    "retryBtn": "🔄 Zkusit znovu",
     "apiFail": "Nepodařilo se připojit k API.",
     "partialRefining": "Výsledky jsou neúplné — hledám znovu, abych je doplnil…",
     "partialWarn": "Výsledky mohou být neúplné — klikněte znovu na „🔎 Hledat spojení“ a doplňte je.",

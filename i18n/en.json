@@ -392,6 +392,8 @@
     "searching": "Searching for connections...",
     "retrying": "Searching for connections... (retrying, the server needed more time)",
     "serverError": "Connection search error (server: {status}). Please try again in a moment.",
+    "serverBusy": "The search server is temporarily overloaded (code {status}). I retried several times without success — try again in a minute. It's not a problem with your phone or internet, and your saved searches are safe.",
+    "retryBtn": "🔄 Try again",
     "apiFail": "Couldn't connect to the API.",
     "partialRefining": "Results are incomplete — searching again to complete them…",
     "partialWarn": "Results may be incomplete — click “🔎 Find connections” again to complete them.",
