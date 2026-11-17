@@ -57,7 +57,8 @@
   // ⏰ Przypomnienia dla autora (tylko profil autora: showVersionBadge) — pasek na górze strony od podanego dnia,
   // „✅ Zrobione” chowa na stałe, „⏰ Jutro” do następnego dnia. Zapis tylko w tym telefonie (localStorage).
   var AUTHOR_REMINDERS = [
-    { id: "pomiar-kat-dworzec", from: "2026-11-18", html: "⏱️ <b>Pomiar (TODO 70):</b> w Katowicach zmierz stoperem dojście <b>peron 2 → Katowice Dworzec</b> (zapisz numer stanowiska; jeśli się da, też z peronu 1 lub 3). Stoper: Planer → 🚆🚌 Pociąg + GZM → Pomiar dojścia." }
+    { id: "pomiar-kat-dworzec", from: "2026-11-18", html: "⏱️ <b>Pomiar (TODO 70):</b> w Katowicach zmierz stoperem dojście <b>peron 2 → Katowice Dworzec</b> (zapisz numer stanowiska; jeśli się da, też z peronu 1 lub 3). Stoper: Planer → 🚆🚌 Pociąg + GZM → Pomiar dojścia." },
+    { id: "pomiar-wieczorka-szkola", from: "2026-11-18", html: "⏱️ <b>Pomiar (TODO 71):</b> na przystanku <b>Osiedle Wieczorka Szkoła</b> zmierz stoperem przejście <b>stanowisko 01 → 02</b> (przez światła przy skrzyżowaniu z Ziętka / Armii Krajowej). Stoper: Planer → 🚆🚌 Pociąg + GZM → Pomiar dojścia → ✏️ inne." }
   ];
   function authorReminders() {
     try { if (localStorage.getItem("showVersionBadge") !== "1") return; } catch (e) { return; }

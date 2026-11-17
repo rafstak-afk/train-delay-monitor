@@ -12,7 +12,7 @@
 })(typeof self !== "undefined" ? self : this, function () {
   "use strict";
   var INF = 1e9, TYPE = { 0: "tram", 3: "bus", 11: "trolley" };
-  var WALK_M = 300, CHANGE = 2;
+  var WALK_M = 300, CHANGE = 1;   // 17.11: zapas po przejściu pieszo 1 min (przejście liczone ostrożnie: 1,2 m/s, w górę, +30 s na światłach)
   // 17.11 (uwaga autora): przesiadka na TYM SAMYM stanowisku albo na zintegrowanym przystanku autobusowo-tramwajowym
   // (ten sam numer stanowiska, tramwajowe z dopiskiem „t”, np. 28501 / 28501t) — dozwolony zapas 0–1 min (w widoku miga na czerwono)
   function sameNo(j, a, b) { var ca = String(j.stops[a][3] || "").replace(/t$/i, ""), cb = String(j.stops[b][3] || "").replace(/t$/i, ""); return !!ca && ca === cb; }
@@ -45,6 +45,13 @@
           if (d <= WALK_M) net.foot[i].push(o, Math.max(1, Math.ceil(d * 1.4 / 1.2 / 60)));
         }
       }
+    }
+    // TODO 71: czasy przejść między przystankami po drogach z OSM (przez jezdnię tylko na przejściach) zamiast linii prostej
+    if (j.fw) for (var w = 0; w + 2 < j.fw.length; w += 3) {
+      var fa = j.fw[w], fb = j.fw[w + 1], fm = j.fw[w + 2], fa2 = net.foot[fa], fb2 = net.foot[fb];
+      if (!fa2 || !fb2) continue;
+      for (var u = 0; u < fa2.length; u += 2) if (fa2[u] === fb) fa2[u + 1] = fm;
+      for (u = 0; u < fb2.length; u += 2) if (fb2[u] === fa) fb2[u + 1] = fm;
     }
     return net;
   }
@@ -88,7 +95,7 @@
           var prev = tau[k - 1][s];
           if (prev < INF && i < seq.length - 1 && !(+fl[i] & 1)) {
             var pw = walkL[k - 1][s] && par[k - 1][s], same = !walkL[k - 1][s] || (pw && pw.walk != null && sameNo(j, pw.walk, s));
-            var need = prev + (k > 1 && !same ? CHANGE : 0);   // TODO 69: 2 min także po przejściu pieszo; to samo stanowisko / zintegrowany przystanek — 0 min
+            var need = prev + (k > 1 && !same ? CHANGE : 0);   // TODO 69: zapas także po przejściu pieszo (1 min); to samo stanowisko / zintegrowany przystanek — 0 min
             if (trip < 0 || need <= t0 + dl + off[2 * i + 1]) {
               // najwcześniejszy kurs tego wzoru odjeżdżający z i-tego przystanku nie wcześniej niż `need`
               var lo = 0, hi = trips.length, target = need - off[2 * i + 1] - 30;
