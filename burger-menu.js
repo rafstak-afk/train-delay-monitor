@@ -54,10 +54,39 @@
     return '<a href="' + escapeAttr(l.href) + '"' + attrs + ' data-i18n="' + l.key + '" onclick="closeBurgerMenu()">' + l.fallback + "</a>";
   }
 
+  // ⏰ Przypomnienia dla autora (tylko profil autora: showVersionBadge) — pasek na górze strony od podanego dnia,
+  // „✅ Zrobione” chowa na stałe, „⏰ Jutro” do następnego dnia. Zapis tylko w tym telefonie (localStorage).
+  var AUTHOR_REMINDERS = [
+    { id: "pomiar-kat-dworzec", from: "2026-11-18", html: "⏱️ <b>Pomiar (TODO 70):</b> w Katowicach zmierz stoperem dojście <b>peron 2 → Katowice Dworzec</b> (zapisz numer stanowiska; jeśli się da, też z peronu 1 lub 3). Stoper: Planer → 🚆🚌 Pociąg + GZM → Pomiar dojścia." }
+  ];
+  function authorReminders() {
+    try { if (localStorage.getItem("showVersionBadge") !== "1") return; } catch (e) { return; }
+    var today = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Warsaw" });
+    var st = {}; try { st = JSON.parse(localStorage.getItem("authorRemindersV1") || "{}") || {}; } catch (e) {}
+    AUTHOR_REMINDERS.forEach(function (r) {
+      var v = st[r.id];
+      if (today < r.from || v === "done" || (v && v > today)) return;
+      var bar = document.createElement("div");
+      bar.setAttribute("role", "status");
+      bar.style.cssText = "position:sticky;top:0;z-index:9999;background:#3a2f00;color:#fff;border-bottom:2px solid #ffd400;padding:10px 12px;font:14px/1.45 system-ui,sans-serif";
+      bar.innerHTML = '<div style="max-width:900px;margin:0 auto">' + r.html +
+        '<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap"><button type="button" data-ar="done" style="padding:6px 12px;border-radius:8px;border:0;background:#2e7d4f;color:#fff;font-weight:700">✅ Zrobione</button>' +
+        '<button type="button" data-ar="later" style="padding:6px 12px;border-radius:8px;border:0;background:#4a5563;color:#fff;font-weight:700">⏰ Jutro</button></div></div>';
+      bar.addEventListener("click", function (e) {
+        var b = e.target.closest("[data-ar]"); if (!b) return;
+        if (b.dataset.ar === "done") st[r.id] = "done";
+        else { var d = new Date(today + "T12:00:00Z"); d.setUTCDate(d.getUTCDate() + 1); st[r.id] = d.toISOString().slice(0, 10); }
+        try { localStorage.setItem("authorRemindersV1", JSON.stringify(st)); } catch (e2) {}
+        bar.remove();
+      });
+      document.body.insertBefore(bar, document.body.firstChild);
+    });
+  }
   function ensureDom() {
     var style = document.createElement("style");
     style.textContent = CSS;
     document.head.appendChild(style);
+    try { authorReminders(); } catch (e) {}
 
     var wrap = document.createElement("div");
     wrap.className = "burger-wrap";
