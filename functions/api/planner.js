@@ -1420,7 +1420,8 @@ async function getJsonCached(url, headers, ttlSeconds) {
   // co wykluczyło rywalizację o zasoby jako przyczynę), choć pobrane w
   // izolacji (bez cache'owania) działało bez problemu w 1,2s.
   try {
-    const responseForCache = new Response(JSON.stringify(result.data), {
+    // surowy tekst z PLK zamiast ponownego JSON.stringify dużego rozkładu — oszczędza czas procesora (limit Cloudflare, błąd 1102)
+    const responseForCache = new Response(result.text != null ? result.text : JSON.stringify(result.data), {
       headers: {
         "Content-Type": "application/json; charset=utf-8",
         "Cache-Control": `public, max-age=${ttlSeconds}`
@@ -1433,7 +1434,7 @@ async function getJsonCached(url, headers, ttlSeconds) {
     // zwracamy.
   }
 
-  return { ...result, cache: "MISS" };
+  return { data: result.data, apiLimits: result.apiLimits, cache: "MISS" };
 }
 
 async function getJsonWithMeta(url, headers) {
@@ -1448,7 +1449,7 @@ async function getJsonWithMeta(url, headers) {
       throw new Error(`HTTP ${res.status}: ${text.slice(0, 500)}`);
     }
 
-    return { data: JSON.parse(text), apiLimits: readApiLimits(res.headers) };
+    return { data: JSON.parse(text), text, apiLimits: readApiLimits(res.headers) };
   } catch (err) {
     if (err.name === "AbortError") {
       throw new Error(`Upstream timeout po ${UPSTREAM_TIMEOUT_MS}ms: ${url}`);
