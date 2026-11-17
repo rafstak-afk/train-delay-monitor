@@ -177,6 +177,21 @@ function simplify(pts) {
 }
 
 // ---------- G. przypisanie przystanków do stacji (+ ręczne poprawki) ----------
+// Douglas–Peucker w metrach (tol), punkty [lat, lon]
+function simplifyPts(pts, tol) {
+  if (pts.length < 3) return pts.slice();
+  const k = Math.cos(pts[0][0] * Math.PI / 180) * 111320, xy = pts.map(p => [p[1] * k, p[0] * 110540]);
+  const keep = new Array(pts.length).fill(false); keep[0] = keep[pts.length - 1] = true;
+  const stack = [[0, pts.length - 1]];
+  while (stack.length) {
+    const [a, b] = stack.pop(); let best = -1, bi = -1;
+    const [ax, ay] = xy[a], [bx, by] = xy[b], dx = bx - ax, dy = by - ay, L = Math.hypot(dx, dy) || 1e-9;
+    for (let i = a + 1; i < b; i++) { const d = Math.abs(dy * xy[i][0] - dx * xy[i][1] + bx * ay - by * ax) / L; if (d > best) { best = d; bi = i; } }
+    if (best > tol) { keep[bi] = true; stack.push([a, bi], [bi, b]); }
+  }
+  return pts.filter((_, i) => keep[i]);
+}
+
 function assign(stations, stopsByCode, cache, overrides) {
   for (const st of stations) {
     const ov = overrides[String(st.id)] || {};
@@ -190,8 +205,8 @@ function assign(stations, stopsByCode, cache, overrides) {
       let w = ov.walk && ov.walk[code];
       // walkPlat: pomiar w terenie z wybranych peronów — podmiana tylko tych peronów w byPlat, zakres min–max od nowa
       const wp = ov.walkPlat && ov.walkPlat[code];
-      if (!w && wp && e.byPlat) { const bp = Object.assign({}, e.byPlat, wp), v = Object.values(bp); return { code, id: s.id, name: s.name, lat: s.lat, lon: s.lon, url: s.url, types: s.types, byPlat: bp, min: Math.min(...v), max: Math.max(...v), ns: e.ns, src: "measured" }; }
-      return { code, id: s.id, name: s.name, lat: s.lat, lon: s.lon, url: s.url, types: s.types, byPlat: w ? undefined : e.byPlat, min: w ? w[0] : e.min, max: w ? w[1] : e.max, ns: w ? undefined : e.ns, nsPart: w ? undefined : e.nsPart, cx: w ? undefined : e.cx, sig: w ? undefined : e.sig, rx: w ? undefined : e.rx, stairs: (e.obst || []).includes("schody") || undefined, src: w ? "override" : e.src };
+      if (!w && wp && e.byPlat) { const bp = Object.assign({}, e.byPlat, wp), v = Object.values(bp); return { code, id: s.id, name: s.name, lat: s.lat, lon: s.lon, url: s.url, types: s.types, byPlat: bp, min: Math.min(...v), max: Math.max(...v), ns: e.ns, src: "measured", pts: e.pts }; }
+      return { code, id: s.id, name: s.name, lat: s.lat, lon: s.lon, url: s.url, types: s.types, byPlat: w ? undefined : e.byPlat, min: w ? w[0] : e.min, max: w ? w[1] : e.max, ns: w ? undefined : e.ns, nsPart: w ? undefined : e.nsPart, cx: w ? undefined : e.cx, sig: w ? undefined : e.sig, rx: w ? undefined : e.rx, stairs: (e.obst || []).includes("schody") || undefined, src: w ? "override" : e.src, pts: e.pts };
     }).filter(Boolean).sort((a, b) => a.min - b.min || a.max - b.max || a.name.localeCompare(b.name, "pl"));
   }
 }
@@ -421,6 +436,10 @@ async function main() {
     if (st.stops.length) {
       fs.mkdirSync(path.join(TMP, "stations"), { recursive: true });
       fs.writeFileSync(path.join(TMP, "stations", st.id + ".json"), txt);
+      // TODO 20: przebieg drogi (OSM) do mapki — osobny, mały plik ładowany na żądanie
+      const walkPts = {};
+      for (const s of st.stops) if (Array.isArray(s.pts) && s.pts.length >= 2) walkPts[s.code] = simplifyPts(s.pts, 3).map(p => [+p[0].toFixed(5), +p[1].toFixed(5)]);
+      if (Object.keys(walkPts).length) fs.writeFileSync(path.join(TMP, "stations", st.id + "-walk.json"), JSON.stringify({ v: 1, id: st.id, src: "© OpenStreetMap contributors (ODbL)", stops: walkPts }));
       if (txt.length / 1024 > biggest.kb) biggest = { id: st.id, name: st.name, kb: Math.round(txt.length / 1024) };
     }
     if (st.stops.length) {

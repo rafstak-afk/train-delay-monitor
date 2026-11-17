@@ -283,6 +283,7 @@
       }).join("") + "</div>";
     }
     function rerender() { if (st.dir === "C" && cState) renderC(); else render(); }
+    root.addEventListener("click", function (e) { var wm = e.target.closest("[data-wmap]"); if (wm) { e.stopPropagation(); openWalkMap(wm.getAttribute("data-wmap")); } });   // 🗺️ TODO 20
     root.addEventListener("click", function (e) {
       if (!tripExpandOn()) return;
       // karta podróży (v2): stuknięcie w kartę — poza przyciskami, sekcjami „Inne…” i rozwiniętą trasą — jak „▼ Trasa”
@@ -308,12 +309,55 @@
       return '<div class="gz-dep ' + x.status + (cls || "") + '" data-k="' + esc(d.trip + "|" + d.stopIdx) + '"' + (tripExpandOn() ? ' data-tripx="' + esc(tk) + '" title="' + esc(T("gzm.tTap", null, "Stuknij — cały bieg kursu")) + '"' : "") + '>' +
         '<div class="gz-line ' + d.type + '">' + esc(d.line) + "<small>" + TYPE_ICON[d.type] + "</small></div>" +
         '<div class="gz-main"><div class="gz-dir">→ ' + esc(d.head) + ' ' + (noFav ? "" : '<button type="button" class="gz-fav" data-fav="' + esc(key) + '" title="' + esc(T("gzm.favTitle", null, "Ulubiona linia w tym kierunku na tej stacji")) + '">' + (isF ? "★" : "☆") + "</button>") + "</div>" +
-        '<div class="gz-stop">' + esc(d.stop.n + stTag(d.stop.c)) + " · 🚶 " + esc(x.walk.exact ? x.walk.min : (d.stop.w[0] === d.stop.w[1] ? d.stop.w[1] : d.stop.w[0] + "–" + d.stop.w[1])) + " min" + (d.stop.stairs ? " 🪜" : "") + " · " + esc(liveTxt) + "</div>" +
+        '<div class="gz-stop">' + esc(d.stop.n + stTag(d.stop.c)) + " · 🚶 " + esc(x.walk.exact ? x.walk.min : (d.stop.w[0] === d.stop.w[1] ? d.stop.w[1] : d.stop.w[0] + "–" + d.stop.w[1])) + " min" + (d.stop.stairs ? " 🪜" : "") + walkMapBtn(d.stop) + " · " + esc(liveTxt) + "</div>" +
         (x.arrDest != null ? '<div class="gz-stop" style="color:#fff">🏁 ' + esc(T("gzm.arrDest", { t: C.fmt(x.arrDest), n: x.destName, m: x.travel }, "{t} {n} (jazda {m} min)")) + "</div>" : "") +        "</div>" +
         '<div class="gz-right"><div class="gz-t">' + tTxt + '</div><div class="gz-in">' + (inMin > 180 || inMin < -1 ? "" : inMin <= 0 ? esc(T("gzm.now", null, "teraz")) : esc(T("gzm.inMin", { n: inMin }, "za {n} min"))) + '</div><div class="gz-in gz-st-' + x.status + '">' + esc(stTxt) + "</div></div></div>" +
         (tripOpen[tk] ? tripHtml(d.trip, d.date, d.stop.n) : "");
     }
 
+    // 🗺️ Droga peron → przystanek na mapce (TODO 20) — na razie profil autora; dane: stations/<id>-walk.json
+    var walkFiles = {};
+    function walkMapBtn(stop) {
+      if (!authorOn() || !stop || !stop.c) return "";
+      return ' <button type="button" class="gz-wmap" data-wmap="' + esc(stop.c) + '" title="' + esc(T("gzm.wmapTitle", null, "Droga z peronu na mapie")) + '" style="border:0;background:none;cursor:pointer;font-size:1em;padding:0 2px">🗺️</button>';
+    }
+    function openWalkMap(code) {
+      var sid = cfg.stationId, f0 = file, stop = f0 && (f0.stops || []).find(function (s) { return s.c === code; });
+      if (!stop) return;
+      var get = walkFiles[sid] || (walkFiles[sid] = fetch(dataUrl("stations/" + sid + "-walk.json")).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }));
+      get.then(function (wj) {
+        var pts = wj && wj.stops && wj.stops[code];
+        var ov = document.createElement("div"); ov.className = "gzmap-ov";
+        ov.innerHTML = '<div class="gzmap-box"><div class="gzmap-top" style="justify-content:space-between"><b style="padding:6px">🚶 ' + esc((f0.name || "") + " → " + stop.n + stTag(stop.c)) + '</b><button type="button" class="gzmap-btn" data-x="1">✕</button></div>' +
+          '<div class="gzmap" style="cursor:default"><div class="gzmap-tiles"></div><svg class="gzw-svg" style="position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none"></svg></div>' +
+          '<div class="gzmap-bot"><small>' + esc(pts ? T("gzm.wmapNote", null, "Droga policzona z mapy OpenStreetMap z najbliższego peronu — w terenie może się różnić.") : T("gzm.wmapNone", null, "Dla tego przystanku nie mam przebiegu drogi — pokazuję tylko przystanek.")) +
+          ' · <a href="https://www.openstreetmap.org/?mlat=' + stop.lat + "&mlon=" + stop.lon + "#map=18/" + stop.lat + "/" + stop.lon + '" target="_blank" rel="noopener">OpenStreetMap ↗</a> · © OpenStreetMap contributors</small></div></div>';
+        document.body.appendChild(ov);
+        ov.addEventListener("click", function (e) { if (e.target === ov || e.target.closest("[data-x]")) ov.remove(); });
+        var mapEl = ov.querySelector(".gzmap"), tiles = ov.querySelector(".gzmap-tiles"), svg = ov.querySelector(".gzw-svg"), T2 = 256;
+        var lx = function (lon, z) { return (lon + 180) / 360 * T2 * Math.pow(2, z); };
+        var ly = function (lat, z) { var r = lat * Math.PI / 180; return (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * T2 * Math.pow(2, z); };
+        var all = (pts || []).concat([[stop.lat, stop.lon]]);
+        var w = mapEl.clientWidth || 320, h = mapEl.clientHeight || 320, z = 19;
+        for (; z > 13; z--) { var xs = all.map(function (p) { return lx(p[1], z); }), ys = all.map(function (p) { return ly(p[0], z); }); if (Math.max.apply(null, xs) - Math.min.apply(null, xs) < w - 60 && Math.max.apply(null, ys) - Math.min.apply(null, ys) < h - 60) break; }
+        var xs2 = all.map(function (p) { return lx(p[1], z); }), ys2 = all.map(function (p) { return ly(p[0], z); });
+        var cx = (Math.max.apply(null, xs2) + Math.min.apply(null, xs2)) / 2, cy = (Math.max.apply(null, ys2) + Math.min.apply(null, ys2)) / 2, x0 = cx - w / 2, y0 = cy - h / 2, n = Math.pow(2, z), html = "";
+        for (var tx = Math.floor(x0 / T2); tx <= Math.floor((x0 + w) / T2); tx++) for (var ty = Math.floor(y0 / T2); ty <= Math.floor((y0 + h) / T2); ty++) {
+          if (ty < 0 || ty >= n) continue;
+          html += '<img alt="" src="https://tile.openstreetmap.org/' + z + "/" + (((tx % n) + n) % n) + "/" + ty + '.png" style="left:' + Math.round(tx * T2 - x0) + "px;top:" + Math.round(ty * T2 - y0) + 'px">';
+        }
+        tiles.innerHTML = html;
+        var P = function (p) { return Math.round(lx(p[1], z) - x0) + "," + Math.round(ly(p[0], z) - y0); };
+        var s = "";
+        if (pts) {
+          s += '<polyline points="' + pts.map(P).join(" ") + '" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" opacity=".9"/>';
+          s += '<polyline points="' + pts.map(P).join(" ") + '" fill="none" stroke="#0b57d0" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>';
+          var a = P(pts[0]).split(","); s += '<circle cx="' + a[0] + '" cy="' + a[1] + '" r="8" fill="#f59e0b" stroke="#fff" stroke-width="3"/><text x="' + (+a[0] + 11) + '" y="' + (+a[1] + 5) + '" font-size="14" font-weight="700" fill="#111" stroke="#fff" stroke-width="3" paint-order="stroke">🚆</text>';
+        }
+        var b = P([stop.lat, stop.lon]).split(","); s += '<circle cx="' + b[0] + '" cy="' + b[1] + '" r="8" fill="#16a34a" stroke="#fff" stroke-width="3"/><text x="' + (+b[0] + 11) + '" y="' + (+b[1] + 5) + '" font-size="14" font-weight="700" fill="#111" stroke="#fff" stroke-width="3" paint-order="stroke">🚏</text>';
+        svg.innerHTML = s;
+      });
+    }
     function depHtmlV2(x, cls, noFav) {
       var d = x.dep, inMin = Math.round(x.real - nowOn(cfg.date || warsawNow().date));
       var tTxt = (x.live && x.delay) ? '<span class="plan-strike">' + C.fmt(d.min) + "</span> " + C.fmt(x.real) : C.fmt(x.real);
@@ -324,7 +368,7 @@
       return '<div class="card v2-dep ' + (V2ST[x.status] || "s-ok") + (cls || "") + '" data-k="' + esc(d.trip + "|" + d.stopIdx) + '" data-tripx="' + esc(tk) + '" title="' + esc(T("gzm.tTap", null, "Stuknij — cały bieg kursu")) + '">' +
         '<div class="c-head"><div><div class="c-route">' + (TYPE_ICON[d.type] || "🚌") + " " + esc(d.line) + " → " + esc(d.head) +
         (noFav ? "" : ' <button type="button" class="gz-fav" data-fav="' + esc(key) + '" title="' + esc(T("gzm.favTitle", null, "Ulubiona linia w tym kierunku na tej stacji")) + '">' + (isF ? "★" : "☆") + "</button>") + "</div>" +
-        '<div class="c-date">' + esc(d.stop.n + stTag(d.stop.c)) + " · 🚶 " + esc(walk) + " min" + (d.stop.stairs ? " 🪜" : "") + (modesOn() ? crossIcons(d.stop) : "") + (nodOn() ? nodBadge(d.stop) : "") + (x.walk.warn ? ' <span title="' + esc(T("gzm.stairsWarn", null, "Z części peronów albo w ogóle tylko po schodach")) + '">⚠️♿</span>' : "") + v2Dl(x.live, x.delay) + "</div>" +
+        '<div class="c-date">' + esc(d.stop.n + stTag(d.stop.c)) + " · 🚶 " + esc(walk) + " min" + (d.stop.stairs ? " 🪜" : "") + walkMapBtn(d.stop) + (modesOn() ? crossIcons(d.stop) : "") + (nodOn() ? nodBadge(d.stop) : "") + (x.walk.warn ? ' <span title="' + esc(T("gzm.stairsWarn", null, "Z części peronów albo w ogóle tylko po schodach")) + '">⚠️♿</span>' : "") + v2Dl(x.live, x.delay) + "</div>" +
         (x.arrDest != null ? '<div class="c-sub">🏁 ' + esc(T("gzm.arrDest", { t: C.fmt(x.arrDest), n: x.destName, m: x.travel }, "{t} {n} (jazda {m} min)")) + "</div>" : "") + "</div>" +
         '<span class="chip ' + (V2ST[x.status] || "s-ok") + '"><span class="ct">' + tTxt + "</span>" + esc(inTxt ? inTxt + " · " : "") + esc(v2StTxt(x.status)) + "</span></div>" +
         (open ? tripHtml(d.trip, d.date, d.stop.n) : "") + "</div>";
