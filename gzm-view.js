@@ -60,6 +60,7 @@
     '.gz .gz-dep{display:grid;grid-template-columns:54px minmax(0,1fr) auto;gap:4px 10px;align-items:center;background:var(--panel);border:1px solid var(--line);border-left:5px solid var(--grey);border-radius:12px;padding:9px 11px;margin:6px 0;transition:transform .25s,opacity .25s}' +
     '.gz .gz-dep.ok{border-left-color:var(--green)}.gz .gz-dep.tight{border-left-color:var(--yellow);box-shadow:0 0 0 1px rgba(255,204,0,.35)}' +
     '.gz .gz-dep.missed{opacity:.5}.gz .gz-dep.cancelled{opacity:.6}.gz .gz-dep.cancelled .gz-t{text-decoration:line-through}' +
+    '.xfer.edge{border:1px solid rgba(255,77,77,.8)!important;animation:gzEdge 1s ease-in-out infinite}@keyframes gzEdge{50%{background:rgba(255,77,77,.35)}}@media(prefers-reduced-motion:reduce){.xfer.edge{animation:none;background:rgba(255,77,77,.25)}}' +
     '.gz .gz-dep.flash{animation:gzFlash 1.4s ease-out}@keyframes gzFlash{0%{box-shadow:0 0 0 3px #ffd400}100%{box-shadow:none}}' +
     '.gz .gz-line{font-weight:900;font-size:16px;text-align:center;border-radius:8px;padding:5px 2px;background:#2b3e52}' +
     '.gz .gz-line.tram{background:#7a1f2b}.gz .gz-line.trolley{background:#1f5a3a}.gz .gz-line small{display:block;font-size:10px;font-weight:700;opacity:.85}' +
@@ -1690,7 +1691,9 @@
         if (l.type === "walk") { if (prevRide) walkBetween += l.min; out.push(v2Walk(l)); return; }
         if (prevRide) {
           var slack = l.dep - prevRide.arr - walkBetween, st = slack >= 3 ? "ok" : slack >= 0 ? "tight" : "missed";
-          out.push(v2Xfer(st, esc(T("gzm.v2XferBus", { s: l.fromName, n: slack }, "Przesiadka: {s}, zapas {n} min"))));
+          // 0–1 min (dozwolone tylko na tym samym stanowisku / zintegrowanym przystanku) — graniczny czas: miga na czerwono
+          var xh = v2Xfer(slack >= 0 && slack <= 1 ? "missed" : st, esc(T("gzm.v2XferBus", { s: l.fromName, n: slack }, "Przesiadka: {s}, zapas {n} min")));
+          out.push(slack >= 0 && slack <= 1 ? xh.replace('class="xfer ', 'class="xfer edge ') : xh);
         }
         out.push(v2Ride(l)); prevRide = l; walkBetween = 0;
       });
