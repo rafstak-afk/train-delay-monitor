@@ -1342,6 +1342,7 @@
     "v2Changes": "transbordos: {n}",
     "v2Direct": "sin transbordos",
     "v2XferPlat": "En el andén ({s}) {t} · margen {n} min hasta el tren",
+    "v2Alt": "O bien: sal a las {a} y sube al tren en {s} a las {t}",
     "v2XferEgr": "Tras el tren: {s}, margen {n} min",
     "v2MoreAcc": "Otras formas de llegar al tren ({n})",
     "v2MoreEgr": "Otras opciones tras el tren ({n})",

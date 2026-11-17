@@ -1342,6 +1342,7 @@
     "v2Changes": "przesiadki: {n}",
     "v2Direct": "bez przesiadek",
     "v2XferPlat": "Na peronie ({s}) {t} · zapas {n} min do pociągu",
+    "v2Alt": "Albo: wyjdź {a} i wsiądź do pociągu w {s} o {t}",
     "v2XferEgr": "Po pociągu: {s}, zapas {n} min",
     "v2MoreAcc": "Inne dojazdy na pociąg ({n})",
     "v2MoreEgr": "Inne możliwości po pociągu ({n})",

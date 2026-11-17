@@ -1721,6 +1721,14 @@
       var xw = v2Cur[i] && v2Cur[i].why; if (xw) sub += '<br><b>' + esc(xw) + "</b>";
       return '<div class="card s-ok v2-tap" data-cx="' + esc(k) + '">' + v2Head(route, sub, "ok", chip) + v2Journey(jn) + v2Foot(i, k, open, esc(rtOk && cState.date === warsawNow().date ? "● " + T("gzm.liveOn", null, "na żywo") : T("gzm.sched", null, "wg rozkładu"))) + (open ? tripsOfJourney(jn) : "") + "</div>";
     }
+    // TODO 68: „albo” — inny dojazd na ten sam pociąg z innej stacji (np. 🚌 900 do Załęża zamiast pieszo na Katowice)
+    function altHtml(y) {
+      var c = y.c || {}, L = c.latest, lv = y.start, parts = [];
+      if (c.walkA) parts.push("🚶 " + c.walkA.min + " min → " + esc(y.p.cb.a.st.n));
+      else if (L) L.jn.legs.forEach(function (l) { parts.push(l.type === "walk" ? "🚶 " + l.min + " min" : (TYPE_ICON[l.type] || "🚌") + " <b>" + esc(l.line) + "</b> " + C.fmt(l.dep) + " " + esc(l.fromName) + " → " + esc(l.toName)); });
+      var st0 = (y.it.legs && y.it.legs[0] && y.it.legs[0].board.stationName) || y.p.cb.a.st.n;
+      return '<div class="c-date" style="margin:8px 0 2px;white-space:normal">🔀 ' + esc(T("gzm.v2Alt", { a: C.fmt(lv), s: st0, t: y.it.departureTime }, "Albo: wyjdź {a} i wsiądź do pociągu w {s} o {t}")) + (L && L.status === "tight" ? " 🟡" : "") + "<br>" + parts.join(" · ") + "</div>";
+    }
     function v2TrainCard(x, i, S) {
       var it = x.it, c = x.c, key = cKey(x.p, it), L = c.latest, tKey = "t|" + key, open = !!tripOpen[tKey];
       var leave = c.walkA ? c.walkA.leave : L ? (L.jn.leave != null ? L.jn.leave : L.jn.legs[0].type === "walk" ? L.jn.dep - L.jn.legs[0].min : L.jn.dep) : x.dep;
@@ -1755,6 +1763,7 @@
       if (c.egr && c.egr.length > 1) more += '<details class="v2-more" data-mk="e|' + esc(key) + '"' + (moreOpen["e|" + key] ? " open" : "") + "><summary>" + esc(T("gzm.v2MoreEgr", { n: c.egr.length - 1 }, "Inne możliwości po pociągu ({n})")) + "</summary>" +
         c.egr.slice(1).map(function (y) { return jRow(y, "🏁 " + C.fmt(y.arr) + " " + esc(y.legs[y.legs.length - 1].toName), "ok"); }).join("") +
         (c.egr.length >= 5 + 5 * ((S.more && S.more[key]) || 0) ? '<button type="button" class="btn-sm secondary" data-cmore="' + esc(key) + '">' + esc(T("gzm.more", null, "Pokaż kolejne 5")) + "</button>" : "") + "</details>";
+      if (x.alt) more = altHtml(x.alt) + more;
       var route = esc(fromName) + " → " + esc(toName);
       var sub = esc(T("gzm.v2Sub", { a: C.fmt(leave), b: C.fmt(x.final), t: v2Total(x.final - leave) }, "wyjdź {a} · na miejscu {b} · w drodze {t}"));
       var chip = '<span class="ct">' + C.fmt(x.final) + "</span>" + esc(v2StTxt(st));
@@ -1854,7 +1863,7 @@
           var dep = C.hm(it.departureTime), arr = C.hm(it.arrivalTime);
           if (dep < S.tmin - 60) dep += 1440;
           if (arr < dep % 1440 || it.arrivalNextDay) arr += 1440;
-          var key = cKey(p, it), tl = S.tDelay[key], tD = tl ? tl.d : 0; arr += tD;
+          var key = cKey(p, it), tl = delayOf(S, p, it), tD = tl ? tl.d : 0; arr += tD;
           var ck = key + "|" + rtAt + "|" + base + "|" + tD + "|" + ((S.more && S.more[key]) || 0) + "|" + ((S.more && S.more["a|" + key]) || 0);
           var c = S.cache[ck];
           if (!c) {
@@ -1903,8 +1912,10 @@
       // wsiadanie najpóźniej (lista posortowana: przy równym przyjeździe najpóźniejsze wyjście pierwsze).
       // Inaczej np. z Tarnowskich Gór proponowało autobus WSTECZ na Stroszek do pociągu, który i tak jedzie przez TG.
       function trainKey(x) { return "t|" + (x.it.legs || []).map(function (l) { return (l.train && l.train.number) || "?"; }).join(">") + "|" + x.it.arrivalTime + "|" + x.p.cb.e.st.id; }
+      var trAlts = {};   // TODO 68: inne dojazdy na ten sam pociąg (inna stacja wsiadania) — pokazujemy jako „albo”
       out = out.filter(function (x) {
         var k = x.net ? "n|" + x.net.legs.map(function (l) { return l.trip || l.min; }).join(">") : cKey(x.p, x.it), k2 = x.net ? null : trainKey(x);
+        if (k2 && seen.has(k2) && !seen.has(k)) (trAlts[k2] = trAlts[k2] || []).push(x);
         if (seen.has(k) || (k2 && seen.has(k2))) return false; seen.add(k); if (k2) seen.add(k2); return true;
       });
       // Bez wariantów gorszych pod każdym względem: inny wyrusza nie wcześniej, a dowozi wcześniej
@@ -1965,6 +1976,12 @@
             }
           }
         }
+        out.forEach(function (x) {
+          if (!x.mm) return; var al = (trAlts[trainKey(x)] || []).filter(function (y) {
+            return y.p.cb.a.st.id !== x.p.cb.a.st.id && y.start >= x.start - 20 && y.final <= x.final + 2 && !absurd(y, geo);
+          });
+          x.alt = al[0] || null;
+        });
         if (bR && bB) {
           var diff = bR.final - bB.final;
           if (railFirst) bR.why = diff > 0 ? T("gzm.v3WhyRailTol", { n: diff }, "Pociągiem — {n} min później niż samą komunikacją, ale koleją") : T("gzm.v3WhyRailBest", null, "Pociągiem — najszybciej");
@@ -2154,6 +2171,10 @@
         '<div class="gz-right"><div class="gz-t">' + C.fmt(o.arrDest) + '</div><div class="gz-in">' + esc(T("gzm.bArrive", null, "na miejscu")) + "</div></div></div>";
     }
     function cKey(p, it) { return p.cb.a.st.id + "|" + p.cb.e.st.id + "|" + it.departureTime + "|" + it.arrivalTime; }
+    // TODO 68: opóźnienie zapisywane też po POCIĄGU (numer + stacja wysiadki) — ten sam pociąg ma to samo opóźnienie
+    // we wszystkich wariantach dojazdu (wcześniej wynik „przeskakiwał” między Załężem a Katowicami co minutę)
+    function trKey(it) { var l = it && it.legs && it.legs[it.legs.length - 1]; return l && l.train && l.train.number ? "tr|" + l.train.number + "|" + ((l.alight && l.alight.stationName) || "") : null; }
+    function delayOf(S, p, it) { var t = S.tDelay || {}, k2 = trKey(it); return t[cKey(p, it)] || (k2 && t[k2]) || null; }
     // Opóźnienie pociągu (ostatni odcinek) na stacji wysiadki — dla 2 pierwszych propozycji, co 60 s.
     function trainLiveC() {
       if (!cState || !cState.shown || !window.GuardCore) return Promise.resolve();
@@ -2163,7 +2184,7 @@
         return fetch("/api/train-details?" + q, { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
           if (!d) return;
           var rd = GuardCore.readLeg({ board: { stationName: l.board.stationName, time: l.board.time }, alight: { stationName: l.alight.stationName, time: l.alight.time } }, d);
-          if (!rd.noData) cState.tDelay[cKey(x.p, x.it)] = { d: Number(rd.delayArr) || 0, src: rd.arrSource, arrived: rd.arrived };
+          if (!rd.noData) { var dv = { d: Number(rd.delayArr) || 0, src: rd.arrSource, arrived: rd.arrived }, k2 = trKey(x.it); cState.tDelay[cKey(x.p, x.it)] = dv; if (k2) cState.tDelay[k2] = dv; }
         }).catch(function () {});
       })).then(function () { renderC(); });
     }
@@ -2177,7 +2198,7 @@
           var dep = C.hm(it.departureTime), arr = C.hm(it.arrivalTime);
           if (dep < S.tmin - 60) dep += 1440;
           if (arr < dep % 1440 || it.arrivalNextDay) arr += 1440;
-          var tl = S.tDelay && S.tDelay[cKey(p, it)], tDelay = tl ? tl.d : 0;
+          var tl = delayOf(S, p, it), tDelay = tl ? tl.d : 0;
           arr += tDelay;
           if (!rides && dep < S.tmin) return;
           var acc = null;

@@ -12,7 +12,10 @@
 })(typeof self !== "undefined" ? self : this, function () {
   "use strict";
   var INF = 1e9, TYPE = { 0: "tram", 3: "bus", 11: "trolley" };
-  var WALK_M = 300, CHANGE = 1;
+  var WALK_M = 300, CHANGE = 2;
+  // TODO 69: minimalny zapas przesiadki w komunikacji — 2 min (wcześniej 1 min na tym samym przystanku i 0 min po przejściu pieszo)
+  // WALK_W: minuta chodzenia „kosztuje” pół minuty późniejszego wyjścia — dłuższy marsz tylko wtedy, gdy realnie pozwala wyjść później
+  var WALK_W = 0.5;
 
   function hav(a, b, c, d) { var R = 6371000, t = Math.PI / 180, x = Math.pow(Math.sin((c - a) * t / 2), 2) + Math.cos(a * t) * Math.cos(c * t) * Math.pow(Math.sin((d - b) * t / 2), 2); return 2 * R * Math.asin(Math.sqrt(x)); }
 
@@ -81,7 +84,7 @@
           }
           var prev = tau[k - 1][s];
           if (prev < INF && i < seq.length - 1 && !(+fl[i] & 1)) {
-            var need = prev + (k > 1 && !walkL[k - 1][s] ? CHANGE : 0);
+            var need = prev + (k > 1 ? CHANGE : 0);   // także po przejściu pieszo między przystankami (TODO 69)
             if (trip < 0 || need <= t0 + dl + off[2 * i + 1]) {
               // najwcześniejszy kurs tego wzoru odjeżdżający z i-tego przystanku nie wcześniej niż `need`
               var lo = 0, hi = trips.length, target = need - off[2 * i + 1] - 30;
@@ -129,7 +132,10 @@
       legs.forEach(function (l) { delete l._p; delete l._t; delete l._b; delete l._a; });
       var rides = legs.filter(function (l) { return l.type === "ride"; });
       if (!rides.length) continue;
-      out.push({ dep: rides[0].dep, arr: tau[k][bs], arrTotal: bt, transfers: rides.length - 1, legs: legs });
+      // godzina wyjścia (odjazd − dojście, także z miejsca startowego) — do wyboru między podróżami (TODO 69)
+      var o0 = legs[0].from, d0 = startAt && startAt.dep0 != null ? startAt.dep0 : dep, w0 = startAt && startAt[o0] != null ? Math.max(0, startAt[o0] - d0) : 0;
+      var wk0 = (legs[0].type === "walk" ? legs[0].min : 0) + w0;
+      out.push({ dep: rides[0].dep, arr: tau[k][bs], arrTotal: bt, transfers: rides.length - 1, legs: legs, _lv: rides[0].dep - wk0, _wk: wk0 });
     }
     return out;
   }
@@ -147,13 +153,14 @@
     var pat = j.pats[L._p], seq = pat[1], off = pat[2], fl = pat[3], t0 = j.trips[L._t][1];
     var curS = ri === 1 ? legs[0].from : seq[L._b];
     var curAcc = acc[curS] != null ? acc[curS] : dep, curWalk = (curAcc - dep) + (ri === 1 ? legs[0].min : 0);
-    var best = { b: -1, leave: L.dep - curWalk, walk: curWalk };
+    var best = { b: -1, leave: L.dep - curWalk, walk: curWalk, sc: L.dep - curWalk - WALK_W * curWalk };
     for (var b = 0; b < L._a; b++) {
       var sb = seq[b]; if (acc[sb] == null || (+fl[b] & 1)) continue;
       var depB = t0 + L.delay + off[2 * b + 1], w = acc[sb] - dep;
       if (depB < acc[sb]) continue;                       // nie zdążę na ten przystanek
       var leave = depB - w;
-      if (leave > best.leave || (leave === best.leave && w < best.walk)) best = { b: b, leave: leave, walk: w };
+      var sc = leave - WALK_W * w;   // TODO 69: nie 15 min marszu dla 3 min późniejszego wyjścia
+      if (sc > best.sc || (sc === best.sc && w < best.walk)) best = { b: b, leave: leave, walk: w, sc: sc };
     }
     if (best.b < 0 || (best.b === L._b && ri === 0)) return;
     L.from = seq[best.b]; L.dep = t0 + L.delay + off[2 * best.b + 1]; L.depPlan = t0 + off[2 * best.b + 1]; L.stops = L._a - best.b; L._b = best.b;
@@ -199,9 +206,13 @@
     // bez duplikatów i bez podróży zdominowanych (później start i nie wcześniejsza meta przy ≥ przesiadkach)
     var key = function (x) { return x.legs.filter(function (l) { return l.type === "ride"; }).map(function (l) { return l.trip + "@" + l.from; }).join(">"); };
     var seen = {}; all = all.filter(function (x) { var kx = key(x); if (seen[kx]) return false; seen[kx] = 1; return true; });
-    all = all.filter(function (x) { return !all.some(function (y) { return y !== x && y.dep >= x.dep && y.arrTotal <= x.arrTotal && y.transfers <= x.transfers && (y.dep > x.dep || y.arrTotal < x.arrTotal || y.transfers < x.transfers); }); });
+    // TODO 69: porównanie po „wartości wyjścia” (wyjście − pół minuty za każdą minutę chodzenia), nie po odjeździe pierwszego kursu —
+    // wcześniej późniejszy tramwaj z dalekiego przystanku (15 min pieszo) wypierał bliższy przystanek z wcześniejszym wyjściem
+    var sv = function (x) { return x._lv - WALK_W * x._wk; };
+    all = all.filter(function (x) { return !all.some(function (y) { return y !== x && sv(y) >= sv(x) && y.arrTotal <= x.arrTotal && y.transfers <= x.transfers && (sv(y) > sv(x) || y.arrTotal < x.arrTotal || y.transfers < x.transfers); }); });
     all.sort(function (a, b) { return a.dep - b.dep || a.arrTotal - b.arrTotal; });
     return all.slice(0, count).map(function (x) {
+      delete x._lv; delete x._wk;
       x.legs.forEach(function (l) { l.fromName = net.name[l.from]; l.toName = net.name[l.to]; l.fromCode = net.j.stops[l.from][3]; l.toCode = net.j.stops[l.to][3]; });
       return x;
     });
