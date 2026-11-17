@@ -1968,7 +1968,7 @@
         if (bR && bB) {
           var diff = bR.final - bB.final;
           if (railFirst) bR.why = diff > 0 ? T("gzm.v3WhyRailTol", { n: diff }, "Pociągiem — {n} min później niż samą komunikacją, ale koleją") : T("gzm.v3WhyRailBest", null, "Pociągiem — najszybciej");
-          else bB.why = T("gzm.v3WhyBus", { n: diff }, "Autobusem/tramwajem — o {n} min szybciej niż z pociągiem");
+          else bB.why = T("gzm.v3WhyBus", { n: diff }, "Autobusem/tramwajem — o {n} min szybciej niż pociągiem");
         }
         // wariant pieszy: blisko (ten sam węzeł), do 25 min albo szybciej niż komunikacja
         var bestFinal = out.length ? Math.min.apply(null, out.map(function (x) { return x.final; })) : Infinity;

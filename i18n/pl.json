@@ -1359,7 +1359,7 @@
     "v3WalkWhy": "{d} w linii prostej — pieszo najprościej",
     "v3WhyRailTol": "Pociągiem — {n} min później niż samą komunikacją, ale koleją",
     "v3WhyRailBest": "Pociągiem — najszybciej",
-    "v3WhyBus": "Autobusem/tramwajem — o {n} min szybciej niż z pociągiem",
+    "v3WhyBus": "Autobusem/tramwajem — o {n} min szybciej niż pociągiem",
     "v3NoTransit": "Komunikacją nie będzie szybciej albo brak połączeń w najbliższych godzinach — zmień godzinę, żeby zobaczyć późniejsze kursy.",
     "v3FirstLater": "Najbliższe połączenie komunikacją: wyjście dopiero o {t} (poniżej).",
     "pOnMap": "na mapie",
