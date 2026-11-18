@@ -274,8 +274,24 @@
         var cls = (curSeq != null && i < curSeq ? " past" : "") + (nm === boardName || (alightName && nm === alightName) ? " me" : "") + (i === nearIdx || (schedBetween != null && schedBetween >= 0 && i === schedBetween) ? " here" : "");
         var t = dl ? '<span class="plan-strike">' + C.fmt(plan) + "</span> " + C.fmt(plan + dl) : C.fmt(plan);
         return '<div class="gz-tr' + cls + '"><div>' + t + "</div><div>" + (i === nearIdx ? "📍 " : "") + esc(nm + stTag(net.j.stops[sx][3])) + "</div></div>";
-      }).join("");
+      });
+      // TODO 60 (profil autora): także kursy GZM — przystanki przed wsiadaniem i po wysiadce schowane
+      var ib = -1, ia = -1;
+      if (alightName) seq.forEach(function (sx, i) { var nm = net.name[sx]; if (ib < 0 && nm === boardName) ib = i; else if (ib >= 0 && ia < 0 && nm === alightName) ia = i; });
+      rows = authorOn() && ib >= 0 && ia > ib ? foldRoute(rows, ib, ia, "g|" + tid, "stop") : rows.join("");
       return inner ? pos + rows : '<div class="gz-trip">' + pos + rows + "</div>";
+    }
+    // TODO 60: odcinek od wsiadania do wysiadki widoczny, reszta trasy pod „▸ …” (stan rozwinięcia przeżywa odświeżanie)
+    function foldRoute(rows, ib, ia, key, kind) {
+      if (ib <= 0 && ia >= rows.length - 1) return rows.join("");
+      var fold = function (part, side, n) {
+        if (!part.length) return "";
+        var mk = "rt|" + side + "|" + key, txt = kind === "stop" ?
+          (side === "b" ? T("gzm.tBeforeStop", { n: n }, "▸ wcześniejsze przystanki ({n})") : T("gzm.tAfterStop", { n: n }, "▸ dalsze przystanki ({n})")) :
+          (side === "b" ? T("gzm.tBefore", { n: n }, "▸ wcześniejsze stacje pociągu ({n})") : T("gzm.tAfter", { n: n }, "▸ dalsze stacje pociągu ({n})"));
+        return '<details class="gz-rt-more" data-mk="' + esc(mk) + '"' + (moreOpen[mk] ? " open" : "") + "><summary>" + esc(txt) + "</summary>" + part.join("") + "</details>";
+      };
+      return fold(rows.slice(0, ib), "b", ib) + rows.slice(ib, ia + 1).join("") + fold(rows.slice(ia + 1), "a", rows.length - 1 - ia);
     }
     // bieg wszystkich kursów podróży (po kolei), pod kartą
     function tripsOfJourney(jn) {
@@ -1129,7 +1145,12 @@
         return geocode(txt).then(function (g) { return g ? { key: "addr", label: g.label, lat: g.lat, lon: g.lon, far: true } : null; });
       }, function () { return null; });
       if (!k) return Promise.resolve(null);
-      if (k === "gps") return gpsNow().then(function (g) { return { key: k, label: PL_TOK.gps + (g.approx ? " (" + T("gzm.pGpsApprox", null, "przybliżona") + ")" : ""), lat: g.lat, lon: g.lon }; });
+      if (k === "gps") return gpsNow().then(function (g) {
+        var o = { key: k, label: PL_TOK.gps + (g.approx ? " (" + T("gzm.pGpsApprox", null, "przybliżona") + ")" : ""), lat: g.lat, lon: g.lon, acc: g.acc != null ? Math.round(g.acc) : null };
+        // TODO 73 (profil autora): jesteś przy 🏠 Domu / 🏢 Pracy — liczymy z Twoich czasów dojścia zapisanych przy tym miejscu
+        if (authorOn() && !(o.acc > 150)) { var P = load(PLACES, {}); ["praca", "dom"].some(function (pk) { var x = P[pk]; if (x && x.walks && havM(o.lat, o.lon, x.lat, x.lon) <= 150) { o.walks = x.walks; o.nearPlace = pk; return true; } return false; }); }
+        return o;
+      });
       var pl = load(PLACES, {})[k];
       if (!pl) return Promise.reject(new Error("unset:" + k));
       return Promise.resolve({ key: k, label: PL_TOK[k], lat: pl.lat, lon: pl.lon, walks: pl.walks || null });
@@ -1472,6 +1493,21 @@
           if (o) { o.walk = +fw.stop[nm]; o.fixed = true; o.measured = false; } else pl.stops.push({ s: si, walk: +fw.stop[nm], d: 0, fixed: true });
         });
       });
+      // TODO 73 (profil autora): przystanek ZA stacją, do której znamy czas (zmierzony / „Twój czas”) — dojście nie krótsze niż do stacji − 2 min
+      // (linia prosta nie widzi torów: np. Piotra Skargi wychodziło 9 min, a na perony jest 15 min)
+      if (authorOn()) {
+        var known = {}; Object.keys(ms.sts).forEach(function (k) { known[k] = ms.sts[k]; });
+        Object.keys(fw.st || {}).forEach(function (nm) { var x = stationByName(nm); if (x) known[x.id] = +fw.st[nm]; });
+        Object.keys(known).forEach(function (id) {
+          var x = (index.stations || []).find(function (y) { return String(y.id) === String(id); }); if (!x) return;
+          var dS = havM(pl.lat, pl.lon, x.lat, x.lon);
+          pl.stops.forEach(function (o) {
+            if (o.fixed || o.measured) return;
+            var la = net.lat[o.s], lo = net.lon[o.s];
+            if (havM(pl.lat, pl.lon, la, lo) > dS && havM(x.lat, x.lon, la, lo) <= 500 && o.walk < known[id] - 2) { o.walk = known[id] - 2; o.lb = true; }
+          });
+        });
+      }
       return pl;
     }
     function searchC() {
@@ -1852,6 +1888,15 @@
       return '<div class="card s-ok">' + v2Head("🚶 " + esc(T("gzm.v3Walk", null, "Idź pieszo")), sub, "ok", '<span class="ct">' + C.fmt(arr) + "</span>" + esc(T("gzm.v3WalkChip", { n: g.walk }, "{n} min pieszo"))) +
         '<div class="c-date" style="margin-top:6px">' + esc(T("gzm.v3WalkWhy", { d: kmTxt(g.dist) }, "{d} w linii prostej — pieszo najprościej")) + "</div></div>";
     }
+    // TODO 73 (profil autora): położenie z telefonu niedokładne — czasy dojścia z „Mojej lokalizacji” mogą być błędne
+    function gpsWarn(S) {
+      if (!authorOn()) return "";
+      var w = [S.fromPlace, S.toPlace].filter(function (p) { return p && p.key === "gps"; })[0];
+      if (!w) return "";
+      if (w.nearPlace) return '<div class="gz-sub" style="margin:4px 2px">📍 ' + esc(T("gzm.pGpsNear", { p: PL_TOK[w.nearPlace] }, "Jesteś przy: {p} — dojścia z Twoich zapisanych czasów")) + "</div>";
+      if (!(w.acc > 150)) return w.acc != null ? '<div class="gz-sub" style="margin:4px 2px">📍 ' + esc(T("gzm.pGpsAcc", { n: w.acc }, "Lokalizacja z dokładnością ±{n} m")) + "</div>" : "";
+      return '<div class="gz-warn" style="margin:4px 2px">⚠️ ' + esc(T("gzm.pGpsBad", { n: w.acc }, "Telefon podał położenie z dokładnością tylko ±{n} m — czasy dojścia pieszo mogą być błędne. Wpisz przystanek albo wybierz 🏠 Dom / 🏢 Pracę.")) + "</div>";
+    }
     function renderMM() {
       var res = root.querySelector("#gzCRes"), S = cState, now = nowOn(S.date), base = S.live ? Math.max(S.tmin, now) : S.tmin, out = [];
       if ((S.fromPlace || S.toPlace) && !S.fromSt && !S.toSt && !S.netFrom) { S.netFrom = S.fN || []; S.netTo = S.tN || []; }
@@ -2022,7 +2067,7 @@
       }
       if (!out.length) { res.innerHTML = '<div class="gz-empty">' + esc(T("gzm.cNone", null, "Nie udało się ułożyć podróży w ciągu 2 godzin od wyjścia.")) + "</div>" + noResModes(); return; }
       var guardOk = !!(window.GuardStore && window.GuardCore && GuardStore.enabled && GuardStore.enabled());
-      res.innerHTML = walkTop + (S.date !== warsawNow().date ? '<div class="gz-live off" style="margin:4px 2px">📅 ' + esc(T("gzm.uSched", { d: S.date }, "{d} — godziny wg rozkładu")) + "</div>" : '<div class="gz-live ' + (rtOk ? "on" : "off") + '" style="margin:4px 2px">' + (rtOk ? "● " + esc(T("gzm.liveOn", null, "na żywo")) : "○ " + esc(T("gzm.liveOff", null, "dane na żywo niedostępne, pokazuję rozkład"))) + "</div>") +
+      res.innerHTML = gpsWarn(S) + walkTop + (S.date !== warsawNow().date ? '<div class="gz-live off" style="margin:4px 2px">📅 ' + esc(T("gzm.uSched", { d: S.date }, "{d} — godziny wg rozkładu")) + "</div>" : '<div class="gz-live ' + (rtOk ? "on" : "off") + '" style="margin:4px 2px">' + (rtOk ? "● " + esc(T("gzm.liveOn", null, "na żywo")) : "○ " + esc(T("gzm.liveOff", null, "dane na żywo niedostępne, pokazuję rozkład"))) + "</div>") +
         out.map(function (x, i) {
           if (v2On()) { v2Cur[i] = x; return x.net ? v2NetCard(x.net, guardOk ? i : null) : v2TrainCard(x, guardOk ? i : null, S); }
           if (x.net) return netCard(x.net, guardOk ? i : null, x);
