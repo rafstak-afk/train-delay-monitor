@@ -206,7 +206,7 @@ const HTML = String.raw`<!DOCTYPE html>
 .rrow.current{background:rgba(255,204,0,.13);outline:1px solid rgba(255,204,0,.35);border-radius:8px}
 .rrow.next{background:rgba(34,211,238,.10);border-radius:8px}
 .rrow.info{background:rgba(255,204,0,.055);border-radius:8px}
-.rrow.future{opacity:.82}
+.rrow.future{opacity:.82}.rrow.folded{display:none}.rrow-fold{grid-column:1/-1;padding:4px 2px}.rrow-fold button{background:none;border:0;color:#9fb0c2;font-size:13px;cursor:pointer;padding:6px 4px;text-align:left;font-family:inherit}.rrow-fold button:hover{color:#cfe0f5}
 .time{font-size:18px;font-weight:900}
 .time-rows{display:flex;flex-direction:column;gap:6px}
 .plan-small{font-size:12px;color:#8b95a1;line-height:1.1}
@@ -754,6 +754,19 @@ async function syncMarksFromProfile(){
     renderJournalBar();
   }catch(e){}
 }
+// TODO 74: zakres widocznej trasy — wsiadanie: 🚏 albo stacja z linku (station), wysiadka: 🏁 albo alight/destination z linku
+var foldOpen={b:false,a:false},foldCourse=null;
+function foldRange(stations){
+  const ck=currentTrainData?String(currentTrainData.scheduleId)+'|'+String(currentTrainData.orderId):'';
+  if(ck!==foldCourse){foldCourse=ck;foldOpen={b:false,a:false}}
+  const find=(nm,from)=>{if(!nm)return -1;const n=normStation(nm);for(let i=from||0;i<stations.length;i++)if(normStation(stations[i].stationName)===n)return i;return -1};
+  let b=markBoardIdx!=null?markBoardIdx:find(qs('station'));
+  let a=markAlightIdx!=null?markAlightIdx:find(qs('alight')||qs('destination'),b>=0?b+1:0);
+  if(b<0)b=0;
+  if(a>=0&&a<=b)a=-1;
+  return {b:b,a:a};
+}
+function toggleFold(side){foldOpen[side]=!foldOpen[side];if(currentTrainData)renderTrain(qs('train'),currentTrainData)}
 function restoreMarksFromStorage(data,stations){
   try{
     const raw=localStorage.getItem(courseMarkKey(data));
@@ -1238,6 +1251,10 @@ function renderTrain(train,data){
   }
   html+='<details class="legend"><summary>'+esc(T('train.legendSummary'))+'</summary><div class="hint">'+esc(T('train.legendText'))+'</div></details><div id="journalBar" class="journal-bar"></div><div id="journalSaveError" class="journal-note warn" style="display:none"></div><div class="route-table"><div class="rrow-head"><div>'+esc(T('train.colTime'))+'</div><div>'+esc(T('train.colDelay'))+'</div><div>'+esc(T('train.colStation'))+'</div><div>'+esc(T('train.colPlatform'))+'</div></div>';
 
+  // TODO 74: tylko odcinek od wsiadania do wysiadki; reszta trasy pod „▸ wcześniejsze / dalsze stacje” (zaznaczenia 🚏/🏁 albo stacja z linku)
+  const fr=foldRange(stations),here=passedIdx>=0&&stations[passedIdx]?stations[passedIdx].stationName:'';
+  const foldBtn=(side,n)=>'<div class="rrow-fold"><button type="button" onclick="toggleFold(\''+side+'\')">'+esc(foldOpen[side]?T('train.foldHide'):T(side==='b'?'train.foldBefore':'train.foldAfter',{n:n}))+(side==='b'&&!foldOpen.b&&passedIdx>=0&&passedIdx<fr.b?' · 📍 '+esc(T('train.foldHere',{s:here})):'')+'</button></div>';
+  if(fr.b>0)html+=foldBtn('b',fr.b);
   stations.forEach((s,i)=>{
     let state='future',txt=T('train.bBefore'),badge='future';
     if(s.status==='confirmed'){
@@ -1255,7 +1272,9 @@ function renderTrain(train,data){
     }
     const hasPlatform=s.platform&&s.platform!=='-';
     const hasTrack=s.track&&s.track!=='-';
-    html+='<div id="station-'+i+'" class="rrow '+state+'">'
+    if(fr.a>=0&&i===fr.a+1&&fr.a<stations.length-1&&!foldOpen.a)html+=foldBtn('a',stations.length-1-fr.a);
+    const folded=(fr.b>0&&i<fr.b&&!foldOpen.b)||(fr.a>=0&&i>fr.a&&!foldOpen.a);
+    html+='<div id="station-'+i+'" class="rrow '+state+(folded?' folded':'')+'">'
       +'<div class="time-cell">'+renderTime(s,state==='future'||state==='next'?'future':state)+'</div>'
       +'<div class="delay-cell">'+renderDelayCol(s)+'</div>'
       +'<div class="station-cell"><span class="badge '+badge+'">'+esc(txt)+'</span><div class="station-name">'+esc(s.stationName)+'</div><div class="mark-btns"><button type="button" class="mark-btn board" data-idx="'+i+'" title="'+esc(T('train.boardHere'))+'" onclick="markBoard('+i+')">🚏</button><button type="button" class="mark-btn alight" data-idx="'+i+'" title="'+esc(T('train.alightHere'))+'" onclick="markAlight('+i+')">🏁</button></div></div>'
@@ -1263,7 +1282,8 @@ function renderTrain(train,data){
     +'</div>';
   });
 
-  html+='</div></div>';document.getElementById('content').innerHTML=html;updateMarkButtons();addGzmButtons();renderJournalBar();setTimeout(()=>{const el=document.getElementById('station-'+focusIdx);if(el)el.scrollIntoView({behavior:'smooth',block:'center'})},150);
+  if(fr.a>=0&&fr.a<stations.length-1&&foldOpen.a)html+=foldBtn('a',stations.length-1-fr.a);
+  html+='</div></div>';document.getElementById('content').innerHTML=html;updateMarkButtons();addGzmButtons();renderJournalBar();setTimeout(()=>{let el=document.getElementById('station-'+focusIdx);if(el&&el.classList.contains('folded'))el=document.getElementById('station-'+fr.b);if(el)el.scrollIntoView({behavior:'smooth',block:'center'})},150);
 }
 // "Moje pociągi" trzyma prostą listę {station,trainNum,planTime} pod tym
 // samym kluczem co moje-pociagi/index.html. Stacją jest ta, z której ktoś
