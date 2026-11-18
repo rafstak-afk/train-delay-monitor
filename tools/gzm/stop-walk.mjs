@@ -124,7 +124,8 @@ export async function computeStopWalks(stops, cache, opts = {}) {
         const ends = nearIds(g, B, SNAP_M), e0 = ends.length ? ends[0][1] : 0;
         let r = null;
         if (best) for (const [id, dd] of ends) { if (dd > e0 + 3) break; const x = best.get(id); if (x && (!r || x.s + dd / W.WALK_SPEED < r.s)) r = { id, s: x.s + dd / W.WALK_SPEED, m: x.m + dd }; }
-        if (!r || r.m > 6 * Math.max(d, 50) + 300) { cache.entries[key] = [est, Math.round(d * 1.4), -1, 0, today]; continue; }
+        // objazd dłuższy o ponad 400 m niż linia prosta = najpewniej luka w mapie (jezdnia bez oznaczonych chodników) — wtedy jak dotąd
+        if (!r || r.m + starts[0][1] - d > 400) { cache.entries[key] = [est, Math.round(d * 1.4), -1, 0, today]; continue; }
         const p = W.pathTo(g, best, r.id);
         const sec = r.s + (starts[0][1]) / W.WALK_SPEED;
         cache.entries[key] = [Math.max(1, Math.ceil(d / W.WALK_SPEED / 60), Math.ceil(sec / 60)), Math.round(r.m + starts[0][1]), p.sig, p.cx, today];
