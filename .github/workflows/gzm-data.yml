@@ -50,7 +50,7 @@ jobs:
         run: |
           FLAG=""
           if [ "${{ github.event.schedule }}" = "0 1 1 * *" ] || [ "${{ inputs.full_walk }}" = "true" ]; then FLAG="--full-walk"; fi
-          node tools/gzm/build.mjs $FLAG
+          node tools/gzm/build.mjs $FLAG --no-stop-walk   # przejścia między przystankami — osobny krok po publikacji
 
       - name: Zapis pamięci dojść na main (tylko gdy się zmieniła)
         run: |
@@ -79,3 +79,21 @@ jobs:
           git add -A
           git commit -q -m "dane GZM $(date -u +%FT%TZ)"
           git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" gzm-data
+
+      # TODO 71: przejścia między przystankami po drogach z OSM — po kawałku, PO publikacji (dane dnia nie czekają);
+      # wyniki trafią do plików sieci przy następnym budowaniu
+      - name: Przejścia między przystankami (OSM, po kawałku)
+        continue-on-error: true
+        timeout-minutes: 100
+        run: node tools/gzm/stop-walk-run.mjs
+
+      - name: Zapis pamięci przejść na main
+        if: always()
+        run: |
+          git config user.name "gzm-data bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add tools/gzm/stop-walk-cache.json
+          git diff --cached --quiet && exit 0
+          git commit -q -m "gzm: przejścia między przystankami ($(date -u +%F))"
+          for i in 1 2 3; do git pull -q --rebase origin main && git push -q origin HEAD:main && exit 0; sleep 5; done
+          echo "::warning::nie udało się zapisać stop-walk-cache — przeliczy się następnym razem"

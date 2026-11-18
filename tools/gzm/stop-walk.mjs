@@ -16,6 +16,25 @@ const SNAP_M = 40;                    // przystanek → najbliższy węzeł siec
 const MAJOR = /^(trunk|primary|secondary|tertiary)(_link)?$/;
 const SIDE_OK = /^(both|left|right|yes)$/;
 
+// Overpass z twardym limitem czasu: każdy serwer najwyżej raz, po 75 s rezygnujemy (kafelek wraca następnego dnia) —
+// 18.11 przy przeciążonych serwerach pojedynczy kafelek potrafił czekać 5–17 min na ponowieniach
+const MIRRORS = [W.OVERPASS, "https://overpass.kumi.systems/api/interpreter", "https://overpass.private.coffee/api/interpreter"];
+let mirror = 0;
+async function fetchQuick(q) {
+  let last = null;
+  for (let i = 0; i < MIRRORS.length; i++) {
+    const url = MIRRORS[(mirror + i) % MIRRORS.length], ac = new AbortController(), tm = setTimeout(() => ac.abort(), 75000);
+    try {
+      const r = await fetch(url, { method: "POST", signal: ac.signal, headers: { "User-Agent": W.UA, "Content-Type": "application/x-www-form-urlencoded" }, body: "data=" + encodeURIComponent(q) });
+      const tx = r.ok ? await r.text() : "";
+      if (r.ok && tx.startsWith("{")) { mirror = (mirror + i) % MIRRORS.length; return JSON.parse(tx); }
+      last = new Error(url.split("/")[2] + " HTTP " + r.status);
+    } catch (e) { last = e.name === "AbortError" ? new Error(url.split("/")[2] + " > 75 s") : e; }
+    finally { clearTimeout(tm); }
+    await new Promise(r => setTimeout(r, 3000));
+  }
+  throw last || new Error("Overpass");
+}
 function sepSidewalk(t) { return [t.sidewalk, t["sidewalk:both"], t["sidewalk:left"], t["sidewalk:right"]].some(v => v === "separate"); }
 export function stopWalkable(t) {
   if (!t || !t.highway) return true;          // perony itp. — decyduje walk.mjs
@@ -25,7 +44,7 @@ export function stopWalkable(t) {
 }
 
 function query(b) {
-  return `[out:json][timeout:120];
+  return `[out:json][timeout:60];
 (
   way["highway"](${b.s},${b.w},${b.n},${b.e});
 );
@@ -73,7 +92,7 @@ export async function computeStopWalks(stops, cache, opts = {}) {
     const pts = list.flatMap(([a, o]) => [stops[a], stops[o]]);
     const b = { s: +(Math.min(...pts.map(p => p.lat)) - MARGIN).toFixed(5), n: +(Math.max(...pts.map(p => p.lat)) + MARGIN).toFixed(5), w: +(Math.min(...pts.map(p => p.lon)) - MARGIN * 1.6).toFixed(5), e: +(Math.max(...pts.map(p => p.lon)) + MARGIN * 1.6).toFixed(5) };
     let g;
-    try { const osm = await W.fetchOverpass(query(b)); calls++; g = W.buildGraph(osm, { walkable: stopWalkable }); }
+    try { calls++; const osm = process.env.GZM_OSM_CACHE ? await W.fetchOverpass(query(b)) : await fetchQuick(query(b)); g = W.buildGraph(osm, { walkable: stopWalkable }); }
     catch (e) { log(`  kafelek ${k}: błąd OSM ${e.message || e} — następnym razem`); continue; }
     const byA = new Map(); for (const pr of list) (byA.get(pr[0]) || byA.set(pr[0], []).get(pr[0])).push(pr);
     for (const [a, prs] of byA) {
