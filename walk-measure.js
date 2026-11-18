@@ -66,7 +66,7 @@ function wmLine(r) {
   return wmWhen(r.at) + ' · ' + wmShort(wmKind(r.kind)) + ' · ' + (r.platform ? 'peron ' + r.platform + ' · ' : '') + (r.name || '—') + ' · ' + wmFmt(r.ms) + ' · start ' + wmGeoTxt(r.from) + ' → meta ' + wmGeoTxt(r.to);
 }
 // Formularz kontaktu z gotowym szablonem; bez GPS — użytkownik sam decyduje o wysłaniu.
-function wmSendUrl(r) { return '/kontakt/?' + new URLSearchParams({ kind: 'place', station: '', stop: r.name || '', res: wmFmt(r.ms) + (r.platform ? ', ' + wmT('platform', 'peron {p}', { p: r.platform }) : '') }).toString(); }
+function wmSendUrl(r) { return '/kontakt/?' + new URLSearchParams({ kind: 'place', station: '', stop: r.name || '', res: wmFmt(r.ms) + (r.platform ? ', ' + wmT('platform', 'peron {p}', { p: r.platform }) : '') + (r.at ? ', ' + new Date(r.at).toLocaleString('pl-PL', { timeZone: 'Europe/Warsaw', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '') }).toString(); }
 let wmTimer = null;
 const WM_BTN = 'border:0;border-radius:10px;color:#fff;font-weight:800;padding:9px 12px;font-size:13.5px;cursor:pointer;';
 const WM_CHIP = on => 'border:1px solid ' + (on ? '#0b57d0' : '#34495e') + ';background:' + (on ? '#173055' : '#223244') + ';color:#fff;border-radius:16px;padding:6px 11px;font-size:12.5px;cursor:pointer';
