@@ -275,10 +275,10 @@
         var t = dl ? '<span class="plan-strike">' + C.fmt(plan) + "</span> " + C.fmt(plan + dl) : C.fmt(plan);
         return '<div class="gz-tr' + cls + '"><div>' + t + "</div><div>" + (i === nearIdx ? "📍 " : "") + esc(nm + stTag(net.j.stops[sx][3])) + "</div></div>";
       });
-      // TODO 60 (profil autora): także kursy GZM — przystanki przed wsiadaniem i po wysiadce schowane
+      // TODO 60 (dla wszystkich od v6.32): także kursy GZM — przystanki przed wsiadaniem i po wysiadce schowane
       var ib = -1, ia = -1;
       if (alightName) seq.forEach(function (sx, i) { var nm = net.name[sx]; if (ib < 0 && nm === boardName) ib = i; else if (ib >= 0 && ia < 0 && nm === alightName) ia = i; });
-      rows = authorOn() && ib >= 0 && ia > ib ? foldRoute(rows, ib, ia, "g|" + tid, "stop") : rows.join("");
+      rows = ib >= 0 && ia > ib ? foldRoute(rows, ib, ia, "g|" + tid, "stop") : rows.join("");
       return inner ? pos + rows : '<div class="gz-trip">' + pos + rows + "</div>";
     }
     // TODO 60: odcinek od wsiadania do wysiadki widoczny, reszta trasy pod „▸ …” (stan rozwinięcia przeżywa odświeżanie)
@@ -1689,10 +1689,10 @@
           var t = real && real !== plan ? '<span class="plan-strike">' + esc(plan) + "</span> " + esc(real) : esc(plan);
           return '<div class="gz-tr' + (j <= lastC ? " past" : "") + (me ? " me" : "") + (j === lastC ? " here" : "") + '"><div>' + t + "</div><div>" + (j === lastC ? "📍 " : "") + esc(r.stationName) + (r.platform && r.platform !== "-" ? ' <span style="color:var(--muted);font-weight:400">· ' + esc(T("gzm.tPlat", { p: r.platform }, "peron {p}")) + "</span>" : "") + "</div></div>";
         });
-        // TODO 60 (profil autora): stacje przed wsiadaniem i po wysiadce schowane — rozwinięcie jednym stuknięciem
+        // TODO 60 (dla wszystkich od v6.32): stacje przed wsiadaniem i po wysiadce schowane — rozwinięcie jednym stuknięciem
         var ib = -1, ia = -1;
         route.forEach(function (r, j) { var nm = normName(r.stationName); if (ib < 0 && nm === nb) ib = j; else if (ib >= 0 && ia < 0 && nm === na) ia = j; });
-        if (authorOn() && ib >= 0 && ia > ib && (ib > 0 || ia < route.length - 1)) {
+        if (ib >= 0 && ia > ib && (ib > 0 || ia < route.length - 1)) {
           var fold = function (part, side, n) {
             if (!part.length) return "";
             var mk = "rt|" + side + "|" + k;
