@@ -82,6 +82,23 @@ jobs:
 
       # TODO 71: przejścia między przystankami po drogach z OSM — po kawałku, PO publikacji (dane dnia nie czekają);
       # wyniki trafią do plików sieci przy następnym budowaniu
+      # 18.11: najpierw z pliku mapy województwa (Geofabrik, ODbL) przez osmium — cała sieć w kilka minut;
+      # plik pobierany tylko, gdy są pary do policzenia (nowe przystanki) albo 1. dnia miesiąca (odświeżenie wszystkich)
+      - name: Przejścia między przystankami z pliku mapy OSM (osmium)
+        continue-on-error: true
+        timeout-minutes: 60
+        run: |
+          export ALL=$([ "$(date -u +%d)" = "01" ] && echo 1 || echo 0)
+          node tools/gzm/stop-walk-pbf.mjs --need || exit 0
+          sudo apt-get install -y -qq osmium-tool > /dev/null
+          T=$(mktemp -d)
+          curl -sSfL --retry 3 -o "$T/slaskie.osm.pbf" https://download.geofabrik.de/europe/poland/slaskie-latest.osm.pbf
+          osmium extract -b 18.35,49.92,19.55,50.70 "$T/slaskie.osm.pbf" -o "$T/gzm.osm.pbf"
+          osmium tags-filter "$T/gzm.osm.pbf" w/highway -o "$T/gzm-hw.osm.pbf"
+          osmium cat "$T/gzm-hw.osm.pbf" -f opl,add_metadata=false -o "$T/gzm-hw.opl"
+          ls -la "$T"
+          NODE_OPTIONS=--max-old-space-size=6000 node tools/gzm/stop-walk-pbf.mjs "$T/gzm-hw.opl"
+
       - name: Przejścia między przystankami (OSM, po kawałku)
         continue-on-error: true
         timeout-minutes: 100
