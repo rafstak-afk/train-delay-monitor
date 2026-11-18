@@ -64,9 +64,14 @@
     try { if (localStorage.getItem("showVersionBadge") !== "1") return; } catch (e) { return; }
     var today = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Warsaw" });
     var st = {}; try { st = JSON.parse(localStorage.getItem("authorRemindersV1") || "{}") || {}; } catch (e) {}
+    // 18.11 (notatka autora): odkliknięte na jednym urządzeniu nie znikało na drugim — stan także w profilu,
+    // klucz authorRem_<id> (jeden zapis na kliknięcie; odczyt profilu tylko gdy jest coś do pokazania)
+    function hidden(v) { return v === "done" || (!!v && v > today); }
+    function prof() { return window.ProfileSync && ProfileSync.getToken && ProfileSync.getToken() ? ProfileSync : null; }
+    var bars = {};
     AUTHOR_REMINDERS.forEach(function (r) {
       var v = st[r.id];
-      if (today < r.from || v === "done" || (v && v > today)) return;
+      if (today < r.from || hidden(v)) return;
       var bar = document.createElement("div");
       bar.setAttribute("role", "status");
       bar.style.cssText = "position:sticky;top:0;z-index:9999;background:#3a2f00;color:#fff;border-bottom:2px solid #ffd400;padding:10px 12px;font:14px/1.45 system-ui,sans-serif";
@@ -78,10 +83,18 @@
         if (b.dataset.ar === "done") st[r.id] = "done";
         else { var d = new Date(today + "T12:00:00Z"); d.setUTCDate(d.getUTCDate() + 1); st[r.id] = d.toISOString().slice(0, 10); }
         try { localStorage.setItem("authorRemindersV1", JSON.stringify(st)); } catch (e2) {}
+        var P = prof(); if (P && P.push) { var patch = {}; patch["authorRem_" + r.id] = st[r.id]; try { P.push(patch); } catch (e3) {} }
         bar.remove();
       });
       document.body.insertBefore(bar, document.body.firstChild);
+      bars[r.id] = bar;
     });
+    var P = prof(); if (!P || !P.pull || !Object.keys(bars).length) return;
+    P.pull().then(function (d) {
+      if (!d) return; var ch = false;
+      Object.keys(bars).forEach(function (id) { var v = d["authorRem_" + id]; if (hidden(v)) { st[id] = v; ch = true; bars[id].remove(); } });
+      if (ch) try { localStorage.setItem("authorRemindersV1", JSON.stringify(st)); } catch (e) {}
+    }).catch(function () {});
   }
   function ensureDom() {
     var style = document.createElement("style");
