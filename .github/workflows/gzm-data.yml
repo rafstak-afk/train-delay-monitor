@@ -92,7 +92,9 @@ jobs:
           node tools/gzm/stop-walk-pbf.mjs --need || exit 0
           sudo apt-get install -y -qq osmium-tool > /dev/null
           T=$(mktemp -d)
-          curl -sSfL --retry 3 -o "$T/slaskie.osm.pbf" https://download.geofabrik.de/europe/poland/slaskie-latest.osm.pbf
+          # 18.11: Geofabrik odrzucał połączenia z serwerów GitHuba — zapasowo ten sam wycinek z openstreetmap.fr
+          curl -sSfL --retry 3 --retry-connrefused --retry-delay 10 -o "$T/slaskie.osm.pbf" https://download.geofabrik.de/europe/poland/slaskie-latest.osm.pbf ||
+            curl -sSfL --retry 3 --retry-connrefused --retry-delay 10 -o "$T/slaskie.osm.pbf" https://download.openstreetmap.fr/extracts/europe/poland/slaskie-latest.osm.pbf
           osmium extract -b 18.35,49.92,19.55,50.70 "$T/slaskie.osm.pbf" -o "$T/gzm.osm.pbf"
           osmium tags-filter "$T/gzm.osm.pbf" w/highway -o "$T/gzm-hw.osm.pbf"
           osmium cat "$T/gzm-hw.osm.pbf" -f opl,add_metadata=false -o "$T/gzm-hw.opl"
