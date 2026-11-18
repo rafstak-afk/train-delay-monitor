@@ -61,6 +61,7 @@
     '.gz .gz-dep.ok{border-left-color:var(--green)}.gz .gz-dep.tight{border-left-color:var(--yellow);box-shadow:0 0 0 1px rgba(255,204,0,.35)}' +
     '.gz .gz-dep.missed{opacity:.5}.gz .gz-dep.cancelled{opacity:.6}.gz .gz-dep.cancelled .gz-t{text-decoration:line-through}' +
     '.xfer.edge{border:1px solid rgba(255,77,77,.8)!important;animation:gzEdge 1s ease-in-out infinite}@keyframes gzEdge{50%{background:rgba(255,77,77,.35)}}@media(prefers-reduced-motion:reduce){.xfer.edge{animation:none;background:rgba(255,77,77,.25)}}' +
+    '.gz-rt-more{margin:2px 0}.gz-rt-more>summary{cursor:pointer;color:var(--muted,#9fb0c2);font-size:13px;padding:6px 2px;list-style:none}.gz-rt-more>summary::-webkit-details-marker{display:none}.gz-rt-more[open]>summary{color:#cfe0f5}' +
     '.gz .gz-dep.flash{animation:gzFlash 1.4s ease-out}@keyframes gzFlash{0%{box-shadow:0 0 0 3px #ffd400}100%{box-shadow:none}}' +
     '.gz .gz-line{font-weight:900;font-size:16px;text-align:center;border-radius:8px;padding:5px 2px;background:#2b3e52}' +
     '.gz .gz-line.tram{background:#7a1f2b}.gz .gz-line.trolley{background:#1f5a3a}.gz .gz-line small{display:block;font-size:10px;font-weight:700;opacity:.85}' +
@@ -1651,8 +1652,20 @@
           var real = r.status === "confirmed" ? (useArr ? r.actualArrival : (r.actualDeparture || r.actualArrival || r.actualTime)) : (useArr ? r.forecastArrival : (r.forecastDeparture || r.forecastArrival || ""));
           var t = real && real !== plan ? '<span class="plan-strike">' + esc(plan) + "</span> " + esc(real) : esc(plan);
           return '<div class="gz-tr' + (j <= lastC ? " past" : "") + (me ? " me" : "") + (j === lastC ? " here" : "") + '"><div>' + t + "</div><div>" + (j === lastC ? "📍 " : "") + esc(r.stationName) + (r.platform && r.platform !== "-" ? ' <span style="color:var(--muted);font-weight:400">· ' + esc(T("gzm.tPlat", { p: r.platform }, "peron {p}")) + "</span>" : "") + "</div></div>";
-        }).join("");
-        return head + pos + rows;
+        });
+        // TODO 60 (profil autora): stacje przed wsiadaniem i po wysiadce schowane — rozwinięcie jednym stuknięciem
+        var ib = -1, ia = -1;
+        route.forEach(function (r, j) { var nm = normName(r.stationName); if (ib < 0 && nm === nb) ib = j; else if (ib >= 0 && ia < 0 && nm === na) ia = j; });
+        if (authorOn() && ib >= 0 && ia > ib && (ib > 0 || ia < route.length - 1)) {
+          var fold = function (part, side, n) {
+            if (!part.length) return "";
+            var mk = "rt|" + side + "|" + k;
+            return '<details class="gz-rt-more" data-mk="' + esc(mk) + '"' + (moreOpen[mk] ? " open" : "") + '><summary>' +
+              esc(side === "b" ? T("gzm.tBefore", { n: n }, "▸ wcześniejsze stacje pociągu ({n})") : T("gzm.tAfter", { n: n }, "▸ dalsze stacje pociągu ({n})")) + "</summary>" + part.join("") + "</details>";
+          };
+          return head + pos + fold(rows.slice(0, ib), "b", ib) + rows.slice(ib, ia + 1).join("") + fold(rows.slice(ia + 1), "a", route.length - 1 - ia);
+        }
+        return head + pos + rows.join("");
       }).join("");
       return '<div class="gz-trip">' + html + "</div>";
     }

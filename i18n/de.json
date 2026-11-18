@@ -1343,6 +1343,8 @@
     "v2Direct": "ohne Umstieg",
     "v2XferPlat": "Am Bahnsteig ({s}) {t} · {n} Min. Puffer zum Zug",
     "v2Alt": "Oder: um {a} losgehen und in {s} um {t} in den Zug einsteigen",
+    "tBefore": "▸ frühere Bahnhöfe des Zuges ({n})",
+    "tAfter": "▸ weitere Bahnhöfe des Zuges ({n})",
     "v2XferEgr": "Nach dem Zug: {s}, {n} Min. Puffer",
     "v2MoreAcc": "Andere Wege zum Zug ({n})",
     "v2MoreEgr": "Weitere Möglichkeiten nach dem Zug ({n})",

@@ -1343,6 +1343,8 @@
     "v2Direct": "bez přestupu",
     "v2XferPlat": "Na nástupišti ({s}) {t} · rezerva {n} min do vlaku",
     "v2Alt": "Nebo: vyjdi v {a} a nastup do vlaku v {s} v {t}",
+    "tBefore": "▸ předchozí stanice vlaku ({n})",
+    "tAfter": "▸ další stanice vlaku ({n})",
     "v2XferEgr": "Po vlaku: {s}, rezerva {n} min",
     "v2MoreAcc": "Další cesty k vlaku ({n})",
     "v2MoreEgr": "Další možnosti po vlaku ({n})",

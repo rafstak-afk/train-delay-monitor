@@ -1343,6 +1343,8 @@
     "v2Direct": "no changes",
     "v2XferPlat": "On the platform ({s}) {t} · {n} min spare before the train",
     "v2Alt": "Or: leave at {a} and board the train at {s} at {t}",
+    "tBefore": "▸ earlier stations of the train ({n})",
+    "tAfter": "▸ later stations of the train ({n})",
     "v2XferEgr": "After the train: {s}, {n} min spare",
     "v2MoreAcc": "Other ways to the train ({n})",
     "v2MoreEgr": "Other options after the train ({n})",
