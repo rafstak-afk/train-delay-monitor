@@ -15,6 +15,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import * as G from "./gtfs.mjs";
 import * as W from "./walk.mjs";
+import * as SW from "./stop-walk.mjs";
 
 const DIR = path.dirname(fileURLToPath(import.meta.url));
 const CFG = JSON.parse(fs.readFileSync(path.join(DIR, "config.json"), "utf8"));
@@ -490,9 +491,20 @@ async function main() {
   if (!only || args.network) {
     fs.mkdirSync(path.join(TMP, "network"), { recursive: true });
     let farDone = false;
+    // TODO 71: przejścia między przystankami (≤ 300 m) po drogach z OSM — brakujące pary liczone raz i trzymane w pamięci
+    const swF = path.join(DIR, "stop-walk-cache.json"), swCache = readJson(swF, { v: 1, entries: {} });
+    if (!args["no-stop-walk"]) {
+      try { const sw = await SW.computeStopWalks([...stopsByCode.values()].filter(s => s.code).map(s => ({ code: s.code, lat: s.lat, lon: s.lon })), swCache, { log, maxTiles: args["stop-walk-tiles"] != null ? +args["stop-walk-tiles"] : (CFG.stopWalkMaxTiles ?? 150), maxMinutes: CFG.stopWalkMaxMinutes ?? 90 }); log("przejścia między przystankami:", JSON.stringify(sw)); }
+      catch (e) { log("przejścia między przystankami — błąd:", e.message || e); }
+      fs.writeFileSync(swF, JSON.stringify(swCache));
+    }
     for (const d of dates) {
       if (!zipsFor(d)) continue;
       const net = await buildNetwork(d, zipsFor);
+      // fw: [indeks A, indeks B, minuty, ...] — czasy przejść z OSM (bez par, dla których mapa nie zna drogi)
+      { const ix = new Map(net.stops.map((s, i) => [s[3], i])), fw = [];
+        for (const [k, v] of Object.entries(swCache.entries)) { if (!v || v[2] < 0) continue; const [a, b] = k.split("|"), ia = ix.get(a), ib = ix.get(b); if (ia != null && ib != null) fw.push(ia, ib, v[0]); }
+        net.fw = fw; }
       // stacje bez przystanku w zasięgu: najbliższe przystanki do 2,5 km (index.json → far)
       if (!farDone) { farDone = true; const nf = addFar(index, net); writeJson(path.join(TMP, "index.json"), index); writeJson(path.join(TMP, "stop-names.json"), { v: 1, date: d, names: [...new Set(net.names)].sort((x, y) => x.localeCompare(y, "pl")) }); log("dalekie przystanki dla stacji bez słupków:", nf); }
       fs.writeFileSync(path.join(TMP, "network", d + ".json"), JSON.stringify(Object.assign({ v: 1, date: d, generated: gen }, net)));

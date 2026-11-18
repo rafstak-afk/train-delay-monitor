@@ -8,7 +8,7 @@
 // jako daleki albo nieosiągalny — dokładnie o to chodzi.
 
 export const OVERPASS = "https://overpass-api.de/api/interpreter";
-export const UA = "czy-zdaze-gzm-build/1.0 (rafstak@gmail.com)";
+export const UA = (typeof process !== "undefined" && process.env.GZM_UA) || "czy-zdaze-gzm-build/1.0 (rafstak@gmail.com)";
 export const WALK_SPEED = 1.2;          // m/s
 export const STEP_PENALTY_S = 60;       // +1 min za każde schody / przejście podziemne / kładkę
 export const SIGNAL_PENALTY_S = 30;     // średnie czekanie na zielone światło dla pieszych
@@ -133,7 +133,7 @@ export function platformRef(t) {
   const m = /perons*([0-9]+[a-z]?)/i.exec(t.name || "");
   return t.local_ref || (m && m[1]) || t["railway:platform:ref"] || t.ref || "";
 }
-export function buildGraph(osm) {
+export function buildGraph(osm, opts = {}) {
   const nodes = new Map(), ways = [], adj = new Map(), platforms = [];
   for (const el of osm.elements) if (el.type === "node") nodes.set(el.id, { lat: el.lat, lon: el.lon, tags: el.tags });
   const link = (a, b, w) => {
@@ -154,7 +154,7 @@ export function buildGraph(osm) {
   for (const el of osm.elements) {
     if (el.type !== "way") continue;
     const relP = relPlatform.get(el.id);
-    if (!relP && !walkable(el.tags)) continue;
+    if (!relP && (!walkable(el.tags) || (opts.walkable && !opts.walkable(el.tags || {})))) continue;
     const t = el.tags || {}, idx = ways.length;
     ways.push({ id: el.id, obstacle: obstacle(t), name: t.name || "", cross: wayCross(t) });
     for (let i = 1; i < el.nodes.length; i++) link(el.nodes[i - 1], el.nodes[i], idx);

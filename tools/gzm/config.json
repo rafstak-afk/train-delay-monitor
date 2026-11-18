@@ -10,5 +10,12 @@
   "suspiciousRatio": 3,
   "fallbackFactor": 1.4,
   "longWalkMin": 5,
-  "bbox": [50.0, 18.45, 50.62, 19.45]
+  "bbox": [
+    50,
+    18.45,
+    50.62,
+    19.45
+  ],
+  "stopWalkMaxTiles": 150,
+  "stopWalkMaxMinutes": 90
 }
