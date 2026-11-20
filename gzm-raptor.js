@@ -140,6 +140,7 @@
       // dojście z przystanku startowego (runda 0)
       var p0 = par[0][s]; if (p0 && p0.walk != null) legs.unshift({ type: "walk", from: p0.walk, to: s, min: p0.w });
       betterBoard(legs, origin, startAt, dep, j);
+      bestTransfers(legs, net);
       legs.forEach(function (l) { delete l._p; delete l._t; delete l._b; delete l._a; });
       var rides = legs.filter(function (l) { return l.type === "ride"; });
       if (!rides.length) continue;
@@ -149,6 +150,49 @@
       out.push({ dep: rides[0].dep, arr: tau[k][bs], arrTotal: bt, transfers: rides.length - 1, legs: legs, _lv: rides[0].dep - wk0, _wk: wk0 });
     }
     return out;
+  }
+
+  // TODO 67 (20.11, reguła autora): gdy dwa kursy jadą wspólnym odcinkiem, przesiadka JAK NAJWCZEŚNIEJ (pierwszy
+  // wspólny / sąsiedni przystanek, na którym zdążysz), chyba że dalej zapas jest wyraźnie lepszy — np. 192 / M28:
+  // Osiedle Wieczorka Szkoła (przez jezdnię), a gdy tam na styk — Osiedle Wieczorka Dworzec (jeden chodnik).
+  // Ten sam kurs dowożący i odjeżdżający — godzina dotarcia do celu się nie zmienia, zmienia się tylko miejsce przesiadki.
+  var COMFY = 3;   // zapas od 3 min = „spokojnie” (🟢)
+  function bestTransfers(legs, net) {
+    var j = net.j;
+    for (var i = 0; i < legs.length; i++) {
+      var A = legs[i]; if (A.type !== "ride" || A._p == null) continue;
+      var k = i + 1, W = null; if (legs[k] && legs[k].type === "walk") { W = legs[k]; k++; }
+      var B = legs[k]; if (!B || B.type !== "ride" || B._p == null) continue;
+      var pA = j.pats[A._p], pB = j.pats[B._p], sA = pA[1], sB = pB[1], oA = pA[2], oB = pB[2], fA = pA[3], fB = pB[3];
+      var tA = j.trips[A._t][1] + (A.delay || 0), tB = j.trips[B._t][1] + (B.delay || 0);
+      var cands = [], maxW = Math.max(W ? W.min : 0, 2);   // nie dłuższe przejście niż dotychczasowe (albo 2 min)
+      for (var u = A._b + 1; u < sA.length; u++) {
+        if (+fA[u] & 2) continue;                          // tu nie wolno wysiąść
+        var su = sA[u], arr = tA + oA[2 * u];
+        for (var v = 0; v < B._a; v++) {
+          if (+fB[v] & 1) continue;                        // tu nie wolno wsiąść
+          var sv = sB[v], w = -1;
+          if (sv === su) w = 0;
+          else { var f = net.foot[su]; for (var q = 0; q < f.length; q += 2) if (f[q] === sv) { w = f[q + 1]; break; } }
+          if (w < 0 || w > maxW) continue;
+          var need = sv === su || sameNo(j, su, sv) ? 0 : CHANGE, depB = tB + oB[2 * v + 1], slack = depB - arr - w;
+          if (slack < need) continue;
+          cands.push({ u: u, v: v, w: w, arr: arr, dep: depB, slack: slack });
+        }
+      }
+      if (cands.length < 2) continue;
+      cands.sort(function (a, b) { return a.arr - b.arr || a.w - b.w; });
+      // najwcześniejsza „spokojna” (zapas ≥ 3 min); gdy żadna — ta z największym zapasem (przy remisie wcześniejsza)
+      var pick = cands.find(function (c) { return c.slack >= COMFY; });
+      if (!pick) pick = cands.reduce(function (a, b) { return b.slack > a.slack ? b : a; });
+      if (pick.u === A._a && pick.v === B._b) continue;
+      A._a = pick.u; A.to = sA[pick.u]; A.arr = pick.arr; A.stops = pick.u - A._b;
+      B._b = pick.v; B.from = sB[pick.v]; B.dep = pick.dep; B.depPlan = j.trips[B._t][1] + oB[2 * pick.v + 1]; B.stops = B._a - pick.v;
+      if (pick.w > 0 || sA[pick.u] !== sB[pick.v]) {
+        var nw = { type: "walk", from: sA[pick.u], to: sB[pick.v], min: pick.w };
+        if (W) legs[i + 1] = nw; else legs.splice(i + 1, 0, nw);
+      } else if (W) legs.splice(i + 1, 1);
+    }
   }
 
   // Pierwszy przejazd: spośród przystanków startowych leżących na trasie tego samego kursu (przed miejscem wysiadki)
