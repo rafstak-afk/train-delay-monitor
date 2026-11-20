@@ -823,10 +823,11 @@
       var w = document.createElement("div"); w.className = "gz-ddw"; inp.parentNode.insertBefore(w, inp); w.appendChild(inp);
       var dd = document.createElement("div"); dd.className = "gz-dd"; w.appendChild(dd);
       var KIND = { st: T("gzm.ddSt", null, "stacja"), stop: T("gzm.ddStop", null, "przystanek"), pl: T("gzm.ddPl", null, "moje miejsce") };
-      var timer = null, nearBusy = false;
+      var timer = null, nearBusy = false, picked = false;   // picked: po wyborze z listy nie otwieraj jej od nowa (notatka 20.11)
       function close() { if (nearBusy) return; dd.classList.remove("open"); dd.innerHTML = ""; }
       var nearOpt = function () { return window.NearestStations ? NearestStations.optionHtml("gz-dd-item") : ""; };
       function show() {
+        if (picked) return;
         var q = inp.value.trim();
         if (q.length < 2) { if (nearOpt() && document.activeElement === inp) { dd.innerHTML = nearOpt(); dd.classList.add("open"); } else close(); return; }
         ddList().then(function () {
@@ -837,8 +838,8 @@
           dd.classList.add("open");
         });
       }
-      function pick(n) { inp.value = n; close(); }
-      inp.addEventListener("input", function () { clearTimeout(timer); timer = setTimeout(show, 150); });
+      function pick(n) { inp.value = n; picked = true; close(); }
+      inp.addEventListener("input", function () { picked = false; clearTimeout(timer); timer = setTimeout(show, 150); });
       inp.addEventListener("focus", function () { show(); });
       inp.addEventListener("blur", function () { setTimeout(close, 180); });
       // ↓/↑ zaznaczenie, Enter wybiera (wyszukiwanie uruchamia dotychczasowy Enter), Esc zamyka
@@ -865,7 +866,9 @@
           }, null, otherInp ? otherInp.value : "");
           return;
         }
-        var b = e.target.closest(".gz-dd-item"); if (b) { pick(b.dataset.n); inp.focus(); }
+        // wybór z listy: lista się zwija; ze „Skąd” przejście do pustego „Dokąd”, inaczej chowamy klawiaturę
+        var b = e.target.closest(".gz-dd-item");
+        if (b) { pick(b.dataset.n); var to2 = root.querySelector("#gzCTo"); if (inp.id === "gzCFrom" && to2 && !to2.value.trim()) to2.focus(); else inp.blur(); }
       });
     }
     // przewinięcie do pierwszego wyniku (pod przyklejonym paskiem zakładek)
