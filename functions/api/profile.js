@@ -58,6 +58,21 @@ function isValidToken(token) {
   return TOKEN_RE.test(token);
 }
 
+
+// Pkt 78 (20.11.2026): prosty licznik w pamięci podręcznej Cloudflare (bez zapisów do KV, limit 1000/dobę) —
+// chroni przed zalaniem zapisami. Liczy osobno w każdym centrum danych, więc to „hamulec”, nie dokładny licznik.
+async function rateOk(request, name, max, ttlSec) {
+  try {
+    const key = new Request(new URL("/__rl/" + encodeURIComponent(name), request.url).toString());
+    const hit = await caches.default.match(key);
+    const n = hit ? (parseInt(await hit.text(), 10) || 0) : 0;
+    if (n >= max) return false;
+    await caches.default.put(key, new Response(String(n + 1), { headers: { "Cache-Control": "max-age=" + ttlSec } }));
+  } catch (e) {}
+  return true;
+}
+function rlDay() { return new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Warsaw" }); }
+
 export async function onRequest(context) {
   const { request, env } = context;
 
@@ -105,6 +120,9 @@ export async function onRequest(context) {
 
     if (!isValidToken(token)) {
       return json({ ok: false, error: "Nieprawidłowy token" }, 400);
+    }
+    if (!(await rateOk(request, "p:" + token + ":" + rlDay(), 300, 86400))) {
+      return json({ ok: false, code: "rate", error: "Za dużo zapisów profilu dziś — spróbuj jutro." }, 429);
     }
 
     const patch = body?.patch;

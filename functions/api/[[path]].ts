@@ -416,70 +416,31 @@ export const onRequest: PagesFunction<Env> = async (
   }
 
   /*
-   * Proxy dla:
-   * /api/operations
-   * /api/schedules
-   * /api/schedules/route/...
-   * itd.
-   *
-   * Tylko te segmenty PLK API są dozwolone przez proxy — inaczej
-   * dowolny klient mógłby przez to proxy odpytywać cały PDP API
-   * przy użyciu naszego sekretnego klucza.
+   * Proxy do PLK — od 20.11.2026 (przegląd bezpieczeństwa, pkt 78) TYLKO wyszukiwanie stacji,
+   * którego używa planer (/api/dictionaries/stations?search=…), wyłącznie GET, małe strony wyników
+   * i pamięć podręczna. Wcześniej przepuszczało schedules / operations / apikey z naszym kluczem
+   * (dane konta klucza, możliwość wyczerpania limitu 20 tys. zapytań na dobę).
    */
-  const ALLOWED_PROXY_PREFIXES = [
-    'schedules',
-    'operations',
-    'dictionaries',
-    'apikey'
-  ];
-
-  const firstSegment = pathArray[0] || '';
-
-  if (!ALLOWED_PROXY_PREFIXES.includes(firstSegment)) {
-    return json({
-      error: 'Niedozwolona ścieżka proxy',
-      path: targetPath
-    }, 403);
+  if (targetPath !== "dictionaries/stations") {
+    return json({ error: "Niedozwolona ścieżka", path: targetPath }, 403);
   }
-
-  const targetUrl =
-    PLK_BASE +
-    '/' +
-    targetPath +
-    url.search;
-
+  if (request.method !== "GET") {
+    return json({ error: "Dozwolone tylko GET" }, 405);
+  }
+  const search = (url.searchParams.get("search") || "").trim().slice(0, 60);
+  const pageSize = Math.max(1, Math.min(20, parseInt(url.searchParams.get("pageSize") || "20", 10) || 20));
+  const q = new URLSearchParams({ pageSize: String(pageSize) });
+  if (search) q.set("search", search);
   try {
-    const response = await fetch(
-      targetUrl,
-      {
-        method: request.method,
-        headers: {
-          'Accept': 'application/json',
-          'X-API-Key': apiKey
-        }
-      }
-    );
-
-    const responseHeaders =
-      new Headers(response.headers);
-
-    responseHeaders.set(
-      'Access-Control-Allow-Origin',
-      '*'
-    );
-
-    return new Response(
-      response.body,
-      {
-        status: response.status,
-        headers: responseHeaders
-      }
-    );
+    const response = await fetch(PLK_BASE + "/dictionaries/stations?" + q.toString(), {
+      method: "GET",
+      headers: { "Accept": "application/json", "X-API-Key": apiKey },
+      // słownik stacji zmienia się rzadko — godzina w pamięci podręcznej Cloudflare
+      cf: { cacheTtlByStatus: { "200-299": 3600, "300-599": -1 }, cacheEverything: true }
+    } as any);
+    const h = new Headers({ "Content-Type": "application/json; charset=utf-8", "Access-Control-Allow-Origin": "*", "Cache-Control": "public, max-age=600" });
+    return new Response(response.body, { status: response.status, headers: h });
   } catch (e: any) {
-    return json({
-      error: 'Proxy Error',
-      message:
-        e?.message || String(e)
-    }, 500);
+    return json({ error: "Proxy Error", message: e?.message || String(e) }, 500);
   }
 };

@@ -109,6 +109,8 @@ export async function onRequest(context) {
         ? { ...existing, keys: { p256dh: sub.keys.p256dh, auth: sub.keys.auth } }
         : { endpoint: sub.endpoint, keys: { p256dh: sub.keys.p256dh, auth: sub.keys.auth }, addedAt: new Date().toISOString() }
     ];
+    // pkt 78: najwyżej 10 urządzeń na profil (najstarsze odpadają)
+    if (profile.pushSubscriptions.length > 10) profile.pushSubscriptions = profile.pushSubscriptions.slice(-10);
   } else {
     const endpoint = String(body?.endpoint || "");
     profile.pushSubscriptions = current.filter(s => s.endpoint !== endpoint);

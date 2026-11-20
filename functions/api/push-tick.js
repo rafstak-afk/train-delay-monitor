@@ -24,6 +24,21 @@ const TOKEN_RE = /^[A-Z0-9]{16}$/;
 // Indeks profili z subskrypcją push (TODO 8, etap 4): posortowana lista tokenów w kluczu "push:index".
 // push-tick co 5 min czyta tylko te profile zamiast listować całe KV; raz na godzinę pełne listowanie odbudowuje indeks.
 const PUSH_INDEX_KEY = "push:index";
+
+// Pkt 78 (20.11.2026): autor rozpoznawany po stronie serwera — skrót SHA-256 tokenu musi być na liście
+// w KV „author:hashes”. Samo pole showVersion w profilu (?wersja=1) może ustawić każdy, więc już nie wystarcza.
+let authorHashes = null, authorHashesAt = 0;
+async function isAuthor(env, token) {
+  if (!token) return false;
+  if (!authorHashes || Date.now() - authorHashesAt > 300000) {
+    try { authorHashes = JSON.parse((await env.USER_PROFILES.get("author:hashes")) || "[]"); } catch (e) { authorHashes = []; }
+    authorHashesAt = Date.now();
+  }
+  const d = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token));
+  const h = [...new Uint8Array(d)].map(b => b.toString(16).padStart(2, "0")).join("");
+  return Array.isArray(authorHashes) && authorHashes.includes(h);
+}
+
 async function setPushIndex(env, token, has) {
   let idx = null;
   try { idx = JSON.parse((await env.USER_PROFILES.get(PUSH_INDEX_KEY)) || "null"); } catch (e) {}
@@ -711,7 +726,7 @@ export async function onRequestPost(context) {
 
       const subs = Array.isArray(profile.pushSubscriptions) ? profile.pushSubscriptions : [];
       if (subs.length) withSubs.push(token);
-      if (dtChanges && profile.showVersion === true) {
+      if (dtChanges && profile.showVersion === true && await isAuthor(env, token)) {
         for (const sub of subs) {
           try { await sendPush(env, sub, disruptionTypesPayload(dtChanges)); summary.pushSent++; }
           catch (e) { summary.errors.push(`${token} push (disruption-types): ${e.message}`); }

@@ -8,6 +8,20 @@ const KINDS = { reply: "💬 Odpowiedź", close: "✅ Zamknij", reopen: "↩️ 
 function json(d, s = 200) { return new Response(JSON.stringify(d), { status: s, headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" } }); }
 function normalizeToken(raw) { return String(raw || "").replace(/[^A-Za-z0-9]/g, "").toUpperCase(); }
 
+// Pkt 78 (20.11.2026): autor rozpoznawany po stronie serwera — skrót SHA-256 tokenu musi być na liście
+// w KV „author:hashes”. Samo pole showVersion w profilu (?wersja=1) może ustawić każdy, więc już nie wystarcza.
+let authorHashes = null, authorHashesAt = 0;
+async function isAuthor(env, token) {
+  if (!token) return false;
+  if (!authorHashes || Date.now() - authorHashesAt > 300000) {
+    try { authorHashes = JSON.parse((await env.USER_PROFILES.get("author:hashes")) || "[]"); } catch (e) { authorHashes = []; }
+    authorHashesAt = Date.now();
+  }
+  const d = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token));
+  const h = [...new Uint8Array(d)].map(b => b.toString(16).padStart(2, "0")).join("");
+  return Array.isArray(authorHashes) && authorHashes.includes(h);
+}
+
 function gh(env, path, init = {}) {
   return fetch(API + path, Object.assign({}, init, { headers: Object.assign({ Authorization: "Bearer " + env.NOTES_GH_TOKEN, Accept: "application/vnd.github+json", "User-Agent": "czy-zdaze-app", "X-GitHub-Api-Version": "2022-11-28" }, init.headers || {}) }));
 }
@@ -33,7 +47,7 @@ export async function onRequestPost({ request, env }) {
   if (!TOKEN_RE.test(token)) return json({ ok: false, error: "Brak profilu" }, 403);
   let profile = null;
   try { profile = JSON.parse((await env.USER_PROFILES.get(token)) || "null"); } catch (e) {}
-  if (!profile || profile.showVersion !== true) return json({ ok: false, error: "Tylko dla autora" }, 403);
+  if (!profile || !(await isAuthor(env, token))) return json({ ok: false, error: "Tylko dla autora" }, 403);
   if (!env.NOTES_GH_TOKEN) return json({ ok: false, error: "nokey" }, 503);
 
   if (body.action === "list") {
