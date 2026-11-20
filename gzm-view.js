@@ -877,6 +877,14 @@
           if (inp.value.trim() !== q) return;
           var m = ddMatch(q);
           if (!m.length || (m.length === 1 && m[0].n === q)) { close(); return; }
+          if (authorOn() && !m.some(function (x) { return x.k === "st" && normName(x.n) === normName(q); })) plkStations(q).then(function () {
+            if (inp.value.trim() !== q || picked) return;
+            var ext = Object.keys(extSt).map(function (k) { return extSt[k]; }).filter(function (x) { return normName(x.n).indexOf(normName(q)) === 0 && !m.some(function (y) { return y.n === x.n; }); }).slice(0, 6);
+            if (!ext.length) return;
+            var m2 = m.concat(ext.map(function (x) { return { n: x.n, k: "st", r: 1 }; }));
+            dd.innerHTML = nearOpt() + m2.map(function (x) { return '<button type="button" class="gz-dd-item" data-n="' + esc(x.n) + '"><span class="gz-dd-name">' + esc(x.n) + '</span><span class="gz-dd-kind">' + esc(KIND[x.k] || "") + "</span></button>"; }).join("");
+            dd.classList.add("open");
+          });
           dd.innerHTML = nearOpt() + m.map(function (x) { return '<button type="button" class="gz-dd-item" data-n="' + esc(x.n) + '"><span class="gz-dd-name">' + esc(x.n) + '</span><span class="gz-dd-kind">' + esc(KIND[x.k]) + "</span></button>"; }).join("");
           dd.classList.add("open");
         });
@@ -1109,7 +1117,26 @@
       if (depFiles[id]) return Promise.resolve(depFiles[id]);
       return fetch(dataUrl("stations/" + id + ".json")).then(function (r) { if (!r.ok) throw new Error("dep"); return r.json(); }).then(function (j) { depFiles[id] = j; return j; });
     }
-    function stationByName(name) { var n = normName(name); return (index.stations || []).find(function (x) { return normName(x.n) === n; }) || null; }
+    function stationByName(name) { var n = normName(name); return (index.stations || []).find(function (x) { return normName(x.n) === n; }) || (authorOn() && extSt[n]) || null; }
+    // TODO 81 (profil autora): każda stacja PKP PLK — spoza GZM bez przystanków komunikacji (s: []), tylko pociąg na tym końcu
+    var extSt = {}, extQ = {};
+    function plkStations(q) {
+      q = String(q || "").trim(); if (q.length < 2) return Promise.resolve([]);
+      var k = normName(q);
+      if (!extQ[k]) extQ[k] = fetch("/api/dictionaries/stations?search=" + encodeURIComponent(q) + "&pageSize=12", { headers: { Accept: "application/json" } })
+        .then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+          var a = (j && (j.stations || j.data || j.items)) || (Array.isArray(j) ? j : []);
+          return a.map(function (x) { return { id: x.id || x.stationId, n: x.name || x.stationName, lat: +x.latitude || +x.lat || null, lon: +x.longitude || +x.lon || null }; })
+            .filter(function (x) { return x.n && x.lat && x.lon; })
+            .map(function (x) { var nn = normName(x.n); if (!(index.stations || []).some(function (y) { return normName(y.n) === nn; })) extSt[nn] = { id: "plk" + x.id, plkId: x.id, n: x.n, lat: x.lat, lon: x.lon, s: [], ext: true }; return x; });
+        }).catch(function () { delete extQ[k]; return []; });
+      return extQ[k];
+    }
+    // przed wyszukiwaniem: nazwy wpisane ręcznie (bez wyboru z listy) — sprawdzić w słowniku PLK
+    function ensureExt(names) {
+      if (!authorOn()) return Promise.resolve();
+      return Promise.all(names.filter(function (t) { return t && !placeKey(t) && !stationByName(t); }).map(plkStations)).then(function () {}, function () {});
+    }
     // przystanek (dokładna nazwa albo fragment) → lista nazw ze słownika
     function stopNames(dict, txt) {
       var keys = Object.keys(dict), n = normName(txt);
@@ -1562,6 +1589,11 @@
       return pl;
     }
     function searchC() {
+      var f0 = root.querySelector("#gzCFrom").value.trim(), t0 = root.querySelector("#gzCTo").value.trim();
+      if (authorOn() && ((f0 && !stationByName(f0) && !placeKey(f0)) || (t0 && !stationByName(t0) && !placeKey(t0)))) { ensureExt([f0, t0]).then(searchCGo); return; }
+      searchCGo();
+    }
+    function searchCGo() {
       var fromTxt = root.querySelector("#gzCFrom").value.trim(), toTxt = root.querySelector("#gzCTo").value.trim();
       if (fromTxt && toTxt && fromTxt.toLowerCase() === toTxt.toLowerCase() && placeKey(fromTxt) !== "gps") {
         root.querySelector("#gzCRes").innerHTML = '<div class="gz-warn">' + esc(T("near.samePlace", null, "Skąd i Dokąd to to samo miejsce — wybierz inny cel.")) + "</div>"; return;
