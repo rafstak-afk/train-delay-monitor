@@ -680,9 +680,11 @@
             r.addEventListener("click", function (e) {
               var b = e.target.closest("button[data-pl]"); if (!b) return;
               var fIn = root.querySelector("#gzCFrom"), tIn2 = root.querySelector("#gzCTo"), me = b.dataset.side === "f" ? fIn : tIn2, other = me === fIn ? tIn2 : fIn;
-              me.value = PL_TOK[b.dataset.pl]; r.style.display = "none";
+              // notatka 20.11: po wyborze 🏠/🏢/📍 lista podpowiedzi pola zostawała rozwinięta
+              if (me._ddPick) me._ddPick(PL_TOK[b.dataset.pl]); else me.value = PL_TOK[b.dataset.pl];
+              r.style.display = "none";
               me.style.boxShadow = "0 0 0 2px #22c55e"; setTimeout(function () { me.style.boxShadow = ""; }, 900);
-              if (other.value.trim()) searchC(); else other.focus();
+              if (other.value.trim()) { try { me.blur(); } catch (er) {} searchC(); } else other.focus();
             });
           }
           var chip = function (k) { return '<button type="button" class="gz-chip" data-pl="' + k + '" data-side="' + side + '">' + esc(PL_TOK[k]) + "</button>"; };
@@ -881,6 +883,7 @@
       }
       var pickedVal = null;
       function pick(n) { clearTimeout(timer); inp.value = n; picked = true; pickedVal = n; close(); }
+      inp._ddPick = pick;   // wybór z zewnątrz (🏠/🏢/📍 pod polami) — też zwija listę
       // notatka 20.11: klawiatura Androida po stuknięciu w podpowiedź zatwierdza jeszcze wpisywany tekst (zdarzenie „input”) — to nie jest nowe wpisywanie
       inp.addEventListener("input", function () { if (picked && inp.value === pickedVal) return; picked = false; clearTimeout(timer); timer = setTimeout(show, 150); });
       inp.addEventListener("focus", function () { show(); });
