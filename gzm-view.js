@@ -903,6 +903,8 @@
           NearestStations.openIn(dd, function (s) {
             nearBusy = false; pick(s.name);
             try { inp.dispatchEvent(new Event("input", { bubbles: true })); } catch (er) {}
+            // notatka 20.11: zdarzenie „input” otwierało listę od nowa i zasłaniało „Dokąd” — po wyborze lista zostaje zwinięta
+            clearTimeout(timer); picked = true; close();
             var to = root.querySelector("#gzCTo"); if (inp.id === "gzCFrom" && to && !to.value.trim()) to.focus();
           }, null, otherInp ? otherInp.value : "");
           return;
