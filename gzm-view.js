@@ -31,7 +31,7 @@
     '.gz .gv .v2-gtimes{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.gz .gv .v2-gtimes .chip{cursor:pointer;font-size:11.5px;text-align:center;min-width:72px}.gz .gv .v2-gtimes .chip .ct{font-size:15px}.gz .gv .v2-gtimes .chip.on{outline:2px solid var(--cyan)}' +
     '.gz .gv .v2c{cursor:pointer;padding:10px 14px}.gz .gv .v2c-r1{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:18px}.gz .gv .v2c-r1 b{font-size:19px}.gz .gv .v2c-dur{font-size:14px;color:#cfe0f5;white-space:nowrap}' +
     '.gz .gv .v2c-r2{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin-top:6px;font-size:14px}.gz .gv .v2c-l{background:#22344a;border-radius:7px;padding:2px 7px;font-weight:700}.gz .gv .v2c-t{background:#1d3a66}.gz .gv .v2c-w{color:#9fb0c2}.gz .gv .v2c-sep{color:#6b7c90}' +
-    '.gz .gv .v2c-r3{margin-top:5px;font-size:12.5px;color:#9fb0c2}.gz .gv .v2c-hide{background:none;border:0;color:#9fb0c2;cursor:pointer;font-size:13px;padding:6px 2px 0}.gz .gv .v2c-open{margin:10px 0}' +
+    '.gz .gv .v2c-r3{margin-top:5px;font-size:12.5px;color:#9fb0c2}.gz .gv .v2c-hide{background:#22344a;border:1px solid #34495e;border-radius:8px;color:#cfe0f5;cursor:pointer;font-size:14px;font-weight:700;padding:6px 12px;margin-top:4px}.gz .gv .v2c-open .c-head{cursor:pointer}.gz .gv .v2c-open{margin:10px 0}' +
     '.gz .gv .v2-dep{cursor:pointer;padding:10px 12px}.gz .gv .v2-dep .c-route{font-size:14.5px}' +
     '.gz .gv .gz-fav{background:none;border:0;color:var(--yellow);font-size:16px;cursor:pointer;padding:0 2px;vertical-align:middle}' +
     '.gz .gz-plk{font-size:12.5px;font-weight:700;color:var(--cyan,#5dade2);text-decoration:none;white-space:nowrap}.gz .gz-plk:hover{text-decoration:underline}' +
@@ -1880,8 +1880,11 @@
     var detOpen = {};
     function detKey(x) { return x.net ? jKey(x.net) : "t|" + cKey(x.p, x.it); }
     root.addEventListener("click", function (e) {
-      var d = e.target.closest("[data-det]"); if (!d) return;
-      e.stopPropagation(); var k = d.getAttribute("data-det");
+      // notatka 20.11: rozwiniętą kartę zwija też stuknięcie w jej nagłówek (godziny, trasa) — nie tylko mały przycisk
+      var d = e.target.closest("[data-det]"), k;
+      if (d) k = d.getAttribute("data-det");
+      else { var h = e.target.closest(".v2c-open .c-head"); if (!h || e.target.closest("button,a")) return; k = h.closest(".v2c-open").getAttribute("data-detk"); }
+      e.stopPropagation();
       if (detOpen[k]) delete detOpen[k]; else detOpen[k] = true;
       rerender();
     }, true);
@@ -2214,7 +2217,7 @@
             // TODO 76 (profil autora): lista jak w oficjalnych wyszukiwarkach — 3 linijki, szczegóły po stuknięciu
             if (authorOn()) { var dk = detKey(x); if (!detOpen[dk]) return v2Compact(x, S, dk); }
             var full = x.net ? v2NetCard(x.net, guardOk ? i : null) : v2TrainCard(x, guardOk ? i : null, S);
-            return authorOn() ? '<div class="v2c-open"><button type="button" class="v2c-hide" data-det="' + esc(detKey(x)) + '">▴ ' + esc(T("gzm.v2cHide", null, "zwiń do listy")) + "</button>" + full + "</div>" : full;
+            return authorOn() ? '<div class="v2c-open" data-detk="' + esc(detKey(x)) + '"><button type="button" class="v2c-hide" data-det="' + esc(detKey(x)) + '">▴ ' + esc(T("gzm.v2cHide", null, "zwiń do listy")) + "</button>" + full + "</div>" : full;
           }
           if (x.net) return netCard(x.net, guardOk ? i : null, x);
           var it = x.it, c = x.c, key = cKey(x.p, it);
