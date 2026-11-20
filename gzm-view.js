@@ -876,7 +876,18 @@
         ddList().then(function () {
           if (inp.value.trim() !== q) return;
           var m = ddMatch(q);
-          if (!m.length || (m.length === 1 && m[0].n === q)) { close(); return; }
+          if (!m.length || (m.length === 1 && m[0].n === q)) {
+            close();
+            // TODO 81: brak w GZM — może to stacja PLK spoza GZM (np. Lubliniec)
+            if (authorOn() && !(m.length === 1 && m[0].n === q)) plkStations(q).then(function () {
+              if (inp.value.trim() !== q || picked) return;
+              var ext = Object.keys(extSt).map(function (k) { return extSt[k]; }).filter(function (x) { return normName(x.n).indexOf(normName(q)) === 0; }).slice(0, 8);
+              if (!ext.length || (ext.length === 1 && ext[0].n === q)) return;
+              dd.innerHTML = nearOpt() + ext.map(function (x) { return '<button type="button" class="gz-dd-item" data-n="' + esc(x.n) + '"><span class="gz-dd-name">' + esc(x.n) + '</span><span class="gz-dd-kind">' + esc(KIND.st) + "</span></button>"; }).join("");
+              dd.classList.add("open");
+            });
+            return;
+          }
           if (authorOn() && !m.some(function (x) { return x.k === "st" && normName(x.n) === normName(q); })) plkStations(q).then(function () {
             if (inp.value.trim() !== q || picked) return;
             var ext = Object.keys(extSt).map(function (k) { return extSt[k]; }).filter(function (x) { return normName(x.n).indexOf(normName(q)) === 0 && !m.some(function (y) { return y.n === x.n; }); }).slice(0, 6);
