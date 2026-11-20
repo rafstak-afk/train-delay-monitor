@@ -4,7 +4,7 @@
 // je w pamięci podręcznej Cloudflare (10 min), żeby nie pytać GitHuba przy
 // każdym otwarciu zakładki. Dozwolone tylko konkretne pliki.
 const RAW = "https://raw.githubusercontent.com/rafstak-afk/train-delay-monitor/gzm-data/";
-const ALLOWED = /^(index\.json|feeders\.json|egress\.json|raport\.json|raport.html|stop-names.json|stations\/\d{1,7}(-arr)?\.json|network\/\d{4}-\d{2}-\d{2}\.json)$/;
+const ALLOWED = /^(index\.json|feeders\.json|egress\.json|raport\.json|raport.html|stop-names.json|stations\/\d{1,7}(-arr|-walk)?\.json|stopwalk\/\d{7}\.json|network\/\d{4}-\d{2}-\d{2}\.json)$/;   // -walk / stopwalk: mapki 🗺️ (TODO 20) — wcześniej odrzucane (przegląd 20.11)
 const TYPES = { json: "application/json; charset=utf-8", html: "text/html; charset=utf-8" };
 
 export async function onRequestGet(context) {
