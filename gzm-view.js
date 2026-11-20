@@ -2154,6 +2154,8 @@
         cState.shown = []; return;
       }
       if (!out.length) { res.innerHTML = '<div class="gz-empty">' + esc(T("gzm.cNone", null, "Nie udało się ułożyć podróży w ciągu 2 godzin od wyjścia.")) + "</div>" + noResModes(); return; }
+      // TODO 76 (lista, profil autora): kolejność jak w oficjalnych wyszukiwarkach — wg godziny wyjścia, przy remisie wcześniej na miejscu
+      if (v2On() && authorOn()) out.sort(function (a, b) { return a.start - b.start || a.final - b.final; });
       var guardOk = !!(window.GuardStore && window.GuardCore && GuardStore.enabled && GuardStore.enabled());
       res.innerHTML = gpsWarn(S) + walkTop + (S.date !== warsawNow().date ? '<div class="gz-live off" style="margin:4px 2px">📅 ' + esc(T("gzm.uSched", { d: S.date }, "{d} — godziny wg rozkładu")) + "</div>" : '<div class="gz-live ' + (rtOk ? "on" : "off") + '" style="margin:4px 2px">' + (rtOk ? "● " + esc(T("gzm.liveOn", null, "na żywo")) : "○ " + esc(T("gzm.liveOff", null, "dane na żywo niedostępne, pokazuję rozkład"))) + "</div>") +
         out.map(function (x, i) {
