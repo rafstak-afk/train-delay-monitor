@@ -89,7 +89,8 @@
     const controller = typeof AbortController === "function" ? new AbortController() : null;
     const timer = controller ? setTimeout(function () { controller.abort(); }, PULL_TIMEOUT_MS) : null;
     try {
-      const res = await fetch("/api/profile?token=" + encodeURIComponent(token), {
+      const res = await fetch("/api/profile", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "get", token: token }),
         cache: "no-store",
         signal: controller ? controller.signal : undefined
       });
@@ -128,7 +129,7 @@
     const token = normalize(rawToken);
     if (!isValid(token)) return "invalid";
     try {
-      const res = await fetch("/api/profile?token=" + encodeURIComponent(token), { cache: "no-store" });
+      const res = await fetch("/api/profile", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "get", token: token }), cache: "no-store" });
       if (!res.ok) return "error";
       const body = await res.json();
       if (!body || !body.ok) return "error";
@@ -412,7 +413,7 @@
     // wysyłać mapy, bo nadpisalibyśmy zaznaczenia z innych urządzeń.
     let remote = {};
     try {
-      const res = await fetch("/api/profile?token=" + encodeURIComponent(token), { cache: "no-store" });
+      const res = await fetch("/api/profile", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "get", token: token }), cache: "no-store" });
       if (!res.ok) return false;
       const body = await res.json();
       if (!body || !body.ok) return false;

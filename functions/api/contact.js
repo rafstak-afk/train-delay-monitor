@@ -26,5 +26,6 @@ export async function onRequest(context) {
     }), { status: 503, headers: HEADERS });
   }
 
-  return new Response(JSON.stringify({ ok: true, to }), { headers: HEADERS });
+  // pkt 78 (20.11): bez adresu wprost — odwrócony i zakodowany (base64); strona kontaktu go składa
+  return new Response(JSON.stringify({ ok: true, t2: btoa(unescape(encodeURIComponent(to.split("").reverse().join("")))) }), { headers: HEADERS });
 }

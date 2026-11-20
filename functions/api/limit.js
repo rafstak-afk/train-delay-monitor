@@ -86,11 +86,15 @@ export async function onRequest(context) {
     }, 500);
   }
 
+  // pkt 78 (20.11): 60 s w pamięci podręcznej — inaczej każde wywołanie tej publicznej strony pytało PLK
+  const cacheKey = new Request(new URL('/__cache/limit/' + (new URL(context.request.url).searchParams.get('mode') || 'full'), context.request.url).toString());
+  try { const hit = await caches.default.match(cacheKey); if (hit) return new Response(hit.body, { headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Cache': 'HIT' } }); } catch (e) {}
+  const keep = async (resp) => { try { const t = await resp.clone().text(); await caches.default.put(cacheKey, new Response(t, { headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'max-age=60' } })); } catch (e) {} return resp; };
   // ?mode=counter — lekki odczyt licznika zapytań (1 zapytanie, bez ciężkiego /apikey/usage) dla monitoringu co godzinę (TODO 32)
   if (new URL(context.request.url).searchParams.get('mode') === 'counter') {
     const c = await probe('/apikey/info', key);
     const d = c.body && c.body.data || {};
-    return json({ ok: !!c.ok, http: c.http, at: new Date().toISOString(), totalRequests: d.totalRequests ?? null, lastUsedAt: d.lastUsedAt || null, hourlyRateLimit: d.hourlyRateLimit ?? null, dailyRateLimit: d.dailyRateLimit ?? null });
+    return keep(json({ ok: !!c.ok, http: c.http, at: new Date().toISOString(), totalRequests: d.totalRequests ?? null, lastUsedAt: d.lastUsedAt || null, hourlyRateLimit: d.hourlyRateLimit ?? null, dailyRateLimit: d.dailyRateLimit ?? null }));
   }
 
   const checks = await Promise.all([
@@ -100,7 +104,7 @@ export async function onRequest(context) {
 
   const overall = pickOverall(checks);
 
-  return json({
+  return keep(json({
     ...overall,
     testedAt: new Date().toISOString(),
     explanation: {
@@ -111,5 +115,5 @@ export async function onRequest(context) {
       AUTH: 'Problem autoryzacji API'
     }[overall.status] || overall.human,
     checks
-  });
+  }));
 }

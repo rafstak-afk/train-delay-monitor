@@ -16,6 +16,15 @@ export async function onRequest(context) {
       error: "Missing station"
     }, 400);
   }
+  // pkt 78 (20.11): tylko nazwy wyglądające na nazwy stacji + hamulec z jednego adresu (to nie jest ogólne proxy do portalu)
+  if (station.length > 60 || !/^[\p{L}0-9 .,'()\-]+$/u.test(station)) return json({ ok: false, error: "Bad station" }, 400);
+  try {
+    const ip = request.headers.get("CF-Connecting-IP") || "?", hr = new Date().toISOString().slice(0, 13);
+    const key = new Request(new URL("/__rl/rl-" + encodeURIComponent(ip + ":" + hr), request.url).toString());
+    const hit = await caches.default.match(key); const n = hit ? (parseInt(await hit.text(), 10) || 0) : 0;
+    if (n >= 120) return json({ ok: false, error: "Too many requests" }, 429);
+    await caches.default.put(key, new Response(String(n + 1), { headers: { "Cache-Control": "max-age=3600" } }));
+  } catch (e) {}
 
   try {
     const result = await resolveStationLink(station);

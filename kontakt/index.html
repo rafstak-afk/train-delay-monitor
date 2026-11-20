@@ -195,7 +195,8 @@ textarea{min-height:140px;resize:vertical;line-height:1.4}
   // Adres pochodzi z ustawień serwera (patrz functions/api/contact.js).
   // Po wczytaniu słownika — inaczej komunikat o błędzie mógłby się pokazać po polsku.
   (window.I18n?I18n.ready:Promise.resolve()).then(function(){return fetch('/api/contact',{cache:'no-store'})}).then(function(r){return r.json()}).then(function(j){
-    if(j&&j.ok&&j.to){TO=j.to}else{setStatus(T('kontakt.notConfigured'),'warn')}
+    if(j&&j.ok&&j.t2){try{TO=decodeURIComponent(escape(atob(j.t2))).split('').reverse().join('')}catch(e){}}else if(j&&j.ok&&j.to){TO=j.to}
+    if(!TO)setStatus(T('kontakt.notConfigured'),'warn')
   }).catch(function(){setStatus(T('kontakt.fetchFailed'),'err')}).then(refresh);
 
   // Numer wersji bierzemy z plakietki na tablicy głównej.

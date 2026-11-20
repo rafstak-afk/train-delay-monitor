@@ -45,6 +45,8 @@ function isValidSubscription(sub) {
     sub &&
     typeof sub.endpoint === "string" &&
     sub.endpoint.startsWith("https://") &&
+    // pkt 78 (20.11): tylko znane usługi push (Chrome/Android, Firefox, Apple, Windows)
+    /^https:\/\/([a-z0-9-]+\.)*(fcm\.googleapis\.com|android\.googleapis\.com|push\.services\.mozilla\.com|push\.apple\.com|notify\.windows\.com)\//i.test(sub.endpoint) &&
     sub.keys &&
     typeof sub.keys.p256dh === "string" &&
     typeof sub.keys.auth === "string"

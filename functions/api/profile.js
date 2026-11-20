@@ -121,6 +121,11 @@ export async function onRequest(context) {
     if (!isValidToken(token)) {
       return json({ ok: false, error: "Nieprawidłowy token" }, 400);
     }
+    // pkt 78 (20.11): odczyt POST-em {action:"get"} — token w treści zamiast w adresie (GET ?token= zostaje dla starszych kart)
+    if (body?.action === "get") {
+      const raw = await env.USER_PROFILES.get(token);
+      return json({ ok: true, data: raw ? JSON.parse(raw) : null });
+    }
     if (!(await rateOk(request, "p:" + token + ":" + rlDay(), 300, 86400))) {
       return json({ ok: false, code: "rate", error: "Za dużo zapisów profilu dziś — spróbuj jutro." }, 429);
     }
