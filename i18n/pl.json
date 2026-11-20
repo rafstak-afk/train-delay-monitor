@@ -411,6 +411,7 @@
     "rerunToday": "🔎 Dziś od {time}",
     "rerunTomorrow": "🔎 Jutro od {time}",
     "rerunOldTitle": "Pokaż połączenia z tamtego dnia",
+    "rerunPick": "Inny dzień — wybierz w kalendarzu",
     "savedPast": "📅 {date} · już minęło",
     "savedFor": "📅 Na dzień {date}",
     "tabSearch": "Szukaj",

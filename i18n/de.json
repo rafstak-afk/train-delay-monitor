@@ -411,6 +411,7 @@
     "rerunToday": "🔎 Heute ab {time}",
     "rerunTomorrow": "🔎 Morgen ab {time}",
     "rerunOldTitle": "Verbindungen von jenem Tag anzeigen",
+    "rerunPick": "Anderer Tag — im Kalender wählen",
     "savedPast": "📅 {date} · vorbei",
     "savedFor": "📅 Für {date}",
     "tabSearch": "Suche",

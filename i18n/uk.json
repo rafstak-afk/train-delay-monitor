@@ -411,6 +411,7 @@
     "rerunToday": "🔎 Сьогодні від {time}",
     "rerunTomorrow": "🔎 Завтра від {time}",
     "rerunOldTitle": "Показати сполучення з того дня",
+    "rerunPick": "Інший день — оберіть у календарі",
     "savedPast": "📅 {date} · вже минуло",
     "savedFor": "📅 На {date}",
     "tabSearch": "Пошук",

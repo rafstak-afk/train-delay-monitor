@@ -411,6 +411,7 @@
     "rerunToday": "🔎 Today from {time}",
     "rerunTomorrow": "🔎 Tomorrow from {time}",
     "rerunOldTitle": "Show connections from that day",
+    "rerunPick": "Another day — pick in the calendar",
     "savedPast": "📅 {date} · already past",
     "savedFor": "📅 For {date}",
     "tabSearch": "Search",

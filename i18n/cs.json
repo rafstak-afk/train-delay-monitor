@@ -411,6 +411,7 @@
     "rerunToday": "🔎 Dnes od {time}",
     "rerunTomorrow": "🔎 Zítra od {time}",
     "rerunOldTitle": "Zobrazit spojení z toho dne",
+    "rerunPick": "Jiný den — vyber v kalendáři",
     "savedPast": "📅 {date} · už proběhlo",
     "savedFor": "📅 Na {date}",
     "tabSearch": "Hledat",

@@ -128,6 +128,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
 .history-rerun{flex:0 0 auto;border:1.5px solid var(--blue);background:transparent;color:#8fb8f5;border-radius:8px;padding:9px 12px;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap}
 .history-rerun:hover{background:rgba(11,87,208,.18)}
 .history-btns{flex:0 0 auto;display:flex;flex-direction:column;gap:6px;align-items:stretch}
+.rerun-pick{display:inline-flex;align-items:center;gap:4px;border:1.5px solid var(--blue);border-radius:8px;padding:4px 8px;color:#8fb8f5;font-size:12.5px;font-weight:700;cursor:pointer}.rerun-pick input{background:transparent;border:0;color:#cfe0f5;color-scheme:dark;font:inherit;max-width:130px}
 .history-rerun.old{border-color:var(--line);color:var(--muted);padding:6px 10px;font-weight:600}
 .saved-date{font-size:12.5px;font-weight:700;margin-top:6px}
 .saved-date.past{color:var(--muted)}
@@ -1000,7 +1001,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
       }
     }
     if(opts.savedKey&&savedPast){
-      actionHtml='<button type="button" class="btn-sm itin-fresh" data-saved-key="'+escapeHtml(opts.savedKey)+'">'+escapeHtml(freshLabel(freshWhen(it.departureTime)))+'</button>'+
+      actionHtml='<button type="button" class="btn-sm itin-fresh" data-saved-key="'+escapeHtml(opts.savedKey)+'">'+escapeHtml(freshLabel(freshWhen(it.departureTime)))+'</button>'+datePickHtml('data-skey',opts.savedKey)+
         '<button type="button" class="btn-sm secondary itin-remove" data-saved-key="'+escapeHtml(opts.savedKey)+'">'+escapeHtml(T('planer.removeBtn'))+'</button>';
     }else if(opts.savedKey){
       actionHtml='<button type="button" class="btn-sm secondary itin-remove" data-saved-key="'+escapeHtml(opts.savedKey)+'">'+escapeHtml(T('planer.removeBtn'))+'</button>'+
@@ -1282,6 +1283,11 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     removeSavedResult(btn.dataset.savedKey);
   });
 
+  $('savedList').addEventListener('change',function(e){
+    var di=e.target.closest('input[data-skey]');if(!di||!di.value)return;
+    var fs3=getSavedResults().find(function(x){return x._key===di.dataset.skey});
+    if(fs3&&fs3.query)rerunQuery(fs3.query,'','',{date:di.value,time:(fs3.snapshot&&fs3.snapshot.departureTime)||fs3.query.time});
+  });
   // === Ostatnie wyszukiwania ===
   function getSearchHistory(){try{var v=JSON.parse(localStorage.getItem(HISTORY_KEY));return Array.isArray(v)?v:[]}catch(e){return[]}}
   function saveSearchHistoryList(list){
@@ -1324,7 +1330,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
         '<div class="history-route">🚆🚌 '+escapeHtml(q.from)+(q.to?' → '+escapeHtml(q.to):' · '+escapeHtml(T('planer.historyGzmDeps')))+'</div>'+
         '<div class="history-meta">'+escapeHtml(T('planer.historyWhen',{date:df,time:q.time}))+' · '+escapeHtml(T('planer.tabTrainGzm'))+'</div></div>'+
         (isPastDate(q.date)
-          ?'<div class="history-btns"><button type="button" class="history-rerun" data-idx="'+idx+'" data-fresh="1">'+escapeHtml(freshLabel(freshWhen(q.time)))+'</button></div>'
+          ?'<div class="history-btns"><button type="button" class="history-rerun" data-idx="'+idx+'" data-fresh="1">'+escapeHtml(freshLabel(freshWhen(q.time)))+'</button>'+datePickHtml('data-hidx',idx)+'</div>'
           :'<button type="button" class="history-rerun" data-idx="'+idx+'">'+escapeHtml(T('planer.rerun'))+'</button>')+'</div>';
     }
     var dateFmt=(function(){var p=String(q.date||'').split('-');return p.length===3?p[2]+'.'+p[1]+'.'+p[0]:q.date})();
@@ -1341,7 +1347,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
       '</div>'+
       (isPastDate(q.date)
         ?'<div class="history-btns"><button type="button" class="history-rerun" data-idx="'+idx+'" data-fresh="1">'+escapeHtml(freshLabel(freshWhen(q.time)))+'</button>'+
-          '<button type="button" class="history-rerun old" data-idx="'+idx+'" title="'+escapeHtml(T('planer.rerunOldTitle'))+'">📅 '+escapeHtml(shortDate(q.date))+'</button></div>'
+          '<button type="button" class="history-rerun old" data-idx="'+idx+'" title="'+escapeHtml(T('planer.rerunOldTitle'))+'">📅 '+escapeHtml(shortDate(q.date))+'</button>'+datePickHtml('data-hidx',idx)+'</div>'
         :'<button type="button" class="history-rerun" data-idx="'+idx+'">'+escapeHtml(T('planer.rerun'))+'</button>')+
       '</div>';
   }
@@ -1356,6 +1362,8 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     return{date:t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0'),time:time,tomorrow:true};
   }
   function freshLabel(w){return T(w.tomorrow?'planer.rerunTomorrow':'planer.rerunToday',{time:w.time})}
+  // 20.11 (prośba autora): oprócz „Dziś/Jutro od …” — kalendarz, dowolny dzień (ta sama godzina)
+  function datePickHtml(attr,val){return '<label class="rerun-pick" title="'+escapeHtml(T('planer.rerunPick'))+'">📅 <input type="date" '+attr+'="'+escapeHtml(String(val))+'" min="'+todayYYYYMMDD()+'" value="" aria-label="'+escapeHtml(T('planer.rerunPick'))+'"></label>'}
   function shortDate(d){var p=String(d||'').split('-');return p.length===3?p[2]+'.'+p[1]:d}
   function renderHistoryPanel(){
     var list=getSearchHistory();
@@ -1396,6 +1404,13 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     updateAdvSummary();updateAdvDot();updateCarrierSummary();
     search();
   }
+  $('historyList').addEventListener('change',function(e){
+    var di=e.target.closest('input[data-hidx]');if(!di||!di.value)return;
+    var en=getSearchHistory()[Number(di.dataset.hidx)];if(!en||!en.query)return;
+    var when={date:di.value,time:en.query.time&&en.query.time!=='00:00'?en.query.time:'06:00'};
+    if(en.query.gzm){if(!gzmView)return;showTab('gzm');gzmView.rerun({from:en.query.from,to:en.query.to,date:when.date,time:when.time});return}
+    rerunQuery(en.query,en.fromId,en.toId,when);
+  });
   $('historyList').addEventListener('click',function(e){
     var btn=e.target.closest('.history-rerun');
     if(!btn)return;
