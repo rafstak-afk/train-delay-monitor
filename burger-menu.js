@@ -55,7 +55,7 @@
   }
 
   // ⏰ Przypomnienia dla autora (tylko profil autora: showVersionBadge) — pasek na górze strony od podanego dnia,
-  // „✅ Zrobione” chowa na stałe, „⏰ Jutro” do następnego dnia. Zapis tylko w tym telefonie (localStorage).
+  // „✅ Zrobione” chowa na stałe, „⏰ <data> Przypomnij wtedy” do wybranego dnia (domyślnie jutro). Zapis tylko w tym telefonie (localStorage).
   var AUTHOR_REMINDERS = [
     { id: "pomiar-wieczorka-szkola", from: "2026-11-18", html: "⏱️ <b>Pomiar (TODO 71):</b> na przystanku <b>Osiedle Wieczorka Szkoła</b> zmierz stoperem przejście <b>stanowisko 01 → 02</b> (przez światła przy skrzyżowaniu z Ziętka / Armii Krajowej). Stoper: Planer → 🚆🚌 Pociąg + GZM → Pomiar dojścia → ✏️ inne." }
   ];
@@ -71,16 +71,18 @@
     AUTHOR_REMINDERS.forEach(function (r) {
       var v = st[r.id];
       if (today < r.from || hidden(v)) return;
+      var td = new Date(today + "T12:00:00Z"); td.setUTCDate(td.getUTCDate() + 1); var tomorrow = td.toISOString().slice(0, 10);
       var bar = document.createElement("div");
       bar.setAttribute("role", "status");
       bar.style.cssText = "position:sticky;top:0;z-index:9999;background:#3a2f00;color:#fff;border-bottom:2px solid #ffd400;padding:10px 12px;font:14px/1.45 system-ui,sans-serif";
       bar.innerHTML = '<div style="max-width:900px;margin:0 auto">' + r.html +
         '<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap"><button type="button" data-ar="done" style="padding:6px 12px;border-radius:8px;border:0;background:#2e7d4f;color:#fff;font-weight:700">✅ Zrobione</button>' +
-        '<button type="button" data-ar="later" style="padding:6px 12px;border-radius:8px;border:0;background:#4a5563;color:#fff;font-weight:700">⏰ Jutro</button></div></div>';
+        '<span style="display:inline-flex;align-items:center;gap:6px">⏰ <input type="date" data-ar-date min="' + tomorrow + '" value="' + tomorrow + '" style="padding:5px 6px;border-radius:8px;border:1px solid #6b5a10;background:#1f1a00;color:#fff;color-scheme:dark">' +
+        '<button type="button" data-ar="later" style="padding:6px 12px;border-radius:8px;border:0;background:#4a5563;color:#fff;font-weight:700">Przypomnij wtedy</button></span></div></div>';
       bar.addEventListener("click", function (e) {
         var b = e.target.closest("[data-ar]"); if (!b) return;
         if (b.dataset.ar === "done") st[r.id] = "done";
-        else { var d = new Date(today + "T12:00:00Z"); d.setUTCDate(d.getUTCDate() + 1); st[r.id] = d.toISOString().slice(0, 10); }
+        else { var di = bar.querySelector("[data-ar-date]"), v = di && di.value; st[r.id] = v && v > today ? v : tomorrow; }   // 20.11: dzień z kalendarza zamiast stałego „jutro”
         try { localStorage.setItem("authorRemindersV1", JSON.stringify(st)); } catch (e2) {}
         var P = prof(); if (P && P.push) { var patch = {}; patch["authorRem_" + r.id] = st[r.id]; try { P.push(patch); } catch (e3) {} }
         bar.remove();
