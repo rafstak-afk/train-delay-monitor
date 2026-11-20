@@ -1003,6 +1003,8 @@
     "plk429Soon": "PLK está limitando las consultas temporalmente — reintento en 15 s.",
     "hOps429Soon": "PLK está limitando las consultas temporalmente — reintento en 15 s (último intento {t}).",
     "hOps429": "PLK está limitando las consultas temporalmente — reintento en un minuto (último intento {t}).",
+    "hOpsStale": "PLK limita temporalmente las consultas: muestro los últimos datos de este tren de hace {n} min. Reintento en un minuto (último intento {t}).",
+    "hOpsBoard": "PLK limita temporalmente las consultas: muestro datos del panel de salidas de {s} (las demás estaciones según horario). Reintento en un minuto (último intento {t}).",
     "plkLastTry": "Último intento: {t}. El problema está en el servidor de PKP PLK, no en tu teléfono.",
     "plkSlow": "PLK responde más lento de lo habitual — sigo esperando…",
     "plkGiveUp": "PLK sigue sin responder. Inténtalo de nuevo más tarde.",

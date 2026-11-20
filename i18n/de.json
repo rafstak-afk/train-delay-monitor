@@ -1003,6 +1003,8 @@
     "plk429Soon": "PLK begrenzt gerade die Anfragen — neuer Versuch in 15 s.",
     "hOps429Soon": "PLK begrenzt gerade die Anfragen — neuer Versuch in 15 s (letzter Versuch {t}).",
     "hOps429": "PLK begrenzt gerade die Anfragen — neuer Versuch in einer Minute (letzter Versuch {t}).",
+    "hOpsStale": "PLK begrenzt gerade die Anfragen — ich zeige die letzten Daten dieses Zuges von vor {n} Min. Neuer Versuch in einer Minute (letzter Versuch {t}).",
+    "hOpsBoard": "PLK begrenzt gerade die Anfragen — ich zeige Daten der Abfahrtstafel von {s} (übrige Bahnhöfe laut Fahrplan). Neuer Versuch in einer Minute (letzter Versuch {t}).",
     "plkLastTry": "Letzter Versuch: {t}. Das Problem liegt beim Server von PKP PLK, nicht bei deinem Handy.",
     "plkSlow": "PLK antwortet langsamer als sonst — ich warte weiter…",
     "plkGiveUp": "PLK antwortet weiterhin nicht. Bitte später erneut versuchen.",

@@ -1003,6 +1003,8 @@
     "plk429Soon": "PLK dočasně omezuje dotazy — zkusím to znovu za 15 s.",
     "hOps429Soon": "PLK dočasně omezuje dotazy — zkusím to znovu za 15 s (poslední pokus {t}).",
     "hOps429": "PLK dočasně omezuje dotazy — zkusím to znovu za minutu (poslední pokus {t}).",
+    "hOpsStale": "PLK dočasně omezuje dotazy — zobrazuji poslední data tohoto vlaku staré {n} min. Zkusím to znovu za minutu (poslední pokus {t}).",
+    "hOpsBoard": "PLK dočasně omezuje dotazy — zobrazuji data z odjezdové tabule stanice {s} (ostatní stanice podle jízdního řádu). Zkusím to znovu za minutu (poslední pokus {t}).",
     "plkLastTry": "Poslední pokus: {t}. Problém je na straně serveru PKP PLK, ne ve tvém telefonu.",
     "plkSlow": "PLK odpovídá pomaleji než obvykle — čekám dál…",
     "plkGiveUp": "PLK stále neodpovídá. Zkus to prosím později.",

@@ -1110,6 +1110,7 @@ function trainHealth(train,opts,data){
   const now=new Date(),nowMin=now.getHours()*60+now.getMinutes();
   let kind=null,msg='',ops429=false;
   if(date!==today){kind='date';msg=T('train.hDate',{d:date})}
+  else if(d.fallback){kind='ops';ops429=true;msg=T(d.fallback==='stale'?'train.hOpsStale':'train.hOpsBoard',{n:Math.max(1,Math.round((d.opsStale||0)/60)),s:d.boardStation||'',t:clockNow()})}
   else if(d.opsOk===false){kind='ops';ops429=/429/.test(String(d.opsError||''));msg=T(ops429?(opsRetryN===0?'train.hOps429Soon':'train.hOps429'):'train.hOps',{t:clockNow()})}
   else if(!data.isFinished){
     // pierwsza niepotwierdzona stacja, której planowy czas minął o > 10 min (z doliczonym ostatnim opóźnieniem)

@@ -1003,6 +1003,8 @@
     "plk429Soon": "PLK is temporarily limiting requests — retrying in 15 s.",
     "hOps429Soon": "PLK is temporarily limiting requests — retrying in 15 s (last try {t}).",
     "hOps429": "PLK is temporarily limiting requests — retrying in a minute (last try {t}).",
+    "hOpsStale": "PLK is temporarily limiting requests — showing this train's last data from {n} min ago. Retrying in a minute (last attempt {t}).",
+    "hOpsBoard": "PLK is temporarily limiting requests — showing data from the departure board of {s} (other stations per timetable). Retrying in a minute (last attempt {t}).",
     "plkLastTry": "Last attempt: {t}. The problem is on the PKP PLK server side, not your phone.",
     "plkSlow": "PLK is responding more slowly than usual — still waiting…",
     "plkGiveUp": "PLK is still not responding. Please try again later.",

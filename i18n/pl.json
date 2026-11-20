@@ -1003,6 +1003,8 @@
     "plk429Soon": "PLK chwilowo ogranicza zapytania — ponawiam za 15 s.",
     "hOps429Soon": "PLK chwilowo ogranicza zapytania — ponawiam za 15 s (ostatnia próba {t}).",
     "hOps429": "PLK chwilowo ogranicza zapytania — ponawiam za minutę (ostatnia próba {t}).",
+    "hOpsStale": "PLK chwilowo ogranicza zapytania — pokazuję ostatnie dane tego pociągu sprzed {n} min. Ponawiam za minutę (ostatnia próba {t}).",
+    "hOpsBoard": "PLK chwilowo ogranicza zapytania — pokazuję dane z tablicy odjazdów stacji {s} (pozostałe stacje wg rozkładu). Ponawiam za minutę (ostatnia próba {t}).",
     "plkLastTry": "Ostatnia próba: {t}. To problem po stronie serwera PKP PLK, nie Twojego telefonu.",
     "plkSlow": "PLK odpowiada wolniej niż zwykle — czekam dalej…",
     "plkGiveUp": "PLK nadal nie odpowiada. Spróbuj ponownie za jakiś czas.",

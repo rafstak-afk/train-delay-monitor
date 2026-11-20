@@ -333,6 +333,20 @@ export async function onRequestGet(context) {
         try { const rd = await plkGet(`/schedules/route/${encodeURIComponent(scheduleId)}/${encodeURIComponent(orderId)}`, apiKey, ROUTE_CACHE_TTL); route = rd?.route || rd || route; } catch (e) {}
       }
     }
+    // TODO 59 (20.11): PLK odpowiada 429 przy małym ruchu — (1) ostatnie dobre dane tego kursu z pamięci podręcznej (do 1 h),
+    // (2) gdy ich brak — wiersz z tablicy stacji, z której otwarto stronę (tablica bywa w pamięci podręcznej i działa)
+    let fallback = null, opsStale = null, boardStation = null;
+    const opsCacheKey = new Request(new URL(`/__cache/ops/${encodeURIComponent(scheduleId)}/${encodeURIComponent(orderId)}/${encodeURIComponent(operatingDate)}`, request.url).toString());
+    const plkTrouble = !operationData && /429|nie odpowiada|niedostępny|HTTP 5\d\d/.test(String(opsError || ""));
+    try {
+      if (operationData && operatingDate === todayWarsaw()) {
+        const put = caches.default.put(opsCacheKey, new Response(JSON.stringify({ at: Date.now(), d: operationData }), { headers: { "Content-Type": "application/json", "Cache-Control": "max-age=3600" } }));
+        if (context.waitUntil) context.waitUntil(put); else await put;
+      } else if (plkTrouble) {
+        const hit = await caches.default.match(opsCacheKey);
+        if (hit) { const w = await hit.json(); if (w && w.d) { operationData = w.d; opsStale = Math.round((Date.now() - w.at) / 1000); fallback = "stale"; } }
+      }
+    } catch (e) {}
     const operation = operationData?.operation || operationData || {};
 
     // Przyczyna opóźnienia/odwołania z PLK (np. "Awaria taboru"), dociągana
@@ -362,6 +376,29 @@ export async function onRequestGet(context) {
     const opStations = Array.isArray(operation.stations) ? operation.stations : [];
 
     const stops = buildStops(routeStations, opStations, stationNames);
+    // (2) tablica stacji: potwierdzenie albo prognoza tylko dla stacji, z której otwarto stronę
+    let boardDelay = null;
+    const stBoard = url.searchParams.get("station") || "";
+    if (plkTrouble && !fallback && stBoard && operatingDate === todayWarsaw()) {
+      try {
+        const nowW = new Date().toLocaleTimeString("sv-SE", { timeZone: "Europe/Warsaw", hour: "2-digit", minute: "2-digit" });
+        const [hh, mm] = nowW.split(":").map(Number), t0 = Math.max(0, hh * 60 + mm - 120);
+        const dq = new URLSearchParams({ station: stBoard, date: operatingDate, time: String(Math.floor(t0 / 60)).padStart(2, "0") + ":" + String(t0 % 60).padStart(2, "0"), limit: "80" });
+        const dr = await fetch(new URL("/api/departures?" + dq.toString(), request.url));
+        const dj = dr.ok ? await dr.json() : null;
+        const row = (dj && Array.isArray(dj.departures) ? dj.departures : []).find(d => String(d.orderId) === String(orderId) || (trainOrderId && String(d.trainOrderId) === String(trainOrderId)) || (trainNum && String(d.train) === String(trainNum)));
+        const si = row ? stops.findIndex(s => normalizeStationText(s.stationName) === normalizeStationText(stBoard)) : -1;
+        if (row && si >= 0) {
+          const s = stops[si], dl = Number(row.delay) || 0;
+          if (row.lastConfirmedStation && normalizeStationText(row.lastConfirmedStation) === normalizeStationText(stBoard)) {
+            Object.assign(s, { status: "confirmed", actualTime: row.time || s.plannedTime, actualDeparture: row.time || "", actualArrival: row.arrivalTime || "", delay: dl, departureDelay: dl, arrivalDelay: row.arrivalDelay ?? null });
+          } else if (dl > 0) {
+            Object.assign(s, { forecastDeparture: row.time || "", forecastDepartureDelay: dl, forecastArrival: row.arrivalTime || "", forecastArrivalDelay: row.arrivalDelay ?? dl });
+          }
+          boardDelay = dl; fallback = "board"; boardStation = s.stationName;
+        }
+      } catch (e) {}
+    }
     const confirmed = lastConfirmed(stops);
 
     // Opóźnienie liczymy WYŁĄCZNIE z potwierdzonych danych, nigdy z
@@ -388,7 +425,7 @@ export async function onRequestGet(context) {
     // pokazywał "+2 min" mimo że PLK na stacji końcowej pokazuje 0.
     const currentDelay = journeyDone
       ? lastStop.delay
-      : (targetStop && targetStop.status === "confirmed" ? targetStop.delay : (confirmed?.delay || 0));
+      : (targetStop && targetStop.status === "confirmed" ? targetStop.delay : (confirmed?.delay || (boardDelay != null ? boardDelay : 0)));
 
     // Kody statusu PLK: C = zrealizowany/zakończony, Z = zakończony.
     // Bez tego pola front-end (moje-pociagi) domyślał się "true" dla
@@ -450,6 +487,7 @@ export async function onRequestGet(context) {
         operatingDate,
         opsOk: !!operationData,
         opsError,
+        fallback: fallback || undefined, opsStale: opsStale ?? undefined, boardStation: boardStation || undefined,
         altFrom, altDbg: altDbg.length ? altDbg : undefined,
         opsStations: opStations.length,
         opsGeneratedAt: (operationData && operationData.generatedAt) || null,
