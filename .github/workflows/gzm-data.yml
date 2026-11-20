@@ -13,6 +13,10 @@ name: gzm-data
 on:
   workflow_dispatch:
     inputs:
+      all_stop_walks:
+        description: "Przelicz od nowa wszystkie przejścia między przystankami (z pliku mapy OSM, kilka minut)"
+        type: boolean
+        default: false
       full_walk:
         description: "Przelicz wszystkie dojścia piesze (długo, ~2–3 h)"
         type: boolean
@@ -88,7 +92,7 @@ jobs:
         continue-on-error: true
         timeout-minutes: 60
         run: |
-          export ALL=$([ "$(date -u +%d)" = "01" ] && echo 1 || echo 0)
+          export ALL=$( { [ "$(date -u +%d)" = "01" ] || [ "${{ inputs.all_stop_walks }}" = "true" ]; } && echo 1 || echo 0)
           node tools/gzm/stop-walk-pbf.mjs --need || exit 0
           sudo apt-get install -y -qq osmium-tool > /dev/null
           T=$(mktemp -d)

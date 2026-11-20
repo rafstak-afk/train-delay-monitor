@@ -357,10 +357,17 @@
       var get = walkFiles[sid] || (walkFiles[sid] = fetch(dataUrl("stations/" + sid + "-walk.json")).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }));
       get.then(function (wj) {
         var pts = wj && wj.stops && wj.stops[code];
+        drawWalkMap((f0.name || "") + " → " + stop.n + stTag(stop.c), pts, { lat: stop.lat, lon: stop.lon }, "🚆", "🚏",
+          pts ? T("gzm.wmapNote", null, "Droga policzona z mapy OpenStreetMap z najbliższego peronu — w terenie może się różnić.") : T("gzm.wmapNone", null, "Dla tego przystanku nie mam przebiegu drogi — pokazuję tylko przystanek."));
+      });
+    }
+    // TODO 20: mapka przejścia — przebieg z mapy OSM (pts od startu do celu), koniec = przystanek docelowy
+    function drawWalkMap(title, pts, stop, iconA, iconB, note) {
+      {
         var ov = document.createElement("div"); ov.className = "gzmap-ov";
-        ov.innerHTML = '<div class="gzmap-box"><div class="gzmap-top" style="justify-content:space-between"><b style="padding:6px">🚶 ' + esc((f0.name || "") + " → " + stop.n + stTag(stop.c)) + '</b><button type="button" class="gzmap-btn" data-x="1">✕</button></div>' +
+        ov.innerHTML = '<div class="gzmap-box"><div class="gzmap-top" style="justify-content:space-between"><b style="padding:6px">🚶 ' + esc(title) + '</b><button type="button" class="gzmap-btn" data-x="1">✕</button></div>' +
           '<div class="gzmap" style="cursor:default"><div class="gzmap-tiles"></div><svg class="gzw-svg" style="position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none"></svg></div>' +
-          '<div class="gzmap-bot"><small>' + esc(pts ? T("gzm.wmapNote", null, "Droga policzona z mapy OpenStreetMap z najbliższego peronu — w terenie może się różnić.") : T("gzm.wmapNone", null, "Dla tego przystanku nie mam przebiegu drogi — pokazuję tylko przystanek.")) +
+          '<div class="gzmap-bot"><small>' + esc(note) +
           ' · <a href="https://www.openstreetmap.org/?mlat=' + stop.lat + "&mlon=" + stop.lon + "#map=18/" + stop.lat + "/" + stop.lon + '" target="_blank" rel="noopener">OpenStreetMap ↗</a> · © OpenStreetMap contributors</small></div></div>';
         document.body.appendChild(ov);
         ov.addEventListener("click", function (e) { if (e.target === ov || e.target.closest("[data-x]")) ov.remove(); });
@@ -382,12 +389,43 @@
         if (pts) {
           s += '<polyline points="' + pts.map(P).join(" ") + '" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" opacity=".9"/>';
           s += '<polyline points="' + pts.map(P).join(" ") + '" fill="none" stroke="#0b57d0" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>';
-          var a = P(pts[0]).split(","); s += '<circle cx="' + a[0] + '" cy="' + a[1] + '" r="8" fill="#f59e0b" stroke="#fff" stroke-width="3"/><text x="' + (+a[0] + 11) + '" y="' + (+a[1] + 5) + '" font-size="14" font-weight="700" fill="#111" stroke="#fff" stroke-width="3" paint-order="stroke">🚆</text>';
+          var a = P(pts[0]).split(","); s += '<circle cx="' + a[0] + '" cy="' + a[1] + '" r="8" fill="#f59e0b" stroke="#fff" stroke-width="3"/><text x="' + (+a[0] + 11) + '" y="' + (+a[1] + 5) + '" font-size="14" font-weight="700" fill="#111" stroke="#fff" stroke-width="3" paint-order="stroke">' + iconA + '</text>';
         }
-        var b = P([stop.lat, stop.lon]).split(","); s += '<circle cx="' + b[0] + '" cy="' + b[1] + '" r="8" fill="#16a34a" stroke="#fff" stroke-width="3"/><text x="' + (+b[0] + 11) + '" y="' + (+b[1] + 5) + '" font-size="14" font-weight="700" fill="#111" stroke="#fff" stroke-width="3" paint-order="stroke">🚏</text>';
+        var b = P([stop.lat, stop.lon]).split(","); s += '<circle cx="' + b[0] + '" cy="' + b[1] + '" r="8" fill="#16a34a" stroke="#fff" stroke-width="3"/><text x="' + (+b[0] + 11) + '" y="' + (+b[1] + 5) + '" font-size="14" font-weight="700" fill="#111" stroke="#fff" stroke-width="3" paint-order="stroke">' + iconB + '</text>';
         svg.innerHTML = s;
+      }
+    }
+    // TODO 20 (profil autora): mapki w kartach połączeń — przejście między przystankami (przebieg z OSM)
+    var swFiles = {};
+    function openStopMap(ia, ib) {
+      var net = cState && cState.net; if (!net) return;
+      var ca = String(net.j.stops[ia][3] || ""), cb = String(net.j.stops[ib][3] || ""), key = ca < cb ? ca + "|" + cb : cb + "|" + ca, g = key.slice(0, 7);
+      var get = swFiles[g] || (swFiles[g] = fetch(dataUrl("stopwalk/" + g + ".json")).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }));
+      get.then(function (wj) {
+        var p = wj && wj.w && wj.w[key], pts = p ? (ca < cb ? p : p.slice().reverse()) : [[net.lat[ia], net.lon[ia]], [net.lat[ib], net.lon[ib]]];
+        drawWalkMap(net.name[ia] + stTag(ca) + " → " + net.name[ib] + stTag(cb), pts, { lat: net.lat[ib], lon: net.lon[ib] }, "🚏", "🚏",
+          p ? T("gzm.wmapStops", null, "Droga policzona z mapy OpenStreetMap (przez jezdnię tylko na przejściach) — w terenie może się różnić.") : T("gzm.wmapStraight", null, "Dla tego przejścia nie mam drogi z mapy — linia prosta między przystankami."));
       });
     }
+    // … i z peronu na przystanek (oraz z przystanku na peron) przy pociągu
+    function openPlatMap(sid, sName, si, toStation) {
+      var net = cState && cState.net; if (!net) return;
+      var code = String(net.j.stops[si][3] || ""), nm = net.name[si];
+      var get = walkFiles[sid] || (walkFiles[sid] = fetch(dataUrl("stations/" + sid + "-walk.json")).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }));
+      get.then(function (wj) {
+        var pts = wj && wj.stops && wj.stops[code], end = { lat: net.lat[si], lon: net.lon[si] };
+        if (pts && toStation) { pts = pts.slice().reverse(); end = { lat: pts[pts.length - 1][0], lon: pts[pts.length - 1][1] }; }
+        drawWalkMap(toStation ? nm + stTag(code) + " → " + sName : sName + " → " + nm + stTag(code), pts || null, end, toStation ? "🚏" : "🚆", toStation && pts ? "🚆" : "🚏",
+          pts ? T("gzm.wmapNote", null, "Droga policzona z mapy OpenStreetMap z najbliższego peronu — w terenie może się różnić.") : T("gzm.wmapNone", null, "Dla tego przystanku nie mam przebiegu drogi — pokazuję tylko przystanek."));
+      });
+    }
+    root.addEventListener("click", function (e) {
+      var b = e.target.closest("[data-swmap],[data-pwmap]"); if (!b) return;
+      e.stopPropagation();
+      if (b.dataset.swmap) { var q = b.dataset.swmap.split("|"); openStopMap(+q[0], +q[1]); }
+      else { var r = b.dataset.pwmap.split("|"); openPlatMap(r[0], r[1], +r[2], r[3] === "1"); }
+    }, true);
+    function mapBtn(attr, val) { return authorOn() ? ' <button type="button" ' + attr + '="' + esc(val) + '" title="' + esc(T("gzm.wmapTitle2", null, "Droga na mapie")) + '" style="border:0;background:none;cursor:pointer;font-size:1em;padding:0 2px">🗺️</button>' : ""; }
     function depHtmlV2(x, cls, noFav) {
       var d = x.dep, inMin = Math.round(x.real - nowOn(cfg.date || warsawNow().date));
       var tTxt = (x.live && x.delay) ? '<span class="plan-strike">' + C.fmt(d.min) + "</span> " + C.fmt(x.real) : C.fmt(x.real);
@@ -1721,7 +1759,8 @@
     function v2Walk(l) {
       var marks = (l.far ? " " + farBadge() + esc(T("gzm.farDist", { d: kmTxt(l.dist || 0) }, "{d} — dalej niż zwykle")) : "") + (l.fixed ? " · " + esc(T("gzm.jFixed", null, "Twój czas")) : l.measured ? " · " + esc(T("gzm.jMeasured", null, "zmierzone")) : "");
       var path = l.fromName && l.toName ? esc(l.fromName) + " → " + esc(l.toName) : l.toName ? "→ " + esc(l.toName) : "";
-      return '<div class="leg v2-walk"><div class="leg-t">🚶 ' + l.min + ' min</div><div class="leg-st">' + esc(T("gzm.v2Walk", null, "pieszo")) + (path ? " · " + path : "") + marks + "</div></div>";
+      var mb = l.from != null && l.to != null && typeof l.from === "number" && typeof l.to === "number" && l.from !== l.to ? mapBtn("data-swmap", l.from + "|" + l.to) : "";
+      return '<div class="leg v2-walk"><div class="leg-t">🚶 ' + l.min + ' min</div><div class="leg-st">' + esc(T("gzm.v2Walk", null, "pieszo")) + (path ? " · " + path : "") + marks + mb + "</div></div>";
     }
     function v2Ride(l) {
       var dep = l.live && l.delay ? '<span class="plan-strike">' + C.fmt(l.depPlan) + "</span> " + C.fmt(l.dep) : C.fmt(l.dep);
@@ -1794,7 +1833,8 @@
       if (c.walkA) html.push(v2Walk({ min: c.walkA.min, fromName: c.walkA.name, toName: x.p.cb.a.st.n }));
       if (L) {
         html.push(v2Journey(L.jn));
-        html.push(v2Xfer(L.status, esc(T("gzm.v2XferPlat", { s: x.p.cb.a.st.n, t: C.fmt(L.plat), n: L.slack }, "Na peronie ({s}) {t} · zapas {n} min do pociągu"))));
+        var lastR = L.jn.legs.filter(function (q) { return q.type === "ride"; }).pop();
+        html.push(v2Xfer(L.status, esc(T("gzm.v2XferPlat", { s: x.p.cb.a.st.n, t: C.fmt(L.plat), n: L.slack }, "Na peronie ({s}) {t} · zapas {n} min do pociągu")) + (lastR ? mapBtn("data-pwmap", x.p.cb.a.st.id + "|" + x.p.cb.a.st.n + "|" + lastR.to + "|1") : "")));
       }
       L0.forEach(function (l, j) {
         if (j > 0) { var p = L0[j - 1], ch = C.hm(l.board.time) - C.hm(p.alight.time); if (ch < 0) ch += 1440; html.push(v2Xfer(ch >= 3 ? "ok" : "tight", esc(T("gzm.tChange", { s: l.board.stationName, n: ch }, "przesiadka: {s}, {n} min")))); }
@@ -1805,7 +1845,7 @@
         var r0 = e0.legs.find(function (l) { return l.type === "ride"; }), wk = 0;
         e0.legs.some(function (l) { if (l.type === "walk") { wk += l.min; return false; } return true; });
         var sl = r0 ? r0.dep - x.arr - wk : 0;
-        html.push(v2Xfer(sl >= 3 ? "ok" : sl >= 0 ? "tight" : "missed", esc(T("gzm.v2XferEgr", { s: r0 ? r0.fromName : "", n: sl }, "Po pociągu: {s}, zapas {n} min"))));
+        html.push(v2Xfer(sl >= 3 ? "ok" : sl >= 0 ? "tight" : "missed", esc(T("gzm.v2XferEgr", { s: r0 ? r0.fromName : "", n: sl }, "Po pociągu: {s}, zapas {n} min")) + (r0 ? mapBtn("data-pwmap", x.p.cb.e.st.id + "|" + x.p.cb.e.st.n + "|" + r0.from + "|0") : "")));
         html.push(v2Journey(e0));
       }
       // inne możliwości — schowane

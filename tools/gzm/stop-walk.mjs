@@ -66,6 +66,15 @@ export function pairsOf(stops) {
   return out;
 }
 export const keyOf = (a, b) => a < b ? a + "|" + b : b + "|" + a;
+// Douglas–Peucker w metrach (przebieg drogi do mapki — kilka punktów zamiast setek)
+export function simplify(pts, tol = 3) {
+  if (pts.length <= 2) return pts;
+  const kx = 111320 * Math.cos(pts[0][0] * Math.PI / 180), ky = 110540;
+  const dist = (p, a, b) => { const ax = a[1] * kx, ay = a[0] * ky, bx = b[1] * kx, by = b[0] * ky, px = p[1] * kx, py = p[0] * ky, dx = bx - ax, dy = by - ay, L = dx * dx + dy * dy; let t = L ? ((px - ax) * dx + (py - ay) * dy) / L : 0; t = Math.max(0, Math.min(1, t)); return Math.hypot(px - ax - t * dx, py - ay - t * dy); };
+  let mi = 0, md = 0; for (let i = 1; i < pts.length - 1; i++) { const d = dist(pts[i], pts[0], pts[pts.length - 1]); if (d > md) { md = d; mi = i; } }
+  if (md <= tol) return [pts[0], pts[pts.length - 1]];
+  return simplify(pts.slice(0, mi + 1), tol).slice(0, -1).concat(simplify(pts.slice(mi), tol));
+}
 
 const GRID = 0.001;
 export function gridIndex(g) {
@@ -128,7 +137,10 @@ export async function computeStopWalks(stops, cache, opts = {}) {
         if (!r || r.m + starts[0][1] - d > 400) { cache.entries[key] = [est, Math.round(d * 1.4), -1, 0, today]; continue; }
         const p = W.pathTo(g, best, r.id);
         const sec = r.s + (starts[0][1]) / W.WALK_SPEED;
-        cache.entries[key] = [Math.max(1, Math.ceil(d / W.WALK_SPEED / 60), Math.ceil(sec / 60)), Math.round(r.m + starts[0][1]), p.sig, p.cx, today];
+        // przebieg: przystanek A → droga z mapy → przystanek B (współrzędne co ok. 1 m, kolejność A→B wg klucza)
+        const route = [[+A.lat.toFixed(5), +A.lon.toFixed(5)]].concat(p.pts.map(q => [+q[0].toFixed(5), +q[1].toFixed(5)]), [[+B.lat.toFixed(5), +B.lon.toFixed(5)]]);
+        const pts = simplify(route, 3), fwd = A.code < B.code ? pts : pts.slice().reverse();
+        cache.entries[key] = [Math.max(1, Math.ceil(d / W.WALK_SPEED / 60), Math.ceil(sec / 60)), Math.round(r.m + starts[0][1]), p.sig, p.cx, today, fwd];
       }
       done += prs.length;
       if (opts.graph && opts.progress && done % 2000 < prs.length) log(`  ${done}/${missing.length}`);

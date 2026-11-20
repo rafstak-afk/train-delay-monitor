@@ -490,7 +490,7 @@ async function main() {
   // cała sieć na każdy dzień
   if (!only || args.network) {
     fs.mkdirSync(path.join(TMP, "network"), { recursive: true });
-    let farDone = false;
+    let farDone = false, farDoneSw = false;
     // TODO 71: przejścia między przystankami (≤ 300 m) po drogach z OSM — brakujące pary liczone raz i trzymane w pamięci
     const swF = path.join(DIR, "stop-walk-cache.json"), swCache = readJson(swF, { v: 1, entries: {} });
     if (!args["no-stop-walk"]) {
@@ -505,6 +505,11 @@ async function main() {
       { const ix = new Map(net.stops.map((s, i) => [s[3], i])), fw = [];
         for (const [k, v] of Object.entries(swCache.entries)) { if (!v || v[2] < 0) continue; const [a, b] = k.split("|"), ia = ix.get(a), ib = ix.get(b); if (ia != null && ib != null) fw.push(ia, ib, v[0]); }
         net.fw = fw; }
+      // TODO 20: przebiegi przejść między przystankami do mapki — pliki wg gminy pierwszego przystanku klucza (ODbL)
+      if (!farDoneSw) { farDoneSw = true; const by = {}; for (const [k, v] of Object.entries(swCache.entries)) { if (!v || v[2] < 0 || !Array.isArray(v[5])) continue; const g = k.slice(0, 7); (by[g] = by[g] || {})[k] = v[5]; }
+        fs.mkdirSync(path.join(TMP, "stopwalk"), { recursive: true });
+        for (const [g, w] of Object.entries(by)) fs.writeFileSync(path.join(TMP, "stopwalk", g + ".json"), JSON.stringify({ v: 1, src: "© OpenStreetMap contributors (ODbL)", w }));
+        log("przebiegi przejść między przystankami:", Object.values(by).reduce((a, w) => a + Object.keys(w).length, 0), "w", Object.keys(by).length, "plikach"); }
       // stacje bez przystanku w zasięgu: najbliższe przystanki do 2,5 km (index.json → far)
       if (!farDone) { farDone = true; const nf = addFar(index, net); writeJson(path.join(TMP, "index.json"), index); writeJson(path.join(TMP, "stop-names.json"), { v: 1, date: d, names: [...new Set(net.names)].sort((x, y) => x.localeCompare(y, "pl")) }); log("dalekie przystanki dla stacji bez słupków:", nf); }
       fs.writeFileSync(path.join(TMP, "network", d + ".json"), JSON.stringify(Object.assign({ v: 1, date: d, generated: gen }, net)));
