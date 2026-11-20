@@ -879,8 +879,10 @@
           dd.classList.add("open");
         });
       }
-      function pick(n) { inp.value = n; picked = true; close(); }
-      inp.addEventListener("input", function () { picked = false; clearTimeout(timer); timer = setTimeout(show, 150); });
+      var pickedVal = null;
+      function pick(n) { clearTimeout(timer); inp.value = n; picked = true; pickedVal = n; close(); }
+      // notatka 20.11: klawiatura Androida po stuknięciu w podpowiedź zatwierdza jeszcze wpisywany tekst (zdarzenie „input”) — to nie jest nowe wpisywanie
+      inp.addEventListener("input", function () { if (picked && inp.value === pickedVal) return; picked = false; clearTimeout(timer); timer = setTimeout(show, 150); });
       inp.addEventListener("focus", function () { show(); });
       inp.addEventListener("blur", function () { setTimeout(close, 180); });
       // ↓/↑ zaznaczenie, Enter wybiera (wyszukiwanie uruchamia dotychczasowy Enter), Esc zamyka
@@ -911,7 +913,7 @@
         }
         // wybór z listy: lista się zwija; ze „Skąd” przejście do pustego „Dokąd”, inaczej chowamy klawiaturę
         var b = e.target.closest(".gz-dd-item");
-        if (b) { pick(b.dataset.n); var to2 = root.querySelector("#gzCTo"); if (inp.id === "gzCFrom" && to2 && !to2.value.trim()) to2.focus(); else inp.blur(); }
+        if (b) { try { inp.blur(); } catch (er) {} pick(b.dataset.n); var to2 = root.querySelector("#gzCTo"); if (inp.id === "gzCFrom" && to2 && !to2.value.trim()) to2.focus(); else inp.blur(); }
       });
     }
     // przewinięcie do pierwszego wyniku (pod przyklejonym paskiem zakładek)
