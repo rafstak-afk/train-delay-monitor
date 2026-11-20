@@ -988,6 +988,8 @@
     "foldAfter": "▸ dalsze stacje ({n})",
     "foldHide": "▴ zwiń",
     "foldHere": "pociąg teraz: {s}",
+    "foldHereT": "pociąg teraz: {s} ({t})",
+    "foldDone": "pociąg zakończył bieg: {s} ({t})",
     "bPassedNoConf": "minięta",
     "boardHere": "Tu wsiadam",
     "alightHere": "Tu wysiadam",

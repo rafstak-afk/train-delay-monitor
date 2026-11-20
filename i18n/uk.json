@@ -988,6 +988,8 @@
     "foldAfter": "▸ наступні станції ({n})",
     "foldHide": "▴ згорнути",
     "foldHere": "потяг зараз: {s}",
+    "foldHereT": "потяг зараз: {s} ({t})",
+    "foldDone": "потяг завершив рейс: {s} ({t})",
     "bPassedNoConf": "минула",
     "boardHere": "Тут сідаю",
     "alightHere": "Тут виходжу",

@@ -1254,7 +1254,9 @@ function renderTrain(train,data){
 
   // TODO 74: tylko odcinek od wsiadania do wysiadki; reszta trasy pod „▸ wcześniejsze / dalsze stacje” (zaznaczenia 🚏/🏁 albo stacja z linku)
   const fr=foldRange(stations),here=passedIdx>=0&&stations[passedIdx]?stations[passedIdx].stationName:'';
-  const foldBtn=(side,n)=>'<div class="rrow-fold"><button type="button" onclick="toggleFold(\''+side+'\')">'+esc(foldOpen[side]?T('train.foldHide'):T(side==='b'?'train.foldBefore':'train.foldAfter',{n:n}))+(side==='b'&&!foldOpen.b&&passedIdx>=0&&passedIdx<fr.b?' · 📍 '+esc(T('train.foldHere',{s:here})):'')+'</button></div>';
+  const foldBtn=(side,n)=>'<div class="rrow-fold"><button type="button" onclick="toggleFold(\''+side+'\')">'+esc(foldOpen[side]?T('train.foldHide'):T(side==='b'?'train.foldBefore':'train.foldAfter',{n:n}))+''+'</button></div>';
+  // 📍 gdzie jest pociąg — zawsze nad trasą (notatka 20.11: brakowało przy kursie już za stacją wsiadania)
+  if(passedIdx>=0&&here){const ht=stations[passedIdx].actualTime||stations[passedIdx].plannedTime||'';html+='<div class="rrow-fold" style="color:#cfe0f5;font-size:14px;padding:6px 6px 2px">'+(data.isFinished?'🏁 '+esc(T('train.foldDone',{s:here,t:ht})):'📍 '+esc(T('train.foldHereT',{s:here,t:ht})))+'</div>'}
   if(fr.b>0)html+=foldBtn('b',fr.b);
   stations.forEach((s,i)=>{
     let state='future',txt=T('train.bBefore'),badge='future';

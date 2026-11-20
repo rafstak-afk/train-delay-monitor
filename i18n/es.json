@@ -988,6 +988,8 @@
     "foldAfter": "▸ estaciones siguientes ({n})",
     "foldHide": "▴ contraer",
     "foldHere": "tren ahora: {s}",
+    "foldHereT": "tren ahora: {s} ({t})",
+    "foldDone": "el tren terminó su recorrido: {s} ({t})",
     "bPassedNoConf": "pasada sin confirmar",
     "boardHere": "Subo aquí",
     "alightHere": "Bajo aquí",

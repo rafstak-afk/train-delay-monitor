@@ -988,6 +988,8 @@
     "foldAfter": "▸ later stations ({n})",
     "foldHide": "▴ collapse",
     "foldHere": "train now: {s}",
+    "foldHereT": "train now: {s} ({t})",
+    "foldDone": "train has finished its run: {s} ({t})",
     "bPassedNoConf": "passed",
     "boardHere": "I board here",
     "alightHere": "I get off here",

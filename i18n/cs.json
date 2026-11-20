@@ -988,6 +988,8 @@
     "foldAfter": "▸ další stanice ({n})",
     "foldHide": "▴ sbalit",
     "foldHere": "vlak teď: {s}",
+    "foldHereT": "vlak teď: {s} ({t})",
+    "foldDone": "vlak dojel do cíle: {s} ({t})",
     "bPassedNoConf": "minuta",
     "boardHere": "Tady nastupuji",
     "alightHere": "Tady vystupuji",

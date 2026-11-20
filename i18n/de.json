@@ -988,6 +988,8 @@
     "foldAfter": "▸ weitere Bahnhöfe ({n})",
     "foldHide": "▴ einklappen",
     "foldHere": "Zug jetzt: {s}",
+    "foldHereT": "Zug jetzt: {s} ({t})",
+    "foldDone": "Zug hat die Fahrt beendet: {s} ({t})",
     "bPassedNoConf": "vorbei",
     "boardHere": "Hier steige ich ein",
     "alightHere": "Hier steige ich aus",
