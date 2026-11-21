@@ -97,7 +97,10 @@ function renderWalkMeasure() {
   }
   if (open && results.length) {
     body += '<div style="margin-top:10px;font-size:12.5px;line-height:1.5">' + results.slice().reverse().map((r, i) => '<div style="border-top:1px solid #2a3a4c;padding:4px 0">✅ ' + wmEsc(wmShort(wmKind(r.kind))) + (r.name ? ': <b>' + wmEsc(r.name) + '</b>' : '') + ' — <b>' + wmFmt(r.ms) + '</b>' + (r.platform ? ' · peron ' + wmEsc(r.platform) : '') + ' <span style="color:#b8c3cf">· ' + wmEsc(wmWhen(r.at)) + (r.from && r.to ? '' : ' · bez GPS') + '</span> <button type="button" class="wm-del" data-i="' + (results.length - 1 - i) + '" style="border:0;background:none;color:#ff4d4d;cursor:pointer">✕</button></div>').join('') + '</div>' +
-      '<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap"><a href="' + wmEsc(wmSendUrl(results[results.length - 1])) + '" style="' + WM_BTN + 'background:#0b57d0;text-decoration:none">📤 ' + wmEsc(wmT('send', 'Wyślij ostatni wynik')) + '</a>' + (wmAuthor() ? '<button type="button" id="wmCopy" style="' + WM_BTN + 'background:#4b5563">📋 Kopiuj wyniki</button>' : '') + '</div>';
+      '<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">' + (wmAuthor() && wmProf()
+        // 21.11: na profilu autora wynik idzie prosto jako „notatka dla Claude” (wcześniej formularz → e-mail)
+        ? '<button type="button" id="wmNote" style="' + WM_BTN + 'background:#0b57d0">📤 ' + wmEsc(wmT('sendNote', 'Wyślij ostatni wynik do Claude')) + '</button>'
+        : '<a href="' + wmEsc(wmSendUrl(results[results.length - 1])) + '" style="' + WM_BTN + 'background:#0b57d0;text-decoration:none">📤 ' + wmEsc(wmT('send', 'Wyślij ostatni wynik')) + '</a>') + (wmAuthor() ? '<button type="button" id="wmCopy" style="' + WM_BTN + 'background:#4b5563">📋 Kopiuj wyniki</button>' : '') + '</div>';
   }
   box.innerHTML = '<div style="background:rgba(255,212,0,.07);border:1px solid ' + (st.running ? '#ffd400' : '#6b5d1a') + ';border-radius:12px;padding:10px 12px;margin:0 0 12px">' + head + body + '</div>';
   if (st.running) wmTimer = setInterval(() => { const ms = Date.now() - (wmState().running || { start: Date.now() }).start; ['wmClock', 'wmClockMini'].forEach(id => { const c = document.getElementById(id); if (c) c.textContent = wmFmt(ms); }); }, 1000);
@@ -127,6 +130,17 @@ document.addEventListener('click', async e => {
   }
   else if (b.id === 'wmCancel') { st.running = null; wmSave(st); }
   else if (b.classList.contains('wm-del')) { if (!confirm('Usunąć ten pomiar?')) return; const gone = (st.results || []).splice(+b.dataset.i, 1)[0]; wmSave(st); if (gone) wmProfileOp(list => list.filter(x => x.at !== gone.at)); }
+  else if (b.id === 'wmNote') {
+    const last = (st.results || [])[(st.results || []).length - 1]; if (!last) return;
+    const extra = prompt('Dopisz (np. numer peronu i stanowiska) — albo zostaw puste:', '') || '';
+    b.disabled = true; b.textContent = '⏳ Wysyłam…';
+    try {
+      const r = await fetch('/api/author-note', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: ProfileSync.getToken(), text: '⏱️ Pomiar dojścia: ' + wmLine(last) + (extra.trim() ? ' · ' + extra.trim() : ''), images: [] }) });
+      const j = await r.json(); if (!j.ok) throw new Error(j.error || r.status);
+      b.textContent = '✅ Wysłane do Claude';
+    } catch (err) { b.disabled = false; b.textContent = '⚠️ Nie wysłano — spróbuj ponownie'; }
+    setTimeout(renderWalkMeasure, 2500); return;
+  }
   else if (b.id === 'wmCopy') {
     const txt = 'Pomiary dojścia pieszo:\n' + (st.results || []).map(wmLine).join('\n');
     try { await navigator.clipboard.writeText(txt); b.textContent = '✅ Skopiowano'; setTimeout(renderWalkMeasure, 1500); return; } catch (err) { prompt('Skopiuj wyniki:', txt); }
