@@ -1361,6 +1361,7 @@
     "pGpsBad": "Telefon určil polohu jen s přesností ±{n} m — časy chůze mohou být chybné. Zadej zastávku nebo vyber 🏠 Domov / 🏢 Práci.",
     "wmapTitle2": "Cesta na mapě",
     "v2cHide": "sbalit do seznamu",
+    "v2Plat": "nástupiště · {s}",
     "v2cX1": "1 přestup",
     "v2cXn": "{n} přestupy",
     "wmapStops": "Cesta spočítaná z mapy OpenStreetMap (přes silnici jen po přechodech) — ve skutečnosti se může lišit.",

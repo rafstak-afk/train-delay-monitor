@@ -1815,6 +1815,9 @@
       var mb = l.from != null && l.to != null && typeof l.from === "number" && typeof l.to === "number" && l.from !== l.to ? mapBtn("data-swmap", l.from + "|" + l.to) : "";
       return '<div class="leg v2-walk"><div class="leg-t">🚶 ' + l.min + ' min</div><div class="leg-st">' + esc(T("gzm.v2Walk", null, "pieszo")) + (path ? " · " + path : "") + marks + mb + "</div></div>";
     }
+    function platWalk(min, from, to, mapVal) {
+      return '<div class="leg v2-walk"><div class="leg-t">🚶 ' + min + ' min</div><div class="leg-st">' + esc(T("gzm.v2Walk", null, "pieszo")) + " · " + esc(from) + " → " + esc(to) + mapBtn("data-pwmap", mapVal) + "</div></div>";
+    }
     function v2Ride(l) {
       var dep = l.live && l.delay ? '<span class="plan-strike">' + C.fmt(l.depPlan) + "</span> " + C.fmt(l.dep) : C.fmt(l.dep);
       return '<div class="leg"><div class="leg-t">' + dep + "<small>" + C.fmt(l.arr) + "</small></div><div>" +
@@ -1931,8 +1934,10 @@
       if (c.walkA) html.push(v2Walk({ min: c.walkA.min, fromName: c.walkA.name, toName: x.p.cb.a.st.n }));
       if (L) {
         html.push(v2Journey(L.jn));
-        var lastR = L.jn.legs.filter(function (q) { return q.type === "ride"; }).pop();
-        html.push(v2Xfer(L.status, esc(T("gzm.v2XferPlat", { s: x.p.cb.a.st.n, t: C.fmt(L.plat), n: L.slack }, "Na peronie ({s}) {t} · zapas {n} min do pociągu")) + (lastR ? mapBtn("data-pwmap", x.p.cb.a.st.id + "|" + x.p.cb.a.st.n + "|" + lastR.to + "|1") : "")));
+        // notatka 21.11: przejście przystanek → peron jako osobny krok (wcześniej niewidoczne), z mapką drogi
+        var lastL = L.jn.legs[L.jn.legs.length - 1], poleA = lastL && lastL.to, pwA = poleA != null ? (polesOf(x.p.cb.a.st).find(function (q) { return q.s === poleA; }) || {}).walk : null;
+        if (pwA != null) html.push(platWalk(pwA, S.net.name[poleA], T("gzm.v2Plat", { s: x.p.cb.a.st.n }, "peron · {s}"), x.p.cb.a.st.id + "|" + x.p.cb.a.st.n + "|" + poleA + "|1"));
+        html.push(v2Xfer(L.status, esc(T("gzm.v2XferPlat", { s: x.p.cb.a.st.n, t: C.fmt(L.plat), n: L.slack }, "Na peronie ({s}) {t} · zapas {n} min do pociągu"))));
       }
       L0.forEach(function (l, j) {
         if (j > 0) { var p = L0[j - 1], ch = C.hm(l.board.time) - C.hm(p.alight.time); if (ch < 0) ch += 1440; html.push(v2Xfer(ch >= 3 ? "ok" : "tight", esc(T("gzm.tChange", { s: l.board.stationName, n: ch }, "przesiadka: {s}, {n} min")))); }
@@ -1942,8 +1947,12 @@
       else if (e0) {
         var r0 = e0.legs.find(function (l) { return l.type === "ride"; }), wk = 0;
         e0.legs.some(function (l) { if (l.type === "walk") { wk += l.min; return false; } return true; });
-        var sl = r0 ? r0.dep - x.arr - wk : 0;
-        html.push(v2Xfer(sl >= 3 ? "ok" : sl >= 0 ? "tight" : "missed", esc(T("gzm.v2XferEgr", { s: r0 ? r0.fromName : "", n: sl }, "Po pociągu: {s}, zapas {n} min")) + (r0 ? mapBtn("data-pwmap", x.p.cb.e.st.id + "|" + x.p.cb.e.st.n + "|" + r0.from + "|0") : "")));
+        // notatka 21.11: przejście peron → pierwszy przystanek jako osobny krok, z mapką; zapas liczony także z tym przejściem
+        var poleE = e0.legs[0] && e0.legs[0].type === "walk" ? e0.legs[0].from : r0 ? r0.from : null;
+        var pwE = poleE != null ? (polesOf(x.p.cb.e.st).find(function (q) { return q.s === poleE; }) || {}).walk : null;
+        if (pwE != null) html.push(platWalk(pwE, T("gzm.v2Plat", { s: x.p.cb.e.st.n }, "peron · {s}"), S.net.name[poleE], x.p.cb.e.st.id + "|" + x.p.cb.e.st.n + "|" + poleE + "|0"));
+        var sl = r0 ? r0.dep - x.arr - wk - (pwE || 0) : 0;
+        html.push(v2Xfer(sl >= 3 ? "ok" : sl >= 0 ? "tight" : "missed", esc(T("gzm.v2XferEgr", { s: r0 ? r0.fromName : "", n: sl }, "Po pociągu: {s}, zapas {n} min"))));
         html.push(v2Journey(e0));
       }
       // inne możliwości — schowane

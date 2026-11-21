@@ -1361,6 +1361,7 @@
     "pGpsBad": "Das Telefon hat den Standort nur auf ±{n} m genau bestimmt — Fußwegzeiten können falsch sein. Gib eine Haltestelle ein oder wähle 🏠 Zuhause / 🏢 Arbeit.",
     "wmapTitle2": "Weg auf der Karte",
     "v2cHide": "zur Liste einklappen",
+    "v2Plat": "Bahnsteig · {s}",
     "v2cX1": "1 Umstieg",
     "v2cXn": "{n} Umstiege",
     "wmapStops": "Weg aus OpenStreetMap berechnet (über die Straße nur an Übergängen) — vor Ort kann es abweichen.",
