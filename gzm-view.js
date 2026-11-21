@@ -1640,7 +1640,7 @@
         setTimeout(function () { clearInterval(stopBusy); searchBusy(false); }, 20000);
       }
       var fromPlace = null, toPlace = null;
-      Promise.all([resolvePlace(fromTxt), resolvePlace(toTxt)]).then(function (pp) { fromPlace = pp[0]; toPlace = pp[1]; return Promise.all([getNet(date), getRt()]); }, function (e) {
+      Promise.all([resolvePlace(fromTxt), resolvePlace(toTxt)]).then(function (pp) { fromPlace = pp[0]; toPlace = pp[1]; return Promise.all([getNet(date), getRt(), authorOn() ? getEgress().catch(function () { return null; }) : null]); }, function (e) {
         var m = String(e && e.message || "");
         if (m.indexOf("addr:") === 0) { res.innerHTML = '<div class="gz-warn">' + esc(T("gzm.uNoAddr", { a: m.slice(5) }, "Nie znalazłem adresu „{a}” (szukam na Śląsku). Dopisz miasto, np. „Opolska 5, Tarnowskie Góry”.")) + "</div>"; throw "handled"; }
         res.innerHTML = m.indexOf("unset:") === 0 ? '<div class="gz-warn">' + esc(T("gzm.pUnset", { p: PL_TOK[m.slice(6)] }, "Najpierw ustaw miejsce {p} — poniżej, w „Moje miejsca”.")) + "</div>" : gpsErrHtml(m);
@@ -1675,10 +1675,23 @@
           var d0 = toPlace ? -1 : net.byName[tN[0]][0], la = toPlace ? toPlace.lat : net.lat[d0], lo = toPlace ? toPlace.lon : net.lon[d0];
           egrSt = (index.stations || []).filter(function (x) { return (x.s && x.s.length) || (toPlace && toPlace.walkSt[x.id] != null); }).map(function (x) { return { st: x, d: Math.pow(x.lat - la, 2) + Math.pow((x.lon - lo) * 0.64, 2) }; })
             .filter(function (x) { return !fromSt || x.st.id !== fromSt.id; }).sort(function (a, b) { return a.d - b.d; }).slice(0, 2).map(function (x) { return x.st; });
+          // notatka 21.11 (profil autora): także stacje, z których komunikacją najkrócej do celu (egress.json) — np. Bytom
+          // (623 spod Dworca, 3 min z peronu) zamiast tylko najbliższych w linii prostej (Bytom Karb, 12 min pieszo z przesiadką)
+          if (authorOn() && egressIx) {
+            var names = toPlace ? toPlace.stops.slice(0, 12).map(function (q) { return net.name[q.s]; }) : tN, best2 = {};
+            names.forEach(function (nm) { (egressIx[nm] || []).forEach(function (e) { var w = toPlace ? ((toPlace.stops.find(function (q) { return net.name[q.s] === nm; }) || {}).walk || 0) : 0; if (best2[e[0]] == null || e[1] + w < best2[e[0]]) best2[e[0]] = e[1] + w; }); });
+            Object.keys(best2).sort(function (a, b) { return best2[a] - best2[b]; }).forEach(function (id) {
+              if (egrSt.length >= 3) return;
+              var x = (index.stations || []).find(function (y) { return String(y.id) === String(id); });
+              if (x && x.s && x.s.length && !egrSt.some(function (y) { return y.id === x.id; }) && (!fromSt || x.id !== fromSt.id)) egrSt.push(x);
+            });
+          }
         }
         var combos = [];
         accSt.forEach(function (a) { egrSt.forEach(function (e) { if (a.id !== e.id) combos.push({ a: { st: a }, e: { st: e } }); }); });
-        combos = combos.slice(0, v2On() ? 4 : 3);
+        // każda stacja wysiadki choć raz (z najlepszą stacją wsiadania), potem reszta — przy limicie zapytań do PLK
+        if (authorOn() && egrSt.length > 2) { var first = egrSt.map(function (e) { return combos.find(function (c) { return c.e.st.id === e.id; }); }).filter(Boolean); combos = first.concat(combos.filter(function (c) { return first.indexOf(c) < 0; })); }
+        combos = combos.slice(0, v2On() ? (authorOn() && egrSt.length > 2 ? 5 : 4) : 3);
         if (!modes().train) combos = [];   // pociąg odznaczony — bez zapytań do PLK
         var date2 = date;
         return Promise.all(combos.map(function (cb) {
@@ -2008,6 +2021,14 @@
       if (!c.walkE && c.egr && c.egr[0]) ridePts(c.egr[0], p);
       return p;
     }
+    // łączne chodzenie w propozycji (do rozstrzygania remisów — np. wysiadka w Bytomiu zamiast Bytomiu Karbie)
+    function walkSum(x) {
+      var jw = function (jn) { return jn ? jn.legs.reduce(function (a, l) { return a + (l.type === "walk" ? l.min : 0); }, 0) : 0; };
+      if (x.net) return jw(x.net);
+      var c = x.c || {}, w = (c.walkA ? c.walkA.min : 0) + (c.latest ? jw(c.latest.jn) : 0);
+      var e0 = c.egr && c.egr[0]; if (c.walkE) w += c.walkE.min; else if (e0) { w += jw(e0); var p0 = e0.legs[0] && e0.legs[0].type === "walk" ? e0.legs[0].from : (e0.legs.find(function (l) { return l.type === "ride"; }) || {}).from; var pw = (polesOf(x.p.cb.e.st).find(function (q) { return q.s === p0; }) || {}).walk; w += pw || 0; }
+      return w;
+    }
     function rideCount(x) {
       if (x.net) return x.net.legs.filter(function (l) { return l.type === "ride"; }).length;
       var n = (x.it.legs || []).length, c = x.c;
@@ -2217,7 +2238,7 @@
       }
       if (!out.length) { res.innerHTML = '<div class="gz-empty">' + esc(T("gzm.cNone", null, "Nie udało się ułożyć podróży w ciągu 2 godzin od wyjścia.")) + "</div>" + noResModes(); return; }
       // TODO 76 (lista, profil autora): kolejność jak w oficjalnych wyszukiwarkach — wg godziny wyjścia, przy remisie wcześniej na miejscu
-      if (v2On() && authorOn()) out.sort(function (a, b) { return a.start - b.start || a.final - b.final; });
+      if (v2On() && authorOn()) out.sort(function (a, b) { return a.start - b.start || a.final - b.final || walkSum(a) - walkSum(b); });
       var guardOk = !!(window.GuardStore && window.GuardCore && GuardStore.enabled && GuardStore.enabled());
       res.innerHTML = gpsWarn(S) + walkTop + (S.date !== warsawNow().date ? '<div class="gz-live off" style="margin:4px 2px">📅 ' + esc(T("gzm.uSched", { d: S.date }, "{d} — godziny wg rozkładu")) + "</div>" : '<div class="gz-live ' + (rtOk ? "on" : "off") + '" style="margin:4px 2px">' + (rtOk ? "● " + esc(T("gzm.liveOn", null, "na żywo")) : "○ " + esc(T("gzm.liveOff", null, "dane na żywo niedostępne, pokazuję rozkład"))) + "</div>") +
         out.map(function (x, i) {
