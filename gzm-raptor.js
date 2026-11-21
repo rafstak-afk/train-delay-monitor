@@ -47,6 +47,9 @@
       }
     }
     // TODO 71: czasy przejść między przystankami po drogach z OSM (przez jezdnię tylko na przejściach) zamiast linii prostej
+    net.fk = {};   // 21.11: rodzaj czasu przejścia między przystankami — do oznaczeń w kartach
+    if (j.fw) for (var w0 = 0; w0 + 2 < j.fw.length; w0 += 3) { net.fk[j.fw[w0] + "|" + j.fw[w0 + 1]] = "o"; net.fk[j.fw[w0 + 1] + "|" + j.fw[w0]] = "o"; }
+    if (j.fwr) for (var w1 = 0; w1 + 1 < j.fwr.length; w1 += 2) { net.fk[j.fwr[w1] + "|" + j.fwr[w1 + 1]] = "r"; net.fk[j.fwr[w1 + 1] + "|" + j.fwr[w1]] = "r"; }
     if (j.fw) for (var w = 0; w + 2 < j.fw.length; w += 3) {
       var fa = j.fw[w], fb = j.fw[w + 1], fm = j.fw[w + 2], fa2 = net.foot[fa], fb2 = net.foot[fb];
       if (!fa2 || !fb2) continue;

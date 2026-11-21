@@ -57,6 +57,8 @@
   // ⏰ Przypomnienia dla autora (tylko profil autora: showVersionBadge) — pasek na górze strony od podanego dnia,
   // „✅ Zrobione” chowa na stałe, „⏰ <data> Przypomnij wtedy” do wybranego dnia (domyślnie jutro). Zapis tylko w tym telefonie (localStorage).
   var AUTHOR_REMINDERS = [
+    { id: "domena", from: "2026-11-22", html: "🌐 <b>Domena (TODO 79):</b> wykup domenę .pl (pamiętaj: odnowienie co rok drożej niż pierwszy rok). Potem napisz Claude — podłączy ją do Cloudflare Pages i przeniesie użytkowników." },
+    { id: "google-widocznosc", from: "2026-11-22", html: "🔎 <b>Google:</b> wpisz w Google <b>site:train-delay-monitor1.pages.dev</b> i sprawdź, które strony „Czy zdążę?” są już w wynikach (planer, Moje pociągi, kontakt…). Wynik napisz Claude." },
     { id: "pomiar-bytom", from: "2026-11-21", html: "⏱️ <b>Pomiar w Bytomiu:</b> zmierz stoperem dojście z peronu (zapisz numer peronu) na <b>Bytom Zamłynie</b> i na <b>Bytom Dworzec</b> (zapisz numer stanowiska). Mapa nie zna przejścia pod torami, więc aplikacja liczy teraz tylko 2–4 min. Stoper: Planer → 🚆🚌 Pociąg + GZM → Pomiar dojścia." },
     { id: "pomiar-wieczorka-szkola", from: "2026-11-18", html: "⏱️ <b>Pomiar (TODO 71):</b> na przystanku <b>Osiedle Wieczorka Szkoła</b> zmierz stoperem przejście <b>stanowisko 01 → 02</b> (przez światła przy skrzyżowaniu z Ziętka / Armii Krajowej). Stoper: Planer → 🚆🚌 Pociąg + GZM → Pomiar dojścia → ✏️ inne." }
   ];

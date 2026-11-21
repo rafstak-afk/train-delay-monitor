@@ -207,7 +207,8 @@ function assign(stations, stopsByCode, cache, overrides) {
       // walkPlat: pomiar w terenie z wybranych peronów — podmiana tylko tych peronów w byPlat, zakres min–max od nowa
       const wp = ov.walkPlat && ov.walkPlat[code];
       if (!w && wp && e.byPlat) { const bp = Object.assign({}, e.byPlat, wp), v = Object.values(bp); return { code, id: s.id, name: s.name, lat: s.lat, lon: s.lon, url: s.url, types: s.types, byPlat: bp, min: Math.min(...v), max: Math.max(...v), ns: e.ns, src: "measured", pts: e.pts }; }
-      return { code, id: s.id, name: s.name, lat: s.lat, lon: s.lon, url: s.url, types: s.types, byPlat: w ? undefined : e.byPlat, min: w ? w[0] : e.min, max: w ? w[1] : e.max, ns: w ? undefined : e.ns, nsPart: w ? undefined : e.nsPart, cx: w ? undefined : e.cx, sig: w ? undefined : e.sig, rx: w ? undefined : e.rx, stairs: (e.obst || []).includes("schody") || undefined, src: w ? "override" : e.src, pts: e.pts };
+      const chk = !w && (e.src === "fallback" || e.src === "osm-stacja" || !!e.apx || (e.src === "osm" && !(e.obst || []).length && (!e.pts || e.pts.length <= 2)));   // 21.11: do sprawdzenia w terenie
+      return { chk, code, id: s.id, name: s.name, lat: s.lat, lon: s.lon, url: s.url, types: s.types, byPlat: w ? undefined : e.byPlat, min: w ? w[0] : e.min, max: w ? w[1] : e.max, ns: w ? undefined : e.ns, nsPart: w ? undefined : e.nsPart, cx: w ? undefined : e.cx, sig: w ? undefined : e.sig, rx: w ? undefined : e.rx, stairs: (e.obst || []).includes("schody") || undefined, src: w ? "override" : e.src, pts: e.pts };
     }).filter(Boolean).sort((a, b) => a.min - b.min || a.max - b.max || a.name.localeCompare(b.name, "pl"));
   }
 }
@@ -469,7 +470,7 @@ async function main() {
       for (const d of dates) aDays[d].sort((a, b) => a[0] - b[0]);
       fs.writeFileSync(path.join(TMP, "stations", st.id + "-arr.json"), JSON.stringify({ v: 1, id: st.id, name: st.name, generated: gen, range: index.range, stops: st.stops.map(s => ({ c: s.code, n: s.name, w: [s.min, s.max] })), lines: aLines, us: usNames, up: ups, days: aDays }));
     }
-    index.stations.push({ id: st.id, n: st.name, lat: +st.lat.toFixed(6), lon: +st.lon.toFixed(6), s: st.stops.map(s => [s.code, s.n || s.name, s.min, s.max, s.ns === undefined ? -2 : s.ns === null ? -1 : s.ns[1], s.nsPart ? 1 : 0]) });
+    index.stations.push({ id: st.id, n: st.name, lat: +st.lat.toFixed(6), lon: +st.lon.toFixed(6), s: st.stops.map(s => [s.code, s.n || s.name, s.min, s.max, s.ns === undefined ? -2 : s.ns === null ? -1 : s.ns[1], s.nsPart ? 1 : 0, s.chk ? 1 : 0]) });
   }
   writeJson(path.join(TMP, "index.json"), index);
   // przystanek → stacje, do których z niego dojedziesz bez przesiadki (z najkrótszym czasem jazdy)
@@ -502,9 +503,9 @@ async function main() {
       if (!zipsFor(d)) continue;
       const net = await buildNetwork(d, zipsFor);
       // fw: [indeks A, indeks B, minuty, ...] — czasy przejść z OSM (bez par, dla których mapa nie zna drogi)
-      { const ix = new Map(net.stops.map((s, i) => [s[3], i])), fw = [];
-        for (const [k, v] of Object.entries(swCache.entries)) { if (!v || v[2] < 0) continue; const [a, b] = k.split("|"), ia = ix.get(a), ib = ix.get(b); if (ia != null && ib != null) fw.push(ia, ib, v[0]); }
-        net.fw = fw; }
+      { const ix = new Map(net.stops.map((s, i) => [s[3], i])), fw = [], fwr = [];
+        for (const [k, v] of Object.entries(swCache.entries)) { if (!v || v[2] < 0) continue; const [a, b] = k.split("|"), ia = ix.get(a), ib = ix.get(b); if (ia != null && ib != null) { fw.push(ia, ib, v[0]); if (v[6] === "r") fwr.push(ia, ib); } }
+        net.fw = fw; net.fwr = fwr; }
       // TODO 20: przebiegi przejść między przystankami do mapki — pliki wg gminy pierwszego przystanku klucza (ODbL)
       if (!farDoneSw) { farDoneSw = true; const by = {}; for (const [k, v] of Object.entries(swCache.entries)) { if (!v || v[2] < 0 || !Array.isArray(v[5])) continue; const g = k.slice(0, 7); (by[g] = by[g] || {})[k] = v[5]; }
         fs.mkdirSync(path.join(TMP, "stopwalk"), { recursive: true });

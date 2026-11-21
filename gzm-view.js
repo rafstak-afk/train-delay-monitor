@@ -1708,7 +1708,7 @@
     }
     // słupki stacji: indeks w sieci + dojście peron ↔ słupek (górna granica)
     function poleWalk(p) { return window.GzmWalkAdj(p[3], p[4] == null || p[4] === -2 ? undefined : p[4], p[5]); }
-    function polesOf(stn) { var out = []; (stn.s || []).forEach(function (p) { var i = cState.code[p[0]]; if (i == null) return; var a = poleWalk(p); out.push({ s: i, walk: a.min, warn: a.warn }); });
+    function polesOf(stn) { var out = []; (stn.s || []).forEach(function (p) { var i = cState.code[p[0]]; if (i == null) return; var a = poleWalk(p); out.push({ s: i, walk: a.min, warn: a.warn, chk: p[6] === 1 }); });
       if (walkPrefs().noStairs && out.some(function (x) { return x.warn !== "stairs"; })) out = out.filter(function (x) { return x.warn !== "stairs"; });
       return out; }
     function polesOfOld(stn) { var out = []; (stn.s || []).forEach(function (p) { var i = cState.code[p[0]]; if (i != null) out.push({ s: i, walk: p[3] }); }); return out; }
@@ -1825,11 +1825,19 @@
     function v2Walk(l) {
       var marks = (l.far ? " " + farBadge() + esc(T("gzm.farDist", { d: kmTxt(l.dist || 0) }, "{d} — dalej niż zwykle")) : "") + (l.fixed ? " · " + esc(T("gzm.jFixed", null, "Twój czas")) : l.measured ? " · " + esc(T("gzm.jMeasured", null, "zmierzone")) : "");
       var path = l.fromName && l.toName ? esc(l.fromName) + " → " + esc(l.toName) : l.toName ? "→ " + esc(l.toName) : "";
-      var mb = l.from != null && l.to != null && typeof l.from === "number" && typeof l.to === "number" && l.from !== l.to ? mapBtn("data-swmap", l.from + "|" + l.to) : "";
+      // mapka i oznaczenie: dla ostatniego odcinka między przystankami (po scaleniu — z części)
+      var segs = (l.parts || [l]).filter(function (q) { return typeof q.from === "number" && typeof q.to === "number" && q.from !== q.to; }), sg = segs[segs.length - 1];
+      var mb = sg ? mapBtn("data-swmap", sg.from + "|" + sg.to) : "";
+      var fk = cState && cState.net && cState.net.fk, kinds = segs.map(function (q) { return fk ? fk[q.from + "|" + q.to] : "o"; });
+      if (authorOn() && segs.length && !l.measured && !l.fixed) {
+        if (kinds.some(function (k) { return !k; })) marks += ' · <span title="' + esc(T("gzm.wEstT", null, "Mapa nie zna tu drogi — czas z odległości w linii prostej")) + '">≈ ' + esc(T("gzm.wEst", null, "szacunek")) + "</span>";
+        else if (kinds.some(function (k) { return k === "r"; })) marks += ' · <span title="' + esc(T("gzm.wApxT", null, "Droga wzdłuż jezdni — mapa nie ma tu chodników ani przejść")) + '">≈ ' + esc(T("gzm.wApx", null, "przybliżone")) + "</span>";
+      }
       return '<div class="leg v2-walk"><div class="leg-t">🚶 ' + l.min + ' min</div><div class="leg-st">' + esc(T("gzm.v2Walk", null, "pieszo")) + (path ? " · " + path : "") + marks + mb + "</div></div>";
     }
-    function platWalk(min, from, to, mapVal) {
-      return '<div class="leg v2-walk"><div class="leg-t">🚶 ' + min + ' min</div><div class="leg-st">' + esc(T("gzm.v2Walk", null, "pieszo")) + " · " + esc(from) + " → " + esc(to) + mapBtn("data-pwmap", mapVal) + "</div></div>";
+    function platWalk(min, from, to, mapVal, chk, extraBtn, via) {
+      var mk = chk && authorOn() ? ' · <span title="' + esc(T("gzm.wChkT", null, "Na mapie brak schodów i przejścia podziemnego — czas może być zaniżony; pomiar stoperem pomoże")) + '">⚠️ ' + esc(T("gzm.wChk", null, "sprawdź")) + "</span>" : "";
+      return '<div class="leg v2-walk"><div class="leg-t">🚶 ' + min + ' min</div><div class="leg-st">' + esc(T("gzm.v2Walk", null, "pieszo")) + " · " + esc(from) + " → " + esc(to) + (via ? ' <span style="color:var(--muted)">(' + esc(T("gzm.v2Via", { s: via }, "przez {s}")) + ")</span>" : "") + mk + mapBtn("data-pwmap", mapVal) + (extraBtn || "") + "</div></div>";
     }
     function v2Ride(l) {
       var dep = l.live && l.delay ? '<span class="plan-strike">' + C.fmt(l.depPlan) + "</span> " + C.fmt(l.dep) : C.fmt(l.dep);
@@ -1845,9 +1853,19 @@
     }
     function v2Xfer(st, txt) { return '<div class="xfer ' + (V2ST[st] || "s-ok") + '">' + (st === "tight" ? "🟡 " : st === "missed" ? "🔴 " : "🟢 ") + txt + "</div>"; }
     // odcinki podróży GZM (z przesiadkami między kursami)
+    // TODO 66 (21.11): kolejne odcinki pieszo — jeden krok („pieszo 9 min · A → C”), mapka dla ostatniego odcinka między przystankami
+    function mergeWalks(legs) {
+      var out = [];
+      legs.forEach(function (l) {
+        var p = out[out.length - 1];
+        if (l.type === "walk" && p && p.type === "walk") { out[out.length - 1] = Object.assign({}, p, { min: p.min + l.min, toName: l.toName, to: l.to, parts: (p.parts || [p]).concat([l]), measured: p.measured && l.measured, fixed: p.fixed && l.fixed }); }
+        else out.push(l);
+      });
+      return out;
+    }
     function v2Journey(jn) {
       var out = [], prevRide = null, walkBetween = 0;
-      jn.legs.forEach(function (l) {
+      mergeWalks(jn.legs).forEach(function (l) {
         if (l.type === "walk") { if (prevRide) walkBetween += l.min; out.push(v2Walk(l)); return; }
         if (prevRide) {
           var slack = l.dep - prevRide.arr - walkBetween, st = slack >= 3 ? "ok" : slack >= 0 ? "tight" : "missed";
@@ -1948,8 +1966,8 @@
       if (L) {
         html.push(v2Journey(L.jn));
         // notatka 21.11: przejście przystanek → peron jako osobny krok (wcześniej niewidoczne), z mapką drogi
-        var lastL = L.jn.legs[L.jn.legs.length - 1], poleA = lastL && lastL.to, pwA = poleA != null ? (polesOf(x.p.cb.a.st).find(function (q) { return q.s === poleA; }) || {}).walk : null;
-        if (pwA != null) html.push(platWalk(pwA, S.net.name[poleA], T("gzm.v2Plat", { s: x.p.cb.a.st.n }, "peron · {s}"), x.p.cb.a.st.id + "|" + x.p.cb.a.st.n + "|" + poleA + "|1"));
+        var lastL = L.jn.legs[L.jn.legs.length - 1], poleA = lastL && lastL.to, pA = poleA != null ? (polesOf(x.p.cb.a.st).find(function (q) { return q.s === poleA; }) || {}) : {}, pwA = pA.walk;
+        if (pwA != null) html.push(platWalk(pwA, S.net.name[poleA], T("gzm.v2Plat", { s: x.p.cb.a.st.n }, "peron · {s}"), x.p.cb.a.st.id + "|" + x.p.cb.a.st.n + "|" + poleA + "|1", pA.chk));
         html.push(v2Xfer(L.status, esc(T("gzm.v2XferPlat", { s: x.p.cb.a.st.n, t: C.fmt(L.plat), n: L.slack }, "Na peronie ({s}) {t} · zapas {n} min do pociągu"))));
       }
       L0.forEach(function (l, j) {
@@ -1962,11 +1980,18 @@
         e0.legs.some(function (l) { if (l.type === "walk") { wk += l.min; return false; } return true; });
         // notatka 21.11: przejście peron → pierwszy przystanek jako osobny krok, z mapką; zapas liczony także z tym przejściem
         var poleE = e0.legs[0] && e0.legs[0].type === "walk" ? e0.legs[0].from : r0 ? r0.from : null;
-        var pwE = poleE != null ? (polesOf(x.p.cb.e.st).find(function (q) { return q.s === poleE; }) || {}).walk : null;
-        if (pwE != null) html.push(platWalk(pwE, T("gzm.v2Plat", { s: x.p.cb.e.st.n }, "peron · {s}"), S.net.name[poleE], x.p.cb.e.st.id + "|" + x.p.cb.e.st.n + "|" + poleE + "|0"));
+        var pE = poleE != null ? (polesOf(x.p.cb.e.st).find(function (q) { return q.s === poleE; }) || {}) : {}, pwE = pE.walk;
+        // TODO 66: peron → przystanek przy stacji → dalsze przejście pieszo = jeden krok (np. „15 min · peron Bytom Karb → Bytom Łużycka”)
+        var lead = []; for (var li = 0; li < e0.legs.length && e0.legs[li].type === "walk"; li++) lead.push(e0.legs[li]);
+        var e0v = lead.length ? Object.assign({}, e0, { legs: e0.legs.slice(lead.length) }) : e0;
+        if (pwE != null) {
+          var lastW = lead[lead.length - 1], toNm = lastW ? lastW.toName : S.net.name[poleE];
+          var extra = lastW && typeof lastW.from === "number" && typeof lastW.to === "number" ? mapBtn("data-swmap", lastW.from + "|" + lastW.to) : "";
+          html.push(platWalk(pwE + wk, T("gzm.v2Plat", { s: x.p.cb.e.st.n }, "peron · {s}"), toNm, x.p.cb.e.st.id + "|" + x.p.cb.e.st.n + "|" + poleE + "|0", pE.chk, extra, lead.length ? S.net.name[poleE] : null));
+        }
         var sl = r0 ? r0.dep - x.arr - wk - (pwE || 0) : 0;
         html.push(v2Xfer(sl >= 3 ? "ok" : sl >= 0 ? "tight" : "missed", esc(T("gzm.v2XferEgr", { s: r0 ? r0.fromName : "", n: sl }, "Po pociągu: {s}, zapas {n} min"))));
-        html.push(v2Journey(e0));
+        html.push(v2Journey(pwE != null ? e0v : e0));
       }
       // inne możliwości — schowane
       var more = "";

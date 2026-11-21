@@ -103,7 +103,8 @@ function nearIds(g, p, maxM) {
 export async function computeStopWalks(stops, cache, opts = {}) {
   const log = opts.log || (() => {}), maxTiles = opts.maxTiles == null ? Infinity : opts.maxTiles, until = opts.maxMinutes ? Date.now() + opts.maxMinutes * 60000 : Infinity;
   const pairs = pairsOf(stops), today = new Date().toISOString().slice(0, 10);
-  const missing = opts.all ? pairs : pairs.filter(([a, b]) => !cache.entries[keyOf(stops[a].code, stops[b].code)]);
+  const missing = opts.onlyKeys ? pairs.filter(([a, b]) => opts.onlyKeys.has(keyOf(stops[a].code, stops[b].code)))
+    : opts.all ? pairs : pairs.filter(([a, b]) => !cache.entries[keyOf(stops[a].code, stops[b].code)]);
   log(`przejścia między przystankami: par ${pairs.length}, do policzenia ${missing.length}`);
   const tiles = new Map();
   for (const pr of missing) { const s = stops[pr[0]], k = opts.graph ? "region" : Math.floor(s.lat / TILE_LAT) + "," + Math.floor(s.lon / TILE_LON); (tiles.get(k) || tiles.set(k, []).get(k)).push(pr); }
@@ -134,13 +135,16 @@ export async function computeStopWalks(stops, cache, opts = {}) {
         let r = null;
         if (best) for (const [id, dd] of ends) { if (dd > e0 + 3) break; const x = best.get(id); if (x && (!r || x.s + dd / W.WALK_SPEED < r.s)) r = { id, s: x.s + dd / W.WALK_SPEED, m: x.m + dd }; }
         // objazd dłuższy o ponad 400 m niż linia prosta = najpewniej luka w mapie (jezdnia bez oznaczonych chodników) — wtedy jak dotąd
-        if (!r || r.m + starts[0][1] - d > 400) { cache.entries[key] = [est, Math.round(d * 1.4), -1, 0, today]; continue; }
+        if (!r || r.m + starts[0][1] - d > 400) {
+          // tryb relaxed: zostaje linia prosta, ale z oznaczeniem „sprawdzone drugi raz” (żeby nie liczyć co dzień od nowa)
+          cache.entries[key] = opts.relaxed ? [est, Math.round(d * 1.4), -1, 0, today, null, "x"] : [est, Math.round(d * 1.4), -1, 0, today]; continue;
+        }
         const p = W.pathTo(g, best, r.id);
         const sec = r.s + (starts[0][1]) / W.WALK_SPEED;
         // przebieg: przystanek A → droga z mapy → przystanek B (współrzędne co ok. 1 m, kolejność A→B wg klucza)
         const route = [[+A.lat.toFixed(5), +A.lon.toFixed(5)]].concat(p.pts.map(q => [+q[0].toFixed(5), +q[1].toFixed(5)]), [[+B.lat.toFixed(5), +B.lon.toFixed(5)]]);
         const pts = simplify(route, 3), fwd = A.code < B.code ? pts : pts.slice().reverse();
-        cache.entries[key] = [Math.max(1, Math.ceil(d / W.WALK_SPEED / 60), Math.ceil(sec / 60)), Math.round(r.m + starts[0][1]), p.sig, p.cx, today, fwd];
+        cache.entries[key] = [Math.max(1, Math.ceil(d / W.WALK_SPEED / 60), Math.ceil(sec / 60)), Math.round(r.m + starts[0][1]), p.sig, p.cx, today, fwd].concat(opts.relaxed ? ["r"] : []);
       }
       done += prs.length;
       if (opts.graph && opts.progress && done % 2000 < prs.length) log(`  ${done}/${missing.length}`);

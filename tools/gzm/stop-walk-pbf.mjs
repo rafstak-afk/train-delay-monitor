@@ -18,7 +18,9 @@ const stops = net.stops.filter(s => s[3]).map(s => ({ code: s[3], lat: s[1], lon
 const F = process.env.GZM_SW_CACHE || path.join(DIR, "stop-walk-cache.json");   // GZM_SW_CACHE — test lokalny
 const cache = fs.existsSync(F) ? JSON.parse(fs.readFileSync(F, "utf8")) : { v: 1, entries: {} };
 const pairs = SW.pairsOf(stops), miss = pairs.filter(([a, b]) => !cache.entries[SW.keyOf(stops[a].code, stops[b].code)]).length;
-if (process.argv[2] === "--need") { log(`par ${pairs.length}, brak ${miss}${all ? ", ALL=1" : ""}`); process.exit(all || miss > 0 ? 0 : 1); }
+// 21.11: pary w linii prostej jeszcze nie sprawdzone drugi raz (mapa z jezdniami)
+const relaxNeed = () => pairs.filter(([a, b]) => { const v = cache.entries[SW.keyOf(stops[a].code, stops[b].code)]; return v && v[2] < 0 && !v[6]; }).length;
+if (process.argv[2] === "--need") { log(`par ${pairs.length}, brak ${miss}${all ? ", ALL=1" : ""}`); process.exit(all || miss > 0 || relaxNeed() > 0 ? 0 : 1); }
 
 // OPL: „n<id> T<tagi> x<lon> y<lat>”, „w<id> T<tagi> N<n1>,<n2>,…”; znaki specjalne jako %xx%
 const dec = v => v.replace(/%([0-9a-fA-F]+)%/g, (m, h) => String.fromCodePoint(parseInt(h, 16)));
@@ -33,10 +35,19 @@ for await (const line of rl) {
   else if (parts[0][0] === "w") { elements.push({ type: "way", id, tags: tagsOf(T) || {}, nodes: N ? N.split(",").map(r => +r.slice(1)) : [] }); nW++; }
 }
 log(`plik mapy: węzłów ${nN}, dróg ${nW}`);
-const g = SW.gridIndex(W.buildGraph({ elements }, { walkable: SW.stopWalkable }));
-elements.length = 0;
+let g = SW.gridIndex(W.buildGraph({ elements }, { walkable: SW.stopWalkable }));
 log(`graf: węzłów z krawędziami ${g._grid ? [...g._grid.values()].reduce((a, b) => a + b.length, 0) : "?"}`);
 const r = await SW.computeStopWalks(stops, cache, { graph: g, all, log, progress: true });
 fs.writeFileSync(F, JSON.stringify(cache));
+// drugie przeliczenie: tam, gdzie mapa nie ma chodników przy jezdni — wolno iść wzdłuż jezdni (wynik „przybliżony”, oznaczenie r)
+g = null;
+const onlyKeys = new Set(pairs.map(([a, b]) => SW.keyOf(stops[a].code, stops[b].code)).filter(k => { const v = cache.entries[k]; return v && v[2] < 0 && !v[6]; }));
+if (onlyKeys.size) {
+  const gR = SW.gridIndex(W.buildGraph({ elements }));
+  const r2 = await SW.computeStopWalks(stops, cache, { graph: gR, onlyKeys, relaxed: true, log, progress: true });
+  log("drugie przeliczenie (z jezdniami):", JSON.stringify(r2), "| par", onlyKeys.size, "→ z drogą", [...onlyKeys].filter(k => cache.entries[k][2] >= 0).length);
+  fs.writeFileSync(F, JSON.stringify(cache));
+}
+elements.length = 0;
 const v = Object.values(cache.entries);
 log("przejścia między przystankami (plik mapy):", JSON.stringify(r), "| w pamięci", v.length, "par, z OSM", v.filter(x => x[2] >= 0).length);
