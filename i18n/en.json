@@ -1104,6 +1104,7 @@
     "xferNoData": "Change at {st}: no data for one of the trains.",
     "xferCancelled": "Change at {st}: train cancelled.",
     "xferLine": "Change at {st}: {slack} min to spare (planned {plan}, needed {need})",
+    "unfold": "show details",
     "platformChange": "Platform change: {a} → {b} (+2 min)",
     "stationChange": "Walk between stations: {a} → {b} (+5 min)",
     "onlyThanksToB": "You'll make it only if {b} doesn't make up its delay.",

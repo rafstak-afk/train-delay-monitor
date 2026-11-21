@@ -422,6 +422,21 @@
           pts ? T("gzm.wmapNote", null, "Droga policzona z mapy OpenStreetMap z najbliższego peronu — w terenie może się różnić.") : T("gzm.wmapNone", null, "Dla tego przystanku nie mam przebiegu drogi — pokazuję tylko przystanek."));
       });
     }
+    window.GzmPlatMap = function (stName, stopName, code, toStation) {
+      getIndex().then(function (idx) {
+        var st = (idx.stations || []).find(function (y) { return y.n === stName; }); if (!st) return;
+        var cand = (st.s || []).filter(function (p) { return code ? p[0] === code : p[1] === stopName; }).sort(function (a, b) { return a[2] - b[2]; })[0]; if (!cand) return;
+        var c = cand[0], sid = st.id;
+        var get = walkFiles[sid] || (walkFiles[sid] = fetch(dataUrl("stations/" + sid + "-walk.json")).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }));
+        get.then(function (wj) {
+          var pts = wj && wj.stops && wj.stops[c];
+          var end = pts ? { lat: pts[pts.length - 1][0], lon: pts[pts.length - 1][1] } : { lat: st.lat, lon: st.lon };
+          if (pts && toStation) { pts = pts.slice().reverse(); end = { lat: pts[pts.length - 1][0], lon: pts[pts.length - 1][1] }; }
+          drawWalkMap(toStation ? stopName + stTag(c) + " → " + stName : stName + " → " + stopName + stTag(c), pts || null, end, toStation ? "🚏" : "🚆", toStation && pts ? "🚆" : "🚏",
+            pts ? T("gzm.wmapNote", null, "Droga policzona z mapy OpenStreetMap z najbliższego peronu — w terenie może się różnić.") : T("gzm.wmapNone", null, "Dla tego przystanku nie mam przebiegu drogi — pokazuję tylko przystanek."));
+        });
+      }).catch(function () {});
+    };
     root.addEventListener("click", function (e) {
       var b = e.target.closest("[data-swmap],[data-pwmap]"); if (!b) return;
       e.stopPropagation();
@@ -2545,7 +2560,7 @@
       jn.legs.forEach(function (l) {
         if (l.type === "walk") { walk += l.min; return; }
         out.push({ mode: "gzm", trip: l.trip, kind: l.kind, train: { category: KIND_ICON[l.kind] || "🚌", number: l.line, name: "→ " + l.head },
-          board: { stationName: l.fromName, time: C.fmt(l.depPlan) }, alight: { stationName: l.toName, time: C.fmt(l.arr - (l.delay || 0)) }, walkBefore: walk || null });
+          board: { stationName: l.fromName, time: C.fmt(l.depPlan), code: cState && cState.net ? String(cState.net.j.stops[l.from][3] || "") : undefined }, alight: { stationName: l.toName, time: C.fmt(l.arr - (l.delay || 0)), code: cState && cState.net ? String(cState.net.j.stops[l.to][3] || "") : undefined }, walkBefore: walk || null });
         walk = 0;
       });
       return out;

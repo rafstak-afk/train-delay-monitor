@@ -1104,6 +1104,7 @@
     "xferNoData": "Umstieg in {st}: keine Daten zu einem der Züge.",
     "xferCancelled": "Umstieg in {st}: Zug fällt aus.",
     "xferLine": "Umstieg in {st}: {slack} Min. Puffer (Plan {plan}, nötig {need})",
+    "unfold": "Details anzeigen",
     "platformChange": "Gleiswechsel: {a} → {b} (+2 Min.)",
     "stationChange": "Weg zwischen Bahnhöfen: {a} → {b} (+5 Min.)",
     "onlyThanksToB": "Klappt nur, wenn {b} die Verspätung nicht aufholt.",

@@ -19,6 +19,7 @@
     '.gv .card{background:var(--panel);border:1px solid var(--line);border-left:6px solid var(--grey);border-radius:14px;padding:12px 14px;margin:12px 0}' +
     '.gv .card.s-ok{border-left-color:var(--green)}.gv .card.s-risk{border-left-color:var(--yellow)}.gv .card.s-broken{border-left-color:var(--red)}.gv .card.s-cancelled{border-left-color:#000;background:#151a20}' +
     '.gv .card.hl{box-shadow:0 0 0 2px var(--cyan)}' +
+    '.gv .c-head.gv-fold{cursor:pointer}.gv .gv-sum{color:var(--muted);font-size:12.5px;margin-top:6px}.gv .gv-fbtn{border:0;background:none;color:var(--muted);cursor:pointer;font-size:12.5px;padding:4px 0 0}' +
     '.gv .c-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}' +
     '.gv .c-route{font-weight:800;font-size:15.5px;line-height:1.3}' +
     '.gv .c-date{color:var(--muted);font-size:12.5px;margin-top:2px}' +
@@ -237,7 +238,7 @@
       return '<a class="leg" href="' + esc(trainUrl(l, date)) + '" title="' + esc(T('guard.openTrain', null, 'Pokaż cały bieg pociągu')) + '"><div class="leg-t">' + timeHtml(d && r.plannedDep || l.board.time, d ? r.delayDep : 0) + '<small>' + timeHtml(d && r.plannedArr || l.alight.time, d ? r.delayArr : 0) + (l.alight.nextDay ? ' +1' : '') + '</small></div>' +
         '<div><div class="leg-train">' + esc(tr) + info + '</div><div class="leg-st">' + esc(l.board.stationName) + (d ? delayHtml(r.delayDep, r.depSource) : '') + ' → ' + esc(l.alight.stationName) + (d ? delayHtml(r.delayArr, r.arrSource) : '') + '</div></div></a>';
     }
-    function xferHtml(t, rising) {
+    function xferHtml(t, rising, la, lb) {
       var s = t.status;
       var main;
       if (s === 'nodata') main = T('guard.xferNoData', { st: t.station }, 'Przesiadka w ' + t.station + ': brak danych o jednym z pociągów.');
@@ -250,7 +251,13 @@
       if (rising) extra += '<div class="warn">📈 ' + esc(T('guard.rising', null, 'Opóźnienie rośnie')) + '</div>';
       var times = '';
       if (t.plannedArrA && t.plannedDepB && s !== 'nodata') times = '<div class="xtimes">' + esc(T('guard.arrShort', null, 'przyjazd')) + ' ' + timeHtml(t.plannedArrA, t.delayA) + ' → ' + esc(T('guard.depShort', null, 'odjazd')) + ' ' + timeHtml(t.plannedDepB, t.delayB) + '</div>';
-      return '<div class="xfer s-' + s + '">' + EMO[s] + ' ' + esc(main) + times + extra + '</div>';
+      // notatka 21.11: 🗺️ droga peron ↔ przystanek (pociąg → autobus/tramwaj albo odwrotnie)
+      var mb = '';
+      if (authorOnG() && la && lb && window.GzmPlatMap && (la.mode === 'gzm') !== (lb.mode === 'gzm')) {
+        var toSt = la.mode === 'gzm', stN = toSt ? lb.board.stationName : la.alight.stationName, stopN = toSt ? la.alight.stationName : lb.board.stationName, code = (toSt ? la.alight.code : lb.board.code) || '';
+        mb = ' <button type="button" data-gpmap="' + esc(stN + '|' + stopN + '|' + code + '|' + (toSt ? 1 : 0)) + '" title="' + esc(T('gzm.wmapTitle2', null, 'Droga na mapie')) + '" style="border:0;background:none;cursor:pointer;font-size:1em;padding:0 2px">🗺️</button>';
+      }
+      return '<div class="xfer s-' + s + '">' + EMO[s] + ' ' + esc(main) + mb + times + extra + '</div>';
     }
     // ===== ⏰ Przypomnienia o wyjściu z domu (TEST — tylko profil autora) =====
     function lang() { try { return (window.I18n && I18n.getLang && I18n.getLang()) || 'pl'; } catch (e) { return 'pl'; } }
@@ -323,21 +330,29 @@
       var l0 = c.legs[0], ln = c.legs[c.legs.length - 1];
       return "/planer/?" + new URLSearchParams({ from: l0.board.stationName, to: ln.alight.stationName, date: c.date, time: String(l0.board.time || "").slice(0, 5) }).toString();
     }
+    function authorOnG() { try { return localStorage.getItem('showVersionBadge') === '1'; } catch (e) { return false; } }
+    var folded = (function () { try { return JSON.parse(localStorage.getItem('guardFoldV1')) || {}; } catch (e) { return {}; } })();
     function cardHtml(c) {
       var r = results[c.id] || { status: 'nodata' };
       var s = r.status;
       var html = '<div class="card s-' + s + (c.id === focusId ? ' hl' : '') + '" id="g-' + esc(c.id) + '">' +
-        '<div class="c-head"><div><div class="c-route">' + esc(c.from) + ' → ' + esc(c.to) + (c.source === 'plan' ? '<span class="badge">' + esc(T('guard.fromPlan', null, 'z dzienniczka')) + '</span>' : '') + '</div>' +
+        '<div class="c-head' + (authorOnG() ? ' gv-fold' : '') + '" data-fold="' + esc(c.id) + '"><div><div class="c-route">' + esc(c.from) + ' → ' + esc(c.to) + (c.source === 'plan' ? '<span class="badge">' + esc(T('guard.fromPlan', null, 'z dzienniczka')) + '</span>' : '') + '</div>' +
         '<div class="c-date">' + esc(c.date) + ' · ' + (function () {
           var l0 = r.legs && r.legs[0], ln = r.legs && r.legs[r.legs.length - 1], ok0 = l0 && !l0.noData, okn = ln && !ln.noData;
           return timeHtml(ok0 && l0.plannedDep || c.legs[0].board.time, ok0 ? l0.delayDep : 0) + ' → ' + timeHtml(okn && ln.plannedArr || c.legs[c.legs.length - 1].alight.time, okn ? ln.delayArr : 0);
         })() + '</div></div>' +
         '<span class="chip s-' + s + '">' + EMO[s] + ' ' + esc(statusText(s)) + '</span></div>';
+      // notatka 21.11: zwijanie szczegółów (profil autora) — zostaje nagłówek, skrót odcinków i alarmy
+      if (authorOnG() && folded[c.id] && s !== 'risk' && s !== 'broken' && s !== 'cancelled') {
+        html += '<div class="gv-sum">' + c.legs.map(function (l) { return esc(G.trainLabel(l.train)) + ' ' + esc(l.board.time); }).join(' → ') + '</div>' +
+          '<button type="button" class="gv-fbtn" data-fold="' + esc(c.id) + '">▾ ' + esc(T('guard.unfold', null, 'pokaż szczegóły')) + '</button></div>';
+        return html;
+      }
       if (oldTimetable(c)) html += '<div class="waiting">🗓️ ' + esc(T('guard.oldTt', null, 'Zapisane według starego rozkładu (przed 13.12). Ten pociąg może jechać o innej godzinie albo wcale.')) +
         ' <a class="btn-sm secondary" href="' + esc(findNewUrl(c)) + '">' + esc(T('guard.findNew', null, '🔎 Znajdź nowe połączenie')) + '</a></div>';
       c.legs.forEach(function (l, i) {
         html += legHtml(l, r.legs ? r.legs[i] : null, c.date);
-        if (i < c.legs.length - 1 && r.transfers && r.transfers[i]) html += xferHtml(r.transfers[i], r.rising && r.worst === i);
+        if (i < c.legs.length - 1 && r.transfers && r.transfers[i]) html += xferHtml(r.transfers[i], r.rising && r.worst === i, l, c.legs[i + 1]);
       });
       if (s === 'waiting') {
         var st = r.startMin; html += '<div class="waiting">⏳ ' + esc(T('guard.waitingInfo', { time: G.fmt(st) }, 'Pilnowanie zacznie się ok. ' + G.fmt(st) + ' tego dnia.')) + '</div>';
@@ -387,6 +402,14 @@
       if (focusId && shown) { var el = document.getElementById('g-' + focusId); if (el) { el.scrollIntoView({ block: 'center' }); focusId = null; } }
     }
     list.addEventListener('click', function (e) {
+      var gm = e.target.closest('[data-gpmap]');
+      if (gm) { var q = gm.dataset.gpmap.split('|'); window.GzmPlatMap(q[0], q[1], q[2], q[3] === '1'); return; }
+      var fd = e.target.closest('[data-fold]');
+      if (fd && authorOnG() && !e.target.closest('a,input,label') && (!e.target.closest('button') || e.target.closest('.gv-fbtn'))) {
+        var fid = fd.dataset.fold; if (folded[fid]) delete folded[fid]; else folded[fid] = 1;
+        try { localStorage.setItem('guardFoldV1', JSON.stringify(folded)); } catch (er) {}
+        render(); return;
+      }
       // odcinek autobusu/tramwaju: rozwiń trasę kursu (z zakładki 🚆🚌 — gzm-view.js)
       var gl = e.target.closest('[data-gtrip]');
       if (gl && !e.target.closest('button,a')) {
