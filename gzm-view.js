@@ -894,7 +894,7 @@
           if (!m.length || (m.length === 1 && m[0].n === q)) {
             close();
             // TODO 81: brak w GZM — może to stacja PLK spoza GZM (np. Lubliniec)
-            if (authorOn() && !(m.length === 1 && m[0].n === q)) plkStations(q).then(function () {
+            if (!(m.length === 1 && m[0].n === q)) plkStations(q).then(function () {
               if (inp.value.trim() !== q || picked) return;
               var ext = Object.keys(extSt).map(function (k) { return extSt[k]; }).filter(function (x) { return normName(x.n).indexOf(normName(q)) === 0; }).slice(0, 8);
               if (!ext.length || (ext.length === 1 && ext[0].n === q)) return;
@@ -903,7 +903,7 @@
             });
             return;
           }
-          if (authorOn() && !m.some(function (x) { return x.k === "st" && normName(x.n) === normName(q); })) plkStations(q).then(function () {
+          if (!m.some(function (x) { return x.k === "st" && normName(x.n) === normName(q); })) plkStations(q).then(function () {
             if (inp.value.trim() !== q || picked) return;
             var ext = Object.keys(extSt).map(function (k) { return extSt[k]; }).filter(function (x) { return normName(x.n).indexOf(normName(q)) === 0 && !m.some(function (y) { return y.n === x.n; }); }).slice(0, 6);
             if (!ext.length) return;
@@ -1143,7 +1143,7 @@
       if (depFiles[id]) return Promise.resolve(depFiles[id]);
       return fetch(dataUrl("stations/" + id + ".json")).then(function (r) { if (!r.ok) throw new Error("dep"); return r.json(); }).then(function (j) { depFiles[id] = j; return j; });
     }
-    function stationByName(name) { var n = normName(name); return (index.stations || []).find(function (x) { return normName(x.n) === n; }) || (authorOn() && extSt[n]) || null; }
+    function stationByName(name) { var n = normName(name); return (index.stations || []).find(function (x) { return normName(x.n) === n; }) || extSt[n] || null; }
     // TODO 81 (profil autora): każda stacja PKP PLK — spoza GZM bez przystanków komunikacji (s: []), tylko pociąg na tym końcu
     var extSt = {}, extQ = {};
     function plkStations(q) {
@@ -1616,7 +1616,7 @@
     }
     function searchC() {
       var f0 = root.querySelector("#gzCFrom").value.trim(), t0 = root.querySelector("#gzCTo").value.trim();
-      if (authorOn() && ((f0 && !stationByName(f0) && !placeKey(f0)) || (t0 && !stationByName(t0) && !placeKey(t0)))) { ensureExt([f0, t0]).then(searchCGo); return; }
+      if (((f0 && !stationByName(f0) && !placeKey(f0)) || (t0 && !stationByName(t0) && !placeKey(t0)))) { ensureExt([f0, t0]).then(searchCGo); return; }
       searchCGo();
     }
     function searchCGo() {
@@ -2278,16 +2278,16 @@
       }
       if (!out.length) { res.innerHTML = '<div class="gz-empty">' + esc(T("gzm.cNone", null, "Nie udało się ułożyć podróży w ciągu 2 godzin od wyjścia.")) + "</div>" + noResModes(); return; }
       // TODO 76 (lista, profil autora): kolejność jak w oficjalnych wyszukiwarkach — wg godziny wyjścia, przy remisie wcześniej na miejscu
-      if (v2On() && authorOn()) out.sort(function (a, b) { return a.start - b.start || a.final - b.final || walkSum(a) - walkSum(b); });
+      if (v2On()) out.sort(function (a, b) { return a.start - b.start || a.final - b.final || walkSum(a) - walkSum(b); });
       var guardOk = !!(window.GuardStore && window.GuardCore && GuardStore.enabled && GuardStore.enabled());
       res.innerHTML = gpsWarn(S) + walkTop + (S.date !== warsawNow().date ? '<div class="gz-live off" style="margin:4px 2px">📅 ' + esc(T("gzm.uSched", { d: S.date }, "{d} — godziny wg rozkładu")) + "</div>" : '<div class="gz-live ' + (rtOk ? "on" : "off") + '" style="margin:4px 2px">' + (rtOk ? "● " + esc(T("gzm.liveOn", null, "na żywo")) : "○ " + esc(T("gzm.liveOff", null, "dane na żywo niedostępne, pokazuję rozkład"))) + "</div>") +
         out.map(function (x, i) {
           if (v2On()) {
             v2Cur[i] = x;
             // TODO 76 (profil autora): lista jak w oficjalnych wyszukiwarkach — 3 linijki, szczegóły po stuknięciu
-            if (authorOn()) { var dk = detKey(x); if (!detOpen[dk]) return v2Compact(x, S, dk); }
+            { var dk = detKey(x); if (!detOpen[dk]) return v2Compact(x, S, dk); }
             var full = x.net ? v2NetCard(x.net, guardOk ? i : null) : v2TrainCard(x, guardOk ? i : null, S);
-            return authorOn() ? '<div class="v2c-open" data-detk="' + esc(detKey(x)) + '"><button type="button" class="v2c-hide" data-det="' + esc(detKey(x)) + '">▴ ' + esc(T("gzm.v2cHide", null, "zwiń do listy")) + "</button>" + full + "</div>" : full;
+            return true ? '<div class="v2c-open" data-detk="' + esc(detKey(x)) + '"><button type="button" class="v2c-hide" data-det="' + esc(detKey(x)) + '">▴ ' + esc(T("gzm.v2cHide", null, "zwiń do listy")) + "</button>" + full + "</div>" : full;
           }
           if (x.net) return netCard(x.net, guardOk ? i : null, x);
           var it = x.it, c = x.c, key = cKey(x.p, it);

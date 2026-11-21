@@ -1475,6 +1475,8 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
   function search(){
     var from=selected.from.name||$('fromInput').value.trim();
     var to=selected.to.name||$('toInput').value.trim();
+    // TODO 63 (profil autora): tylko „Skąd” → tablica odjazdów z tej stacji na wybraną datę i godzinę
+    if(from&&!to&&localStorage.getItem('showVersionBadge')==='1'){var bq=new URLSearchParams({station:from});if($('dateInput').value)bq.set('date',$('dateInput').value);if($('timeInput').value)bq.set('time',$('timeInput').value);location.href='/?'+bq.toString();return}
     if(!from||!to){$('resultsStatus').className='status err';$('resultsStatus').textContent=T('planer.enterStations');return}
     if(from.trim().toLowerCase()===to.trim().toLowerCase()){$('resultsStatus').className='status err';$('resultsStatus').textContent=T('near.samePlace');return}
 
