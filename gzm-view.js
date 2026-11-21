@@ -411,9 +411,28 @@
       });
     }
     // … i z peronu na przystanek (oraz z przystanku na peron) przy pociągu
-    function openPlatMap(sid, sName, si, toStation) {
+    // droga między dwoma przystankami (z mapy albo linia prosta) — do sklejania z dojściem z peronu
+    function stopPath(ia, ib) {
+      var net = cState.net, ca = String(net.j.stops[ia][3] || ""), cb = String(net.j.stops[ib][3] || ""), key = ca < cb ? ca + "|" + cb : cb + "|" + ca, g = key.slice(0, 7);
+      var get = swFiles[g] || (swFiles[g] = fetch(dataUrl("stopwalk/" + g + ".json")).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }));
+      return get.then(function (wj) { var p = wj && wj.w && wj.w[key]; return p ? (ca < cb ? p : p.slice().reverse()) : [[net.lat[ia], net.lon[ia]], [net.lat[ib], net.lon[ib]]]; });
+    }
+    function openPlatMap(sid, sName, si, toStation, chain) {
       var net = cState && cState.net; if (!net) return;
       var code = String(net.j.stops[si][3] || ""), nm = net.name[si];
+      // TODO 66: scalony krok — jedna mapka: peron → przystanek przy stacji → kolejne przejścia
+      if (chain && !toStation) {
+        var segs = chain.split(",").map(function (q) { return q.split(">").map(Number); });
+        var gw = walkFiles[sid] || (walkFiles[sid] = fetch(dataUrl("stations/" + sid + "-walk.json")).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }));
+        Promise.all([gw].concat(segs.map(function (q) { return stopPath(q[0], q[1]); }))).then(function (all) {
+          var wj = all[0], p0 = wj && wj.stops && wj.stops[code], pts = (p0 || [[net.lat[si], net.lon[si]]]).slice();
+          all.slice(1).forEach(function (p) { pts = pts.concat(p); });
+          var last = segs[segs.length - 1][1], lc = String(net.j.stops[last][3] || "");
+          drawWalkMap(sName + " → " + net.name[last] + stTag(lc), pts, { lat: net.lat[last], lon: net.lon[last] }, "🚆", "🚏",
+            T("gzm.wmapNote", null, "Droga policzona z mapy OpenStreetMap z najbliższego peronu — w terenie może się różnić."));
+        });
+        return;
+      }
       var get = walkFiles[sid] || (walkFiles[sid] = fetch(dataUrl("stations/" + sid + "-walk.json")).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }));
       get.then(function (wj) {
         var pts = wj && wj.stops && wj.stops[code], end = { lat: net.lat[si], lon: net.lon[si] };
@@ -441,7 +460,7 @@
       var b = e.target.closest("[data-swmap],[data-pwmap]"); if (!b) return;
       e.stopPropagation();
       if (b.dataset.swmap) { var q = b.dataset.swmap.split("|"); openStopMap(+q[0], +q[1]); }
-      else { var r = b.dataset.pwmap.split("|"); openPlatMap(r[0], r[1], +r[2], r[3] === "1"); }
+      else { var r = b.dataset.pwmap.split("|"); openPlatMap(r[0], r[1], +r[2], r[3] === "1", r[4] || ""); }
     }, true);
     function mapBtn(attr, val) { return authorOn() ? ' <button type="button" ' + attr + '="' + esc(val) + '" title="' + esc(T("gzm.wmapTitle2", null, "Droga na mapie")) + '" style="border:0;background:none;cursor:pointer;font-size:1em;padding:0 2px">🗺️</button>' : ""; }
     function depHtmlV2(x, cls, noFav) {
@@ -2001,8 +2020,8 @@
         var e0v = lead.length ? Object.assign({}, e0, { legs: e0.legs.slice(lead.length) }) : e0;
         if (pwE != null) {
           var lastW = lead[lead.length - 1], toNm = lastW ? lastW.toName : S.net.name[poleE];
-          var extra = lastW && typeof lastW.from === "number" && typeof lastW.to === "number" ? mapBtn("data-swmap", lastW.from + "|" + lastW.to) : "";
-          html.push(platWalk(pwE + wk, T("gzm.v2Plat", { s: x.p.cb.e.st.n }, "peron · {s}"), toNm, x.p.cb.e.st.id + "|" + x.p.cb.e.st.n + "|" + poleE + "|0", pE.chk, extra, lead.length ? S.net.name[poleE] : null));
+          var chain = lead.filter(function (q) { return typeof q.from === "number" && typeof q.to === "number" && q.from !== q.to; }).map(function (q) { return q.from + ">" + q.to; }).join(",");
+          html.push(platWalk(pwE + wk, T("gzm.v2Plat", { s: x.p.cb.e.st.n }, "peron · {s}"), toNm, x.p.cb.e.st.id + "|" + x.p.cb.e.st.n + "|" + poleE + "|0" + (chain ? "|" + chain : ""), pE.chk, "", lead.length ? S.net.name[poleE] : null));
         }
         var sl = r0 ? r0.dep - x.arr - wk - (pwE || 0) : 0;
         html.push(v2Xfer(sl >= 3 ? "ok" : sl >= 0 ? "tight" : "missed", esc(T("gzm.v2XferEgr", { s: r0 ? r0.fromName : "", n: sl }, "Po pociągu: {s}, zapas {n} min"))));
