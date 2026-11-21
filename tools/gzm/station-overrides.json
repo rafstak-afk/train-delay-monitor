@@ -7,6 +7,14 @@
       }
     }
   },
+  "72306": {
+    "note": "Bytom: pomiar autora 21.11.2026 ok. 16:15: peron 2 → Bytom Dworzec stan. 11: 3 min 15 s (4 min; OSM liczyło 3 min — mapa nie zna przejścia pod torami)",
+    "walkPlat": {
+      "2462011-01211": {
+        "2": 4
+      }
+    }
+  },
   "73312": {
     "note": "Katowice: Kopernika Dworzec (8–9 min przez przejście podziemne) — zgłoszenie użytkownika 2.11.2026; pomiar autora 4.11.2026 6:18: peron 2 (wyjście od pl. Andrzeja) → Katowice Andrzeja Dworzec słupek 01: 4 min 20 s (5 min); pomiar autora 18.11.2026 6:21: peron 2 → Katowice Dworzec stan. 02: 2 min 56 s (3 min; OSM liczyło 2 min), bez przejść dla pieszych; 18.11: decyzja autora — pomiar 3 min (peron 2 → stan. 02) obowiązuje dla całego podziemnego dworca Katowice Dworzec (stan. 01–10, z peronu 2); poprawka: pomiar 4.11 (4 min 20 s) dotyczy Katowice Andrzeja Dworzec słupek 01 (2469011-01501), wcześniej omyłkowo wpisany pod Katowice Dworzec 01 (2469011-00101)",
     "add": [
