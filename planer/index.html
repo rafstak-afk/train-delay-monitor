@@ -128,7 +128,8 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
 .history-rerun{flex:0 0 auto;border:1.5px solid var(--blue);background:transparent;color:#8fb8f5;border-radius:8px;padding:9px 12px;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap}
 .history-rerun:hover{background:rgba(11,87,208,.18)}
 .history-btns{flex:0 0 auto;display:flex;flex-direction:column;gap:6px;align-items:stretch}
-.rerun-pick{display:inline-flex;align-items:center;gap:4px;border:1.5px solid var(--blue);border-radius:8px;padding:4px 8px;color:#8fb8f5;font-size:12.5px;font-weight:700;cursor:pointer}.rerun-pick input{background:transparent;border:0;color:#cfe0f5;color-scheme:dark;font:inherit;max-width:130px}
+/* notatka 22.11: mała ikonka 📅 zamiast dużego pola daty — pole niewidoczne na ikonce, stuknięcie otwiera kalendarz */
+.rerun-pick{position:relative;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;width:40px;height:36px;border:1.5px solid var(--blue);border-radius:8px;padding:0;font-size:17px;cursor:pointer;align-self:center}.rerun-pick input{position:absolute;inset:0;width:100%;height:100%;opacity:0;border:0;padding:0;cursor:pointer;color-scheme:dark}
 .history-rerun.old{border-color:var(--line);color:var(--muted);padding:6px 10px;font-weight:600}
 .saved-date{font-size:12.5px;font-weight:700;margin-top:6px}
 .saved-date.past{color:var(--muted)}
@@ -1363,6 +1364,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
   }
   function freshLabel(w){return T(w.tomorrow?'planer.rerunTomorrow':'planer.rerunToday',{time:w.time})}
   // 20.11 (prośba autora): oprócz „Dziś/Jutro od …” — kalendarz, dowolny dzień (ta sama godzina)
+  document.addEventListener('click',function(e){var i=e.target.closest('.rerun-pick input');if(i&&i.showPicker){try{i.showPicker()}catch(er){}}});
   function datePickHtml(attr,val){return '<label class="rerun-pick" title="'+escapeHtml(T('planer.rerunPick'))+'">📅 <input type="date" '+attr+'="'+escapeHtml(String(val))+'" min="'+todayYYYYMMDD()+'" value="" aria-label="'+escapeHtml(T('planer.rerunPick'))+'"></label>'}
   function shortDate(d){var p=String(d||'').split('-');return p.length===3?p[2]+'.'+p[1]:d}
   function renderHistoryPanel(){
