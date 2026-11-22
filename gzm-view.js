@@ -72,6 +72,12 @@
     '.gz .gv .ce-msg{margin-top:10px;border-top:1px solid #2a3a4c;padding-top:10px;font-size:15px;line-height:1.6}.gz .gv .ce-msg p{margin:0 0 8px}.gz .gv .ce-msg b{color:#fff}.gz .gv .ce-mu{color:#93a4b8;font-size:13px}' +
     '.gz .gv .ce-ok{color:#5dd39e;font-weight:800}.gz .gv .ce-tight{color:#ffcc00;font-weight:800}.gz .gv .ce-missed,.gz .gv .ce-edge{color:#ff6b6b;font-weight:800}' +
     '.gz .gv .ce-tag{font-weight:900;border:1.5px solid #5fb4ff;color:#5fb4ff;border-radius:6px;padding:0 5px;font-size:13px;white-space:nowrap}.gz .gv .ce-tag.tr{border-color:#c9a0ff;color:#c9a0ff}' +
+    '.gz .gv .f-r1{display:flex;justify-content:space-between;align-items:baseline;gap:8px}.gz .gv .f-r1 b{font-size:21px}.gz .gv .f-st{font-weight:800;font-size:15px;white-space:nowrap}' +
+    '.gz .gv .f-how{margin-top:6px;font-size:15.5px;line-height:1.4}.gz .gv .f-how b{font-weight:800}.gz .gv .f-meta{margin-top:4px;font-size:13.5px;color:#9fb0c2;line-height:1.4}' +
+    '.gz .gv .f-tt{width:100%;border-collapse:collapse;margin-top:8px}.gz .gv .f-tt td{padding:9px 0;vertical-align:top;border-top:1px solid #2a3a4c}.gz .gv .f-tt tr:first-child td{border-top:0}' +
+    '.gz .gv .f-tt .h{width:60px;font-weight:800;font-size:17px;white-space:nowrap}.gz .gv .f-tt .w{font-size:16px;line-height:1.4;overflow-wrap:anywhere}.gz .gv .f-tt .w b{font-weight:800}.gz .gv .f-sm{display:block;font-size:13.5px;color:#9fb0c2;margin-top:1px}' +
+    '.gz .gv .f-tt tr.x-ok td{background:rgba(93,211,158,.08)}.gz .gv .f-tt tr.x-tight td{background:rgba(255,204,0,.10)}.gz .gv .f-tt tr.x-missed td,.gz .gv .f-tt tr.x-edge td{background:rgba(255,77,77,.14)}.gz .gv .f-tt tr.x-edge td{animation:gzEdgeB 1s steps(2) infinite}' +
+    '.gz .gv .f-tt tr[class^="x-"] .h{padding-left:6px;border-radius:10px 0 0 10px}.gz .gv .f-tt tr[class^="x-"] .w{padding-right:6px;border-radius:0 10px 10px 0}' +
     '.xfer.edge{border:1px solid rgba(255,77,77,.8)!important;animation:gzEdge 1s ease-in-out infinite}@keyframes gzEdge{50%{background:rgba(255,77,77,.35)}}@media(prefers-reduced-motion:reduce){.xfer.edge{animation:none;background:rgba(255,77,77,.25)}}' +
     '.gz-rt-more{margin:2px 0}.gz-rt-more>summary{cursor:pointer;color:var(--muted,#9fb0c2);font-size:13px;padding:6px 2px;list-style:none}.gz-rt-more>summary::-webkit-details-marker{display:none}.gz-rt-more[open]>summary{color:#cfe0f5}' +
     '.gz .gz-dep.flash{animation:gzFlash 1.4s ease-out}@keyframes gzFlash{0%{box-shadow:0 0 0 3px #ffd400}100%{box-shadow:none}}' +
@@ -2202,14 +2208,51 @@
       return '<div class="c-head" style="display:block"><div class="v2c-r1"><b>' + C.fmt(leave) + " → " + C.fmt(x.final) + '</b><span class="v2c-dur">' + esc(ceStTxt(st)) + "</span></div>" +
         '<div class="v2c-r3">' + esc(T("gzm.ceSub", { a: C.fmt(leave), t: v2Total(x.final - leave) }, "wyjdź {a} · w drodze {t}")) + (why ? " · " + esc(why) : "") + (x.tDelay ? " · " + esc(T("gzm.v2TrainLive", { n: x.tDelay }, "pociąg +{n} min (na żywo)")) : "") + "</div></div>";
     }
+    // ===== TODO 85 — wersja F (22.11): „rozkład godzinowy” =====
+    var F_CLS = { ok: "ce-ok", tight: "ce-tight", edge: "ce-edge", missed: "ce-missed" };
+    function fStTxt(st) { return st === "edge" ? "🔴 " + T("gzm.ceStEdge", null, "na granicy") : v2StTxt(st === "missed" ? "missed" : st); }
+    function fR1(x, steps, leave) { var st = ceWorst(steps); return '<div class="f-r1"><b>' + C.fmt(leave) + " → " + C.fmt(x.final) + '</b><span class="f-st ' + F_CLS[st] + '">' + esc(fStTxt(st)) + "</span></div>"; }
+    function fRideName(q) { return q.icon + " <b>" + esc(q.train ? q.short || q.line : q.line) + "</b>"; }
     function ceCompact(x, S, dk) {
       var steps = ceSteps(x, S), leave = ceLeave(x), st = ceWorst(steps);
-      return '<div class="card v2c ' + CE_ST[st] + '" data-det="' + esc(dk) + '" role="button" tabindex="0">' + ceHead(x, steps, leave) + ceBlocks(steps, dk, x.final) + "</div>";
+      var rides = steps.filter(function (q) { return q.k === "ride"; }), xs = steps.filter(function (q) { return q.k === "xfer"; });
+      var how = rides.map(function (q, i) { return fRideName(q) + (i < rides.length - 1 ? " → " + esc(q.to) : ""); }).join(", " + esc(T("gzm.fThen", null, "potem")) + " ");
+      var walk = steps.reduce(function (a, q) { return a + (q.k === "walk" ? q.min : 0); }, 0), meta = [esc(v2Total(x.final - leave))];
+      if (xs.length === 1) meta.push(esc(T("gzm.fX1", { s: xs[0].at }, "przesiadka: {s}")) + ', <span class="' + F_CLS[xs[0].st] + '">' + esc(T("gzm.fSlack", { n: xs[0].slack }, "zapas {n} min")) + "</span>");
+      else if (xs.length > 1) { var mn = xs.reduce(function (a, q) { return q.slack < a.slack ? q : a; }); meta.push(esc(T("gzm.fXn", { n: xs.length }, "{n} przesiadki")) + ', <span class="' + F_CLS[mn.st] + '">' + esc(T("gzm.fSlackMin", { n: mn.slack }, "najmniej zapasu {n} min")) + "</span>"); }
+      else meta.push(esc(T("gzm.v2Direct", null, "bez przesiadek")));
+      if (walk) meta.push(esc(T("gzm.fWalk", { n: walk }, "pieszo {n} min")));
+      if (x.why) meta.push(esc(x.why));
+      if (x.tDelay) meta.push('<span class="ce-tight">' + esc(T("gzm.v2TrainLive", { n: x.tDelay }, "pociąg +{n} min (na żywo)")) + "</span>");
+      return '<div class="card v2c ' + CE_ST[st] + '" data-det="' + esc(dk) + '" role="button" tabindex="0"><div class="c-head" style="display:block">' + fR1(x, steps, leave) + "</div>" +
+        '<div class="f-how">' + how + '</div><div class="f-meta">' + meta.join(" · ") + "</div></div>";
     }
+    function fRow(h, w, sm, cls) { return "<tr" + (cls ? ' class="' + cls + '"' : "") + '><td class="h">' + h + '</td><td class="w">' + w + (sm ? '<span class="f-sm">' + sm + "</span>" : "") + "</td></tr>"; }
+    function fMk(q) { return q.mk ? " (" + esc(q.mk) + ")" : ""; }
     // treść rozwiniętej karty (zamiast nagłówka i listy odcinków); reszta karty — jak dotąd
     function ceFull(x, S) {
-      var steps = ceSteps(x, S), leave = ceLeave(x), dk = detKey(x);
-      return ceHead(x, steps, leave) + ceBlocks(steps, dk, x.final) + ceMsg(steps, leave, x.final);
+      var steps = ceSteps(x, S), leave = ceLeave(x), rows = [], firstRide = -1, lastRide = -1, prevArr = null;
+      steps.forEach(function (q, i) { if (q.k === "ride") { if (firstRide < 0) firstRide = i; lastRide = i; } });
+      steps.forEach(function (q, i) {
+        if (q.k === "walk") {
+          if (i < firstRide || firstRide < 0) { rows.push(fRow(C.fmt(leave), "🚶 " + esc(i === 0 ? T("gzm.fLeave", null, "Wyjdź") : T("gzm.fGo", null, "Przejdź")), esc(T("gzm.fWalkTo", { n: q.min, s: q.to }, "{n} min do: {s}")) + fMk(q) + q.mb)); return; }
+          if (i > lastRide) { rows.push(fRow(C.fmt(prevArr), "🚶 " + esc(T("gzm.fOnFoot", null, "Pieszo do celu")), esc(T("gzm.fWalkTo", { n: q.min, s: q.to }, "{n} min do: {s}")) + fMk(q) + q.mb)); return; }
+          return;   // między kursami — w wierszu przesiadki
+        }
+        if (q.k === "xfer") {
+          var w = steps[i - 1] && steps[i - 1].k === "walk" ? steps[i - 1] : null, sl = '<span class="' + F_CLS[q.st] + '">' + (q.st === "missed" ? esc(T("gzm.ceMiss", { n: -q.slack }, "brakuje {n} min — możesz nie zdążyć")) : esc(T("gzm.fSlack", { n: q.slack }, "zapas {n} min"))) + "</span>";
+          var what = w ? "🚶 " + esc(w.from) + " → <b>" + esc(w.to) + "</b>" : "⏳ " + esc(T("gzm.ceXfer", { s: "" }, "Przesiadka: {s}")) + "<b>" + esc(q.at) + "</b>";
+          rows.push(fRow(prevArr != null ? C.fmt(prevArr) : "", what, (w ? w.min + " min" + fMk(w) + " · " : "") + sl + (w ? w.mb : ""), "x-" + q.st));
+          return;
+        }
+        var live = q.live ? (q.delay ? '<span class="ce-tight">+' + q.delay + " min " + esc(T("gzm.ceLive", null, "na żywo")) + "</span>" : esc(T("gzm.ceOnTime", null, "jedzie punktualnie"))) : q.arrDelay ? '<span class="ce-tight">+' + q.arrDelay + " min " + esc(T("gzm.ceLive", null, "na żywo")) + "</span>" : "";
+        var from = esc(q.from) + (q.fromSt ? ", " + esc(T("gzm.stand", { n: q.fromSt }, "stan. {n}")) : "");
+        var sm = esc(T("gzm.fFrom", { s: "" }, "z: {s}")) + from + " · " + esc(T("gzm.fOff", { t: "" }, "wysiadasz {t}")) + ceTime(q.arrPlan != null ? q.arrPlan : q.arr, q.arrDelay ? q.arr : null) + (q.toSt ? " (" + esc(T("gzm.stand", { n: q.toSt }, "stan. {n}")) + ")" : "") + (live ? " · " + live : "");
+        rows.push(fRow(ceTime(q.depPlan, q.delay ? q.dep : null), fRideName(q) + " → " + esc(q.to), sm));
+        prevArr = q.arr;
+      });
+      rows.push(fRow(C.fmt(x.final), "🏁 <b>" + esc(T("gzm.fThere", null, "Na miejscu")) + "</b>", x.why ? esc(x.why) : ""));
+      return '<div class="c-head" style="display:block">' + fR1(x, steps, leave) + '</div><table class="f-tt">' + rows.join("") + "</table>";
     }
     // ===== Logika v3: pieszo, filtry absurdów, pierwszeństwo kolei (TEST — tylko profil autora) =====
     var NODE_M = 300;
