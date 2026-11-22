@@ -19,6 +19,14 @@
       "profile": "👤 Profil",
       "journal": "📓 Tagebuch",
       "menu": "☰ Menü"
+    },
+    "foot": {
+      "board": "Abfahrtstafel",
+      "planner": "Reiseplaner",
+      "myTrains": "Meine Züge",
+      "diary": "Reisetagebuch",
+      "how": "So funktioniert's",
+      "contact": "Kontakt"
     }
   },
   "alarmSound": {
@@ -55,7 +63,8 @@
     "reorderDone": "✅ Fertig",
     "reorderHint": "Verschiebe Züge mit den Pfeilen ▲▼. Die Sterne sind währenddessen ausgeblendet, damit nichts versehentlich entfernt wird.",
     "removedToast": "{train} aus den Favoriten entfernt",
-    "undo": "↩️ Rückgängig"
+    "undo": "↩️ Rückgängig",
+    "pageTitle": "Meine Züge: Verspätungsalarme – Czy zdążę?"
   },
   "index": {
     "trainWord": "Zug",
@@ -285,7 +294,7 @@
   "planer": {
     "oldTt": "Nach dem alten Fahrplan gespeichert (vor dem 13.12). Zeiten und Züge können sich geändert haben.",
     "oldTtSearch": "🔄 Erneut suchen",
-    "pageTitle": "Reiseplaner",
+    "pageTitle": "Reiseplaner Bahn und ÖPNV GZM – Czy zdążę?",
     "back": "← Tafel",
     "title": "🧭 Reiseplaner",
     "subtitle": "Sucht Direktverbindungen und Verbindungen mit Umstieg anhand des PLK-Fahrplans, mit Echtzeitdaten, wo sie bereits bekannt sind.",
@@ -692,7 +701,7 @@
   "dziennik": {
     "oldTt": "Nach dem alten Fahrplan gespeichert (vor dem 13.12). Dieser Zug fährt vielleicht zu einer anderen Zeit oder gar nicht.",
     "findNew": "🔎 Neue Verbindung suchen",
-    "pageTitle": "Reisetagebuch",
+    "pageTitle": "Reisetagebuch – Czy zdążę?",
     "back": "← Tafel",
     "title": "📓 Reisetagebuch",
     "infoTitle": "Was ist das und wie fülle ich es aus",
@@ -803,7 +812,7 @@
     "gzmTrip": "GZM-Anschlüsse: {st}"
   },
   "profil": {
-    "pageTitle": "Mein Profil",
+    "pageTitle": "Mein Profil – Czy zdążę?",
     "back": "← Tafel",
     "journalLink": "📓 Reisetagebuch",
     "contactLink": "💬 Feedback",
@@ -837,7 +846,7 @@
     "loaded": "Profil geladen. Öffne die Tafel oder Meine Züge, um die synchronisierten Daten zu sehen."
   },
   "jak": {
-    "pageTitle": "So funktioniert Czy zdążę?",
+    "pageTitle": "So funktioniert Czy zdążę? – Verspätungen, Planer, Alarme",
     "back": "← Tafel",
     "title": "📖 Czy zdążę?",
     "subtitle": "Kostenlose Abfahrtstafel und Verspätungsmonitor auf Basis von PLK-Daten —<br>ohne Werbung, ohne Anmeldung, ohne App-Installation.",
@@ -865,7 +874,7 @@
     "footnote": "Fahrplan- und Verspätungsdaten stammen aus der öffentlichen PLK-API. Die App ist kein offizieller Dienst von PKP oder PLK.<br>Hast du eine Frage, die hier nicht beantwortet wird? <a href=\"/kontakt/\">Schreib uns</a>."
   },
   "kontakt": {
-    "pageTitle": "Feedback und Kontakt",
+    "pageTitle": "Feedback und Kontakt – Czy zdążę?",
     "back": "← Tafel",
     "title": "💬 Feedback und Kontakt",
     "subtitle": "Einen Fehler gefunden oder eine Idee? Schreib — ich öffne dir eine fertige E-Mail.",

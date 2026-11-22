@@ -19,6 +19,14 @@
       "profile": "👤 Profil",
       "journal": "📓 Dziennik",
       "menu": "☰ Menu"
+    },
+    "foot": {
+      "board": "Tablica odjazdów",
+      "planner": "Planer podróży",
+      "myTrains": "Moje pociągi",
+      "diary": "Dzienniczek",
+      "how": "Jak działa",
+      "contact": "Kontakt"
     }
   },
   "alarmSound": {
@@ -55,7 +63,8 @@
     "reorderDone": "✅ Gotowe",
     "reorderHint": "Przesuwaj pociągi strzałkami ▲▼. Gwiazdki są na ten czas ukryte, żeby niczego nie usunąć przez pomyłkę.",
     "removedToast": "Usunięto {train} z ulubionych",
-    "undo": "↩️ Cofnij"
+    "undo": "↩️ Cofnij",
+    "pageTitle": "Moje pociągi: alarmy o opóźnieniach – Czy zdążę?"
   },
   "index": {
     "trainWord": "pociąg",
@@ -285,7 +294,7 @@
   "planer": {
     "oldTt": "Zapisane według starego rozkładu (przed 13.12). Godziny i pociągi mogą być już inne.",
     "oldTtSearch": "🔄 Szukaj ponownie",
-    "pageTitle": "Planer podróży",
+    "pageTitle": "Planer podróży koleją i komunikacją GZM – Czy zdążę?",
     "back": "← Tablica",
     "title": "🧭 Planer podróży",
     "subtitle": "Szuka połączeń bezpośrednich i z przesiadką(ami) na podstawie rozkładu PLK, z czasem rzeczywistym tam, gdzie już jest znany.",
@@ -692,7 +701,7 @@
   "dziennik": {
     "oldTt": "Zapisane według starego rozkładu (przed 13.12). Ten pociąg może jechać o innej godzinie albo wcale.",
     "findNew": "🔎 Znajdź nowe połączenie",
-    "pageTitle": "Dzienniczek podróży",
+    "pageTitle": "Dzienniczek podróży koleją – Czy zdążę?",
     "back": "← Tablica",
     "title": "📓 Dzienniczek podróży",
     "infoTitle": "Co to jest i jak wypełniać",
@@ -803,7 +812,7 @@
     "gzmTrip": "Przesiadki GZM: {st}"
   },
   "profil": {
-    "pageTitle": "Mój profil",
+    "pageTitle": "Mój profil – Czy zdążę?",
     "back": "← Tablica",
     "journalLink": "📓 Dzienniczek podróży",
     "contactLink": "💬 Uwagi",
@@ -837,7 +846,7 @@
     "loaded": "Profil wczytany. Otwórz Tablicę albo Moje pociągi, żeby zobaczyć zsynchronizowane dane."
   },
   "jak": {
-    "pageTitle": "Jak działa Czy zdążę?",
+    "pageTitle": "Jak działa Czy zdążę? – opóźnienia, planer, alarmy",
     "back": "← Tablica",
     "title": "📖 Czy zdążę?",
     "subtitle": "Darmowa tablica odjazdów i monitoring opóźnień na podstawie danych PLK —<br>bez reklam, bez logowania, bez aplikacji do instalowania.",
@@ -865,7 +874,7 @@
     "sec_prywatnosc": "<h2>🔒 Prywatność</h2>\n<p>Nie zapisujemy adresów IP ani żadnych danych osobowych. Profil (jeśli go założysz) przechowuje wyłącznie Twoje własne ustawienia: ulubione stacje, pociągi i trasy w dzienniczku — nic więcej. Pełny opis, wraz z jedynym technicznym wyjątkiem (chwilowy, nieodwracalny skrót IP przy zakładaniu profilu), znajdziesz w <a href=\"/kontakt/#rodo\" style=\"color:var(--cyan)\">sekcji RODO i prywatność</a>.</p>"
   },
   "kontakt": {
-    "pageTitle": "Uwagi i kontakt",
+    "pageTitle": "Uwagi i kontakt – Czy zdążę?",
     "back": "← Tablica",
     "title": "💬 Uwagi i kontakt",
     "subtitle": "Znalazłeś błąd albo masz pomysł? Napisz — otworzę Ci gotową wiadomość e-mail.",

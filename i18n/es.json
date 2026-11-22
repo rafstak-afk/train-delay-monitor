@@ -19,6 +19,14 @@
       "profile": "👤 Perfil",
       "journal": "📓 Diario",
       "menu": "☰ Menú"
+    },
+    "foot": {
+      "board": "Panel de salidas",
+      "planner": "Planificador",
+      "myTrains": "Mis trenes",
+      "diary": "Diario de viajes",
+      "how": "Cómo funciona",
+      "contact": "Contacto"
     }
   },
   "alarmSound": {
@@ -55,7 +63,8 @@
     "reorderDone": "✅ Listo",
     "reorderHint": "Mueve los trenes con las flechas ▲▼. Las estrellas se ocultan mientras tanto para no borrar nada por error.",
     "removedToast": "{train} eliminado de favoritos",
-    "undo": "↩️ Deshacer"
+    "undo": "↩️ Deshacer",
+    "pageTitle": "Mis trenes: alertas de retrasos – Czy zdążę?"
   },
   "index": {
     "trainWord": "tren",
@@ -285,7 +294,7 @@
   "planer": {
     "oldTt": "Guardado con el horario antiguo (antes del 13.12). Las horas y los trenes pueden haber cambiado.",
     "oldTtSearch": "🔄 Buscar de nuevo",
-    "pageTitle": "Planificador de viajes",
+    "pageTitle": "Planificador de viajes en tren y transporte GZM – Czy zdążę?",
     "back": "← Panel",
     "title": "🧭 Planificador de viajes",
     "subtitle": "Busca conexiones directas y con transbordo según el horario de PLK, con datos en tiempo real donde ya se conocen.",
@@ -692,7 +701,7 @@
   "dziennik": {
     "oldTt": "Guardado con el horario antiguo (antes del 13.12). Este tren puede circular a otra hora o no circular.",
     "findNew": "🔎 Buscar una nueva conexión",
-    "pageTitle": "Diario de viajes",
+    "pageTitle": "Diario de viajes – Czy zdążę?",
     "back": "← Panel",
     "title": "📓 Diario de viajes",
     "infoTitle": "Qué es y cómo rellenarlo",
@@ -803,7 +812,7 @@
     "gzmTrip": "Conexiones GZM: {st}"
   },
   "profil": {
-    "pageTitle": "Mi perfil",
+    "pageTitle": "Mi perfil – Czy zdążę?",
     "back": "← Panel",
     "journalLink": "📓 Diario de viajes",
     "contactLink": "💬 Opiniones",
@@ -837,7 +846,7 @@
     "loaded": "Perfil cargado. Abre el Panel o Mis trenes para ver los datos sincronizados."
   },
   "jak": {
-    "pageTitle": "Cómo funciona Czy zdążę?",
+    "pageTitle": "Cómo funciona Czy zdążę? – retrasos, planificador, alertas",
     "back": "← Panel",
     "title": "📖 Czy zdążę?",
     "subtitle": "Panel de salidas y control de retrasos gratuito basado en datos de PLK,<br>sin anuncios, sin registro y sin aplicación que instalar.",
@@ -865,7 +874,7 @@
     "footnote": "Los datos de horarios y retrasos proceden de la API pública de PLK. Esta aplicación no es un servicio oficial de PKP ni de PLK.<br>¿Tienes una pregunta que no está aquí? <a href=\"/kontakt/\">Escríbenos</a>."
   },
   "kontakt": {
-    "pageTitle": "Opiniones y contacto",
+    "pageTitle": "Opiniones y contacto – Czy zdążę?",
     "back": "← Panel",
     "title": "💬 Opiniones y contacto",
     "subtitle": "¿Has encontrado un error o tienes una idea? Escribe: te abriré un correo ya preparado.",

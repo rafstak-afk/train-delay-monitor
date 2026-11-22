@@ -19,6 +19,14 @@
       "profile": "👤 Profile",
       "journal": "📓 Journal",
       "menu": "☰ Menu"
+    },
+    "foot": {
+      "board": "Departure board",
+      "planner": "Journey planner",
+      "myTrains": "My trains",
+      "diary": "Travel diary",
+      "how": "How it works",
+      "contact": "Contact"
     }
   },
   "alarmSound": {
@@ -55,7 +63,8 @@
     "reorderDone": "✅ Done",
     "reorderHint": "Move trains with the ▲▼ arrows. Stars are hidden meanwhile so nothing gets removed by mistake.",
     "removedToast": "Removed {train} from favourites",
-    "undo": "↩️ Undo"
+    "undo": "↩️ Undo",
+    "pageTitle": "My trains: delay alerts – Czy zdążę?"
   },
   "index": {
     "trainWord": "train",
@@ -285,7 +294,7 @@
   "planer": {
     "oldTt": "Saved under the old timetable (before 13.12). Times and trains may have changed.",
     "oldTtSearch": "🔄 Search again",
-    "pageTitle": "Journey planner",
+    "pageTitle": "Train and GZM public transport journey planner – Czy zdążę?",
     "back": "← Board",
     "title": "🧭 Journey planner",
     "subtitle": "Finds direct connections and connections with changes based on the PLK timetable, with real-time data wherever it's already known.",
@@ -692,7 +701,7 @@
   "dziennik": {
     "oldTt": "Saved under the old timetable (before 13.12). This train may run at a different time or not at all.",
     "findNew": "🔎 Find a new connection",
-    "pageTitle": "Travel journal",
+    "pageTitle": "Travel journal – Czy zdążę?",
     "back": "← Board",
     "title": "📓 Travel journal",
     "infoTitle": "What this is and how to fill it in",
@@ -803,7 +812,7 @@
     "gzmTrip": "GZM connections: {st}"
   },
   "profil": {
-    "pageTitle": "My profile",
+    "pageTitle": "My profile – Czy zdążę?",
     "back": "← Board",
     "journalLink": "📓 Travel journal",
     "contactLink": "💬 Feedback",
@@ -837,7 +846,7 @@
     "loaded": "Profile loaded. Open the Board or My trains to see the synced data."
   },
   "jak": {
-    "pageTitle": "How Czy zdążę? works",
+    "pageTitle": "How Czy zdążę? works – delays, planner, alerts",
     "back": "← Board",
     "title": "📖 Czy zdążę?",
     "subtitle": "A free departure board and delay monitor based on PLK data —<br>no ads, no login, no app to install.",
@@ -865,7 +874,7 @@
     "footnote": "Timetable and delay data come from the public PLK API. This app is not an official PKP or PLK service.<br>Have a question that isn't answered here? <a href=\"/kontakt/\">Write to us</a>."
   },
   "kontakt": {
-    "pageTitle": "Feedback and contact",
+    "pageTitle": "Feedback and contact – Czy zdążę?",
     "back": "← Board",
     "title": "💬 Feedback and contact",
     "subtitle": "Found a bug or have an idea? Write — I'll open a ready e-mail message for you.",

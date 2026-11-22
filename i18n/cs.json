@@ -19,6 +19,14 @@
       "profile": "👤 Profil",
       "journal": "📓 Deník",
       "menu": "☰ Menu"
+    },
+    "foot": {
+      "board": "Odjezdová tabule",
+      "planner": "Plánovač cest",
+      "myTrains": "Moje vlaky",
+      "diary": "Deník cest",
+      "how": "Jak to funguje",
+      "contact": "Kontakt"
     }
   },
   "alarmSound": {
@@ -55,7 +63,8 @@
     "reorderDone": "✅ Hotovo",
     "reorderHint": "Vlaky posouvejte šipkami ▲▼. Hvězdičky jsou mezitím skryté, aby se nic neodstranilo omylem.",
     "removedToast": "{train} odebrán z oblíbených",
-    "undo": "↩️ Zpět"
+    "undo": "↩️ Zpět",
+    "pageTitle": "Moje vlaky: upozornění na zpoždění – Czy zdążę?"
   },
   "index": {
     "trainWord": "vlak",
@@ -285,7 +294,7 @@
   "planer": {
     "oldTt": "Uloženo podle starého jízdního řádu (před 13.12). Časy a vlaky se mohly změnit.",
     "oldTtSearch": "🔄 Hledat znovu",
-    "pageTitle": "Plánovač cest",
+    "pageTitle": "Plánovač cest vlakem a MHD GZM – Czy zdążę?",
     "back": "← Tabule",
     "title": "🧭 Plánovač cest",
     "subtitle": "Hledá přímá spojení i spojení s přestupy podle jízdního řádu PLK, s údaji v reálném čase tam, kde už jsou známé.",
@@ -692,7 +701,7 @@
   "dziennik": {
     "oldTt": "Uloženo podle starého jízdního řádu (před 13.12). Tento vlak může jet v jiný čas nebo vůbec.",
     "findNew": "🔎 Najít nové spojení",
-    "pageTitle": "Cestovní deník",
+    "pageTitle": "Cestovní deník – Czy zdążę?",
     "back": "← Tabule",
     "title": "📓 Cestovní deník",
     "infoTitle": "Co to je a jak to vyplnit",
@@ -803,7 +812,7 @@
     "gzmTrip": "Přestupy GZM: {st}"
   },
   "profil": {
-    "pageTitle": "Můj profil",
+    "pageTitle": "Můj profil – Czy zdążę?",
     "back": "← Tabule",
     "journalLink": "📓 Cestovní deník",
     "contactLink": "💬 Připomínky",
@@ -837,7 +846,7 @@
     "loaded": "Profil načten. Otevřete Tabuli nebo Moje vlaky a uvidíte synchronizovaná data."
   },
   "jak": {
-    "pageTitle": "Jak funguje Czy zdążę?",
+    "pageTitle": "Jak funguje Czy zdążę? – zpoždění, plánovač, upozornění",
     "back": "← Tabule",
     "title": "📖 Czy zdążę?",
     "subtitle": "Bezplatná odjezdová tabule a sledování zpoždění na základě dat PLK —<br>bez reklam, bez přihlašování, bez instalace aplikace.",
@@ -865,7 +874,7 @@
     "footnote": "Údaje o jízdním řádu a zpožděních pocházejí z veřejného API PLK. Aplikace není oficiální službou PKP ani PLK.<br>Máte otázku, na kterou tu není odpověď? <a href=\"/kontakt/\">Napište nám</a>."
   },
   "kontakt": {
-    "pageTitle": "Připomínky a kontakt",
+    "pageTitle": "Připomínky a kontakt – Czy zdążę?",
     "back": "← Tabule",
     "title": "💬 Připomínky a kontakt",
     "subtitle": "Našli jste chybu nebo máte nápad? Napište — otevřu vám hotovou e-mailovou zprávu.",
