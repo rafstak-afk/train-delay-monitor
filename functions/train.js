@@ -342,6 +342,23 @@ function todayIso(){return new Date().toLocaleDateString('sv-SE',{timeZone:'Euro
 function nowMin(){const p=new Date().toLocaleTimeString('pl-PL',{timeZone:'Europe/Warsaw',hour:'2-digit',minute:'2-digit',hour12:false}).split(':').map(Number);return p[0]*60+p[1]}
 function toMin(t){const s=shortTime(t);const m=s.match(/^(\d{2}):(\d{2})$/);return m?Number(m[1])*60+Number(m[2]):null}
 function delayClass(d){if(d>=20)return'high';if(d>10)return'mid';if(d>0)return'low';return'zero'}
+function partialCancelSection(data,route){
+  const re=/odwoła|odwoł|nie kursuje|komunikacj\S* zastępcz/i;
+  for(const d of (Array.isArray(data.disruptions)?data.disruptions:[])){
+    if(!d||!re.test(String(d.message||''))||!Array.isArray(d.stations)||!d.stations.length)continue;
+    const set=new Set(d.stations.map(normStation));let lo=-1,hi=-1;
+    route.forEach((s,k)=>{if(set.has(normStation(s.stationName))){if(lo<0)lo=k;hi=k;}});
+    if(lo>=0&&hi>lo)return {from:route[lo].stationName,to:route[hi].stationName,zka:/zastępcz/i.test(d.message)};
+  }
+  return null;
+}
+function likelyCancelledTrain(data,route){
+  const dg=data.diag||{};
+  if(dg.opsOk!==false||!/404/.test(String(dg.opsError||''))||data.lastConfirmedStation||route.some(s=>s.status==='confirmed')||!route.length)return false;
+  const day=String(data.operatingDate||''),t=toMin(route[0].plannedDeparture||route[0].plannedTime);
+  if(!day||t==null)return false;
+  return day<todayIso()||(day===todayIso()&&nowMin()>=t+10);
+}
 function statusHuman(code){
   const c=String(code||'').trim().toUpperCase();
   if(!c) return [T('train.stNone'),''];
@@ -1230,8 +1247,15 @@ function renderTrain(train,data){
   let focusIdx=passedIdx>=0?passedIdx:stations.findIndex(s=>{const t=toMin(s.actualTime||s.plannedTime);return t!=null&&t>=nm});
   if(focusIdx<0)focusIdx=0;
   const title=[data.category||qs('category')||'',data.trainNumber||train,data.name||qs('name')||''].filter(Boolean).join(' ');
-  const st=statusHuman(data.status);
-  const isCancelledTrain=String(data.status||'').trim().toUpperCase()==='X';
+  let st=statusHuman(data.status);
+  let isCancelledTrain=String(data.status||'').trim().toUpperCase()==='X';
+  // 23.11 (S8 40474): odwołanie NA ODCINKU — status pusty, jest tylko utrudnienie „…odwołany…”;
+  // po jego zniknięciu PLK nie ma danych o ruchu (404), a minął już planowy odjazd.
+  if(!isCancelledTrain){
+    const pc=partialCancelSection(data,stations);
+    if(pc){isCancelledTrain=true;st=[T('train.cancelSection',{a:pc.from,b:pc.to}),pc.zka?T('train.zka'):''];}
+    else if(likelyCancelledTrain(data,stations)){isCancelledTrain=true;st=[T('train.likelyCancel'),T('train.likelyCancelWhy')];}
+  }
   setStatus('');
   const lastStationText=data.lastConfirmedStation||T('train.noLastStation');
   const lastTimeText=data.lastConfirmedStation?(data.lastConfirmedTime||''):T('train.noHardConfirm');

@@ -1032,7 +1032,11 @@
     "hDiagBtn": "📋 Copiar diagnóstico",
     "hDiagCopied": "✓ Copiado — pégalo en contacto o en el chat",
     "gzmTitle": "Conexiones GZM — autobuses y tranvías que alcanzas al bajar del tren",
-    "gzmFarTitle": "Parada ZTM más cercana: {s}, a {d} de la estación; más lejos de lo habitual"
+    "gzmFarTitle": "Parada ZTM más cercana: {s}, a {d} de la estación; más lejos de lo habitual",
+    "cancelSection": "cancelado en el tramo {a} – {b}",
+    "zka": "transporte sustitutivo",
+    "likelyCancel": "probablemente cancelado",
+    "likelyCancelWhy": "PLK no tiene datos de circulación de este tren y ya pasó la salida prevista"
   },
   "survey": {
     "aria": "Encuesta de satisfacción",
@@ -1173,7 +1177,9 @@
     },
     "gzmTrip": "Toca: recorrido y dónde está ahora",
     "cancelSection": "en el tramo {a} – {b}",
-    "zka": "transporte sustitutivo"
+    "zka": "transporte sustitutivo",
+    "likelyCancel": "probablemente cancelado",
+    "likelyCancelWhy": "PLK no tiene datos de circulación de este tren"
   },
   "gzm": {
     "title": "🚌 Conexiones GZM",

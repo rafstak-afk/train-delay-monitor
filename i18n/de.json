@@ -1032,7 +1032,11 @@
     "hDiagBtn": "📋 Diagnose kopieren",
     "hDiagCopied": "✓ Kopiert — im Kontakt oder Chat einfügen",
     "gzmTitle": "GZM-Anschlüsse — Busse und Straßenbahnen, die du nach dem Aussteigen erreichst",
-    "gzmFarTitle": "Nächste ZTM-Haltestelle: {s}, {d} vom Bahnhof — weiter als üblich"
+    "gzmFarTitle": "Nächste ZTM-Haltestelle: {s}, {d} vom Bahnhof — weiter als üblich",
+    "cancelSection": "fällt aus auf dem Abschnitt {a} – {b}",
+    "zka": "Ersatzverkehr",
+    "likelyCancel": "wahrscheinlich ausgefallen",
+    "likelyCancelWhy": "PLK hat keine Fahrdaten zu diesem Zug, die planmäßige Abfahrt ist vorbei"
   },
   "survey": {
     "aria": "Zufriedenheitsumfrage",
@@ -1173,7 +1177,9 @@
     },
     "gzmTrip": "Tippen — Fahrtverlauf und aktuelle Position",
     "cancelSection": "auf dem Abschnitt {a} – {b}",
-    "zka": "Ersatzverkehr"
+    "zka": "Ersatzverkehr",
+    "likelyCancel": "wahrscheinlich ausgefallen",
+    "likelyCancelWhy": "PLK hat keine Fahrdaten zu diesem Zug"
   },
   "gzm": {
     "title": "🚌 GZM-Anschlüsse",

@@ -1032,7 +1032,11 @@
     "hDiagBtn": "📋 Kopiuj diagnostykę",
     "hDiagCopied": "✓ Skopiowano — wklej w kontakcie lub czacie",
     "gzmTitle": "Przesiadki GZM — autobusy i tramwaje, na które zdążysz po wyjściu z pociągu",
-    "gzmFarTitle": "Najbliższy przystanek ZTM: {s}, {d} od stacji — dalej niż zwykle"
+    "gzmFarTitle": "Najbliższy przystanek ZTM: {s}, {d} od stacji — dalej niż zwykle",
+    "cancelSection": "odwołany na odcinku {a} – {b}",
+    "zka": "komunikacja zastępcza",
+    "likelyCancel": "prawdopodobnie odwołany",
+    "likelyCancelWhy": "PLK nie ma danych o ruchu tego pociągu, a minął planowy odjazd"
   },
   "survey": {
     "aria": "Ankieta zadowolenia",
@@ -1173,7 +1177,9 @@
     },
     "gzmTrip": "Stuknij — trasa kursu i gdzie jest teraz",
     "cancelSection": "na odcinku {a} – {b}",
-    "zka": "komunikacja zastępcza"
+    "zka": "komunikacja zastępcza",
+    "likelyCancel": "prawdopodobnie odwołany",
+    "likelyCancelWhy": "PLK nie ma danych o ruchu tego pociągu"
   },
   "gzm": {
     "title": "🚌 Przesiadki GZM",

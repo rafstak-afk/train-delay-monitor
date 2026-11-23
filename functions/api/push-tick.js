@@ -80,6 +80,29 @@ function isCancelledStatus(status) {
   return s === "X" || s.includes("ODWO") || s.includes("CANCEL");
 }
 
+// 23.11 (S8 40474): PLK odwołał pociąg NA ODCINKU — status kursu pusty, jest tylko
+// utrudnienie „na odcinku … odwołany” (znika po ok. godzinie), potem pociąg znika z danych
+// o ruchu (404). Ta sama logika co w pilnowaniu (guard-core.js), dla stacji użytkownika.
+function cancelInfo(data, userStation) {
+  if (isCancelledStatus(data.status)) return { cancelled: true };
+  const route = Array.isArray(data.route) ? data.route : [];
+  if (!GuardCore || !GuardCore.partialCancel) return { cancelled: false };
+  const si = route.findIndex(s => GuardCore.norm(s.stationName) === GuardCore.norm(userStation));
+  if (si < 0) return { cancelled: false };
+  const sec = GuardCore.partialCancel(data, si, si + 1);
+  if (sec) return { cancelled: true, section: sec };
+  if (GuardCore.likelyCancelled(data, route[si])) return { cancelled: true, likely: true };
+  return { cancelled: false };
+}
+// Tablica stacji: utrudnienie „odwołany” przypięte do tej stacji (poza stacją, na której odwołany odcinek się kończy).
+const CANCEL_RE = /odwoła|odwoł|nie kursuje|komunikacj\S* zastępcz/i;
+function boardRowCancelled(d, stationName) {
+  const r = String(d.disruptionReason || "");
+  if (!CANCEL_RE.test(r)) return false;
+  const m = r.match(/do stacji ([^.(]+?)(?:\s+pociąg|\.|\(|$)/i);
+  return !(m && normalizeStationText(m[1]) === normalizeStationText(stationName));
+}
+
 async function fetchJson(origin, path) {
   try {
     const res = await fetch(origin + path, { headers: { Accept: "application/json" }, cf: { cacheTtl: 0 } });
@@ -125,7 +148,7 @@ function trainPhase(data, userStation) {
 // jest jeszcze użyteczne); opóźnienia przed startem to prognozy PLK.
 function isRelevantForUser(data, userStation) {
   const phase = trainPhase(data, userStation);
-  return phase === "active" || (phase === "notStarted" && isCancelledStatus(data.status));
+  return phase === "active" || (phase === "notStarted" && cancelInfo(data, userStation).cancelled);
 }
 
 // Okno czasowe wokół planowego czasu na stacji użytkownika (item.planTime),
@@ -208,14 +231,15 @@ async function checkTrain(origin, item, cachedLookup) {
   if (trainPhase(data, item.station) === "done") return outcome(true, null);
   if (!isRelevantForUser(data, item.station)) return outcome(false, null);
 
-  const cancelled = isCancelledStatus(data.status);
+  const ci = cancelInfo(data, item.station), cancelled = ci.cancelled;
   const delay = Number(data.delay || 0);
   if (!cancelled && !(delay >= 5)) return outcome(false, null);
 
   const label = [data.category, item.trainNum, data.name].filter(Boolean).join(" ");
-  const reason = Array.isArray(data.disruptions) && data.disruptions.length
+  let reason = Array.isArray(data.disruptions) && data.disruptions.length
     ? data.disruptions.map(d => d.message).filter(Boolean).join(" / ")
     : "";
+  if (!reason && ci.likely) reason = "PLK nie ma danych o ruchu tego pociągu — prawdopodobnie odwołany";
 
   const urlParams = new URLSearchParams({ train: item.trainNum, station: item.station });
   if (data.category) urlParams.set("category", data.category);
@@ -290,7 +314,7 @@ async function checkStation(origin, stationName, followUps = new Map()) {
     // lastConfirmedStation oznacza, że pociąg już tu był — alarm spóźniony.
     if (d.lastConfirmedStation) continue;
 
-    const cancelled = isCancelledStatus(d.status);
+    const cancelled = isCancelledStatus(d.status) || boardRowCancelled(d, stationName);
     const delay = Number(d.delay || 0);
     if (!cancelled && !(delay >= 5)) continue;
 

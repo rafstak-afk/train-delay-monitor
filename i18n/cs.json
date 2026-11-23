@@ -1032,7 +1032,11 @@
     "hDiagBtn": "📋 Kopírovat diagnostiku",
     "hDiagCopied": "✓ Zkopírováno — vlož do kontaktu nebo chatu",
     "gzmTitle": "Přestupy GZM — autobusy a tramvaje, které stihnete po výstupu z vlaku",
-    "gzmFarTitle": "Nejbližší zastávka ZTM: {s}, {d} od stanice — dál než obvykle"
+    "gzmFarTitle": "Nejbližší zastávka ZTM: {s}, {d} od stanice — dál než obvykle",
+    "cancelSection": "zrušen v úseku {a} – {b}",
+    "zka": "náhradní doprava",
+    "likelyCancel": "pravděpodobně zrušen",
+    "likelyCancelWhy": "PLK nemá data o jízdě tohoto vlaku a plánovaný odjezd už minul"
   },
   "survey": {
     "aria": "Anketa spokojenosti",
@@ -1173,7 +1177,9 @@
     },
     "gzmTrip": "Klepněte — trasa spoje a kde je teď",
     "cancelSection": "v úseku {a} – {b}",
-    "zka": "náhradní doprava"
+    "zka": "náhradní doprava",
+    "likelyCancel": "pravděpodobně zrušen",
+    "likelyCancelWhy": "PLK nemá data o jízdě tohoto vlaku"
   },
   "gzm": {
     "title": "🚌 Přestupy GZM",

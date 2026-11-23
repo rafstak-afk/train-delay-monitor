@@ -1032,7 +1032,11 @@
     "hDiagBtn": "📋 Copy diagnostics",
     "hDiagCopied": "✓ Copied — paste it in contact or chat",
     "gzmTitle": "GZM connections — buses and trams you can catch after leaving the train",
-    "gzmFarTitle": "Nearest ZTM stop: {s}, {d} from the station — farther than usual"
+    "gzmFarTitle": "Nearest ZTM stop: {s}, {d} from the station — farther than usual",
+    "cancelSection": "cancelled on the section {a} – {b}",
+    "zka": "replacement bus",
+    "likelyCancel": "probably cancelled",
+    "likelyCancelWhy": "PLK has no running data for this train and the planned departure has passed"
   },
   "survey": {
     "aria": "Satisfaction survey",
@@ -1173,7 +1177,9 @@
     },
     "gzmTrip": "Tap — route and where it is now",
     "cancelSection": "on the section {a} – {b}",
-    "zka": "replacement bus"
+    "zka": "replacement bus",
+    "likelyCancel": "probably cancelled",
+    "likelyCancelWhy": "PLK has no running data for this train"
   },
   "gzm": {
     "title": "🚌 GZM connections",
