@@ -46,8 +46,14 @@ export async function onRequestGet(context) {
     const r = await fetchFeed();
     if (r.status !== 200) return json({ ok: false, error: "feed HTTP " + r.status }, 502);
     const feed = GzmRtCore.decodeFeed(r.buf);
-    const trips = {};
+    const trips = {}, alerts = [];
     for (const e of feed.entities) {
+      // TODO 93: komunikaty ZTM (GTFS-RT Alert) — linie/kursy, nagłówek, opis, okres
+      if (e.alert && alerts.length < 60) {
+        const a = e.alert, txt = arr => { const l = (arr || []).find(x => !x.lang || x.lang === "pl") || (arr || [])[0]; return l ? String(l.text || "") : ""; };
+        alerts.push({ id: e.id, r: [...new Set(a.entities.map(x => x.routeId).filter(Boolean))].slice(0, 30), t: [...new Set(a.entities.map(x => x.trip && x.trip.tripId).filter(Boolean))].slice(0, 30),
+          h: txt(a.header).slice(0, 200), d: txt(a.description).slice(0, 500), p: (a.periods || []).slice(0, 3), eff: a.effect || null });
+      }
       if (e.tripUpdate && e.tripUpdate.trip && e.tripUpdate.trip.tripId) {
         const u = e.tripUpdate, s = u.stu[0] || {}, ev = s.arr || s.dep || {};
         const t = trips[u.trip.tripId] || (trips[u.trip.tripId] = [null, null, null, null, null]);
@@ -63,7 +69,7 @@ export async function onRequestGet(context) {
         t[4] = v.timestamp || null;
       }
     }
-    const out = json({ ok: true, ts: feed.timestamp, age: feed.timestamp ? Math.round(Date.now() / 1000 - feed.timestamp) : null, trips }, 200, CACHE_S);
+    const out = json({ ok: true, ts: feed.timestamp, age: feed.timestamp ? Math.round(Date.now() / 1000 - feed.timestamp) : null, trips, alerts }, 200, CACHE_S);
     context.waitUntil(cache.put(key, out.clone()));
     return out;
   } catch (e) {

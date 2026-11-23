@@ -630,6 +630,51 @@ function guardTrainFetcher(origin) {
     return cache.get(k);
   };
 }
+// TODO 93: komunikaty przewoźnika i ZTM dla pilnowanych połączeń (autor).
+// Koleje Śląskie: lista „Utrudnienia bieżące” (zwykły HTML, robots.txt jej nie blokuje; pamięć brzegowa 4 min),
+// wpisy z dzisiejszą datą, dopasowanie po numerze pociągu. ZTM GZM: komunikaty z GTFS-RT (/api/gzm-rt → alerts),
+// dopasowanie po kursie albo linii.
+const KS_URL = "https://www.kolejeslaskie.pl/utrudnienia/utrudnienia-biezace/";
+const PL_MONTHS = { stycznia: 1, lutego: 2, marca: 3, kwietnia: 4, maja: 5, czerwca: 6, lipca: 7, sierpnia: 8, września: 9, października: 10, listopada: 11, grudnia: 12 };
+function decodeHtml(s) { return String(s || "").replace(/<[^>]+>/g, " ").replace(/&#8211;|&ndash;/g, "–").replace(/&#8212;|&mdash;/g, "—").replace(/&nbsp;|&#160;/g, " ").replace(/&amp;/g, "&").replace(/&quot;|&#8220;|&#8221;|&#8222;/g, "\"").replace(/&#039;|&#8217;/g, "'").replace(/&#(\d+);/g, (m, n) => String.fromCharCode(+n)).replace(/\s+/g, " ").trim(); }
+async function ksNotices(today) {
+  try {
+    const r = await fetch(KS_URL, { headers: { Accept: "text/html" }, signal: AbortSignal.timeout(8000), cf: { cacheTtl: 240, cacheEverything: true } });
+    if (!r.ok) return [];
+    const html = await r.text(), out = new Map();
+    const re = /<a[^>]+href="(https:\/\/www\.kolejeslaskie\.pl\/utrudnienie\/[^"#?]+)"[^>]*>([\s\S]*?)<\/a>/g;
+    let m;
+    while ((m = re.exec(html))) {
+      const title = decodeHtml(m[2]); if (title.length < 25 || out.has(m[1])) continue;
+      const back = html.slice(Math.max(0, m.index - 1500), m.index);
+      const dates = [...back.matchAll(/(\d{1,2})\s+(stycznia|lutego|marca|kwietnia|maja|czerwca|lipca|sierpnia|września|października|listopada|grudnia)\s+(\d{4})/g)];
+      const dm = dates[dates.length - 1];
+      const date = dm ? dm[3] + "-" + String(PL_MONTHS[dm[2]]).padStart(2, "0") + "-" + String(dm[1]).padStart(2, "0") : "";
+      if (date !== today) continue;
+      const nums = [...title.matchAll(/(?:nr\.?\s*|Pociąg\s+)(\d{4,6})/gi)].map(x => x[1]);
+      // id z adresu i długości tytułu — „Aktualizacja: …” pod tym samym adresem to nowe powiadomienie
+      out.set(m[1], { id: "ks:" + m[1].split("/utrudnienie/")[1].replace(/\/$/, "").slice(0, 50) + ":" + title.length, src: "Koleje Śląskie", title, url: m[1], nums });
+    }
+    return [...out.values()];
+  } catch (e) { return []; }
+}
+async function carrierNotices(origin, conns, today) {
+  const nums = new Set(), lines = new Set(), trips = new Set();
+  for (const c of conns) for (const l of c.legs || []) {
+    if (l.mode === "gzm") { if (l.trip) trips.add(String(l.trip)); if (l.train && l.train.number) lines.add(String(l.train.number)); }
+    else if (l.train && l.train.number) nums.add(String(l.train.number));
+  }
+  const found = [];
+  if (nums.size) for (const n of await ksNotices(today)) if (n.nums.some(x => nums.has(x))) found.push(n);
+  if (lines.size || trips.size) {
+    const rt = await fetchJson(origin, "/api/gzm-rt");
+    for (const a of (rt && Array.isArray(rt.alerts) ? rt.alerts : [])) {
+      if (!(a.t || []).some(t => trips.has(String(t))) && !(a.r || []).some(r => lines.has(String(r)))) continue;
+      found.push({ id: "ztm:" + a.id, src: "ZTM", title: (a.h || "") + (a.d ? " — " + a.d.slice(0, 160) : ""), url: "/planer/#pilnowane" });
+    }
+  }
+  return found;
+}
 // TODO 91: treść skrótu przed wyjściem (po polsku — na razie tylko profil autora).
 function briefText(conn, res, readings) {
   const EM = { ok: "🟢", risk: "🟡", broken: "🔴", cancelled: "⚫", nodata: "❔", done: "🏁" };
@@ -747,6 +792,23 @@ async function runGuard(env, origin, token, profile, subs, conns, fetchTrain, su
       } catch (e) { summary.errors.push(token + " push (guard): " + e.message); }
     }
     if (sent) next[conn.id].notifiedDelay = cur.delayA;
+  }
+  // TODO 93 (autor): komunikaty przewoźnika / ZTM dla pilnowanych kursów — każdy raz (lista „_seen” w stanie).
+  if (author) {
+    const seen = Array.isArray(prevState._seen) ? prevState._seen : [];
+    next._seen = seen;
+    const live = conns.filter(c => !c._remind);
+    if (live.length) {
+      const nw = warsawNow();
+      for (const n of await carrierNotices(origin, live, nw.date)) {
+        if (seen.includes(n.id)) continue;
+        for (const sub of subs) {
+          try { const st = await sendPush(env, sub, { title: "📢 " + n.src, body: n.title, url: n.url, kind: "guard", tag: n.id.slice(0, 60) }); if (st >= 200 && st < 300) { summary.pushSent++; summary.guardNotices = (summary.guardNotices || 0) + 1; } }
+          catch (e) { summary.errors.push(token + " push (notice): " + e.message); }
+        }
+        next._seen = next._seen.concat(n.id).slice(-80);
+      }
+    }
   }
   // Zapis tylko przy zmianie (limit zapisów KV).
   if (JSON.stringify(next) !== JSON.stringify(prevState)) {
