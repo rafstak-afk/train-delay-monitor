@@ -70,7 +70,8 @@
     if ((data.route || []).some(function (s) { return s.status === "confirmed"; })) return false;
     var t = hm(stop.plannedDeparture || stop.plannedTime), n = warsawNow(), day = String(data.operatingDate || "");
     if (!day || t == null) return false;
-    return day < n.date || (day === n.date && n.min >= t + 10);
+    // tylko dziś: dane o ruchu PLK wygasają po ok. 2–3 dniach (20.11 już 404), więc dla starszych dni 404 nic nie znaczy
+    return day === n.date && n.min >= t + 10;
   }
 
   // Id połączenia — z daty i kursów, więc ten sam wynik dodany dwa razy

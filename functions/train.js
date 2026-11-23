@@ -357,7 +357,7 @@ function likelyCancelledTrain(data,route){
   if(dg.opsOk!==false||!/404/.test(String(dg.opsError||''))||data.lastConfirmedStation||route.some(s=>s.status==='confirmed')||!route.length)return false;
   const day=String(data.operatingDate||''),t=toMin(route[0].plannedDeparture||route[0].plannedTime);
   if(!day||t==null)return false;
-  return day<todayIso()||(day===todayIso()&&nowMin()>=t+10);
+  return day===todayIso()&&nowMin()>=t+10; // tylko dziś — starsze dane o ruchu PLK wygasają (404)
 }
 function statusHuman(code){
   const c=String(code||'').trim().toUpperCase();
