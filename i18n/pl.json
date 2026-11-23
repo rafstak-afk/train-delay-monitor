@@ -1171,7 +1171,9 @@
       "sound": "Przy zamkniętej aplikacji gra zwykły dźwięk powiadomienia telefonu. Android: dźwięk możesz zmienić w ustawieniach powiadomień tej aplikacji.",
       "icsTitle": "Wyjście: {d} {from} → {to}"
     },
-    "gzmTrip": "Stuknij — trasa kursu i gdzie jest teraz"
+    "gzmTrip": "Stuknij — trasa kursu i gdzie jest teraz",
+    "cancelSection": "na odcinku {a} – {b}",
+    "zka": "komunikacja zastępcza"
   },
   "gzm": {
     "title": "🚌 Przesiadki GZM",

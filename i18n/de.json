@@ -1171,7 +1171,9 @@
       "sound": "Bei geschlossener App spielt das Telefon den normalen Mitteilungston. Android: änderbar in den Benachrichtigungseinstellungen dieser App.",
       "icsTitle": "Losgehen: {d} {from} → {to}"
     },
-    "gzmTrip": "Tippen — Fahrtverlauf und aktuelle Position"
+    "gzmTrip": "Tippen — Fahrtverlauf und aktuelle Position",
+    "cancelSection": "auf dem Abschnitt {a} – {b}",
+    "zka": "Ersatzverkehr"
   },
   "gzm": {
     "title": "🚌 GZM-Anschlüsse",

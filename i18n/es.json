@@ -1171,7 +1171,9 @@
       "sound": "Con la app cerrada suena el tono normal de notificaciones. Android: puedes cambiarlo en los ajustes de notificaciones de esta app.",
       "icsTitle": "Salida: {d} {from} → {to}"
     },
-    "gzmTrip": "Toca: recorrido y dónde está ahora"
+    "gzmTrip": "Toca: recorrido y dónde está ahora",
+    "cancelSection": "en el tramo {a} – {b}",
+    "zka": "transporte sustitutivo"
   },
   "gzm": {
     "title": "🚌 Conexiones GZM",

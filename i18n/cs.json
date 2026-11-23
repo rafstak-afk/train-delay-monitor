@@ -1171,7 +1171,9 @@
       "sound": "Se zavřenou aplikací zazní běžný zvuk oznámení. Android: změníte ho v nastavení oznámení této aplikace.",
       "icsTitle": "Odchod: {d} {from} → {to}"
     },
-    "gzmTrip": "Klepněte — trasa spoje a kde je teď"
+    "gzmTrip": "Klepněte — trasa spoje a kde je teď",
+    "cancelSection": "v úseku {a} – {b}",
+    "zka": "náhradní doprava"
   },
   "gzm": {
     "title": "🚌 Přestupy GZM",

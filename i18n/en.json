@@ -1171,7 +1171,9 @@
       "sound": "With the app closed, the phone plays its normal notification sound. Android: you can change it in this app's notification settings.",
       "icsTitle": "Leave: {d} {from} → {to}"
     },
-    "gzmTrip": "Tap — route and where it is now"
+    "gzmTrip": "Tap — route and where it is now",
+    "cancelSection": "on the section {a} – {b}",
+    "zka": "replacement bus"
   },
   "gzm": {
     "title": "🚌 GZM connections",
