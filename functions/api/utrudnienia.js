@@ -74,11 +74,13 @@ export async function onRequestGet({ request, env }) {
       if (!trains.size) continue;
       out.push(Object.assign(scalars(d), { code, message, trains: [...trains.values()] }));
     }
-    // ?withTrains=1 — numer, kategoria i relacja kursu (trasa z PLK, pamięć 6 h, najwyżej 60 kursów).
+    // ?withTrains=1 — numer, kategoria i relacja kursu (trasa z PLK, pamięć 6 h). Najwyżej 40 kursów na wywołanie
+    // (limit ok. 50 podzapytań Cloudflare); &known=orderId,orderId… — te pomijamy (wywołujący zna je z poprzednich razy).
     if (url.searchParams.get("withTrains") === "1") {
+      const known = new Set((url.searchParams.get("known") || "").split(",").filter(Boolean));
       const keys = new Map();
-      for (const d of out) for (const t of d.trains) if (t.scheduleId && t.orderId) keys.set(t.scheduleId + "/" + t.orderId, null);
-      const list = [...keys.keys()].slice(0, 60);
+      for (const d of out) for (const t of d.trains) if (t.scheduleId && t.orderId && !known.has(String(t.orderId))) keys.set(t.scheduleId + "/" + t.orderId, null);
+      const list = [...keys.keys()].slice(0, 40);
       let i = 0;
       await Promise.all(Array.from({ length: 6 }, async () => {
         while (i < list.length) {
