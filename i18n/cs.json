@@ -1036,7 +1036,7 @@
     "cancelSection": "zrušen v úseku {a} – {b}",
     "zka": "náhradní doprava",
     "likelyCancel": "pravděpodobně zrušen",
-    "likelyCancelWhy": "PLK nemá data o jízdě tohoto vlaku a plánovaný odjezd už minul"
+    "likelyCancelWhy": "PLK nemá data o jízdě tohoto vlaku, i když by už měla být"
   },
   "survey": {
     "aria": "Anketa spokojenosti",

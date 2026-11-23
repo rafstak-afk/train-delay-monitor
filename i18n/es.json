@@ -1036,7 +1036,7 @@
     "cancelSection": "cancelado en el tramo {a} – {b}",
     "zka": "transporte sustitutivo",
     "likelyCancel": "probablemente cancelado",
-    "likelyCancelWhy": "PLK no tiene datos de circulación de este tren y ya pasó la salida prevista"
+    "likelyCancelWhy": "PLK no tiene datos de circulación de este tren, aunque ya debería"
   },
   "survey": {
     "aria": "Encuesta de satisfacción",

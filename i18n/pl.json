@@ -1036,7 +1036,7 @@
     "cancelSection": "odwołany na odcinku {a} – {b}",
     "zka": "komunikacja zastępcza",
     "likelyCancel": "prawdopodobnie odwołany",
-    "likelyCancelWhy": "PLK nie ma danych o ruchu tego pociągu, a minął planowy odjazd"
+    "likelyCancelWhy": "PLK nie ma danych o ruchu tego pociągu, choć powinien już w nich być"
   },
   "survey": {
     "aria": "Ankieta zadowolenia",

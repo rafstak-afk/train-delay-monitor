@@ -161,6 +161,16 @@
         // poza oknem pilnowania nie odpytujemy PLK — pokazujemy plan
         if (!w || nm < w.startMin) { results[c.id] = { status: 'waiting', startMin: w && w.startMin }; return Promise.resolve(); }
         return Promise.all(c.legs.map(function (l) { return fetchTrain(l, c.date); })).then(function (rs) {
+          // TODO 88 (autor): obieg składu — tablica stacji początkowej z przyjazdami, póki kurs nie wyruszył
+          if (!authorOnG() || !G.rotationQuery) return rs;
+          return Promise.all(c.legs.map(function (l, i) {
+            var rd = rs[i]; if (l.mode === 'gzm' || !rd) return null;
+            var q = G.rotationQuery(rd, c.date); if (!q) return null;
+            var k = 'rot|' + new URLSearchParams(q).toString(), hit = cache[k];
+            var p = hit && Date.now() - hit.at < 120000 ? Promise.resolve(hit.data) : fetch('/api/departures?' + new URLSearchParams(q).toString(), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) { cache[k] = { at: Date.now(), data: d }; return d; }).catch(function () { return null; });
+            return p.then(function (b) { rd._rot = G.rotationFrom(b && b.departures, (l.train && l.train.number) || rd.train, rd.route[0].plannedDeparture || rd.route[0].plannedTime, { name: rd.name }); });
+          })).then(function () { return rs; });
+        }).then(function (rs) {
           var res = G.evaluate(c, rs, { minTransfer: set.minTransfer });
           res.raw = rs;
           var t = res.transfers[res.worst];
@@ -233,6 +243,12 @@
       var tr = G.trainLabel(l.train) + (l.train && l.train.name ? ' ' + l.train.name : '');
       var d = r && !r.noData;
       var info = !r ? '' : (r.noData ? ' <span class="src">(' + esc(T('guard.status.nodata', null, 'brak danych')) + ')</span>' : (r.cancelled ? ' <b style="color:#fff;background:#000;padding:1px 6px;border-radius:6px">⚫ ' + esc(r.cancelLikely ? T('guard.likelyCancel', null, 'prawdopodobnie odwołany') : T('guard.status.cancelled', null, 'pociąg odwołany')) + '</b>' + (r.cancelLikely ? ' <span class="src">' + esc(T('guard.likelyCancelWhy', null, 'PLK nie ma danych o ruchu tego pociągu')) + '</span>' : '') + (r.cancelSection ? ' <span class="src">' + esc(T('guard.cancelSection', { a: r.cancelSection.from, b: r.cancelSection.to }, 'na odcinku ' + r.cancelSection.from + ' – ' + r.cancelSection.to)) + (r.cancelSection.zka ? ' · 🚌 ' + esc(T('guard.zka', null, 'komunikacja zastępcza')) : '') + '</span>' : '') : ''));
+      if (d && r.rotation && !r.started) {
+        var ro = r.rotation, bad = G.rotationRisk(r);
+        info += '<div class="src" style="margin-top:2px' + (bad ? ';color:var(--yellow);font-weight:700' : '') + '">🔁 ' + esc(T('guard.rot', { st: r.originName, tr: ro.label }, 'skład przyjeżdża do ' + r.originName + ' jako ' + ro.label)) + ' — ' +
+          esc(ro.cancelled ? T('guard.rotCan', null, 'odwołany') : (ro.delay > 0 ? '+' + ro.delay + ' min, ' : '') + T('guard.rotTurn', { n: ro.turn }, 'postój ' + ro.turn + ' min')) +
+          (bad && !ro.cancelled ? ' · ' + esc(T('guard.rotLate', { n: ro.expDelay }, 'Twój może odjechać ok. ' + ro.expDelay + ' min później')) : '') + '</div>';
+      }
       if (l.mode === "gzm") return '<div class="leg gv-gzm" data-gtrip="' + esc(l.trip) + '" data-gdate="' + esc(date) + '" data-gb="' + esc(l.board.stationName) + '" data-ga="' + esc(l.alight.stationName) + '" role="button" tabindex="0" title="' + esc(T('guard.gzmTrip', null, 'Stuknij — trasa kursu i gdzie jest teraz')) + '"><div class="leg-t">' + timeHtml(l.board.time, d ? r.delayDep : 0) + '<small>' + timeHtml(l.alight.time, d ? r.delayArr : 0) + '</small></div>' +
         '<div><div class="leg-train">' + esc(tr) + info + '</div><div class="leg-st">' + esc(l.board.stationName) + (d ? delayHtml(r.delayDep, r.depSource) : '') + ' → ' + esc(l.alight.stationName) + '</div></div></div>';
       return '<a class="leg" href="' + esc(trainUrl(l, date)) + '" title="' + esc(T('guard.openTrain', null, 'Pokaż cały bieg pociągu')) + '"><div class="leg-t">' + timeHtml(d && r.plannedDep || l.board.time, d ? r.delayDep : 0) + '<small>' + timeHtml(d && r.plannedArr || l.alight.time, d ? r.delayArr : 0) + (l.alight.nextDay ? ' +1' : '') + '</small></div>' +
@@ -368,7 +384,10 @@
         }
         if (a.list && a.list.length) a.list.forEach(function (it, k) {
           var trs = it.legs.map(function (l) { return G.trainLabel(l.train); }).join(' + ');
-          html += '<div class="alt"><div><b>' + esc(it.departureTime) + ' → ' + esc(it.arrivalTime) + '</b> · ' + esc(trs) + '<div class="src">' + esc(it.legs.length > 1 ? T('guard.altChanges', { n: it.legs.length - 1 }, 'przesiadki: ' + (it.legs.length - 1)) : T('guard.altDirect', null, 'bezpośrednio')) + '</div></div>' +
+          // TODO 92 (autor): plan B od pierwszej stacji — o której wyjść z domu (dojście z ⏰ przypomnień)
+          var lv = '';
+          if (authorOnG() && a.origin.keep === 0) { var dpm = G.hm(it.departureTime); if (dpm != null) lv = ' · <b style="color:var(--green)">🚶 ' + esc(T('guard.altLeave', { t: G.fmt(dpm - (Number(remCfg(c).walk) || 0)) }, 'wyjdź ' + G.fmt(dpm - (Number(remCfg(c).walk) || 0)))) + '</b>'; }
+          html += '<div class="alt"><div><b>' + esc(it.departureTime) + ' → ' + esc(it.arrivalTime) + '</b> · ' + esc(trs) + '<div class="src">' + esc(it.legs.length > 1 ? T('guard.altChanges', { n: it.legs.length - 1 }, 'przesiadki: ' + (it.legs.length - 1)) : T('guard.altDirect', null, 'bezpośrednio')) + lv + '</div></div>' +
             '<button type="button" class="btn-sm" data-act="switch" data-id="' + esc(c.id) + '" data-k="' + k + '">' + esc(T('guard.switch', null, '🛡️ Pilnuj tej')) + '</button></div>';
         });
         html += '</div>';

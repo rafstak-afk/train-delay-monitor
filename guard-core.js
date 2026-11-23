@@ -68,10 +68,65 @@
     var dg = data && data.diag;
     if (!dg || dg.opsOk !== false || !/404/.test(String(dg.opsError || "")) || data.lastConfirmedStation) return false;
     if ((data.route || []).some(function (s) { return s.status === "confirmed"; })) return false;
-    var t = hm(stop.plannedDeparture || stop.plannedTime), n = warsawNow(), day = String(data.operatingDate || "");
+    // TODO 89: od odjazdu ze STACJI POCZĄTKOWEJ — jadący pociąg ma dane o ruchu od startu, więc 10 min po planowym
+    // wyjeździe z początku trasy brak danych (404) = zniknął; ostrzeżenie zanim dojedzie do stacji wsiadania.
+    var o0 = (data.route || [])[0] || stop, t = hm(o0.plannedDeparture || o0.plannedTime || stop.plannedDeparture || stop.plannedTime), n = warsawNow(), day = String(data.operatingDate || "");
     if (!day || t == null) return false;
     // tylko dziś: dane o ruchu PLK wygasają po ok. 2–3 dniach (20.11 już 404), więc dla starszych dni 404 nic nie znaczy
-    return day === n.date && n.min >= t + 10;
+    // PLK ma dane o ruchu ok. 2–3 h przed startem (23.11: o 19:38 były dla 21:57, nie dla 22:55) — brak na 60 min przed
+    // wyjazdem z początku trasy jest już podejrzany (TODO 89: wcześniejsze ostrzeżenie).
+    return day === n.date && n.min >= t - 60;
+  }
+
+  // ===== TODO 88: obieg składu =====
+  // Ten sam skład zwykle wraca: pociąg kończy bieg na stacji początkowej naszego kursu, a potem jedzie
+  // z powrotem jako nasz (23.11: S8 40423 → Lubliniec, odwołany „Awaria taboru”; potem S8 40474 z Lublińca).
+  // Z tablicy stacji początkowej z przyjazdami (/api/departures?arrivals=1) bierzemy OSTATNI pociąg tego samego
+  // przewoźnika i linii, który kończy tam bieg 3–60 min przed naszym odjazdem. To przybliżenie (PLK nie podaje
+  // obiegów), więc w tekście „prawdopodobnie”.
+  // Zapytanie o tablicę — tylko gdy nasz kurs jeszcze nie wyruszył, a do odjazdu z początku trasy jest ≤ 120 min.
+  function rotationQuery(data, date) {
+    if (!data || data.error || !Array.isArray(data.route) || !data.route.length || data.lastConfirmedStation) return null;
+    var o0 = data.route[0], dep = hm(o0.plannedDeparture || o0.plannedTime), n = warsawNow();
+    if (dep == null || !o0.stationName || date !== n.date || n.min < dep - 120 || n.min > dep + 5) return null;
+    return { station: o0.stationName, date: date, time: fmt(Math.max(0, dep - 75)), limit: "40", arrivals: "1" };
+  }
+  // hint = { name } z danych kursu — gdy nasz pociąg zniknął z tablicy (jak 40474 23.11), dopasowanie po samej linii.
+  function rotationFrom(rows, trainNum, depTime, hint) {
+    rows = Array.isArray(rows) ? rows : [];
+    var dep = hm(depTime); if (dep == null) return null;
+    var own = rows.filter(function (r) { return !r.terminates && String(r.train) === String(trainNum); })[0]
+      || (hint && hint.name ? { carrier: "", name: hint.name } : null);
+    if (!own || (!own.carrier && !own.name)) return null;
+    var best = null;
+    rows.forEach(function (r) {
+      if (!r.terminates || (own.carrier && r.carrier !== own.carrier) || (own.name && r.name !== own.name)) return;
+      var pa = hm(r.plannedArrivalTime || r.plannedTime);
+      if (pa == null || pa > dep - 3 || pa < dep - 60) return;
+      if (!best || pa > hm(best.plannedArrivalTime || best.plannedTime)) best = r;
+    });
+    if (!best) return null;
+    var pa = hm(best.plannedArrivalTime || best.plannedTime), turn = dep - pa;
+    var ra = hm(best.arrivalTime || best.time); if (ra == null) ra = pa;
+    var cancelled = String(best.status || "").toUpperCase() === "X";
+    var minTurn = Math.min(5, turn), exp = cancelled ? 0 : Math.max(0, ra + minTurn - dep);
+    return { train: String(best.train), label: [best.name || best.category || "", best.train].filter(Boolean).join(" "),
+      plannedArr: fmt(pa), arr: fmt(ra), delay: Math.max(0, ra - pa), cancelled: cancelled, expDelay: exp, turn: turn, reason: best.disruptionReason || "" };
+  }
+  // Czy obieg zagraża kursowi, który jeszcze nie wyruszył.
+  function rotationRisk(x) { return !!(x && !x.noData && !x.started && x.rotation && (x.rotation.cancelled || x.rotation.expDelay >= 5)); }
+  var ROT_TX = {
+    pl: { can: "🔁 {tr}: skład prawdopodobnie przyjeżdża do stacji {st} jako {in}, który jest odwołany{why}. Twój pociąg może zostać odwołany albo opóźniony.",
+      late: "🔁 {tr}: skład prawdopodobnie przyjeżdża do stacji {st} jako {in} z opóźnieniem +{d} min (przyjazd {arr}). Twój pociąg może odjechać ok. {e} min później." },
+    en: { can: "🔁 {tr}: the train set probably arrives at {st} as {in}, which is cancelled{why}. Your train may be cancelled or delayed.",
+      late: "🔁 {tr}: the train set probably arrives at {st} as {in}, +{d} min late (arr. {arr}). Your train may leave about {e} min late." }
+  };
+  function rotationText(conn, res, lang) {
+    var i = -1; res.legs.forEach(function (x, k) { if (i < 0 && rotationRisk(x)) i = k; });
+    if (i < 0) return "";
+    var t = ROT_TX[lang] || ROT_TX.pl, x = res.legs[i], ro = x.rotation, l = conn.legs[i];
+    var st = (l && l._originName) || x.originName || "";
+    return fill(ro.cancelled ? t.can : t.late, { tr: trainLabel(l.train), st: st, in: ro.label, d: ro.delay, arr: ro.arr, e: ro.expDelay, why: ro.reason ? " (" + ro.reason + ")" : "" });
   }
 
   // Id połączenia — z daty i kursów, więc ten sam wynik dodany dwa razy
@@ -163,6 +218,8 @@
       cancelled: isCancelled(data) || !!pc || lk,
       cancelSection: pc || null,
       cancelLikely: lk,
+      rotation: data._rot || null,
+      originName: data.route[0].stationName || "",
       started: !!data.lastConfirmedStation,
       boarded: b.status === "confirmed",
       arrived: a.status === "confirmed",
@@ -231,7 +288,7 @@
     var transfers = [];
     for (var i = 0; i < legs.length - 1; i++) transfers.push(evalTransfer(legs[i], legs[i + 1], r[i], r[i + 1], minTransfer));
     var status = "ok";
-    r.forEach(function (x) { if (x.noData) status = worse(status, "nodata"); else if (x.cancelled) status = worse(status, "cancelled"); });
+    r.forEach(function (x) { if (x.noData) status = worse(status, "nodata"); else if (x.cancelled) status = worse(status, "cancelled"); else if (rotationRisk(x)) status = worse(status, "risk"); });
     transfers.forEach(function (t) { status = worse(status, t.status); });
     var last = r[r.length - 1];
     var done = !!(last && !last.noData && last.arrived);
@@ -327,6 +384,8 @@
       var cs = ci >= 0 && res.legs[ci].cancelSection;
       if (ci >= 0 && res.legs[ci].cancelLikely && t.likely) body = body.replace(/\.?$/, function () { return t.likely + "."; });
       if (cs && t.sec) body = body.replace(/\.?$/, function () { return fill(t.sec, { a: cs.from, b: cs.to, z: cs.zka ? t.zka : "" }) + "."; });
+    } else if (res.status === "risk" && kind !== "better" && rotationText(conn, res, lang) && (!tr || (RANK[tr.status] || 0) < RANK.risk)) {
+      body = rotationText(conn, res, lang);
     } else if (kind === "better" && tr) {
       body = fill(t.better, { st: tr.station, s: tr.slack });
     } else if (tr && res.status === "broken") {
@@ -388,8 +447,9 @@
     if (!res || !res.legs) return null;
     if ((conn.legs || []).some(function (l) { return l.mode === "gzm"; })) return null;   // podróż z GZM — bez alternatyw z planera PLK
     var ci = -1;
-    res.legs.forEach(function (x, i) { if (ci < 0 && x && !x.noData && x.cancelled) ci = i; });
+    res.legs.forEach(function (x, i) { if (ci < 0 && x && !x.noData && (x.cancelled || rotationRisk(x))) ci = i; });
     var tIdx = res.worst;
+    if (tIdx >= 0 && res.transfers[tIdx] && (RANK[res.transfers[tIdx].status] || 0) < RANK.risk && ci < 0) tIdx = -1;
     if (ci >= 0 && (tIdx < 0 || ci <= tIdx)) {
       var l = conn.legs[ci];
       return { keep: ci, station: l.board.stationName, stationId: l.board.stationId || "", time: l.board.time };
@@ -579,7 +639,8 @@
     norm: norm, hm: hm, fmt: fmt, connectionId: connectionId, fromItinerary: fromItinerary, fromPlannedTrips: fromPlannedTrips,
     timeWindow: timeWindow, isActive: isActive, readLeg: readLeg, evalTransfer: evalTransfer, evaluate: evaluate, setSoftMargin: setSoftMargin,
     rising: rising, shouldNotify: shouldNotify, message: message, tx: tx, trainLabel: trainLabel,
-    isCancelled: isCancelled, partialCancel: partialCancel, likelyCancelled: likelyCancelled
+    isCancelled: isCancelled, partialCancel: partialCancel, likelyCancelled: likelyCancelled,
+    rotationQuery: rotationQuery, rotationFrom: rotationFrom, rotationRisk: rotationRisk, rotationText: rotationText
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   root.GuardCore = api;

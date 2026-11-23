@@ -630,11 +630,31 @@ function guardTrainFetcher(origin) {
     return cache.get(k);
   };
 }
+// TODO 91: treść skrótu przed wyjściem (po polsku — na razie tylko profil autora).
+function briefText(conn, res, readings) {
+  const EM = { ok: "🟢", risk: "🟡", broken: "🔴", cancelled: "⚫", nodata: "❔", done: "🏁" };
+  const parts = [];
+  conn.legs.forEach((l, i) => {
+    const x = res.legs[i] || {};
+    const lab = GuardCore.trainLabel(l.train) + " " + l.board.time;
+    if (x.noData) parts.push(lab + ": brak danych PLK");
+    else if (x.cancelled) parts.push(lab + ": ⚫ " + (x.cancelLikely ? "prawdopodobnie odwołany" : "odwołany") + (x.cancelSection ? " (odcinek " + x.cancelSection.from + " – " + x.cancelSection.to + (x.cancelSection.zka ? ", komunikacja zastępcza" : "") + ")" : ""));
+    else if (x.gzm) parts.push(lab + (x.delayDep ? " +" + x.delayDep + " min" : " planowo"));
+    else parts.push(lab + (x.delayDep > 0 ? " +" + x.delayDep + " min" : " planowo") + (x.platformDep ? ", peron " + x.platformDep : ""));
+    if (x.rotation && !x.started) parts.push("🔁 skład jako " + x.rotation.label + (x.rotation.cancelled ? " — odwołany" : (x.rotation.delay ? " +" + x.rotation.delay + " min" : " planowo")));
+  });
+  res.transfers.forEach(t => { if (t.status !== "nodata" && t.status !== "cancelled") parts.push("przesiadka " + t.station + ": zapas " + t.slack + " min"); });
+  const msgs = new Set();
+  (readings || []).forEach(d => (d && Array.isArray(d.disruptions) ? d.disruptions : []).forEach(m => { if (m && m.message) msgs.add(m.message.length > 90 ? m.message.slice(0, 88) + "…" : m.message); }));
+  [...msgs].slice(0, 2).forEach(m => parts.push("⚠️ " + m));
+  return { title: "📋 " + (EM[res.status] || "") + " " + conn.from + " → " + conn.to + " " + conn.legs[0].board.time, body: parts.join(" · ") };
+}
 async function runGuard(env, origin, token, profile, subs, conns, fetchTrain, summary, lang) {
   let prevState = {};
   try { prevState = JSON.parse((await env.USER_PROFILES.get(GUARD_STATE_PREFIX + token)) || "{}") || {}; } catch (e) {}
   const set = guardSettingsOf(profile);
   const next = {};
+  const author = await isAuthor(env, token), rotBoards = new Map();
   for (const conn of conns) {
     if (conn._remind) {
       const prevR = prevState[conn.id] || {};
@@ -649,6 +669,19 @@ async function runGuard(env, origin, token, profile, subs, conns, fetchTrain, su
     }
     summary.guardChecked = (summary.guardChecked || 0) + 1;
     const readings = await Promise.all(conn.legs.map(l => fetchTrain(l, conn.date)));
+    // TODO 88 (autor): obieg składu — tablica stacji początkowej z przyjazdami, gdy kurs jeszcze nie wyruszył.
+    if (author && GuardCore.rotationQuery) {
+      for (let i = 0; i < conn.legs.length; i++) {
+        const l = conn.legs[i], rd = readings[i];
+        if (l.mode === "gzm" || !rd) continue;
+        const q = GuardCore.rotationQuery(rd, conn.date); if (!q) continue;
+        const k = "rot|" + q.station + "|" + q.date + "|" + q.time;
+        if (!rotBoards.has(k)) rotBoards.set(k, fetchJson(origin, "/api/departures?" + new URLSearchParams(q).toString()));
+        const b = await rotBoards.get(k);
+        rd._rot = GuardCore.rotationFrom(b && b.departures, (l.train && l.train.number) || rd.train, rd.route[0].plannedDeparture || rd.route[0].plannedTime, { name: rd.name });
+        summary.guardRotation = (summary.guardRotation || 0) + 1;
+      }
+    }
     const res = GuardCore.evaluate(conn, readings, { minTransfer: set.minTransfer });
     const t = res.transfers[res.worst];
     const prev = prevState[conn.id] || null;
@@ -661,7 +694,24 @@ async function runGuard(env, origin, token, profile, subs, conns, fetchTrain, su
     // poprzedniego odczytu — inaczej narastanie po minucie nigdy by nie dało ostrzeżenia.
     const prevForNotify = prev ? { status: prev.status, delayA: typeof prev.notifiedDelay === "number" ? prev.notifiedDelay : prev.delayA } : null;
     const kind = GuardCore.shouldNotify(prevForNotify, cur);
-    next[conn.id] = { status: base.status, delayA: base.delayA, hist: hist.slice(-5), notifiedDelay: prev ? prev.notifiedDelay : undefined, alt: prev ? prev.alt : undefined };
+    next[conn.id] = { status: base.status, delayA: base.delayA, hist: hist.slice(-5), notifiedDelay: prev ? prev.notifiedDelay : undefined, alt: prev ? prev.alt : undefined, brief: prev ? prev.brief : undefined };
+    // TODO 91 (autor): skrót przed wyjściem — raz, 20–35 min przed wyjściem z domu (odjazd − dojście):
+    // stan pociągów, przesiadki, obieg składu i komunikaty PLK dla tych kursów. Bez dodatkowych zapytań do PLK.
+    if (author && !(prev && prev.brief) && !kind) {
+      const rcfg = profile.guardReminders && profile.guardReminders[conn.id];
+      const walk = rcfg && rcfg.walk != null && rcfg.walk !== "" && Number.isFinite(Number(rcfg.walk)) ? Number(rcfg.walk) : GuardCore.REM_DEFAULTS.walk;
+      const nw = warsawNow(), rel = GuardCore.hm(nw.time) + dayDiff(nw.date, conn.date) * 1440;
+      const leave = GuardCore.hm(conn.legs[0].board.time) - walk;
+      if (leave != null && rel >= leave - 35 && rel <= leave - 20) {
+        const b = briefText(conn, res, readings);
+        let sent = false;
+        for (const sub of subs) {
+          try { const st = await sendPush(env, sub, { title: b.title, body: b.body, url: "/planer/?gid=" + encodeURIComponent(conn.id) + "#pilnowane", kind: "guard", tag: "brief-" + conn.id }); if (st >= 200 && st < 300) { sent = true; summary.pushSent++; summary.guardBriefs = (summary.guardBriefs || 0) + 1; } }
+          catch (e) { summary.errors.push(token + " push (brief): " + e.message); }
+        }
+        if (sent || !subs.length) next[conn.id].brief = conn.date;
+      }
+    }
     if (!kind) continue;
     // Etap 3: przy 🔴/⚫ najlepsza alternatywa do treści powiadomienia. Wyszukiwarka
     // jest ciężka, więc szukamy TYLKO przy wysyłce ostrzeżenia, a wynik dla tego
@@ -674,8 +724,14 @@ async function runGuard(env, origin, token, profile, subs, conns, fetchTrain, su
         if (prev && prev.alt && prev.alt.key === key) altText = prev.alt.text || null;
         else {
           const d = await fetchJson(origin, "/api/planner?" + new URLSearchParams(GuardCore.altQuery(conn, o)).toString());
-          const best = d && Array.isArray(d.itineraries) ? GuardCore.pickAlternatives(d.itineraries, 1)[0] : null;
-          altText = best ? GuardCore.altText(best, lang) : null;
+          const picks = d && Array.isArray(d.itineraries) ? GuardCore.pickAlternatives(d.itineraries, author ? 2 : 1) : [];
+          // TODO 92 (autor): dwie alternatywy, a gdy plan B startuje z pierwszej stacji — „wyjdź o” (odjazd − dojście z przypomnień)
+          const walk = (() => { const r = profile.guardReminders && profile.guardReminders[conn.id]; const w = r && r.walk != null && r.walk !== "" ? Number(r.walk) : GuardCore.REM_DEFAULTS.walk; return Number.isFinite(w) ? w : GuardCore.REM_DEFAULTS.walk; })();
+          altText = picks.length ? picks.map(it => {
+            let s = GuardCore.altText(it, lang);
+            if (author && o.keep === 0) { const dep = GuardCore.hm(it.departureTime || it.legs[0].board.time); if (dep != null) s += ", wyjdź " + GuardCore.fmt(dep - walk); }
+            return s;
+          }).join(author ? " albo " : "") : null;
           next[conn.id].alt = { key, text: altText };
           summary.guardAltSearches = (summary.guardAltSearches || 0) + 1;
         }

@@ -1036,7 +1036,7 @@
     "cancelSection": "fällt aus auf dem Abschnitt {a} – {b}",
     "zka": "Ersatzverkehr",
     "likelyCancel": "wahrscheinlich ausgefallen",
-    "likelyCancelWhy": "PLK hat keine Fahrdaten zu diesem Zug, die planmäßige Abfahrt ist vorbei"
+    "likelyCancelWhy": "PLK hat keine Fahrdaten zu diesem Zug, obwohl sie schon da sein sollten"
   },
   "survey": {
     "aria": "Zufriedenheitsumfrage",

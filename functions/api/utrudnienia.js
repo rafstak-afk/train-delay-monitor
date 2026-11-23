@@ -74,6 +74,26 @@ export async function onRequestGet({ request, env }) {
       if (!trains.size) continue;
       out.push(Object.assign(scalars(d), { code, message, trains: [...trains.values()] }));
     }
+    // ?withTrains=1 — numer, kategoria i relacja kursu (trasa z PLK, pamięć 6 h, najwyżej 60 kursów).
+    if (url.searchParams.get("withTrains") === "1") {
+      const keys = new Map();
+      for (const d of out) for (const t of d.trains) if (t.scheduleId && t.orderId) keys.set(t.scheduleId + "/" + t.orderId, null);
+      const list = [...keys.keys()].slice(0, 60);
+      let i = 0;
+      await Promise.all(Array.from({ length: 6 }, async () => {
+        while (i < list.length) {
+          const k = list[i++];
+          try {
+            const r = await plkGet("/schedules/route/" + k, apiKey, 21600);
+            const route = r?.route || r || {};
+            const st = Array.isArray(route.stations) ? route.stations : [];
+            const nm = s => s && (dict.byId.get(String(s.stationId)) || s.stationName || "");
+            keys.set(k, { train: String(route.nationalNumber || route.trainNumber || ""), category: route.commercialCategorySymbol || "", name: route.name || "", carrier: route.carrierCode || "", from: nm(st[0]), to: nm(st[st.length - 1]), dep: st[0] ? String(st[0].departureTime || "").slice(0, 5) : "" });
+          } catch (e) { keys.set(k, null); }
+        }
+      }));
+      for (const d of out) for (const t of d.trains) { const m = keys.get(t.scheduleId + "/" + t.orderId); if (m) Object.assign(t, m); }
+    }
     return json({ ok: true, date, at: new Date().toISOString(), stations: names, unknown, disruptions: out });
   } catch (e) {
     return json({ ok: false, error: e.message }, 502);

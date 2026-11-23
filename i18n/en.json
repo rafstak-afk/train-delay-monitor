@@ -1036,7 +1036,7 @@
     "cancelSection": "cancelled on the section {a} – {b}",
     "zka": "replacement bus",
     "likelyCancel": "probably cancelled",
-    "likelyCancelWhy": "PLK has no running data for this train and the planned departure has passed"
+    "likelyCancelWhy": "PLK has no running data for this train, although it should by now"
   },
   "survey": {
     "aria": "Satisfaction survey",
