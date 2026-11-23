@@ -17,13 +17,13 @@ const CACHE_TTL = {
 // 30 osobnych zapytań o pełne trasy pociągów.
 const COMPOSED_CACHE_TTL = 25;
 
-function composedCacheKey(stationName, date, time, limit) {
+function composedCacheKey(stationName, date, time, limit, arrivals) {
   // encodeURIComponent PRZED btoa — nazwy stacji z polskimi znakami spoza
   // Latin-1 (ą, ć, ę, ł, ń, ś, ź, ż, np. "Oświęcim") powodowały, że surowe
   // btoa() rzucało wyjątkiem SYNCHRONICZNIE, poza blokiem try/catch niżej
   // — cały request kończył się nieobsłużonym wyjątkiem Workera (Cloudflare
   // "error code: 1101") zamiast zwykłej odpowiedzi JSON z błędem.
-  const raw = `${encodeURIComponent(stationName.trim().toLowerCase())}|${date}|${time}|${limit}`;
+  const raw = `${encodeURIComponent(stationName.trim().toLowerCase())}|${date}|${time}|${limit}` + (arrivals ? "|arr" : "");
   return new Request("https://cache.local/composed-departures/" + btoa(raw), { method: "GET" });
 }
 
@@ -35,6 +35,10 @@ export async function onRequestGet(context) {
   const date = url.searchParams.get("date") || localDateYYYYMMDD();
   const time = url.searchParams.get("time") || currentTimeHHMM();
   const limit = clamp(Number(url.searchParams.get("limit") || 20), 1, 80);
+  // 23.11: ?arrivals=1 — także pociągi KOŃCZĄCE bieg na tej stacji (tylko przyjazd, terminates: true).
+  // Do raportu skomunikowań (przesiadka z pociągu, który tu kończy, np. S8 w Chorzowie Batorym).
+  // Domyślnie bez nich — tablica w aplikacji i alarmy to odjazdy.
+  const arrivals = url.searchParams.get("arrivals") === "1";
 
   if (!stationName) {
     return json({ error: "Brak parametru station" }, 400);
@@ -44,7 +48,7 @@ export async function onRequestGet(context) {
     return json({ error: "Brak zmiennej PLK_API_KEY" }, 500);
   }
 
-  const cacheKey = composedCacheKey(stationName, date, time, limit);
+  const cacheKey = composedCacheKey(stationName, date, time, limit, arrivals);
   const cachedComposed = await caches.default.match(cacheKey);
 
   if (cachedComposed) {
@@ -160,10 +164,12 @@ export async function onRequestGet(context) {
       operationsRaw,
       stationId: station.id,
       stationNames,
-      date
+      date,
+      includeArrivals: arrivals
     });
 
     const departures = getDeparturesFromTime(allDepartures, time, limit);
+    departures.forEach(r => { if (r.terminates) r.destination = station.name || stationName; });
 
     // Kierunek/stacje pośrednie wymagają PEŁNEJ trasy pociągu (nie tylko
     // naszej stacji). Zamiast ściągać rozkład całej Polski na cały dzień
@@ -344,7 +350,8 @@ function buildDepartures({
   operationsRaw,
   stationId,
   stationNames,
-  date
+  date,
+  includeArrivals
 }) {
   const stationRoutes = stationSchedulesRaw.routes || [];
   const trains = operationsRaw.trains || [];
@@ -376,7 +383,9 @@ function buildDepartures({
       s => Number(s.stationId) === Number(stationId)
     );
 
-    if (!stationPlan || !stationPlan.departureTime) continue;
+    if (!stationPlan) continue;
+    const terminates = !stationPlan.departureTime;
+    if (terminates && !(includeArrivals && stationPlan.arrivalTime)) continue;
 
     const operation = operationsMap.get(key);
     const opStation = operation?.station;
@@ -385,19 +394,21 @@ function buildDepartures({
       stationNames
     );
 
-    const plannedTime =
+    const plannedTime = terminates ? stationPlan.arrivalTime :
       stationPlan.departureTime ||
       opStation?.plannedDepartureTime ||
       "";
 
-    const actualTime =
-      timeOnly(opStation?.actualDeparture) ||
+    const actualTime = terminates
+      ? (timeOnly(opStation?.actualArrival) || timeOnly(opStation?.estimatedArrival) || opStation?.plannedArrivalTime || plannedTime)
+      : timeOnly(opStation?.actualDeparture) ||
       timeOnly(opStation?.estimatedDeparture) ||
       opStation?.plannedDepartureTime ||
       plannedTime;
 
-    const delay =
-      typeof opStation?.departureDelayMinutes === "number"
+    const delay = terminates
+      ? (typeof opStation?.arrivalDelayMinutes === "number" ? opStation.arrivalDelayMinutes : calculateDelay(plannedTime, actualTime))
+      : typeof opStation?.departureDelayMinutes === "number"
         ? opStation.departureDelayMinutes
         : calculateDelay(plannedTime, actualTime);
 
@@ -426,8 +437,8 @@ function buildDepartures({
       arrivalTime: plannedArrival ? shortTime(actualArrival || plannedArrival) : "",
       plannedArrivalTime: plannedArrival ? shortTime(plannedArrival) : "",
       arrivalDelay,
-      train: stationPlan.departureTrainNumber || stationRoute.nationalNumber || "",
-      category: stationPlan.departureCommercialCategory || stationRoute.commercialCategorySymbol || "",
+      train: stationPlan.departureTrainNumber || stationPlan.arrivalTrainNumber || stationRoute.nationalNumber || "",
+      category: stationPlan.departureCommercialCategory || stationPlan.arrivalCommercialCategory || stationRoute.commercialCategorySymbol || "",
       name: stationRoute.name || "",
       carrier: stationRoute.carrierCode || "",
       // Uzupełniane później przez enrichWithFullRoutes() — stationRoute
@@ -436,8 +447,9 @@ function buildDepartures({
       via: "",
       lastConfirmedStation: lastConfirmed?.station || "",
       lastConfirmedTime: lastConfirmed?.time || "",
-      platform: stationPlan.departurePlatform || "",
-      track: stationPlan.departureTrack || "",
+      platform: stationPlan.departurePlatform || stationPlan.arrivalPlatform || "",
+      track: stationPlan.departureTrack || stationPlan.arrivalTrack || "",
+      ...(terminates ? { terminates: true } : {}),
       delay,
       status: operation?.train?.trainStatus || "",
       scheduleId: stationRoute.scheduleId,
@@ -526,7 +538,7 @@ async function runLimited(items, worker, limit) {
 
 async function enrichWithFullRoutes(departures, headers, stationNames, stationId) {
   const targets = departures
-    .filter(row => row.scheduleId && row.orderId)
+    .filter(row => row.scheduleId && row.orderId && !row.terminates)
     .slice(0, MAX_ROUTE_ENRICHMENTS);
 
   const failures = await runLimited(
