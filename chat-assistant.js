@@ -906,11 +906,11 @@
   }
   // 🧠 TODO 82 (wariant B, profil autora): swobodne prośby o połączenia → /api/asystent (model rozumie, liczą nasze algorytmy);
   // gdy to nie prośba o połączenie (np. „jak to działa”) albo błąd — dotychczasowe reguły
-  function aiOn() { try { return localStorage.getItem("showVersionBadge") === "1" && !!(window.ProfileSync && ProfileSync.getToken && ProfileSync.getToken()); } catch (e) { return false; } }
+  function aiOn() { return true; }   // 24.11 (v6.88): dla wszystkich, także bez profilu (limity po stronie serwera)
   function askAi(text, fallback) {
     var w = addMsg("🧠 Sprawdzam połączenia, objazdy i rozkład…", "bot", true); w.classList.add("ca-wait");
     var ctl = typeof AbortController === "function" ? new AbortController() : null, tm = ctl ? setTimeout(function () { ctl.abort(); }, 90000) : null;
-    fetch("/api/asystent", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token: ProfileSync.getToken(), text: text }), signal: ctl ? ctl.signal : undefined })
+    fetch("/api/asystent", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token: (window.ProfileSync && ProfileSync.getToken && ProfileSync.getToken()) || "", text: text }), signal: ctl ? ctl.signal : undefined })
       .then(function (r) { return r.json().catch(function () { return null; }); })
       .then(function (j) {
         if (tm) clearTimeout(tm); w.remove();
