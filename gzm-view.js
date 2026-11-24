@@ -1476,7 +1476,9 @@
     var NET_KIND = { 0: "tram", 3: "bus", 11: "trolley", 800: "trolley" };
     // Numer stanowiska (słupka) z kodu ZTM: 2469011-00105 → „05”, 2466011-07601t → „01t”. TEST: profil autora.
     function standOn() { return true; }   // dla wszystkich od v5.79
-    function authorOn() { try { return localStorage.getItem("showVersionBadge") === "1"; } catch (e) { return false; } }
+    // 24.11 (v6.85): wszystkie funkcje testowane dotąd na profilu autora — dla wszystkich (karty F, mapki dojść, oznaczenia
+    // przybliżonych przejść, stacje wysiadania, stacje spoza GZM, czasy dojścia z Dom/Praca). Nowe testy: wrócić do warunku showVersionBadge.
+    function authorOn() { return true; }
     function standOf(code) { var m = String(code || "").split("-")[1]; return m && m.length >= 5 ? m.slice(3) : ""; }
     function stTag(code) { if (!standOn()) return ""; var s = standOf(code); return s ? " · " + T("gzm.stand", { n: s }, "stan. {n}") : ""; }
     function stopDeps(net, name, fromMin, limit) {

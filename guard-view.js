@@ -358,7 +358,8 @@
       var l0 = c.legs[0], ln = c.legs[c.legs.length - 1];
       return "/planer/?" + new URLSearchParams({ from: l0.board.stationName, to: ln.alight.stationName, date: c.date, time: String(l0.board.time || "").slice(0, 5) }).toString();
     }
-    function authorOnG() { try { return localStorage.getItem('showVersionBadge') === '1'; } catch (e) { return false; } }
+    // 24.11 (v6.85): zwijanie kart i mapka przejścia pociąg ↔ GZM — dla wszystkich. Nowe testy: wrócić do warunku showVersionBadge.
+    function authorOnG() { return true; }
     var folded = (function () { try { return JSON.parse(localStorage.getItem('guardFoldV1')) || {}; } catch (e) { return {}; } })();
     function cardHtml(c) {
       var r = results[c.id] || { status: 'nodata' };
