@@ -4,4 +4,4 @@ Disallow: /api/
 Disallow: /ankieta-wyniki/
 Disallow: /transport-gosci.html
 
-Sitemap: https://train-delay-monitor1.pages.dev/sitemap.xml
+Sitemap: https://czyzdaze.pl/sitemap.xml

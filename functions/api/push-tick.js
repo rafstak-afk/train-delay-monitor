@@ -205,7 +205,7 @@ async function writeTrainState(env, token, today, state) {
 // Zwraca { lookup, done, alert }: `lookup` — świeży wynik smart-lookup do
 // zapisania (null, gdy użyto zapamiętanego), `done` — pociąg minął stację
 // użytkownika / skończył bieg, `alert` — pozycja do powiadomienia albo null.
-async function checkTrain(origin, item, cachedLookup) {
+async function checkTrain(origin, item, cachedLookup, author) {
   let lookup = cachedLookup;
   let freshLookup = null;
   if (!lookup) {
@@ -229,6 +229,24 @@ async function checkTrain(origin, item, cachedLookup) {
   const data = await fetchJson(origin, `/api/train-details?${params.toString()}`);
   if (!data || data.error) return outcome(false, null);
   if (trainPhase(data, item.station) === "done") return outcome(true, null);
+  // 24.11 (autor): obieg składu dla pociągu z „Moich pociągów”, który jeszcze nie wyruszył — gdy skład przyjeżdża
+  // odwołanym albo za bardzo spóźnionym kursem, alarm wcześniej niż PLK (ta sama logika co w pilnowanych).
+  if (author && GuardCore && GuardCore.rotationResolve && trainPhase(data, item.station) === "notStarted" && !cancelInfo(data, item.station).cancelled) {
+    const date = data.operatingDate || warsawNow().date, cache = new Map();
+    const getBoard = q => { const k = "b|" + new URLSearchParams(q); if (!cache.has(k)) cache.set(k, fetchJson(origin, "/api/departures?" + new URLSearchParams(q).toString())); return cache.get(k); };
+    const getTrain = (r, dt) => fetchJson(origin, "/api/train-details?" + new URLSearchParams({ scheduleId: r.scheduleId, orderId: r.orderId, operatingDate: dt, train: r.train }).toString());
+    const rot = await GuardCore.rotationResolve(data, item.trainNum, date, getBoard, getTrain);
+    if (rot && (rot.cancelled || rot.expDelay >= 5 || (rot.prev && rot.prev.cancelled))) {
+      const label = [data.category, item.trainNum, data.name].filter(Boolean).join(" ");
+      const up = new URLSearchParams({ train: item.trainNum, station: item.station });
+      if (data.scheduleId) { up.set("scheduleId", data.scheduleId); up.set("scheduledId", data.scheduleId); }
+      if (data.orderId) up.set("orderId", data.orderId);
+      return outcome(false, { label, time: item.planTime || "--:--", delay: rot.cancelled ? 0 : rot.expDelay, cancelled: false, rotation: true,
+        rotText: rot.cancelled || (rot.prev && rot.prev.cancelled) ? "skład (" + rot.label + ") odwołany" : "skład (" + rot.label + ") +" + rot.delay + ", możliwe +" + rot.expDelay + " min",
+        reason: "🔁 " + GuardCore.rotationLine(rot, data.route[0].stationName), url: "/train?" + up.toString(),
+        key: item.trainNum + "|" + normalizeStationText(item.station) + "|" + (item.planTime || "") + "|rot" });
+    }
+  }
   if (!isRelevantForUser(data, item.station)) return outcome(false, null);
 
   const ci = cancelInfo(data, item.station), cancelled = ci.cancelled;
@@ -386,6 +404,7 @@ function pluralWord(forms, n, lang) {
 
 function plainText(x, t) {
   t = t || pushText("pl");
+  if (x.rotation) return `${shortLabel(x)} 🔁 ${x.rotText}`;
   return x.cancelled ? `${shortLabel(x)} ${t.cancelled}` : `${shortLabel(x)} +${x.delay} min`;
 }
 
@@ -917,6 +936,7 @@ export async function onRequestPost(context) {
       // rozpoznawalne nagłówki powiadomienia zamiast jednego uniwersalnego
       // "Alarm pociągów" dla obu przypadków naraz.
       const trainItems = [];
+      const authorTok = useTrains ? await isAuthor(env, token) : false;
       if (useTrains) {
         const state = await readTrainState(env, token, now.date);
         let stateChanged = false;
@@ -930,7 +950,7 @@ export async function onRequestPost(context) {
           }
           summary.trainsChecked++;
           try {
-            const { lookup, done, alert } = await checkTrain(origin, item, state.lookups[key]);
+            const { lookup, done, alert } = await checkTrain(origin, item, state.lookups[key], authorTok);
             if (lookup) { state.lookups[key] = lookup; stateChanged = true; }
             if (done) { state.done.add(key); stateChanged = true; }
             if (alert) trainItems.push(alert);
