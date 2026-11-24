@@ -29,8 +29,13 @@ self.addEventListener("activate", event => {
 self.addEventListener("fetch", event => {
   if (event.request.method !== "GET") return;
 
+  // 24.11: własne pliki (.js, .json, strony) zawsze ze sprawdzeniem na serwerze („no-cache” = pytanie o zmianę,
+  // przy braku zmian szybkie 304). Na czyzdaze.pl strefa Cloudflare dawała skryptom max-age 4 h, więc po aktualizacji
+  // telefon łączył nową stronę ze starym gzm-view.js (TODO 62 „nie ma przystanków”, mimo v6.80).
+  const sameOrigin = new URL(event.request.url).origin === self.location.origin;
+  const req = sameOrigin && event.request.mode !== "navigate" ? new Request(event.request, { cache: "no-cache" }) : event.request;
   event.respondWith(
-    fetch(event.request).catch(() => caches.match(event.request))
+    fetch(req).catch(() => caches.match(event.request))
   );
 });
 
