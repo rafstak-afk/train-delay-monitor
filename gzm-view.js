@@ -923,7 +923,7 @@
         var q = inp.value.trim();
         if (q.length < 2) { if (nearOpt() && document.activeElement === inp) { dd.innerHTML = nearOpt(); dd.classList.add("open"); } else close(); return; }
         ddList().then(function () {
-          if (inp.value.trim() !== q) return;
+          if (inp.value.trim() !== q || picked) return;   // notatka 24.11: w międzyczasie wybór z listy — lista ma zostać zwinięta
           var m = ddMatch(q);
           if (!m.length || (m.length === 1 && m[0].n === q)) {
             close();
@@ -949,11 +949,11 @@
           dd.classList.add("open");
         });
       }
-      var pickedVal = null;
-      function pick(n) { clearTimeout(timer); inp.value = n; picked = true; pickedVal = n; close(); }
+      var pickedVal = null, pickedAt = 0;
+      function pick(n) { clearTimeout(timer); inp.value = n; picked = true; pickedVal = n; pickedAt = Date.now(); close(); }
       inp._ddPick = pick;   // wybór z zewnątrz (🏠/🏢/📍 pod polami) — też zwija listę
       // notatka 20.11: klawiatura Androida po stuknięciu w podpowiedź zatwierdza jeszcze wpisywany tekst (zdarzenie „input”) — to nie jest nowe wpisywanie
-      inp.addEventListener("input", function () { if (picked && inp.value === pickedVal) return; picked = false; clearTimeout(timer); timer = setTimeout(show, 150); });
+      inp.addEventListener("input", function () { if (picked && (inp.value === pickedVal || Date.now() - pickedAt < 800)) { if (inp.value !== pickedVal) inp.value = pickedVal; return; } picked = false; clearTimeout(timer); timer = setTimeout(show, 150); });
       inp.addEventListener("focus", function () { show(); });
       inp.addEventListener("blur", function () { setTimeout(close, 180); });
       // ↓/↑ zaznaczenie, Enter wybiera (wyszukiwanie uruchamia dotychczasowy Enter), Esc zamyka
@@ -978,7 +978,7 @@
             try { inp.dispatchEvent(new Event("input", { bubbles: true })); } catch (er) {}
             // notatka 20.11: zdarzenie „input” otwierało listę od nowa i zasłaniało „Dokąd” — po wyborze lista zostaje zwinięta
             clearTimeout(timer); picked = true; close();
-            var to = root.querySelector("#gzCTo"); if (inp.id === "gzCFrom" && to && !to.value.trim()) to.focus();
+            var to = root.querySelector("#gzCTo"); if (inp.id === "gzCFrom" && to && !to.value.trim()) to.focus(); else { try { inp.blur(); } catch (er) {} }
           }, null, otherInp ? otherInp.value : "", !authorOn() ? null : function (pos) {   // na razie profil autora
             // TODO 62: do najbliższych stacji także najbliższe przystanki GZM (do 4, w promieniu 2 km, bez powtórzeń nazw)
             return getNet(warsawNow().date).then(function (net) {
