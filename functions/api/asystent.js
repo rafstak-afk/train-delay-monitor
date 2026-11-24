@@ -161,3 +161,10 @@ export async function onRequestPost({ request, env }) {
   const r = await solve(request, p, now);
   return json(Object.assign({ parsed: p, ai: !!env.AI }, r));
 }
+
+// 24.11: stan bez tokenu — tylko czy powiązanie z modelem Workers AI jest podłączone (bez wywołania modelu).
+export async function onRequestGet({ request, env }) {
+  const u = new URL(request.url);
+  if (u.searchParams.get("status") !== "1") return json({ ok: false, error: "Użyj POST" }, 405);
+  return json({ ok: true, ai: !!env.AI, model: env.AI ? MODEL : null });
+}
