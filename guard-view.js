@@ -128,6 +128,9 @@
       return ' <span class="dl ' + cls + '">' + (d > 0 ? '+' + d : d === 0 ? '0' : d) + ' min</span>' + (srcT ? ' <span class="src">(' + esc(srcT) + ')</span>' : '');
     }
 
+    // TODO 75 (autor): statystyka czekania na spóźnione dowożące — raz na sesję
+    var waitStatsPr = null;
+    function waitStatsP() { if (!waitStatsPr) waitStatsPr = fetch('/data/czekanie.json').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }); return waitStatsPr; }
     var gzmRtP = null, gzmRtAt = 0;
     function fetchTrain(leg, date) {
       if (leg.mode === "gzm") {
@@ -177,7 +180,10 @@
             return G.rotationResolve(rd, (l.train && l.train.number) || rd.train, c.date, getBoard, getTrain).then(function (rot) { rd._rot = rot; });
           })).then(function () { return rs; });
         }).then(function (rs) {
-          var res = G.evaluate(c, rs, { minTransfer: set.minTransfer });
+          return (authorOnG() ? waitStatsP() : Promise.resolve(null)).then(function (ws) { return { rs: rs, ws: ws }; });
+        }).then(function (o) {
+          var rs = o.rs;
+          var res = G.evaluate(c, rs, { minTransfer: set.minTransfer, waitStats: o.ws });
           res.raw = rs;
           var t = res.transfers[res.worst];
           if (t && typeof t.delayA === 'number') { var h = trend[c.id] = (trend[c.id] || []); if (h[h.length - 1] !== t.delayA || h.length < 1) h.push(t.delayA); if (h.length > 6) h.shift(); res.rising = G.rising(h); }
@@ -265,6 +271,7 @@
       else if (s === 'cancelled') main = T('guard.xferCancelled', { st: t.station }, 'Przesiadka w ' + t.station + ': pociąg odwołany.');
       else main = T('guard.xferLine', { st: t.station, slack: t.slack, plan: t.plannedSlack, need: t.need }, 'Przesiadka w ' + t.station + ': zapas ' + t.slack + ' min (wg planu ' + t.plannedSlack + ', potrzebne ' + t.need + ')');
       var extra = '';
+      if (t.wait) extra += '<div class="src" style="color:#cfe0f5">' + esc(G.waitText(t)) + '</div>';
       if (t.platformChange) extra += '<div class="src">' + esc(T('guard.platformChange', { a: t.platformArr, b: t.platformDep }, 'Zmiana peronu: ' + t.platformArr + ' → ' + t.platformDep + ' (+2 min)')) + '</div>';
       if (t.stationChange) extra += '<div class="src">' + esc(T('guard.stationChange', { a: t.station, b: t.toStation }, 'Przejście między stacjami: ' + t.station + ' → ' + t.toStation + ' (+5 min)')) + '</div>';
       if (t.onlyThanksToB) extra += '<div class="warn">' + esc(T('guard.onlyThanksToB', { b: G.trainLabel(t.trainB) }, 'Zdążysz tylko, jeśli ' + G.trainLabel(t.trainB) + ' nie nadrobi opóźnienia.')) + '</div>';

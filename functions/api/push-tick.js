@@ -724,6 +724,7 @@ async function runGuard(env, origin, token, profile, subs, conns, fetchTrain, su
   const set = guardSettingsOf(profile);
   const next = {};
   const author = await isAuthor(env, token), rotBoards = new Map();
+  let waitStats;
   for (const conn of conns) {
     if (conn._remind) {
       const prevR = prevState[conn.id] || {};
@@ -751,7 +752,9 @@ async function runGuard(env, origin, token, profile, subs, conns, fetchTrain, su
         summary.guardRotation = (summary.guardRotation || 0) + 1;
       }
     }
-    const res = GuardCore.evaluate(conn, readings, { minTransfer: set.minTransfer });
+    // TODO 75 (autor): czy pociąg zwykle czeka na spóźniony dowożący — statystyka z tablic
+    if (author && waitStats === undefined) waitStats = await fetchJson(origin, "/data/czekanie.json");
+    const res = GuardCore.evaluate(conn, readings, { minTransfer: set.minTransfer, waitStats: author ? waitStats : null });
     const t = res.transfers[res.worst];
     const prev = prevState[conn.id] || null;
     const cur = { status: res.status, delayA: t && typeof t.delayA === "number" ? t.delayA : null };

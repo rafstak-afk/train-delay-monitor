@@ -78,6 +78,31 @@
     return day === n.date && n.min >= t - 60;
   }
 
+  // ===== TODO 75: czy pociąg poczeka na spóźniony dowożący =====
+  // Statystyka z tablic (data/czekanie.json, skrypt notatki/skrypty/czekanie.mjs): pary[stacja|D|F] i linie[stacja|lD|lF]
+  // = [przypadków zagrożonej przesiadki, ile razy D czekał, najdłuższe czekanie min]. Najpierw para pociągów (≥ 2 przypadki),
+  // potem para linii (≥ 3). „S1 KŁODNICA” → S1.
+  function lineOf(n) { var m = String(n || "").match(/^S\d+/); return m ? m[0] : String(n || "").trim(); }
+  function waitHint(stats, station, numB, numA, lineB, lineA) {
+    if (!stats) return null;
+    var p = stats.pary && stats.pary[station + "|" + numB + "|" + numA];
+    if (p && p[0] >= 2) return { n: p[0], w: p[1], max: p[2], level: "pair" };
+    var l = lineB && lineA && stats.linie && stats.linie[station + "|" + lineB + "|" + lineA];
+    if (l && l[0] >= 3) return { n: l[0], w: l[1], max: l[2], level: "line", lineB: lineB, lineA: lineA };
+    return null;
+  }
+  // Tekst (PL — na razie profil autora). needWait = o ile min D musiałby poczekać.
+  function waitText(t) {
+    var h = t && t.wait; if (!h) return "";
+    var who = h.level === "pair" ? trainLabel(t.trainB) + " na " + trainLabel(t.trainA) : "pociągi " + h.lineB + " na " + h.lineA;
+    var stat = h.w + " z " + h.n + " razy";
+    if (!h.w) return "🕒 " + who + " w " + t.station + " zwykle nie czekają (" + stat + ").";
+    var s = "🕒 " + (h.level === "pair" ? who + " czekał" : who + " czekały") + " w " + t.station + " " + stat + ", najdłużej " + h.max + " min";
+    if (t.needWait > 0 && t.needWait > h.max) s += " — tu trzeba by ok. " + t.needWait + " min, dłużej niż dotąd";
+    else if (t.needWait > 0 && h.w / h.n >= 0.5) s += " — jest szansa, że poczeka";
+    return s + ".";
+  }
+
   // ===== TODO 88: obieg składu =====
   // Ten sam skład zwykle wraca: pociąg kończy bieg na stacji początkowej naszego kursu, a potem jedzie
   // z powrotem jako nasz (23.11: S8 40423 → Lubliniec, odwołany „Awaria taboru”; potem S8 40474 z Lublińca).
@@ -274,6 +299,7 @@
       cancelLikely: lk,
       rotation: data._rot || null,
       originName: data.route[0].stationName || "",
+      line: lineOf(data.name),
       started: !!data.lastConfirmedStation,
       boarded: b.status === "confirmed",
       arrived: a.status === "confirmed",
@@ -341,6 +367,13 @@
     var r = legs.map(function (l, i) { return readLeg(l, readings[i]); });
     var transfers = [];
     for (var i = 0; i < legs.length - 1; i++) transfers.push(evalTransfer(legs[i], legs[i + 1], r[i], r[i + 1], minTransfer));
+    if (opts.waitStats) transfers.forEach(function (t, k) {
+      if ((t.status !== "risk" && t.status !== "broken") || legs[k].mode === "gzm" || legs[k + 1].mode === "gzm") return;
+      var rb = r[k + 1], ra = r[k];
+      if (rb && rb.boarded) return;   // B już odjechał
+      t.wait = waitHint(opts.waitStats, t.station, legs[k + 1].train && legs[k + 1].train.number, legs[k].train && legs[k].train.number, rb && rb.line, ra && ra.line);
+      if (t.wait) t.needWait = Math.max(0, (t.need || 0) - (typeof t.slack === "number" ? t.slack : 0));
+    });
     var status = "ok";
     r.forEach(function (x) { if (x.noData) status = worse(status, "nodata"); else if (x.cancelled) status = worse(status, "cancelled"); else if (rotationRisk(x)) status = worse(status, "risk"); });
     transfers.forEach(function (t) { status = worse(status, t.status); });
@@ -450,6 +483,7 @@
     } else {
       body = t[res.status] || res.status;
     }
+    if (tr && tr.wait && (res.status === "risk" || res.status === "broken") && kind !== "better") body += " " + waitText(tr);
     if ((res.status === "broken" || res.status === "cancelled") && kind !== "better") body += altText ? fill(t.alt, { alt: altText }) : t.check;
     return { title: t.title, body: body };
   }
@@ -695,7 +729,8 @@
     rising: rising, shouldNotify: shouldNotify, message: message, tx: tx, trainLabel: trainLabel,
     isCancelled: isCancelled, partialCancel: partialCancel, likelyCancelled: likelyCancelled,
     rotationQuery: rotationQuery, rotationFrom: rotationFrom, rotationRisk: rotationRisk, rotationText: rotationText,
-    rotationLive: rotationLive, rotationResolve: rotationResolve, rotationLine: rotationLine
+    rotationLive: rotationLive, rotationResolve: rotationResolve, rotationLine: rotationLine,
+    lineOf: lineOf, waitHint: waitHint, waitText: waitText
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   root.GuardCore = api;
