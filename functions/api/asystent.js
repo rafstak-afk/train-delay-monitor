@@ -41,9 +41,32 @@ const fmt = m => String(Math.floor(((m % 1440) + 1440) % 1440 / 60)).padStart(2,
 const norm = s => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/ł/g, "l").trim();
 
 // ---------- 1. zrozumienie prośby ----------
-const SYSTEM = `Jesteś parserem próśb o połączenia kolejowe w Polsce (głównie Śląsk). Odpowiadasz WYŁĄCZNIE obiektem JSON, bez komentarzy:
-{"trip":true|false,"from":"stacja startowa albo null","to":"stacja docelowa albo null","date":"RRRR-MM-DD albo null","time":"GG:MM albo null","now":true|false,"flexible":true|false,"via":["stacje, przez które pasażer może/chce jechać"],"meet":true|false}
-Zasady: "trip" = czy to prośba o połączenie/trasę. "now" = jedzie teraz / zaraz / mogę wyjść teraz. "flexible" = ma czas, nie chce czekać na peronie, może się wozić, objazdy mu nie przeszkadzają. "meet" = chce wyjechać pociągowi naprzeciw / złapać go wcześniej na trasie. "via" = stacje wymienione jako możliwy objazd (np. „nawet przez Częstochowę” → ["Częstochowa"]). Nazwy stacji w mianowniku (Zawiercia → Zawiercie, do Tarnowskich Gór → Tarnowskie Góry, z Katowic → Katowice). Daty i godziny względne („jutro”, „po siedemnastej”) zamień na konkretne, licząc od podanej chwili.`;
+const SYSTEM = `Jesteś parserem próśb o połączenia kolejowe w Polsce (głównie województwo śląskie). Zamieniasz prośbę pasażera na JEDEN obiekt JSON w jednej linii — bez komentarzy, bez znaczników kodu, bez dodatkowych pól:
+{"trip":true|false,"from":"stacja startowa albo null","to":"stacja docelowa albo null","date":"RRRR-MM-DD albo null","time":"GG:MM albo null","now":true|false,"flexible":true|false,"via":[],"meet":true|false}
+
+Pola:
+- trip: true, gdy pasażer pyta o połączenie, dojazd, trasę albo pociąg między miejscami. Pytania o coś innego (bilety, opóźnienie konkretnego pociągu, pogoda, rozmowa) → false i reszta pól null / false / [].
+- from, to: nazwy stacji w MIANOWNIKU, z polskimi znakami, bez słów „stacja”, „dworzec”, „PKP”. Odmiana: z Zawiercia → Zawiercie; do Tarnowskich Gór → Tarnowskie Góry; z Katowic → Katowice; do Gliwic → Gliwice; z Bytomia → Bytom; do Chorzowa Batorego → Chorzów Batory; z Sosnowca Głównego → Sosnowiec Główny; do Lublińca → Lubliniec; z Częstochowy → Częstochowa; do Zabrza → Zabrze; z Rudy Śląskiej → Ruda Śląska; do Dąbrowy Górniczej → Dąbrowa Górnicza; z Krakowa Głównego → Kraków Główny; z Opola Głównego → Opole Główne. Nie dopisuj „Główny/Główna”, jeśli pasażer tego nie napisał. „Z domu”, „z pracy”, „stąd”, „z miejsca, gdzie jestem” → null (nie zgaduj stacji).
+- date: dzień podróży. „dziś/dzisiaj” → dzisiejsza data; „jutro” → +1 dzień; „pojutrze” → +2 dni; nazwa dnia tygodnia („w piątek”) → najbliższy taki dzień od dziś (dziś, jeśli to ten dzień, a pora jeszcze nie minęła); brak wzmianki → null.
+- time: godzina odjazdu GG:MM. „o 8” / „o ósmej” → 08:00; „po siedemnastej” / „po 17” → 17:00; „około wpół do siódmej” → 06:30; „rano” → 06:00; „przed południem” → 09:00; „w południe” → 12:00; „po południu” → 14:00; „wieczorem” → 18:00; „w nocy” → 22:00; „za godzinę” → teraz + 60 min; „za pół godziny” → teraz + 30 min. Gdy pasażer podaje godzinę PRZYJAZDU („muszę być o 8:00”, „na 7:30 do pracy”) → time = ta godzina minus 2 godziny. Brak wzmianki → null.
+- now: true, gdy jedzie teraz, zaraz, „najbliższy”, „najszybciej jak się da”, „już wychodzę”.
+- flexible: true, gdy ma czas, nie spieszy się, nie chce czekać na peronie, może się wozić, objazdy mu nie przeszkadzają, „może być dłużej”.
+- via: stacje, przez które pasażer chce albo może jechać („nawet przez Częstochowę” → ["Częstochowa"]); w mianowniku; bez stacji z from/to; najwyżej 2; brak → [].
+- meet: true, gdy chce wyjechać pociągowi naprzeciw, złapać go wcześniej na trasie, wsiąść na wcześniejszej stacji, żeby mieć miejsce.
+
+Przykłady (teraz: poniedziałek, 2026-11-23, godz. 15:00):
+Prośba: z Zawiercia do Tarnowskich Gór, mam czas, mogę jechać przez Częstochowę
+{"trip":true,"from":"Zawiercie","to":"Tarnowskie Góry","date":null,"time":null,"now":false,"flexible":true,"via":["Częstochowa"],"meet":false}
+Prośba: jutro po siedemnastej z Katowic do Lublińca
+{"trip":true,"from":"Katowice","to":"Lubliniec","date":"2026-11-24","time":"17:00","now":false,"flexible":false,"via":[],"meet":false}
+Prośba: muszę być w Gliwicach na 8:00 w piątek, jadę z Bytomia
+{"trip":true,"from":"Bytom","to":"Gliwice","date":"2026-11-27","time":"06:00","now":false,"flexible":false,"via":[],"meet":false}
+Prośba: chcę wyjechać pociągowi naprzeciw, jadę z Chorzowa Batorego do Bytomia, najbliższy
+{"trip":true,"from":"Chorzów Batory","to":"Bytom","date":null,"time":null,"now":true,"flexible":false,"via":[],"meet":true}
+Prośba: z domu do Katowic wieczorem
+{"trip":true,"from":null,"to":"Katowice","date":null,"time":"18:00","now":false,"flexible":false,"via":[],"meet":false}
+Prośba: ile kosztuje bilet miesięczny?
+{"trip":false,"from":null,"to":null,"date":null,"time":null,"now":false,"flexible":false,"via":[],"meet":false}`;
 
 export async function understand(env, text, now) {
   if (env.AI) {
@@ -54,7 +77,11 @@ export async function understand(env, text, now) {
       });
       const out = typeof r === "string" ? r : (r && (r.response ?? r.result?.response)) ?? "";
       const o = typeof out === "object" ? out : JSON.parse((String(out).match(/\{[\s\S]*\}/) || ["null"])[0]);
-      if (o && typeof o === "object") return Object.assign({ via: [] }, o, { by: "ai" });
+      if (o && typeof o === "object") {
+        const nul = v => (v == null || v === "" || String(v).toLowerCase() === "null") ? null : String(v).trim();
+        return { trip: !!o.trip, from: nul(o.from), to: nul(o.to), date: nul(o.date), time: nul(o.time), now: !!o.now, flexible: !!o.flexible,
+          via: (Array.isArray(o.via) ? o.via : []).map(nul).filter(Boolean).slice(0, 2), meet: !!o.meet, by: "ai" };
+      }
     } catch (e) { /* awaryjnie prosty parser */ }
   }
   // prosty parser (bez AI): „z X do Y”, „X → Y”, „X Y” przy znanych słowach
