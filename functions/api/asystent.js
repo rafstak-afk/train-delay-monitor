@@ -134,14 +134,16 @@ export async function solve(request, p, now) {
   const its = itsOf(base).sort((a, b) => hm(a.arrivalTime) - hm(b.arrivalTime) || hm(b.departureTime) - hm(a.departureTime));
   if (!its.length) return { ok: true, text: `Nie znalazłem połączenia ${A.name} → ${B.name} od ${time} (${date}). Spróbuj innej godziny.` };
   const best = its[0];
+  let arrPick = null;
   // 24.11: „muszę być na 8:00” — najpierw ostatnie połączenie, które zdąży (najdłużej w domu), potem najszybsze
   if (p.arrive && hm(p.arrive) != null) {
     const ok = itsOf(base).filter(x => hm(x.arrivalTime) <= hm(p.arrive)).sort((a, b) => hm(b.departureTime) - hm(a.departureTime));
+    arrPick = ok[0] || null;
     if (ok.length) out.push(`✅ Na ${p.arrive} zdążysz, wyjeżdżając najpóźniej: ${ok[0].departureTime} → ${ok[0].arrivalTime} (zapas ${hm(p.arrive) - hm(ok[0].arrivalTime)} min)\n   ${itTxt(ok[0])}`);
     else out.push(`⚠️ Nie znalazłem połączenia z przyjazdem do ${p.arrive} (szukam od ${time}). Najwcześniej na miejscu:`);
   }
   out.push(`🏆 Najszybciej na miejscu: ${best.departureTime} → ${best.arrivalTime} (${durMin(best)} min)\n   ${itTxt(best)}`);
-  const others = itsOf(base).filter(x => x !== best).slice(0, 3);
+  const others = itsOf(base).filter(x => x !== best && x !== arrPick).slice(0, 3);
   if (others.length) out.push("Inne:\n" + others.map(x => `   ${x.departureTime} → ${x.arrivalTime} · ${itTxt(x)}`).join("\n"));
   // objazdy przez wskazane stacje
   for (const v of (p.via || []).slice(0, 2)) {
