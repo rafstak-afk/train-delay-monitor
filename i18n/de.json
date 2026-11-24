@@ -1179,7 +1179,8 @@
     "cancelSection": "auf dem Abschnitt {a} – {b}",
     "zka": "Ersatzverkehr",
     "likelyCancel": "wahrscheinlich ausgefallen",
-    "likelyCancelWhy": "PLK hat keine Fahrdaten zu diesem Zug"
+    "likelyCancelWhy": "PLK hat keine Fahrdaten zu diesem Zug",
+    "altLeave": "geh um {t} los"
   },
   "gzm": {
     "title": "🚌 GZM-Anschlüsse",
@@ -1452,7 +1453,25 @@
     "plkCatalog": "ℹ️ Barrierefreiheit des Bahnhofs (PKP PLK)",
     "noResTrainOnly": "Du suchst nur Züge — zum und vom Bahnhof rechne ich dann nur Fußwege (bis ca. {km} km). Start oder Ziel liegt weiter vom Bahnhof entfernt, ohne Bus oder Straßenbahn ist es nicht erreichbar.",
     "noResModes": "In den Einstellungen ausgeschaltet: {m}. Ohne sie habe ich keine Route gefunden.",
-    "modesAllBtn": "🚆🚌 Alle Verkehrsmittel einschalten und suchen"
+    "modesAllBtn": "🚆🚌 Alle Verkehrsmittel einschalten und suchen",
+    "ceLive": "live",
+    "ceXfer": "Umstieg: {s}",
+    "ceMiss": "{n} Min. zu wenig — evtl. verpasst",
+    "ceOnTime": "pünktlich",
+    "ceStEdge": "knapp",
+    "fThen": "dann",
+    "fX1": "Umstieg: {s}",
+    "fSlack": "{n} Min. Puffer",
+    "fXn": "Umstiege: {n}",
+    "fSlackMin": "kleinster Puffer {n} Min.",
+    "fWalk": "{n} Min. zu Fuß",
+    "fLeave": "Losgehen",
+    "fGo": "Gehen",
+    "fWalkTo": "{n} Min. bis: {s}",
+    "fOnFoot": "Zu Fuß zum Ziel",
+    "fFrom": "ab: {s}",
+    "fOff": "aussteigen {t}",
+    "fThere": "Angekommen"
   },
   "tt": {
     "swapLater": "Ab 13.12 ersetzen",

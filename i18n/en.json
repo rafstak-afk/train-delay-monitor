@@ -1179,7 +1179,8 @@
     "cancelSection": "on the section {a} – {b}",
     "zka": "replacement bus",
     "likelyCancel": "probably cancelled",
-    "likelyCancelWhy": "PLK has no running data for this train"
+    "likelyCancelWhy": "PLK has no running data for this train",
+    "altLeave": "leave {t}"
   },
   "gzm": {
     "title": "🚌 GZM connections",
@@ -1452,7 +1453,25 @@
     "plkCatalog": "ℹ️ Station accessibility (PKP PLK)",
     "noResTrainOnly": "You are searching trains only — to and from the station I then count walking only (up to about {km} km). Your start or destination is farther from a station, so it can’t be reached without a bus or tram.",
     "noResModes": "Turned off in your preferences: {m}. Without them I found no route.",
-    "modesAllBtn": "🚆🚌 Turn on all means of transport and search"
+    "modesAllBtn": "🚆🚌 Turn on all means of transport and search",
+    "ceLive": "live",
+    "ceXfer": "Change: {s}",
+    "ceMiss": "{n} min short — you may miss it",
+    "ceOnTime": "on time",
+    "ceStEdge": "on the edge",
+    "fThen": "then",
+    "fX1": "change: {s}",
+    "fSlack": "{n} min to spare",
+    "fXn": "changes: {n}",
+    "fSlackMin": "least spare {n} min",
+    "fWalk": "{n} min on foot",
+    "fLeave": "Leave",
+    "fGo": "Walk",
+    "fWalkTo": "{n} min to: {s}",
+    "fOnFoot": "Walk to destination",
+    "fFrom": "from: {s}",
+    "fOff": "get off {t}",
+    "fThere": "Arrived"
   },
   "tt": {
     "swapLater": "Replace from 13.12",

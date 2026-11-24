@@ -205,7 +205,7 @@ async function writeTrainState(env, token, today, state) {
 // Zwraca { lookup, done, alert }: `lookup` — świeży wynik smart-lookup do
 // zapisania (null, gdy użyto zapamiętanego), `done` — pociąg minął stację
 // użytkownika / skończył bieg, `alert` — pozycja do powiadomienia albo null.
-async function checkTrain(origin, item, cachedLookup, author) {
+async function checkTrain(origin, item, cachedLookup, author, lang) {
   let lookup = cachedLookup;
   let freshLookup = null;
   if (!lookup) {
@@ -242,8 +242,8 @@ async function checkTrain(origin, item, cachedLookup, author) {
       if (data.scheduleId) { up.set("scheduleId", data.scheduleId); up.set("scheduledId", data.scheduleId); }
       if (data.orderId) up.set("orderId", data.orderId);
       return outcome(false, { label, time: item.planTime || "--:--", delay: rot.cancelled ? 0 : rot.expDelay, cancelled: false, rotation: true,
-        rotText: rot.cancelled || (rot.prev && rot.prev.cancelled) ? "skład (" + rot.label + ") odwołany" : "skład (" + rot.label + ") +" + rot.delay + ", możliwe +" + rot.expDelay + " min",
-        reason: "🔁 " + GuardCore.rotationLine(rot, data.route[0].stationName), url: "/train?" + up.toString(),
+        rotText: rot.cancelled || (rot.prev && rot.prev.cancelled) ? GuardCore.gx(lang, "mtRotCan", { tr: rot.label }) : GuardCore.gx(lang, "mtRotLate", { tr: rot.label, d: rot.delay, e: rot.expDelay }),
+        reason: "🔁 " + GuardCore.rotationLine(rot, data.route[0].stationName, lang), url: "/train?" + up.toString(),
         key: item.trainNum + "|" + normalizeStationText(item.station) + "|" + (item.planTime || "") + "|rot" });
     }
   }
@@ -257,7 +257,7 @@ async function checkTrain(origin, item, cachedLookup, author) {
   let reason = Array.isArray(data.disruptions) && data.disruptions.length
     ? data.disruptions.map(d => d.message).filter(Boolean).join(" / ")
     : "";
-  if (!reason && ci.likely) reason = "PLK nie ma danych o ruchu tego pociągu — prawdopodobnie odwołany";
+  if (!reason && ci.likely) reason = GuardCore.gx(lang, "likelyReason");
 
   const urlParams = new URLSearchParams({ train: item.trainNum, station: item.station });
   if (data.category) urlParams.set("category", data.category);
@@ -705,25 +705,26 @@ async function carrierNotices(origin, conns, today) {
   }
   return found;
 }
-// TODO 91: treść skrótu przed wyjściem (po polsku — na razie tylko profil autora).
-function briefText(conn, res, readings) {
+// TODO 91: treść skrótu przed wyjściem (6 języków — GuardCore.gx).
+function briefText(conn, res, readings, lang) {
+  const g = (k, p) => GuardCore.gx(lang, k, p), tx = GuardCore.tx(lang);
   const EM = { ok: "🟢", risk: "🟡", broken: "🔴", cancelled: "⚫", nodata: "❔", done: "🏁" };
   const parts = [];
   conn.legs.forEach((l, i) => {
     const x = res.legs[i] || {};
     const lab = GuardCore.trainLabel(l.train) + " " + l.board.time;
-    if (x.noData) parts.push(lab + ": brak danych PLK");
-    else if (x.cancelled) parts.push(lab + ": ⚫ " + (x.cancelLikely ? "prawdopodobnie odwołany" : "odwołany") + (x.cancelSection ? " (odcinek " + x.cancelSection.from + " – " + x.cancelSection.to + (x.cancelSection.zka ? ", komunikacja zastępcza" : "") + ")" : ""));
-    else if (x.gzm) parts.push(lab + (x.delayDep ? " +" + x.delayDep + " min" : " planowo"));
+    if (x.noData) parts.push(lab + ": " + g("bNoData"));
+    else if (x.cancelled) parts.push(lab + ": ⚫ " + g(x.cancelLikely ? "bLikely" : "bCan") + (x.cancelSection && tx.sec ? tx.sec.replace("{a}", x.cancelSection.from).replace("{b}", x.cancelSection.to).replace("{z}", x.cancelSection.zka ? tx.zka : "") : ""));
+    else if (x.gzm) parts.push(lab + (x.delayDep ? " +" + x.delayDep + " min" : g("bOnTime")));
     else {
       const rd = readings && readings[i], o = rd && Array.isArray(rd.route) ? rd.route[0] : null;
-      const state = x.started ? (rd && rd.lastConfirmedStation ? "jedzie, ostatnio " + rd.lastConfirmedStation : "jedzie")
-        : (o ? "jeszcze nie wyruszył (start " + o.stationName + " " + (o.plannedDeparture || o.plannedTime || "") + ")" : "");
-      parts.push(lab + (x.delayDep > 0 ? " +" + x.delayDep + " min" : " planowo") + (state ? ", " + state : "") + (x.platformDep ? ", peron " + x.platformDep : ""));
+      const state = x.started ? (rd && rd.lastConfirmedStation ? g("bRunLast", { w: rd.lastConfirmedStation }) : g("bRun"))
+        : (o ? g("bNotYet", { st: o.stationName, t: o.plannedDeparture || o.plannedTime || "" }) : "");
+      parts.push(lab + (x.delayDep > 0 ? " +" + x.delayDep + " min" : g("bOnTime")) + (state ? ", " + state : "") + (x.platformDep ? g("bPlat", { p: x.platformDep }) : ""));
     }
-    if (x.rotation && !x.started) parts.push("🔁 " + GuardCore.rotationLine(x.rotation, x.originName));
+    if (x.rotation && !x.started) parts.push("🔁 " + GuardCore.rotationLine(x.rotation, x.originName, lang));
   });
-  res.transfers.forEach(t => { if (t.status !== "nodata" && t.status !== "cancelled") parts.push("przesiadka " + t.station + ": zapas " + t.slack + " min"); });
+  res.transfers.forEach(t => { if (t.status !== "nodata" && t.status !== "cancelled") parts.push(g("bXfer", { st: t.station, n: t.slack })); });
   const msgs = new Set();
   (readings || []).forEach(d => (d && Array.isArray(d.disruptions) ? d.disruptions : []).forEach(m => { if (m && m.message) msgs.add(m.message.length > 90 ? m.message.slice(0, 88) + "…" : m.message); }));
   [...msgs].slice(0, 2).forEach(m => parts.push("⚠️ " + m));
@@ -791,7 +792,7 @@ async function runGuard(env, origin, token, profile, subs, conns, fetchTrain, su
       let bFrom = leave - 35; const bTo = leave - 8;
       if (o0dep != null && o0dep + 5 > bFrom) bFrom = Math.min(o0dep + 5, leave - 12);
       if (leave != null && rel >= bFrom && rel <= bTo) {
-        const b = briefText(conn, res, readings);
+        const b = briefText(conn, res, readings, lang);
         let sent = false;
         for (const sub of subs) {
           try { const st = await sendPush(env, sub, { title: b.title, body: b.body, url: "/planer/?gid=" + encodeURIComponent(conn.id) + "#pilnowane", kind: "guard", tag: "brief-" + conn.id }); if (st >= 200 && st < 300) { sent = true; summary.pushSent++; summary.guardBriefs = (summary.guardBriefs || 0) + 1; } }
@@ -817,9 +818,9 @@ async function runGuard(env, origin, token, profile, subs, conns, fetchTrain, su
           const walk = (() => { const r = profile.guardReminders && profile.guardReminders[conn.id]; const w = r && r.walk != null && r.walk !== "" ? Number(r.walk) : GuardCore.REM_DEFAULTS.walk; return Number.isFinite(w) ? w : GuardCore.REM_DEFAULTS.walk; })();
           altText = picks.length ? picks.map(it => {
             let s = GuardCore.altText(it, lang);
-            if (author && o.keep === 0) { const dep = GuardCore.hm(it.departureTime || it.legs[0].board.time); if (dep != null) s += ", wyjdź " + GuardCore.fmt(dep - walk); }
+            if (author && o.keep === 0) { const dep = GuardCore.hm(it.departureTime || it.legs[0].board.time); if (dep != null) s += GuardCore.gx(lang, "leave", { t: GuardCore.fmt(dep - walk) }); }
             return s;
-          }).join(author ? " albo " : "") : null;
+          }).join(author ? GuardCore.gx(lang, "or") : "") : null;
           next[conn.id].alt = { key, text: altText };
           summary.guardAltSearches = (summary.guardAltSearches || 0) + 1;
         }
@@ -965,7 +966,7 @@ export async function onRequestPost(context) {
           }
           summary.trainsChecked++;
           try {
-            const { lookup, done, alert, missing } = await checkTrain(origin, item, state.lookups[key], authorTok);
+            const { lookup, done, alert, missing } = await checkTrain(origin, item, state.lookups[key], authorTok, typeof profile.language === "string" ? profile.language : "pl");
             if (missing && now.date >= TT_MISS_FROM && now.date <= TT_MISS_TO) ttMissing.push(item);
             if (lookup) { state.lookups[key] = lookup; stateChanged = true; }
             if (done) { state.done.add(key); stateChanged = true; }

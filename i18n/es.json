@@ -1179,7 +1179,8 @@
     "cancelSection": "en el tramo {a} – {b}",
     "zka": "transporte sustitutivo",
     "likelyCancel": "probablemente cancelado",
-    "likelyCancelWhy": "PLK no tiene datos de circulación de este tren"
+    "likelyCancelWhy": "PLK no tiene datos de circulación de este tren",
+    "altLeave": "sal a las {t}"
   },
   "gzm": {
     "title": "🚌 Conexiones GZM",
@@ -1452,7 +1453,25 @@
     "plkCatalog": "ℹ️ Accesibilidad de la estación (PKP PLK)",
     "noResTrainOnly": "Buscas solo trenes: hasta la estación y desde ella cuento entonces solo el trayecto a pie (hasta unos {km} km). El origen o el destino está más lejos de una estación, así que sin autobús ni tranvía no se puede llegar.",
     "noResModes": "Desactivado en tus preferencias: {m}. Sin ellos no encontré ruta.",
-    "modesAllBtn": "🚆🚌 Activar todos los medios de transporte y buscar"
+    "modesAllBtn": "🚆🚌 Activar todos los medios de transporte y buscar",
+    "ceLive": "en vivo",
+    "ceXfer": "Transbordo: {s}",
+    "ceMiss": "faltan {n} min: puede que no llegues",
+    "ceOnTime": "va puntual",
+    "ceStEdge": "al límite",
+    "fThen": "luego",
+    "fX1": "transbordo: {s}",
+    "fSlack": "margen {n} min",
+    "fXn": "transbordos: {n}",
+    "fSlackMin": "margen mínimo {n} min",
+    "fWalk": "a pie {n} min",
+    "fLeave": "Sal",
+    "fGo": "Camina",
+    "fWalkTo": "{n} min hasta: {s}",
+    "fOnFoot": "A pie hasta el destino",
+    "fFrom": "desde: {s}",
+    "fOff": "te bajas {t}",
+    "fThere": "Llegada"
   },
   "tt": {
     "swapLater": "Sustituir desde el 13.12",

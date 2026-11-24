@@ -78,6 +78,10 @@
     return day === n.date && n.min >= t - 60;
   }
 
+  // ===== 24.11: teksty nowych funkcji (obieg, czekanie, skrót, plan B) w 6 językach =====
+  var GX = {"pl":{"rot":"skład przyjeżdża na stację {st} jako {tr}","rotStart":" (start {from} {dep})","rotCan":" — odwołany","rotArrived":" — przyjechał {t}{d}, potwierdzone","rotRun":" — jedzie","rotLast":", ostatnio {w}","rotEta":", przyjazd ok. {t}","rotPlan":" (planowo)","rotNotYet":" — jeszcze nie wyruszył","rotPrev":"; wcześniej ten skład: {tr}","rotFc":" — prognoza {t}","rotSched":" — wg rozkładu {t}, brak danych na żywo","rotTurn":" · postój {n} min","rotYour":" · Twój może odjechać ok. {n} min później","waitPair":"{b} na {a}","waitLine":"{lb} na {la}","waitStat":"{w} z {n} razy","waitNo":"🕒 {st}, {who}: zwykle bez czekania ({stat}).","waitYes":"🕒 {st}, {who}: czekał {stat}, najdłużej {max} min","waitLonger":" — tu trzeba by ok. {n} min, dłużej niż dotąd","waitChance":" — jest szansa, że poczeka","bNoData":"brak danych PLK","bLikely":"prawdopodobnie odwołany","bCan":"odwołany","bOnTime":" planowo","bRunLast":"jedzie, ostatnio {w}","bRun":"jedzie","bNotYet":"jeszcze nie wyruszył (start {st} {t})","bPlat":", peron {p}","bXfer":"przesiadka {st}: zapas {n} min","leave":", wyjdź {t}","or":" albo ","mtRotCan":"skład ({tr}) odwołany","mtRotLate":"skład ({tr}) +{d}, możliwe +{e} min","likelyReason":"PLK nie ma danych o ruchu tego pociągu — prawdopodobnie odwołany"},"en":{"rot":"the train set arrives at {st} as {tr}","rotStart":" (from {from} {dep})","rotCan":" — cancelled","rotArrived":" — arrived {t}{d}, confirmed","rotRun":" — running","rotLast":", last seen {w}","rotEta":", arrives ~{t}","rotPlan":" (on time)","rotNotYet":" — not departed yet","rotPrev":"; before that this set runs as {tr}","rotFc":" — forecast {t}","rotSched":" — scheduled {t}, no live data","rotTurn":" · layover {n} min","rotYour":" · yours may leave about {n} min late","waitPair":"{b} for {a}","waitLine":"{lb} trains for {la}","waitStat":"{w} of {n} times","waitNo":"🕒 {st}, {who}: usually no waiting ({stat}).","waitYes":"🕒 {st}, {who}: waited {stat}, up to {max} min","waitLonger":" — this needs ~{n} min, longer than ever seen","waitChance":" — there is a chance it waits","bNoData":"no PLK data","bLikely":"probably cancelled","bCan":"cancelled","bOnTime":" on time","bRunLast":"running, last seen {w}","bRun":"running","bNotYet":"not departed yet (from {st} {t})","bPlat":", platform {p}","bXfer":"change at {st}: {n} min to spare","leave":", leave {t}","or":" or ","mtRotCan":"train set ({tr}) cancelled","mtRotLate":"train set ({tr}) +{d}, possibly +{e} min","likelyReason":"PLK has no running data for this train — probably cancelled"},"de":{"rot":"die Garnitur kommt nach {st} als {tr}","rotStart":" (ab {from} {dep})","rotCan":" — fällt aus","rotArrived":" — angekommen {t}{d}, bestätigt","rotRun":" — unterwegs","rotLast":", zuletzt {w}","rotEta":", Ankunft ca. {t}","rotPlan":" (pünktlich)","rotNotYet":" — noch nicht abgefahren","rotPrev":"; davor fährt die Garnitur als {tr}","rotFc":" — Prognose {t}","rotSched":" — laut Fahrplan {t}, keine Live-Daten","rotTurn":" · Wendezeit {n} Min.","rotYour":" · deiner fährt evtl. ca. {n} Min. später","waitPair":"{b} auf {a}","waitLine":"Züge {lb} auf {la}","waitStat":"{w} von {n} Mal","waitNo":"🕒 {st}, {who}: meist kein Warten ({stat}).","waitYes":"🕒 {st}, {who}: gewartet {stat}, max. {max} Min.","waitLonger":" — hier wären ca. {n} Min. nötig, länger als bisher","waitChance":" — er wartet vielleicht","bNoData":"keine PLK-Daten","bLikely":"wahrscheinlich ausgefallen","bCan":"fällt aus","bOnTime":" pünktlich","bRunLast":"unterwegs, zuletzt {w}","bRun":"unterwegs","bNotYet":"noch nicht abgefahren (ab {st} {t})","bPlat":", Bahnsteig {p}","bXfer":"Umstieg {st}: {n} Min. Puffer","leave":", geh um {t} los","or":" oder ","mtRotCan":"Garnitur ({tr}) fällt aus","mtRotLate":"Garnitur ({tr}) +{d}, evtl. +{e} Min.","likelyReason":"PLK hat keine Fahrdaten zu diesem Zug — wahrscheinlich ausgefallen"},"cs":{"rot":"souprava přijíždí do stanice {st} jako {tr}","rotStart":" (výchozí {from} {dep})","rotCan":" — zrušen","rotArrived":" — přijel {t}{d}, potvrzeno","rotRun":" — jede","rotLast":", naposledy {w}","rotEta":", příjezd cca {t}","rotPlan":" (včas)","rotNotYet":" — ještě nevyjel","rotPrev":"; předtím souprava jede jako {tr}","rotFc":" — předpověď {t}","rotSched":" — podle jízdního řádu {t}, bez živých dat","rotTurn":" · obrat {n} min","rotYour":" · tvůj může odjet asi o {n} min později","waitPair":"{b} na {a}","waitLine":"{lb} na {la}","waitStat":"{w} z {n} případů","waitNo":"🕒 {st}, {who}: obvykle bez čekání ({stat}).","waitYes":"🕒 {st}, {who}: čekal {stat}, nejdéle {max} min","waitLonger":" — tady by bylo potřeba cca {n} min, déle než dosud","waitChance":" — je šance, že počká","bNoData":"bez dat PLK","bLikely":"pravděpodobně zrušen","bCan":"zrušen","bOnTime":" včas","bRunLast":"jede, naposledy {w}","bRun":"jede","bNotYet":"ještě nevyjel (výchozí {st} {t})","bPlat":", nástupiště {p}","bXfer":"přestup {st}: rezerva {n} min","leave":", vyraz v {t}","or":" nebo ","mtRotCan":"souprava ({tr}) zrušena","mtRotLate":"souprava ({tr}) +{d}, možná +{e} min","likelyReason":"PLK nemá data o jízdě tohoto vlaku — pravděpodobně zrušen"},"es":{"rot":"la composición llega a {st} como {tr}","rotStart":" (sale de {from} {dep})","rotCan":" — cancelado","rotArrived":" — llegó {t}{d}, confirmado","rotRun":" — en camino","rotLast":", último paso {w}","rotEta":", llega hacia {t}","rotPlan":" (puntual)","rotNotYet":" — aún no ha salido","rotPrev":"; antes esta composición es el {tr}","rotFc":" — previsión {t}","rotSched":" — según horario {t}, sin datos en vivo","rotTurn":" · parada {n} min","rotYour":" · el tuyo puede salir unos {n} min tarde","waitPair":"{b} a {a}","waitLine":"{lb} a {la}","waitStat":"{w} de {n} veces","waitNo":"🕒 {st}, {who}: normalmente no espera ({stat}).","waitYes":"🕒 {st}, {who}: esperó {stat}, hasta {max} min","waitLonger":" — aquí haría falta ~{n} min, más que hasta ahora","waitChance":" — puede que espere","bNoData":"sin datos de PLK","bLikely":"probablemente cancelado","bCan":"cancelado","bOnTime":" puntual","bRunLast":"en camino, último paso {w}","bRun":"en camino","bNotYet":"aún no ha salido (sale de {st} {t})","bPlat":", andén {p}","bXfer":"transbordo {st}: margen {n} min","leave":", sal a las {t}","or":" o ","mtRotCan":"composición ({tr}) cancelada","mtRotLate":"composición ({tr}) +{d}, posible +{e} min","likelyReason":"PLK no tiene datos de circulación de este tren: probablemente cancelado"},"uk":{"rot":"состав прибуває на станцію {st} як {tr}","rotStart":" (з {from} {dep})","rotCan":" — скасовано","rotArrived":" — прибув {t}{d}, підтверджено","rotRun":" — їде","rotLast":", востаннє {w}","rotEta":", прибуття бл. {t}","rotPlan":" (вчасно)","rotNotYet":" — ще не вирушив","rotPrev":"; перед тим цей состав — {tr}","rotFc":" — прогноз {t}","rotSched":" — за розкладом {t}, без даних наживо","rotTurn":" · стоянка {n} хв","rotYour":" · твій може відправитися бл. на {n} хв пізніше","waitPair":"{b} на {a}","waitLine":"{lb} на {la}","waitStat":"{w} з {n} разів","waitNo":"🕒 {st}, {who}: зазвичай не чекає ({stat}).","waitYes":"🕒 {st}, {who}: чекав {stat}, до {max} хв","waitLonger":" — тут треба бл. {n} хв, довше, ніж досі","waitChance":" — є шанс, що зачекає","bNoData":"немає даних PLK","bLikely":"ймовірно, скасовано","bCan":"скасовано","bOnTime":" вчасно","bRunLast":"їде, востаннє {w}","bRun":"їде","bNotYet":"ще не вирушив (з {st} {t})","bPlat":", перон {p}","bXfer":"пересадка {st}: запас {n} хв","leave":", виходь о {t}","or":" або ","mtRotCan":"состав ({tr}) скасовано","mtRotLate":"состав ({tr}) +{d}, можливо +{e} хв","likelyReason":"PLK не має даних про рух цього поїзда — ймовірно, скасовано"}};
+  function gx(lang, k, p) { var d = GX[lang] || GX.pl, s = d[k] != null ? d[k] : GX.pl[k]; return p ? fill(s, p) : s; }
+
   // ===== TODO 75: czy pociąg poczeka na spóźniony dowożący =====
   // Statystyka z tablic (data/czekanie.json, skrypt notatki/skrypty/czekanie.mjs): pary[stacja|D|F] i linie[stacja|lD|lF]
   // = [przypadków zagrożonej przesiadki, ile razy D czekał, najdłuższe czekanie min]. Najpierw para pociągów (≥ 2 przypadki),
@@ -91,15 +95,15 @@
     if (l && l[0] >= 3) return { n: l[0], w: l[1], max: l[2], level: "line", lineB: lineB, lineA: lineA };
     return null;
   }
-  // Tekst (PL — na razie profil autora). needWait = o ile min D musiałby poczekać.
-  function waitText(t) {
+  // Tekst podpowiedzi (needWait = o ile min D musiałby poczekać). Statystyka z obserwacji tablic, nie od PLK.
+  function waitText(t, lang) {
     var h = t && t.wait; if (!h) return "";
-    var who = h.level === "pair" ? trainLabel(t.trainB) + " na " + trainLabel(t.trainA) : "pociągi " + h.lineB + " na " + h.lineA;
-    var stat = h.w + " z " + h.n + " razy";
-    if (!h.w) return "🕒 " + who + " w " + t.station + " zwykle nie czekają (" + stat + ").";
-    var s = "🕒 " + (h.level === "pair" ? who + " czekał" : who + " czekały") + " w " + t.station + " " + stat + ", najdłużej " + h.max + " min";
-    if (t.needWait > 0 && t.needWait > h.max) s += " — tu trzeba by ok. " + t.needWait + " min, dłużej niż dotąd";
-    else if (t.needWait > 0 && h.w / h.n >= 0.5) s += " — jest szansa, że poczeka";
+    var who = h.level === "pair" ? gx(lang, "waitPair", { b: trainLabel(t.trainB), a: trainLabel(t.trainA) }) : gx(lang, "waitLine", { lb: h.lineB, la: h.lineA });
+    var stat = gx(lang, "waitStat", { w: h.w, n: h.n });
+    if (!h.w) return gx(lang, "waitNo", { st: t.station, who: who, stat: stat });
+    var s = gx(lang, "waitYes", { st: t.station, who: who, stat: stat, max: h.max });
+    if (t.needWait > 0 && t.needWait > h.max) s += gx(lang, "waitLonger", { n: t.needWait });
+    else if (t.needWait > 0 && h.w / h.n >= 0.5) s += gx(lang, "waitChance");
     return s + ".";
   }
 
@@ -178,18 +182,19 @@
       });
     }).catch(function () { return null; });
   }
-  // Jedna linijka o obiegu (PL — na razie profil autora).
-  function rotationLine(rot, originName) {
+  // Jedna linijka o obiegu. Obieg to wyliczenie z rozkładu (który pociąg kończy na stacji początkowej tuż przed naszym),
+  // nie informacja od PLK ani przewoźnika.
+  function rotationLine(rot, originName, lang) {
     if (!rot) return "";
-    var s = "skład przyjeżdża do " + originName + " jako " + rot.label, lv = rot.live;
-    if (lv && lv.from) s += " (start " + lv.from + " " + lv.fromDep + ")";
-    if (rot.cancelled) s += " — odwołany";
-    else if (lv && lv.arrived) s += " — przyjechał " + rot.arr + (rot.delay ? " (+" + rot.delay + ")" : "") + ", potwierdzone";
-    else if (lv && lv.started) s += " — jedzie" + (lv.where ? ", ostatnio " + lv.where + (lv.whereTime ? " " + lv.whereTime : "") : "") + ", przyjazd ok. " + rot.arr + (rot.delay ? " (+" + rot.delay + ")" : " (planowo)");
-    else if (lv) s += " — jeszcze nie wyruszył" + (rot.prev ? "; wcześniej ten skład: " + rot.prev.label + (rot.prev.cancelled ? " — odwołany" : rot.prev.delay ? " +" + rot.prev.delay + " min" : "") : "");
-    else s += " — " + (rot.src === "actual" ? "przyjechał " + rot.arr : rot.src === "forecast" ? "prognoza " + rot.arr : "wg rozkładu " + rot.plannedArr + ", brak danych na żywo");
-    s += " · postój " + Math.max(0, rot.turn - (rot.delay || 0)) + " min";
-    if (rot.expDelay >= 5 && !rot.cancelled) s += " · Twój może odjechać ok. " + rot.expDelay + " min później";
+    var s = gx(lang, "rot", { st: originName, tr: rot.label }), lv = rot.live, dl = rot.delay ? " (+" + rot.delay + ")" : "";
+    if (lv && lv.from) s += gx(lang, "rotStart", { from: lv.from, dep: lv.fromDep });
+    if (rot.cancelled) s += gx(lang, "rotCan");
+    else if (lv && lv.arrived) s += gx(lang, "rotArrived", { t: rot.arr, d: dl });
+    else if (lv && lv.started) s += gx(lang, "rotRun") + (lv.where ? gx(lang, "rotLast", { w: lv.where + (lv.whereTime ? " " + lv.whereTime : "") }) : "") + gx(lang, "rotEta", { t: rot.arr }) + (rot.delay ? dl : gx(lang, "rotPlan"));
+    else if (lv) s += gx(lang, "rotNotYet") + (rot.prev ? gx(lang, "rotPrev", { tr: rot.prev.label + (rot.prev.cancelled ? gx(lang, "rotCan") : rot.prev.delay ? " +" + rot.prev.delay + " min" : "") }) : "");
+    else s += rot.src === "actual" ? gx(lang, "rotArrived", { t: rot.arr, d: dl }) : rot.src === "forecast" ? gx(lang, "rotFc", { t: rot.arr }) : gx(lang, "rotSched", { t: rot.plannedArr });
+    s += gx(lang, "rotTurn", { n: Math.max(0, rot.turn - (rot.delay || 0)) });
+    if (rot.expDelay >= 5 && !rot.cancelled) s += gx(lang, "rotYour", { n: rot.expDelay });
     return s;
   }
   // Czy obieg zagraża kursowi, który jeszcze nie wyruszył.
@@ -198,7 +203,15 @@
     pl: { can: "🔁 {tr}: skład prawdopodobnie przyjeżdża do stacji {st} jako {in}, który jest odwołany{why}. Twój pociąg może zostać odwołany albo opóźniony.",
       late: "🔁 {tr}: skład prawdopodobnie przyjeżdża do stacji {st} jako {in} z opóźnieniem +{d} min (przyjazd {arr}). Twój pociąg może odjechać ok. {e} min później." },
     en: { can: "🔁 {tr}: the train set probably arrives at {st} as {in}, which is cancelled{why}. Your train may be cancelled or delayed.",
-      late: "🔁 {tr}: the train set probably arrives at {st} as {in}, +{d} min late (arr. {arr}). Your train may leave about {e} min late." }
+      late: "🔁 {tr}: the train set probably arrives at {st} as {in}, +{d} min late (arr. {arr}). Your train may leave about {e} min late." },
+    de: { can: "🔁 {tr}: die Garnitur kommt wahrscheinlich nach {st} als {in}, der ausfällt{why}. Dein Zug kann ausfallen oder sich verspäten.",
+      late: "🔁 {tr}: die Garnitur kommt wahrscheinlich nach {st} als {in}, +{d} Min. (Ankunft {arr}). Dein Zug fährt evtl. ca. {e} Min. später." },
+    cs: { can: "🔁 {tr}: souprava nejspíš přijíždí do {st} jako {in}, který je zrušen{why}. Tvůj vlak může být zrušen nebo zpožděn.",
+      late: "🔁 {tr}: souprava nejspíš přijíždí do {st} jako {in} se zpožděním +{d} min (příjezd {arr}). Tvůj vlak může odjet asi o {e} min později." },
+    es: { can: "🔁 {tr}: la composición probablemente llega a {st} como {in}, que está cancelado{why}. Tu tren puede cancelarse o retrasarse.",
+      late: "🔁 {tr}: la composición probablemente llega a {st} como {in} con +{d} min (llega {arr}). Tu tren puede salir unos {e} min tarde." },
+    uk: { can: "🔁 {tr}: состав, імовірно, прибуває до {st} як {in}, який скасовано{why}. Твій поїзд можуть скасувати або затримати.",
+      late: "🔁 {tr}: состав, імовірно, прибуває до {st} як {in} із затримкою +{d} хв (прибуття {arr}). Твій поїзд може відправитися бл. на {e} хв пізніше." }
   };
   function rotationText(conn, res, lang) {
     var i = -1; res.legs.forEach(function (x, k) { if (i < 0 && rotationRisk(x)) i = k; });
@@ -483,7 +496,7 @@
     } else {
       body = t[res.status] || res.status;
     }
-    if (tr && tr.wait && (res.status === "risk" || res.status === "broken") && kind !== "better") body += " " + waitText(tr);
+    if (tr && tr.wait && (res.status === "risk" || res.status === "broken") && kind !== "better") body += " " + waitText(tr, lang);
     if ((res.status === "broken" || res.status === "cancelled") && kind !== "better") body += altText ? fill(t.alt, { alt: altText }) : t.check;
     return { title: t.title, body: body };
   }
@@ -730,7 +743,7 @@
     isCancelled: isCancelled, partialCancel: partialCancel, likelyCancelled: likelyCancelled,
     rotationQuery: rotationQuery, rotationFrom: rotationFrom, rotationRisk: rotationRisk, rotationText: rotationText,
     rotationLive: rotationLive, rotationResolve: rotationResolve, rotationLine: rotationLine,
-    lineOf: lineOf, waitHint: waitHint, waitText: waitText
+    lineOf: lineOf, waitHint: waitHint, waitText: waitText, gx: gx
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   root.GuardCore = api;

@@ -1179,7 +1179,8 @@
     "cancelSection": "na odcinku {a} – {b}",
     "zka": "komunikacja zastępcza",
     "likelyCancel": "prawdopodobnie odwołany",
-    "likelyCancelWhy": "PLK nie ma danych o ruchu tego pociągu"
+    "likelyCancelWhy": "PLK nie ma danych o ruchu tego pociągu",
+    "altLeave": "wyjdź {t}"
   },
   "gzm": {
     "title": "🚌 Przesiadki GZM",
@@ -1452,7 +1453,25 @@
     "plkCatalog": "ℹ️ Dostępność stacji (PKP PLK)",
     "noResTrainOnly": "Szukasz tylko pociągów — do stacji i od stacji liczę wtedy wyłącznie dojście pieszo (najwyżej ok. {km} km). Start albo cel jest dalej od stacji, więc bez autobusu lub tramwaju nie da się tam dotrzeć.",
     "noResModes": "Wyłączone w preferencjach: {m}. Bez nich nie znalazłem trasy.",
-    "modesAllBtn": "🚆🚌 Włącz wszystkie środki transportu i szukaj"
+    "modesAllBtn": "🚆🚌 Włącz wszystkie środki transportu i szukaj",
+    "ceLive": "na żywo",
+    "ceXfer": "Przesiadka: {s}",
+    "ceMiss": "brakuje {n} min — możesz nie zdążyć",
+    "ceOnTime": "jedzie punktualnie",
+    "ceStEdge": "na granicy",
+    "fThen": "potem",
+    "fX1": "przesiadka: {s}",
+    "fSlack": "zapas {n} min",
+    "fXn": "przesiadki: {n}",
+    "fSlackMin": "najmniej zapasu {n} min",
+    "fWalk": "pieszo {n} min",
+    "fLeave": "Wyjdź",
+    "fGo": "Przejdź",
+    "fWalkTo": "{n} min do: {s}",
+    "fOnFoot": "Pieszo do celu",
+    "fFrom": "z: {s}",
+    "fOff": "wysiadasz {t}",
+    "fThere": "Na miejscu"
   },
   "tt": {
     "swapLater": "Zamień od 13.12",

@@ -2219,7 +2219,7 @@
       var how = rides.map(function (q, i) { return fRideName(q) + (i < rides.length - 1 ? " → " + esc(q.to) : ""); }).join(", " + esc(T("gzm.fThen", null, "potem")) + " ");
       var walk = steps.reduce(function (a, q) { return a + (q.k === "walk" ? q.min : 0); }, 0), meta = [esc(v2Total(x.final - leave))];
       if (xs.length === 1) meta.push(esc(T("gzm.fX1", { s: xs[0].at }, "przesiadka: {s}")) + ', <span class="' + F_CLS[xs[0].st] + '">' + esc(T("gzm.fSlack", { n: xs[0].slack }, "zapas {n} min")) + "</span>");
-      else if (xs.length > 1) { var mn = xs.reduce(function (a, q) { return q.slack < a.slack ? q : a; }); meta.push(esc(T("gzm.fXn", { n: xs.length }, "{n} przesiadki")) + ', <span class="' + F_CLS[mn.st] + '">' + esc(T("gzm.fSlackMin", { n: mn.slack }, "najmniej zapasu {n} min")) + "</span>"); }
+      else if (xs.length > 1) { var mn = xs.reduce(function (a, q) { return q.slack < a.slack ? q : a; }); meta.push(esc(T("gzm.fXn", { n: xs.length }, "przesiadki: {n}")) + ', <span class="' + F_CLS[mn.st] + '">' + esc(T("gzm.fSlackMin", { n: mn.slack }, "najmniej zapasu {n} min")) + "</span>"); }
       else meta.push(esc(T("gzm.v2Direct", null, "bez przesiadek")));
       if (walk) meta.push(esc(T("gzm.fWalk", { n: walk }, "pieszo {n} min")));
       if (x.why) meta.push(esc(x.why));

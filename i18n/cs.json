@@ -1179,7 +1179,8 @@
     "cancelSection": "v úseku {a} – {b}",
     "zka": "náhradní doprava",
     "likelyCancel": "pravděpodobně zrušen",
-    "likelyCancelWhy": "PLK nemá data o jízdě tohoto vlaku"
+    "likelyCancelWhy": "PLK nemá data o jízdě tohoto vlaku",
+    "altLeave": "vyraz v {t}"
   },
   "gzm": {
     "title": "🚌 Přestupy GZM",
@@ -1452,7 +1453,25 @@
     "plkCatalog": "ℹ️ Přístupnost stanice (PKP PLK)",
     "noResTrainOnly": "Hledáte jen vlaky — k nádraží a od něj pak počítám jen chůzi (do cca {km} km). Start nebo cíl je dál od nádraží, takže bez autobusu či tramvaje se tam nedostanete.",
     "noResModes": "Vypnuto v předvolbách: {m}. Bez nich jsem trasu nenašel.",
-    "modesAllBtn": "🚆🚌 Zapnout všechny dopravní prostředky a hledat"
+    "modesAllBtn": "🚆🚌 Zapnout všechny dopravní prostředky a hledat",
+    "ceLive": "živě",
+    "ceXfer": "Přestup: {s}",
+    "ceMiss": "chybí {n} min — nemusíš stihnout",
+    "ceOnTime": "jede včas",
+    "ceStEdge": "na hraně",
+    "fThen": "pak",
+    "fX1": "přestup: {s}",
+    "fSlack": "rezerva {n} min",
+    "fXn": "přestupy: {n}",
+    "fSlackMin": "nejmenší rezerva {n} min",
+    "fWalk": "pěšky {n} min",
+    "fLeave": "Vyraz",
+    "fGo": "Přejdi",
+    "fWalkTo": "{n} min do: {s}",
+    "fOnFoot": "Pěšky do cíle",
+    "fFrom": "z: {s}",
+    "fOff": "vystupuješ {t}",
+    "fThere": "Na místě"
   },
   "tt": {
     "swapLater": "Nahradit od 13.12",

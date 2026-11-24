@@ -128,6 +128,7 @@
       return ' <span class="dl ' + cls + '">' + (d > 0 ? '+' + d : d === 0 ? '0' : d) + ' min</span>' + (srcT ? ' <span class="src">(' + esc(srcT) + ')</span>' : '');
     }
 
+    function curLang() { return window.I18n && I18n.getLang ? I18n.getLang() : "pl"; }
     // TODO 75 (autor): statystyka czekania na spóźnione dowożące — raz na sesję
     var waitStatsPr = null;
     function waitStatsP() { if (!waitStatsPr) waitStatsPr = fetch('/data/czekanie.json').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }); return waitStatsPr; }
@@ -257,7 +258,7 @@
       var info = !r ? '' : (r.noData ? ' <span class="src">(' + esc(T('guard.status.nodata', null, 'brak danych')) + ')</span>' : (r.cancelled ? ' <b style="color:#fff;background:#000;padding:1px 6px;border-radius:6px">⚫ ' + esc(r.cancelLikely ? T('guard.likelyCancel', null, 'prawdopodobnie odwołany') : T('guard.status.cancelled', null, 'pociąg odwołany')) + '</b>' + (r.cancelLikely ? ' <span class="src">' + esc(T('guard.likelyCancelWhy', null, 'PLK nie ma danych o ruchu tego pociągu')) + '</span>' : '') + (r.cancelSection ? ' <span class="src">' + esc(T('guard.cancelSection', { a: r.cancelSection.from, b: r.cancelSection.to }, 'na odcinku ' + r.cancelSection.from + ' – ' + r.cancelSection.to)) + (r.cancelSection.zka ? ' · 🚌 ' + esc(T('guard.zka', null, 'komunikacja zastępcza')) : '') + '</span>' : '') : ''));
       if (d && r.rotation && !r.started) {
         var ro = r.rotation, bad = G.rotationRisk(r);
-        info += '<div class="src" style="margin-top:2px' + (bad ? ';color:var(--yellow);font-weight:700' : '') + '">🔁 ' + esc(G.rotationLine(ro, r.originName)) + '</div>';
+        info += '<div class="src" style="margin-top:2px' + (bad ? ';color:var(--yellow);font-weight:700' : '') + '">🔁 ' + esc(G.rotationLine(ro, r.originName, curLang())) + '</div>';
       }
       if (l.mode === "gzm") return '<div class="leg gv-gzm" data-gtrip="' + esc(l.trip) + '" data-gdate="' + esc(date) + '" data-gb="' + esc(l.board.stationName) + '" data-ga="' + esc(l.alight.stationName) + '" role="button" tabindex="0" title="' + esc(T('guard.gzmTrip', null, 'Stuknij — trasa kursu i gdzie jest teraz')) + '"><div class="leg-t">' + timeHtml(l.board.time, d ? r.delayDep : 0) + '<small>' + timeHtml(l.alight.time, d ? r.delayArr : 0) + '</small></div>' +
         '<div><div class="leg-train">' + esc(tr) + info + '</div><div class="leg-st">' + esc(l.board.stationName) + (d ? delayHtml(r.delayDep, r.depSource) : '') + ' → ' + esc(l.alight.stationName) + '</div></div></div>';
@@ -271,7 +272,7 @@
       else if (s === 'cancelled') main = T('guard.xferCancelled', { st: t.station }, 'Przesiadka w ' + t.station + ': pociąg odwołany.');
       else main = T('guard.xferLine', { st: t.station, slack: t.slack, plan: t.plannedSlack, need: t.need }, 'Przesiadka w ' + t.station + ': zapas ' + t.slack + ' min (wg planu ' + t.plannedSlack + ', potrzebne ' + t.need + ')');
       var extra = '';
-      if (t.wait) extra += '<div class="src" style="color:#cfe0f5">' + esc(G.waitText(t)) + '</div>';
+      if (t.wait) extra += '<div class="src" style="color:#cfe0f5">' + esc(G.waitText(t, curLang())) + '</div>';
       if (t.platformChange) extra += '<div class="src">' + esc(T('guard.platformChange', { a: t.platformArr, b: t.platformDep }, 'Zmiana peronu: ' + t.platformArr + ' → ' + t.platformDep + ' (+2 min)')) + '</div>';
       if (t.stationChange) extra += '<div class="src">' + esc(T('guard.stationChange', { a: t.station, b: t.toStation }, 'Przejście między stacjami: ' + t.station + ' → ' + t.toStation + ' (+5 min)')) + '</div>';
       if (t.onlyThanksToB) extra += '<div class="warn">' + esc(T('guard.onlyThanksToB', { b: G.trainLabel(t.trainB) }, 'Zdążysz tylko, jeśli ' + G.trainLabel(t.trainB) + ' nie nadrobi opóźnienia.')) + '</div>';
