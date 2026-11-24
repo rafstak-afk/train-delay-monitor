@@ -66,6 +66,27 @@
     return;
   }
 
+  // ===== nowy adres: powiadomienia na tym adresie (zgoda jest osobna dla każdego adresu) =====
+  if (here === NEW && !/[?&]przenosiny=1/.test(location.search)) {
+    var askPush = function () {
+      var g = function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } };
+      if (!g("profileToken") || g("pushEndpointThisDevice") || g("pushPytanieUkryj") === "1") return;
+      if (!("Notification" in window) || Notification.permission === "denied" || Notification.permission === "granted") return;
+      var b = note("🔔 <b>Włącz powiadomienia na tym adresie.</b> Alarmy i pilnowane połączenia działają, ale ten telefon na czyzdaze.pl nie dostaje jeszcze powiadomień." +
+        '<div style="display:flex;gap:8px;margin-top:10px"><button data-p=on style="flex:1;border:0;border-radius:10px;background:#2e7d32;color:#fff;font-weight:800;padding:10px">🔔 Włącz</button>' +
+        '<button data-p=no style="border:0;border-radius:10px;background:#37474f;color:#fff;font-weight:700;padding:10px">Nie teraz</button></div>');
+      b.querySelector("[data-p=on]").onclick = function () {
+        b.querySelector("[data-p=on]").textContent = "⏳…";
+        (window.ProfileSync && ProfileSync.ensureDevicePush ? ProfileSync.ensureDevicePush(true) : Promise.resolve(false)).then(function (ok) {
+          b.innerHTML = ok ? "✅ Powiadomienia włączone na tym telefonie." : "⚠️ Nie udało się włączyć — sprawdź zgodę na powiadomienia w ustawieniach przeglądarki.";
+          setTimeout(function () { b.remove(); }, 5000);
+        });
+      };
+      b.querySelector("[data-p=no]").onclick = function () { b.remove(); try { localStorage.setItem("pushPytanieUkryj", "1"); } catch (e) {} };
+    };
+    setTimeout(function () { if (document.body) askPush(); else document.addEventListener("DOMContentLoaded", askPush); }, 3000);
+  }
+
   // ===== nowy adres: odbiór danych =====
   if (here === NEW && /[?&]przenosiny=1/.test(location.search)) {
     var start = function () {

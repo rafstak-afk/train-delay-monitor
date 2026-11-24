@@ -326,7 +326,32 @@
     }
   } catch (e) {}
 
+  // 24.11 (notatka: po przenosinach na czyzdaze.pl telefon nie dostawał powiadomień): urządzenie ma profil i zgodę
+  // przeglądarki na powiadomienia, ale nie jest zgłoszone na serwerze (np. przełącznik alarmów skopiował się jako
+  // „włączony”, więc nikt go nie przełączał) — zgłaszamy je samo, bez pytania (zgoda już jest). Klucz VAPID jest publiczny.
+  const VAPID = "BOVJOSGUg7ftbz0Qni3Fo15a25c08pX-OJPavIGysDlyyzYt5FW46c2p3OKu46HJB08fuBB70z5dNk9G_xMAsSA";
+  function vapidBytes() { const b = (VAPID + "=".repeat((4 - VAPID.length % 4) % 4)).replace(/-/g, "+").replace(/_/g, "/"), r = atob(b); return Uint8Array.from([...r].map(c => c.charCodeAt(0))); }
+  async function ensureDevicePush(ask) {
+    try {
+      if (!getToken() || !("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) return false;
+      if (Notification.permission !== "granted") {
+        if (!ask || Notification.permission === "denied") return false;
+        if ((await Notification.requestPermission()) !== "granted") return false;
+      }
+      const reg = await navigator.serviceWorker.ready;
+      let sub = await reg.pushManager.getSubscription();
+      if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: vapidBytes() });
+      return await registerPush(sub);
+    } catch (e) { return false; }
+  }
+  try {
+    if (getToken() && !localStorage.getItem(PUSH_ENDPOINT_KEY) && "Notification" in window && Notification.permission === "granted") {
+      setTimeout(function () { ensureDevicePush(false); }, 4000);
+    }
+  } catch (e) {}
+
   window.ProfileSync = {
+    ensureDevicePush,
     generateToken,
     getToken,
     setToken,
