@@ -843,7 +843,12 @@
     "missing": "There's no profile with this token. Check that you typed it correctly. If the profile was created a moment ago, wait a minute and try again.",
     "loading": "Loading profile...",
     "loadFailed": "Couldn't load the profile data. Please try again.",
-    "loaded": "Profile loaded. Open the Board or My trains to see the synced data."
+    "loaded": "Profile loaded. Open the Board or My trains to see the synced data.",
+    "pushOn": "Notifications on this phone: ✅ on",
+    "pushOff": "Notifications on this phone: ❌ off",
+    "pushDenied": "Notifications on this phone: ❌ blocked in the browser — padlock next to the address → Permissions → Notifications → Allow",
+    "pushNo": "This browser does not support notifications",
+    "pushEnable": "Turn on"
   },
   "jak": {
     "pageTitle": "How Czy zdążę? works – delays, planner, alerts",

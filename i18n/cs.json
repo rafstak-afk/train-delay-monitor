@@ -843,7 +843,12 @@
     "missing": "Profil s tímto tokenem neexistuje. Zkontrolujte, zda jste ho zadali správně. Pokud profil vznikl před chvílí, počkejte minutu a zkuste to znovu.",
     "loading": "Načítám profil...",
     "loadFailed": "Data profilu se nepodařilo načíst. Zkuste to znovu.",
-    "loaded": "Profil načten. Otevřete Tabuli nebo Moje vlaky a uvidíte synchronizovaná data."
+    "loaded": "Profil načten. Otevřete Tabuli nebo Moje vlaky a uvidíte synchronizovaná data.",
+    "pushOn": "Oznámení na tomto telefonu: ✅ zapnutá",
+    "pushOff": "Oznámení na tomto telefonu: ❌ vypnutá",
+    "pushDenied": "Oznámení na tomto telefonu: ❌ zablokovaná v prohlížeči — zámek u adresy → Oprávnění → Oznámení → Povolit",
+    "pushNo": "Tento prohlížeč nepodporuje oznámení",
+    "pushEnable": "Zapnout"
   },
   "jak": {
     "pageTitle": "Jak funguje Czy zdążę? – zpoždění, plánovač, upozornění",

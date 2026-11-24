@@ -843,7 +843,12 @@
     "missing": "Nie ma profilu o tym tokenie. Sprawdź, czy wpisałeś go dobrze. Jeśli profil powstał przed chwilą, odczekaj minutę i spróbuj ponownie.",
     "loading": "Wczytuję profil...",
     "loadFailed": "Nie udało się pobrać danych profilu. Spróbuj ponownie.",
-    "loaded": "Profil wczytany. Otwórz Tablicę albo Moje pociągi, żeby zobaczyć zsynchronizowane dane."
+    "loaded": "Profil wczytany. Otwórz Tablicę albo Moje pociągi, żeby zobaczyć zsynchronizowane dane.",
+    "pushOn": "Powiadomienia na tym telefonie: ✅ włączone",
+    "pushOff": "Powiadomienia na tym telefonie: ❌ wyłączone",
+    "pushDenied": "Powiadomienia na tym telefonie: ❌ zablokowane w przeglądarce — kłódka przy adresie → Uprawnienia → Powiadomienia → Zezwalaj",
+    "pushNo": "Ta przeglądarka nie obsługuje powiadomień",
+    "pushEnable": "Włącz"
   },
   "jak": {
     "pageTitle": "Jak działa Czy zdążę? – opóźnienia, planer, alarmy",

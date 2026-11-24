@@ -843,7 +843,12 @@
     "missing": "Es gibt kein Profil mit diesem Token. Prüfe, ob du ihn richtig eingegeben hast. Wurde das Profil gerade erst erstellt, warte eine Minute und versuche es erneut.",
     "loading": "Profil wird geladen...",
     "loadFailed": "Profildaten konnten nicht geladen werden. Bitte erneut versuchen.",
-    "loaded": "Profil geladen. Öffne die Tafel oder Meine Züge, um die synchronisierten Daten zu sehen."
+    "loaded": "Profil geladen. Öffne die Tafel oder Meine Züge, um die synchronisierten Daten zu sehen.",
+    "pushOn": "Benachrichtigungen auf diesem Telefon: ✅ an",
+    "pushOff": "Benachrichtigungen auf diesem Telefon: ❌ aus",
+    "pushDenied": "Benachrichtigungen auf diesem Telefon: ❌ im Browser blockiert — Schloss neben der Adresse → Berechtigungen → Benachrichtigungen → Zulassen",
+    "pushNo": "Dieser Browser unterstützt keine Benachrichtigungen",
+    "pushEnable": "Einschalten"
   },
   "jak": {
     "pageTitle": "So funktioniert Czy zdążę? – Verspätungen, Planer, Alarme",

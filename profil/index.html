@@ -51,6 +51,24 @@ a.back{display:inline-block;margin-bottom:10px;color:var(--muted);text-decoratio
     <div class="token-box" id="activeToken"></div>
     <button class="btn" id="copyBtn" data-i18n="profil.copy">📋 Kopiuj token</button>
     <button class="btn danger" id="unlinkBtn" data-i18n="profil.unlink">Odepnij to urządzenie</button>
+    <div class="hint" id="pushRow" style="margin-top:10px;font-size:15px"></div>
+    <script>
+    // 24.11: czy TEN telefon dostaje powiadomienia (zgoda przeglądarki + zgłoszenie na serwerze) — bez zgadywania
+    (function () {
+      var T = function (k, f) { return window.I18n && I18n.t ? (I18n.t(k) !== k ? I18n.t(k) : f) : f; };
+      function draw() {
+        var el = document.getElementById("pushRow"); if (!el || !window.ProfileSync || !ProfileSync.getToken()) return;
+        var perm = "Notification" in window ? Notification.permission : "unsupported", on = ProfileSync.hasDevicePush && ProfileSync.hasDevicePush();
+        if (on && perm === "granted") { el.innerHTML = "🔔 " + T("profil.pushOn", "Powiadomienia na tym telefonie: ✅ włączone"); return; }
+        if (perm === "denied") { el.innerHTML = "🔕 " + T("profil.pushDenied", "Powiadomienia na tym telefonie: ❌ zablokowane w przeglądarce — kłódka przy adresie → Uprawnienia → Powiadomienia → Zezwalaj"); return; }
+        if (perm === "unsupported") { el.innerHTML = "🔕 " + T("profil.pushNo", "Ta przeglądarka nie obsługuje powiadomień"); return; }
+        el.innerHTML = "🔕 " + T("profil.pushOff", "Powiadomienia na tym telefonie: ❌ wyłączone") + ' <button class="btn" id="pushOnBtn" style="margin-left:6px">🔔 ' + T("profil.pushEnable", "Włącz") + "</button>";
+        document.getElementById("pushOnBtn").onclick = function () { this.textContent = "⏳"; ProfileSync.ensureDevicePush(true).then(draw); };
+      }
+      if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", function () { setTimeout(draw, 600); }); else setTimeout(draw, 600);
+      window.addEventListener("langchange", draw);
+    })();
+    </script>
     <div class="hint" data-i18n="profil.activeHint">Dane (ulubione stacje, listy pociągów, alarm) synchronizują się automatycznie na tym urządzeniu, dopóki token jest aktywny. Odpięcie NIE kasuje danych w chmurze — tylko przestaje je stąd synchronizować.</div>
   </div>
 

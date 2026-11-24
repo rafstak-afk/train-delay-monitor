@@ -843,7 +843,12 @@
     "missing": "No existe ningún perfil con este token. Comprueba que lo has escrito bien. Si el perfil se acaba de crear, espera un minuto y vuelve a intentarlo.",
     "loading": "Cargando el perfil...",
     "loadFailed": "No se pudieron cargar los datos del perfil. Inténtalo de nuevo.",
-    "loaded": "Perfil cargado. Abre el Panel o Mis trenes para ver los datos sincronizados."
+    "loaded": "Perfil cargado. Abre el Panel o Mis trenes para ver los datos sincronizados.",
+    "pushOn": "Notificaciones en este teléfono: ✅ activadas",
+    "pushOff": "Notificaciones en este teléfono: ❌ desactivadas",
+    "pushDenied": "Notificaciones en este teléfono: ❌ bloqueadas en el navegador — candado junto a la dirección → Permisos → Notificaciones → Permitir",
+    "pushNo": "Este navegador no admite notificaciones",
+    "pushEnable": "Activar"
   },
   "jak": {
     "pageTitle": "Cómo funciona Czy zdążę? – retrasos, planificador, alertas",
