@@ -5,6 +5,9 @@
 //    1. dnia miesiąca o 2:00 — pełne przeliczenie dojść pieszych. Zegar GitHuba spóźniał się o 6–8 h.
 //  • kontrola rozkładów GZM o 7:30, 8:30, 10:00, 13:00 i 17:00 — gdy dziś nie ma udanej aktualizacji
 //    (np. portal ZTM nie odpowiadał o 7:00) i żadna nie trwa, uruchamia ją ponownie.
+//  • 24.11: akcje w repozytorium notatek (zaplanowane w GitHubie ruszały z kilkugodzinnym opóźnieniem albo wcale):
+//    archiwum komunikatów „utrudnienia” co 30 min 4:00–21:30, zbieranie tablic „skomunikowania” o 4:20,
+//    „raport-tygodniowy” w poniedziałki o 6:00. Co 30 min, nie 15 — limit 2000 min akcji/mies. w prywatnym repozytorium.
 // Cała logika zostaje w funkcjach Pages / w Action; ten Worker tylko je wywołuje.
 
 const ORIGIN = "https://train-delay-monitor1.pages.dev";
@@ -18,8 +21,8 @@ const REPO = "rafstak-afk/train-delay-monitor";
 
 // Godzina i dzień miesiąca w Warszawie (sam przelicza czas letni/zimowy).
 function warsaw(ts) {
-  const p = Object.fromEntries(new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Warsaw", day: "numeric", hour: "numeric", minute: "numeric", hourCycle: "h23" }).formatToParts(new Date(ts)).map(x => [x.type, x.value]));
-  return { day: +p.day, hour: +p.hour, minute: +p.minute };
+  const p = Object.fromEntries(new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Warsaw", weekday: "short", day: "numeric", hour: "numeric", minute: "numeric", hourCycle: "h23" }).formatToParts(new Date(ts)).map(x => [x.type, x.value]));
+  return { day: +p.day, hour: +p.hour, minute: +p.minute, weekday: p.weekday };
 }
 
 function warsawDate(ts) {
@@ -50,6 +53,13 @@ async function dispatchGzm(env, fullWalk) {
   console.log("gzm-data dispatch" + (fullWalk ? " (full_walk)" : "") + ":", res.status, (await res.text()).slice(0, 200));
 }
 
+const NOTES_REPO = "rafstak-afk/czy-zdaze-notatki";
+async function dispatchNotes(env, wf) {
+  if (!env.GITHUB_TOKEN) { console.log(wf + ": brak sekretu GITHUB_TOKEN"); return; }
+  const res = await fetch(`https://api.github.com/repos/${NOTES_REPO}/actions/workflows/${wf}/dispatches`, { method: "POST", headers: GH_HEADERS(env), body: JSON.stringify({ ref: "main" }) });
+  console.log("notatki " + wf + " dispatch:", res.status, (await res.text()).slice(0, 200));
+}
+
 export default {
   async scheduled(event, env, ctx) {
     const minute = new Date(event.scheduledTime).getUTCMinutes();
@@ -59,6 +69,9 @@ export default {
     if (w.hour === 7 && w.minute === 0) jobs.push(dispatchGzm(env, false));
     if (w.day === 1 && w.hour === 2 && w.minute === 0) jobs.push(dispatchGzm(env, true));
     if ((w.hour === 7 && w.minute === 30) || (w.hour === 8 && w.minute === 30) || (w.hour === 10 && w.minute === 0) || (w.hour === 13 && w.minute === 0) || (w.hour === 17 && w.minute === 0)) jobs.push(checkGzm(env, event.scheduledTime));
+    if (w.hour >= 4 && w.hour <= 21 && (w.minute === 7 || w.minute === 37)) jobs.push(dispatchNotes(env, "utrudnienia.yml"));
+    if (w.hour === 4 && w.minute === 20) jobs.push(dispatchNotes(env, "skomunikowania.yml"));
+    if (w.weekday === "Mon" && w.hour === 6 && w.minute === 0) jobs.push(dispatchNotes(env, "raport-tygodniowy.yml"));
     ctx.waitUntil(Promise.allSettled(jobs));
   },
 
