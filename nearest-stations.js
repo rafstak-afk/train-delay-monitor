@@ -17,7 +17,7 @@
     });
   }
   function locate() {
-    var get = function (high, ms) { return new Promise(function (res, rej) { navigator.geolocation.getCurrentPosition(function (p) { res({ lat: p.coords.latitude, lon: p.coords.longitude }); }, rej, { enableHighAccuracy: high, timeout: ms, maximumAge: 60000 }); }); };
+    var get = function (high, ms) { return new Promise(function (res, rej) { navigator.geolocation.getCurrentPosition(function (p) { res({ lat: p.coords.latitude, lon: p.coords.longitude, acc: p.coords.accuracy }); }, rej, { enableHighAccuracy: high, timeout: ms, maximumAge: 60000 }); }); };
     if (!navigator.geolocation) return Promise.reject(new Error("none"));
     return get(true, 10000).catch(function (e) { if (e && e.code === 1) throw e; return get(false, 8000); });
   }
@@ -29,7 +29,9 @@
       var items = st.map(function (s) { return { id: s.id, name: s.name, km: s.km, kind: "station" }; }).concat(o.extra || []).sort(function (a, b) { return a.km - b.km; })
         .filter(function (s) { return !skip || s.name.toLowerCase() !== skip; });
       if (!items.length) { box.innerHTML = '<div style="margin:6px 0">' + esc(t("none", { km: 60 }, "Brak stacji w promieniu 60 km.")) + "</div>"; return; }
-      box.innerHTML = '<div style="font-weight:700;margin:8px 0 4px">' + esc(o.title || t("title", null, "Najbliższe stacje (w linii prostej)")) + "</div>" +
+      var accWarn = o.acc > 2000 ? '<div style="margin:6px 0;padding:7px 10px;border-radius:10px;background:#3a2f0b;color:#fde68a;font-size:13px;line-height:1.4">⚠️ ' +
+        esc(t("inaccurate", { km: Math.round(o.acc / 1000) }, "Położenie jest przybliżone (± {km} km) — to może być lokalizacja dostawcy internetu, nie Twoja. Na komputerze włącz usługi lokalizacji w systemie albo wpisz stację ręcznie.").replace("{km}", Math.round(o.acc / 1000))) + "</div>" : "";
+      box.innerHTML = accWarn + '<div style="font-weight:700;margin:8px 0 4px">' + esc(o.title || t("title", null, "Najbliższe stacje (w linii prostej)")) + "</div>" +
         items.map(function (s, i) {
           return '<button type="button" data-near="' + i + '" style="display:flex;justify-content:space-between;gap:10px;width:100%;text-align:left;margin:4px 0;padding:9px 12px;border-radius:10px;border:1px solid #34495e;background:#1c2833;color:#fff;font-size:14px;cursor:pointer">' +
             "<span>" + (s.kind === "stop" ? "🚏 " : "🚉 ") + esc(s.name) + '</span><span style="opacity:.75">' + esc(kmTxt(s.km)) + "</span></button>";
@@ -59,9 +61,9 @@
         var pick = function (s) {
           var next = onPick(s);
           if (!next) { list.innerHTML = ""; return; }
-          render(list, { lat: g.lat, lon: g.lon, title: next, onPick: pick });
+          render(list, { lat: g.lat, lon: g.lon, acc: g.acc, title: next, onPick: pick });
         };
-        return render(list, { lat: g.lat, lon: g.lon, title: typeof opts.title === "function" ? opts.title() : opts.title, onPick: pick });
+        return render(list, { lat: g.lat, lon: g.lon, acc: g.acc, title: typeof opts.title === "function" ? opts.title() : opts.title, onPick: pick });
       })
         .catch(function (e) { list.innerHTML = '<div style="margin:6px 0;color:#fbbf24">' + esc(e && e.code === 1 ? t("denied", null, "Przeglądarka nie ma zgody na lokalizację.") : t("gpsErr", null, "Nie udało się ustalić położenia. Spróbuj ponownie.")) + "</div>"; });
     };
@@ -76,7 +78,7 @@
     return locate().then(function (g) {
       return Promise.resolve(extraFn ? extraFn(g) : []).catch(function () { return []; }).then(function (extra) {
         extra = Array.isArray(extra) ? extra : [];
-        return render(box, { lat: g.lat, lon: g.lon, title: title || (extra.length ? t("titleBoth", null, "Najbliższe stacje i przystanki (w linii prostej)") : null), exclude: exclude, onPick: onPick, extra: extra });
+        return render(box, { lat: g.lat, lon: g.lon, acc: g.acc, title: title || (extra.length ? t("titleBoth", null, "Najbliższe stacje i przystanki (w linii prostej)") : null), exclude: exclude, onPick: onPick, extra: extra });
       });
     })
       .catch(function (e) { box.innerHTML = '<div style="margin:8px;color:#fbbf24">' + esc(e && e.code === 1 ? t("denied", null, "Przeglądarka nie ma zgody na lokalizację.") : t("gpsErr", null, "Nie udało się ustalić położenia. Spróbuj ponownie.")) + "</div>"; });

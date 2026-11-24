@@ -1534,6 +1534,7 @@
     "none": "Brak stacji w promieniu {km} km.",
     "denied": "Przeglądarka nie ma zgody na lokalizację.",
     "gpsErr": "Nie udało się ustalić położenia. Spróbuj ponownie.",
-    "titleBoth": "Najbliższe stacje i przystanki (w linii prostej)"
+    "titleBoth": "Najbliższe stacje i przystanki (w linii prostej)",
+    "inaccurate": "Położenie jest przybliżone (± {km} km) — to może być lokalizacja dostawcy internetu, nie Twoja. Na komputerze włącz usługi lokalizacji w systemie albo wpisz stację ręcznie."
   }
 }

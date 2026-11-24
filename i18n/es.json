@@ -1534,6 +1534,7 @@
     "none": "No hay estaciones en {km} km.",
     "denied": "El navegador no tiene permiso para usar tu ubicación.",
     "gpsErr": "No se pudo obtener tu ubicación. Inténtalo de nuevo.",
-    "titleBoth": "Estaciones y paradas más cercanas (en línea recta)"
+    "titleBoth": "Estaciones y paradas más cercanas (en línea recta)",
+    "inaccurate": "La ubicación es aproximada (± {km} km): puede ser la de tu proveedor de internet. En el ordenador activa los servicios de ubicación del sistema o escribe la estación."
   }
 }

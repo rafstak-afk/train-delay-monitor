@@ -1534,6 +1534,7 @@
     "none": "No stations within {km} km.",
     "denied": "The browser has no permission to use your location.",
     "gpsErr": "Could not find your location. Try again.",
-    "titleBoth": "Nearest stations and stops (straight line)"
+    "titleBoth": "Nearest stations and stops (straight line)",
+    "inaccurate": "Your location is approximate (± {km} km) — it may be your internet provider's location, not yours. On a computer, turn on location services in the system or type the station."
   }
 }

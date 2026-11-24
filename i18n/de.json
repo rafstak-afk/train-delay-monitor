@@ -1534,6 +1534,7 @@
     "none": "Keine Bahnhöfe im Umkreis von {km} km.",
     "denied": "Der Browser darf deinen Standort nicht verwenden.",
     "gpsErr": "Standort konnte nicht ermittelt werden. Versuche es erneut.",
-    "titleBoth": "Nächste Bahnhöfe und Haltestellen (Luftlinie)"
+    "titleBoth": "Nächste Bahnhöfe und Haltestellen (Luftlinie)",
+    "inaccurate": "Der Standort ist ungenau (± {km} km) — evtl. der Standort deines Internetanbieters. Am Computer die Ortungsdienste im System einschalten oder den Bahnhof eintippen."
   }
 }

@@ -1534,6 +1534,7 @@
     "none": "Žádné stanice do {km} km.",
     "denied": "Prohlížeč nemá oprávnění k poloze.",
     "gpsErr": "Polohu se nepodařilo zjistit. Zkus to znovu.",
-    "titleBoth": "Nejbližší stanice a zastávky (vzdušnou čarou)"
+    "titleBoth": "Nejbližší stanice a zastávky (vzdušnou čarou)",
+    "inaccurate": "Poloha je přibližná (± {km} km) — může jít o polohu poskytovatele internetu. Na počítači zapni služby určování polohy v systému nebo napiš stanici ručně."
   }
 }
