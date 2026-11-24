@@ -42,13 +42,14 @@ const norm = s => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ
 
 // ---------- 1. zrozumienie prośby ----------
 const SYSTEM = `Jesteś parserem próśb o połączenia kolejowe w Polsce (głównie województwo śląskie). Zamieniasz prośbę pasażera na JEDEN obiekt JSON w jednej linii — bez komentarzy, bez znaczników kodu, bez dodatkowych pól:
-{"trip":true|false,"from":"stacja startowa albo null","to":"stacja docelowa albo null","date":"RRRR-MM-DD albo null","time":"GG:MM albo null","now":true|false,"flexible":true|false,"via":[],"meet":true|false}
+{"trip":true|false,"from":"stacja startowa albo null","to":"stacja docelowa albo null","date":"RRRR-MM-DD albo null","time":"GG:MM albo null","arrive":"GG:MM albo null","now":true|false,"flexible":true|false,"via":[],"meet":true|false}
 
 Pola:
 - trip: true, gdy pasażer pyta o połączenie, dojazd, trasę albo pociąg między miejscami. Pytania o coś innego (bilety, opóźnienie konkretnego pociągu, pogoda, rozmowa) → false i reszta pól null / false / [].
 - from, to: nazwy stacji w MIANOWNIKU, z polskimi znakami, bez słów „stacja”, „dworzec”, „PKP”. Odmiana: z Zawiercia → Zawiercie; do Tarnowskich Gór → Tarnowskie Góry; z Katowic → Katowice; do Gliwic → Gliwice; z Bytomia → Bytom; do Chorzowa Batorego → Chorzów Batory; z Sosnowca Głównego → Sosnowiec Główny; do Lublińca → Lubliniec; z Częstochowy → Częstochowa; do Zabrza → Zabrze; z Rudy Śląskiej → Ruda Śląska; do Dąbrowy Górniczej → Dąbrowa Górnicza; z Krakowa Głównego → Kraków Główny; z Opola Głównego → Opole Główne. Nie dopisuj „Główny/Główna”, jeśli pasażer tego nie napisał. „Z domu”, „z pracy”, „stąd”, „z miejsca, gdzie jestem” → null (nie zgaduj stacji).
 - date: dzień podróży. „dziś/dzisiaj” → dzisiejsza data; „jutro” → +1 dzień; „pojutrze” → +2 dni; nazwa dnia tygodnia („w piątek”) → najbliższy taki dzień od dziś (dziś, jeśli to ten dzień, a pora jeszcze nie minęła); brak wzmianki → null.
-- time: godzina odjazdu GG:MM. „o 8” / „o ósmej” → 08:00; „po siedemnastej” / „po 17” → 17:00; „około wpół do siódmej” → 06:30; „rano” → 06:00; „przed południem” → 09:00; „w południe” → 12:00; „po południu” → 14:00; „wieczorem” → 18:00; „w nocy” → 22:00; „za godzinę” → teraz + 60 min; „za pół godziny” → teraz + 30 min. Gdy pasażer podaje godzinę PRZYJAZDU („muszę być o 8:00”, „na 7:30 do pracy”) → time = ta godzina minus 2 godziny. Brak wzmianki → null.
+- time: godzina odjazdu GG:MM. „o 8” / „o ósmej” → 08:00; „po siedemnastej” / „po 17” → 17:00; „około wpół do siódmej” → 06:30; „rano” → 06:00; „przed południem” → 09:00; „w południe” → 12:00; „po południu” → 14:00; „wieczorem” → 18:00; „w nocy” → 22:00; „za godzinę” → teraz + 60 min; „za pół godziny” → teraz + 30 min. Gdy pasażer podaje godzinę PRZYJAZDU („muszę być o 8:00”, „na 7:30 do pracy”) → arrive = ta godzina, a time = ta godzina minus 2 godziny. Brak wzmianki → null.
+- arrive: godzina, na którą pasażer musi BYĆ na miejscu (GG:MM), albo null.
 - now: true, gdy jedzie teraz, zaraz, „najbliższy”, „najszybciej jak się da”, „już wychodzę”.
 - flexible: true, gdy ma czas, nie spieszy się, nie chce czekać na peronie, może się wozić, objazdy mu nie przeszkadzają, „może być dłużej”.
 - via: stacje, przez które pasażer chce albo może jechać („nawet przez Częstochowę” → ["Częstochowa"]); w mianowniku; bez stacji z from/to; najwyżej 2; brak → [].
@@ -56,17 +57,17 @@ Pola:
 
 Przykłady (teraz: poniedziałek, 2026-11-23, godz. 15:00):
 Prośba: z Zawiercia do Tarnowskich Gór, mam czas, mogę jechać przez Częstochowę
-{"trip":true,"from":"Zawiercie","to":"Tarnowskie Góry","date":null,"time":null,"now":false,"flexible":true,"via":["Częstochowa"],"meet":false}
+{"trip":true,"from":"Zawiercie","to":"Tarnowskie Góry","date":null,"time":null,"arrive":null,"now":false,"flexible":true,"via":["Częstochowa"],"meet":false}
 Prośba: jutro po siedemnastej z Katowic do Lublińca
-{"trip":true,"from":"Katowice","to":"Lubliniec","date":"2026-11-24","time":"17:00","now":false,"flexible":false,"via":[],"meet":false}
+{"trip":true,"from":"Katowice","to":"Lubliniec","date":"2026-11-24","time":"17:00","arrive":null,"now":false,"flexible":false,"via":[],"meet":false}
 Prośba: muszę być w Gliwicach na 8:00 w piątek, jadę z Bytomia
-{"trip":true,"from":"Bytom","to":"Gliwice","date":"2026-11-27","time":"06:00","now":false,"flexible":false,"via":[],"meet":false}
+{"trip":true,"from":"Bytom","to":"Gliwice","date":"2026-11-27","time":"06:00","arrive":"08:00","now":false,"flexible":false,"via":[],"meet":false}
 Prośba: chcę wyjechać pociągowi naprzeciw, jadę z Chorzowa Batorego do Bytomia, najbliższy
-{"trip":true,"from":"Chorzów Batory","to":"Bytom","date":null,"time":null,"now":true,"flexible":false,"via":[],"meet":true}
+{"trip":true,"from":"Chorzów Batory","to":"Bytom","date":null,"time":null,"arrive":null,"now":true,"flexible":false,"via":[],"meet":true}
 Prośba: z domu do Katowic wieczorem
-{"trip":true,"from":null,"to":"Katowice","date":null,"time":"18:00","now":false,"flexible":false,"via":[],"meet":false}
+{"trip":true,"from":null,"to":"Katowice","date":null,"time":"18:00","arrive":null,"now":false,"flexible":false,"via":[],"meet":false}
 Prośba: ile kosztuje bilet miesięczny?
-{"trip":false,"from":null,"to":null,"date":null,"time":null,"now":false,"flexible":false,"via":[],"meet":false}`;
+{"trip":false,"from":null,"to":null,"date":null,"time":null,"arrive":null,"now":false,"flexible":false,"via":[],"meet":false}`;
 
 export async function understand(env, text, now) {
   if (env.AI) {
@@ -79,7 +80,7 @@ export async function understand(env, text, now) {
       const o = typeof out === "object" ? out : JSON.parse((String(out).match(/\{[\s\S]*\}/) || ["null"])[0]);
       if (o && typeof o === "object") {
         const nul = v => (v == null || v === "" || String(v).toLowerCase() === "null") ? null : String(v).trim();
-        return { trip: !!o.trip, from: nul(o.from), to: nul(o.to), date: nul(o.date), time: nul(o.time), now: !!o.now, flexible: !!o.flexible,
+        return { trip: !!o.trip, from: nul(o.from), to: nul(o.to), date: nul(o.date), time: nul(o.time), arrive: /^\d{1,2}:\d{2}$/.test(String(o.arrive || "")) ? String(o.arrive).padStart(5, "0") : null, now: !!o.now, flexible: !!o.flexible,
           via: (Array.isArray(o.via) ? o.via : []).map(nul).filter(Boolean).slice(0, 2), meet: !!o.meet, by: "ai" };
       }
     } catch (e) { /* awaryjnie prosty parser */ }
@@ -133,6 +134,12 @@ export async function solve(request, p, now) {
   const its = itsOf(base).sort((a, b) => hm(a.arrivalTime) - hm(b.arrivalTime) || hm(b.departureTime) - hm(a.departureTime));
   if (!its.length) return { ok: true, text: `Nie znalazłem połączenia ${A.name} → ${B.name} od ${time} (${date}). Spróbuj innej godziny.` };
   const best = its[0];
+  // 24.11: „muszę być na 8:00” — najpierw ostatnie połączenie, które zdąży (najdłużej w domu), potem najszybsze
+  if (p.arrive && hm(p.arrive) != null) {
+    const ok = itsOf(base).filter(x => hm(x.arrivalTime) <= hm(p.arrive)).sort((a, b) => hm(b.departureTime) - hm(a.departureTime));
+    if (ok.length) out.push(`✅ Na ${p.arrive} zdążysz, wyjeżdżając najpóźniej: ${ok[0].departureTime} → ${ok[0].arrivalTime} (zapas ${hm(p.arrive) - hm(ok[0].arrivalTime)} min)\n   ${itTxt(ok[0])}`);
+    else out.push(`⚠️ Nie znalazłem połączenia z przyjazdem do ${p.arrive} (szukam od ${time}). Najwcześniej na miejscu:`);
+  }
   out.push(`🏆 Najszybciej na miejscu: ${best.departureTime} → ${best.arrivalTime} (${durMin(best)} min)\n   ${itTxt(best)}`);
   const others = itsOf(base).filter(x => x !== best).slice(0, 3);
   if (others.length) out.push("Inne:\n" + others.map(x => `   ${x.departureTime} → ${x.arrivalTime} · ${itTxt(x)}`).join("\n"));
@@ -171,7 +178,7 @@ export async function solve(request, p, now) {
     if (loops.length) out.push(`⏳ Zamiast czekać ${wait} min na peronie — przejażdżka tam i z powrotem:\n` + loops.join("\n"));
     else notes.push(`⏳ Do odjazdu ${wait} min — nie znalazłem przejażdżki tam i z powrotem, która zdąży wrócić.`);
   }
-  if (wait > 0 && !(p.flexible && wait >= 20)) notes.push(`Do odjazdu najszybszego połączenia: ${wait} min.`);
+  if (wait > 0 && date === now.date && time === now.time && !(p.flexible && wait >= 20)) notes.push(`Do odjazdu najszybszego połączenia: ${wait} min.`);
   return { ok: true, text: `${A.name} → ${B.name}, ${date === now.date ? "dziś" : date} od ${time}\n\n` + out.join("\n\n") + (notes.length ? "\n\n" + notes.join("\n") : "") + "\n\nRozkład i opóźnienia: PKP PLK." };
 }
 
