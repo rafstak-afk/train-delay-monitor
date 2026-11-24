@@ -1533,6 +1533,7 @@
     "locating": "Finding your location…",
     "none": "No stations within {km} km.",
     "denied": "The browser has no permission to use your location.",
-    "gpsErr": "Could not find your location. Try again."
+    "gpsErr": "Could not find your location. Try again.",
+    "titleBoth": "Nearest stations and stops (straight line)"
   }
 }

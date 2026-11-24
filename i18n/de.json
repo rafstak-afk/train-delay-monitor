@@ -1533,6 +1533,7 @@
     "locating": "Standort wird ermittelt…",
     "none": "Keine Bahnhöfe im Umkreis von {km} km.",
     "denied": "Der Browser darf deinen Standort nicht verwenden.",
-    "gpsErr": "Standort konnte nicht ermittelt werden. Versuche es erneut."
+    "gpsErr": "Standort konnte nicht ermittelt werden. Versuche es erneut.",
+    "titleBoth": "Nächste Bahnhöfe und Haltestellen (Luftlinie)"
   }
 }

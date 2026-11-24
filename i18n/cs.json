@@ -1533,6 +1533,7 @@
     "locating": "Zjišťuji polohu…",
     "none": "Žádné stanice do {km} km.",
     "denied": "Prohlížeč nemá oprávnění k poloze.",
-    "gpsErr": "Polohu se nepodařilo zjistit. Zkus to znovu."
+    "gpsErr": "Polohu se nepodařilo zjistit. Zkus to znovu.",
+    "titleBoth": "Nejbližší stanice a zastávky (vzdušnou čarou)"
   }
 }

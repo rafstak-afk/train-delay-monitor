@@ -1533,6 +1533,7 @@
     "locating": "Buscando tu ubicación…",
     "none": "No hay estaciones en {km} km.",
     "denied": "El navegador no tiene permiso para usar tu ubicación.",
-    "gpsErr": "No se pudo obtener tu ubicación. Inténtalo de nuevo."
+    "gpsErr": "No se pudo obtener tu ubicación. Inténtalo de nuevo.",
+    "titleBoth": "Estaciones y paradas más cercanas (en línea recta)"
   }
 }

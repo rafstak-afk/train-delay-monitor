@@ -70,9 +70,15 @@
   function optionHtml(cls) {
     return '<button type="button" class="' + (cls || "") + ' near-opt" data-near-open="1" style="font-weight:700"><span>📍</span> <span>' + esc(t("btnPlain", null, "Najbliższe stacje")) + "</span></button>";
   }
-  function openIn(box, onPick, title, exclude) {
+  // extraFn(g) — TODO 62: dodatkowe pozycje dla położenia g (np. przystanki GZM): tablica albo Promise z tablicą [{ name, km, kind: "stop" }]
+  function openIn(box, onPick, title, exclude, extraFn) {
     box.innerHTML = '<div style="opacity:.75;font-size:13px;margin:8px">' + esc(t("locating", null, "Ustalam położenie…")) + "</div>";
-    return locate().then(function (g) { return render(box, { lat: g.lat, lon: g.lon, title: title, exclude: exclude, onPick: onPick }); })
+    return locate().then(function (g) {
+      return Promise.resolve(extraFn ? extraFn(g) : []).catch(function () { return []; }).then(function (extra) {
+        extra = Array.isArray(extra) ? extra : [];
+        return render(box, { lat: g.lat, lon: g.lon, title: title || (extra.length ? t("titleBoth", null, "Najbliższe stacje i przystanki (w linii prostej)") : null), exclude: exclude, onPick: onPick, extra: extra });
+      });
+    })
       .catch(function (e) { box.innerHTML = '<div style="margin:8px;color:#fbbf24">' + esc(e && e.code === 1 ? t("denied", null, "Przeglądarka nie ma zgody na lokalizację.") : t("gpsErr", null, "Nie udało się ustalić położenia. Spróbuj ponownie.")) + "</div>"; });
   }
   window.NearestStations = { mount: mount, render: render, near: near, locate: locate, km: km, optionHtml: optionHtml, openIn: openIn };

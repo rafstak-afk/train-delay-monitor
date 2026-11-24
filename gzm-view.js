@@ -979,7 +979,14 @@
             // notatka 20.11: zdarzenie „input” otwierało listę od nowa i zasłaniało „Dokąd” — po wyborze lista zostaje zwinięta
             clearTimeout(timer); picked = true; close();
             var to = root.querySelector("#gzCTo"); if (inp.id === "gzCFrom" && to && !to.value.trim()) to.focus();
-          }, null, otherInp ? otherInp.value : "");
+          }, null, otherInp ? otherInp.value : "", !authorOn() ? null : function (pos) {   // na razie profil autora
+            // TODO 62: do najbliższych stacji także najbliższe przystanki GZM (do 4, w promieniu 2 km, bez powtórzeń nazw)
+            return getNet(warsawNow().date).then(function (net) {
+              var best = {};
+              for (var i = 0; i < net.n; i++) { var d = NearestStations.km(pos.lat, pos.lon, net.lat[i], net.lon[i]); if (d <= 2 && (!best[net.name[i]] || d < best[net.name[i]])) best[net.name[i]] = d; }
+              return Object.keys(best).map(function (nm) { return { name: nm, km: best[nm], kind: "stop" }; }).sort(function (a, b) { return a.km - b.km; }).slice(0, 4);
+            });
+          });
           return;
         }
         // wybór z listy: lista się zwija; ze „Skąd” przejście do pustego „Dokąd”, inaczej chowamy klawiaturę
