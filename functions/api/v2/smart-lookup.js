@@ -134,7 +134,8 @@ export async function onRequest(context) {
     if (!matches.length) {
       return json({
         ok: false,
-        error: "Nie znaleziono pociągu " + trainNum + " dla stacji " + stationName + " w podanym dniu."
+        error: "Nie znaleziono pociągu " + trainNum + " dla stacji " + stationName + " w podanym dniu.",
+        stationTrains: routes.length   // 24.11: >0 = stacja ma kursy, a tego pociągu brak (nie pusta odpowiedź PLK)
       }, 200);
     }
 

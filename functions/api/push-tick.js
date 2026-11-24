@@ -213,7 +213,7 @@ async function checkTrain(origin, item, cachedLookup, author) {
       origin,
       `/api/v2/smart-lookup?train=${encodeURIComponent(item.trainNum)}&station=${encodeURIComponent(item.station)}${item.planTime ? `&time=${encodeURIComponent(item.planTime)}` : ""}`
     );
-    if (!res || !res.ok || !res.scheduleId || !res.orderId) return { lookup: null, done: false, alert: null };
+    if (!res || !res.ok || !res.scheduleId || !res.orderId) return { lookup: null, done: false, alert: null, missing: !!(res && res.ok === false && /Nie znaleziono pociągu/.test(String(res.error || "")) && res.stationTrains > 0) };
     lookup = freshLookup = { scheduleId: res.scheduleId, orderId: res.orderId, trainOrderId: res.trainOrderId || "" };
   }
   const outcome = (done, alert) => ({ lookup: freshLookup, done, alert });
@@ -568,6 +568,17 @@ const TT_NOTICE = {
   cs: ["🗓️ Zítra nový jízdní řád", "Některé vlaky mění časy nebo čísla. Zkontroluj „Moje vlaky“."],
   es: ["🗓️ Mañana nuevo horario", "Algunos trenes cambian de hora o de número. Revisa «Mis trenes»."],
   uk: ["🗓️ Завтра новий розклад", "Деякі поїзди змінюють час або номери. Перевір «Мої поїзди»."]
+};
+// TODO 39 (2): po zmianie rozkładu pociąg z „Moich pociągów” może nie istnieć pod tym numerem — dotąd alarmy po prostu
+// przestawały przychodzić. Od 13.12 do końca stycznia: jedno powiadomienie na pociąg (lista w KV „ttmiss:<token>”, zapis tylko przy nowym).
+const TT_MISS_FROM = "2026-12-13", TT_MISS_TO = "2027-01-31", TT_MISS_PREFIX = "ttmiss:";
+const TT_MISS = {
+  pl: ["🗓️ Pociąg nie jeździ w nowym rozkładzie", "Nie ma już: {list}. Alarmy dla niego nie działają — wybierz nowy pociąg w „Moich pociągach”."],
+  en: ["🗓️ Train not in the new timetable", "No longer found: {list}. Its alerts stopped — pick a new train in “My trains”."],
+  de: ["🗓️ Zug nicht im neuen Fahrplan", "Nicht mehr gefunden: {list}. Keine Alarme mehr — wähle einen neuen Zug in „Meine Züge“."],
+  cs: ["🗓️ Vlak není v novém jízdním řádu", "Už nenalezen: {list}. Upozornění nefungují — vyber nový vlak v „Moje vlaky“."],
+  es: ["🗓️ Tren fuera del nuevo horario", "Ya no aparece: {list}. Sus alertas se detuvieron: elige otro tren en «Mis trenes»."],
+  uk: ["🗓️ Поїзда немає в новому розкладі", "Більше не знайдено: {list}. Сповіщення не працюють — обери новий поїзд у «Мої поїзди»."]
 };
 function ttNoticeDue(now, nowMinutes) { return now.date === "2026-12-12" && nowMinutes >= 1080 && nowMinutes < 1085; }
 function ttNoticePayload(lang) { const m = TT_NOTICE[lang] || TT_NOTICE.pl; return { title: m[0], body: m[1], url: "/moje-pociagi/" }; }
@@ -940,6 +951,7 @@ export async function onRequestPost(context) {
       // "Alarm pociągów" dla obu przypadków naraz.
       const trainItems = [];
       const authorTok = useTrains ? await isAuthor(env, token) : false;
+      const ttMissing = [];
       if (useTrains) {
         const state = await readTrainState(env, token, now.date);
         let stateChanged = false;
@@ -953,7 +965,8 @@ export async function onRequestPost(context) {
           }
           summary.trainsChecked++;
           try {
-            const { lookup, done, alert } = await checkTrain(origin, item, state.lookups[key], authorTok);
+            const { lookup, done, alert, missing } = await checkTrain(origin, item, state.lookups[key], authorTok);
+            if (missing && now.date >= TT_MISS_FROM && now.date <= TT_MISS_TO) ttMissing.push(item);
             if (lookup) { state.lookups[key] = lookup; stateChanged = true; }
             if (done) { state.done.add(key); stateChanged = true; }
             if (alert) trainItems.push(alert);
@@ -962,6 +975,21 @@ export async function onRequestPost(context) {
           }
         }
         if (stateChanged) await writeTrainState(env, token, now.date, state);
+        if (ttMissing.length) {
+          let known = [];
+          try { known = JSON.parse((await env.USER_PROFILES.get(TT_MISS_PREFIX + token)) || "[]") || []; } catch (e) {}
+          const fresh = ttMissing.filter(x => !known.includes(trainKey(x)));
+          if (fresh.length) {
+            const m = TT_MISS[typeof profile.language === "string" ? profile.language : "pl"] || TT_MISS.pl;
+            const list = fresh.map(x => x.trainNum + " (" + x.station + (x.planTime ? " " + x.planTime : "") + ")").join(", ");
+            for (const sub of subs) {
+              try { const st = await sendPush(env, sub, { title: m[0], body: m[1].replace("{list}", list), url: "/moje-pociagi/", tag: "tt-missing" }); if (st >= 200 && st < 300) summary.pushSent++; }
+              catch (e) { summary.errors.push(token + " push (tt missing): " + e.message); }
+            }
+            await env.USER_PROFILES.put(TT_MISS_PREFIX + token, JSON.stringify(known.concat(fresh.map(trainKey)).slice(-100)), { expirationTtl: 90 * 86400 });
+            summary.ttMissing = (summary.ttMissing || 0) + fresh.length;
+          }
+        }
       }
       const stationItems = [];
       if (useStations) {
