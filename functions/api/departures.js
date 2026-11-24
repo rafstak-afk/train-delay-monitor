@@ -437,6 +437,9 @@ function buildDepartures({
       arrivalTime: plannedArrival ? shortTime(actualArrival || plannedArrival) : "",
       plannedArrivalTime: plannedArrival ? shortTime(plannedArrival) : "",
       arrivalDelay,
+      // 24.11: skąd godzina — "actual" potwierdzona, "forecast" prognoza PLK, "plan" tylko rozkład (obieg składu: czy przyjazd jest pewny)
+      arrivalSource: plannedArrival ? (timeOnly(opStation?.actualArrival) ? "actual" : timeOnly(opStation?.estimatedArrival) ? "forecast" : "plan") : undefined,
+      departureSource: terminates ? undefined : (timeOnly(opStation?.actualDeparture) ? "actual" : timeOnly(opStation?.estimatedDeparture) ? "forecast" : "plan"),
       train: stationPlan.departureTrainNumber || stationPlan.arrivalTrainNumber || stationRoute.nationalNumber || "",
       category: stationPlan.departureCommercialCategory || stationPlan.arrivalCommercialCategory || stationRoute.commercialCategorySymbol || "",
       name: stationRoute.name || "",

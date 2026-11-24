@@ -685,8 +685,13 @@ function briefText(conn, res, readings) {
     if (x.noData) parts.push(lab + ": brak danych PLK");
     else if (x.cancelled) parts.push(lab + ": ⚫ " + (x.cancelLikely ? "prawdopodobnie odwołany" : "odwołany") + (x.cancelSection ? " (odcinek " + x.cancelSection.from + " – " + x.cancelSection.to + (x.cancelSection.zka ? ", komunikacja zastępcza" : "") + ")" : ""));
     else if (x.gzm) parts.push(lab + (x.delayDep ? " +" + x.delayDep + " min" : " planowo"));
-    else parts.push(lab + (x.delayDep > 0 ? " +" + x.delayDep + " min" : " planowo") + (x.platformDep ? ", peron " + x.platformDep : ""));
-    if (x.rotation && !x.started) parts.push("🔁 skład jako " + x.rotation.label + (x.rotation.cancelled ? " — odwołany" : (x.rotation.delay ? " +" + x.rotation.delay + " min" : " planowo")));
+    else {
+      const rd = readings && readings[i], o = rd && Array.isArray(rd.route) ? rd.route[0] : null;
+      const state = x.started ? (rd && rd.lastConfirmedStation ? "jedzie, ostatnio " + rd.lastConfirmedStation : "jedzie")
+        : (o ? "jeszcze nie wyruszył (start " + o.stationName + " " + (o.plannedDeparture || o.plannedTime || "") + ")" : "");
+      parts.push(lab + (x.delayDep > 0 ? " +" + x.delayDep + " min" : " planowo") + (state ? ", " + state : "") + (x.platformDep ? ", peron " + x.platformDep : ""));
+    }
+    if (x.rotation && !x.started) parts.push("🔁 " + GuardCore.rotationLine(x.rotation, x.originName));
   });
   res.transfers.forEach(t => { if (t.status !== "nodata" && t.status !== "cancelled") parts.push("przesiadka " + t.station + ": zapas " + t.slack + " min"); });
   const msgs = new Set();
@@ -719,11 +724,11 @@ async function runGuard(env, origin, token, profile, subs, conns, fetchTrain, su
       for (let i = 0; i < conn.legs.length; i++) {
         const l = conn.legs[i], rd = readings[i];
         if (l.mode === "gzm" || !rd) continue;
-        const q = GuardCore.rotationQuery(rd, conn.date); if (!q) continue;
-        const k = "rot|" + q.station + "|" + q.date + "|" + q.time;
-        if (!rotBoards.has(k)) rotBoards.set(k, fetchJson(origin, "/api/departures?" + new URLSearchParams(q).toString()));
-        const b = await rotBoards.get(k);
-        rd._rot = GuardCore.rotationFrom(b && b.departures, (l.train && l.train.number) || rd.train, rd.route[0].plannedDeparture || rd.route[0].plannedTime, { name: rd.name });
+        if (!GuardCore.rotationQuery(rd, conn.date)) continue;
+        // 24.11: cały obieg na żywo (bieg poprzedniego kursu + ogniwo wcześniej, gdy jeszcze nie wyruszył)
+        const getBoard = q => { const k = "rot|" + new URLSearchParams(q).toString(); if (!rotBoards.has(k)) rotBoards.set(k, fetchJson(origin, "/api/departures?" + new URLSearchParams(q).toString())); return rotBoards.get(k); };
+        const getTrain = (r, date) => { const k = "rt|" + r.scheduleId + "|" + r.orderId + "|" + date; if (!rotBoards.has(k)) rotBoards.set(k, fetchJson(origin, "/api/train-details?" + new URLSearchParams({ scheduleId: r.scheduleId, orderId: r.orderId, operatingDate: date, train: r.train }).toString())); return rotBoards.get(k); };
+        rd._rot = await GuardCore.rotationResolve(rd, (l.train && l.train.number) || rd.train, conn.date, getBoard, getTrain);
         summary.guardRotation = (summary.guardRotation || 0) + 1;
       }
     }
@@ -747,7 +752,12 @@ async function runGuard(env, origin, token, profile, subs, conns, fetchTrain, su
       const walk = rcfg && rcfg.walk != null && rcfg.walk !== "" && Number.isFinite(Number(rcfg.walk)) ? Number(rcfg.walk) : GuardCore.REM_DEFAULTS.walk;
       const nw = warsawNow(), rel = GuardCore.hm(nw.time) + dayDiff(nw.date, conn.date) * 1440;
       const leave = GuardCore.hm(conn.legs[0].board.time) - walk;
-      if (leave != null && rel >= leave - 35 && rel <= leave - 20) {
+      // 24.11 (notatka): skrót dopiero, gdy pierwszy pociąg wyruszył ze stacji początkowej (+5 min) — wcześniej „planowo”
+      // nic nie znaczy; najpóźniej 12 min przed wyjściem z domu, nawet jeśli jeszcze nie wyruszył.
+      const r0 = readings[0], o0 = r0 && Array.isArray(r0.route) && r0.route[0], o0dep = o0 ? GuardCore.hm(o0.plannedDeparture || o0.plannedTime) : null;
+      let bFrom = leave - 35; const bTo = leave - 8;
+      if (o0dep != null && o0dep + 5 > bFrom) bFrom = Math.min(o0dep + 5, leave - 12);
+      if (leave != null && rel >= bFrom && rel <= bTo) {
         const b = briefText(conn, res, readings);
         let sent = false;
         for (const sub of subs) {

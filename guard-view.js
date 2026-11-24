@@ -165,10 +165,16 @@
           if (!authorOnG() || !G.rotationQuery) return rs;
           return Promise.all(c.legs.map(function (l, i) {
             var rd = rs[i]; if (l.mode === 'gzm' || !rd) return null;
-            var q = G.rotationQuery(rd, c.date); if (!q) return null;
-            var k = 'rot|' + new URLSearchParams(q).toString(), hit = cache[k];
-            var p = hit && Date.now() - hit.at < 120000 ? Promise.resolve(hit.data) : fetch('/api/departures?' + new URLSearchParams(q).toString(), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) { cache[k] = { at: Date.now(), data: d }; return d; }).catch(function () { return null; });
-            return p.then(function (b) { rd._rot = G.rotationFrom(b && b.departures, (l.train && l.train.number) || rd.train, rd.route[0].plannedDeparture || rd.route[0].plannedTime, { name: rd.name }); });
+            if (!G.rotationQuery(rd, c.date)) return null;
+            // 24.11: cały obieg na żywo — tablica stacji początkowej, bieg poprzedniego kursu, ogniwo wcześniej
+            var cached = function (k, url) {
+              var hit = cache[k];
+              if (hit && Date.now() - hit.at < 90000) return Promise.resolve(hit.data);
+              return fetch(url, { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) { cache[k] = { at: Date.now(), data: d }; return d; }).catch(function () { return null; });
+            };
+            var getBoard = function (q) { var s = new URLSearchParams(q).toString(); return cached('rot|' + s, '/api/departures?' + s); };
+            var getTrain = function (r, date) { var s = new URLSearchParams({ scheduleId: r.scheduleId, orderId: r.orderId, operatingDate: date, train: r.train }).toString(); return cached('rt|' + s, '/api/train-details?' + s); };
+            return G.rotationResolve(rd, (l.train && l.train.number) || rd.train, c.date, getBoard, getTrain).then(function (rot) { rd._rot = rot; });
           })).then(function () { return rs; });
         }).then(function (rs) {
           var res = G.evaluate(c, rs, { minTransfer: set.minTransfer });
@@ -245,9 +251,7 @@
       var info = !r ? '' : (r.noData ? ' <span class="src">(' + esc(T('guard.status.nodata', null, 'brak danych')) + ')</span>' : (r.cancelled ? ' <b style="color:#fff;background:#000;padding:1px 6px;border-radius:6px">⚫ ' + esc(r.cancelLikely ? T('guard.likelyCancel', null, 'prawdopodobnie odwołany') : T('guard.status.cancelled', null, 'pociąg odwołany')) + '</b>' + (r.cancelLikely ? ' <span class="src">' + esc(T('guard.likelyCancelWhy', null, 'PLK nie ma danych o ruchu tego pociągu')) + '</span>' : '') + (r.cancelSection ? ' <span class="src">' + esc(T('guard.cancelSection', { a: r.cancelSection.from, b: r.cancelSection.to }, 'na odcinku ' + r.cancelSection.from + ' – ' + r.cancelSection.to)) + (r.cancelSection.zka ? ' · 🚌 ' + esc(T('guard.zka', null, 'komunikacja zastępcza')) : '') + '</span>' : '') : ''));
       if (d && r.rotation && !r.started) {
         var ro = r.rotation, bad = G.rotationRisk(r);
-        info += '<div class="src" style="margin-top:2px' + (bad ? ';color:var(--yellow);font-weight:700' : '') + '">🔁 ' + esc(T('guard.rot', { st: r.originName, tr: ro.label }, 'skład przyjeżdża do ' + r.originName + ' jako ' + ro.label)) + ' — ' +
-          esc(ro.cancelled ? T('guard.rotCan', null, 'odwołany') : (ro.delay > 0 ? '+' + ro.delay + ' min, ' : '') + T('guard.rotTurn', { n: ro.turn }, 'postój ' + ro.turn + ' min')) +
-          (bad && !ro.cancelled ? ' · ' + esc(T('guard.rotLate', { n: ro.expDelay }, 'Twój może odjechać ok. ' + ro.expDelay + ' min później')) : '') + '</div>';
+        info += '<div class="src" style="margin-top:2px' + (bad ? ';color:var(--yellow);font-weight:700' : '') + '">🔁 ' + esc(G.rotationLine(ro, r.originName)) + '</div>';
       }
       if (l.mode === "gzm") return '<div class="leg gv-gzm" data-gtrip="' + esc(l.trip) + '" data-gdate="' + esc(date) + '" data-gb="' + esc(l.board.stationName) + '" data-ga="' + esc(l.alight.stationName) + '" role="button" tabindex="0" title="' + esc(T('guard.gzmTrip', null, 'Stuknij — trasa kursu i gdzie jest teraz')) + '"><div class="leg-t">' + timeHtml(l.board.time, d ? r.delayDep : 0) + '<small>' + timeHtml(l.alight.time, d ? r.delayArr : 0) + '</small></div>' +
         '<div><div class="leg-train">' + esc(tr) + info + '</div><div class="leg-st">' + esc(l.board.stationName) + (d ? delayHtml(r.delayDep, r.depSource) : '') + ' → ' + esc(l.alight.stationName) + '</div></div></div>';

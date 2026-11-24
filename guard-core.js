@@ -111,10 +111,64 @@
     var cancelled = String(best.status || "").toUpperCase() === "X";
     var minTurn = Math.min(5, turn), exp = cancelled ? 0 : Math.max(0, ra + minTurn - dep);
     return { train: String(best.train), label: [best.name || best.category || "", best.train].filter(Boolean).join(" "),
-      plannedArr: fmt(pa), arr: fmt(ra), delay: Math.max(0, ra - pa), cancelled: cancelled, expDelay: exp, turn: turn, reason: best.disruptionReason || "" };
+      plannedArr: fmt(pa), arr: fmt(ra), delay: Math.max(0, ra - pa), cancelled: cancelled, expDelay: exp, turn: turn, reason: best.disruptionReason || "",
+      dep: fmt(dep), src: best.arrivalSource || "", status: String(best.status || "").toUpperCase(), scheduleId: best.scheduleId || "", orderId: best.orderId || "" };
+  }
+  // 24.11 (notatka): obieg „na żywo” — bieg poprzedniego kursu (train-details): gdzie jest, opóźnienie na naszej stacji
+  // początkowej (potwierdzone / prognoza), czy wyruszył, czy nie odwołany. Uaktualnia rot.
+  function rotationLive(rot, d, stationName) {
+    if (!rot || !d || d.error || !Array.isArray(d.route) || !d.route.length) return rot;
+    var i = findStop(d.route, stationName, 0); if (i < 0) i = d.route.length - 1;
+    var st = d.route[i], ad = stopDelay(st, d, "arr"), pa = hm(rot.plannedArr), dep = hm(rot.dep);
+    var o0 = d.route[0];
+    rot.live = { started: !!d.lastConfirmedStation, where: d.lastConfirmedStation || "", whereTime: d.lastConfirmedTime || "", arrived: st.status === "confirmed",
+      src: ad.source, from: o0.stationName || "", fromDep: o0.plannedDeparture || o0.plannedTime || "" };
+    if (isCancelled(d) || partialCancel(d, Math.max(0, i - 1), i) || likelyCancelled(d, o0)) rot.cancelled = true;
+    if (ad.delay != null && pa != null) {
+      rot.delay = Math.max(0, ad.delay); rot.arr = fmt(pa + rot.delay);
+      rot.expDelay = rot.cancelled ? 0 : Math.max(0, pa + rot.delay + Math.min(5, rot.turn) - dep);
+    }
+    return rot;
+  }
+  // Cały łańcuch (do 2 ogniw): tablica stacji początkowej → poprzedni kurs → jego bieg; gdy jeszcze nie wyruszył —
+  // ten sam krok dla niego (skład wcześniej). getBoard(q) i getTrain(rot, date) zwracają Promise z JSON-em.
+  function rotationResolve(rd, legNum, date, getBoard, getTrain) {
+    var q = rotationQuery(rd, date); if (!q) return Promise.resolve(null);
+    return getBoard(q).then(function (b) {
+      var rot = rotationFrom(b && b.departures, legNum || rd.train, rd.route[0].plannedDeparture || rd.route[0].plannedTime, { name: rd.name });
+      if (!rot || !rot.orderId) return rot;
+      return getTrain(rot, date).then(function (d) {
+        rotationLive(rot, d, q.station);
+        if (!d || !rot.live || rot.live.started || rot.cancelled) return rot;
+        var q2 = rotationQuery(d, date); if (!q2) return rot;
+        return getBoard(q2).then(function (b2) {
+          var p = rotationFrom(b2 && b2.departures, rot.train, d.route[0].plannedDeparture || d.route[0].plannedTime, { name: d.name });
+          if (p) {
+            rot.prev = p;
+            // poprzednie ogniwo spóźnione → nasz poprzedni kurs ruszy później → szacunek dla nas
+            if (!p.cancelled && p.expDelay > 0) { var pa2 = hm(rot.plannedArr), dp2 = hm(rot.dep); rot.expDelay = Math.max(rot.expDelay, pa2 + p.expDelay + Math.min(5, rot.turn) - dp2, 0); }
+          }
+          return rot;
+        });
+      });
+    }).catch(function () { return null; });
+  }
+  // Jedna linijka o obiegu (PL — na razie profil autora).
+  function rotationLine(rot, originName) {
+    if (!rot) return "";
+    var s = "skład przyjeżdża do " + originName + " jako " + rot.label, lv = rot.live;
+    if (lv && lv.from) s += " (start " + lv.from + " " + lv.fromDep + ")";
+    if (rot.cancelled) s += " — odwołany";
+    else if (lv && lv.arrived) s += " — przyjechał " + rot.arr + (rot.delay ? " (+" + rot.delay + ")" : "") + ", potwierdzone";
+    else if (lv && lv.started) s += " — jedzie" + (lv.where ? ", ostatnio " + lv.where + (lv.whereTime ? " " + lv.whereTime : "") : "") + ", przyjazd ok. " + rot.arr + (rot.delay ? " (+" + rot.delay + ")" : " (planowo)");
+    else if (lv) s += " — jeszcze nie wyruszył" + (rot.prev ? "; wcześniej ten skład: " + rot.prev.label + (rot.prev.cancelled ? " — odwołany" : rot.prev.delay ? " +" + rot.prev.delay + " min" : "") : "");
+    else s += " — " + (rot.src === "actual" ? "przyjechał " + rot.arr : rot.src === "forecast" ? "prognoza " + rot.arr : "wg rozkładu " + rot.plannedArr + ", brak danych na żywo");
+    s += " · postój " + Math.max(0, rot.turn - (rot.delay || 0)) + " min";
+    if (rot.expDelay >= 5 && !rot.cancelled) s += " · Twój może odjechać ok. " + rot.expDelay + " min później";
+    return s;
   }
   // Czy obieg zagraża kursowi, który jeszcze nie wyruszył.
-  function rotationRisk(x) { return !!(x && !x.noData && !x.started && x.rotation && (x.rotation.cancelled || x.rotation.expDelay >= 5)); }
+  function rotationRisk(x) { return !!(x && !x.noData && !x.started && x.rotation && (x.rotation.cancelled || x.rotation.expDelay >= 5 || (x.rotation.prev && x.rotation.prev.cancelled))); }
   var ROT_TX = {
     pl: { can: "🔁 {tr}: skład prawdopodobnie przyjeżdża do stacji {st} jako {in}, który jest odwołany{why}. Twój pociąg może zostać odwołany albo opóźniony.",
       late: "🔁 {tr}: skład prawdopodobnie przyjeżdża do stacji {st} jako {in} z opóźnieniem +{d} min (przyjazd {arr}). Twój pociąg może odjechać ok. {e} min później." },
@@ -640,7 +694,8 @@
     timeWindow: timeWindow, isActive: isActive, readLeg: readLeg, evalTransfer: evalTransfer, evaluate: evaluate, setSoftMargin: setSoftMargin,
     rising: rising, shouldNotify: shouldNotify, message: message, tx: tx, trainLabel: trainLabel,
     isCancelled: isCancelled, partialCancel: partialCancel, likelyCancelled: likelyCancelled,
-    rotationQuery: rotationQuery, rotationFrom: rotationFrom, rotationRisk: rotationRisk, rotationText: rotationText
+    rotationQuery: rotationQuery, rotationFrom: rotationFrom, rotationRisk: rotationRisk, rotationText: rotationText,
+    rotationLive: rotationLive, rotationResolve: rotationResolve, rotationLine: rotationLine
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   root.GuardCore = api;
