@@ -979,7 +979,7 @@
             // notatka 20.11: zdarzenie „input” otwierało listę od nowa i zasłaniało „Dokąd” — po wyborze lista zostaje zwinięta
             clearTimeout(timer); picked = true; close();
             var to = root.querySelector("#gzCTo"); if (inp.id === "gzCFrom" && to && !to.value.trim()) to.focus(); else { try { inp.blur(); } catch (er) {} }
-          }, null, otherInp ? otherInp.value : "", !authorOn() ? null : function (pos) {   // na razie profil autora
+          }, null, otherInp ? otherInp.value : "", function (pos) {   // dla wszystkich od 24.11 (v6.84)
             // TODO 62: do najbliższych stacji także najbliższe przystanki GZM (do 4, w promieniu 2 km, bez powtórzeń nazw)
             return getNet(warsawNow().date).then(function (net) {
               var best = {};

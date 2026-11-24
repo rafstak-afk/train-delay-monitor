@@ -166,7 +166,7 @@
         if (!w || nm < w.startMin) { results[c.id] = { status: 'waiting', startMin: w && w.startMin }; return Promise.resolve(); }
         return Promise.all(c.legs.map(function (l) { return fetchTrain(l, c.date); })).then(function (rs) {
           // TODO 88 (autor): obieg składu — tablica stacji początkowej z przyjazdami, póki kurs nie wyruszył
-          if (!authorOnG() || !G.rotationQuery) return rs;
+          if (!G.rotationQuery) return rs;   // obieg składu — dla wszystkich od 24.11 (v6.84)
           return Promise.all(c.legs.map(function (l, i) {
             var rd = rs[i]; if (l.mode === 'gzm' || !rd) return null;
             if (!G.rotationQuery(rd, c.date)) return null;
@@ -181,7 +181,7 @@
             return G.rotationResolve(rd, (l.train && l.train.number) || rd.train, c.date, getBoard, getTrain).then(function (rot) { rd._rot = rot; });
           })).then(function () { return rs; });
         }).then(function (rs) {
-          return (authorOnG() ? waitStatsP() : Promise.resolve(null)).then(function (ws) { return { rs: rs, ws: ws }; });
+          return waitStatsP().then(function (ws) { return { rs: rs, ws: ws }; });   // „czy poczeka” — dla wszystkich od 24.11
         }).then(function (o) {
           var rs = o.rs;
           var res = G.evaluate(c, rs, { minTransfer: set.minTransfer, waitStats: o.ws });
@@ -398,7 +398,7 @@
           var trs = it.legs.map(function (l) { return G.trainLabel(l.train); }).join(' + ');
           // TODO 92 (autor): plan B od pierwszej stacji — o której wyjść z domu (dojście z ⏰ przypomnień)
           var lv = '';
-          if (authorOnG() && a.origin.keep === 0) { var dpm = G.hm(it.departureTime); if (dpm != null) lv = ' · <b style="color:var(--green)">🚶 ' + esc(T('guard.altLeave', { t: G.fmt(dpm - (Number(remCfg(c).walk) || 0)) }, 'wyjdź ' + G.fmt(dpm - (Number(remCfg(c).walk) || 0)))) + '</b>'; }
+          /* „wyjdź o” — dla wszystkich od 24.11 */ if (a.origin.keep === 0) { var dpm = G.hm(it.departureTime); if (dpm != null) lv = ' · <b style="color:var(--green)">🚶 ' + esc(T('guard.altLeave', { t: G.fmt(dpm - (Number(remCfg(c).walk) || 0)) }, 'wyjdź ' + G.fmt(dpm - (Number(remCfg(c).walk) || 0)))) + '</b>'; }
           html += '<div class="alt"><div><b>' + esc(it.departureTime) + ' → ' + esc(it.arrivalTime) + '</b> · ' + esc(trs) + '<div class="src">' + esc(it.legs.length > 1 ? T('guard.altChanges', { n: it.legs.length - 1 }, 'przesiadki: ' + (it.legs.length - 1)) : T('guard.altDirect', null, 'bezpośrednio')) + lv + '</div></div>' +
             '<button type="button" class="btn-sm" data-act="switch" data-id="' + esc(c.id) + '" data-k="' + k + '">' + esc(T('guard.switch', null, '🛡️ Pilnuj tej')) + '</button></div>';
         });

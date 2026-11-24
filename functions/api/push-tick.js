@@ -735,7 +735,8 @@ async function runGuard(env, origin, token, profile, subs, conns, fetchTrain, su
   try { prevState = JSON.parse((await env.USER_PROFILES.get(GUARD_STATE_PREFIX + token)) || "{}") || {}; } catch (e) {}
   const set = guardSettingsOf(profile);
   const next = {};
-  const author = await isAuthor(env, token), rotBoards = new Map();
+  // 24.11 (v6.84): obieg składu, „czy poczeka”, skrót przed wyjściem, plan B i komunikaty KŚ/ZTM — dla wszystkich
+  const author = true, rotBoards = new Map();
   let waitStats;
   for (const conn of conns) {
     if (conn._remind) {
@@ -951,7 +952,7 @@ export async function onRequestPost(context) {
       // rozpoznawalne nagłówki powiadomienia zamiast jednego uniwersalnego
       // "Alarm pociągów" dla obu przypadków naraz.
       const trainItems = [];
-      const authorTok = useTrains ? await isAuthor(env, token) : false;
+      const authorTok = true;   // obieg składu w Moich pociągach — dla wszystkich od 24.11 (v6.84)
       const ttMissing = [];
       if (useTrains) {
         const state = await readTrainState(env, token, now.date);
