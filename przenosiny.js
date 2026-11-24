@@ -3,7 +3,9 @@
 // Stary adres: pasek „Nowy adres” + przycisk „Przenieś” → otwiera https://czyzdaze.pl/?przenosiny=1 w nowym oknie
 // i przekazuje mu wszystkie dane z localStorage przez postMessage (tylko do tego jednego adresu — nie w URL-u).
 // Nowy adres: przy ?przenosiny=1 prosi okno, które go otworzyło (tylko stary adres), o dane, zapisuje je i odświeża.
-// Na razie pasek tylko na profilu autora (localStorage showVersionBadge === "1").
+// 24.11: dla wszystkich. Po udanym przeniesieniu (nowe okno potwierdza „ok”) pasek znika. Kto ma profil (token), ten nie
+// widzi go już wcale — ulubione, pilnowane, Moje pociągi itd. i tak synchronizują się przez profil między adresami.
+// Kto nie ma profilu (dane tylko w telefonie), dostaje krótkie przypomnienie z „Przenieś ponownie”.
 (function () {
   var OLD = "https://train-delay-monitor1.pages.dev", NEW = "https://czyzdaze.pl";
   var here = location.origin;
@@ -21,12 +23,19 @@
 
   // ===== stary adres: pasek i wysyłka danych =====
   if (here === OLD) {
-    var author = false; try { author = localStorage.getItem("showVersionBadge") === "1"; } catch (e) {}
-    var hidden = false; try { hidden = localStorage.getItem("przenosinyUkryj") === "1"; } catch (e) {}
-    if (!author || hidden) return;
+    var get = function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } };
+    var moved = get("przenosinyZrobione"), hasProfile = !!get("profileToken");
+    if (moved && hasProfile) return;
     var send = null;
     window.addEventListener("message", function (ev) {
-      if (ev.origin !== NEW || !ev.data || ev.data.przenosiny !== "gotowy" || !send) return;
+      if (ev.origin !== NEW || !ev.data) return;
+      if (ev.data.przenosiny === "ok") {   // nowe okno zapisało dane
+        try { localStorage.setItem("przenosinyZrobione", new Date().toISOString()); } catch (e) {}
+        if (alertBox) alertBox.innerHTML = "✅ <b>Przeniesiono.</b> Korzystaj teraz z <b>czyzdaze.pl</b>" + (get("profileToken") ? " — zmiany i tak zsynchronizują się przez Twój profil." : ".");
+        setTimeout(function () { if (alertBox) alertBox.remove(); }, 6000);
+        return;
+      }
+      if (ev.data.przenosiny !== "gotowy" || !send) return;
       var all = {};
       try { for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (SKIP.indexOf(k) < 0) all[k] = localStorage.getItem(k); } } catch (e) {}
       send.postMessage({ przenosiny: "dane", ls: all }, NEW);
@@ -37,6 +46,15 @@
     };
     var alertBox;
     var show = function () {
+      if (moved) {   // już przeniesione, ale bez profilu — zmiany zrobione tutaj nie przejdą same
+        alertBox = note("🌐 Korzystasz ze starego adresu. <b>Zmiany zrobione tutaj nie przejdą same na czyzdaze.pl</b> (nie masz profilu)." +
+          '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><a href="' + NEW + '/" style="flex:1;text-align:center;text-decoration:none;border-radius:10px;background:#2e7d32;color:#fff;font-weight:800;padding:10px">Otwórz czyzdaze.pl</a>' +
+          '<button data-p=go style="border:0;border-radius:10px;background:#1565c0;color:#fff;font-weight:700;padding:10px">Przenieś ponownie</button>' +
+          '<button data-p=later style="border:0;border-radius:10px;background:#37474f;color:#fff;font-weight:700;padding:10px">✕</button></div><span data-p=info></span>', "#2a2f12");
+        alertBox.querySelector("[data-p=go]").onclick = go;
+        alertBox.querySelector("[data-p=later]").onclick = function () { alertBox.remove(); try { sessionStorage.setItem("przenosinyPozniej", "1"); } catch (e) {} };
+        return;
+      }
       alertBox = note("🌐 <b>Aplikacja ma nowy adres: czyzdaze.pl</b><br><span data-p=info>Przeniesienie skopiuje Twój profil, ulubione, pilnowane połączenia i ustawienia. Ten adres dalej działa — niczego tu nie tracisz.</span>" +
         '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button data-p=go style="flex:1;border:0;border-radius:10px;background:#2e7d32;color:#fff;font-weight:800;padding:10px">➡️ Przenieś na czyzdaze.pl</button>' +
         '<button data-p=later style="border:0;border-radius:10px;background:#37474f;color:#fff;font-weight:700;padding:10px">Później</button></div>');
@@ -59,7 +77,8 @@
         done = true;
         var n = 0, ls = ev.data.ls || {};
         try { Object.keys(ls).forEach(function (k) { if (typeof ls[k] === "string") { localStorage.setItem(k, ls[k]); n++; } }); } catch (e) {}
-        try { localStorage.setItem("przenosinyZ", new Date().toISOString()); } catch (e) {}
+        try { localStorage.setItem("przenosinyZ", new Date().toISOString()); localStorage.setItem("przenosinyZrobione", new Date().toISOString()); } catch (e) {}
+        try { window.opener && window.opener.postMessage({ przenosiny: "ok", n: n }, OLD); } catch (e) {}
         box.innerHTML = "✅ <b>Przeniesiono " + esc(n) + " ustawień.</b> Za chwilę odświeżę stronę.<br>Powiadomienia na tym adresie trzeba włączyć jeszcze raz (🛡️ Pilnowane albo Moje pociągi), a aplikację na telefonie zainstalować z tego adresu.";
         setTimeout(function () { location.replace(NEW + "/"); }, 3500);
       });
