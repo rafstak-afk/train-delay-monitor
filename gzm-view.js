@@ -2524,10 +2524,22 @@
             }
           }
         }
+        // TODO 97 (25.11): „Albo” tylko z realną korzyścią. Reguła ogólna — bez nazw linii i miast, działa na każdej sieci:
+        // to ten sam pociąg (trainKey), więc późniejsze wsiadanie = stacja dalej na jego trasie. Takiego wariantu nie pokazujemy,
+        // jeśli trzeba wyjść tak samo albo wcześniej (np. Tarnowskie Góry → „wsiądź w Bytomiu Stroszku” do tego samego S8).
+        var aWalk = function (z) { var c = z.c || {}, w = c.walkA ? c.walkA.min : 0; if (c.latest) w += c.latest.jn.legs.reduce(function (t, l) { return t + (l.type === "walk" ? l.min : 0); }, 0); return w; };
+        var aSlack = function (z) { var c = z.c || {}; return c.latest && c.latest.slack != null ? c.latest.slack : 99; };
+        var aBoard = function (z) { var l = z.it && z.it.legs && z.it.legs[0]; return l ? C.hm(l.board.time) : null; };
         out.forEach(function (x) {
           if (!x.mm) return; var al = (trAlts[trainKey(x)] || []).filter(function (y) {
-            return y.p.cb.a.st.id !== x.p.cb.a.st.id && y.start >= x.start - 20 && y.final <= x.final + 2 && !absurd(y, geo);
-          });
+            if (y.p.cb.a.st.id === x.p.cb.a.st.id || y.final > x.final + 2 || absurd(y, geo)) return false;
+            var by = aBoard(y), bx = aBoard(x), further = by != null && bx != null && by > bx;
+            if (further && y.start <= x.start) return false;                       // goni ten sam pociąg dalej na trasie — bez sensu
+            var later = y.start > x.start;                                         // można wyjść później
+            var lessWalk = aWalk(y) + 5 <= aWalk(x) && y.start >= x.start - 5;     // wyraźnie mniej chodzenia
+            var safer = aSlack(x) < 3 && aSlack(y) >= aSlack(x) + 3 && y.start >= x.start - 10;   // pewniejsza przesiadka zamiast „na styk”
+            return later || lessWalk || safer;
+          }).sort(function (p, q) { return q.start - p.start; });
           x.alt = al[0] || null;
         });
         if (bR && bB) {
