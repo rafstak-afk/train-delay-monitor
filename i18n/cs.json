@@ -453,7 +453,7 @@
       "source": "Trasy, nástupiště a zpoždění: PKP PLK. „Počká?“ — statistika z pozorování tabulí.",
       "route": "▼ Trasa",
       "routeHide": "▲ sbalit trasu",
-      "middle": "{n} mezilehlých stanic — ukáže „Trasa“"
+      "middle": "mezilehlé stanice: {n} — ukáže „Trasa“"
     }
   },
   "tutorial": {

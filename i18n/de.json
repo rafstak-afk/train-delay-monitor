@@ -453,7 +453,7 @@
       "source": "Zugläufe, Bahnsteige und Verspätungen: PKP PLK. „Wartet er?“ — Statistik aus beobachteten Anzeigen.",
       "route": "▼ Strecke",
       "routeHide": "▲ Strecke zuklappen",
-      "middle": "{n} Zwischenhalte — unter „Strecke“"
+      "middle": "Zwischenhalte: {n} — unter „Strecke“"
     }
   },
   "tutorial": {

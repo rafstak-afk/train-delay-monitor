@@ -453,7 +453,7 @@
       "source": "Trasy, perony i opóźnienia: PKP PLK. „Czy poczeka” — statystyka z obserwacji tablic.",
       "route": "▼ Trasa",
       "routeHide": "▲ zwiń trasę",
-      "middle": "{n} stacji pośrednich — pokaże „Trasa”"
+      "middle": "stacje pośrednie: {n} — pokaże „Trasa”"
     }
   },
   "tutorial": {

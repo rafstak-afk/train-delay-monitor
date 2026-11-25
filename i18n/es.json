@@ -453,7 +453,7 @@
       "source": "Recorridos, andenes y retrasos: PKP PLK. «¿Esperará?» — estadística de paneles observados.",
       "route": "▼ Recorrido",
       "routeHide": "▲ ocultar recorrido",
-      "middle": "{n} paradas intermedias — en «Recorrido»"
+      "middle": "paradas intermedias: {n} — en «Recorrido»"
     }
   },
   "tutorial": {
