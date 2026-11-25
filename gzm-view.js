@@ -953,7 +953,11 @@
       function pick(n) { clearTimeout(timer); inp.value = n; picked = true; pickedVal = n; pickedAt = Date.now(); close(); }
       inp._ddPick = pick;   // wybór z zewnątrz (🏠/🏢/📍 pod polami) — też zwija listę
       // notatka 20.11: klawiatura Androida po stuknięciu w podpowiedź zatwierdza jeszcze wpisywany tekst (zdarzenie „input”) — to nie jest nowe wpisywanie
-      inp.addEventListener("input", function () { if (picked && (inp.value === pickedVal || Date.now() - pickedAt < 800)) { if (inp.value !== pickedVal) inp.value = pickedVal; return; } picked = false; clearTimeout(timer); timer = setTimeout(show, 150); });
+      inp.addEventListener("input", function () { if (picked && (inp.value === pickedVal || Date.now() - pickedAt < 800)) { if (inp.value !== pickedVal) inp.value = pickedVal; return; } picked = false; nearBusy = false; clearTimeout(timer); timer = setTimeout(show, 150); });
+      // notatka 25.11 (14:10, „nie zwija się lista w polu dokąd”): zwijamy też po stuknięciu poza listą i po schowaniu klawiatury
+      // (Android: wstecz / „Gotowe” chowa klawiaturę, ale pole zostaje aktywne, więc „blur” nie przychodzi)
+      document.addEventListener("pointerdown", function (e) { if (dd.classList.contains("open") && !w.contains(e.target)) { nearBusy = false; close(); } }, true);
+      if (window.visualViewport) { var vvH = visualViewport.height; visualViewport.addEventListener("resize", function () { var h = visualViewport.height; if (h > vvH + 120 && dd.classList.contains("open") && !nearBusy) close(); vvH = h; }); }
       inp.addEventListener("focus", function () { show(); });
       inp.addEventListener("blur", function () { setTimeout(close, 180); });
       // ↓/↑ zaznaczenie, Enter wybiera (wyszukiwanie uruchamia dotychczasowy Enter), Esc zamyka
@@ -965,6 +969,7 @@
           var nx = e.key === "ArrowDown" ? Math.min(cur + 1, items.length - 1) : Math.max(cur - 1, 0);
           items.forEach(function (b, i) { b.classList.toggle("active", i === nx); }); items[nx].scrollIntoView({ block: "nearest" });
         } else if (e.key === "Enter" && items.length && cur >= 0) { pick(items[cur].dataset.n); }
+        else if (e.key === "Enter") { var ex = items.filter(function (b) { return normName(b.dataset.n || "") === normName(inp.value); })[0]; if (ex) pick(ex.dataset.n); else { nearBusy = false; close(); } }
         else if (e.key === "Escape") close();
       }, true);
       dd.addEventListener("mousedown", function (e) { e.preventDefault(); });
