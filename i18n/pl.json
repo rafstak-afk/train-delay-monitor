@@ -450,7 +450,10 @@
       "slackLive": "na żywo {n} min",
       "xfer": "Przesiadka: {st}",
       "noRoute": "Brak trasy z PLK — tylko odcinek:",
-      "source": "Trasy, perony i opóźnienia: PKP PLK. „Czy poczeka” — statystyka z obserwacji tablic."
+      "source": "Trasy, perony i opóźnienia: PKP PLK. „Czy poczeka” — statystyka z obserwacji tablic.",
+      "route": "▼ Trasa",
+      "routeHide": "▲ zwiń trasę",
+      "middle": "{n} stacji pośrednich — pokaże „Trasa”"
     }
   },
   "tutorial": {

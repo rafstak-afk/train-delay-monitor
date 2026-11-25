@@ -1959,7 +1959,7 @@
       var chip = '<span class="ct">' + C.fmt(jn.arr) + "</span>" + esc(jn.transfers ? T("gzm.v2Changes", { n: jn.transfers }, "przesiadki: {n}") : T("gzm.v2Direct", null, "bez przesiadek"));
       var xw = v2Cur[i] && v2Cur[i].why; if (xw) sub += '<br><b>' + esc(xw) + "</b>";
       var ceX = ceOn() && xx ? xx : null, ceStn = ceX ? ceWorst(ceSteps(ceX, cState)) : null;
-      return '<div class="card ' + (ceStn ? CE_ST[ceStn] : "s-ok") + ' v2-tap" data-cx="' + esc(k) + '">' + (ceX ? ceFull(ceX, cState) : v2Head(route, sub, "ok", chip) + v2Journey(jn)) + v2Foot(i, k, open, esc(rtOk && cState.date === warsawNow().date ? "● " + T("gzm.liveOn", null, "na żywo") : T("gzm.sched", null, "wg rozkładu"))) + (open ? tripsOfJourney(jn) : "") + "</div>";
+      return '<div class="card ' + (ceStn ? CE_ST[ceStn] : "s-ok") + ' v2-tap" data-cx="' + esc(k) + '">' + (ceX ? ceFull(ceX, cState) : v2Head(route, sub, "ok", chip) + v2Journey(jn)) + v2Foot(i, k, open, esc(rtOk && cState.date === warsawNow().date ? "● " + T("gzm.liveOn", null, "na żywo") : T("gzm.sched", null, "wg rozkładu"))) + (open && !fInline() ? tripsOfJourney(jn) : "") + "</div>";
     }
     // TODO 68: „albo” — inny dojazd na ten sam pociąg z innej stacji (np. 🚌 900 do Załęża zamiast pieszo na Katowice)
     function altHtml(y) {
@@ -1975,6 +1975,8 @@
     root.addEventListener("click", function (e) {
       // notatka 20.11: rozwiniętą kartę zwija też stuknięcie w jej nagłówek (godziny, trasa) — nie tylko mały przycisk
       if (e.target.closest("[data-ceb],.ce-det,.ce-msg")) return;
+      var tb = e.target.closest("[data-trasa]");   // „▼ Trasa” na zwiniętej karcie: rozwiń i pokaż przystanki
+      if (tb) { var tk = tb.getAttribute("data-trasa"); e.stopPropagation(); detOpen[tk] = true; tripOpen[tk] = true; rerender(); return; }
       var d = e.target.closest("[data-det]"), k;
       if (d) k = d.getAttribute("data-det");
       else { var h = e.target.closest(".v2c-open .c-head"); if (!h || e.target.closest("button,a")) return; k = h.closest(".v2c-open").getAttribute("data-detk"); }
@@ -2070,7 +2072,7 @@
       if (x.why) sub += '<br><b>' + esc(x.why) + "</b>";
       var meta = x.tDelay ? esc(T("gzm.v2TrainLive", { n: x.tDelay }, "pociąg +{n} min (na żywo)")) : esc(T("gzm.v2TrainPlan", null, "pociąg wg rozkładu PLK"));
       var ceStp = ceOn() ? ceWorst(ceSteps(x, S)) : null;
-      return '<div class="card ' + (ceStp ? CE_ST[ceStp] : V2ST[st]) + ' v2-tap" data-cx="' + esc(tKey) + '">' + (ceStp ? ceFull(x, S) : v2Head(route, sub, st, chip) + html.join("")) + more + v2Foot(i, tKey, open, meta) + (open ? (L ? tripsOfJourney(L.jn) : "") + trainRunsHtml(it, S.date) + (e0 && !c.walkE ? tripsOfJourney(e0) : "") : "")   /* wszystkie kursy: dojazd, pociąg(i), dalej */ + "</div>";
+      return '<div class="card ' + (ceStp ? CE_ST[ceStp] : V2ST[st]) + ' v2-tap" data-cx="' + esc(tKey) + '">' + (ceStp ? ceFull(x, S) : v2Head(route, sub, st, chip) + html.join("")) + more + v2Foot(i, tKey, open, meta) + (open && !fInline() ? (L ? tripsOfJourney(L.jn) : "") + trainRunsHtml(it, S.date) + (e0 && !c.walkE ? tripsOfJourney(e0) : "") : "")   /* wszystkie kursy: dojazd, pociąg(i), dalej */ + "</div>";
     }
     // ===== TODO 85 (21.11, profil autora): lista „klocki” + rozwinięcie „wiadomość” =====
     function ceOn() { return authorOn() && v2On(); }
@@ -2234,7 +2236,8 @@
       if (x.why) meta.push(esc(x.why));
       if (x.tDelay) meta.push('<span class="ce-tight">' + esc(T("gzm.v2TrainLive", { n: x.tDelay }, "pociąg +{n} min (na żywo)")) + "</span>");
       return '<div class="card v2c ' + CE_ST[st] + '" data-det="' + esc(dk) + '" role="button" tabindex="0"><div class="c-head" style="display:block">' + fR1(x, steps, leave) + "</div>" +
-        '<div class="f-how">' + how + '</div><div class="f-meta">' + meta.join(" · ") + "</div></div>";
+        '<div class="f-how">' + how + '</div><div class="f-meta">' + meta.join(" · ") + "</div>" +
+        (fInline() ? '<div style="text-align:right;margin-top:6px"><button type="button" class="btn-sm secondary" data-trasa="' + esc(dk) + '">' + esc(T("gzm.v2Route", null, "▼ Trasa")) + "</button></div>" : "") + "</div>";
     }
     function fRow(h, w, sm, cls) { return "<tr" + (cls ? ' class="' + cls + '"' : "") + '><td class="h">' + h + '</td><td class="w">' + w + (sm ? '<span class="f-sm">' + sm + "</span>" : "") + "</td></tr>"; }
     function fMk(q) { return q.mk ? " (" + esc(q.mk) + ")" : ""; }
@@ -2264,8 +2267,10 @@
       });
       return foldRoute(rows, ib, ia, "f|" + leg.orderId, "station");
     }
+    // 25.11: „▼ Trasa” = przystanki każdego pojazdu w karcie (pod jego wierszem); rozwinięcie karty samo — bez przystanków.
+    function fInline() { try { return ceOn() && localStorage.getItem("showVersionBadge") === "1"; } catch (e) { return false; } }   // na razie profil autora
     function fStops(q) {
-      try { if (localStorage.getItem("showVersionBadge") !== "1") return ""; } catch (e) { return ""; }   // na razie profil autora (jak TODO 77)
+      if (!fInline()) return "";
       var date = (cState && cState.date) || warsawNow().date, h = "";
       if (q.trip) h = tripHtml(q.trip, date, q.from, q.to, true);
       else if (q.leg && q.leg.orderId) h = fTrainStops(q.leg, date);
@@ -2273,7 +2278,7 @@
     }
     // treść rozwiniętej karty (zamiast nagłówka i listy odcinków); reszta karty — jak dotąd
     function ceFull(x, S) {
-      var steps = ceSteps(x, S), leave = ceLeave(x), rows = [], firstRide = -1, lastRide = -1, prevArr = null;
+      var steps = ceSteps(x, S), leave = ceLeave(x), rows = [], firstRide = -1, lastRide = -1, prevArr = null, showStops = !!tripOpen[detKey(x)];
       steps.forEach(function (q, i) { if (q.k === "ride") { if (firstRide < 0) firstRide = i; lastRide = i; } });
       steps.forEach(function (q, i) {
         if (q.k === "walk") {
@@ -2291,7 +2296,7 @@
         var from = esc(q.from) + (q.fromSt ? ", " + esc(T("gzm.stand", { n: q.fromSt }, "stan. {n}")) : "");
         var sm = esc(T("gzm.fFrom", { s: "" }, "z: {s}")) + from + " · " + esc(T("gzm.fOff", { t: "" }, "wysiadasz {t}")) + ceTime(q.arrPlan != null ? q.arrPlan : q.arr, q.arrDelay ? q.arr : null) + (q.toSt ? " (" + esc(T("gzm.stand", { n: q.toSt }, "stan. {n}")) + ")" : "") + (live ? " · " + live : "");
         rows.push(fRow(ceTime(q.depPlan, q.delay ? q.dep : null), fRideName(q) + " → " + esc(q.to), sm));
-        rows.push(fStops(q));
+        if (showStops) rows.push(fStops(q));
         prevArr = q.arr;
       });
       rows.push(fRow(C.fmt(x.final), "🏁 <b>" + esc(T("gzm.fThere", null, "Na miejscu")) + "</b>", x.why ? esc(x.why) : ""));

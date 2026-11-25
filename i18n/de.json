@@ -450,7 +450,10 @@
       "slackLive": "live {n} Min.",
       "xfer": "Umstieg: {st}",
       "noRoute": "Kein Zuglauf von PLK — nur dein Abschnitt:",
-      "source": "Zugläufe, Bahnsteige und Verspätungen: PKP PLK. „Wartet er?“ — Statistik aus beobachteten Anzeigen."
+      "source": "Zugläufe, Bahnsteige und Verspätungen: PKP PLK. „Wartet er?“ — Statistik aus beobachteten Anzeigen.",
+      "route": "▼ Strecke",
+      "routeHide": "▲ Strecke zuklappen",
+      "middle": "{n} Zwischenhalte — unter „Strecke“"
     }
   },
   "tutorial": {

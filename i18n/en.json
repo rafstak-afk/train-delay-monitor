@@ -450,7 +450,10 @@
       "slackLive": "live {n} min",
       "xfer": "Change: {st}",
       "noRoute": "No route from PLK — your section only:",
-      "source": "Routes, platforms and delays: PKP PLK. “Will it wait” — statistics from observed boards."
+      "source": "Routes, platforms and delays: PKP PLK. “Will it wait” — statistics from observed boards.",
+      "route": "▼ Route",
+      "routeHide": "▲ hide route",
+      "middle": "{n} stops in between — tap “Route”"
     }
   },
   "tutorial": {

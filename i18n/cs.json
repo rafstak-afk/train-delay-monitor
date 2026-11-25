@@ -450,7 +450,10 @@
       "slackLive": "živě {n} min",
       "xfer": "Přestup: {st}",
       "noRoute": "Trasa od PLK chybí — jen tvůj úsek:",
-      "source": "Trasy, nástupiště a zpoždění: PKP PLK. „Počká?“ — statistika z pozorování tabulí."
+      "source": "Trasy, nástupiště a zpoždění: PKP PLK. „Počká?“ — statistika z pozorování tabulí.",
+      "route": "▼ Trasa",
+      "routeHide": "▲ sbalit trasu",
+      "middle": "{n} mezilehlých stanic — ukáže „Trasa“"
     }
   },
   "tutorial": {
