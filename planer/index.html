@@ -978,7 +978,8 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
 
   // ===== TODO 77: szczegóły podróży w rozwinięciu karty (24.11 decyzja: rozwinięcie w miejscu; najpierw profil autora) =====
   // Trasy pociągów z /api/train-details wczytywane dopiero po stuknięciu (zapytania do PLK tylko na żądanie).
-  function det77On(){try{return localStorage.getItem('showVersionBadge')==='1'}catch(e){return false}}
+  // TODO 77: dla wszystkich od 25.11 17:00 (zaplanowane — wcześniej tylko profil autora)
+  function det77On(){if(Date.now() >= Date.parse("2026-11-25T17:00:00+01:00"))return true;try{return localStorage.getItem('showVersionBadge')==='1'}catch(e){return false}}
   var det77Cache={},det77Wait=null,det77Stops={};
   function det77Lookup(key){
     if(key.indexOf('i:')===0){return{it:lastItineraries[+key.slice(2)],date:lastQuery&&lastQuery.date}}

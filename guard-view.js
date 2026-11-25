@@ -257,7 +257,7 @@
     }
     // TODO 101 (25.11, profil autora): odcinek pociągu rozwija w karcie przystanki (odcinek pasażera widoczny, przed i po zwinięte);
     // do strony biegu pociągu prowadzi stuknięcie w numer pociągu. Trasa z danych, które pilnowanie już pobrało (bez nowych zapytań).
-    function rlegOn() { try { return localStorage.getItem('showVersionBadge') === '1'; } catch (e) { return false; } }
+    function rlegOn() { if (Date.now() >= Date.parse("2026-11-25T17:00:00+01:00")) return true; try { return localStorage.getItem('showVersionBadge') === '1'; } catch (e) { return false; } }   // TODO 101: dla wszystkich od 25.11 17:00 (zaplanowane)
     function railStops(cid, i) {
       var res = results[cid], d = res && res.raw && res.raw[i], c = S.all().find(function (x) { return x.id === cid; }), l = c && c.legs[i];
       var route = d && Array.isArray(d.route) ? d.route : [];
