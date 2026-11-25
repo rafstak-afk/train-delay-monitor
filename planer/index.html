@@ -1007,7 +1007,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     var route=d&&Array.isArray(d.route)?d.route:[];
     var bi=route.findIndex(function(x){return det77Norm(x.stationName)===det77Norm(leg.board.stationName)});
     var ai=-1;for(var i=Math.max(0,bi+1);i<route.length;i++){if(det77Norm(route[i].stationName)===det77Norm(leg.alight.stationName)){ai=i;break}}
-    var head='<div style="font-weight:800;margin:10px 0 4px">🚆 '+escapeHtml(tr)+(route.length?' → '+escapeHtml(route[route.length-1].stationName):'')+'</div>';
+    var head='<div class="det77-head" style="font-weight:800;margin:10px 0 4px">🚆 '+escapeHtml(tr)+(route.length?' → '+escapeHtml(route[route.length-1].stationName):'')+'</div>';
     if(bi<0||ai<0)return head+'<div class="muted" style="font-size:13px">'+escapeHtml(T('planer.det.noRoute'))+' '+escapeHtml(leg.board.stationName+' '+leg.board.time+' → '+leg.alight.stationName+' '+leg.alight.time)+'</div>';
     var rows='';
     // TODO 103: „▼ Trasa” w wyglądzie „Biegu pociągu” (🚏/🏁 → dzienniczek, 🚌 → przesiadki GZM)
@@ -1059,6 +1059,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
         if(i<L.it.legs.length-1)h+=det77Xfer((L.it.transfers||[])[i],l,L.it.legs[i+1],ds[i],ds[i+1],stats);
       });
       box.innerHTML=h+'<div class="muted" style="font-size:12px;margin-top:6px">'+escapeHtml(T('planer.det.source'))+'</div>';
+      if(window.StopsView)StopsView.scrollTo(box.querySelector('.det77-head'));
     });
   }
   document.addEventListener('click',function(e){var b=e.target.closest('.itin-det-btn');if(!b)return;e.preventDefault();e.stopPropagation();det77Toggle(b.getAttribute('data-det77'),b)},true);

@@ -107,5 +107,11 @@
     return '<div class="sv">' + fold(rows.slice(0, bi), T("train.foldBefore", { n: bi }, "▸ wcześniejsze stacje (" + bi + ")"), "b") + rows.slice(bi, ai + 1).join("") +
       fold(rows.slice(ai + 1), T("train.foldAfter", { n: route.length - 1 - ai }, "▸ dalsze stacje (" + (route.length - 1 - ai) + ")"), "a") + "</div>";
   }
-  window.StopsView = { html: html, trainUrl: trainUrl, ready: function () { gzmIndex(); return gzmP; } };
+  // prośba 25.11: po rozwinięciu „Trasy” / „szczegółów” ekran staje na pierwszym pociągu (pod przyklejonym paskiem zakładek), bez przewijania
+  function scrollTo(el) {
+    if (!el || !el.getBoundingClientRect) return;
+    var bar = document.querySelector(".ptabs"), off = (bar ? bar.getBoundingClientRect().height : 0) + 8;
+    window.scrollTo({ top: Math.max(0, el.getBoundingClientRect().top + window.pageYOffset - off), behavior: "smooth" });
+  }
+  window.StopsView = { scrollTo: scrollTo, html: html, trainUrl: trainUrl, ready: function () { gzmIndex(); return gzmP; } };
 })();

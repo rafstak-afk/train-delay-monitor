@@ -1976,14 +1976,23 @@
       // notatka 20.11: rozwiniętą kartę zwija też stuknięcie w jej nagłówek (godziny, trasa) — nie tylko mały przycisk
       if (e.target.closest("[data-ceb],.ce-det,.ce-msg")) return;
       var tb = e.target.closest("[data-trasa]");   // „▼ Trasa” na zwiniętej karcie: rozwiń i pokaż przystanki
-      if (tb) { var tk = tb.getAttribute("data-trasa"); e.stopPropagation(); detOpen[tk] = true; tripOpen[tk] = true; rerender(); return; }
+      if (tb) { var tk = tb.getAttribute("data-trasa"); e.stopPropagation(); detOpen[tk] = true; tripOpen[tk] = true; rerender(); toFirstRide(tk); return; }
       var d = e.target.closest("[data-det]"), k;
       if (d) k = d.getAttribute("data-det");
       else { var h = e.target.closest(".v2c-open .c-head"); if (!h || e.target.closest("button,a")) return; k = h.closest(".v2c-open").getAttribute("data-detk"); }
       e.stopPropagation();
       if (detOpen[k]) delete detOpen[k]; else detOpen[k] = true;
       rerender();
+      if (detOpen[k]) toFirstRide(k);
     }, true);
+    // prośba 25.11: po rozwinięciu karty ekran staje na pierwszym pojeździe (bez przewijania)
+    function toFirstRide(k) {
+      setTimeout(function () {
+        var box = [].slice.call(root.querySelectorAll(".v2c-open")).filter(function (b) { return b.getAttribute("data-detk") === k; })[0];
+        var el = box && (box.querySelector("tr.f-ride") || box);
+        if (el && window.StopsView) StopsView.scrollTo(el);
+      }, 60);
+    }
     function chipOf(l) {
       if (l.type === "walk") return '<span class="v2c-w">🚶' + l.min + "</span>";
       return '<span class="v2c-l">' + (TYPE_ICON[l.kind] || "🚌") + esc(l.line) + "</span>";
@@ -2298,7 +2307,7 @@
         var live = q.live ? (q.delay ? '<span class="ce-tight">+' + q.delay + " min " + esc(T("gzm.ceLive", null, "na żywo")) + "</span>" : esc(T("gzm.ceOnTime", null, "jedzie punktualnie"))) : q.arrDelay ? '<span class="ce-tight">+' + q.arrDelay + " min " + esc(T("gzm.ceLive", null, "na żywo")) + "</span>" : "";
         var from = esc(q.from) + (q.fromSt ? ", " + esc(T("gzm.stand", { n: q.fromSt }, "stan. {n}")) : "");
         var sm = esc(T("gzm.fFrom", { s: "" }, "z: {s}")) + from + " · " + esc(T("gzm.fOff", { t: "" }, "wysiadasz {t}")) + ceTime(q.arrPlan != null ? q.arrPlan : q.arr, q.arrDelay ? q.arr : null) + (q.toSt ? " (" + esc(T("gzm.stand", { n: q.toSt }, "stan. {n}")) + ")" : "") + (live ? " · " + live : "");
-        rows.push(fRow(ceTime(q.depPlan, q.delay ? q.dep : null), fRideName(q) + " → " + esc(q.to), sm));
+        rows.push(fRow(ceTime(q.depPlan, q.delay ? q.dep : null), fRideName(q) + " → " + esc(q.to), sm, "f-ride"));
         if (showStops) rows.push(fStops(q));
         prevArr = q.arr;
       });

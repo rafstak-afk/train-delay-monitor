@@ -474,7 +474,7 @@
       }
       // TODO 101: odcinek pociągu — rozwiń/zwiń przystanki (numer pociągu to link do biegu)
       var rl = e.target.closest('[data-rleg]');
-      if (rl && !e.target.closest('a,button')) { var rk = rl.dataset.rleg; if (rlegOpen[rk]) delete rlegOpen[rk]; else rlegOpen[rk] = 1; render(); return; }
+      if (rl && !e.target.closest('a,button')) { var rk = rl.dataset.rleg; if (rlegOpen[rk]) delete rlegOpen[rk]; else rlegOpen[rk] = 1; render(); if (rlegOpen[rk] && window.StopsView) setTimeout(function () { var el = [].slice.call(document.querySelectorAll("[data-rleg]")).filter(function (x) { return x.dataset.rleg === rk; })[0]; StopsView.scrollTo(el); }, 60); return; }
       // odcinek autobusu/tramwaju: rozwiń trasę kursu (z zakładki 🚆🚌 — gzm-view.js)
       var gl = e.target.closest('[data-gtrip]');
       if (gl && !e.target.closest('button,a')) {
