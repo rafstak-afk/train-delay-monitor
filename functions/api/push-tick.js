@@ -807,7 +807,7 @@ async function runGuard(env, origin, token, profile, subs, conns, fetchTrain, su
     // jest ciężka, więc szukamy TYLKO przy wysyłce ostrzeżenia, a wynik dla tego
     // samego miejsca i godziny startu bierzemy z pamięci (stan w KV).
     let altText = null;
-    if ((res.status === "broken" || res.status === "cancelled" || (res.status === "risk" && author)) && kind !== "better") {   // notatka 25.11: plan B już przy 🟡 (najpierw profil autora)
+    if ((res.status === "broken" || res.status === "cancelled" || res.status === "risk") && kind !== "better") {   // notatka 25.11: plan B już przy 🟡 — dla wszystkich
       const o = GuardCore.altOrigin(conn, res);
       if (o) {
         const key = o.station + "|" + o.time;
