@@ -1203,7 +1203,12 @@
     "zka": "transporte sustitutivo",
     "likelyCancel": "probablemente cancelado",
     "likelyCancelWhy": "PLK no tiene datos de circulación de este tren",
-    "altLeave": "sal a las {t}"
+    "altLeave": "sal a las {t}",
+    "noRoute": "Sin recorrido del tren de PLK.",
+    "platN": "andén {p}",
+    "before": "estaciones anteriores ({n})",
+    "after": "estaciones siguientes ({n})",
+    "legStops": "Toca — paradas de este tramo"
   },
   "gzm": {
     "title": "🚌 Conexiones GZM",

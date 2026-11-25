@@ -1203,7 +1203,12 @@
     "zka": "Ersatzverkehr",
     "likelyCancel": "wahrscheinlich ausgefallen",
     "likelyCancelWhy": "PLK hat keine Fahrdaten zu diesem Zug",
-    "altLeave": "geh um {t} los"
+    "altLeave": "geh um {t} los",
+    "noRoute": "Kein Zuglauf von PLK.",
+    "platN": "Bahnsteig {p}",
+    "before": "frühere Bahnhöfe ({n})",
+    "after": "weitere Bahnhöfe ({n})",
+    "legStops": "Tippen — Halte dieses Abschnitts"
   },
   "gzm": {
     "title": "🚌 GZM-Anschlüsse",

@@ -1203,7 +1203,12 @@
     "zka": "náhradní doprava",
     "likelyCancel": "pravděpodobně zrušen",
     "likelyCancelWhy": "PLK nemá data o jízdě tohoto vlaku",
-    "altLeave": "vyraz v {t}"
+    "altLeave": "vyraz v {t}",
+    "noRoute": "Trasa vlaku od PLK chybí.",
+    "platN": "nástupiště {p}",
+    "before": "předchozí stanice ({n})",
+    "after": "další stanice ({n})",
+    "legStops": "Klepni — zastávky tohoto úseku"
   },
   "gzm": {
     "title": "🚌 Přestupy GZM",

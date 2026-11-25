@@ -1203,7 +1203,12 @@
     "zka": "replacement bus",
     "likelyCancel": "probably cancelled",
     "likelyCancelWhy": "PLK has no running data for this train",
-    "altLeave": "leave {t}"
+    "altLeave": "leave {t}",
+    "noRoute": "No train route from PLK.",
+    "platN": "platform {p}",
+    "before": "earlier stations ({n})",
+    "after": "later stations ({n})",
+    "legStops": "Tap — stops of this section"
   },
   "gzm": {
     "title": "🚌 GZM connections",

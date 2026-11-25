@@ -30,6 +30,8 @@
     '.gv .leg:first-of-type{border-top:0}' +
     '.gv .gv-gzm{cursor:pointer;position:relative;padding-right:18px;border-radius:8px}.gv .gv-gzm:hover{background:rgba(255,255,255,.04)}.gv .gv-gzm::after{content:"▾";position:absolute;right:4px;top:50%;transform:translateY(-50%);color:var(--muted)}' +
     '.gv a.leg{color:inherit;text-decoration:none;border-radius:8px;position:relative;padding-right:18px}' +
+    '.gv .gv-rail{cursor:pointer;position:relative;padding-right:18px;border-radius:8px}.gv .gv-rail:hover{background:rgba(255,255,255,.04)}.gv .gv-rail::after{content:"▾";position:absolute;right:4px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px}' +
+    '.gv .gv-trn{color:#8fb8f5;text-decoration:underline;text-underline-offset:3px}.gv .gv-rtrip{margin:2px 0 6px 96px;font-size:13px}.gv .gv-rtrip .r{display:grid;grid-template-columns:52px 1fr;gap:6px;padding:2px 0;opacity:.85}.gv .gv-rtrip .r.me{font-weight:800;opacity:1}.gv .gv-rtrip summary{cursor:pointer;color:var(--muted)}' +
     '.gv a.leg:hover{background:rgba(255,255,255,.04)}' +
     '.gv a.leg::after{content:"›";position:absolute;right:4px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:20px}' +
     '.gv .leg-t{font-weight:800}.gv .leg-t small{display:block;color:var(--muted);font-weight:400}' +
@@ -132,6 +134,7 @@
     // TODO 75 (autor): statystyka czekania na spóźnione dowożące — raz na sesję
     var waitStatsPr = null;
     function waitStatsP() { if (!waitStatsPr) waitStatsPr = fetch('/data/czekanie.json').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }); return waitStatsPr; }
+    var rlegOpen = {};   // TODO 101: rozwinięte odcinki pociągów „idPołączenia|nr”
     var gzmRtP = null, gzmRtAt = 0;
     function fetchTrain(leg, date) {
       if (leg.mode === "gzm") {
@@ -252,7 +255,29 @@
       p.set('station', l.board.stationName);
       return '/train?' + p.toString();
     }
-    function legHtml(l, r, date) {
+    // TODO 101 (25.11, profil autora): odcinek pociągu rozwija w karcie przystanki (odcinek pasażera widoczny, przed i po zwinięte);
+    // do strony biegu pociągu prowadzi stuknięcie w numer pociągu. Trasa z danych, które pilnowanie już pobrało (bez nowych zapytań).
+    function rlegOn() { try { return localStorage.getItem('showVersionBadge') === '1'; } catch (e) { return false; } }
+    function railStops(cid, i) {
+      var res = results[cid], d = res && res.raw && res.raw[i], c = S.all().find(function (x) { return x.id === cid; }), l = c && c.legs[i];
+      var route = d && Array.isArray(d.route) ? d.route : [];
+      if (!l || !route.length) return '<div class="src">' + esc(T('guard.noRoute', null, 'Brak trasy pociągu z PLK.')) + '</div>';
+      var nn = function (v) { return String(v || '').trim().toLowerCase(); };
+      var bi = route.findIndex(function (x) { return nn(x.stationName) === nn(l.board.stationName); }), ai = -1;
+      for (var k = Math.max(0, bi + 1); k < route.length; k++) if (nn(route[k].stationName) === nn(l.alight.stationName)) { ai = k; break; }
+      var row = function (x, k) {
+        var t = String((k === ai ? x.plannedArrival : x.plannedDeparture) || x.plannedTime || '').slice(0, 5);
+        var dl = x.status === 'confirmed' ? (k === ai ? x.arrivalDelay : x.departureDelay) : (k === ai ? x.forecastArrivalDelay : x.forecastDepartureDelay);
+        var pl = x.platform && x.platform !== '-' ? ' · ' + T('guard.platN', { p: x.platform }, 'peron ' + x.platform) : '';
+        return '<div class="r' + (k >= bi && k <= ai ? ' me' : '') + '"><span>' + (dl > 0 ? '<span class="plan-strike">' + esc(t) + '</span> ' + esc(G.fmt(G.hm(t) + (+dl))) : esc(t)) + '</span><span>' + (x.status === 'confirmed' ? '✓ ' : '') + esc(x.stationName + pl) + '</span></div>';
+      };
+      if (bi < 0 || ai < 0) return route.map(row).join('');
+      var before = route.slice(0, bi).map(function (x, k) { return row(x, k); }).join(''), after = route.slice(ai + 1).map(function (x, k) { return row(x, ai + 1 + k); }).join('');
+      return (before ? '<details><summary>' + esc(T('guard.before', { n: bi }, 'wcześniejsze stacje (' + bi + ')')) + '</summary>' + before + '</details>' : '') +
+        route.slice(bi, ai + 1).map(function (x, k) { return row(x, bi + k); }).join('') +
+        (after ? '<details><summary>' + esc(T('guard.after', { n: route.length - 1 - ai }, 'dalsze stacje (' + (route.length - 1 - ai) + ')')) + '</summary>' + after + '</details>' : '');
+    }
+    function legHtml(l, r, date, cid, li) {
       var tr = G.trainLabel(l.train) + (l.train && l.train.name ? ' ' + l.train.name : '');
       var d = r && !r.noData;
       var info = !r ? '' : (r.noData ? ' <span class="src">(' + esc(T('guard.status.nodata', null, 'brak danych')) + ')</span>' : (r.cancelled ? ' <b style="color:#fff;background:#000;padding:1px 6px;border-radius:6px">⚫ ' + esc(r.cancelLikely ? T('guard.likelyCancel', null, 'prawdopodobnie odwołany') : T('guard.status.cancelled', null, 'pociąg odwołany')) + '</b>' + (r.cancelLikely ? ' <span class="src">' + esc(T('guard.likelyCancelWhy', null, 'PLK nie ma danych o ruchu tego pociągu')) + '</span>' : '') + (r.cancelSection ? ' <span class="src">' + esc(T('guard.cancelSection', { a: r.cancelSection.from, b: r.cancelSection.to }, 'na odcinku ' + r.cancelSection.from + ' – ' + r.cancelSection.to)) + (r.cancelSection.zka ? ' · 🚌 ' + esc(T('guard.zka', null, 'komunikacja zastępcza')) : '') + '</span>' : '') : ''));
@@ -262,6 +287,9 @@
       }
       if (l.mode === "gzm") return '<div class="leg gv-gzm" data-gtrip="' + esc(l.trip) + '" data-gdate="' + esc(date) + '" data-gb="' + esc(l.board.stationName) + '" data-ga="' + esc(l.alight.stationName) + '" role="button" tabindex="0" title="' + esc(T('guard.gzmTrip', null, 'Stuknij — trasa kursu i gdzie jest teraz')) + '"><div class="leg-t">' + timeHtml(l.board.time, d ? r.delayDep : 0) + '<small>' + timeHtml(l.alight.time, d ? r.delayArr : 0) + '</small></div>' +
         '<div><div class="leg-train">' + esc(tr) + info + '</div><div class="leg-st">' + esc(l.board.stationName) + (d ? delayHtml(r.delayDep, r.depSource) : '') + ' → ' + esc(l.alight.stationName) + '</div></div></div>';
+      if (rlegOn() && cid != null) return '<div class="leg gv-rail" data-rleg="' + esc(cid + '|' + li) + '" role="button" tabindex="0" title="' + esc(T('guard.legStops', null, 'Stuknij — przystanki tego odcinka')) + '"><div class="leg-t">' + timeHtml(d && r.plannedDep || l.board.time, d ? r.delayDep : 0) + '<small>' + timeHtml(d && r.plannedArr || l.alight.time, d ? r.delayArr : 0) + (l.alight.nextDay ? ' +1' : '') + '</small></div>' +
+        '<div><div class="leg-train"><a class="gv-trn" href="' + esc(trainUrl(l, date)) + '" title="' + esc(T('guard.openTrain', null, 'Pokaż cały bieg pociągu')) + '">' + esc(tr) + '</a>' + info + '</div><div class="leg-st">' + esc(l.board.stationName) + (d ? delayHtml(r.delayDep, r.depSource) : '') + ' → ' + esc(l.alight.stationName) + (d ? delayHtml(r.delayArr, r.arrSource) : '') + '</div></div></div>' +
+        (rlegOpen[cid + '|' + li] ? '<div class="gv-rtrip">' + railStops(cid, li) + '</div>' : '');
       return '<a class="leg" href="' + esc(trainUrl(l, date)) + '" title="' + esc(T('guard.openTrain', null, 'Pokaż cały bieg pociągu')) + '"><div class="leg-t">' + timeHtml(d && r.plannedDep || l.board.time, d ? r.delayDep : 0) + '<small>' + timeHtml(d && r.plannedArr || l.alight.time, d ? r.delayArr : 0) + (l.alight.nextDay ? ' +1' : '') + '</small></div>' +
         '<div><div class="leg-train">' + esc(tr) + info + '</div><div class="leg-st">' + esc(l.board.stationName) + (d ? delayHtml(r.delayDep, r.depSource) : '') + ' → ' + esc(l.alight.stationName) + (d ? delayHtml(r.delayArr, r.arrSource) : '') + '</div></div></a>';
     }
@@ -380,7 +408,7 @@
       if (oldTimetable(c)) html += '<div class="waiting">🗓️ ' + esc(T('guard.oldTt', null, 'Zapisane według starego rozkładu (przed 13.12). Ten pociąg może jechać o innej godzinie albo wcale.')) +
         ' <a class="btn-sm secondary" href="' + esc(findNewUrl(c)) + '">' + esc(T('guard.findNew', null, '🔎 Znajdź nowe połączenie')) + '</a></div>';
       c.legs.forEach(function (l, i) {
-        html += legHtml(l, r.legs ? r.legs[i] : null, c.date);
+        html += legHtml(l, r.legs ? r.legs[i] : null, c.date, c.id, i);
         if (i < c.legs.length - 1 && r.transfers && r.transfers[i]) html += xferHtml(r.transfers[i], r.rising && r.worst === i, l, c.legs[i + 1]);
       });
       if (s === 'waiting') {
@@ -442,6 +470,9 @@
         try { localStorage.setItem('guardFoldV1', JSON.stringify(folded)); } catch (er) {}
         render(); return;
       }
+      // TODO 101: odcinek pociągu — rozwiń/zwiń przystanki (numer pociągu to link do biegu)
+      var rl = e.target.closest('[data-rleg]');
+      if (rl && !e.target.closest('a,button')) { var rk = rl.dataset.rleg; if (rlegOpen[rk]) delete rlegOpen[rk]; else rlegOpen[rk] = 1; render(); return; }
       // odcinek autobusu/tramwaju: rozwiń trasę kursu (z zakładki 🚆🚌 — gzm-view.js)
       var gl = e.target.closest('[data-gtrip]');
       if (gl && !e.target.closest('button,a')) {

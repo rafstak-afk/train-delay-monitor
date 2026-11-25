@@ -1203,7 +1203,12 @@
     "zka": "komunikacja zastępcza",
     "likelyCancel": "prawdopodobnie odwołany",
     "likelyCancelWhy": "PLK nie ma danych o ruchu tego pociągu",
-    "altLeave": "wyjdź {t}"
+    "altLeave": "wyjdź {t}",
+    "noRoute": "Brak trasy pociągu z PLK.",
+    "platN": "peron {p}",
+    "before": "wcześniejsze stacje ({n})",
+    "after": "dalsze stacje ({n})",
+    "legStops": "Stuknij — przystanki tego odcinka"
   },
   "gzm": {
     "title": "🚌 Przesiadki GZM",
