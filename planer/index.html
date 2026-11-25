@@ -1059,7 +1059,8 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
         if(i<L.it.legs.length-1)h+=det77Xfer((L.it.transfers||[])[i],l,L.it.legs[i+1],ds[i],ds[i+1],stats);
       });
       box.innerHTML=h+'<div class="muted" style="font-size:12px;margin-top:6px">'+escapeHtml(T('planer.det.source'))+'</div>';
-      if(window.StopsView)StopsView.scrollTo(box.querySelector('.det77-head'));
+      // notatka 25.11: od góry karty — widać godziny podróży i „zdążysz / na styk”, pod nimi pierwszy pociąg
+      if(window.StopsView)StopsView.scrollTo(entry);
     });
   }
   document.addEventListener('click',function(e){var b=e.target.closest('.itin-det-btn');if(!b)return;e.preventDefault();e.stopPropagation();det77Toggle(b.getAttribute('data-det77'),b)},true);

@@ -1990,11 +1990,11 @@
       rerender();
       if (detOpen[k]) toFirstRide(k);
     }, true);
-    // prośba 25.11: po rozwinięciu karty ekran staje na pierwszym pojeździe (bez przewijania)
+    // prośba 25.11: po rozwinięciu karty ekran staje na jej nagłówku (godziny, „zdążysz”), pod nim pierwszy pojazd
     function toFirstRide(k) {
       setTimeout(function () {
         var box = [].slice.call(root.querySelectorAll(".v2c-open")).filter(function (b) { return b.getAttribute("data-detk") === k; })[0];
-        var el = box && (box.querySelector("tr.f-ride") || box);
+        var el = box && (box.querySelector(".c-head") || box);   // notatka 25.11: od nagłówka karty — godziny podróży i „zdążysz / na styk”
         if (el && window.StopsView) StopsView.scrollTo(el);
       }, 60);
     }
