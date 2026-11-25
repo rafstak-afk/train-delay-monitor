@@ -2291,7 +2291,8 @@
       if (q.trip) h = tripHtml(q.trip, date, q.from, q.to, true);
       else if (q.leg && q.leg.orderId) h = fTrainStops(q.leg, date);
       if (h && !q.trip && window.StopsView) return '<tr class="f-stops"><td colspan="2" style="padding:0">' + h + "</td></tr>";   // pociąg: cała szerokość karty (notatka 25.11)
-      return h ? '<tr class="f-stops"><td></td><td><div class="gz-trip" style="margin:2px 0 4px;font-size:14px">' + h + "</div></td></tr>" : "";
+      // notatka 25.11: autobus/tramwaj też na całą szerokość karty (w prawej kolumnie było za wąsko)
+      return h ? '<tr class="f-stops"><td colspan="2" style="padding:0"><div class="gz-trip" style="margin:2px 0 4px;font-size:14px">' + h + "</div></td></tr>" : "";
     }
     // treść rozwiniętej karty (zamiast nagłówka i listy odcinków); reszta karty — jak dotąd
     function ceFull(x, S) {
