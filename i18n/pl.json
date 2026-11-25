@@ -1491,7 +1491,8 @@
     "fOnFoot": "Pieszo do celu",
     "fFrom": "z: {s}",
     "fOff": "wysiadasz {t}",
-    "fThere": "Na miejscu"
+    "fThere": "Na miejscu",
+    "platN": "peron {p}"
   },
   "tt": {
     "swapLater": "Zamień od 13.12",

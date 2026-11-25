@@ -1491,7 +1491,8 @@
     "fOnFoot": "Walk to destination",
     "fFrom": "from: {s}",
     "fOff": "get off {t}",
-    "fThere": "Arrived"
+    "fThere": "Arrived",
+    "platN": "platform {p}"
   },
   "tt": {
     "swapLater": "Replace from 13.12",

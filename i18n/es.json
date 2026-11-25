@@ -1491,7 +1491,8 @@
     "fOnFoot": "A pie hasta el destino",
     "fFrom": "desde: {s}",
     "fOff": "te bajas {t}",
-    "fThere": "Llegada"
+    "fThere": "Llegada",
+    "platN": "andén {p}"
   },
   "tt": {
     "swapLater": "Sustituir desde el 13.12",

@@ -1491,7 +1491,8 @@
     "fOnFoot": "Zu Fuß zum Ziel",
     "fFrom": "ab: {s}",
     "fOff": "aussteigen {t}",
-    "fThere": "Angekommen"
+    "fThere": "Angekommen",
+    "platN": "Bahnsteig {p}"
   },
   "tt": {
     "swapLater": "Ab 13.12 ersetzen",

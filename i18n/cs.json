@@ -1491,7 +1491,8 @@
     "fOnFoot": "Pěšky do cíle",
     "fFrom": "z: {s}",
     "fOff": "vystupuješ {t}",
-    "fThere": "Na místě"
+    "fThere": "Na místě",
+    "platN": "nástupiště {p}"
   },
   "tt": {
     "swapLater": "Nahradit od 13.12",
