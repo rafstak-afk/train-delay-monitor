@@ -1140,6 +1140,11 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     if(data.noConnectionFound){
       statusEl.textContent='';
       var msg;
+      if((data.plkError||data.partial)&&!data.viaFailedAt){
+        // notatka 25.11: PLK chwilowo nie oddało rozkładu — to nie znaczy, że połączenia nie ma
+        listEl.innerHTML=notes+'<div class="empty">'+escapeHtml(T('planer.noConnPlk'))+'<div style="margin-top:10px"><button type="button" class="btn" onclick="search()">'+escapeHtml(T('planer.retry'))+'</button></div></div>';
+        return;
+      }
       if(data.viaFailedAt){
         msg=escapeHtml(T('planer.noConnVia',{station:data.viaFailedAt}));
       }else if(data.lastDepartureToday){

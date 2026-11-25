@@ -177,6 +177,7 @@ export async function onRequestGet(context) {
     let itineraries = [];
     let noConnectionFound = false;
     let partial = false;
+    let plkError = false;
     let viaFailedAt = null;
     let lastDepartureToday = null;
     let cacheInfo = { stationsDictionary: stationsDictionaryResult.cache };
@@ -239,6 +240,7 @@ export async function onRequestGet(context) {
       apiLimitsList.push(...csa.apiLimitsList);
       requestBudgetUsed += csa.fetchedCount * 3;
       partial = !!csa.budgetExhausted;
+      plkError = csa.failedFetches > 0;
 
       const combined = pruneDominated(dedupItineraries(csa.itineraries));
       itineraries = combined.sort((a, b) => a.departureTime.localeCompare(b.departureTime)).slice(0, maxResults);
@@ -249,7 +251,7 @@ export async function onRequestGet(context) {
       // informacją "ostatni kurs dziś już minął". Sprawdzane osobnym
       // przebiegiem od początku dnia TYLKO gdy pierwszy (z progiem godziny)
       // nic nie znalazł — nie płacimy za to w normalnym przypadku.
-      if (noConnectionFound && minutesFromTime(time) > 0) {
+      if (noConnectionFound && !plkError && minutesFromTime(time) > 0) {
         const fullDay = await searchWithCSA({
           from: resolvedWaypoints[0],
           to: resolvedWaypoints[1],
@@ -313,6 +315,7 @@ export async function onRequestGet(context) {
       counts,
       noConnectionFound,
       partial,
+      plkError,
       viaFailedAt,
       lastDepartureToday,
       itineraries,
@@ -325,7 +328,7 @@ export async function onRequestGet(context) {
     // parametrów — krótki cache, kolejne zapytanie policzy go od nowa już na
     // rozgrzanym cache rozkładów.
     const composedTtl = (noConnectionFound || partial) ? COMPOSED_CACHE_TTL_EMPTY : COMPOSED_CACHE_TTL;
-    context.waitUntil(
+    if (!(plkError && noConnectionFound)) context.waitUntil(
       caches.default.put(
         composedKey,
         new Response(JSON.stringify(responsePayload), {
@@ -1060,6 +1063,7 @@ async function searchWithCSA({
   // się to wcześniej, więc to samo zapytanie potrafiło dać różne wyniki
   // zależnie od tego, co akurat było w cache. Wynik oznaczamy jako niepełny.
   let budgetExhausted = false;
+  let failedFetches = 0;
 
   async function fetchAndAdd(ids) {
     const toFetch = ids.filter((id) => !fetchedIds.has(id));
@@ -1074,7 +1078,12 @@ async function searchWithCSA({
       result = null;
     }
     subrequestsUsed += result ? (result.cache === "HIT" ? 1 : 3) : 3;
-    if (!result) return 0;
+    // notatka 25.11: chwilowy błąd PLK dawał po cichu „Nie znaleziono połączenia” — jedna ponowna próba, potem flaga dla użytkownika
+    if (!result && CSA_SUBREQUEST_CEILING - subrequestsUsed >= 3) {
+      try { result = await getJsonCached(url, headers, scheduleTtl); } catch (e) { result = null; }
+      subrequestsUsed += 3;
+    }
+    if (!result) { failedFetches++; return 0; }
     apiLimitsList.push(result.apiLimits);
     const routes = (result.data?.rt || []).filter((r) => {
       const key = r.sid + "|" + r.oid;
@@ -1159,7 +1168,7 @@ async function searchWithCSA({
   const directLegs = findAllDirectLegs(sortedFinal, String(from.id), String(to.id), floorMin);
   const itineraries = rawLegs.concat(directLegs).map((legs) => csaLegsToItinerary(legs, from, to, stationNames, date));
 
-  return { itineraries, apiLimitsList, fetchedCount, budgetExhausted };
+  return { itineraries, apiLimitsList, fetchedCount, budgetExhausted, failedFetches };
 }
 
 function findAllDirectLegs(sortedConnections, sourceId, destId, floorMin) {

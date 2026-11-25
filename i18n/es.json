@@ -454,7 +454,9 @@
       "route": "▼ Recorrido",
       "routeHide": "▲ ocultar recorrido",
       "middle": "paradas intermedias: {n} — en «Recorrido»"
-    }
+    },
+    "noConnPlk": "No se pudo obtener ahora el horario de PLK, el resultado estaría incompleto — no significa que no haya conexión.",
+    "retry": "🔄 Reintentar"
   },
   "tutorial": {
     "ui": {

@@ -454,7 +454,9 @@
       "route": "▼ Route",
       "routeHide": "▲ hide route",
       "middle": "stops in between: {n} — tap “Route”"
-    }
+    },
+    "noConnPlk": "Could not fetch the timetable from PLK right now, so the result would be incomplete — it does not mean there is no connection.",
+    "retry": "🔄 Try again"
   },
   "tutorial": {
     "ui": {

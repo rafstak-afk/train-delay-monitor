@@ -454,7 +454,9 @@
       "route": "▼ Trasa",
       "routeHide": "▲ zwiń trasę",
       "middle": "stacje pośrednie: {n} — pokaże „Trasa”"
-    }
+    },
+    "noConnPlk": "Nie udało się teraz pobrać rozkładu z PLK, więc wynik byłby niepełny — to nie znaczy, że połączenia nie ma.",
+    "retry": "🔄 Spróbuj ponownie"
   },
   "tutorial": {
     "ui": {

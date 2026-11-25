@@ -454,7 +454,9 @@
       "route": "▼ Trasa",
       "routeHide": "▲ sbalit trasu",
       "middle": "mezilehlé stanice: {n} — ukáže „Trasa“"
-    }
+    },
+    "noConnPlk": "Jízdní řád od PLK se teď nepodařilo načíst, výsledek by byl neúplný — neznamená to, že spojení neexistuje.",
+    "retry": "🔄 Zkusit znovu"
   },
   "tutorial": {
     "ui": {

@@ -454,7 +454,9 @@
       "route": "▼ Strecke",
       "routeHide": "▲ Strecke zuklappen",
       "middle": "Zwischenhalte: {n} — unter „Strecke“"
-    }
+    },
+    "noConnPlk": "Der Fahrplan konnte gerade nicht von PLK geladen werden, das Ergebnis wäre unvollständig — das heißt nicht, dass es keine Verbindung gibt.",
+    "retry": "🔄 Erneut versuchen"
   },
   "tutorial": {
     "ui": {
