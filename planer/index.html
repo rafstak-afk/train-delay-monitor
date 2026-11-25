@@ -315,6 +315,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
 <script src="/guard-core.js"></script>
 <script src="/guard-store.js"></script>
 <script src="/alarm-sound.js"></script>
+<script src="/stops-view.js"></script>
 <script src="/guard-view.js"></script>
 <script src="/gzm-core.js"></script>
 <script src="/gzm-raptor.js"></script>
@@ -1001,7 +1002,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     var p=st.platform&&st.platform!=='-'?T('planer.det.platform',{p:st.platform}):'';
     return '<div style="display:grid;grid-template-columns:52px 1fr auto;gap:8px;padding:3px 0;'+(isEnd?'font-weight:800':'opacity:.9')+'"><span>'+escapeHtml(String(t||'').slice(0,5))+'</span><span>'+escapeHtml(st.stationName)+det77DlHtml(det77Delay(st,kind))+'</span><span style="opacity:.75;font-size:13px">'+escapeHtml(p)+'</span></div>';
   }
-  function det77Leg(leg,d,stops){
+  function det77Leg(leg,d,stops,date){
     var tr=[leg.train.category,leg.train.number,leg.train.name].filter(Boolean).join(' ');
     var route=d&&Array.isArray(d.route)?d.route:[];
     var bi=route.findIndex(function(x){return det77Norm(x.stationName)===det77Norm(leg.board.stationName)});
@@ -1009,6 +1010,8 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     var head='<div style="font-weight:800;margin:10px 0 4px">🚆 '+escapeHtml(tr)+(route.length?' → '+escapeHtml(route[route.length-1].stationName):'')+'</div>';
     if(bi<0||ai<0)return head+'<div class="muted" style="font-size:13px">'+escapeHtml(T('planer.det.noRoute'))+' '+escapeHtml(leg.board.stationName+' '+leg.board.time+' → '+leg.alight.stationName+' '+leg.alight.time)+'</div>';
     var rows='';
+    // TODO 103: „▼ Trasa” w wyglądzie „Biegu pociągu” (🚏/🏁 → dzienniczek, 🚌 → przesiadki GZM)
+    if(stops&&window.StopsView)return head+StopsView.html(route,bi,ai,{leg:leg,date:date,key:'p|'+(leg.orderId||tr)});
     if(!stops)return head+'<div style="border-left:3px solid #3b82f6;padding-left:10px">'+det77StopRow(route[bi],true,'dep')+(ai-bi>1?'<div style="opacity:.6;font-size:13px;padding:2px 0 2px 60px">⋮ '+escapeHtml(T('planer.det.middle',{n:ai-bi-1}))+'</div>':'')+det77StopRow(route[ai],true,'arr')+'</div>';
     if(bi>0)rows+='<details style="margin:2px 0"><summary style="cursor:pointer;opacity:.75;font-size:13px">'+escapeHtml(T('planer.det.before',{n:bi}))+'</summary>'+route.slice(0,bi).map(function(x){return det77StopRow(x,false,'dep')}).join('')+'</details>';
     for(var j=bi;j<=ai;j++)rows+=det77StopRow(route[j],j===bi||j===ai,j===ai?'arr':'dep');
@@ -1049,10 +1052,10 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     box.hidden=false;det77Labels(entry,key);
     box.innerHTML='<div class="muted" style="font-size:13px;margin:8px 0">'+escapeHtml(T('planer.det.loading'))+'</div>';
     if(!det77Wait)det77Wait=fetch('/data/czekanie.json').then(function(r){return r.ok?r.json():null}).catch(function(){return null});
-    Promise.all([Promise.all(L.it.legs.map(function(l){return det77Train(l,L.date)})),det77Wait]).then(function(res){
+    Promise.all([Promise.all(L.it.legs.map(function(l){return det77Train(l,L.date)})),det77Wait,window.StopsView&&det77Stops[key]?StopsView.ready():null]).then(function(res){
       var ds=res[0],stats=res[1],h='';
       L.it.legs.forEach(function(l,i){
-        h+=det77Leg(l,ds[i],!!det77Stops[key]);
+        h+=det77Leg(l,ds[i],!!det77Stops[key],L.date);
         if(i<L.it.legs.length-1)h+=det77Xfer((L.it.transfers||[])[i],l,L.it.legs[i+1],ds[i],ds[i+1],stats);
       });
       box.innerHTML=h+'<div class="muted" style="font-size:12px;margin-top:6px">'+escapeHtml(T('planer.det.source'))+'</div>';

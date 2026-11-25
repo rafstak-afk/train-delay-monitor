@@ -1241,6 +1241,14 @@ function renderTrain(train,data){
   const isSameCourse=currentTrainData&&String(currentTrainData.scheduleId)===String(data.scheduleId)&&String(currentTrainData.orderId)===String(data.orderId);
   if(!isSameCourse){markBoardIdx=null;markAlightIdx=null;markMode=null;restoreMarksFromStorage(data,stations)}
   currentTrainData=data;currentStations=stations;
+  // TODO 103: 🚏/🏁 z rozwinięcia trasy (wyszukiwarka, Pociąg + GZM, Pilnowane) — link niesie mb/ma; zaznaczamy raz i zdejmujemy je z adresu
+  if(qs('mb')&&qs('ma')){
+    const nmb=normStation(qs('mb')),nma=normStation(qs('ma'));
+    const bi=stations.findIndex(s=>normStation(s.stationName)===nmb);let ai=-1;
+    for(let k=Math.max(0,bi+1);k<stations.length;k++)if(normStation(stations[k].stationName)===nma){ai=k;break}
+    try{const u=new URL(location.href);u.searchParams.delete('mb');u.searchParams.delete('ma');history.replaceState(history.state,'',u.pathname+u.search+u.hash)}catch(e){}
+    if(bi>=0&&ai>bi){markBoardIdx=bi;markAlightIdx=ai;markMode=null;saveMarksToStorage()}
+  }
   const nm=nowMin();
   let passedIdx=-1;
   stations.forEach((s,i)=>{if(s.status==='confirmed')passedIdx=i});

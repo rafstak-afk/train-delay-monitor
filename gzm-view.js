@@ -2258,6 +2258,8 @@
       var ib = route.findIndex(function (x) { return nn(x.stationName) === nn(leg.board.stationName); }), ia = -1;
       for (var i = Math.max(0, ib + 1); i < route.length; i++) if (nn(route[i].stationName) === nn(leg.alight.stationName)) { ia = i; break; }
       if (ib < 0 || ia < 0) return "";
+      // TODO 103: wygląd „Biegu pociągu” (🚏/🏁 → dzienniczek, 🚌 → przesiadki GZM)
+      if (window.StopsView) return StopsView.html(route, ib, ia, { leg: leg, date: date, key: "f|" + leg.orderId, onReady: rerender });
       var rows = route.map(function (x, i) {
         var t = String((i === ia ? x.plannedArrival : x.plannedDeparture) || x.plannedTime || "").slice(0, 5);
         var dl = x.status === "confirmed" ? (i === ia ? x.arrivalDelay : x.departureDelay) : (i === ia ? x.forecastArrivalDelay : x.forecastDepartureDelay);

@@ -31,7 +31,7 @@
     '.gv .gv-gzm{cursor:pointer;position:relative;padding-right:18px;border-radius:8px}.gv .gv-gzm:hover{background:rgba(255,255,255,.04)}.gv .gv-gzm::after{content:"▾";position:absolute;right:4px;top:50%;transform:translateY(-50%);color:var(--muted)}' +
     '.gv a.leg{color:inherit;text-decoration:none;border-radius:8px;position:relative;padding-right:18px}' +
     '.gv .gv-rail{cursor:pointer;position:relative;padding-right:18px;border-radius:8px}.gv .gv-rail:hover{background:rgba(255,255,255,.04)}.gv .gv-rail::after{content:"▾";position:absolute;right:4px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px}' +
-    '.gv .gv-trn{color:#8fb8f5;text-decoration:underline;text-underline-offset:3px}.gv .gv-rtrip{margin:2px 0 6px 96px;font-size:13px}.gv .gv-rtrip .r{display:grid;grid-template-columns:52px 1fr;gap:6px;padding:2px 0;opacity:.85}.gv .gv-rtrip .r.me{font-weight:800;opacity:1}.gv .gv-rtrip summary{cursor:pointer;color:var(--muted)}' +
+    '.gv .gv-trn{color:#8fb8f5;text-decoration:underline;text-underline-offset:3px}.gv .gv-rtrip{margin:2px 0 6px 0;font-size:13px}.gv .gv-rtrip .r{display:grid;grid-template-columns:52px 1fr;gap:6px;padding:2px 0;opacity:.85}.gv .gv-rtrip .r.me{font-weight:800;opacity:1}.gv .gv-rtrip summary{cursor:pointer;color:var(--muted)}' +
     '.gv a.leg:hover{background:rgba(255,255,255,.04)}' +
     '.gv a.leg::after{content:"›";position:absolute;right:4px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:20px}' +
     '.gv .leg-t{font-weight:800}.gv .leg-t small{display:block;color:var(--muted);font-weight:400}' +
@@ -271,6 +271,8 @@
         var pl = x.platform && x.platform !== '-' ? ' · ' + T('guard.platN', { p: x.platform }, 'peron ' + x.platform) : '';
         return '<div class="r' + (k >= bi && k <= ai ? ' me' : '') + '"><span>' + (dl > 0 ? '<span class="plan-strike">' + esc(t) + '</span> ' + esc(G.fmt(G.hm(t) + (+dl))) : esc(t)) + '</span><span>' + (x.status === 'confirmed' ? '✓ ' : '') + esc(x.stationName + pl) + '</span></div>';
       };
+      // TODO 103: wygląd „Biegu pociągu” (🚏/🏁 → dzienniczek, 🚌 → przesiadki GZM)
+      if (window.StopsView) return StopsView.html(route, bi, ai, { leg: l, date: c.date, key: 'g|' + cid + '|' + i, onReady: render });
       if (bi < 0 || ai < 0) return route.map(row).join('');
       var before = route.slice(0, bi).map(function (x, k) { return row(x, k); }).join(''), after = route.slice(ai + 1).map(function (x, k) { return row(x, ai + 1 + k); }).join('');
       return (before ? '<details><summary>' + esc(T('guard.before', { n: bi }, 'wcześniejsze stacje (' + bi + ')')) + '</summary>' + before + '</details>' : '') +
