@@ -14,7 +14,10 @@
     ".sv .badge.next{background:#0ea5e9;color:#fff}.sv .badge.future{background:#334155;color:#e5e7eb}.sv .badge.info{background:#5b4b1f;color:#ffe8a3}" +
     ".sv .plat-num{font-size:17px;font-weight:800;line-height:1}.sv .plat-track{font-size:10px;color:#9fb0c2;margin-top:2px}" +
     ".sv .mark-btns{display:flex;gap:4px;margin-top:4px}.sv .mark-btn{border:1.5px solid #8fa6bf;background:rgba(255,255,255,.08);border-radius:7px;padding:4px 7px;font-size:15px;line-height:1.2;text-decoration:none;color:inherit;display:inline-flex}" +
-    ".sv .mark-btn.gzm{background:#7a1f2b;border-color:#a33}.sv details>summary{cursor:pointer;color:#9fb0c2;font-size:13px;padding:6px 4px}";
+    ".sv .mark-btn.gzm{background:#7a1f2b;border-color:#a33}.sv details>summary{cursor:pointer;color:#9fb0c2;font-size:13px;padding:6px 4px;list-style:none}.sv details>summary::-webkit-details-marker{display:none}" +
+    // notatka 25.11 (telefon, Pociąg + GZM): w wąskiej karcie 4 kolumny nachodziły na siebie — 3 kolumny, opóźnienie widać po godzinie w nawiasie
+    ".sv{container-type:inline-size}@container (max-width:440px){.sv .rrow{grid-template-columns:58px minmax(0,1fr) 34px;gap:6px;padding:7px 4px}.sv .delay-cell{display:none}.sv .time{font-size:14px}.sv .plan-small{font-size:11px}" +
+    ".sv .station-name{font-size:14px;overflow-wrap:anywhere}.sv .plat-num{font-size:15px}.sv .plat-track{font-size:9.5px}.sv .mark-btn{padding:3px 6px;font-size:14px}}";
   function css() { if (document.getElementById("sv-css")) return; var st = document.createElement("style"); st.id = "sv-css"; st.textContent = CSS; document.head.appendChild(st); }
   function T(k, p, d) { try { if (window.I18n) { var v = I18n.t(k, p); if (v && v !== k) return v; } } catch (e) {} return d; }
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
