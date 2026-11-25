@@ -436,7 +436,22 @@
     "tabGzm": "GZM",
     "tabTrain": "Pociąg",
     "tabTrainGzm": "Pociąg + GZM",
-    "historyGzmDeps": "odjazdy spod stacji"
+    "historyGzmDeps": "odjazdy spod stacji",
+    "det": {
+      "open": "▾ szczegóły",
+      "close": "▴ zwiń",
+      "loading": "Wczytuję trasy pociągów…",
+      "before": "wcześniejsze stacje ({n})",
+      "after": "dalsze stacje ({n})",
+      "platform": "peron {p}",
+      "samePlat": "ten sam peron {p}",
+      "platChange": "zmiana peronu: {a} → {b}",
+      "slack": "zapas {n} min wg rozkładu",
+      "slackLive": "na żywo {n} min",
+      "xfer": "Przesiadka: {st}",
+      "noRoute": "Brak trasy z PLK — tylko odcinek:",
+      "source": "Trasy, perony i opóźnienia: PKP PLK. „Czy poczeka” — statystyka z obserwacji tablic."
+    }
   },
   "tutorial": {
     "ui": {

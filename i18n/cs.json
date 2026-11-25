@@ -436,7 +436,22 @@
     "tabGzm": "GZM",
     "tabTrain": "Vlak",
     "tabTrainGzm": "Vlak + GZM",
-    "historyGzmDeps": "odjezdy u stanice"
+    "historyGzmDeps": "odjezdy u stanice",
+    "det": {
+      "open": "▾ podrobnosti",
+      "close": "▴ sbalit",
+      "loading": "Načítám trasy vlaků…",
+      "before": "předchozí stanice ({n})",
+      "after": "další stanice ({n})",
+      "platform": "nástupiště {p}",
+      "samePlat": "stejné nástupiště {p}",
+      "platChange": "změna nástupiště: {a} → {b}",
+      "slack": "rezerva {n} min podle jízdního řádu",
+      "slackLive": "živě {n} min",
+      "xfer": "Přestup: {st}",
+      "noRoute": "Trasa od PLK chybí — jen tvůj úsek:",
+      "source": "Trasy, nástupiště a zpoždění: PKP PLK. „Počká?“ — statistika z pozorování tabulí."
+    }
   },
   "tutorial": {
     "ui": {

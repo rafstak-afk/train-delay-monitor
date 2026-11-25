@@ -436,7 +436,22 @@
     "tabGzm": "GZM",
     "tabTrain": "Train",
     "tabTrainGzm": "Train + GZM",
-    "historyGzmDeps": "departures near the station"
+    "historyGzmDeps": "departures near the station",
+    "det": {
+      "open": "▾ details",
+      "close": "▴ collapse",
+      "loading": "Loading train routes…",
+      "before": "earlier stations ({n})",
+      "after": "later stations ({n})",
+      "platform": "platform {p}",
+      "samePlat": "same platform {p}",
+      "platChange": "platform change: {a} → {b}",
+      "slack": "{n} min to spare (timetable)",
+      "slackLive": "live {n} min",
+      "xfer": "Change: {st}",
+      "noRoute": "No route from PLK — your section only:",
+      "source": "Routes, platforms and delays: PKP PLK. “Will it wait” — statistics from observed boards."
+    }
   },
   "tutorial": {
     "ui": {

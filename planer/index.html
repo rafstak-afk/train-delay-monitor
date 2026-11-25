@@ -975,6 +975,80 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     el.classList.remove('flash');void el.offsetWidth;el.classList.add('flash');
   }
 
+  // ===== TODO 77: szczegóły podróży w rozwinięciu karty (24.11 decyzja: rozwinięcie w miejscu; najpierw profil autora) =====
+  // Trasy pociągów z /api/train-details wczytywane dopiero po stuknięciu (zapytania do PLK tylko na żądanie).
+  function det77On(){try{return localStorage.getItem('showVersionBadge')==='1'}catch(e){return false}}
+  var det77Cache={},det77Wait=null;
+  function det77Lookup(key){
+    if(key.indexOf('i:')===0){return{it:lastItineraries[+key.slice(2)],date:lastQuery&&lastQuery.date}}
+    var e=getSavedResults().find(function(x){return x._key===key.slice(2)});
+    return e?{it:e.snapshot,date:e.query&&e.query.date}:null;
+  }
+  function det77Train(leg,date){
+    var k=leg.scheduleId+'|'+leg.orderId+'|'+date;
+    if(!det77Cache[k])det77Cache[k]=fetch('/api/train-details?'+new URLSearchParams({scheduleId:leg.scheduleId||'',orderId:leg.orderId||'',operatingDate:date||'',train:(leg.train&&leg.train.number)||'',station:leg.board.stationName}).toString()).then(function(r){return r.ok?r.json():null}).catch(function(){return null});
+    return det77Cache[k];
+  }
+  function det77Norm(x){return String(x||'').trim().toLowerCase()}
+  function det77Delay(st,kind){
+    if(!st)return null;
+    if(st.status==='confirmed'){var c=kind==='arr'?st.arrivalDelay:st.departureDelay;if(c==null)c=st.delay;return c==null?0:+c}
+    var f=kind==='arr'?st.forecastArrivalDelay:st.forecastDepartureDelay;return f==null?null:+f;
+  }
+  function det77DlHtml(d){if(d==null)return '';var c=d>=10?'#f87171':d>=3?'#fbbf24':'#4ade80';return ' <b style="color:'+c+'">'+(d>0?'+'+d:'0')+'</b>'}
+  function det77StopRow(st,isEnd,kind){
+    var t=kind==='arr'?(st.plannedArrival||st.plannedTime):(st.plannedDeparture||st.plannedTime);
+    var p=st.platform&&st.platform!=='-'?T('planer.det.platform',{p:st.platform}):'';
+    return '<div style="display:grid;grid-template-columns:52px 1fr auto;gap:8px;padding:3px 0;'+(isEnd?'font-weight:800':'opacity:.9')+'"><span>'+escapeHtml(String(t||'').slice(0,5))+'</span><span>'+escapeHtml(st.stationName)+det77DlHtml(det77Delay(st,kind))+'</span><span style="opacity:.75;font-size:13px">'+escapeHtml(p)+'</span></div>';
+  }
+  function det77Leg(leg,d){
+    var tr=[leg.train.category,leg.train.number,leg.train.name].filter(Boolean).join(' ');
+    var route=d&&Array.isArray(d.route)?d.route:[];
+    var bi=route.findIndex(function(x){return det77Norm(x.stationName)===det77Norm(leg.board.stationName)});
+    var ai=-1;for(var i=Math.max(0,bi+1);i<route.length;i++){if(det77Norm(route[i].stationName)===det77Norm(leg.alight.stationName)){ai=i;break}}
+    var head='<div style="font-weight:800;margin:10px 0 4px">🚆 '+escapeHtml(tr)+(route.length?' → '+escapeHtml(route[route.length-1].stationName):'')+'</div>';
+    if(bi<0||ai<0)return head+'<div class="muted" style="font-size:13px">'+escapeHtml(T('planer.det.noRoute'))+' '+escapeHtml(leg.board.stationName+' '+leg.board.time+' → '+leg.alight.stationName+' '+leg.alight.time)+'</div>';
+    var rows='';
+    if(bi>0)rows+='<details style="margin:2px 0"><summary style="cursor:pointer;opacity:.75;font-size:13px">'+escapeHtml(T('planer.det.before',{n:bi}))+'</summary>'+route.slice(0,bi).map(function(x){return det77StopRow(x,false,'dep')}).join('')+'</details>';
+    for(var j=bi;j<=ai;j++)rows+=det77StopRow(route[j],j===bi||j===ai,j===ai?'arr':'dep');
+    if(ai<route.length-1)rows+='<details style="margin:2px 0"><summary style="cursor:pointer;opacity:.75;font-size:13px">'+escapeHtml(T('planer.det.after',{n:route.length-1-ai}))+'</summary>'+route.slice(ai+1).map(function(x){return det77StopRow(x,false,'arr')}).join('')+'</details>';
+    return head+'<div style="border-left:3px solid #3b82f6;padding-left:10px">'+rows+'</div>';
+  }
+  function det77Xfer(t,legA,legB,dA,dB,stats){
+    var find=function(d,name,after){var r=d&&Array.isArray(d.route)?d.route:[];for(var i=0;i<r.length;i++)if(det77Norm(r[i].stationName)===det77Norm(name))return r[i];return null};
+    var a=find(dA,legA.alight.stationName),b=find(dB,legB.board.stationName);
+    var pa=a&&a.platform&&a.platform!=='-'?a.platform:'',pb=b&&b.platform&&b.platform!=='-'?b.platform:'';
+    var plan=t&&t.bufferMinutes!=null?+t.bufferMinutes:null;
+    var la=det77Delay(a,'arr'),lb=det77Delay(b,'dep'),live=plan!=null&&(la!=null||lb!=null)?plan+(lb||0)-(la||0):null;
+    var sl=live!=null?live:plan,em=sl==null?'':sl>=5?'🟢':sl>=3?'🟡':'🔴';
+    var lines=[];
+    if(pa||pb)lines.push(pa&&pb?(pa===pb?T('planer.det.samePlat',{p:pa}):T('planer.det.platChange',{a:pa,b:pb})):T('planer.det.platform',{p:pa||pb}));
+    if(plan!=null)lines.push(em+' '+T('planer.det.slack',{n:plan})+(live!=null&&live!==plan?' · '+T('planer.det.slackLive',{n:live}):''));
+    if(stats&&window.GuardCore&&GuardCore.waitHint&&sl!=null&&sl<5){
+      var h=GuardCore.waitHint(stats,t.stationName,legB.train&&legB.train.number,legA.train&&legA.train.number,GuardCore.lineOf(dB&&dB.name),GuardCore.lineOf(dA&&dA.name));
+      if(h)lines.push(GuardCore.waitText({wait:h,trainA:legA.train,trainB:legB.train,station:t.stationName,needWait:Math.max(0,3-sl)},(window.I18n&&I18n.getLang?I18n.getLang():'pl')));
+    }
+    return '<div style="margin:10px 0;padding:10px 12px;border:1px solid #34495e;border-radius:12px;background:#16212d"><div style="font-weight:800">🔁 '+escapeHtml(T('planer.det.xfer',{st:t?t.stationName:legA.alight.stationName}))+'</div>'+lines.map(function(x){return '<div style="font-size:14px;margin-top:3px">'+escapeHtml(x)+'</div>'}).join('')+'</div>';
+  }
+  function det77Toggle(key,btn){
+    var entry=document.querySelector('[data-det77-entry="'+(window.CSS&&CSS.escape?CSS.escape(key):key)+'"]');if(!entry)return;
+    var box=entry.querySelector('.itin-det77');if(!box)return;
+    if(!box.hidden){box.hidden=true;btn.textContent=T('planer.det.open');return}
+    var L=det77Lookup(key);if(!L||!L.it||!L.it.legs)return;
+    box.hidden=false;btn.textContent=T('planer.det.close');
+    box.innerHTML='<div class="muted" style="font-size:13px;margin:8px 0">'+escapeHtml(T('planer.det.loading'))+'</div>';
+    if(!det77Wait)det77Wait=fetch('/data/czekanie.json').then(function(r){return r.ok?r.json():null}).catch(function(){return null});
+    Promise.all([Promise.all(L.it.legs.map(function(l){return det77Train(l,L.date)})),det77Wait]).then(function(res){
+      var ds=res[0],stats=res[1],h='';
+      L.it.legs.forEach(function(l,i){
+        h+=det77Leg(l,ds[i]);
+        if(i<L.it.legs.length-1)h+=det77Xfer((L.it.transfers||[])[i],l,L.it.legs[i+1],ds[i],ds[i+1],stats);
+      });
+      box.innerHTML=h+'<div class="muted" style="font-size:12px;margin-top:6px">'+escapeHtml(T('planer.det.source'))+'</div>';
+    });
+  }
+  document.addEventListener('click',function(e){var b=e.target.closest('.itin-det-btn');if(!b)return;e.preventDefault();e.stopPropagation();det77Toggle(b.getAttribute('data-det77'),b)},true);
+
   function itineraryHtml(it,opts){
     opts=opts||{};
     var transfers=it.transfers||[];
@@ -1013,14 +1087,16 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     }
     var dateLine=savedQ&&savedQ.date?'<div class="saved-date'+(savedPast?' past':'')+'">'+escapeHtml(T(savedPast?'planer.savedPast':'planer.savedFor',{date:shortDate(savedQ.date)}))+'</div>':'';
     var savedLine=opts.savedAt?'<div class="saved-at">'+escapeHtml(T('planer.savedAt',{date:new Date(opts.savedAt).toLocaleString(dateLocale())}))+'</div>':'';
-    return '<div class="entry"'+(opts.index!=null?' id="itin-'+opts.index+'"':'')+'>'+
+    var detKey=opts.index!=null?'i:'+opts.index:(opts.savedKey?'s:'+opts.savedKey:'');
+    var detBtn=detKey&&det77On()?'<button type="button" class="btn-sm secondary itin-det-btn" data-det77="'+escapeHtml(detKey)+'" style="margin-left:auto">'+escapeHtml(T('planer.det.open'))+'</button>':'';
+    return '<div class="entry"'+(opts.index!=null?' id="itin-'+opts.index+'"':'')+(detKey?' data-det77-entry="'+escapeHtml(detKey)+'"':'')+'>'+
       '<div class="itin-head">'+
         '<span class="itin-time">'+escapeHtml(it.departureTime)+'</span><span class="itin-arrow">→</span><span class="itin-time">'+escapeHtml(it.arrivalTime)+'</span>'+
         (it.arrivalNextDay?'<span class="itin-nextday">'+escapeHtml(T('planer.nextDay'))+'</span>':'')+
         '<span class="itin-dur">'+shortDur(it.durationMinutes)+'</span>'+
-        badgeHtml(it)+
+        badgeHtml(it)+detBtn+
       '</div>'+
-      legsHtml+
+      legsHtml+'<div class="itin-det77" hidden></div>'+
       (opts.index!=null?fasterHintHtml(opts.index)+transferHintHtml(opts.index):'')+
       dateLine+savedLine+
       (actionHtml?'<div class="itin-actions">'+actionHtml+'</div>':'')+

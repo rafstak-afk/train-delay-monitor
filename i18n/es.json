@@ -436,7 +436,22 @@
     "tabGzm": "GZM",
     "tabTrain": "Tren",
     "tabTrainGzm": "Tren + GZM",
-    "historyGzmDeps": "salidas junto a la estación"
+    "historyGzmDeps": "salidas junto a la estación",
+    "det": {
+      "open": "▾ detalles",
+      "close": "▴ contraer",
+      "loading": "Cargando recorridos de los trenes…",
+      "before": "estaciones anteriores ({n})",
+      "after": "estaciones siguientes ({n})",
+      "platform": "andén {p}",
+      "samePlat": "mismo andén {p}",
+      "platChange": "cambio de andén: {a} → {b}",
+      "slack": "margen {n} min según horario",
+      "slackLive": "en vivo {n} min",
+      "xfer": "Transbordo: {st}",
+      "noRoute": "Sin recorrido de PLK — solo tu tramo:",
+      "source": "Recorridos, andenes y retrasos: PKP PLK. «¿Esperará?» — estadística de paneles observados."
+    }
   },
   "tutorial": {
     "ui": {

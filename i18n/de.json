@@ -436,7 +436,22 @@
     "tabGzm": "GZM",
     "tabTrain": "Zug",
     "tabTrainGzm": "Zug + GZM",
-    "historyGzmDeps": "Abfahrten am Bahnhof"
+    "historyGzmDeps": "Abfahrten am Bahnhof",
+    "det": {
+      "open": "▾ Details",
+      "close": "▴ zuklappen",
+      "loading": "Zugläufe werden geladen…",
+      "before": "frühere Bahnhöfe ({n})",
+      "after": "weitere Bahnhöfe ({n})",
+      "platform": "Bahnsteig {p}",
+      "samePlat": "gleicher Bahnsteig {p}",
+      "platChange": "Bahnsteigwechsel: {a} → {b}",
+      "slack": "{n} Min. Puffer laut Fahrplan",
+      "slackLive": "live {n} Min.",
+      "xfer": "Umstieg: {st}",
+      "noRoute": "Kein Zuglauf von PLK — nur dein Abschnitt:",
+      "source": "Zugläufe, Bahnsteige und Verspätungen: PKP PLK. „Wartet er?“ — Statistik aus beobachteten Anzeigen."
+    }
   },
   "tutorial": {
     "ui": {
