@@ -1132,7 +1132,8 @@
       "cancelled": "vlak zrušen",
       "nodata": "bez dat",
       "done": "dojeto",
-      "waiting": "čeká na start"
+      "waiting": "čeká na start",
+      "missed": "přestup nestihnut"
     },
     "src": {
       "forecast": "prognóza PLK",

@@ -25,7 +25,7 @@
     '.gv .c-date{color:var(--muted);font-size:12.5px;margin-top:2px}' +
     '.gv .chip{flex:0 1 auto;max-width:48%;border-radius:12px;padding:5px 10px;font-size:12.5px;font-weight:800;background:var(--grey);text-align:center;line-height:1.3}' +
     '.gv .chip.s-ok{background:rgba(93,211,158,.18);color:var(--green)}.gv .chip.s-risk{background:rgba(255,204,0,.16);color:var(--yellow)}' +
-    '.gv .chip.s-broken{background:rgba(255,77,77,.18);color:var(--red)}.gv .chip.s-cancelled{background:#000;color:#fff}.gv .chip.s-done{background:rgba(34,211,238,.15);color:var(--cyan)}' +
+    '.gv .chip.s-broken{background:rgba(255,77,77,.18);color:var(--red)}.gv .chip.s-cancelled{background:#000;color:#fff}.gv .chip.s-missed{background:rgba(255,77,77,.18);color:var(--red)}.gv .chip.s-done{background:rgba(34,211,238,.15);color:var(--cyan)}' +
     '.gv .leg{display:grid;grid-template-columns:88px minmax(0,1fr);gap:8px;padding:8px 0;border-top:1px solid #2a3a4c;font-size:13.5px}' +
     '.gv .leg:first-of-type{border-top:0}' +
     '.gv .gv-gzm{cursor:pointer;position:relative;padding-right:18px;border-radius:8px}.gv .gv-gzm:hover{background:rgba(255,255,255,.04)}.gv .gv-gzm::after{content:"▾";position:absolute;right:4px;top:50%;transform:translateY(-50%);color:var(--muted)}' +
@@ -75,7 +75,7 @@
 
   function T(k, p, fb) { if (window.I18n) { var v = I18n.t(k, p); if (v !== k) return v; } return fb != null ? fb : k; }
   function esc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-  var EMO = { ok: '🟢', risk: '🟡', broken: '🔴', cancelled: '⚫', nodata: '❔', done: '🏁', waiting: '⏳' };
+  var EMO = { ok: '🟢', risk: '🟡', broken: '🔴', missed: '🔴', cancelled: '⚫', nodata: '❔', done: '🏁', waiting: '⏳' };
 
   function nowWarsawMin(dateStr) {
     var p = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Warsaw', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(new Date());
@@ -122,7 +122,7 @@
     var savedMsg = '';
 
     function count() { if (opts.onCount) opts.onCount(S.all().length); }
-    function statusText(s) { return T('guard.status.' + s, null, { ok: 'OK', risk: 'przesiadka zagrożona', broken: 'przesiadka prawdopodobnie zerwana', cancelled: 'pociąg odwołany', nodata: 'brak danych', done: 'dojechano', waiting: 'czeka na start' }[s] || s); }
+    function statusText(s) { return T('guard.status.' + s, null, { ok: 'OK', risk: 'przesiadka zagrożona', broken: 'przesiadka prawdopodobnie zerwana', cancelled: 'pociąg odwołany', nodata: 'brak danych', done: 'dojechano', missed: 'przesiadka nieudana', waiting: 'czeka na start' }[s] || s); }
     function delayHtml(d, src) {
       if (d == null) return '';
       var cls = d >= 10 ? 'vlate' : (d >= 3 ? 'late' : 'ontime');
@@ -196,7 +196,7 @@
           results[c.id] = res;
           // Alternatywy przy 🟡/🔴/⚫ — od stacji zagrożonej przesiadki; ponowne
           // wyszukanie, gdy zmieni się stacja albo godzina startu o ≥ 5 min.
-          if (res.status === 'risk' || res.status === 'broken' || res.status === 'cancelled') {
+          if (res.status === 'risk' || res.status === 'broken' || res.status === 'cancelled' || res.status === 'missed') {
             var o = G.altOrigin(c, res), prev = alts[c.id];
             if (o && (!prev || !prev.origin || prev.origin.station !== o.station || Math.abs(G.hm(prev.origin.time) - G.hm(o.time)) >= 5)) findAlternatives(c, res);
           }
@@ -206,7 +206,7 @@
         lastAt = Date.now(); render();
         // co 1 min, gdy któraś przesiadka jest w ciągu 60 min; inaczej co 5 min —
         // tylko gdy widok jest pokazany
-        var soon = conns.some(function (c) { var r = results[c.id]; if (!r || r.status === 'waiting' || r.status === 'done') return false; var nm = nowWarsawMin(c.date); return c.legs.some(function (l) { var t = G.hm(l.alight.time); return t != null && t - nm <= 60 && t - nm >= -30; }); });
+        var soon = conns.some(function (c) { var r = results[c.id]; if (!r || r.status === 'waiting' || r.status === 'done' || r.status === 'missed') return false; var nm = nowWarsawMin(c.date); return c.legs.some(function (l) { var t = G.hm(l.alight.time); return t != null && t - nm <= 60 && t - nm >= -30; }); });
         if (shown && document.visibilityState === 'visible') timer = setTimeout(refresh, soon ? 60000 : 300000);
       });
     }
@@ -218,7 +218,7 @@
       alts[c.id] = { loading: true, origin: o };
       var qs = new URLSearchParams(G.altQuery(c, o));
       fetch('/api/planner?' + qs.toString(), { headers: { Accept: 'application/json' } }).then(function (r) { return r.json(); }).then(function (d) {
-        alts[c.id] = { list: G.pickAlternatives(d && d.itineraries, 3), origin: o }; render();
+        alts[c.id] = { list: G.pickAlternatives(d && d.itineraries, 3, c, o), origin: o }; render();
       }).catch(function () { alts[c.id] = { error: true, origin: o }; render(); });
     }
     function switchTo(c, idx) {
@@ -417,7 +417,7 @@
         var st = r.startMin; html += '<div class="waiting">⏳ ' + esc(T('guard.waitingInfo', { time: G.fmt(st) }, 'Pilnowanie zacznie się ok. ' + G.fmt(st) + ' tego dnia.')) + '</div>';
       }
       var a = alts[c.id];
-      if (a && (s === 'risk' || s === 'broken' || s === 'cancelled')) {
+      if (a && (s === 'risk' || s === 'broken' || s === 'cancelled' || s === 'missed')) {
         html += '<div class="alts"><h4>🔀 ' + (s === 'risk' ? esc(T('guard.planB', null, 'Plan B')) + ': ' : '') + esc(T('guard.altTitle', { st: a.origin.station, time: a.origin.time }, 'Alternatywy z ' + a.origin.station + ' od ' + a.origin.time)) + '</h4>';
         if (a.loading) html += '<div class="src">' + esc(T('guard.altLoading', null, 'Szukam połączeń…')) + '</div>';
         else if (a.error || !a.list || !a.list.length) html += '<div class="src">' + esc(T('guard.altNone', null, 'Nie znalazłem alternatyw.')) + '</div> <button type="button" class="btn-sm secondary" data-act="altRetry" data-id="' + esc(c.id) + '">' + esc(T('guard.altRetry', null, 'Szukaj ponownie')) + '</button>';
@@ -436,14 +436,14 @@
         html += '</div>';
       }
       var arrMin = G.lastArrMin(c);
-      if (s !== 'waiting' && (s === 'done' || (arrMin != null && nowWarsawMin(c.date) >= arrMin))) {
+      if (s !== 'waiting' && (s === 'done' || s === 'missed' || (arrMin != null && nowWarsawMin(c.date) >= arrMin))) {
         html += '<div class="ask"><h4>📓 ' + esc(T('guard.ask.title', null, 'Jechałeś tym połączeniem?')) + '</h4>' +
           (c.legs.length > 1 ? '<div class="src">' + esc(T('guard.ask.legsHint', null, 'Odznacz odcinki, którymi nie jechałeś.')) + '</div>' : '') +
           c.legs.map(function (l, i) { return '<label><input type="checkbox" class="ask-leg" data-id="' + esc(c.id) + '" data-i="' + i + '" checked> <span><b>' + esc(G.trainLabel(l.train)) + '</b> ' + esc(l.board.stationName) + ' ' + esc(l.board.time) + ' → ' + esc(l.alight.stationName) + ' ' + esc(l.alight.time) + '</span></label>'; }).join('') +
           '<div class="btns"><button type="button" class="btn-sm ok" data-act="record" data-id="' + esc(c.id) + '">✅ ' + esc(T('guard.ask.yes', null, 'Tak — zapisz w dzienniczku')) + '</button>' +
           '<button type="button" class="btn-sm secondary" data-act="dismiss" data-id="' + esc(c.id) + '">❌ ' + esc(T('guard.ask.no', null, 'Nie jechałem')) + '</button></div></div>';
       }
-      if (remOn() && s !== 'done') html += remHtml(c);
+      if (remOn() && s !== 'done' && s !== 'missed') html += remHtml(c);
       html += '<div class="c-foot"><span class="c-meta">' + (lastAt && s !== 'waiting' ? esc(T('guard.updated', { time: new Date(lastAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }, 'Aktualizacja: ' + new Date(lastAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))) : '') + '</span>' +
         '<span class="c-actions"><button type="button" class="btn-sm secondary" data-act="refresh">↻ ' + esc(T('guard.refresh', null, 'Odśwież')) + '</button>' +
         '<button type="button" class="btn-sm danger" data-act="remove" data-id="' + esc(c.id) + '">' + esc(T('guard.stop', null, 'Przestań pilnować')) + '</button></span></div></div>';

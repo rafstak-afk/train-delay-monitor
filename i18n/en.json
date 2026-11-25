@@ -1132,7 +1132,8 @@
       "cancelled": "train cancelled",
       "nodata": "no data",
       "done": "arrived",
-      "waiting": "waiting to start"
+      "waiting": "waiting to start",
+      "missed": "connection missed"
     },
     "src": {
       "forecast": "PLK forecast",

@@ -1132,7 +1132,8 @@
       "cancelled": "Zug fällt aus",
       "nodata": "keine Daten",
       "done": "angekommen",
-      "waiting": "wartet auf Start"
+      "waiting": "wartet auf Start",
+      "missed": "Anschluss verpasst"
     },
     "src": {
       "forecast": "PLK-Prognose",

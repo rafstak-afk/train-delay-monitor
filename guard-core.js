@@ -16,7 +16,7 @@
   // zapas bezpieczeństwa = samo opóźnienie pociągu A (najwyżej SAFE_MARGIN) — bo opóźnienia zwykle rosną.
   var SOFT_MARGIN = true;   // dla wszystkich (także powiadomienia z serwera) od v5.56
   function setSoftMargin(v) { SOFT_MARGIN = !!v; }
-  var RANK = { ok: 0, nodata: 1, risk: 2, broken: 3, cancelled: 4 };
+  var RANK = { ok: 0, nodata: 1, risk: 2, broken: 3, missed: 3, cancelled: 4 };
   var MAX_ACTIVE = 5;      // tyle połączeń naraz pilnujemy w tle (limity PLK)
 
   function norm(s) {
@@ -397,7 +397,10 @@
     // najgorsza przesiadka — do treści powiadomienia
     var worst = -1;
     transfers.forEach(function (t, k) { if (worst < 0 || (RANK[t.status] || 0) > (RANK[transfers[worst].status] || 0)) worst = k; });
-    return { status: done ? "done" : status, legs: r, transfers: transfers, worst: worst, eta: eta, done: done };
+    // notatka 25.11: po dojeździe ostatniego pociągu „dojechano” tylko, gdy żadna przesiadka się nie zerwała (np. S8 odjechał 14 min przed przyjazdem S1)
+    var missed = -1; if (done) transfers.forEach(function (t, k) { if (missed < 0 && t.status === "broken") missed = k; });
+    if (missed >= 0) worst = missed;
+    return { status: done ? (missed >= 0 ? "missed" : "done") : status, legs: r, transfers: transfers, worst: worst, eta: eta, done: done, missed: missed };
   }
 
   // Trend: opóźnienie A rośnie w 3 kolejnych odczytach.
@@ -413,7 +416,7 @@
   // danych” (to nie jest zmiana dla pasażera) i przy pierwszym 🟢.
   function shouldNotify(prev, cur) {
     var p = prev && prev.status, c = cur.status;
-    if (c === "nodata" || c === "done") return null;
+    if (c === "nodata" || c === "done" || c === "missed") return null;
     if (!p || p === "nodata") return (c === "ok") ? null : "worse";
     if (p !== c) {
       if ((RANK[c] || 0) > (RANK[p] || 0)) return "worse";
@@ -426,42 +429,42 @@
 
   // ---------- teksty (powiadomienia i statusy) w 6 językach ----------
   var TXT = {
-    pl: { title: "🛡️ Pilnowane połączenie", ok: "OK", risk: "przesiadka zagrożona", broken: "przesiadka prawdopodobnie zerwana", cancelled: "pociąg odwołany", nodata: "brak danych", done: "dojechano",
+    pl: { title: "🛡️ Pilnowane połączenie", ok: "OK", risk: "przesiadka zagrożona", broken: "przesiadka prawdopodobnie zerwana", cancelled: "pociąg odwołany", nodata: "brak danych", done: "dojechano", missed: "przesiadka nieudana",
       warn: "⚠️ Przesiadka na stacji {st} zagrożona: {a} ma +{d} min, na przesiadkę na {b} zostanie {s} min (potrzebne {n}).",
       brk: "🔴 Przesiadka na stacji {st} prawdopodobnie zerwana: {a} ma +{d} min, {b} odjeżdża {t}.",
       can: "⚫ {tr} odwołany — połączenie {from} → {to} nie dojdzie do skutku.", sec: " (odcinek {a} – {b}{z})", zka: ", komunikacja zastępcza", likely: " (prawdopodobnie — PLK nie ma danych o jego ruchu)",
       better: "✅ Przesiadka na stacji {st} znów bezpieczna ({s} min zapasu).",
       onlyB: " Zdążysz tylko, jeśli {b} nie nadrobi opóźnienia.",
       alt: " Najbliższa alternatywa: {alt}.", check: " Sprawdź alternatywy." },
-    en: { title: "🛡️ Guarded connection", ok: "OK", risk: "connection at risk", broken: "connection probably missed", cancelled: "train cancelled", nodata: "no data", done: "arrived",
+    en: { title: "🛡️ Guarded connection", ok: "OK", risk: "connection at risk", broken: "connection probably missed", cancelled: "train cancelled", nodata: "no data", done: "arrived", missed: "connection missed",
       warn: "⚠️ Connection at {st} at risk: {a} is +{d} min, {s} min left to change to {b} (need {n}).",
       brk: "🔴 Connection at {st} probably missed: {a} is +{d} min, {b} leaves at {t}.",
       can: "⚫ {tr} cancelled — the {from} → {to} journey won't work.", sec: " (section {a} – {b}{z})", zka: ", replacement bus", likely: " (probably — PLK has no running data for it)",
       better: "✅ Connection at {st} safe again ({s} min to spare).",
       onlyB: " You'll make it only if {b} doesn't make up its delay.",
       alt: " Next alternative: {alt}.", check: " Check alternatives." },
-    de: { title: "🛡️ Überwachte Verbindung", ok: "OK", risk: "Anschluss gefährdet", broken: "Anschluss wahrscheinlich verpasst", cancelled: "Zug fällt aus", nodata: "keine Daten", done: "angekommen",
+    de: { title: "🛡️ Überwachte Verbindung", ok: "OK", risk: "Anschluss gefährdet", broken: "Anschluss wahrscheinlich verpasst", cancelled: "Zug fällt aus", nodata: "keine Daten", done: "angekommen", missed: "Anschluss verpasst",
       warn: "⚠️ Anschluss in {st} gefährdet: {a} hat +{d} Min., zum Umstieg in {b} bleiben {s} Min. (nötig {n}).",
       brk: "🔴 Anschluss in {st} wahrscheinlich verpasst: {a} hat +{d} Min., {b} fährt um {t}.",
       can: "⚫ {tr} fällt aus — die Fahrt {from} → {to} klappt nicht.", sec: " (Abschnitt {a} – {b}{z})", zka: ", Ersatzverkehr", likely: " (wahrscheinlich — PLK hat keine Fahrdaten)",
       better: "✅ Anschluss in {st} wieder sicher ({s} Min. Puffer).",
       onlyB: " Klappt nur, wenn {b} die Verspätung nicht aufholt.",
       alt: " Nächste Alternative: {alt}.", check: " Prüfe Alternativen." },
-    cs: { title: "🛡️ Hlídané spojení", ok: "OK", risk: "přestup ohrožen", broken: "přestup pravděpodobně ujede", cancelled: "vlak zrušen", nodata: "bez dat", done: "dojeto",
+    cs: { title: "🛡️ Hlídané spojení", ok: "OK", risk: "přestup ohrožen", broken: "přestup pravděpodobně ujede", cancelled: "vlak zrušen", nodata: "bez dat", done: "dojeto", missed: "přestup nestihnut",
       warn: "⚠️ Přestup ve stanici {st} ohrožen: {a} má +{d} min, na přestup na {b} zbude {s} min (potřeba {n}).",
       brk: "🔴 Přestup ve stanici {st} pravděpodobně ujede: {a} má +{d} min, {b} odjíždí v {t}.",
       can: "⚫ {tr} zrušen — spojení {from} → {to} nevyjde.", sec: " (úsek {a} – {b}{z})", zka: ", náhradní doprava", likely: " (pravděpodobně — PLK nemá data o jeho jízdě)",
       better: "✅ Přestup ve stanici {st} je znovu bezpečný ({s} min rezervy).",
       onlyB: " Stihneš jen, pokud {b} zpoždění nedožene.",
       alt: " Nejbližší alternativa: {alt}.", check: " Zkontroluj alternativy." },
-    es: { title: "🛡️ Conexión vigilada", ok: "OK", risk: "transbordo en riesgo", broken: "transbordo probablemente perdido", cancelled: "tren cancelado", nodata: "sin datos", done: "llegada",
+    es: { title: "🛡️ Conexión vigilada", ok: "OK", risk: "transbordo en riesgo", broken: "transbordo probablemente perdido", cancelled: "tren cancelado", nodata: "sin datos", done: "llegada", missed: "transbordo perdido",
       warn: "⚠️ Transbordo en {st} en riesgo: {a} va con +{d} min, quedarán {s} min para cambiar a {b} (se necesitan {n}).",
       brk: "🔴 Transbordo en {st} probablemente perdido: {a} va con +{d} min, {b} sale a las {t}.",
       can: "⚫ {tr} cancelado: el viaje {from} → {to} no saldrá.", sec: " (tramo {a} – {b}{z})", zka: ", transporte sustitutivo", likely: " (probablemente: PLK no tiene datos de su circulación)",
       better: "✅ Transbordo en {st} seguro de nuevo ({s} min de margen).",
       onlyB: " Solo llegarás si {b} no recupera el retraso.",
       alt: " Próxima alternativa: {alt}.", check: " Revisa alternativas." },
-    uk: { title: "🛡️ Відстежуване сполучення", ok: "OK", risk: "пересадка під загрозою", broken: "пересадку, ймовірно, втрачено", cancelled: "поїзд скасовано", nodata: "немає даних", done: "прибуття",
+    uk: { title: "🛡️ Відстежуване сполучення", ok: "OK", risk: "пересадка під загрозою", broken: "пересадку, ймовірно, втрачено", cancelled: "поїзд скасовано", nodata: "немає даних", done: "прибуття", missed: "пересадку пропущено",
       warn: "⚠️ Пересадка на станції {st} під загрозою: {a} має +{d} хв, на пересадку на {b} лишиться {s} хв (потрібно {n}).",
       brk: "🔴 Пересадку на станції {st}, ймовірно, втрачено: {a} має +{d} хв, {b} відправляється о {t}.",
       can: "⚫ {tr} скасовано — поїздка {from} → {to} не відбудеться.", sec: " (ділянка {a} – {b}{z})", zka: ", замінний транспорт", likely: " (ймовірно — PLK не має даних про його рух)",
@@ -498,6 +501,7 @@
     }
     if (tr && tr.wait && (res.status === "risk" || res.status === "broken") && kind !== "better") body += " " + waitText(tr, lang);
     if ((res.status === "broken" || res.status === "cancelled") && kind !== "better") body += altText ? fill(t.alt, { alt: altText }) : t.check;
+    else if (res.status === "risk" && kind !== "better" && altText) body += fill(t.alt, { alt: altText });   // notatka 25.11: plan B od razu przy zagrożonej przesiadce
     return { title: t.title, body: body };
   }
 
@@ -568,8 +572,10 @@
     return q;
   }
   // 2–3 najlepsze: najwcześniejszy przyjazd na cel.
-  function pickAlternatives(itineraries, n) {
-    return (itineraries || []).filter(function (it) { return it && it.legs && it.legs.length; })
+  // conn + origin (opcjonalnie): bez pociągu, na który właśnie zagrożona jest przesiadka — to nie alternatywa (plan B przy 🟡, 25.11)
+  function pickAlternatives(itineraries, n, conn, origin) {
+    var skip = conn && origin && conn.legs && conn.legs[origin.keep] && conn.legs[origin.keep].train ? String(conn.legs[origin.keep].train.number || "") : "";
+    return (itineraries || []).filter(function (it) { return it && it.legs && it.legs.length && !(skip && it.legs[0].train && String(it.legs[0].train.number || "") === skip); })
       .slice().sort(function (a, b) { return (hm(a.arrivalTime) + (a.arrivalNextDay ? 1440 : 0)) - (hm(b.arrivalTime) + (b.arrivalNextDay ? 1440 : 0)); })
       .slice(0, n || 3);
   }

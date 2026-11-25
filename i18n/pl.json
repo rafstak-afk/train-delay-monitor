@@ -1132,7 +1132,8 @@
       "cancelled": "pociąg odwołany",
       "nodata": "brak danych",
       "done": "dojechano",
-      "waiting": "czeka na start"
+      "waiting": "czeka na start",
+      "missed": "przesiadka nieudana"
     },
     "src": {
       "forecast": "prognoza PLK",

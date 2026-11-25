@@ -1132,7 +1132,8 @@
       "cancelled": "tren cancelado",
       "nodata": "sin datos",
       "done": "llegada",
-      "waiting": "esperando inicio"
+      "waiting": "esperando inicio",
+      "missed": "transbordo perdido"
     },
     "src": {
       "forecast": "previsión PLK",

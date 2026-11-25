@@ -708,7 +708,7 @@ async function carrierNotices(origin, conns, today) {
 // TODO 91: treść skrótu przed wyjściem (6 języków — GuardCore.gx).
 function briefText(conn, res, readings, lang) {
   const g = (k, p) => GuardCore.gx(lang, k, p), tx = GuardCore.tx(lang);
-  const EM = { ok: "🟢", risk: "🟡", broken: "🔴", cancelled: "⚫", nodata: "❔", done: "🏁" };
+  const EM = { ok: "🟢", risk: "🟡", broken: "🔴", missed: "🔴", cancelled: "⚫", nodata: "❔", done: "🏁" };
   const parts = [];
   conn.legs.forEach((l, i) => {
     const x = res.legs[i] || {};
@@ -807,14 +807,14 @@ async function runGuard(env, origin, token, profile, subs, conns, fetchTrain, su
     // jest ciężka, więc szukamy TYLKO przy wysyłce ostrzeżenia, a wynik dla tego
     // samego miejsca i godziny startu bierzemy z pamięci (stan w KV).
     let altText = null;
-    if ((res.status === "broken" || res.status === "cancelled") && kind !== "better") {
+    if ((res.status === "broken" || res.status === "cancelled" || (res.status === "risk" && author)) && kind !== "better") {   // notatka 25.11: plan B już przy 🟡 (najpierw profil autora)
       const o = GuardCore.altOrigin(conn, res);
       if (o) {
         const key = o.station + "|" + o.time;
         if (prev && prev.alt && prev.alt.key === key) altText = prev.alt.text || null;
         else {
           const d = await fetchJson(origin, "/api/planner?" + new URLSearchParams(GuardCore.altQuery(conn, o)).toString());
-          const picks = d && Array.isArray(d.itineraries) ? GuardCore.pickAlternatives(d.itineraries, author ? 2 : 1) : [];
+          const picks = d && Array.isArray(d.itineraries) ? GuardCore.pickAlternatives(d.itineraries, author ? 2 : 1, conn, o) : [];
           // TODO 92 (autor): dwie alternatywy, a gdy plan B startuje z pierwszej stacji — „wyjdź o” (odjazd − dojście z przypomnień)
           const walk = (() => { const r = profile.guardReminders && profile.guardReminders[conn.id]; const w = r && r.walk != null && r.walk !== "" ? Number(r.walk) : GuardCore.REM_DEFAULTS.walk; return Number.isFinite(w) ? w : GuardCore.REM_DEFAULTS.walk; })();
           altText = picks.length ? picks.map(it => {
