@@ -2371,7 +2371,8 @@
         var stand = function (n) { return n ? T("gzm.stand", { n: n }, "stan. {n}").replace("{n}", n) : ""; };
         var after = "";
         if (showStops) { var h = q.trip ? tripHtml(q.trip, date, q.from, q.to, true) : (q.leg && q.leg.orderId ? fTrainStops(q.leg, date) : ""); if (h) after = q.trip ? '<div class="gz-trip" style="margin:2px 0 6px;font-size:14px">' + h + "</div>" : h; }
-        out.push(StopsView.legA({ icon: q.icon, label: "<b>" + esc(q.line) + "</b>", dir: q.head || "",
+        var tdir = ""; if (q.train && q.leg) { var tc = fTrainCache[q.leg.scheduleId + "|" + q.leg.orderId + "|" + date], trt = tc && tc.d && Array.isArray(tc.d.route) ? tc.d.route : null; if (trt && trt.length) tdir = trt[trt.length - 1].stationName; }
+        out.push(StopsView.legA({ icon: q.icon, label: "<b>" + esc(q.line) + "</b>", dir: q.head || tdir,
           dep: { time: C.fmt(q.delay ? q.dep : q.depPlan), plan: C.fmt(q.depPlan), station: q.from, plat: q.train ? (p99 && p99.b) || "" : stand(q.fromSt) },
           arr: { time: C.fmt(q.arrDelay ? q.arr : (q.arrPlan != null ? q.arrPlan : q.arr)), plan: C.fmt(q.arrPlan != null ? q.arrPlan : q.arr), station: q.to, plat: q.train ? (p99 && p99.a) || "" : stand(q.toSt) },
           xfer: xq ? { status: XS[xq.st] || "ok", slack: xq.slack } : null, details: det.join("<br>"), warn: warn, key: "f|" + detKey(x) + "|" + i, after: after }));
