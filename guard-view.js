@@ -215,6 +215,7 @@
     // altQuery, pickAlternatives), więc strona i push proponują to samo.
     function findAlternatives(c, res) {
       var o = G.altOrigin(c, res); if (!o) return;
+      if (o.mixed && !o.plkTo) { alts[c.id] = { list: [], origin: o }; render(); return; }   // dalej od razu autobus — tylko przycisk Pociąg + GZM
       alts[c.id] = { loading: true, origin: o };
       var qs = new URLSearchParams(G.altQuery(c, o));
       fetch('/api/planner?' + qs.toString(), { headers: { Accept: 'application/json' } }).then(function (r) { return r.json(); }).then(function (d) {
@@ -343,7 +344,7 @@
       var label = gz ? esc(tr) : '<a class="gv-trn" href="' + esc(trainUrl(l, c.date)) + '" title="' + esc(T('guard.openTrain', null, 'Pokaż cały bieg pociągu')) + '">' + esc(tr) + '</a>';
       var attrs = gz ? ' data-gtrip="' + esc(l.trip) + '" data-gdate="' + esc(c.date) + '" data-gb="' + esc(l.board.stationName) + '" data-ga="' + esc(l.alight.stationName) + '" role="button" tabindex="0" style="cursor:pointer"'
         : (rlegOn() ? ' data-rleg="' + esc(c.id + '|' + i) + '" role="button" tabindex="0" style="cursor:pointer" title="' + esc(T('guard.legStops', null, 'Stuknij — przystanki tego odcinka')) + '"' : '');
-      return StopsView.legA({ icon: gz ? '🚌' : '🚆', label: label, dir: (function () { var rw = r.raw && r.raw[i]; return rw && Array.isArray(rw.route) && rw.route.length ? rw.route[rw.route.length - 1].stationName : (gz && l.head) || ''; })(), tag: tag, attrs: attrs,
+      return StopsView.legA({ icon: gz ? '' : '🚆', label: label, dir: (function () { var rw = r.raw && r.raw[i]; return rw && Array.isArray(rw.route) && rw.route.length ? rw.route[rw.route.length - 1].stationName : (gz && l.head) || ''; })(), tag: tag, attrs: attrs,
         dep: { time: dR, plan: dP, station: l.board.stationName, plat: d ? rr.platformDep : '' },
         arr: { time: aR, plan: aP + (l.alight.nextDay ? '' : ''), station: l.alight.stationName, plat: d ? rr.platformArr : '', platNext: t && nx && !nx.noData ? nx.platformDep : '' },
         xfer: t ? (G.unifyOn && G.unifyOn() && typeof t.slack === 'number' && t.status !== 'cancelled' && t.status !== 'nodata' ? { status: t.onlyThanksToB && G.xferClass(t.slack - t.need) === 'ok' ? 'risk' : G.xferClass(t.slack - t.need), slack: t.slack - t.need } : { status: t.status, slack: t.slack }) : null, details: det.join('<br>'), warn: warn, key: 'g|' + c.id + '|' + i,
@@ -503,8 +504,9 @@
           var lv = '';
           /* „wyjdź o” — dla wszystkich od 24.11 */ if (a.origin.keep === 0) { var dpm = G.hm(it.departureTime); if (dpm != null) lv = ' · <b style="color:var(--green)">🚶 ' + esc(T('guard.altLeave', { t: G.fmt(dpm - (Number(remCfg(c).walk) || 0)) }, 'wyjdź ' + G.fmt(dpm - (Number(remCfg(c).walk) || 0)))) + '</b>'; }
           html += '<div class="alt"><div><b>' + esc(it.departureTime) + ' → ' + esc(it.arrivalTime) + '</b> · ' + esc(trs) + '<div class="src">' + esc(it.legs.length > 1 ? T('guard.altChanges', { n: it.legs.length - 1 }, 'przesiadki: ' + (it.legs.length - 1)) : T('guard.altDirect', null, 'bezpośrednio')) + lv + '</div></div>' +
-            '<button type="button" class="btn-sm" data-act="switch" data-id="' + esc(c.id) + '" data-k="' + k + '">' + esc(T('guard.switch', null, '🛡️ Pilnuj tej')) + '</button></div>';
+            (a.origin.mixed ? '' : '<button type="button" class="btn-sm" data-act="switch" data-id="' + esc(c.id) + '" data-k="' + k + '">' + esc(T('guard.switch', null, '🛡️ Pilnuj tej')) + '</button>') + '</div>';
         });
+        if (a.origin.mixed) html += '<div style="margin-top:8px"><button type="button" class="btn-sm" data-act="planbGzm" data-id="' + esc(c.id) + '">🚆🚌 ' + esc(T('guard.planBGzm', null, 'Plan B z autobusami')) + '</button> <span class="src">' + esc(T('guard.planBGzmInfo', { st: a.origin.station, to: a.origin.finalTo }, 'cała dalsza droga z {st} do {to}').replace('{st}', a.origin.station).replace('{to}', a.origin.finalTo)) + '</span></div>';
         html += '</div>';
       }
       var arrMin = G.lastArrMin(c);
@@ -576,6 +578,7 @@
         return;
       }
       if (act === 'dismiss' && c) { b.disabled = true; S.dismissTrip(c).then(function () { delete results[id]; render(); }); return; }
+      if (act === 'planbGzm' && c) { var ao = alts[id] && alts[id].origin; if (ao) window.dispatchEvent(new CustomEvent('gzmplanb', { detail: { from: ao.station, to: ao.finalTo, date: c.date, time: ao.time } })); return; }
       if (act === 'altRetry' && c) { delete alts[id]; findAlternatives(c, results[id]); render(); }
     });
 

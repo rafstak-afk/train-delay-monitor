@@ -1213,7 +1213,9 @@
     "platN": "platform {p}",
     "before": "earlier stations ({n})",
     "after": "later stations ({n})",
-    "legStops": "Tap — stops of this section"
+    "legStops": "Tap — stops of this section",
+    "planBGzm": "Plan B with buses",
+    "planBGzmInfo": "the whole way on from {st} to {to}"
   },
   "gzm": {
     "title": "🚌 GZM connections",

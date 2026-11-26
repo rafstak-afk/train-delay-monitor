@@ -849,7 +849,7 @@ async function runGuard(env, origin, token, profile, subs, conns, fetchTrain, su
     let altText = null;
     if ((res.status === "broken" || res.status === "cancelled" || res.status === "risk") && kind !== "better") {   // notatka 25.11: plan B już przy 🟡 — dla wszystkich
       const o = GuardCore.altOrigin(conn, res);
-      if (o) {
+      if (o && !(o.mixed && !o.plkTo)) {
         const key = o.station + "|" + o.time;
         if (prev && prev.alt && prev.alt.key === key) altText = prev.alt.text || null;
         else {

@@ -1213,7 +1213,9 @@
     "platN": "nástupiště {p}",
     "before": "předchozí stanice ({n})",
     "after": "další stanice ({n})",
-    "legStops": "Klepni — zastávky tohoto úseku"
+    "legStops": "Klepni — zastávky tohoto úseku",
+    "planBGzm": "Plán B s autobusy",
+    "planBGzmInfo": "celá další cesta z {st} do {to}"
   },
   "gzm": {
     "title": "🚌 Přestupy GZM",

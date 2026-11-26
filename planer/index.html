@@ -1473,6 +1473,8 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     saveSearchHistoryList(list);
     renderHistoryPanel();
   }
+  // 26.11: plan B z Pilnowanych dla podróży z autobusem — pełne wyszukanie w Pociąg + GZM od miejsca zagrożonej przesiadki
+  window.addEventListener('gzmplanb',function(ev){var d=ev.detail||{};if(!gzmView||!d.from)return;showTab('gzm');gzmView.rerun({from:d.from,to:d.to||'',date:d.date||null,time:d.time||null});try{window.scrollTo({top:0,behavior:'smooth'})}catch(e){}});
   // 🚆🚌 Pociąg + GZM (gzm-view.js wysyła „gzmsearch”) — do tej samej listy Ostatnich
   window.addEventListener('gzmsearch',function(ev){
     var d=ev.detail||{};if(!d.from)return;

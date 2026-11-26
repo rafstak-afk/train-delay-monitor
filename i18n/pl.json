@@ -1213,7 +1213,9 @@
     "platN": "peron {p}",
     "before": "wcześniejsze stacje ({n})",
     "after": "dalsze stacje ({n})",
-    "legStops": "Stuknij — przystanki tego odcinka"
+    "legStops": "Stuknij — przystanki tego odcinka",
+    "planBGzm": "Plan B z autobusami",
+    "planBGzmInfo": "cała dalsza droga z {st} do {to}"
   },
   "gzm": {
     "title": "🚌 Przesiadki GZM",

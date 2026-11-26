@@ -446,42 +446,42 @@
       can: "⚫ {tr} odwołany — połączenie {from} → {to} nie dojdzie do skutku.", sec: " (odcinek {a} – {b}{z})", zka: ", komunikacja zastępcza", likely: " (prawdopodobnie — PLK nie ma danych o jego ruchu)",
       better: "✅ Przesiadka na stacji {st} znów bezpieczna ({s} min zapasu).",
       onlyB: " Zdążysz tylko, jeśli {b} nie nadrobi opóźnienia.",
-      alt: " Najbliższa alternatywa: {alt}.", check: " Sprawdź alternatywy." },
+      alt: " Najbliższa alternatywa: {alt}.", check: " Sprawdź alternatywy.", mixed: " Więcej możliwości (także autobusem) — stuknij." },
     en: { title: "🛡️ Guarded connection", ok: "OK", risk: "connection at risk", broken: "connection probably missed", cancelled: "train cancelled", nodata: "no data", done: "arrived", missed: "connection missed",
       warn: "⚠️ Connection at {st} at risk: {a} is +{d} min, {s} min left to change to {b} (need {n}).",
       brk: "🔴 Connection at {st} probably missed: {a} is +{d} min, {b} leaves at {t}.",
       can: "⚫ {tr} cancelled — the {from} → {to} journey won't work.", sec: " (section {a} – {b}{z})", zka: ", replacement bus", likely: " (probably — PLK has no running data for it)",
       better: "✅ Connection at {st} safe again ({s} min to spare).",
       onlyB: " You'll make it only if {b} doesn't make up its delay.",
-      alt: " Next alternative: {alt}.", check: " Check alternatives." },
+      alt: " Next alternative: {alt}.", check: " Check alternatives.", mixed: " More options (also by bus) — tap." },
     de: { title: "🛡️ Überwachte Verbindung", ok: "OK", risk: "Anschluss gefährdet", broken: "Anschluss wahrscheinlich verpasst", cancelled: "Zug fällt aus", nodata: "keine Daten", done: "angekommen", missed: "Anschluss verpasst",
       warn: "⚠️ Anschluss in {st} gefährdet: {a} hat +{d} Min., zum Umstieg in {b} bleiben {s} Min. (nötig {n}).",
       brk: "🔴 Anschluss in {st} wahrscheinlich verpasst: {a} hat +{d} Min., {b} fährt um {t}.",
       can: "⚫ {tr} fällt aus — die Fahrt {from} → {to} klappt nicht.", sec: " (Abschnitt {a} – {b}{z})", zka: ", Ersatzverkehr", likely: " (wahrscheinlich — PLK hat keine Fahrdaten)",
       better: "✅ Anschluss in {st} wieder sicher ({s} Min. Puffer).",
       onlyB: " Klappt nur, wenn {b} die Verspätung nicht aufholt.",
-      alt: " Nächste Alternative: {alt}.", check: " Prüfe Alternativen." },
+      alt: " Nächste Alternative: {alt}.", check: " Prüfe Alternativen.", mixed: " Mehr Möglichkeiten (auch Bus) — tippen." },
     cs: { title: "🛡️ Hlídané spojení", ok: "OK", risk: "přestup ohrožen", broken: "přestup pravděpodobně ujede", cancelled: "vlak zrušen", nodata: "bez dat", done: "dojeto", missed: "přestup nestihnut",
       warn: "⚠️ Přestup ve stanici {st} ohrožen: {a} má +{d} min, na přestup na {b} zbude {s} min (potřeba {n}).",
       brk: "🔴 Přestup ve stanici {st} pravděpodobně ujede: {a} má +{d} min, {b} odjíždí v {t}.",
       can: "⚫ {tr} zrušen — spojení {from} → {to} nevyjde.", sec: " (úsek {a} – {b}{z})", zka: ", náhradní doprava", likely: " (pravděpodobně — PLK nemá data o jeho jízdě)",
       better: "✅ Přestup ve stanici {st} je znovu bezpečný ({s} min rezervy).",
       onlyB: " Stihneš jen, pokud {b} zpoždění nedožene.",
-      alt: " Nejbližší alternativa: {alt}.", check: " Zkontroluj alternativy." },
+      alt: " Nejbližší alternativa: {alt}.", check: " Zkontroluj alternativy.", mixed: " Více možností (i autobusem) — klepni." },
     es: { title: "🛡️ Conexión vigilada", ok: "OK", risk: "transbordo en riesgo", broken: "transbordo probablemente perdido", cancelled: "tren cancelado", nodata: "sin datos", done: "llegada", missed: "transbordo perdido",
       warn: "⚠️ Transbordo en {st} en riesgo: {a} va con +{d} min, quedarán {s} min para cambiar a {b} (se necesitan {n}).",
       brk: "🔴 Transbordo en {st} probablemente perdido: {a} va con +{d} min, {b} sale a las {t}.",
       can: "⚫ {tr} cancelado: el viaje {from} → {to} no saldrá.", sec: " (tramo {a} – {b}{z})", zka: ", transporte sustitutivo", likely: " (probablemente: PLK no tiene datos de su circulación)",
       better: "✅ Transbordo en {st} seguro de nuevo ({s} min de margen).",
       onlyB: " Solo llegarás si {b} no recupera el retraso.",
-      alt: " Próxima alternativa: {alt}.", check: " Revisa alternativas." },
+      alt: " Próxima alternativa: {alt}.", check: " Revisa alternativas.", mixed: " Más opciones (también en autobús) — toca." },
     uk: { title: "🛡️ Відстежуване сполучення", ok: "OK", risk: "пересадка під загрозою", broken: "пересадку, ймовірно, втрачено", cancelled: "поїзд скасовано", nodata: "немає даних", done: "прибуття", missed: "пересадку пропущено",
       warn: "⚠️ Пересадка на станції {st} під загрозою: {a} має +{d} хв, на пересадку на {b} лишиться {s} хв (потрібно {n}).",
       brk: "🔴 Пересадку на станції {st}, ймовірно, втрачено: {a} має +{d} хв, {b} відправляється о {t}.",
       can: "⚫ {tr} скасовано — поїздка {from} → {to} не відбудеться.", sec: " (ділянка {a} – {b}{z})", zka: ", замінний транспорт", likely: " (ймовірно — PLK не має даних про його рух)",
       better: "✅ Пересадка на станції {st} знову безпечна ({s} хв запасу).",
       onlyB: " Встигнеш, лише якщо {b} не наздожене затримку.",
-      alt: " Найближча альтернатива: {alt}.", check: " Перевір альтернативи." }
+      alt: " Найближча альтернатива: {alt}.", check: " Перевір альтернативи.", mixed: " Більше варіантів (також автобусом) — торкнись." }
   };
   function tx(lang) { return TXT[lang] || TXT.pl; }
   // ===== 26.11: „Zdążysz tylko, jeśli…” — wszystkie przypadki (A = pociąg, którym przyjeżdżasz, B = na który się przesiadasz).
@@ -560,7 +560,8 @@
       body = t[res.status] || res.status;
     }
     if (tr && tr.wait && (res.status === "risk" || res.status === "broken") && kind !== "better") body += " " + waitText(tr, lang);
-    if ((res.status === "broken" || res.status === "cancelled") && kind !== "better") body += altText ? fill(t.alt, { alt: altText }) : t.check;
+    var mixedTrip = (conn.legs || []).some(function (l) { return l.mode === "gzm"; });
+    if ((res.status === "broken" || res.status === "cancelled") && kind !== "better") body += (altText ? fill(t.alt, { alt: altText }) : (mixedTrip ? "" : t.check)) + (mixedTrip && t.mixed ? t.mixed : "");
     else if (res.status === "risk" && kind !== "better" && altText) body += fill(t.alt, { alt: altText });   // notatka 25.11: plan B od razu przy zagrożonej przesiadce
     return { title: t.title, body: body };
   }
@@ -610,7 +611,20 @@
   // keep = ile pierwszych nóg zostaje przy przełączeniu na alternatywę.
   function altOrigin(conn, res) {
     if (!res || !res.legs) return null;
-    if ((conn.legs || []).some(function (l) { return l.mode === "gzm"; })) return null;   // podróż z GZM — bez alternatyw z planera PLK
+    var o = altOrigin0(conn, res); if (!o) return null;
+    // 26.11: podróż z autobusem/tramwajem — pociągi PLK tylko do stacji, z której jedzie dalszy autobus; pełny plan B
+    // (pociągi + autobusy) liczy w aplikacji wyszukiwarka Pociąg + GZM (przycisk na karcie)
+    var legs = conn.legs || [];
+    if (legs.some(function (l) { return l.mode === "gzm"; })) {
+      o.mixed = true; o.finalTo = legs[legs.length - 1].alight.stationName;
+      var j = -1; for (var i = o.keep; i < legs.length; i++) if (legs[i].mode === "gzm") { j = i; break; }
+      if (j === o.keep || (o.keep < legs.length && legs[o.keep].mode === "gzm")) o.plkTo = null;   // dalej od razu autobus — PLK nie pomoże
+      else o.plkTo = j > 0 ? legs[j - 1].alight.stationName : legs[legs.length - 1].alight.stationName;
+      o.plkToId = j > 0 ? (legs[j - 1].alight.stationId || "") : (legs[legs.length - 1].alight.stationId || "");
+    }
+    return o;
+  }
+  function altOrigin0(conn, res) {
     var ci = -1;
     res.legs.forEach(function (x, i) { if (ci < 0 && x && !x.noData && (x.cancelled || rotationRisk(x))) ci = i; });
     var tIdx = res.worst;
@@ -625,6 +639,7 @@
   }
   // Zapytanie do /api/planner dla alternatyw.
   function altQuery(conn, origin) {
+    if (origin && origin.mixed) { var qm = { from: origin.station, to: origin.plkTo, date: conn.date, time: origin.time }; if (origin.stationId) qm.fromId = origin.stationId; if (origin.plkToId) qm.toId = origin.plkToId; return qm; }
     var last = conn.legs[conn.legs.length - 1];
     var q = { from: origin.station, to: last.alight.stationName, date: conn.date, time: origin.time };
     if (origin.stationId) q.fromId = origin.stationId;

@@ -1213,7 +1213,9 @@
     "platN": "andén {p}",
     "before": "estaciones anteriores ({n})",
     "after": "estaciones siguientes ({n})",
-    "legStops": "Toca — paradas de este tramo"
+    "legStops": "Toca — paradas de este tramo",
+    "planBGzm": "Plan B con autobuses",
+    "planBGzmInfo": "todo el trayecto desde {st} hasta {to}"
   },
   "gzm": {
     "title": "🚌 Conexiones GZM",
