@@ -64,7 +64,9 @@
     "reorderHint": "Verschiebe Züge mit den Pfeilen ▲▼. Die Sterne sind währenddessen ausgeblendet, damit nichts versehentlich entfernt wird.",
     "removedToast": "{train} aus den Favoriten entfernt",
     "undo": "↩️ Rückgängig",
-    "pageTitle": "Meine Züge: Verspätungsalarme – Czy zdążę?"
+    "pageTitle": "Meine Züge: Verspätungsalarme – Czy zdążę?",
+    "stillWaiting": "⏳ Warte noch auf PLK-Daten…",
+    "unavailable": "Daten vorübergehend nicht verfügbar."
   },
   "index": {
     "trainWord": "Zug",
@@ -289,7 +291,12 @@
       "notificationTitle": "Zugalarm"
     },
     "header": "Czy zdążę? Claude Code und RafStaK",
-    "stationDropdownAll": "Alle Bahnhöfe"
+    "stationDropdownAll": "Alle Bahnhöfe",
+    "offline": "Keine Internetverbindung. Prüfe dein Netz und versuche es erneut.",
+    "srvBusy": "Der Server ist vorübergehend überlastet.",
+    "srvBusyRetry": "Der Server ist vorübergehend überlastet — neuer Versuch jede Minute.",
+    "srvLastTry": "Letzter Versuch: {t}. Kein Problem deines Telefons oder Internets.",
+    "fetchFailedSimple": "Daten konnten nicht geladen werden. Bitte erneut versuchen."
   },
   "planer": {
     "oldTt": "Nach dem alten Fahrplan gespeichert (vor dem 13.12). Zeiten und Züge können sich geändert haben.",

@@ -64,7 +64,9 @@
     "reorderHint": "Move trains with the ▲▼ arrows. Stars are hidden meanwhile so nothing gets removed by mistake.",
     "removedToast": "Removed {train} from favourites",
     "undo": "↩️ Undo",
-    "pageTitle": "My trains: delay alerts – Czy zdążę?"
+    "pageTitle": "My trains: delay alerts – Czy zdążę?",
+    "stillWaiting": "⏳ Still waiting for PLK data…",
+    "unavailable": "Data temporarily unavailable."
   },
   "index": {
     "trainWord": "train",
@@ -289,7 +291,12 @@
       "notificationTitle": "Train alarm"
     },
     "header": "Czy zdążę? Claude Code and RafStaK",
-    "stationDropdownAll": "All stations"
+    "stationDropdownAll": "All stations",
+    "offline": "No internet connection. Check your network and try again.",
+    "srvBusy": "The server is temporarily overloaded.",
+    "srvBusyRetry": "The server is temporarily overloaded — retrying every minute.",
+    "srvLastTry": "Last try: {t}. It's not a problem with your phone or internet.",
+    "fetchFailedSimple": "Couldn't load the data. Please try again."
   },
   "planer": {
     "oldTt": "Saved under the old timetable (before 13.12). Times and trains may have changed.",

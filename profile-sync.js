@@ -139,6 +139,25 @@
     }
   }
 
+  // ===== TODO 112 (26.11): zgłaszanie awarii (miejsce + kod, bez danych osobowych), najwyżej raz na 10 min dla danego miejsca
+  const ErrLog = {
+    report: function (where, code) {
+      try {
+        const k = where + "|" + code, now = Date.now(), m = JSON.parse(localStorage.getItem("errLogSentV1") || "{}") || {};
+        if (m[k] && now - m[k] < 600000) return;
+        m[k] = now; localStorage.setItem("errLogSentV1", JSON.stringify(m));
+        const body = JSON.stringify({ where: where, code: String(code) });
+        if (navigator.sendBeacon) navigator.sendBeacon("/api/err-log", new Blob([body], { type: "application/json" }));
+        else fetch("/api/err-log", { method: "POST", headers: { "Content-Type": "application/json" }, body: body, keepalive: true }).catch(function () {});
+      } catch (e) {}
+    }
+  };
+  if (typeof window !== "undefined") window.ErrLog = ErrLog;
+  // ===== TODO 112: zapis profilu przy chwilowej awarii serwera — ponowienia, a gdy nie wyjdzie, zmiana czeka w telefonie
+  const PENDING_KEY = "profilePendingPatchV1";
+  function savePending(patch) { try { const cur = JSON.parse(localStorage.getItem(PENDING_KEY) || "null") || {}; localStorage.setItem(PENDING_KEY, JSON.stringify(Object.assign(cur, patch))); } catch (e) {} }
+  function takePending() { try { const p = JSON.parse(localStorage.getItem(PENDING_KEY) || "null"); localStorage.removeItem(PENDING_KEY); return p && typeof p === "object" && Object.keys(p).length ? p : null; } catch (e) { return null; } }
+  const transient = code => code === "network" || /^http_(5\d\d|429)$/.test(String(code || ""));
   async function putOnce(token, patch, create) {
     try {
       const body = JSON.stringify({ token, patch, create: !!create });
@@ -200,6 +219,10 @@
     waiters.forEach(function (w) { w(true); });
   }
   if (typeof window !== "undefined") {
+    // TODO 112: zmiany, które nie doszły przy awarii — wysyłamy przy następnej okazji
+    const retryPending = function () { if (!getToken()) return; try { if (!localStorage.getItem(PENDING_KEY)) return; } catch (e) { return; } const p = takePending(); if (p) push(p); };
+    setTimeout(retryPending, 4000);
+    window.addEventListener("online", retryPending);
     window.addEventListener("pagehide", flushBeacon);
     document.addEventListener("visibilitychange", function () { if (document.visibilityState === "hidden") flushBeacon(); });
   }
@@ -214,11 +237,19 @@
     if (!token) return false;
     lastError = null;
 
-    const first = await putOnce(token, patch, !!(opts && opts.create));
+    let first = await putOnce(token, patch, !!(opts && opts.create));
+    // TODO 112: chwilowa awaria (503 / 1102 / brak sieci) — dwie ponowne próby, potem zmiana czeka w telefonie
+    for (let n = 0; !first.ok && transient(first.code) && n < 2; n++) {
+      ErrLog.report("profile-put", first.code);
+      await new Promise(function (r) { setTimeout(r, n ? 8000 : 2500); });
+      first = await putOnce(token, patch, !!(opts && opts.create));
+    }
     if (first.ok) {
       markVerified();
+      const left = takePending(); if (left) setTimeout(function () { push(left); }, 500);
       return true;
     }
+    if (transient(first.code)) { savePending(patch); lastError = first.code; return false; }
 
     if (first.code === "no_profile") {
       if (isVerified()) {

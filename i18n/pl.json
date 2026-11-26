@@ -64,7 +64,9 @@
     "reorderHint": "Przesuwaj pociągi strzałkami ▲▼. Gwiazdki są na ten czas ukryte, żeby niczego nie usunąć przez pomyłkę.",
     "removedToast": "Usunięto {train} z ulubionych",
     "undo": "↩️ Cofnij",
-    "pageTitle": "Moje pociągi: alarmy o opóźnieniach – Czy zdążę?"
+    "pageTitle": "Moje pociągi: alarmy o opóźnieniach – Czy zdążę?",
+    "stillWaiting": "⏳ Wciąż czekam na dane PLK…",
+    "unavailable": "Dane chwilowo niedostępne."
   },
   "index": {
     "trainWord": "pociąg",
@@ -289,7 +291,12 @@
       "notificationTitle": "Alarm pociągów"
     },
     "header": "Czy zdążę? Claude Code i RafStaK",
-    "stationDropdownAll": "Wszystkie stacje"
+    "stationDropdownAll": "Wszystkie stacje",
+    "offline": "Brak połączenia z internetem. Sprawdź sieć i spróbuj ponownie.",
+    "srvBusy": "Serwer jest chwilowo przeciążony.",
+    "srvBusyRetry": "Serwer jest chwilowo przeciążony — ponawiam automatycznie co minutę.",
+    "srvLastTry": "Ostatnia próba: {t}. To nie jest problem Twojego telefonu ani internetu.",
+    "fetchFailedSimple": "Nie udało się pobrać danych. Spróbuj ponownie."
   },
   "planer": {
     "oldTt": "Zapisane według starego rozkładu (przed 13.12). Godziny i pociągi mogą być już inne.",

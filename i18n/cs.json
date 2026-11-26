@@ -64,7 +64,9 @@
     "reorderHint": "Vlaky posouvejte šipkami ▲▼. Hvězdičky jsou mezitím skryté, aby se nic neodstranilo omylem.",
     "removedToast": "{train} odebrán z oblíbených",
     "undo": "↩️ Zpět",
-    "pageTitle": "Moje vlaky: upozornění na zpoždění – Czy zdążę?"
+    "pageTitle": "Moje vlaky: upozornění na zpoždění – Czy zdążę?",
+    "stillWaiting": "⏳ Stále čekám na data PLK…",
+    "unavailable": "Data dočasně nedostupná."
   },
   "index": {
     "trainWord": "vlak",
@@ -289,7 +291,12 @@
       "notificationTitle": "Vlakový alarm"
     },
     "header": "Czy zdążę? Claude Code a RafStaK",
-    "stationDropdownAll": "Všechny stanice"
+    "stationDropdownAll": "Všechny stanice",
+    "offline": "Bez připojení k internetu. Zkontroluj síť a zkus to znovu.",
+    "srvBusy": "Server je dočasně přetížený.",
+    "srvBusyRetry": "Server je dočasně přetížený — zkouším znovu každou minutu.",
+    "srvLastTry": "Poslední pokus: {t}. Nejde o problém tvého telefonu ani internetu.",
+    "fetchFailedSimple": "Data se nepodařilo načíst. Zkus to znovu."
   },
   "planer": {
     "oldTt": "Uloženo podle starého jízdního řádu (před 13.12). Časy a vlaky se mohly změnit.",

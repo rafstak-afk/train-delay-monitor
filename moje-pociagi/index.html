@@ -579,6 +579,16 @@ function isCardStuck(item, row) {
   return diff > 2 && diff < 360; // dawno przeszłe karty (>6h) to już nie "utknięcie", tylko coś innego
 }
 
+// TODO 118: „Ponów” na karcie bez danych
+async function retryCardNow(idx) {
+  const el = document.getElementById('card-' + idx), sl = el && el.querySelector('.status-line');
+  if (sl) sl.textContent = I18n.t('mojePociagi.fetchingData');
+  stuckRetryStartedAt.set(idx, Date.now());
+  await retryStuckCard(idx);
+  const el2 = document.getElementById('card-' + idx), sl2 = el2 && el2.querySelector('.status-line');
+  if (!lastRows[idx] && sl2) sl2.innerHTML = escapeHtml(I18n.t('mojePociagi.unavailable')) + ' <button type="button" class="btn-small" onclick="event.stopPropagation();retryCardNow(' + idx + ')" style="margin-left:6px">' + escapeHtml(I18n.t('train.plkRetryNow')) + '</button>';
+}
+window.retryCardNow = retryCardNow;
 async function retryStuckCard(idx) {
   const item = currentTrains[idx];
   if (!item) { clearStuckTimer(idx); return; }
@@ -661,6 +671,7 @@ async function fetchWithTimeout(url, opts = {}, timeoutMs = 15000) {
   try {
     const res = await fetch(url, { ...opts, signal: controller.signal });
     diag('fetch', short + ' → ' + res.status + ' ' + (Date.now() - t0) + 'ms');
+    if (res.status >= 500) try { window.ErrLog && ErrLog.report('mp:' + short.split(/[?&]/)[0].slice(0, 30), 'http_' + res.status); } catch (e) {}
     return res;
   } catch (e) {
     diag('fetch', short + ' → ' + (e && e.name === 'AbortError' ? 'TIMEOUT' : 'BŁĄD ' + (e && e.message)) + ' ' + (Date.now() - t0) + 'ms');
@@ -1299,6 +1310,17 @@ async function init() {
   renderReorderBar();
   if (!reorderMode) maybeScrollToNow();
 
+  // TODO 118 (26.11): po 15 s karty bez danych pokazują „wciąż czekam…”, a po zakończeniu — „dane chwilowo niedostępne” z „Ponów”
+  const slowTimer = setTimeout(() => markEmptyCards(true), 15000);
+  function markEmptyCards(slow) {
+    if (gen !== initGen) return;
+    currentTrains.forEach((item, idx) => {
+      if (lastRows[idx]) return;
+      const el = document.getElementById('card-' + idx), sl = el && el.querySelector('.status-line');
+      if (!sl) return;
+      sl.innerHTML = escapeHtml(I18n.t(slow ? 'mojePociagi.stillWaiting' : 'mojePociagi.unavailable')) + ' <button type="button" class="btn-small" onclick="event.stopPropagation();retryCardNow(' + idx + ')" style="margin-left:6px">' + escapeHtml(I18n.t('train.plkRetryNow')) + '</button>';
+    });
+  }
   function paintCard(idx, item, row) {
     if (gen !== initGen) return; // nowsze odświeżanie już trwa
     lastRows[idx] = row || null;
@@ -1362,6 +1384,7 @@ async function init() {
     });
 
     await Promise.allSettled(cardTasks);
+    clearTimeout(slowTimer); markEmptyCards(false);   // TODO 118: karty, które nie dostały danych — komunikat i „Ponów”
     lastLoadedAt = Date.now();
     try { handleDelayAlerts(); } catch (e) { console.error('handleDelayAlerts', e); }
   } catch (e) {

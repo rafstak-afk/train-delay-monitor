@@ -64,7 +64,9 @@
     "reorderHint": "Mueve los trenes con las flechas ▲▼. Las estrellas se ocultan mientras tanto para no borrar nada por error.",
     "removedToast": "{train} eliminado de favoritos",
     "undo": "↩️ Deshacer",
-    "pageTitle": "Mis trenes: alertas de retrasos – Czy zdążę?"
+    "pageTitle": "Mis trenes: alertas de retrasos – Czy zdążę?",
+    "stillWaiting": "⏳ Sigo esperando datos de PLK…",
+    "unavailable": "Datos no disponibles temporalmente."
   },
   "index": {
     "trainWord": "tren",
@@ -289,7 +291,12 @@
       "notificationTitle": "Alarma de trenes"
     },
     "header": "Czy zdążę? Claude Code y RafStaK",
-    "stationDropdownAll": "Todas las estaciones"
+    "stationDropdownAll": "Todas las estaciones",
+    "offline": "Sin conexión a internet. Revisa la red e inténtalo de nuevo.",
+    "srvBusy": "El servidor está sobrecargado temporalmente.",
+    "srvBusyRetry": "El servidor está sobrecargado — reintento cada minuto.",
+    "srvLastTry": "Último intento: {t}. No es un problema de tu teléfono ni de internet.",
+    "fetchFailedSimple": "No se pudieron cargar los datos. Inténtalo de nuevo."
   },
   "planer": {
     "oldTt": "Guardado con el horario antiguo (antes del 13.12). Las horas y los trenes pueden haber cambiado.",
