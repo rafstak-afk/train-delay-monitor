@@ -367,6 +367,7 @@
     else out.status = "ok";
     // B już odjechał, a A jeszcze nie dojechał — po przesiadce.
     if (rB.boarded && !rA.arrived && out.status !== "ok") out.status = "broken";
+    out.bGone = !!(rB.boarded && !rA.arrived);
     return out;
   }
 
@@ -473,6 +474,55 @@
       alt: " Найближча альтернатива: {alt}.", check: " Перевір альтернативи." }
   };
   function tx(lang) { return TXT[lang] || TXT.pl; }
+  // ===== 26.11: „Zdążysz tylko, jeśli…” — wszystkie przypadki (A = pociąg, którym przyjeżdżasz, B = na który się przesiadasz).
+  // Zapas = plan + opóźnienie B − opóźnienie A; R = zapas − potrzebny czas.
+  var HX = {
+    pl: { shortA: "Zdążysz tylko, jeśli {a} zmniejszy opóźnienie o co najmniej {k} min albo {b} odjedzie co najmniej {k} min później.",
+      part: "Nawet jeśli {a} zmniejszy całe opóźnienie, zabraknie {m} min — zdążysz tylko, jeśli {b} odjedzie co najmniej {m} min później.",
+      shortB: "Zdążysz tylko, jeśli {b} odjedzie co najmniej {k} min później.", gone: "{b} już odjechał.",
+      keepB: "Zdążysz, dopóki {b} nie zmniejszy opóźnienia o więcej niż {r} min.", keepB0: "Zdążysz tylko, jeśli {b} nie zmniejszy opóźnienia.",
+      keepA: "Zdążysz, jeśli {a} nie zwiększy opóźnienia o więcej niż {r} min.", keepA0: "Zdążysz, jeśli {a} nie zwiększy opóźnienia." },
+    en: { shortA: "You'll make it only if {a} cuts its delay by at least {k} min or {b} leaves at least {k} min later.",
+      part: "Even if {a} makes up its whole delay, you'll be {m} min short — you'll make it only if {b} leaves at least {m} min later.",
+      shortB: "You'll make it only if {b} leaves at least {k} min later.", gone: "{b} has already left.",
+      keepB: "You'll make it as long as {b} doesn't cut its delay by more than {r} min.", keepB0: "You'll make it only if {b} doesn't cut its delay.",
+      keepA: "You'll make it if {a} doesn't gain more than {r} min of delay.", keepA0: "You'll make it if {a} doesn't get more delayed." },
+    de: { shortA: "Du schaffst es nur, wenn {a} die Verspätung um mindestens {k} Min. verringert oder {b} mindestens {k} Min. später abfährt.",
+      part: "Selbst wenn {a} die ganze Verspätung aufholt, fehlen {m} Min. — du schaffst es nur, wenn {b} mindestens {m} Min. später abfährt.",
+      shortB: "Du schaffst es nur, wenn {b} mindestens {k} Min. später abfährt.", gone: "{b} ist schon abgefahren.",
+      keepB: "Du schaffst es, solange {b} die Verspätung um nicht mehr als {r} Min. verringert.", keepB0: "Du schaffst es nur, wenn {b} die Verspätung nicht verringert.",
+      keepA: "Du schaffst es, wenn {a} nicht mehr als {r} Min. Verspätung dazubekommt.", keepA0: "Du schaffst es, wenn {a} nicht mehr Verspätung bekommt." },
+    cs: { shortA: "Stihneš to jen tehdy, když {a} sníží zpoždění aspoň o {k} min nebo {b} odjede aspoň o {k} min později.",
+      part: "I když {a} dožene celé zpoždění, bude chybět {m} min — stihneš to jen, když {b} odjede aspoň o {m} min později.",
+      shortB: "Stihneš to jen, když {b} odjede aspoň o {k} min později.", gone: "{b} už odjel.",
+      keepB: "Stihneš to, dokud {b} nesníží zpoždění o víc než {r} min.", keepB0: "Stihneš to jen, když {b} nesníží zpoždění.",
+      keepA: "Stihneš to, když {a} nenabere víc než {r} min zpoždění.", keepA0: "Stihneš to, když {a} nenabere další zpoždění." },
+    es: { shortA: "Llegarás solo si {a} reduce su retraso al menos {k} min o {b} sale al menos {k} min más tarde.",
+      part: "Aunque {a} recupere todo su retraso, faltarán {m} min — llegarás solo si {b} sale al menos {m} min más tarde.",
+      shortB: "Llegarás solo si {b} sale al menos {k} min más tarde.", gone: "{b} ya ha salido.",
+      keepB: "Llegarás mientras {b} no reduzca su retraso más de {r} min.", keepB0: "Llegarás solo si {b} no reduce su retraso.",
+      keepA: "Llegarás si {a} no acumula más de {r} min de retraso.", keepA0: "Llegarás si {a} no se retrasa más." },
+    uk: { shortA: "Встигнеш, лише якщо {a} зменшить затримку щонайменше на {k} хв або {b} відправиться щонайменше на {k} хв пізніше.",
+      part: "Навіть якщо {a} надолужить усю затримку, забракне {m} хв — встигнеш, лише якщо {b} відправиться щонайменше на {m} хв пізніше.",
+      shortB: "Встигнеш, лише якщо {b} відправиться щонайменше на {k} хв пізніше.", gone: "{b} вже відправився.",
+      keepB: "Встигнеш, доки {b} не зменшить затримку більш ніж на {r} хв.", keepB0: "Встигнеш, лише якщо {b} не зменшить затримку.",
+      keepA: "Встигнеш, якщо {a} не збільшить затримку більш ніж на {r} хв.", keepA0: "Встигнеш, якщо {a} не збільшить затримку." }
+  };
+  function xferHint(t, lang) {
+    if (!t || typeof t.slack !== "number" || t.status === "nodata" || t.status === "cancelled") return "";
+    var h = HX[lang] || HX.pl, a = trainLabel(t.trainA), b = trainLabel(t.trainB);
+    var dA = Math.max(0, t.delayA || 0), dB = Math.max(0, t.delayB || 0), R = t.slack - (t.need || 0);
+    if (t.bGone) return fill(h.gone, { b: b });
+    if (R < 0) {
+      var K = -R;
+      if (dA >= K) return fill(h.shortA, { a: a, b: b, k: K });
+      if (dA > 0) return fill(h.part, { a: a, b: b, m: K - dA });
+      return fill(h.shortB, { b: b, k: K });
+    }
+    if (dB > R) return fill(R === 0 ? h.keepB0 : h.keepB, { b: b, r: R });   // zdążysz tylko dzięki opóźnieniu B
+    if (t.status === "risk") return fill(R === 0 ? h.keepA0 : h.keepA, { a: a, r: R });   // na styk
+    return "";
+  }
   function fill(s, p) { return String(s).replace(/\{(\w+)\}/g, function (m, k) { return p[k] != null ? p[k] : m; }); }
   function trainLabel(t) { return [t && t.category, t && t.number].filter(Boolean).join(" ") || "?"; }
 
@@ -749,7 +799,7 @@
     isCancelled: isCancelled, partialCancel: partialCancel, likelyCancelled: likelyCancelled,
     rotationQuery: rotationQuery, rotationFrom: rotationFrom, rotationRisk: rotationRisk, rotationText: rotationText,
     rotationLive: rotationLive, rotationResolve: rotationResolve, rotationLine: rotationLine,
-    lineOf: lineOf, waitHint: waitHint, waitText: waitText, gx: gx
+    lineOf: lineOf, waitHint: waitHint, waitText: waitText, gx: gx, xferHint: xferHint
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   root.GuardCore = api;

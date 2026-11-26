@@ -322,7 +322,8 @@
       if (window.StopsView && StopsView.xfer && localStorage.getItem('showVersionBadge') === '1') {
         var notes = '';
         if (t.wait) notes += '<div class="src" style="color:#cfe0f5;margin-top:4px">' + esc(G.waitText(t, curLang())) + '</div>';
-        if (t.onlyThanksToB) notes += '<div class="warn">' + esc(T('guard.onlyThanksToB', { b: G.trainLabel(t.trainB) }, 'Zdążysz tylko, jeśli ' + G.trainLabel(t.trainB) + ' nie nadrobi opóźnienia.')) + '</div>';
+        var hint = G.xferHint ? G.xferHint(t, curLang()) : '';   // 26.11: „Zdążysz tylko, jeśli … zmniejszy opóźnienie…” — wszystkie przypadki
+        if (hint) notes += '<div class="warn">' + esc(hint) + '</div>';
         if (rising) notes += '<div class="warn">📈 ' + esc(T('guard.rising', null, 'Opóźnienie rośnie')) + '</div>';
         var det = [];
         if (typeof t.plannedSlack === 'number') det.push(T('xfer.dPlan', { n: t.plannedSlack, m: t.need }, 'Wg rozkładu {n} min na przesiadkę, potrzeba {m} min').replace('{n}', t.plannedSlack).replace('{m}', t.need));

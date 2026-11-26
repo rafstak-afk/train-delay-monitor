@@ -1034,6 +1034,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
         var h2=GuardCore.waitHint(stats,stx,legB.train&&legB.train.number,legA.train&&legA.train.number,GuardCore.lineOf(dB&&dB.name),GuardCore.lineOf(dA&&dA.name));
         if(h2)notes='<div style="margin-top:4px;font-size:13px;color:#cfe0f5">'+escapeHtml(GuardCore.waitText({wait:h2,trainA:legA.train,trainB:legB.train,station:stx,needWait:Math.max(0,3-sl)},(window.I18n&&I18n.getLang?I18n.getLang():'pl')))+'</div>';
       }
+      if(window.GuardCore&&GuardCore.xferHint&&sl!=null){var hx=GuardCore.xferHint({slack:sl,need:0,status:sl<0?'broken':'ok',delayA:la||0,delayB:lb||0,trainA:legA.train,trainB:legB.train},(window.I18n&&I18n.getLang?I18n.getLang():'pl'));if(hx)notes+='<div style="margin-top:4px;font-size:13px;color:#ffcc00">'+escapeHtml(hx)+'</div>'}
       if(plan!=null)det.push(T('xfer.dPlanOnly',{n:plan}).replace('{n}',plan));
       if(pa&&pb&&pa===pb)det.push(T('planer.det.samePlat',{p:pa}));
       if(la||lb)det.push(T('xfer.dDelay',{a:la||0,b:lb||0}).replace('{a}',la||0).replace('{b}',lb||0));
