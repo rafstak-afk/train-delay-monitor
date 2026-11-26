@@ -321,9 +321,18 @@
         if (t.wait) det.push(esc(G.waitText(t, curLang())));
         if (r.rising && r.worst === i) { warn = true; det.push('📈 ' + esc(T('guard.rising', null, 'Opóźnienie rośnie'))); }
         if (t.stationChange) det.push('🚶 ' + esc(T('xfer.walk', { a: t.station, b: t.toStation }, 'Przejście: {a} → {b}').replace('{a}', t.station).replace('{b}', t.toStation)));
+        if (G.unifyOn && G.unifyOn()) {
+          var mv = [];
+          if (t.platformChange) mv.push(T('xfer.mvPlat', { a: t.platformArr, b: t.platformDep }, 'zmiana peronu {a} → {b} +2 min').replace('{a}', t.platformArr).replace('{b}', t.platformDep));
+          if (t.stationChange) mv.push(T('xfer.mvStation', null, 'przejście między stacjami +5 min'));
+          if (!t.platformChange && !t.stationChange && t.need) mv.push(T('xfer.mvWalk', { n: t.need }, 'dojście pieszo {n} min').replace('{n}', t.need));
+          if (mv.length) det.push(esc(T('xfer.dMove', { s: mv.join(', ') }, 'Liczymy przejście: {s}').replace('{s}', mv.join(', '))));
+          if (typeof t.plannedSlack === 'number') det.push(esc(T('xfer.dPlanOnly', { n: t.plannedSlack }, 'Wg rozkładu {n} min na przesiadkę').replace('{n}', t.plannedSlack)));
+        } else {
         if (typeof t.plannedSlack === 'number') det.push(esc(T('xfer.dPlan', { n: t.plannedSlack, m: t.need }, 'Wg rozkładu {n} min na przesiadkę, potrzeba {m} min').replace('{n}', t.plannedSlack).replace('{m}', t.need)));
         if (t.platformChange) det.push(esc(T('xfer.dPlat', null, 'W tym +2 min na zmianę peronu')));
         if (t.stationChange) det.push(esc(T('xfer.dStation', null, 'W tym +5 min na przejście między stacjami')));
+        }
         var lb = c.legs[i + 1];
         if (lb && window.GzmPlatMap && (l.mode === 'gzm') !== (lb.mode === 'gzm')) {
           var toSt = l.mode === 'gzm', stN = toSt ? lb.board.stationName : l.alight.stationName, stopN = toSt ? l.alight.stationName : lb.board.stationName, code = (toSt ? l.alight.code : lb.board.code) || '';
@@ -336,7 +345,7 @@
       return StopsView.legA({ icon: gz ? '🚌' : '🚆', label: label, dir: (function () { var rw = r.raw && r.raw[i]; return rw && Array.isArray(rw.route) && rw.route.length ? rw.route[rw.route.length - 1].stationName : (gz && l.head) || ''; })(), tag: tag, attrs: attrs,
         dep: { time: dR, plan: dP, station: l.board.stationName, plat: d ? rr.platformDep : '' },
         arr: { time: aR, plan: aP + (l.alight.nextDay ? '' : ''), station: l.alight.stationName, plat: d ? rr.platformArr : '', platNext: t && nx && !nx.noData ? nx.platformDep : '' },
-        xfer: t ? { status: t.status, slack: t.slack } : null, details: det.join('<br>'), warn: warn, key: 'g|' + c.id + '|' + i,
+        xfer: t ? (G.unifyOn && G.unifyOn() && typeof t.slack === 'number' && t.status !== 'cancelled' && t.status !== 'nodata' ? { status: t.onlyThanksToB && G.xferClass(t.slack - t.need) === 'ok' ? 'risk' : G.xferClass(t.slack - t.need), slack: t.slack - t.need } : { status: t.status, slack: t.slack }) : null, details: det.join('<br>'), warn: warn, key: 'g|' + c.id + '|' + i,
         after: !gz && rlegOpen[c.id + '|' + i] ? '<div class="gv-rtrip">' + railStops(c.id, i) + '</div>' : '' });
     }
     function xferHtml(t, rising, la, lb) {
@@ -470,7 +479,7 @@
       }
       if (oldTimetable(c)) html += '<div class="waiting">🗓️ ' + esc(T('guard.oldTt', null, 'Zapisane według starego rozkładu (przed 13.12). Ten pociąg może jechać o innej godzinie albo wcale.')) +
         ' <a class="btn-sm secondary" href="' + esc(findNewUrl(c)) + '">' + esc(T('guard.findNew', null, '🔎 Znajdź nowe połączenie')) + '</a></div>';
-      if (layoutA()) { html += '<div class="gv-ja">' + c.legs.map(function (l, i) { return legAHtml(c, r, l, i); }).join('') + '</div>'; }
+      if (layoutA()) { html += '<div class="gv-ja">' + c.legs.map(function (l, i) { return legAHtml(c, r, l, i); }).join('') + (c.legs.length > 1 && StopsView.xNote ? StopsView.xNote() : '') + '</div>'; }
       else c.legs.forEach(function (l, i) {
         html += legHtml(l, r.legs ? r.legs[i] : null, c.date, c.id, i);
         if (i < c.legs.length - 1 && r.transfers && r.transfers[i]) html += xferHtml(r.transfers[i], r.rising && r.worst === i, l, c.legs[i + 1]);

@@ -69,6 +69,7 @@ h1{text-align:center;font-size:27px;margin:6px 0 4px}
     <a href="#moje-pociagi" data-i18n="jak.toc_moje_pociagi">⭐ Moje pociągi</a>
     <a href="#bieg" data-i18n="jak.toc_bieg">🛤️ Bieg pociągu</a>
     <a href="#planer" data-i18n="jak.toc_planer">🧭 Planer (beta)</a>
+    <a href="#przesiadki" data-i18n="jak.toc_przesiadki">🔁 Przesiadki</a>
     <a href="#dziennik" data-i18n="jak.toc_dziennik">📓 Dzienniczek</a>
     <a href="#profil" data-i18n="jak.toc_profil">👤 Profil</a>
     <a href="#prywatnosc" data-i18n="jak.toc_prywatnosc">🔒 Prywatność</a>
@@ -136,6 +137,17 @@ h1{text-align:center;font-size:27px;margin:6px 0 4px}
       <li>W <b>Zaawansowanych</b> ustawisz minimalny czas na przesiadkę (domyślnie 3 min), włączysz „Tylko bezpośrednie” (bez przesiadek), wymusisz konkretną stację „przez” albo wykluczysz wybranych przewoźników.</li>
       <li><b>💾 Zapisz</b> zachowuje wynik do późniejszego przejrzenia w panelu „Zapisane wyniki”.</li>
       <li><b>📋 Do dziennika</b> dodaje każdą nogę wyniku jako osobny wpis do <a href="#dziennik">planu podróży</a> w dzienniczku — stamtąd, po faktycznym przejeździe, potwierdzisz rzeczywisty czas i opóźnienie.</li>
+    </ul>
+  </div>
+
+  <div class="section" id="przesiadki" data-i18n-html="jak.sec_przesiadki">
+    <h2>🔁 Jak liczymy zapas na przesiadkę</h2>
+    <p><b>Zapas</b> to czas, który zostaje Ci na przesiadce <b>po przejściu</b> na następny pociąg, autobus albo tramwaj — tak samo w wyszukiwarce, w Pociąg + GZM, w Pilnowanych i w powiadomieniach.</p>
+    <ul>
+      <li><b>Zapas = czas między przyjazdem a odjazdem − czas na przejście.</b> Liczymy z opóźnieniami na żywo, gdy PLK je podaje.</li>
+      <li>Do przejścia doliczamy: <b>zmianę peronu +2 min</b>, <b>przejście pieszo</b> (dworzec ↔ przystanek, między przystankami — z mapy albo z Twojego pomiaru) i <b>przejście między różnymi stacjami +5 min</b>, gdy nie znamy dokładnego czasu.</li>
+      <li>🟢 <b>5 min i więcej</b> — „N min zapasu”; 🟡 <b>2–4 min</b> — „na styk”; 🔴 <b>0–1 min</b> — „na granicy” (miga: zdążysz tylko na tym samym peronie albo przystanku); 🔴 <b>poniżej 0</b> — „N min za mało”.</li>
+      <li>Skąd wziął się wynik, zobaczysz przy każdej przesiadce w <b>▸ szczegóły</b> (np. „przejście z peronu 2 na 1, +2 min”). Czerwone „▸ szczegóły” znaczą, że coś odbiega od planu.</li>
     </ul>
   </div>
 

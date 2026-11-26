@@ -334,6 +334,11 @@
   // zapas rzeczywisty = (plan. odjazd B + opóźn. B) − (plan. przyjazd A + opóźn. A)
   // OSTROŻNIE: opóźnienie B może zostać nadrobione — jeśli przesiadka wychodzi
   // TYLKO dzięki opóźnieniu B, status jest najwyżej 🟡 („zdążysz, jeśli B nie nadrobi”).
+  // ===== 26.11 (od 15:00): JEDNA zasada przesiadek wszędzie — zapas = czas między przyjazdem a odjazdem − przejście
+  // (zmiana peronu +2, inna stacja +5, dojście pieszo z mapy); <0 za mało, 0–1 na granicy, 2–4 na styk, 5+ zapas.
+  var UNIFY_AT = Date.parse("2026-11-26T15:00:00+01:00");
+  function unifyOn() { return Date.now() >= UNIFY_AT; }
+  function xferClass(r) { return r == null || !isFinite(r) ? "nodata" : r < 0 ? "broken" : r <= 1 ? "edge" : r < 5 ? "risk" : "ok"; }
   function evalTransfer(legA, legB, rA, rB, minTransfer) {
     var station = legA.alight.stationName;
     var stationChange = norm(legA.alight.stationName) !== norm(legB.board.stationName);
@@ -343,7 +348,8 @@
     if (plannedB < plannedA - 720) plannedB += 1440; // przez północ
     var plannedSlack = plannedB - plannedA;
     var platformChange = !!(rA && rB && !rA.noData && !rB.noData && rA.platformArr && rB.platformDep && rA.platformArr !== rB.platformDep);
-    var need = minTransfer + (platformChange ? PLATFORM_EXTRA : 0) + (stationChange ? STATION_EXTRA : 0);
+    var uni = unifyOn();
+    var need = (uni ? 0 : minTransfer) + (platformChange ? PLATFORM_EXTRA : 0) + (stationChange ? STATION_EXTRA : 0);
     // przesiadka z udziałem GZM: potrzebny czas = dojście (peron ↔ przystanek, słupek ↔ słupek), zapisane w odcinku B
     if (legA.mode === "gzm" || legB.mode === "gzm" || legB.walkBefore != null) {
       platformChange = false; stationChange = false;
@@ -363,7 +369,7 @@
     out.delayA = dA; out.delayB = dB; out.delaySourceA = rA.arrSource; out.delaySourceB = rB.depSource;
     out.slack = plannedSlack + dB - dA;
     out.slackWithoutB = plannedSlack - dA;
-    var margin = SOFT_MARGIN ? Math.min(SAFE_MARGIN, Math.max(0, dA)) : SAFE_MARGIN;
+    var margin = uni ? SAFE_MARGIN : (SOFT_MARGIN ? Math.min(SAFE_MARGIN, Math.max(0, dA)) : SAFE_MARGIN);
     out.onlyThanksToB = dB > 0 && out.slackWithoutB < need + margin && out.slack >= need;
     out.etaA = fmt(plannedA + dA);
     if (out.slack < need) out.status = "broken";
@@ -803,7 +809,7 @@
     isCancelled: isCancelled, partialCancel: partialCancel, likelyCancelled: likelyCancelled,
     rotationQuery: rotationQuery, rotationFrom: rotationFrom, rotationRisk: rotationRisk, rotationText: rotationText,
     rotationLive: rotationLive, rotationResolve: rotationResolve, rotationLine: rotationLine,
-    lineOf: lineOf, waitHint: waitHint, waitText: waitText, gx: gx, xferHint: xferHint
+    lineOf: lineOf, waitHint: waitHint, waitText: waitText, gx: gx, xferHint: xferHint, xferClass: xferClass, unifyOn: unifyOn
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   root.GuardCore = api;

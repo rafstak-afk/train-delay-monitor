@@ -896,7 +896,9 @@
     "sec_prywatnosc": "<h2>🔒 Privacidad</h2>\n<p>No guardamos direcciones IP ni ningún dato personal. El perfil (si lo creas) contiene solo tus propios ajustes: estaciones favoritas, trenes y rutas del diario, nada más. La descripción completa, con la única excepción técnica (un hash temporal e irreversible de la IP al crear un perfil), está en la <a href=\"/kontakt/#rodo\" style=\"color:var(--cyan)\">sección RGPD y privacidad</a>.</p>",
     "ctaBoard": "🚉 Abrir el panel",
     "ctaContact": "💬 Opiniones y contacto",
-    "footnote": "Los datos de horarios y retrasos proceden de la API pública de PLK. Esta aplicación no es un servicio oficial de PKP ni de PLK.<br>¿Tienes una pregunta que no está aquí? <a href=\"/kontakt/\">Escríbenos</a>."
+    "footnote": "Los datos de horarios y retrasos proceden de la API pública de PLK. Esta aplicación no es un servicio oficial de PKP ni de PLK.<br>¿Tienes una pregunta que no está aquí? <a href=\"/kontakt/\">Escríbenos</a>.",
+    "toc_przesiadki": "🔁 Transbordos",
+    "sec_przesiadki": "<h2>🔁 Cómo calculamos el margen de transbordo</h2>\n    <p>El <b>margen</b> es el tiempo que te queda en el transbordo <b>después de caminar</b> al siguiente tren, autobús o tranvía — igual en la búsqueda, Tren + GZM, Vigiladas y notificaciones.</p>\n    <ul>\n      <li><b>Margen = tiempo entre llegada y salida − tiempo para caminar.</b> Con retrasos en vivo cuando PLK los da.</li>\n      <li>Sumamos: <b>cambio de andén +2 min</b>, <b>trayecto a pie</b> (estación ↔ parada, entre paradas — del mapa o tu medición) y <b>paso entre estaciones distintas +5 min</b> si no conocemos el tiempo exacto.</li>\n      <li>🟢 <b>5 min o más</b> — «N min de margen»; 🟡 <b>2–4 min</b> — «justo»; 🔴 <b>0–1 min</b> — «al límite» (parpadea: solo en el mismo andén o parada); 🔴 <b>menos de 0</b> — «faltan N min».</li>\n      <li>De dónde sale el resultado lo ves en cada transbordo en <b>▸ detalles</b>. «▸ detalles» en rojo indica que algo difiere del plan.</li>\n    </ul>"
   },
   "kontakt": {
     "pageTitle": "Opiniones y contacto – Czy zdążę?",
@@ -1507,7 +1509,11 @@
     "c99Plat": "andén {p}",
     "c99PlatTr": "andén {p}, vía {t}",
     "c99X": "transbordos: {n}",
-    "c99Direct": "sin transbordos"
+    "c99Direct": "sin transbordos",
+    "cxLine": "transbordo {n} min",
+    "cxTight": " — justo",
+    "cxEdge": " — al límite",
+    "cxMiss": "transbordo: faltan {n} min"
   },
   "tt": {
     "swapLater": "Sustituir desde el 13.12",
@@ -1586,6 +1592,12 @@
     "dStation": "Incluye +5 min a pie entre estaciones",
     "dTimes": "Horario: llegada {a}, salida {b}",
     "dDelay": "Retraso: llegada +{a} min, salida +{b} min",
-    "dWalk": "Contamos {n} min para el trayecto a pie"
+    "dWalk": "Contamos {n} min para el trayecto a pie",
+    "note": "ℹ️ El margen de transbordo se cuenta después de caminar: sumamos cambios de andén y trayectos a pie.",
+    "more": "Cómo lo calculamos",
+    "dMove": "Contamos el paso: {s}",
+    "mvPlat": "andén {a} → {b} +2 min",
+    "mvStation": "entre estaciones +5 min",
+    "mvWalk": "a pie {n} min"
   }
 }

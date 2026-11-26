@@ -896,7 +896,9 @@
     "sec_planer": "<h2>🧭 Planer podróży<span class=\"tag\">beta</span></h2>\n<p>Szuka połączeń między dwiema dowolnymi stacjami w całej sieci PLK — nie tylko Twoimi ulubionymi — łącznie z przesiadkami (nawet kilkoma), na podstawie tego samego rozkładu co tablica. To wciąż testowany moduł, więc mogą się zdarzać niedoskonałości.</p>\n<ul>\n<li>Każda noga wyniku to klikalna karta w stylu wiersza na tablicy odjazdów — kliknięcie otwiera pełny <a href=\"#bieg\">bieg pociągu</a>.</li>\n<li>W <b>Zaawansowanych</b> ustawisz minimalny czas na przesiadkę (domyślnie 3 min), włączysz „Tylko bezpośrednie” (bez przesiadek), wymusisz konkretną stację „przez” albo wykluczysz wybranych przewoźników.</li>\n<li><b>💾 Zapisz</b> zachowuje wynik do późniejszego przejrzenia w panelu „Zapisane wyniki”.</li>\n<li><b>📋 Do dziennika</b> dodaje każdą nogę wyniku jako osobny wpis do <a href=\"#dziennik\">planu podróży</a> w dzienniczku — stamtąd, po faktycznym przejeździe, potwierdzisz rzeczywisty czas i opóźnienie.</li>\n</ul>",
     "sec_dziennik": "<h2>📓 Dzienniczek podróży</h2>\n<p>Historia Twoich przejazdów — z faktyczną godziną i opóźnieniem na stacji wsiadania i wysiadania, nie tylko planem.</p>\n<ul>\n<li><b>Ulubione trasy</b> — zapisz raz stacje powtarzalnego przejazdu (np. codzienny dojazd), a dzienniczek sam rozpozna pasujący kurs i zaproponuje zapis pod właściwą nazwą. Przyciskiem „➕ Dodaj kolejną trasę” dodasz ich dowolnie wiele, także z przesiadką (Odcinek 2).</li>\n<li><b>Plan podróży</b> — wpisy czekające na potwierdzenie: z biegu pociągu (zaznacz 🚏/🏁 i „📋 Do planu”) albo z <a href=\"#planer\">planera</a> („📋 Do dziennika”). Gdy pociąg faktycznie dojedzie, wróć tu i kliknij „✅ Potwierdź” (przejazd trafi do wpisów poniżej) albo „❌ Odrzuć”.</li>\n<li><b>Zapisane przejazdy</b> — lista wpisów z datą, godzinami i opóźnieniem; edycja (np. dopisanie kilometrów) zapisuje się automatycznie, bez osobnego przycisku „Zapisz”.</li>\n<li><b>Eksport ⬇️ XLSX</b> — pobierz całą historię jako arkusz kalkulacyjny, np. do rozliczenia abonamentu albo własnych statystyk.</li>\n</ul>",
     "sec_profil": "<h2>👤 Profil — synchronizacja między urządzeniami</h2>\n<p>Bez zakładania profilu wszystko (ulubione stacje i pociągi, dzienniczek) zapisuje się tylko w tej jednej przeglądarce. Profil pozwala mieć to samo na kilku urządzeniach — bez loginu, hasła i e-maila.</p>\n<ul>\n<li>Profil to losowy token — utwórz go raz, a na kolejnym urządzeniu po prostu wklej ten sam token, żeby wczytać te same dane.</li>\n<li>„Odepnij urządzenie” usuwa token tylko z telefonu/komputera, na którym klikasz — dane w chmurze zostają i nadal można je wczytać tym samym tokenem gdziekolwiek indziej.</li>\n<li>Token działa jak klucz — kto go ma, może wczytać Twój profil, więc nie udostępniaj go dalej.</li>\n</ul>",
-    "sec_prywatnosc": "<h2>🔒 Prywatność</h2>\n<p>Nie zapisujemy adresów IP ani żadnych danych osobowych. Profil (jeśli go założysz) przechowuje wyłącznie Twoje własne ustawienia: ulubione stacje, pociągi i trasy w dzienniczku — nic więcej. Pełny opis, wraz z jedynym technicznym wyjątkiem (chwilowy, nieodwracalny skrót IP przy zakładaniu profilu), znajdziesz w <a href=\"/kontakt/#rodo\" style=\"color:var(--cyan)\">sekcji RODO i prywatność</a>.</p>"
+    "sec_prywatnosc": "<h2>🔒 Prywatność</h2>\n<p>Nie zapisujemy adresów IP ani żadnych danych osobowych. Profil (jeśli go założysz) przechowuje wyłącznie Twoje własne ustawienia: ulubione stacje, pociągi i trasy w dzienniczku — nic więcej. Pełny opis, wraz z jedynym technicznym wyjątkiem (chwilowy, nieodwracalny skrót IP przy zakładaniu profilu), znajdziesz w <a href=\"/kontakt/#rodo\" style=\"color:var(--cyan)\">sekcji RODO i prywatność</a>.</p>",
+    "toc_przesiadki": "🔁 Przesiadki",
+    "sec_przesiadki": "<h2>🔁 Jak liczymy zapas na przesiadkę</h2>\n    <p><b>Zapas</b> to czas, który zostaje Ci na przesiadce <b>po przejściu</b> na następny pociąg, autobus albo tramwaj — tak samo w wyszukiwarce, w Pociąg + GZM, w Pilnowanych i w powiadomieniach.</p>\n    <ul>\n      <li><b>Zapas = czas między przyjazdem a odjazdem − czas na przejście.</b> Liczymy z opóźnieniami na żywo, gdy PLK je podaje.</li>\n      <li>Do przejścia doliczamy: <b>zmianę peronu +2 min</b>, <b>przejście pieszo</b> (dworzec ↔ przystanek, między przystankami — z mapy albo z Twojego pomiaru) i <b>przejście między różnymi stacjami +5 min</b>, gdy nie znamy dokładnego czasu.</li>\n      <li>🟢 <b>5 min i więcej</b> — „N min zapasu”; 🟡 <b>2–4 min</b> — „na styk”; 🔴 <b>0–1 min</b> — „na granicy” (miga: zdążysz tylko na tym samym peronie albo przystanku); 🔴 <b>poniżej 0</b> — „N min za mało”.</li>\n      <li>Skąd wziął się wynik, zobaczysz przy każdej przesiadce w <b>▸ szczegóły</b> (np. „przejście z peronu 2 na 1, +2 min”). Czerwone „▸ szczegóły” znaczą, że coś odbiega od planu.</li>\n    </ul>"
   },
   "kontakt": {
     "pageTitle": "Uwagi i kontakt – Czy zdążę?",
@@ -1507,7 +1509,11 @@
     "c99Plat": "peron {p}",
     "c99PlatTr": "peron {p}, tor {t}",
     "c99X": "przesiadki: {n}",
-    "c99Direct": "bez przesiadek"
+    "c99Direct": "bez przesiadek",
+    "cxLine": "przesiadka {n} min",
+    "cxTight": " — na styk",
+    "cxEdge": " — na granicy",
+    "cxMiss": "przesiadka: brakuje {n} min"
   },
   "tt": {
     "swapLater": "Zamień od 13.12",
@@ -1586,6 +1592,12 @@
     "dStation": "W tym +5 min na przejście między stacjami",
     "dTimes": "Rozkład: przyjazd {a}, odjazd {b}",
     "dDelay": "Opóźnienie: przyjazd +{a} min, odjazd +{b} min",
-    "dWalk": "Na przejście liczymy {n} min"
+    "dWalk": "Na przejście liczymy {n} min",
+    "note": "ℹ️ Zapas przesiadki liczymy po przejściu: doliczamy zmianę peronu i dojście pieszo.",
+    "more": "Jak to liczymy",
+    "dMove": "Liczymy przejście: {s}",
+    "mvPlat": "zmiana peronu {a} → {b} +2 min",
+    "mvStation": "przejście między stacjami +5 min",
+    "mvWalk": "dojście pieszo {n} min"
   }
 }

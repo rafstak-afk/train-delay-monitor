@@ -896,7 +896,9 @@
     "sec_prywatnosc": "<h2>🔒 Privacy</h2>\n<p>We don't store IP addresses or any personal data. A profile (if you create one) holds only your own settings: favorite stations, trains and routes in the journal — nothing else. The full description, including the only technical exception (a temporary, irreversible IP hash when a profile is created), is in the <a href=\"/kontakt/#rodo\" style=\"color:var(--cyan)\">GDPR and privacy section</a>.</p>",
     "ctaBoard": "🚉 Open the board",
     "ctaContact": "💬 Feedback and contact",
-    "footnote": "Timetable and delay data come from the public PLK API. This app is not an official PKP or PLK service.<br>Have a question that isn't answered here? <a href=\"/kontakt/\">Write to us</a>."
+    "footnote": "Timetable and delay data come from the public PLK API. This app is not an official PKP or PLK service.<br>Have a question that isn't answered here? <a href=\"/kontakt/\">Write to us</a>.",
+    "toc_przesiadki": "🔁 Changes",
+    "sec_przesiadki": "<h2>🔁 How we count the time to change</h2>\n    <p>The <b>margin</b> is the time you have left at a change <b>after walking</b> to the next train, bus or tram — the same in the search, Train + GZM, Guarded and notifications.</p>\n    <ul>\n      <li><b>Margin = time between arrival and departure − time to walk.</b> With live delays when PLK provides them.</li>\n      <li>Walking includes: <b>platform change +2 min</b>, <b>walking</b> (station ↔ stop, between stops — from the map or your own measurement) and <b>walking between different stations +5 min</b> when we don't know the exact time.</li>\n      <li>🟢 <b>5 min or more</b> — “N min to spare”; 🟡 <b>2–4 min</b> — “tight”; 🔴 <b>0–1 min</b> — “borderline” (blinking: only on the same platform or stop); 🔴 <b>below 0</b> — “N min short”.</li>\n      <li>See where the result comes from in <b>▸ details</b> at each change (e.g. “platform 2 to 1, +2 min”). Red “▸ details” means something differs from the plan.</li>\n    </ul>"
   },
   "kontakt": {
     "pageTitle": "Feedback and contact – Czy zdążę?",
@@ -1507,7 +1509,11 @@
     "c99Plat": "platform {p}",
     "c99PlatTr": "platform {p}, track {t}",
     "c99X": "changes: {n}",
-    "c99Direct": "direct"
+    "c99Direct": "direct",
+    "cxLine": "change {n} min",
+    "cxTight": " — tight",
+    "cxEdge": " — borderline",
+    "cxMiss": "change: {n} min short"
   },
   "tt": {
     "swapLater": "Replace from 13.12",
@@ -1586,6 +1592,12 @@
     "dStation": "Includes +5 min to walk between stations",
     "dTimes": "Timetable: arrive {a}, depart {b}",
     "dDelay": "Delay: arrival +{a} min, departure +{b} min",
-    "dWalk": "We allow {n} min for the walk"
+    "dWalk": "We allow {n} min for the walk",
+    "note": "ℹ️ The change margin is counted after walking: we add platform changes and walking time.",
+    "more": "How we count it",
+    "dMove": "We count the walk: {s}",
+    "mvPlat": "platform {a} → {b} +2 min",
+    "mvStation": "between stations +5 min",
+    "mvWalk": "walk {n} min"
   }
 }

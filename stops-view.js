@@ -196,5 +196,7 @@
       (o.details ? "<details" + dk + "><summary" + (warn ? ' class="xv-warn"' : "") + ">▸ " + esc(T("xfer.details", null, "szczegóły")) + '</summary><div class="jl-det">' + o.details + "</div></details>" : "") +
       "</div>" + (o.after || "");
   }
-  window.StopsView = { legA: legA, isOpen: function (k) { return !!openMk[k]; }, scrollTo: scrollTo, html: html, xfer: xfer, trainUrl: trainUrl, ready: function () { gzmIndex(); return gzmP; } };
+  // dopisek pod przesiadkami — link do objaśnienia w „Jak działa aplikacja”
+  function xNote() { return '<div style="font-size:12px;color:#8ea3ba;margin-top:6px;line-height:1.4">' + esc(T("xfer.note", null, "ℹ️ Zapas przesiadki liczymy po przejściu: doliczamy zmianę peronu i dojście pieszo.")) + ' <a href="/jak-dziala/#przesiadki" style="color:#8fb8f5">' + esc(T("xfer.more", null, "Jak to liczymy")) + " ›</a></div>"; }
+  window.StopsView = { xNote: xNote, legA: legA, isOpen: function (k) { return !!openMk[k]; }, scrollTo: scrollTo, html: html, xfer: xfer, trainUrl: trainUrl, ready: function () { gzmIndex(); return gzmP; } };
 })();

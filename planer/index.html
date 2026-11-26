@@ -1033,6 +1033,12 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     if(window.GuardCore&&GuardCore.xferHint&&sl!=null){var hx=GuardCore.xferHint({slack:sl,need:0,status:sl<0?'broken':'ok',delayA:la||0,delayB:lb||0,trainA:legA.train,trainB:legB.train},(window.I18n&&I18n.getLang?I18n.getLang():'pl'));if(hx){warn=true;det.push('<span style="color:#ffcc00;font-weight:700">'+escapeHtml(hx)+'</span>')}}
     if(stats&&window.GuardCore&&GuardCore.waitHint&&sl!=null&&sl<5){var h2=GuardCore.waitHint(stats,stx,legB.train&&legB.train.number,legA.train&&legA.train.number,GuardCore.lineOf(dB&&dB.name),GuardCore.lineOf(dA&&dA.name));if(h2)det.push(escapeHtml(GuardCore.waitText({wait:h2,trainA:legA.train,trainB:legB.train,station:stx,needWait:Math.max(0,3-sl)},(window.I18n&&I18n.getLang?I18n.getLang():'pl'))))}
     if(plan!=null)det.push(escapeHtml(T('xfer.dPlanOnly',{n:plan}).replace('{n}',plan)));
+    // 26.11 15:00: wspólna zasada — zapas po przejściu (zmiana peronu +2 min)
+    var pa2=a&&a.platform&&a.platform!=='-'?a.platform:'',pb2=b&&b.platform&&b.platform!=='-'?b.platform:'',mvp=window.GuardCore&&GuardCore.unifyOn&&GuardCore.unifyOn()&&pa2&&pb2&&pa2!==pb2?2:0;
+    if(window.GuardCore&&GuardCore.unifyOn&&GuardCore.unifyOn()){
+      if(mvp)det.unshift(escapeHtml(T('xfer.dMove',{s:''}).replace('{s}',T('xfer.mvPlat',{a:pa2,b:pb2}).replace('{a}',pa2).replace('{b}',pb2))));
+      var R=sl==null?null:sl-mvp;return {status:GuardCore.xferClass(R),slack:R,details:det,warn:warn||(R!=null&&R<5),platNext:pb2};
+    }
     return {status:sl==null?'nodata':sl<0?'broken':sl<3?'edge':sl<5?'risk':'ok',slack:sl,details:det,warn:warn,platNext:b&&b.platform&&b.platform!=='-'?b.platform:''};
   }
   function det77LegA(leg,d,x,date,stops,key){
@@ -1105,7 +1111,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
       var ds=res[0],stats=res[1],h='';
       if(det77LayoutA()){
         h='<div style="margin-top:6px">'+L.it.legs.map(function(l,i){var nx=L.it.legs[i+1];var x=nx?det77XData((L.it.transfers||[])[i],l,nx,ds[i],ds[i+1],stats):null;return det77LegA(l,ds[i],x,L.date,!!det77Stops[key],key+'|'+i)}).join('')+'</div>';
-        box.innerHTML=h+'<div class="muted" style="font-size:12px;margin-top:6px">'+escapeHtml(T('planer.det.source'))+'</div>';
+        box.innerHTML=h+(L.it.legs.length>1&&StopsView.xNote?StopsView.xNote():'')+'<div class="muted" style="font-size:12px;margin-top:6px">'+escapeHtml(T('planer.det.source'))+'</div>';
         var lg=entry.querySelector('.itin-legs');if(lg)lg.hidden=true;   // wariant A zastępuje krótką listę odcinków — bez dublowania
         if(window.StopsView)StopsView.scrollTo(entry);
         return;

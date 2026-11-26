@@ -896,7 +896,9 @@
     "sec_prywatnosc": "<h2>🔒 Soukromí</h2>\n<p>Neukládáme IP adresy ani žádné osobní údaje. Profil (pokud si ho vytvoříte) uchovává jen vaše vlastní nastavení: oblíbené stanice, vlaky a trasy v deníku — nic dalšího. Úplný popis včetně jediné technické výjimky (dočasný, nevratný otisk IP při vytváření profilu) najdete v <a href=\"/kontakt/#rodo\" style=\"color:var(--cyan)\">sekci GDPR a soukromí</a>.</p>",
     "ctaBoard": "🚉 Otevřít tabuli",
     "ctaContact": "💬 Připomínky a kontakt",
-    "footnote": "Údaje o jízdním řádu a zpožděních pocházejí z veřejného API PLK. Aplikace není oficiální službou PKP ani PLK.<br>Máte otázku, na kterou tu není odpověď? <a href=\"/kontakt/\">Napište nám</a>."
+    "footnote": "Údaje o jízdním řádu a zpožděních pocházejí z veřejného API PLK. Aplikace není oficiální službou PKP ani PLK.<br>Máte otázku, na kterou tu není odpověď? <a href=\"/kontakt/\">Napište nám</a>.",
+    "toc_przesiadki": "🔁 Přestupy",
+    "sec_przesiadki": "<h2>🔁 Jak počítáme rezervu na přestup</h2>\n    <p><b>Rezerva</b> je čas, který ti na přestupu zbude <b>po přechodu</b> na další vlak, autobus nebo tramvaj — všude stejně: vyhledávání, Vlak + GZM, Hlídané a oznámení.</p>\n    <ul>\n      <li><b>Rezerva = čas mezi příjezdem a odjezdem − čas na přechod.</b> S aktuálním zpožděním, když ho PLK poskytuje.</li>\n      <li>K přechodu přičítáme: <b>změnu nástupiště +2 min</b>, <b>chůzi</b> (nádraží ↔ zastávka, mezi zastávkami — z mapy nebo tvého měření) a <b>přechod mezi různými stanicemi +5 min</b>, když neznáme přesný čas.</li>\n      <li>🟢 <b>5 min a víc</b> — „N min rezerva“; 🟡 <b>2–4 min</b> — „těsně“; 🔴 <b>0–1 min</b> — „na hraně“ (bliká: jen na stejném nástupišti nebo zastávce); 🔴 <b>pod 0</b> — „o N min méně“.</li>\n      <li>Odkud výsledek je, uvidíš u každého přestupu v <b>▸ podrobnosti</b>. Červené „▸ podrobnosti“ znamenají odchylku od plánu.</li>\n    </ul>"
   },
   "kontakt": {
     "pageTitle": "Připomínky a kontakt – Czy zdążę?",
@@ -1507,7 +1509,11 @@
     "c99Plat": "nástupiště {p}",
     "c99PlatTr": "nástupiště {p}, kolej {t}",
     "c99X": "přestupy: {n}",
-    "c99Direct": "bez přestupu"
+    "c99Direct": "bez přestupu",
+    "cxLine": "přestup {n} min",
+    "cxTight": " — těsně",
+    "cxEdge": " — na hraně",
+    "cxMiss": "přestup: chybí {n} min"
   },
   "tt": {
     "swapLater": "Nahradit od 13.12",
@@ -1586,6 +1592,12 @@
     "dStation": "Z toho +5 min na přechod mezi stanicemi",
     "dTimes": "Jízdní řád: příjezd {a}, odjezd {b}",
     "dDelay": "Zpoždění: příjezd +{a} min, odjezd +{b} min",
-    "dWalk": "Na přechod počítáme {n} min"
+    "dWalk": "Na přechod počítáme {n} min",
+    "note": "ℹ️ Rezervu na přestup počítáme po přechodu: přičítáme změnu nástupiště a chůzi.",
+    "more": "Jak to počítáme",
+    "dMove": "Počítáme přechod: {s}",
+    "mvPlat": "nástupiště {a} → {b} +2 min",
+    "mvStation": "mezi stanicemi +5 min",
+    "mvWalk": "chůze {n} min"
   }
 }
