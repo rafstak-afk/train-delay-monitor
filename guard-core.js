@@ -67,6 +67,10 @@
   function likelyCancelled(data, stop) {
     var dg = data && data.diag;
     if (!dg || dg.opsOk !== false || !/404/.test(String(dg.opsError || "")) || data.lastConfirmedStation) return false;
+    // 26.11 (RJ 14022): PLK podał utrudnienie „Wydłużone przygotowanie wagonów do drogi” — pociąg ruszył później, nie był odwołany.
+    // Gdy PLK podaje powód utrudnienia, który NIE jest odwołaniem, nie zgadujemy odwołania.
+    var ds = Array.isArray(data.disruptions) ? data.disruptions : [];
+    if (ds.length && !ds.some(function (d) { return /odwoł|nie kursuje|cancel/i.test(String(d && d.message || "")); })) return false;
     if ((data.route || []).some(function (s) { return s.status === "confirmed"; })) return false;
     // TODO 89: od odjazdu ze STACJI POCZĄTKOWEJ — jadący pociąg ma dane o ruchu od startu, więc 10 min po planowym
     // wyjeździe z początku trasy brak danych (404) = zniknął; ostrzeżenie zanim dojedzie do stacji wsiadania.

@@ -251,9 +251,9 @@ async function checkTrain(origin, item, cachedLookup, author, lang) {
 
   const ci = cancelInfo(data, item.station), cancelled = ci.cancelled;
   const delay = Number(data.delay || 0);
-  if (!cancelled && !(delay >= 5)) return outcome(false, null);
-
   const label = [data.category, item.trainNum, data.name].filter(Boolean).join(" ");
+  // 26.11: pociąg nie jest odwołany — zapamiętaj, że żyje (do „jednak jedzie” po wcześniejszym alarmie o odwołaniu)
+  if (!cancelled && !(delay >= 5)) return Object.assign(outcome(false, null), { alive: { key: `${item.trainNum}|${normalizeStationText(item.station)}|${item.planTime || ""}`, label, last: data.lastConfirmedStation || "", lastTime: data.lastConfirmedTime || "", delay } });
   let reason = Array.isArray(data.disruptions) && data.disruptions.length
     ? data.disruptions.map(d => d.message).filter(Boolean).join(" / ")
     : "";
@@ -270,6 +270,7 @@ async function checkTrain(origin, item, cachedLookup, author, lang) {
     time: item.planTime || "--:--",
     delay,
     cancelled,
+    likely: !!(cancelled && ci.likely),
     reason,
     url: `/train?${urlParams.toString()}`,
     key: `${item.trainNum}|${normalizeStationText(item.station)}|${item.planTime || ""}`
@@ -379,17 +380,17 @@ function shortLabel(x) {
 // nie w i18n/*.json. Liczba mnoga wg reguł danego języka (Intl.PluralRules).
 function pushText(lang) {
   const T = {
-    pl: { station: "Alarm: stacja w tle", train: "Alarm: Moje pociągi", cancelled: "ODWOŁANY", tap: "dotknij, by zobaczyć", more: "i {n} więcej",
+    pl: { station: "Alarm: stacja w tle", train: "Alarm: Moje pociągi", cancelled: "ODWOŁANY", likely: "prawdopodobnie odwołany (brak danych PLK)", revived: "jednak jedzie", lastAt: "ostatnio {s}", tap: "dotknij, by zobaczyć", more: "i {n} więcej",
       delays: { one: "opóźnienie", few: "opóźnienia", many: "opóźnień", other: "opóźnienia" } },
-    en: { station: "Alarm: watched station", train: "Alarm: My trains", cancelled: "CANCELLED", tap: "tap to see", more: "and {n} more",
+    en: { station: "Alarm: watched station", train: "Alarm: My trains", cancelled: "CANCELLED", likely: "probably cancelled (no PLK data)", revived: "is running after all", lastAt: "last seen {s}", tap: "tap to see", more: "and {n} more",
       delays: { one: "delay", other: "delays" } },
-    de: { station: "Alarm: beobachteter Bahnhof", train: "Alarm: Meine Züge", cancelled: "AUSGEFALLEN", tap: "tippen zum Ansehen", more: "und {n} weitere",
+    de: { station: "Alarm: beobachteter Bahnhof", train: "Alarm: Meine Züge", cancelled: "AUSGEFALLEN", likely: "wahrscheinlich ausgefallen (keine PLK-Daten)", revived: "fährt doch", lastAt: "zuletzt {s}", tap: "tippen zum Ansehen", more: "und {n} weitere",
       delays: { one: "Verspätung", other: "Verspätungen" } },
-    cs: { station: "Alarm: stanice na pozadí", train: "Alarm: Moje vlaky", cancelled: "ZRUŠEN", tap: "klepněte pro zobrazení", more: "a {n} další",
+    cs: { station: "Alarm: stanice na pozadí", train: "Alarm: Moje vlaky", cancelled: "ZRUŠEN", likely: "pravděpodobně zrušen (bez dat PLK)", revived: "přece jede", lastAt: "naposledy {s}", tap: "klepněte pro zobrazení", more: "a {n} další",
       delays: { one: "zpoždění", few: "zpoždění", many: "zpoždění", other: "zpoždění" } },
-    es: { station: "Alarma: estación vigilada", train: "Alarma: Mis trenes", cancelled: "CANCELADO", tap: "toca para ver", more: "y {n} más",
+    es: { station: "Alarma: estación vigilada", train: "Alarma: Mis trenes", cancelled: "CANCELADO", likely: "probablemente cancelado (sin datos de PLK)", revived: "sí circula", lastAt: "visto por última vez en {s}", tap: "toca para ver", more: "y {n} más",
       delays: { one: "retraso", other: "retrasos" } },
-    uk: { station: "Тривога: станція у фоні", train: "Тривога: Мої поїзди", cancelled: "СКАСОВАНО", tap: "натисніть, щоб переглянути", more: "і ще {n}",
+    uk: { station: "Тривога: станція у фоні", train: "Тривога: Мої поїзди", cancelled: "СКАСОВАНО", likely: "ймовірно скасовано (немає даних PLK)", revived: "все ж їде", lastAt: "востаннє {s}", tap: "натисніть, щоб переглянути", more: "і ще {n}",
       delays: { one: "затримка", few: "затримки", many: "затримок", other: "затримки" } }
   };
   const code = T[lang] ? lang : "pl";
@@ -404,7 +405,9 @@ function pluralWord(forms, n, lang) {
 
 function plainText(x, t) {
   t = t || pushText("pl");
+  if (x.revived) return `${shortLabel(x)} ${t.revived}${x.last ? " (" + t.lastAt.replace("{s}", x.last + (x.lastTime ? " " + String(x.lastTime).slice(0, 5) : "")) + ")" : ""}${x.delay >= 5 ? " +" + x.delay + " min" : ""}`;
   if (x.rotation) return `${shortLabel(x)} 🔁 ${x.rotText}`;
+  if (x.cancelled && x.likely) return `${shortLabel(x)} ${t.likely}`;
   return x.cancelled ? `${shortLabel(x)} ${t.cancelled}` : `${shortLabel(x)} +${x.delay} min`;
 }
 
@@ -483,9 +486,10 @@ function isNews(x, notifiedLevel) {
 // jeździ codziennie o tej samej godzinie, więc bez daty wczorajsze "+37"
 // blokowało dzisiejszy alarm "+20" (20 < 37 + 5). Wpisy z innych dni
 // są przy okazji usuwane.
-async function notifyForSource(env, token, subs, items, stateField, legacyField, kind, summary, today, lang) {
+async function notifyForSource(env, token, subs, items, stateField, legacyField, kind, summary, today, lang, alive) {
   const dayPrefix = `${today}|`;
   const dayKey = x => dayPrefix + x.key;
+  const items0 = items;
   const kept = [];
   let changed = false;
   let notified = false;
@@ -494,7 +498,14 @@ async function notifyForSource(env, token, subs, items, stateField, legacyField,
     const prev = hasState ? sub[stateField] : {};
     const undated = hasState && Object.keys(prev).length > 0 && !Object.keys(prev).some(k => /^\d{4}-\d{2}-\d{2}\|/.test(k));
     const migrating = (!hasState && typeof sub[legacyField] === "string") || undated;
-    const news = migrating ? [] : items.filter(x => isNews(x, prev[dayKey(x)]));
+    // 26.11: „jednak jedzie” — po alarmie „odwołany” (poziom X) pociąg jest na liście bez odwołania albo zniknął z niej, bo jedzie
+    items = items0.map(x => !migrating && prev[dayKey(x)] === "X" && !x.cancelled ? Object.assign({}, x, { revived: true }) : x);
+    if (!migrating && alive) for (const [k, v] of Object.entries(prev)) {
+      if (v !== "X" || !k.startsWith(dayPrefix)) continue;
+      const a = alive[k.slice(dayPrefix.length)];
+      if (a && !items.some(x => dayKey(x) === k)) items = items.concat([{ key: a.key, label: a.label, revived: true, last: a.last, lastTime: a.lastTime, delay: a.delay || 0, cancelled: false, time: "", url: "/moje-pociagi/" }]);
+    }
+    const news = migrating ? [] : items.filter(x => x.revived || isNews(x, prev[dayKey(x)]));
 
     // Pozycje, które chwilowo zniknęły (np. opóźnienie spadło z 5 na 4 min),
     // zostają w stanie — inaczej powrót do 5 min liczyłby się jako nowość.
@@ -952,7 +963,7 @@ export async function onRequestPost(context) {
       // liście `items` jak poprzednio), żeby można było wysłać dwa różne,
       // rozpoznawalne nagłówki powiadomienia zamiast jednego uniwersalnego
       // "Alarm pociągów" dla obu przypadków naraz.
-      const trainItems = [];
+      const trainItems = [], trainAlive = {};
       const authorTok = true;   // obieg składu w Moich pociągach — dla wszystkich od 24.11 (v6.84)
       const ttMissing = [];
       if (useTrains) {
@@ -968,11 +979,12 @@ export async function onRequestPost(context) {
           }
           summary.trainsChecked++;
           try {
-            const { lookup, done, alert, missing } = await checkTrain(origin, item, state.lookups[key], authorTok, typeof profile.language === "string" ? profile.language : "pl");
+            const { lookup, done, alert, missing, alive } = await checkTrain(origin, item, state.lookups[key], authorTok, typeof profile.language === "string" ? profile.language : "pl");
             if (missing && now.date >= TT_MISS_FROM && now.date <= TT_MISS_TO) ttMissing.push(item);
             if (lookup) { state.lookups[key] = lookup; stateChanged = true; }
             if (done) { state.done.add(key); stateChanged = true; }
             if (alert) trainItems.push(alert);
+            if (alive) trainAlive[alive.key] = alive;
           } catch (e) {
             summary.errors.push(`${token}:${item.trainNum}: ${e.message}`);
           }
@@ -1009,7 +1021,7 @@ export async function onRequestPost(context) {
 
       let subsNow = subs;
       const lang = typeof profile.language === "string" ? profile.language : "pl";
-      subsNow = await notifyForSource(env, token, subsNow, trainItems, "notifiedTrain", "lastSignatureTrain", "train", summary, now.date, lang);
+      subsNow = await notifyForSource(env, token, subsNow, trainItems, "notifiedTrain", "lastSignatureTrain", "train", summary, now.date, lang, trainAlive);
       subsNow = await notifyForSource(env, token, subsNow, stationItems, "notifiedStation", "lastSignatureStation", "station", summary, now.date, lang);
 
       if (subsNow !== subs) {
