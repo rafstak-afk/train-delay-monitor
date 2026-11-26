@@ -191,7 +191,7 @@ export async function onRequestPost({ request, env }) {
   if (!text) return json({ ok: false, error: "Pusta prośba" }, 400);
   const now = nowWarsaw();
   // 24.11 (v6.88): dla wszystkich. Limity: autor 60/dobę; pozostali 10/dobę na osobę (profil albo skrót adresu IP — tylko
-  // w pamięci podręcznej na dobę, bez zapisu) i 300/dobę łącznie (ok. 3 tys. zapytań do PLK z 20 tys., darmowy przydział Workers AI).
+  // w pamięci podręcznej na dobę, bez zapisu) i 150/dobę łącznie (TODO 96, 26.11: było 300 — darmowe 10 tys. neuronów Workers AI starcza na ok. 175 rozmów Llamą 3.3 70B, więc z zapasem zawsze odpowiada pełny model; ok. 1,5 tys. zapytań do PLK).
   const author = TOKEN_RE.test(token) && await isAuthor(env, token);
   const sha = async x => [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(x)))].slice(0, 8).map(v => v.toString(16).padStart(2, "0")).join("");
   if (author) {
@@ -199,7 +199,7 @@ export async function onRequestPost({ request, env }) {
   } else {
     const who = TOKEN_RE.test(token) ? "t" + await sha(token) : "i" + await sha("czyzdaze|" + (request.headers.get("CF-Connecting-IP") || "?"));
     if (!(await rateOk(request, "asyst-u:" + now.date + ":" + who, 10, 86400))) return json({ ok: false, error: "Twój dzienny limit asystenta (10 rozmów) jest wyczerpany — jutro znowu. Zwykły czat i planer działają bez limitu." }, 429);
-    if (!(await rateOk(request, "asyst:" + now.date, 300, 86400))) return json({ ok: false, error: "Asystent ma dziś bardzo dużo pytań — dzienny limit wyczerpany, jutro znowu. Planer działa normalnie." }, 429);
+    if (!(await rateOk(request, "asyst:" + now.date, 150, 86400))) return json({ ok: false, error: "Asystent ma dziś bardzo dużo pytań — dzienny limit wyczerpany, jutro znowu. Planer działa normalnie." }, 429);
   }
   const p = await understand(env, text, now);
   if (!p || !p.trip || !p.from || !p.to) return json({ ok: false, reason: "not_trip", parsed: p, ai: !!env.AI });

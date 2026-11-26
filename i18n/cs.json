@@ -1430,6 +1430,7 @@
     "v2cXn": "{n} přestupy",
     "wmapStops": "Cesta spočítaná z mapy OpenStreetMap (přes silnici jen po přechodech) — ve skutečnosti se může lišit.",
     "wmapStraight": "Pro tento přestup nemám cestu z mapy — přímka mezi zastávkami.",
+    "wmapPlace": "Pro tuto cestu nemám trasu z mapy — přímka, čas podle vzdálenosti. Skutečná cesta může být delší.",
     "v2XferEgr": "Po vlaku: {s}, rezerva {n} min",
     "v2MoreAcc": "Další cesty k vlaku ({n})",
     "v2MoreEgr": "Další možnosti po vlaku ({n})",

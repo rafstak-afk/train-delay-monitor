@@ -453,6 +453,25 @@
       if (b.dataset.swmap) { var q = b.dataset.swmap.split("|"); openStopMap(+q[0], +q[1]); }
       else { var r = b.dataset.pwmap.split("|"); openPlatMap(r[0], r[1], +r[2], r[3] === "1", r[4] || ""); }
     }, true);
+    // TODO 111 (26.11, profil autora): 🗺️ także przy dojściu od/do miejsca (adres, 🏠 Dom, 💼 Praca, 📍 GPS) — do przystanku albo stacji.
+    // Przebiegu drogi z mapy dla miejsc nie mamy (czas liczony z odległości) — mapka pokazuje oba punkty i linię prostą.
+    var ptReg = {};
+    function ptMapBtn(a, b) {
+      if (!a || !b || a.lat == null || b.lat == null || a.lon == null || b.lon == null) return "";
+      var k = [a.lat, a.lon, b.lat, b.lon].map(function (v) { return (+v).toFixed(5); }).join(",");
+      ptReg[k] = { a: a, b: b };
+      return mapBtn("data-ptmap", k);
+    }
+    function placePt(pl) { return pl ? { lat: pl.lat, lon: pl.lon, name: pl.label || "", icon: "📍" } : null; }
+    function stopPt(i) { var net = cState && cState.net; return net && net.lat[i] != null ? { lat: net.lat[i], lon: net.lon[i], name: net.name[i] + stTag(String(net.j.stops[i][3] || "")), icon: "🚏" } : null; }
+    function stationPt(st) { return st && st.lat != null ? { lat: st.lat, lon: st.lon, name: st.n || "", icon: "🚆" } : null; }
+    root.addEventListener("click", function (e) {
+      var b = e.target.closest("[data-ptmap]"); if (!b) return;
+      e.stopPropagation();
+      var r = ptReg[b.getAttribute("data-ptmap")]; if (!r) return;
+      drawWalkMap(r.a.name + " → " + r.b.name, [[r.a.lat, r.a.lon], [r.b.lat, r.b.lon]], { lat: r.b.lat, lon: r.b.lon }, r.a.icon, r.b.icon,
+        T("gzm.wmapPlace", null, "Dla tego dojścia nie mam drogi z mapy — linia prosta, czas wg odległości. W terenie droga może być dłuższa."));
+    }, true);
     function mapBtn(attr, val) { return authorOn() ? ' <button type="button" ' + attr + '="' + esc(val) + '" title="' + esc(T("gzm.wmapTitle2", null, "Droga na mapie")) + '" style="border:0;background:none;cursor:pointer;font-size:1em;padding:0 2px">🗺️</button>' : ""; }
     function depHtmlV2(x, cls, noFav) {
       var d = x.dep, inMin = Math.round(x.real - nowOn(cfg.date || warsawNow().date));
@@ -1762,11 +1781,11 @@
     function withPlaceWalks(jn, fromPl, toPl) {
       if (fromPl) {
         var r0 = jn.legs.find(function (l) { return l.type === "ride"; }), w0 = fromPl.stops.find(function (x) { return x.s === (jn.legs[0].type === "walk" ? jn.legs[0].from : r0.from); });
-        if (w0) { jn.legs.unshift({ type: "walk", min: w0.walk, measured: !!w0.measured, fixed: !!w0.fixed, far: !!w0.far, dist: w0.d, fromName: fromPl.label, toName: S_name(jn.legs[0].type === "walk" ? jn.legs[0].from : r0.from) }); jn.leave = (jn.legs[1].type === "walk" ? r0.dep - jn.legs[1].min : r0.dep) - w0.walk; }
+        if (w0) { jn.legs.unshift({ type: "walk", min: w0.walk, measured: !!w0.measured, fixed: !!w0.fixed, far: !!w0.far, dist: w0.d, fromName: fromPl.label, toName: S_name(jn.legs[0].type === "walk" ? jn.legs[0].from : r0.from), pa: placePt(fromPl), pb: stopPt(jn.legs[0].type === "walk" ? jn.legs[0].from : r0.from) }); jn.leave = (jn.legs[1].type === "walk" ? r0.dep - jn.legs[1].min : r0.dep) - w0.walk; }
       }
       if (toPl) {
         var last = jn.legs[jn.legs.length - 1], w1 = toPl.stops.find(function (x) { return x.s === last.to; });
-        if (w1) { jn.legs.push({ type: "walk", min: w1.walk, measured: !!w1.measured, fixed: !!w1.fixed, far: !!w1.far, dist: w1.d, fromName: S_name(last.to), toName: toPl.label }); jn.arr += w1.walk; }
+        if (w1) { jn.legs.push({ type: "walk", min: w1.walk, measured: !!w1.measured, fixed: !!w1.fixed, far: !!w1.far, dist: w1.d, fromName: S_name(last.to), toName: toPl.label, pa: stopPt(last.to), pb: placePt(toPl) }); jn.arr += w1.walk; }
       }
       return jn;
     }
@@ -1840,7 +1859,7 @@
       var path = l.fromName && l.toName ? esc(l.fromName) + " → " + esc(l.toName) : l.toName ? "→ " + esc(l.toName) : "";
       // mapka i oznaczenie: dla ostatniego odcinka między przystankami (po scaleniu — z części)
       var segs = (l.parts || [l]).filter(function (q) { return typeof q.from === "number" && typeof q.to === "number" && q.from !== q.to; }), sg = segs[segs.length - 1];
-      var mb = sg ? mapBtn("data-swmap", sg.from + "|" + sg.to) : "";
+      var mb = sg ? mapBtn("data-swmap", sg.from + "|" + sg.to) : ptMapBtn(l.pa, l.pb);
       var fk = cState && cState.net && cState.net.fk, kinds = segs.map(function (q) { return fk ? fk[q.from + "|" + q.to] : "o"; });
       if (authorOn() && segs.length && !l.measured && !l.fixed) {
         if (kinds.some(function (k) { return !k; })) marks += ' · <span title="' + esc(T("gzm.wEstT", null, "Mapa nie zna tu drogi — czas z odległości w linii prostej")) + '">≈ ' + esc(T("gzm.wEst", null, "szacunek")) + "</span>";
@@ -1987,7 +2006,7 @@
       var fromName = c.walkA ? c.walkA.name : L ? L.jn.legs[0].fromName : (L0[0] && L0[0].board.stationName) || x.p.cb.a.st.n;
       var e0 = c.egr && c.egr[0], toName = c.walkE ? c.walkE.name : e0 ? e0.legs[e0.legs.length - 1].toName : (L0.length ? L0[L0.length - 1].alight.stationName : x.p.cb.e.st.n);
       var html = [];
-      if (c.walkA) html.push(v2Walk({ min: c.walkA.min, fromName: c.walkA.name, toName: x.p.cb.a.st.n }));
+      if (c.walkA) html.push(v2Walk({ min: c.walkA.min, fromName: c.walkA.name, toName: x.p.cb.a.st.n, pa: placePt(S.fromPlace), pb: stationPt(x.p.cb.a.st) }));
       if (L) {
         html.push(v2Journey(L.jn));
         // notatka 21.11: przejście przystanek → peron jako osobny krok (wcześniej niewidoczne), z mapką drogi
@@ -1999,7 +2018,7 @@
         if (j > 0) { var p = L0[j - 1], ch = C.hm(l.board.time) - C.hm(p.alight.time); if (ch < 0) ch += 1440; html.push(v2Xfer(ch >= 3 ? "ok" : "tight", esc(T("gzm.tChange", { s: l.board.stationName, n: ch }, "przesiadka: {s}, {n} min")))); }
         html.push(v2Train(l, j === L0.length - 1 && x.tDelay ? x.arr : null));
       });
-      if (c.walkE) html.push(v2Walk({ min: c.walkE.min, fromName: L0.length ? L0[L0.length - 1].alight.stationName : "", toName: c.walkE.name }));
+      if (c.walkE) html.push(v2Walk({ min: c.walkE.min, fromName: L0.length ? L0[L0.length - 1].alight.stationName : "", toName: c.walkE.name, pa: stationPt(x.p.cb.e.st), pb: placePt(S.toPlace) }));
       else if (e0) {
         var r0 = e0.legs.find(function (l) { return l.type === "ride"; }), wk = 0;
         e0.legs.some(function (l) { if (l.type === "walk") { wk += l.min; return false; } return true; });
@@ -2046,7 +2065,7 @@
       if (l.fixed) mk = T("gzm.jFixed", null, "Twój czas"); else if (l.measured) mk = T("gzm.jMeasured", null, "zmierzone");
       else if (segs.length && kinds.some(function (k) { return !k; })) mk = "≈ " + T("gzm.wEst", null, "szacunek");
       else if (segs.length && kinds.some(function (k) { return k === "r"; })) mk = "≈ " + T("gzm.wApx", null, "przybliżone");
-      return { k: "walk", min: l.min, from: l.fromName || "", to: l.toName || "", mk: mk, mb: sg ? mapBtn("data-swmap", sg.from + "|" + sg.to) : "" };
+      return { k: "walk", min: l.min, from: l.fromName || "", to: l.toName || "", mk: mk, mb: sg ? mapBtn("data-swmap", sg.from + "|" + sg.to) : ptMapBtn(l.pa, l.pb) };
     }
     function ceRideStep(l) {
       return { k: "ride", icon: TYPE_ICON[l.kind] || "🚌", line: l.line, head: l.head || "", dep: l.dep, depPlan: l.depPlan, arr: l.arr, delay: l.live ? (l.delay || 0) : 0, live: !!l.live,
@@ -2064,7 +2083,7 @@
       var out = [];
       if (x.net) { ceJourney(x.net, out); return out; }
       var c = x.c || {}, L = c.latest, L0 = x.it.legs || [], e0 = c.egr && c.egr[0];
-      if (c.walkA) out.push({ k: "walk", min: c.walkA.min, from: c.walkA.name, to: x.p.cb.a.st.n, mk: "", mb: "" });
+      if (c.walkA) out.push({ k: "walk", min: c.walkA.min, from: c.walkA.name, to: x.p.cb.a.st.n, mk: "", mb: ptMapBtn(placePt(S.fromPlace), stationPt(x.p.cb.a.st)) });
       if (L) {
         ceJourney(L.jn, out);
         var lastL = L.jn.legs[L.jn.legs.length - 1], poleA = lastL && lastL.to, pA = poleA != null ? (polesOf(x.p.cb.a.st).find(function (q) { return q.s === poleA; }) || {}) : {};
@@ -2078,7 +2097,7 @@
         out.push({ k: "ride", train: true, icon: "🚆", line: nm.trim(), short: t.name && /^S\d/.test(t.name) ? t.name : (t.category || "") + " " + (t.number || ""), head: "", dep: C.hm(l.board.time), depPlan: C.hm(l.board.time),
           arr: last && x.tDelay ? x.arr : ap, arrPlan: ap, delay: 0, arrDelay: last ? (x.tDelay || 0) : 0, from: l.board.stationName, to: l.alight.stationName, leg: l });
       });
-      if (c.walkE) out.push({ k: "walk", min: c.walkE.min, from: L0.length ? L0[L0.length - 1].alight.stationName : "", to: c.walkE.name, mk: "", mb: "" });
+      if (c.walkE) out.push({ k: "walk", min: c.walkE.min, from: L0.length ? L0[L0.length - 1].alight.stationName : "", to: c.walkE.name, mk: "", mb: ptMapBtn(stationPt(x.p.cb.e.st), placePt(S.toPlace)) });
       else if (e0) {
         var r0 = e0.legs.find(function (l) { return l.type === "ride"; }), wk = 0;
         e0.legs.some(function (l) { if (l.type === "walk") { wk += l.min; return false; } return true; });

@@ -1430,6 +1430,7 @@
     "v2cXn": "{n} Umstiege",
     "wmapStops": "Weg aus OpenStreetMap berechnet (über die Straße nur an Übergängen) — vor Ort kann es abweichen.",
     "wmapStraight": "Für diesen Übergang gibt es keinen Weg aus der Karte — Luftlinie zwischen den Haltestellen.",
+    "wmapPlace": "Für diesen Fußweg gibt es keinen Weg aus der Karte — Luftlinie, Zeit nach Entfernung geschätzt. Der echte Weg kann länger sein.",
     "v2XferEgr": "Nach dem Zug: {s}, {n} Min. Puffer",
     "v2MoreAcc": "Andere Wege zum Zug ({n})",
     "v2MoreEgr": "Weitere Möglichkeiten nach dem Zug ({n})",

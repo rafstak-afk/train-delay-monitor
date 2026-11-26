@@ -1430,6 +1430,7 @@
     "v2cXn": "{n} transbordos",
     "wmapStops": "Camino calculado con OpenStreetMap (cruzando calles solo por pasos de peatones); en la realidad puede variar.",
     "wmapStraight": "No hay camino en el mapa para este transbordo: línea recta entre las paradas.",
+    "wmapPlace": "No hay camino en el mapa para este trayecto a pie: línea recta, tiempo según la distancia. El camino real puede ser más largo.",
     "v2XferEgr": "Tras el tren: {s}, margen {n} min",
     "v2MoreAcc": "Otras formas de llegar al tren ({n})",
     "v2MoreEgr": "Otras opciones tras el tren ({n})",

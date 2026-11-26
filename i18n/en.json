@@ -1430,6 +1430,7 @@
     "v2cXn": "{n} changes",
     "wmapStops": "Route calculated from OpenStreetMap (crossing roads only at crossings) — it may differ on the ground.",
     "wmapStraight": "No mapped route for this transfer — straight line between the stops.",
+    "wmapPlace": "No mapped route for this walk — straight line, time estimated from distance. The real route may be longer.",
     "v2XferEgr": "After the train: {s}, {n} min spare",
     "v2MoreAcc": "Other ways to the train ({n})",
     "v2MoreEgr": "Other options after the train ({n})",
