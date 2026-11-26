@@ -2312,6 +2312,7 @@
     function ceFull(x, S) {
       var steps = ceSteps(x, S), leave = ceLeave(x), rows = [], firstRide = -1, lastRide = -1, prevArr = null, showStops = !!tripOpen[detKey(x)];
       steps.forEach(function (q, i) { if (q.k === "ride") { if (firstRide < 0) firstRide = i; lastRide = i; } });
+      if (window.StopsView && StopsView.legA && xAuthor()) return ceFullA(x, steps, leave, showStops, firstRide, lastRide);   // 26.11 wariant A
       steps.forEach(function (q, i) {
         if (q.k === "walk") {
           if (i < firstRide || firstRide < 0) { rows.push(fRow(C.fmt(leave), "🚶 " + esc(i === 0 ? T("gzm.fLeave", null, "Wyjdź") : T("gzm.fGo", null, "Przejdź")), esc(T("gzm.fWalkTo", { n: q.min, s: q.to }, "{n} min do: {s}")) + fMk(q) + q.mb)); return; }
@@ -2346,6 +2347,40 @@
       // TODO 99: czas podróży i liczba przesiadek pod godzinami
       var m99 = ""; if (xAuthor()) { var nx99 = steps.filter(function (q) { return q.k === "xfer"; }).length; m99 = '<div style="font-size:13.5px;color:var(--muted);margin-top:2px">⏱️ ' + esc(v2Total(x.final - leave)) + " · " + esc(nx99 ? T("gzm.c99X", { n: nx99 }, "przesiadki: {n}").replace("{n}", nx99) : T("gzm.c99Direct", null, "bez przesiadek")) + "</div>"; }
       return '<div class="c-head" style="display:block">' + fR1(x, steps, leave) + m99 + '</div><table class="f-tt">' + rows.join("") + "</table>";
+    }
+    // ===== 26.11 wariant A (dla wszystkich od 15:00): pojazd nad wszystkim, linia odjazdu i przyjazdu, odpowiedź o przesiadce
+    // w linii przyjazdu na stację przesiadki, reszta w „▸ szczegóły” — ten sam układ co w Pilnowanych i wyszukiwarce kolejowej
+    function ceFullA(x, steps, leave, showStops, firstRide, lastRide) {
+      var date = (cState && cState.date) || warsawNow().date, out = [], prevArr = null, XS = { ok: "ok", tight: "risk", edge: "edge", missed: "broken" };
+      var line = function (t, ico, txt) { return '<div class="jl-r" style="padding:6px 0"><div class="jl-t">' + t + '</div><div class="jl-s" style="font-weight:400">' + ico + " " + txt + "</div><div></div></div>"; };
+      steps.forEach(function (q, i) {
+        if (q.k === "walk") {
+          if (i < firstRide || firstRide < 0) out.push(line(C.fmt(leave), "🚶", "<b>" + esc(i === 0 ? T("gzm.fLeave", null, "Wyjdź") : T("gzm.fGo", null, "Przejdź")) + "</b> · " + esc(T("gzm.fWalkTo", { n: q.min, s: q.to }, "{n} min do: {s}")) + fMk(q) + q.mb));
+          else if (i > lastRide) out.push(line(C.fmt(prevArr), "🚶", "<b>" + esc(T("gzm.fOnFoot", null, "Pieszo do celu")) + "</b> · " + esc(T("gzm.fWalkTo", { n: q.min, s: q.to }, "{n} min do: {s}")) + fMk(q) + q.mb));
+          return;
+        }
+        if (q.k !== "ride") return;
+        var j = i + 1, w = null; if (steps[j] && steps[j].k === "walk" && j < lastRide) { w = steps[j]; j++; }
+        var xq = steps[j] && steps[j].k === "xfer" ? steps[j] : null, det = [], warn = false;
+        if (q.live && q.delay) { warn = true; det.push('<span class="ce-tight">+' + q.delay + " min " + esc(T("gzm.ceLive", null, "na żywo")) + "</span>"); }
+        else if (q.arrDelay) { warn = true; det.push('<span class="ce-tight">+' + q.arrDelay + " min " + esc(T("gzm.ceLive", null, "na żywo")) + "</span>"); }
+        else if (q.live) det.push(esc(T("gzm.ceOnTime", null, "jedzie punktualnie")));
+        if (w) det.push("🚶 " + esc(T("xfer.walk", { a: w.from, b: w.to }, "Przejście: {a} → {b}").replace("{a}", w.from).replace("{b}", w.to)) + " · " + w.min + " min" + fMk(w) + (w.mb || ""));
+        if (xq && xq.st === "missed") det.unshift('<span style="color:#ff6b6b;font-weight:700">' + esc(T("gzm.ceMiss", { n: -xq.slack }, "brakuje {n} min — możesz nie zdążyć")) + "</span>");
+        var p99 = q.train ? fTrainPlat(q.leg, date) : null;
+        var stand = function (n) { return n ? T("gzm.stand", { n: n }, "stan. {n}").replace("{n}", n) : ""; };
+        var after = "";
+        if (showStops) { var h = q.trip ? tripHtml(q.trip, date, q.from, q.to, true) : (q.leg && q.leg.orderId ? fTrainStops(q.leg, date) : ""); if (h) after = q.trip ? '<div class="gz-trip" style="margin:2px 0 6px;font-size:14px">' + h + "</div>" : h; }
+        out.push(StopsView.legA({ icon: q.icon, label: "<b>" + esc(q.line) + "</b>", dir: q.head || "",
+          dep: { time: C.fmt(q.delay ? q.dep : q.depPlan), plan: C.fmt(q.depPlan), station: q.from, plat: q.train ? (p99 && p99.b) || "" : stand(q.fromSt) },
+          arr: { time: C.fmt(q.arrDelay ? q.arr : (q.arrPlan != null ? q.arrPlan : q.arr)), plan: C.fmt(q.arrPlan != null ? q.arrPlan : q.arr), station: q.to, plat: q.train ? (p99 && p99.a) || "" : stand(q.toSt) },
+          xfer: xq ? { status: XS[xq.st] || "ok", slack: xq.slack } : null, details: det.join("<br>"), warn: warn, key: "f|" + detKey(x) + "|" + i, after: after }));
+        prevArr = q.arr;
+      });
+      out.push(line(C.fmt(x.final), "🏁", "<b>" + esc(T("gzm.fThere", null, "Na miejscu")) + "</b>" + (x.why ? ' <span style="color:var(--muted)">· ' + esc(x.why) + "</span>" : "")));
+      var nx99 = steps.filter(function (q) { return q.k === "xfer"; }).length;
+      var m99 = '<div style="font-size:13.5px;color:var(--muted);margin-top:2px">⏱️ ' + esc(v2Total(x.final - leave)) + " · " + esc(nx99 ? T("gzm.c99X", { n: nx99 }, "przesiadki: {n}").replace("{n}", nx99) : T("gzm.c99Direct", null, "bez przesiadek")) + "</div>";
+      return '<div class="c-head" style="display:block">' + fR1(x, steps, leave) + m99 + '</div><div class="f-ja">' + out.join("") + "</div>";
     }
     // ===== Logika v3: pieszo, filtry absurdów, pierwszeństwo kolei (TEST — tylko profil autora) =====
     var NODE_M = 300;

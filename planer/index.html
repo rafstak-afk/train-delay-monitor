@@ -1020,6 +1020,37 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     return head+'<div style="border-left:3px solid #3b82f6;padding-left:10px">'+rows+'</div>';
   }
   function det77AuthorX(){if(Date.now() >= Date.parse("2026-11-26T15:00:00+01:00"))return true;try{return localStorage.getItem('showVersionBadge')==='1'}catch(e){return false}}
+  // ===== 26.11 wariant A (dla wszystkich od 15:00): numer pociągu nad wszystkim, linia odjazdu i przyjazdu,
+  // odpowiedź o przesiadce w linii przyjazdu, reszta w „▸ szczegóły”
+  function det77LayoutA(){return !!(window.StopsView&&StopsView.legA&&det77AuthorX())}
+  function det77Hm(x){var m=/(\d{1,2}):(\d{2})/.exec(String(x||''));return m?+m[1]*60+ +m[2]:null}
+  function det77Fm(v){v=((v%1440)+1440)%1440;return String(Math.floor(v/60)).padStart(2,'0')+':'+String(v%60).padStart(2,'0')}
+  function det77XData(t,legA,legB,dA,dB,stats){
+    var find=function(d,name){var r=d&&Array.isArray(d.route)?d.route:[];for(var i=0;i<r.length;i++)if(det77Norm(r[i].stationName)===det77Norm(name))return r[i];return null};
+    var a=find(dA,legA.alight.stationName),b=find(dB,legB.board.stationName);
+    var plan=t&&t.bufferMinutes!=null?+t.bufferMinutes:null,la=det77Delay(a,'arr'),lb=det77Delay(b,'dep');
+    var live=plan!=null&&(la!=null||lb!=null)?plan+(lb||0)-(la||0):null,sl=live!=null?live:plan,stx=t?t.stationName:legA.alight.stationName,det=[],warn=false;
+    if(window.GuardCore&&GuardCore.xferHint&&sl!=null){var hx=GuardCore.xferHint({slack:sl,need:0,status:sl<0?'broken':'ok',delayA:la||0,delayB:lb||0,trainA:legA.train,trainB:legB.train},(window.I18n&&I18n.getLang?I18n.getLang():'pl'));if(hx){warn=true;det.push('<span style="color:#ffcc00;font-weight:700">'+escapeHtml(hx)+'</span>')}}
+    if(stats&&window.GuardCore&&GuardCore.waitHint&&sl!=null&&sl<5){var h2=GuardCore.waitHint(stats,stx,legB.train&&legB.train.number,legA.train&&legA.train.number,GuardCore.lineOf(dB&&dB.name),GuardCore.lineOf(dA&&dA.name));if(h2)det.push(escapeHtml(GuardCore.waitText({wait:h2,trainA:legA.train,trainB:legB.train,station:stx,needWait:Math.max(0,3-sl)},(window.I18n&&I18n.getLang?I18n.getLang():'pl'))))}
+    if(plan!=null)det.push(escapeHtml(T('xfer.dPlanOnly',{n:plan}).replace('{n}',plan)));
+    return {status:sl==null?'nodata':sl<0?'broken':sl<3?'edge':sl<5?'risk':'ok',slack:sl,details:det,warn:warn,platNext:b&&b.platform&&b.platform!=='-'?b.platform:''};
+  }
+  function det77LegA(leg,d,x,date,stops,key){
+    var route=d&&Array.isArray(d.route)?d.route:[];
+    var bi=route.findIndex(function(z){return det77Norm(z.stationName)===det77Norm(leg.board.stationName)}),ai=-1;
+    for(var i=Math.max(0,bi+1);i<route.length;i++){if(det77Norm(route[i].stationName)===det77Norm(leg.alight.stationName)){ai=i;break}}
+    var B=bi>=0?route[bi]:null,A=ai>=0?route[ai]:null,dd=det77Delay(B,'dep'),ad=det77Delay(A,'arr');
+    var pl=function(z){return z&&z.platform&&z.platform!=='-'?z.platform:''};
+    var dP=leg.board.time,aP=leg.alight.time,det=(x&&x.details?x.details.slice():[]);
+    if(dd||ad)det.push(escapeHtml(T('xfer.dDelay',{a:dd||0,b:ad||0}).replace('{a}',dd||0).replace('{b}',ad||0)));
+    var tr=[leg.train.category,leg.train.number,leg.train.name].filter(Boolean).join(' ');
+    var label=leg.trainUrl||window.StopsView.trainUrl?'<a href="'+escapeHtml(window.StopsView.trainUrl(leg,date))+'">'+escapeHtml(tr)+'</a>':escapeHtml(tr);
+    return StopsView.legA({icon:'🚆',label:label,dir:route.length?route[route.length-1].stationName:'',
+      dep:{time:dd?det77Fm(det77Hm(dP)+dd):dP,plan:dP,station:leg.board.stationName,plat:pl(B)},
+      arr:{time:ad?det77Fm(det77Hm(aP)+ad):aP,plan:aP,station:leg.alight.stationName,plat:pl(A),platNext:x?x.platNext:''},
+      xfer:x?{status:x.status,slack:x.slack}:null,details:det.join('<br>'),warn:x&&x.warn,key:key,
+      after:stops&&route.length&&bi>=0&&ai>bi?StopsView.html(route,bi,ai,{leg:leg,date:date,key:'p|'+(leg.orderId||tr)}):''});
+  }
   function det77Xfer(t,legA,legB,dA,dB,stats){
     var find=function(d,name,after){var r=d&&Array.isArray(d.route)?d.route:[];for(var i=0;i<r.length;i++)if(det77Norm(r[i].stationName)===det77Norm(name))return r[i];return null};
     var a=find(dA,legA.alight.stationName),b=find(dB,legB.board.stationName);
@@ -1072,6 +1103,12 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     if(!det77Wait)det77Wait=fetch('/data/czekanie.json').then(function(r){return r.ok?r.json():null}).catch(function(){return null});
     Promise.all([Promise.all(L.it.legs.map(function(l){return det77Train(l,L.date)})),det77Wait,window.StopsView&&det77Stops[key]?StopsView.ready():null]).then(function(res){
       var ds=res[0],stats=res[1],h='';
+      if(det77LayoutA()){
+        h='<div style="margin-top:6px">'+L.it.legs.map(function(l,i){var nx=L.it.legs[i+1];var x=nx?det77XData((L.it.transfers||[])[i],l,nx,ds[i],ds[i+1],stats):null;return det77LegA(l,ds[i],x,L.date,!!det77Stops[key],key+'|'+i)}).join('')+'</div>';
+        box.innerHTML=h+'<div class="muted" style="font-size:12px;margin-top:6px">'+escapeHtml(T('planer.det.source'))+'</div>';
+        if(window.StopsView)StopsView.scrollTo(entry);
+        return;
+      }
       L.it.legs.forEach(function(l,i){
         h+=det77Leg(l,ds[i],!!det77Stops[key],L.date);
         if(i<L.it.legs.length-1)h+=det77Xfer((L.it.transfers||[])[i],l,L.it.legs[i+1],ds[i],ds[i+1],stats);

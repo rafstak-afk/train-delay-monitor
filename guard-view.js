@@ -298,6 +298,47 @@
       return '<a class="leg" href="' + esc(trainUrl(l, date)) + '" title="' + esc(T('guard.openTrain', null, 'Pokaż cały bieg pociągu')) + '"><div class="leg-t">' + timeHtml(d && r.plannedDep || l.board.time, d ? r.delayDep : 0) + '<small>' + timeHtml(d && r.plannedArr || l.alight.time, d ? r.delayArr : 0) + (l.alight.nextDay ? ' +1' : '') + '</small></div>' +
         '<div><div class="leg-train">' + esc(tr) + info + '</div><div class="leg-st">' + esc(l.board.stationName) + (d ? delayHtml(r.delayDep, r.depSource) : '') + ' → ' + esc(l.alight.stationName) + (d ? delayHtml(r.delayArr, r.arrSource) : '') + '</div></div></a>';
     }
+    // ===== 26.11 wariant A (dla wszystkich od 15:00, wcześniej profil autora): numer pociągu nad wszystkim, linia odjazdu i przyjazdu,
+    // odpowiedź o przesiadce w linii przyjazdu; reszta w „▸ szczegóły”
+    function layoutA() { if (!window.StopsView || !StopsView.legA) return false; if (Date.now() >= Date.parse("2026-11-26T15:00:00+01:00")) return true; try { return localStorage.getItem('showVersionBadge') === '1'; } catch (e) { return false; } }
+    function srcTxt(src) { return src === 'live' || src === 'confirmed' ? T('guard.srcLive', null, 'na żywo') : src === 'forecast' ? T('guard.srcForecast', null, 'prognoza PLK') : ''; }
+    function legAHtml(c, r, l, i) {
+      var rr = r.legs ? r.legs[i] : null, d = rr && !rr.noData, nx = r.legs ? r.legs[i + 1] : null, t = i < c.legs.length - 1 && r.transfers ? r.transfers[i] : null;
+      var tr = G.trainLabel(l.train) + (l.train && l.train.name ? ' ' + l.train.name : ''), gz = l.mode === 'gzm';
+      var dP = d && rr.plannedDep || l.board.time, aP = d && rr.plannedArr || l.alight.time;
+      var dR = d && rr.delayDep ? G.fmt(G.hm(dP) + rr.delayDep) : dP, aR = d && rr.delayArr ? G.fmt(G.hm(aP) + rr.delayArr) : aP;
+      var tag = '', det = [], warn = false;
+      if (rr && rr.noData) { tag = ' <span class="src">(' + esc(T('guard.status.nodata', null, 'brak danych')) + ')</span>'; }
+      else if (rr && rr.cancelled) { warn = true; tag = ' <b style="color:#fff;background:#000;padding:1px 6px;border-radius:6px;font-size:13px">⚫ ' + esc(rr.cancelLikely ? T('guard.likelyCancel', null, 'prawdopodobnie odwołany') : T('guard.status.cancelled', null, 'pociąg odwołany')) + '</b>'; if (rr.cancelSection) det.push(esc(rr.cancelSection.from + ' → ' + rr.cancelSection.to)); }
+      if (d && rr.rotation && !rr.started) {
+        var bad = G.rotationRisk(rr), rl = '🔁 ' + esc(G.rotationLine(rr.rotation, rr.originName, curLang()));
+        if (bad) { warn = true; tag += '<div style="flex-basis:100%;font-size:13px;color:var(--yellow);font-weight:700">' + rl + '</div>'; } else det.push(rl);
+      }
+      if (d && (rr.delayDep || rr.delayArr)) det.push(esc(T('xfer.dDelay', { a: rr.delayDep || 0, b: rr.delayArr || 0 }, 'Opóźnienie: odjazd +{a} min, przyjazd +{b} min').replace('{a}', rr.delayDep || 0).replace('{b}', rr.delayArr || 0)) + (srcTxt(rr.arrSource || rr.depSource) ? ' (' + esc(srcTxt(rr.arrSource || rr.depSource)) + ')' : ''));
+      if (t) {
+        var hint = G.xferHint ? G.xferHint(t, curLang()) : '';
+        if (hint) { warn = true; det.unshift('<span style="color:#ffcc00;font-weight:700">' + esc(hint) + '</span>'); }
+        if (t.wait) det.push(esc(G.waitText(t, curLang())));
+        if (r.rising && r.worst === i) { warn = true; det.push('📈 ' + esc(T('guard.rising', null, 'Opóźnienie rośnie'))); }
+        if (t.stationChange) det.push('🚶 ' + esc(T('xfer.walk', { a: t.station, b: t.toStation }, 'Przejście: {a} → {b}').replace('{a}', t.station).replace('{b}', t.toStation)));
+        if (typeof t.plannedSlack === 'number') det.push(esc(T('xfer.dPlan', { n: t.plannedSlack, m: t.need }, 'Wg rozkładu {n} min na przesiadkę, potrzeba {m} min').replace('{n}', t.plannedSlack).replace('{m}', t.need)));
+        if (t.platformChange) det.push(esc(T('xfer.dPlat', null, 'W tym +2 min na zmianę peronu')));
+        if (t.stationChange) det.push(esc(T('xfer.dStation', null, 'W tym +5 min na przejście między stacjami')));
+        var lb = c.legs[i + 1];
+        if (lb && window.GzmPlatMap && (l.mode === 'gzm') !== (lb.mode === 'gzm')) {
+          var toSt = l.mode === 'gzm', stN = toSt ? lb.board.stationName : l.alight.stationName, stopN = toSt ? l.alight.stationName : lb.board.stationName, code = (toSt ? l.alight.code : lb.board.code) || '';
+          det.push('<button type="button" data-gpmap="' + esc(stN + '|' + stopN + '|' + code + '|' + (toSt ? 1 : 0)) + '" style="border:0;background:none;color:#8fb8f5;cursor:pointer;padding:0;font-size:12.5px">🗺️ ' + esc(T('gzm.wmapTitle2', null, 'Droga na mapie')) + '</button>');
+        }
+      }
+      var label = gz ? esc(tr) : '<a class="gv-trn" href="' + esc(trainUrl(l, c.date)) + '" title="' + esc(T('guard.openTrain', null, 'Pokaż cały bieg pociągu')) + '">' + esc(tr) + '</a>';
+      var attrs = gz ? ' data-gtrip="' + esc(l.trip) + '" data-gdate="' + esc(c.date) + '" data-gb="' + esc(l.board.stationName) + '" data-ga="' + esc(l.alight.stationName) + '" role="button" tabindex="0" style="cursor:pointer"'
+        : (rlegOn() ? ' data-rleg="' + esc(c.id + '|' + i) + '" role="button" tabindex="0" style="cursor:pointer" title="' + esc(T('guard.legStops', null, 'Stuknij — przystanki tego odcinka')) + '"' : '');
+      return StopsView.legA({ icon: gz ? '🚌' : '🚆', label: label, dir: (function () { var rw = r.raw && r.raw[i]; return rw && Array.isArray(rw.route) && rw.route.length ? rw.route[rw.route.length - 1].stationName : (gz && l.head) || ''; })(), tag: tag, attrs: attrs,
+        dep: { time: dR, plan: dP, station: l.board.stationName, plat: d ? rr.platformDep : '' },
+        arr: { time: aR, plan: aP + (l.alight.nextDay ? '' : ''), station: l.alight.stationName, plat: d ? rr.platformArr : '', platNext: t && nx && !nx.noData ? nx.platformDep : '' },
+        xfer: t ? { status: t.status, slack: t.slack } : null, details: det.join('<br>'), warn: warn, key: 'g|' + c.id + '|' + i,
+        after: !gz && rlegOpen[c.id + '|' + i] ? '<div class="gv-rtrip">' + railStops(c.id, i) + '</div>' : '' });
+    }
     function xferHtml(t, rising, la, lb) {
       var s = t.status;
       var main;
@@ -429,7 +470,8 @@
       }
       if (oldTimetable(c)) html += '<div class="waiting">🗓️ ' + esc(T('guard.oldTt', null, 'Zapisane według starego rozkładu (przed 13.12). Ten pociąg może jechać o innej godzinie albo wcale.')) +
         ' <a class="btn-sm secondary" href="' + esc(findNewUrl(c)) + '">' + esc(T('guard.findNew', null, '🔎 Znajdź nowe połączenie')) + '</a></div>';
-      c.legs.forEach(function (l, i) {
+      if (layoutA()) { html += '<div class="gv-ja">' + c.legs.map(function (l, i) { return legAHtml(c, r, l, i); }).join('') + '</div>'; }
+      else c.legs.forEach(function (l, i) {
         html += legHtml(l, r.legs ? r.legs[i] : null, c.date, c.id, i);
         if (i < c.legs.length - 1 && r.transfers && r.transfers[i]) html += xferHtml(r.transfers[i], r.rising && r.worst === i, l, c.legs[i + 1]);
       });
@@ -497,7 +539,7 @@
       if (rl && !e.target.closest('a,button,summary,details')) { var rk = rl.dataset.rleg; if (rlegOpen[rk]) delete rlegOpen[rk]; else rlegOpen[rk] = 1; render(); if (rlegOpen[rk] && window.StopsView) setTimeout(function () { var el = [].slice.call(document.querySelectorAll("[data-rleg]")).filter(function (x) { return x.dataset.rleg === rk; })[0]; StopsView.scrollTo(el && (el.closest(".card") || el)); }, 60); return; }
       // odcinek autobusu/tramwaju: rozwiń trasę kursu (z zakładki 🚆🚌 — gzm-view.js)
       var gl = e.target.closest('[data-gtrip]');
-      if (gl && !e.target.closest('button,a')) {
+      if (gl && !e.target.closest('button,a,summary,details')) {
         var nx = gl.nextElementSibling;
         if (nx && nx.classList.contains('gv-gztrip')) { nx.remove(); return; }
         if (!window.GzmTripHtml) return;

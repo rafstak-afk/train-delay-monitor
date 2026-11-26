@@ -151,5 +151,50 @@
       line + plat +
       (body ? "<details" + dk + "><summary" + (warn ? ' class="xv-warn"' : "") + ">▸ " + esc(T("xfer.details", null, "szczegóły")) + "</summary>" + body + "</details>" : "") + "</div>";
   }
-  window.StopsView = { isOpen: function (k) { return !!openMk[k]; }, scrollTo: scrollTo, html: html, xfer: xfer, trainUrl: trainUrl, ready: function () { gzmIndex(); return gzmP; } };
+  // ===== 26.11 wariant A: odcinek podróży — numer pociągu nad wszystkim, linia odjazdu i linia przyjazdu;
+  // odpowiedź o przesiadce w linii przyjazdu na stację przesiadki; reszta w „▸ szczegóły” (czerwone przy odchyleniach).
+  // o: { icon, label (html), dir, tag (html obok numeru), attrs (atrybuty bloku), dep: {time, plan, station, plat}, arr: {time, plan, station, plat, platNext},
+  //      xfer: {status, slack} | null, details (html), warn, key, after (html pod blokiem, np. rozwinięte stacje) }
+  var LCSS = ".jl{padding:8px 0 6px}.jl+.jl{border-top:1px solid #2b3b4f}.jl-h{font-weight:800;font-size:15.5px;margin:0 0 4px;display:flex;flex-wrap:wrap;align-items:baseline;gap:6px}" +
+    ".jl-h .jl-d{font-weight:400;color:#9fb0c2;font-size:14px}.jl-h a{color:inherit;text-decoration:underline;text-decoration-color:#4b6584;text-underline-offset:3px}" +
+    ".jl-r{display:grid;grid-template-columns:58px minmax(0,1fr) auto;gap:8px;align-items:center;padding:3px 0}.jl-t{font-weight:900;font-size:16px;line-height:1.1}" +
+    ".jl-t s{display:block;font-size:11.5px;color:#8b95a1;font-weight:400}.jl-t .late{color:#facc15}.jl-s{font-size:15px;font-weight:700;min-width:0;overflow-wrap:anywhere}" +
+    ".jl-s small{display:block;font-weight:400;color:#9fb0c2;font-size:12.5px}.jl .xv-b{flex:none;border-radius:999px;padding:3px 9px;font-size:12.5px;font-weight:800;white-space:nowrap}" +
+    ".jl-ok .xv-b{background:rgba(34,197,94,.16);color:#4ade80}.jl-risk .xv-b{background:rgba(250,204,21,.16);color:#facc15}.jl-edge .xv-b,.jl-broken .xv-b{background:rgba(255,77,77,.18);color:#ff6b6b}" +
+    ".jl-edge .xv-b{animation:xvb 1.2s ease-in-out infinite}.jl-nodata .xv-b{background:#334155;color:#cbd5e1}.jl-cancelled .xv-b{background:#000;color:#fff;border:1px solid #555}" +
+    ".jl details{margin-top:2px}.jl summary{cursor:pointer;color:#8ea3ba;font-size:12.5px;list-style:none;padding:2px 0}.jl summary::-webkit-details-marker{display:none}.jl summary.xv-warn{color:#ff6b6b;font-weight:700}" +
+    ".jl .jl-det{font-size:12.5px;color:#9fb0c2;line-height:1.45;margin-top:2px}";
+  function lcss() { xcss(); if (document.getElementById("jl-css")) return; var st = document.createElement("style"); st.id = "jl-css"; st.textContent = LCSS; document.head.appendChild(st); }
+  function xBadge(x) {
+    if (!x) return "";
+    var s = x.status || "ok", n = Number(x.slack), b;
+    if (s === "nodata") b = T("xfer.noData", null, "brak danych");
+    else if (s === "cancelled") b = T("xfer.cancelled", null, "pociąg odwołany");
+    else if (!isFinite(n)) return "";
+    else if (n < 0) b = T("xfer.short", { n: -n }, "{n} min za mało").replace("{n}", -n);
+    else if (s === "broken") b = T("xfer.tooLittle", { n: n }, "tylko {n} min — za mało").replace("{n}", n);
+    else if (s === "edge") b = T("xfer.edge", { n: n }, "{n} min — na granicy").replace("{n}", n);
+    else if (s === "risk") b = T("xfer.tight", { n: n }, "{n} min zapasu — na styk").replace("{n}", n);
+    else b = T("xfer.spare", { n: n }, "{n} min zapasu").replace("{n}", n);
+    return '<span class="xv-b">' + esc(b) + "</span>";
+  }
+  function legA(o) {
+    lcss(); o = o || {};
+    var tcell = function (p) { var r = sh(p.time), pl = sh(p.plan); if (r && pl && r !== pl) return "<s>" + esc(pl) + '</s><span class="late">' + esc(r) + "</span>"; return esc(r || pl || ""); };
+    var pcell = function (p, next) {
+      var a = p.plat ? String(p.plat) : "", b = next ? String(next) : "";
+      if (a && b && a !== b) return T("xfer.plat", { a: a, b: b }, "Peron {a} → {b}").replace("{a}", a).replace("{b}", b).toLowerCase();
+      return a ? (/^\D/.test(a) ? a : T("gzm.c99Plat", { p: a }, "peron {p}").replace("{p}", a)) : (b ? T("gzm.c99Plat", { p: b }, "peron {p}").replace("{p}", b) : "");
+    };
+    var row = function (p, next, badge) { if (!p) return ""; var pc = pcell(p, next); return '<div class="jl-r"><div class="jl-t">' + tcell(p) + '</div><div class="jl-s">' + esc(p.station || "") + (pc ? "<small>" + esc(pc) + "</small>" : "") + "</div><div>" + (badge || "") + "</div></div>"; };
+    var x = o.xfer, cls = "jl" + (x ? " jl-" + (x.status || "ok") : "");
+    var dk = o.key ? ' data-svk="' + esc("l|" + o.key) + '"' + (openMk["l|" + o.key] ? " open" : "") : "";
+    var late = (o.dep && sh(o.dep.time) && sh(o.dep.plan) && sh(o.dep.time) !== sh(o.dep.plan)) || (o.arr && sh(o.arr.time) && sh(o.arr.plan) && sh(o.arr.time) !== sh(o.arr.plan));
+    var warn = o.warn || late || (x && x.status && x.status !== "ok");
+    return '<div class="' + cls + '"' + (o.attrs || "") + '><div class="jl-h">' + (o.icon || "🚆") + " " + (o.label || "") + (o.dir ? ' <span class="jl-d">→ ' + esc(o.dir) + "</span>" : "") + (o.tag || "") + "</div>" +
+      row(o.dep, null, "") + row(o.arr, o.arr && o.arr.platNext, xBadge(x)) +
+      (o.details ? "<details" + dk + "><summary" + (warn ? ' class="xv-warn"' : "") + ">▸ " + esc(T("xfer.details", null, "szczegóły")) + '</summary><div class="jl-det">' + o.details + "</div></details>" : "") +
+      "</div>" + (o.after || "");
+  }
+  window.StopsView = { legA: legA, isOpen: function (k) { return !!openMk[k]; }, scrollTo: scrollTo, html: html, xfer: xfer, trainUrl: trainUrl, ready: function () { gzmIndex(); return gzmP; } };
 })();
