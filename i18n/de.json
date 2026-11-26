@@ -1503,7 +1503,11 @@
     "fFrom": "ab: {s}",
     "fOff": "aussteigen {t}",
     "fThere": "Angekommen",
-    "platN": "Bahnsteig {p}"
+    "platN": "Bahnsteig {p}",
+    "c99Plat": "Bahnsteig {p}",
+    "c99PlatTr": "Bahnsteig {p}, Gleis {t}",
+    "c99X": "Umstiege: {n}",
+    "c99Direct": "ohne Umstieg"
   },
   "tt": {
     "swapLater": "Ab 13.12 ersetzen",

@@ -1503,7 +1503,11 @@
     "fFrom": "from: {s}",
     "fOff": "get off {t}",
     "fThere": "Arrived",
-    "platN": "platform {p}"
+    "platN": "platform {p}",
+    "c99Plat": "platform {p}",
+    "c99PlatTr": "platform {p}, track {t}",
+    "c99X": "changes: {n}",
+    "c99Direct": "direct"
   },
   "tt": {
     "swapLater": "Replace from 13.12",

@@ -2258,6 +2258,19 @@
     // 25.11 (prośba: „tak samo czytelnie w Pociąg + GZM”): pod przejazdem jego przystanki — odcinek widoczny, przed i po zwinięte.
     // GZM: bieg kursu z rozkładu ZTM (tripHtml); pociąg: trasa z PLK (/api/train-details, wczytywana raz, pamiętana).
     var fTrainCache = {};
+    // TODO 99 (26.11): perony i tory przy wsiadaniu i wysiadaniu — z biegu pociągu (to samo zapytanie i ta sama pamięć co „Trasa”)
+    function fTrainPlat(leg, date) {
+      if (!leg || !leg.orderId) return null;
+      var k = leg.scheduleId + "|" + leg.orderId + "|" + date; if (!fTrainCache[k]) fTrainStops(leg, date);
+      var c = fTrainCache[k], route = c && c.d && Array.isArray(c.d.route) ? c.d.route : null; if (!route) return null;
+      var nn = function (v) { return String(v || "").trim().toLowerCase(); }, ib = route.findIndex(function (x) { return nn(x.stationName) === nn(leg.board.stationName); }), ia = -1;
+      for (var i = Math.max(0, ib + 1); i < route.length; i++) if (nn(route[i].stationName) === nn(leg.alight.stationName)) { ia = i; break; }
+      var pt = function (x) {
+        if (!x) return ""; var p = x.platform && x.platform !== "-" ? x.platform : "", t = x.track && x.track !== "-" ? x.track : "";
+        return p ? (t ? T("gzm.c99PlatTr", { p: p, t: t }, "peron {p}, tor {t}").replace("{p}", p).replace("{t}", t) : T("gzm.c99Plat", { p: p }, "peron {p}").replace("{p}", p)) : "";
+      };
+      return { b: pt(ib >= 0 ? route[ib] : null), a: pt(ia >= 0 ? route[ia] : null) };
+    }
     function fTrainStops(leg, date) {
       var k = leg.scheduleId + "|" + leg.orderId + "|" + date, c = fTrainCache[k];
       if (!c) {
@@ -2322,13 +2335,17 @@
         }
         var live = q.live ? (q.delay ? '<span class="ce-tight">+' + q.delay + " min " + esc(T("gzm.ceLive", null, "na żywo")) + "</span>" : esc(T("gzm.ceOnTime", null, "jedzie punktualnie"))) : q.arrDelay ? '<span class="ce-tight">+' + q.arrDelay + " min " + esc(T("gzm.ceLive", null, "na żywo")) + "</span>" : "";
         var from = esc(q.from) + (q.fromSt ? ", " + esc(T("gzm.stand", { n: q.fromSt }, "stan. {n}")) : "");
-        var sm = esc(T("gzm.fFrom", { s: "" }, "z: {s}")) + from + " · " + esc(T("gzm.fOff", { t: "" }, "wysiadasz {t}")) + ceTime(q.arrPlan != null ? q.arrPlan : q.arr, q.arrDelay ? q.arr : null) + (q.toSt ? " (" + esc(T("gzm.stand", { n: q.toSt }, "stan. {n}")) + ")" : "") + (live ? " · " + live : "");
-        rows.push(fRow(ceTime(q.depPlan, q.delay ? q.dep : null), fRideName(q) + " → " + esc(q.to), sm, "f-ride"));
+        var p99 = q.train && xAuthor() ? fTrainPlat(q.leg, (cState && cState.date) || warsawNow().date) : null;   // TODO 99
+        if (p99 && p99.b) from += ", <b>" + esc(p99.b) + "</b>";
+        var sm = esc(T("gzm.fFrom", { s: "" }, "z: {s}")) + from + " · " + esc(T("gzm.fOff", { t: "" }, "wysiadasz {t}")) + ceTime(q.arrPlan != null ? q.arrPlan : q.arr, q.arrDelay ? q.arr : null) + (q.toSt ? " (" + esc(T("gzm.stand", { n: q.toSt }, "stan. {n}")) + ")" : "") + (p99 && p99.a ? ", " + esc(p99.a) : "") + (live ? " · " + live : "");
+        rows.push(fRow(ceTime(q.depPlan, q.delay ? q.dep : null), (q.train && xAuthor() ? q.icon + " <b>" + esc(q.line) + "</b>" : fRideName(q)) + " → " + esc(q.to), sm, "f-ride"));   // TODO 99: pełny numer, np. S9 40362
         if (showStops) rows.push(fStops(q));
         prevArr = q.arr;
       });
       rows.push(fRow(C.fmt(x.final), "🏁 <b>" + esc(T("gzm.fThere", null, "Na miejscu")) + "</b>", x.why ? esc(x.why) : ""));
-      return '<div class="c-head" style="display:block">' + fR1(x, steps, leave) + '</div><table class="f-tt">' + rows.join("") + "</table>";
+      // TODO 99: czas podróży i liczba przesiadek pod godzinami
+      var m99 = ""; if (xAuthor()) { var nx99 = steps.filter(function (q) { return q.k === "xfer"; }).length; m99 = '<div style="font-size:13.5px;color:var(--muted);margin-top:2px">⏱️ ' + esc(v2Total(x.final - leave)) + " · " + esc(nx99 ? T("gzm.c99X", { n: nx99 }, "przesiadki: {n}").replace("{n}", nx99) : T("gzm.c99Direct", null, "bez przesiadek")) + "</div>"; }
+      return '<div class="c-head" style="display:block">' + fR1(x, steps, leave) + m99 + '</div><table class="f-tt">' + rows.join("") + "</table>";
     }
     // ===== Logika v3: pieszo, filtry absurdów, pierwszeństwo kolei (TEST — tylko profil autora) =====
     var NODE_M = 300;

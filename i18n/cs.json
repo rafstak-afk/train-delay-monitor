@@ -1503,7 +1503,11 @@
     "fFrom": "z: {s}",
     "fOff": "vystupuješ {t}",
     "fThere": "Na místě",
-    "platN": "nástupiště {p}"
+    "platN": "nástupiště {p}",
+    "c99Plat": "nástupiště {p}",
+    "c99PlatTr": "nástupiště {p}, kolej {t}",
+    "c99X": "přestupy: {n}",
+    "c99Direct": "bez přestupu"
   },
   "tt": {
     "swapLater": "Nahradit od 13.12",

@@ -1503,7 +1503,11 @@
     "fFrom": "z: {s}",
     "fOff": "wysiadasz {t}",
     "fThere": "Na miejscu",
-    "platN": "peron {p}"
+    "platN": "peron {p}",
+    "c99Plat": "peron {p}",
+    "c99PlatTr": "peron {p}, tor {t}",
+    "c99X": "przesiadki: {n}",
+    "c99Direct": "bez przesiadek"
   },
   "tt": {
     "swapLater": "Zamień od 13.12",

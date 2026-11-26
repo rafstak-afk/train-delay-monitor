@@ -1503,7 +1503,11 @@
     "fFrom": "desde: {s}",
     "fOff": "te bajas {t}",
     "fThere": "Llegada",
-    "platN": "andén {p}"
+    "platN": "andén {p}",
+    "c99Plat": "andén {p}",
+    "c99PlatTr": "andén {p}, vía {t}",
+    "c99X": "transbordos: {n}",
+    "c99Direct": "sin transbordos"
   },
   "tt": {
     "swapLater": "Sustituir desde el 13.12",
