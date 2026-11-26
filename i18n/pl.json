@@ -1563,5 +1563,25 @@
     "gpsErr": "Nie udało się ustalić położenia. Spróbuj ponownie.",
     "titleBoth": "Najbliższe stacje i przystanki (w linii prostej)",
     "inaccurate": "Położenie jest przybliżone (± {km} km) — to może być lokalizacja dostawcy internetu, nie Twoja. Na komputerze włącz usługi lokalizacji w systemie albo wpisz stację ręcznie."
+  },
+  "xfer": {
+    "noData": "brak danych",
+    "cancelled": "pociąg odwołany",
+    "short": "{n} min za mało",
+    "tooLittle": "tylko {n} min — za mało",
+    "edge": "{n} min — na granicy",
+    "tight": "{n} min zapasu — na styk",
+    "spare": "{n} min zapasu",
+    "times": "Przyjazd {a} → odjazd {b}",
+    "plat": "Peron {a} → {b}",
+    "walk": "Przejście: {a} → {b}",
+    "details": "szczegóły",
+    "dPlan": "Wg rozkładu {n} min na przesiadkę, potrzeba {m} min",
+    "dPlanOnly": "Wg rozkładu {n} min na przesiadkę",
+    "dPlat": "W tym +2 min na zmianę peronu",
+    "dStation": "W tym +5 min na przejście między stacjami",
+    "dTimes": "Rozkład: przyjazd {a}, odjazd {b}",
+    "dDelay": "Opóźnienie: przyjazd +{a} min, odjazd +{b} min",
+    "dWalk": "Na przejście liczymy {n} min"
   }
 }

@@ -315,6 +315,22 @@
         var toSt = la.mode === 'gzm', stN = toSt ? lb.board.stationName : la.alight.stationName, stopN = toSt ? la.alight.stationName : lb.board.stationName, code = (toSt ? la.alight.code : lb.board.code) || '';
         mb = ' <button type="button" data-gpmap="' + esc(stN + '|' + stopN + '|' + code + '|' + (toSt ? 1 : 0)) + '" title="' + esc(T('gzm.wmapTitle2', null, 'Droga na mapie')) + '" style="border:0;background:none;cursor:pointer;font-size:1em;padding:0 2px">🗺️</button>';
       }
+      // TODO 113 (26.11, profil autora): jedna odpowiedź — „Katowice · 46 min zapasu”; wyliczenia w „szczegóły”
+      if (window.StopsView && StopsView.xfer && localStorage.getItem('showVersionBadge') === '1') {
+        var notes = '';
+        if (t.wait) notes += '<div class="src" style="color:#cfe0f5;margin-top:4px">' + esc(G.waitText(t, curLang())) + '</div>';
+        if (t.onlyThanksToB) notes += '<div class="warn">' + esc(T('guard.onlyThanksToB', { b: G.trainLabel(t.trainB) }, 'Zdążysz tylko, jeśli ' + G.trainLabel(t.trainB) + ' nie nadrobi opóźnienia.')) + '</div>';
+        if (rising) notes += '<div class="warn">📈 ' + esc(T('guard.rising', null, 'Opóźnienie rośnie')) + '</div>';
+        var det = [];
+        if (typeof t.plannedSlack === 'number') det.push(T('xfer.dPlan', { n: t.plannedSlack, m: t.need }, 'Wg rozkładu {n} min na przesiadkę, potrzeba {m} min').replace('{n}', t.plannedSlack).replace('{m}', t.need));
+        if (t.platformChange) det.push(T('xfer.dPlat', null, 'W tym +2 min na zmianę peronu'));
+        if (t.stationChange) det.push(T('xfer.dStation', null, 'W tym +5 min na przejście między stacjami'));
+        if (t.plannedArrA && t.plannedDepB) det.push(T('xfer.dTimes', { a: t.plannedArrA, b: t.plannedDepB }, 'Rozkład: przyjazd {a}, odjazd {b}').replace('{a}', t.plannedArrA).replace('{b}', t.plannedDepB));
+        if (typeof t.delayA === 'number' || typeof t.delayB === 'number') det.push(T('xfer.dDelay', { a: t.delayA || 0, b: t.delayB || 0 }, 'Opóźnienie: przyjazd +{a} min, odjazd +{b} min').replace('{a}', t.delayA || 0).replace('{b}', t.delayB || 0));
+        return StopsView.xfer({ station: t.station, status: s, slack: t.slack, need: t.need,
+          arr: t.plannedArrA ? G.fmt(G.hm(t.plannedArrA) + (t.delayA || 0)) : '', arrPlan: t.plannedArrA, dep: t.plannedDepB ? G.fmt(G.hm(t.plannedDepB) + (t.delayB || 0)) : '', depPlan: t.plannedDepB,
+          platA: t.platformArr, platB: t.platformDep, walkTo: t.stationChange ? t.toStation : '', icon: mb, notes: notes, details: det, key: 'g|' + t.station + '|' + (t.plannedDepB || '') });
+      }
       return '<div class="xfer s-' + s + '">' + EMO[s] + ' ' + esc(main) + mb + times + extra + '</div>';
     }
     // ===== ⏰ Przypomnienia o wyjściu z domu (TEST — tylko profil autora) =====

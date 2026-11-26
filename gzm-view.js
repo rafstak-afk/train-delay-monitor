@@ -2284,6 +2284,7 @@
       return foldRoute(rows, ib, ia, "f|" + leg.orderId, "station");
     }
     // 25.11: „▼ Trasa” = przystanki każdego pojazdu w karcie (pod jego wierszem); rozwinięcie karty samo — bez przystanków.
+    function xAuthor() { try { return localStorage.getItem("showVersionBadge") === "1"; } catch (e) { return false; } }   // TODO 113: nowy wygląd przesiadki — najpierw profil autora
     function fInline() { if (ceOn() && Date.now() >= Date.parse("2026-11-25T17:00:00+01:00")) return true; try { return ceOn() && localStorage.getItem("showVersionBadge") === "1"; } catch (e) { return false; } }   // dla wszystkich od 25.11 17:00 (zaplanowane), wcześniej profil autora
     function fStops(q) {
       if (!fInline()) return "";
@@ -2306,6 +2307,15 @@
         }
         if (q.k === "xfer") {
           var w = steps[i - 1] && steps[i - 1].k === "walk" ? steps[i - 1] : null, sl = '<span class="' + F_CLS[q.st] + '">' + (q.st === "missed" ? esc(T("gzm.ceMiss", { n: -q.slack }, "brakuje {n} min — możesz nie zdążyć")) : esc(T("gzm.fSlack", { n: q.slack }, "zapas {n} min"))) + "</span>";
+          // TODO 113 (26.11, profil autora): przesiadka jako jedna odpowiedź — ten sam wygląd co w Pilnowanych i wyszukiwarce kolejowej
+          if (window.StopsView && StopsView.xfer && xAuthor()) {
+            var nx = steps[i + 1] || {}, xs = { ok: "ok", tight: "risk", edge: "edge", missed: "broken" }[q.st] || "ok";
+            var xn = w ? '<div class="xv-p">🚶 ' + esc(T("xfer.walk", { a: w.from, b: w.to }, "Przejście: {a} → {b}").replace("{a}", w.from).replace("{b}", w.to)) + " · " + w.min + " min" + fMk(w) + (w.mb || "") + "</div>" : "";
+            var xd = []; if (w) xd.push(T("xfer.dWalk", { n: w.min }, "Na przejście liczymy {n} min").replace("{n}", w.min));
+            rows.push('<tr class="f-x"><td colspan="2" style="padding:0">' + StopsView.xfer({ station: w ? w.to : q.at, status: xs, slack: q.slack,
+              arr: prevArr != null ? C.fmt(prevArr) : "", dep: nx.dep != null ? C.fmt(nx.dep) : "", depPlan: nx.depPlan != null ? C.fmt(nx.depPlan) : "", notes: xn, details: xd, key: "f|" + (q.at || "") + "|" + (nx.dep || "") }) + "</td></tr>");
+            return;
+          }
           var what = w ? "🚶 " + esc(w.from) + " → <b>" + esc(w.to) + "</b>" : "⏳ " + esc(T("gzm.ceXfer", { s: "" }, "Przesiadka: {s}")) + "<b>" + esc(q.at) + "</b>";
           rows.push(fRow(prevArr != null ? C.fmt(prevArr) : "", what, (w ? w.min + " min" + fMk(w) + " · " : "") + sl + (w ? w.mb : ""), "x-" + q.st));
           return;

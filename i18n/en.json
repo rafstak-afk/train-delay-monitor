@@ -1563,5 +1563,25 @@
     "gpsErr": "Could not find your location. Try again.",
     "titleBoth": "Nearest stations and stops (straight line)",
     "inaccurate": "Your location is approximate (± {km} km) — it may be your internet provider's location, not yours. On a computer, turn on location services in the system or type the station."
+  },
+  "xfer": {
+    "noData": "no data",
+    "cancelled": "train cancelled",
+    "short": "{n} min short",
+    "tooLittle": "only {n} min — too little",
+    "edge": "{n} min — borderline",
+    "tight": "{n} min to spare — tight",
+    "spare": "{n} min to spare",
+    "times": "Arrive {a} → depart {b}",
+    "plat": "Platform {a} → {b}",
+    "walk": "Walk: {a} → {b}",
+    "details": "details",
+    "dPlan": "Timetable gives {n} min to change, {m} min needed",
+    "dPlanOnly": "Timetable gives {n} min to change",
+    "dPlat": "Includes +2 min for a platform change",
+    "dStation": "Includes +5 min to walk between stations",
+    "dTimes": "Timetable: arrive {a}, depart {b}",
+    "dDelay": "Delay: arrival +{a} min, departure +{b} min",
+    "dWalk": "We allow {n} min for the walk"
   }
 }

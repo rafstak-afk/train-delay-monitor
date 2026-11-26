@@ -1019,6 +1019,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     if(ai<route.length-1)rows+='<details style="margin:2px 0"><summary style="cursor:pointer;opacity:.75;font-size:13px">'+escapeHtml(T('planer.det.after',{n:route.length-1-ai}))+'</summary>'+route.slice(ai+1).map(function(x){return det77StopRow(x,false,'arr')}).join('')+'</details>';
     return head+'<div style="border-left:3px solid #3b82f6;padding-left:10px">'+rows+'</div>';
   }
+  function det77AuthorX(){try{return localStorage.getItem('showVersionBadge')==='1'}catch(e){return false}}
   function det77Xfer(t,legA,legB,dA,dB,stats){
     var find=function(d,name,after){var r=d&&Array.isArray(d.route)?d.route:[];for(var i=0;i<r.length;i++)if(det77Norm(r[i].stationName)===det77Norm(name))return r[i];return null};
     var a=find(dA,legA.alight.stationName),b=find(dB,legB.board.stationName);
@@ -1026,6 +1027,21 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     var plan=t&&t.bufferMinutes!=null?+t.bufferMinutes:null;
     var la=det77Delay(a,'arr'),lb=det77Delay(b,'dep'),live=plan!=null&&(la!=null||lb!=null)?plan+(lb||0)-(la||0):null;
     var sl=live!=null?live:plan,em=sl==null?'':sl>=5?'🟢':sl>=3?'🟡':'🔴';
+    // TODO 113 (26.11, profil autora): jedna odpowiedź — „Katowice · 46 min zapasu”, wyliczenia w „szczegóły”
+    if(window.StopsView&&StopsView.xfer&&det77AuthorX()){
+      var stx=t?t.stationName:legA.alight.stationName,notes='',det=[];
+      if(stats&&window.GuardCore&&GuardCore.waitHint&&sl!=null&&sl<5){
+        var h2=GuardCore.waitHint(stats,stx,legB.train&&legB.train.number,legA.train&&legA.train.number,GuardCore.lineOf(dB&&dB.name),GuardCore.lineOf(dA&&dA.name));
+        if(h2)notes='<div style="margin-top:4px;font-size:13px;color:#cfe0f5">'+escapeHtml(GuardCore.waitText({wait:h2,trainA:legA.train,trainB:legB.train,station:stx,needWait:Math.max(0,3-sl)},(window.I18n&&I18n.getLang?I18n.getLang():'pl')))+'</div>';
+      }
+      if(plan!=null)det.push(T('xfer.dPlanOnly',{n:plan}).replace('{n}',plan));
+      if(pa&&pb&&pa===pb)det.push(T('planer.det.samePlat',{p:pa}));
+      if(la||lb)det.push(T('xfer.dDelay',{a:la||0,b:lb||0}).replace('{a}',la||0).replace('{b}',lb||0));
+      var hm=function(x){var m=/(\d{1,2}):(\d{2})/.exec(String(x||''));return m?+m[1]*60+ +m[2]:null},fm=function(v){v=((v%1440)+1440)%1440;return String(Math.floor(v/60)).padStart(2,'0')+':'+String(v%60).padStart(2,'0')};
+      var ap=legA.alight.time,dp=legB.board.time,ar=hm(ap)!=null&&la?fm(hm(ap)+la):ap,dr=hm(dp)!=null&&lb?fm(hm(dp)+lb):dp;
+      var stS=sl==null?'nodata':sl<0?'broken':sl<3?'edge':sl<5?'risk':'ok';
+      return StopsView.xfer({station:stx,status:stS,slack:sl,arr:ar,arrPlan:ap,dep:dr,depPlan:dp,platA:pa,platB:pb,notes:notes,details:det,key:'p|'+stx+'|'+dp});
+    }
     var lines=[];
     if(pa||pb)lines.push(pa&&pb?(pa===pb?T('planer.det.samePlat',{p:pa}):T('planer.det.platChange',{a:pa,b:pb})):T('planer.det.platform',{p:pa||pb}));
     if(plan!=null)lines.push(em+' '+T('planer.det.slack',{n:plan})+(live!=null&&live!==plan?' · '+T('planer.det.slackLive',{n:live}):''));

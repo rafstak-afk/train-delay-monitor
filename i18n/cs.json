@@ -1563,5 +1563,25 @@
     "gpsErr": "Polohu se nepodařilo zjistit. Zkus to znovu.",
     "titleBoth": "Nejbližší stanice a zastávky (vzdušnou čarou)",
     "inaccurate": "Poloha je přibližná (± {km} km) — může jít o polohu poskytovatele internetu. Na počítači zapni služby určování polohy v systému nebo napiš stanici ručně."
+  },
+  "xfer": {
+    "noData": "bez dat",
+    "cancelled": "vlak zrušen",
+    "short": "o {n} min méně",
+    "tooLittle": "jen {n} min — málo",
+    "edge": "{n} min — na hraně",
+    "tight": "{n} min rezerva — těsně",
+    "spare": "{n} min rezerva",
+    "times": "Příjezd {a} → odjezd {b}",
+    "plat": "Nástupiště {a} → {b}",
+    "walk": "Přechod: {a} → {b}",
+    "details": "podrobnosti",
+    "dPlan": "Podle jízdního řádu {n} min na přestup, potřeba {m} min",
+    "dPlanOnly": "Podle jízdního řádu {n} min na přestup",
+    "dPlat": "Z toho +2 min na změnu nástupiště",
+    "dStation": "Z toho +5 min na přechod mezi stanicemi",
+    "dTimes": "Jízdní řád: příjezd {a}, odjezd {b}",
+    "dDelay": "Zpoždění: příjezd +{a} min, odjezd +{b} min",
+    "dWalk": "Na přechod počítáme {n} min"
   }
 }

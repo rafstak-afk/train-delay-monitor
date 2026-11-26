@@ -1563,5 +1563,25 @@
     "gpsErr": "No se pudo obtener tu ubicación. Inténtalo de nuevo.",
     "titleBoth": "Estaciones y paradas más cercanas (en línea recta)",
     "inaccurate": "La ubicación es aproximada (± {km} km): puede ser la de tu proveedor de internet. En el ordenador activa los servicios de ubicación del sistema o escribe la estación."
+  },
+  "xfer": {
+    "noData": "sin datos",
+    "cancelled": "tren cancelado",
+    "short": "faltan {n} min",
+    "tooLittle": "solo {n} min — insuficiente",
+    "edge": "{n} min — al límite",
+    "tight": "{n} min de margen — justo",
+    "spare": "{n} min de margen",
+    "times": "Llegada {a} → salida {b}",
+    "plat": "Andén {a} → {b}",
+    "walk": "A pie: {a} → {b}",
+    "details": "detalles",
+    "dPlan": "El horario da {n} min para el transbordo, se necesitan {m} min",
+    "dPlanOnly": "El horario da {n} min para el transbordo",
+    "dPlat": "Incluye +2 min por cambio de andén",
+    "dStation": "Incluye +5 min a pie entre estaciones",
+    "dTimes": "Horario: llegada {a}, salida {b}",
+    "dDelay": "Retraso: llegada +{a} min, salida +{b} min",
+    "dWalk": "Contamos {n} min para el trayecto a pie"
   }
 }

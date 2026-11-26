@@ -1563,5 +1563,25 @@
     "gpsErr": "Standort konnte nicht ermittelt werden. Versuche es erneut.",
     "titleBoth": "Nächste Bahnhöfe und Haltestellen (Luftlinie)",
     "inaccurate": "Der Standort ist ungenau (± {km} km) — evtl. der Standort deines Internetanbieters. Am Computer die Ortungsdienste im System einschalten oder den Bahnhof eintippen."
+  },
+  "xfer": {
+    "noData": "keine Daten",
+    "cancelled": "Zug fällt aus",
+    "short": "{n} Min. zu wenig",
+    "tooLittle": "nur {n} Min. — zu wenig",
+    "edge": "{n} Min. — grenzwertig",
+    "tight": "{n} Min. Puffer — knapp",
+    "spare": "{n} Min. Puffer",
+    "times": "Ankunft {a} → Abfahrt {b}",
+    "plat": "Bahnsteig {a} → {b}",
+    "walk": "Fußweg: {a} → {b}",
+    "details": "Details",
+    "dPlan": "Laut Fahrplan {n} Min. zum Umsteigen, nötig {m} Min.",
+    "dPlanOnly": "Laut Fahrplan {n} Min. zum Umsteigen",
+    "dPlat": "Davon +2 Min. für Bahnsteigwechsel",
+    "dStation": "Davon +5 Min. Fußweg zwischen Bahnhöfen",
+    "dTimes": "Fahrplan: Ankunft {a}, Abfahrt {b}",
+    "dDelay": "Verspätung: Ankunft +{a} Min., Abfahrt +{b} Min.",
+    "dWalk": "Für den Fußweg rechnen wir {n} Min."
   }
 }

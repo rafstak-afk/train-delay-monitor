@@ -113,5 +113,37 @@
     var bar = document.querySelector(".ptabs"), off = (bar ? bar.getBoundingClientRect().height : 0) + 8;
     window.scrollTo({ top: Math.max(0, el.getBoundingClientRect().top + window.pageYOffset - off), behavior: "smooth" });
   }
-  window.StopsView = { scrollTo: scrollTo, html: html, trainUrl: trainUrl, ready: function () { gzmIndex(); return gzmP; } };
+  // ===== TODO 113 (26.11): przesiadka jako jedna odpowiedź — „Katowice · 46 min zapasu” / „Chorzów Batory · 14 min za mało”.
+  // Wspólne dla Pilnowanych, wyszukiwarki kolejowej i Pociąg + GZM. Wyliczenia (plan, potrzebny czas, zmiana peronu) — w „szczegóły”.
+  // o: { station, status: ok|risk|edge|broken|nodata|cancelled, slack, need, arr, arrPlan, dep, depPlan, platA, platB, walkTo,
+  //      icon (html obok nazwy, np. 🗺️), notes (html pod spodem: ostrzeżenia), details: [teksty], key }
+  var XCSS = ".xv{background:#16212d;border:1px solid #2b3b4f;border-radius:12px;padding:10px 12px;margin:8px 0}.xv-h{display:flex;align-items:center;justify-content:space-between;gap:8px}" +
+    ".xv-st{font-weight:800;font-size:15px;min-width:0}.xv-b{flex:none;border-radius:999px;padding:3px 10px;font-size:13px;font-weight:800;white-space:nowrap}" +
+    ".xv-ok .xv-b{background:rgba(34,197,94,.16);color:#4ade80}.xv-risk .xv-b{background:rgba(250,204,21,.16);color:#facc15}.xv-edge .xv-b,.xv-broken .xv-b{background:rgba(255,77,77,.18);color:#ff6b6b}" +
+    ".xv-nodata .xv-b{background:#334155;color:#cbd5e1}.xv-cancelled .xv-b{background:#000;color:#fff;border:1px solid #555}.xv-broken{border-color:rgba(255,77,77,.45)}.xv-edge .xv-b{animation:xvb 1.2s ease-in-out infinite}" +
+    "@keyframes xvb{50%{opacity:.45}}.xv-l{margin-top:5px;font-size:14px;color:#dbe5f1}.xv-l .late{color:#facc15;font-weight:700}.xv-p{margin-top:3px;font-size:13.5px;color:#9fb0c2}" +
+    ".xv details{margin-top:6px}.xv summary{cursor:pointer;color:#8ea3ba;font-size:12.5px;list-style:none}.xv summary::-webkit-details-marker{display:none}.xv .xv-d{font-size:12.5px;color:#9fb0c2;margin-top:4px;line-height:1.45}";
+  function xcss() { if (document.getElementById("xv-css")) return; var st = document.createElement("style"); st.id = "xv-css"; st.textContent = XCSS; document.head.appendChild(st); }
+  function xfer(o) {
+    xcss(); o = o || {};
+    var s = o.status || "ok", n = Number(o.slack), b;
+    if (s === "nodata") b = T("xfer.noData", null, "brak danych");
+    else if (s === "cancelled") b = T("xfer.cancelled", null, "pociąg odwołany");
+    else if (!isFinite(n)) b = "";
+    else if (n < 0) b = T("xfer.short", { n: -n }, "{n} min za mało").replace("{n}", -n);
+    else if (s === "broken") b = T("xfer.tooLittle", { n: n }, "tylko {n} min — za mało").replace("{n}", n);
+    else if (s === "edge") b = T("xfer.edge", { n: n }, "{n} min — na granicy").replace("{n}", n);
+    else if (s === "risk") b = T("xfer.tight", { n: n }, "{n} min zapasu — na styk").replace("{n}", n);
+    else b = T("xfer.spare", { n: n }, "{n} min zapasu").replace("{n}", n);
+    var tm = function (real, plan) { real = sh(real); plan = sh(plan); if (!real) return esc(plan); return real !== plan && plan ? '<span class="late">' + esc(real) + "</span>" : esc(real); };
+    var line = (o.arr || o.arrPlan) && (o.dep || o.depPlan) ? '<div class="xv-l">' + T("xfer.times", { a: "\u0001", b: "\u0002" }, "Przyjazd \u0001 → odjazd \u0002").replace("\u0001", tm(o.arr, o.arrPlan)).replace("\u0002", tm(o.dep, o.depPlan)) + "</div>" : "";
+    var plat = o.platA && o.platB && String(o.platA) !== String(o.platB) ? '<div class="xv-p">' + esc(T("xfer.plat", { a: o.platA, b: o.platB }, "Peron {a} → {b}").replace("{a}", o.platA).replace("{b}", o.platB)) + "</div>" : "";
+    var walk = o.walkTo ? '<div class="xv-p">' + esc(T("xfer.walk", { a: o.station, b: o.walkTo }, "Przejście: {a} → {b}").replace("{a}", o.station).replace("{b}", o.walkTo)) + "</div>" : "";
+    var det = (o.details || []).filter(Boolean);
+    var dk = o.key ? ' data-svk="' + esc("x|" + o.key) + '"' + (openMk["x|" + o.key] ? " open" : "") : "";
+    return '<div class="xv xv-' + esc(s) + '"><div class="xv-h"><span class="xv-st">' + esc(o.station || "") + (o.icon || "") + "</span>" + (b ? '<span class="xv-b">' + esc(b) + "</span>" : "") + "</div>" +
+      line + plat + walk + (o.notes || "") +
+      (det.length ? "<details" + dk + "><summary>▸ " + esc(T("xfer.details", null, "szczegóły")) + '</summary><div class="xv-d">' + det.map(esc).join("<br>") + "</div></details>" : "") + "</div>";
+  }
+  window.StopsView = { scrollTo: scrollTo, html: html, xfer: xfer, trainUrl: trainUrl, ready: function () { gzmIndex(); return gzmP; } };
 })();
