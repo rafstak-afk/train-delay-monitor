@@ -619,6 +619,34 @@ function dayDiff(a, b) { return Math.round((Date.parse(a + "T00:00:00Z") - Date.
 // Połączenia w oknie pilnowania (teraz), najwyżej MAX_ACTIVE — oraz te,
 // którym właśnie mija godzina od planowego przyjazdu (_remind: jedno
 // przypomnienie „Dojechałeś? Zapisz w dzienniczku”).
+// ===== TODO 8 cz. 2 (26.11): strażnik co minutę dla przesiadek w ciągu najbliższej godziny.
+// Pełny przebieg (co 5 min) zapisuje listę „gorących” profili (klucz guard:hot — zapis tylko przy zmianie, kilka razy dziennie),
+// a w pozostałych minutach Worker woła /api/push-tick?guard=1: tylko te profile i tylko połączenia z przesiadką
+// za -10…+60 min. Rozkład trasy z pamięci (6 h), na żywo tylko dane o ruchu pociągu.
+const GUARD_HOT_KEY = "guard:hot";
+function guardHot(c, now, nowMinutes) {
+  if (!c || c._remind || !Array.isArray(c.legs) || c.legs.length < 2) return false;
+  const rel = nowMinutes + dayDiff(now.date, c.date) * 1440;
+  return c.legs.slice(0, -1).some(l => { const t = GuardCore.hm(l.alight.time); return t != null && t >= rel - 10 && t <= rel + 60; });
+}
+async function guardMinute(env, origin, now, nowMinutes, fetchGuardTrain, summary) {
+  let hot = [];
+  try { hot = JSON.parse((await env.USER_PROFILES.get(GUARD_HOT_KEY)) || "[]") || []; } catch (e) {}
+  summary.source = "guard-hot"; summary.hot = hot.length;
+  for (const token of hot) {
+    let profile = null;
+    try { profile = JSON.parse((await env.USER_PROFILES.get(token)) || "null"); } catch (e) {}
+    if (!profile) continue;
+    const subs = Array.isArray(profile.pushSubscriptions) ? profile.pushSubscriptions : [];
+    if (!subs.length) continue;
+    const conns = activeGuardConnections(profile, now, nowMinutes).filter(c => guardHot(c, now, nowMinutes));
+    if (!conns.length) continue;
+    summary.profilesChecked++;
+    try { await runGuard(env, origin, token, profile, subs, conns, fetchGuardTrain, summary, typeof profile.language === "string" ? profile.language : "pl"); }
+    catch (e) { summary.errors.push(token + " guard (minuta): " + e.message); }
+  }
+  return summary;
+}
 function activeGuardConnections(profile, now, nowMinutes) {
   if (!GuardCore) return [];
   const set = guardSettingsOf(profile);
@@ -890,6 +918,8 @@ export async function onRequestPost(context) {
   const now = warsawNow();
   const nowMinutes = minutesOf(now.time);
   const fetchGuardTrain = guardTrainFetcher(origin);
+  if (new URL(request.url).searchParams.get("guard") === "1") return json({ ok: true, ...(await guardMinute(env, origin, now, nowMinutes, fetchGuardTrain, summary)) });
+  const hotTokens = [];
 
   let dtChanges = null;
   try { dtChanges = await checkDisruptionTypes(env, origin, warsawNow().date, summary); }
@@ -944,6 +974,7 @@ export async function onRequestPost(context) {
       const useTrains = !!profile.alarmEnabled && trains.length > 0;
       const useStations = watchedStations.length > 0;
       const guardConns = subs.length ? activeGuardConnections(profile, now, nowMinutes) : [];
+      if (guardConns.some(c => guardHot(c, now, nowMinutes))) hotTokens.push(token);
       if (!subs.length || (!useTrains && !useStations && !guardConns.length)) continue;
 
       summary.profilesChecked++;
@@ -1043,6 +1074,11 @@ export async function onRequestPost(context) {
     if (JSON.stringify(next) !== JSON.stringify(idxNow)) { await env.USER_PROFILES.put(PUSH_INDEX_KEY, JSON.stringify(next)); summary.indexWritten = next.length; }
   }
   summary.profilesTotal = tokens.length;
+  // lista „gorących” profili dla strażnika co minutę — zapis tylko przy zmianie
+  try {
+    const hotNext = [...new Set(hotTokens)].sort(), hotPrev = JSON.parse((await env.USER_PROFILES.get(GUARD_HOT_KEY)) || "[]");
+    if (JSON.stringify(hotNext) !== JSON.stringify(hotPrev)) { await env.USER_PROFILES.put(GUARD_HOT_KEY, JSON.stringify(hotNext), { expirationTtl: 3 * 3600 }); summary.hotWritten = hotNext.length; }
+  } catch (e) { summary.errors.push("guard:hot: " + e.message); }
 
   return json({ ok: true, ...summary });
 }

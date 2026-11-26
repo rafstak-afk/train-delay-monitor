@@ -65,6 +65,7 @@ export default {
     const minute = new Date(event.scheduledTime).getUTCMinutes();
     const jobs = [call(env, "/api/remind-tick")];
     if (minute % 5 === 0) jobs.push(call(env, "/api/push-tick"));
+    else jobs.push(call(env, "/api/push-tick?guard=1"));   // TODO 8 cz. 2 (26.11): strażnik co minutę — tylko przesiadki w ciągu godziny
     const w = warsaw(event.scheduledTime);
     if (w.hour === 7 && w.minute === 0) jobs.push(dispatchGzm(env, false));
     if (w.day === 1 && w.hour === 2 && w.minute === 0) jobs.push(dispatchGzm(env, true));
