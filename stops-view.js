@@ -122,7 +122,7 @@
     ".xv-ok .xv-b{background:rgba(34,197,94,.16);color:#4ade80}.xv-risk .xv-b{background:rgba(250,204,21,.16);color:#facc15}.xv-edge .xv-b,.xv-broken .xv-b{background:rgba(255,77,77,.18);color:#ff6b6b}" +
     ".xv-nodata .xv-b{background:#334155;color:#cbd5e1}.xv-cancelled .xv-b{background:#000;color:#fff;border:1px solid #555}.xv-broken{border-color:rgba(255,77,77,.45)}.xv-edge .xv-b{animation:xvb 1.2s ease-in-out infinite}" +
     "@keyframes xvb{50%{opacity:.45}}.xv-l{margin-top:5px;font-size:14px;color:#dbe5f1}.xv-l .late{color:#facc15;font-weight:700}.xv-p{margin-top:3px;font-size:13.5px;color:#9fb0c2}" +
-    ".xv details{margin-top:6px}.xv summary{cursor:pointer;color:#8ea3ba;font-size:12.5px;list-style:none}.xv summary::-webkit-details-marker{display:none}.xv .xv-d{font-size:12.5px;color:#9fb0c2;margin-top:4px;line-height:1.45}";
+    ".xv details{margin-top:6px}.xv summary{cursor:pointer;color:#8ea3ba;font-size:12.5px;list-style:none}.xv summary.xv-warn{color:#ff6b6b;font-weight:700}.xv summary::-webkit-details-marker{display:none}.xv .xv-d{font-size:12.5px;color:#9fb0c2;margin-top:4px;line-height:1.45}";
   function xcss() { if (document.getElementById("xv-css")) return; var st = document.createElement("style"); st.id = "xv-css"; st.textContent = XCSS; document.head.appendChild(st); }
   function xfer(o) {
     xcss(); o = o || {};
@@ -141,9 +141,15 @@
     var walk = o.walkTo ? '<div class="xv-p">' + esc(T("xfer.walk", { a: o.station, b: o.walkTo }, "Przejście: {a} → {b}").replace("{a}", o.station).replace("{b}", o.walkTo)) + "</div>" : "";
     var det = (o.details || []).filter(Boolean);
     var dk = o.key ? ' data-svk="' + esc("x|" + o.key) + '"' + (openMk["x|" + o.key] ? " open" : "") : "";
+    // notatka 26.11 9:46: na wierzchu tylko stacja + odpowiedź, przyjazd → odjazd, peron; reszta (przejście, „czy poczeka”, ostrzeżenia, wyliczenia) w „szczegóły”,
+    // a „▸ szczegóły” na czerwono, gdy coś odbiega od normy (opóźnienie, zagrożenie, ostrzeżenie) — przy punktualnej przesiadce szare
+    var late = (sh(o.arr) && sh(o.arrPlan) && sh(o.arr) !== sh(o.arrPlan)) || (sh(o.dep) && sh(o.depPlan) && sh(o.dep) !== sh(o.depPlan));
+    var warn = s !== "ok" || late || !!o.notes;
+    var body = walk + (o.info || "") + (o.notes || "") +   // info = neutralne (np. przejście pieszo), notes = ostrzeżenia
+       (det.length ? '<div class="xv-d">' + det.map(esc).join("<br>") + "</div>" : "");
     return '<div class="xv xv-' + esc(s) + '"><div class="xv-h"><span class="xv-st">' + esc(o.station || "") + (o.icon || "") + "</span>" + (b ? '<span class="xv-b">' + esc(b) + "</span>" : "") + "</div>" +
-      line + plat + walk + (o.notes || "") +
-      (det.length ? "<details" + dk + "><summary>▸ " + esc(T("xfer.details", null, "szczegóły")) + '</summary><div class="xv-d">' + det.map(esc).join("<br>") + "</div></details>" : "") + "</div>";
+      line + plat +
+      (body ? "<details" + dk + "><summary" + (warn ? ' class="xv-warn"' : "") + ">▸ " + esc(T("xfer.details", null, "szczegóły")) + "</summary>" + body + "</details>" : "") + "</div>";
   }
   window.StopsView = { isOpen: function (k) { return !!openMk[k]; }, scrollTo: scrollTo, html: html, xfer: xfer, trainUrl: trainUrl, ready: function () { gzmIndex(); return gzmP; } };
 })();

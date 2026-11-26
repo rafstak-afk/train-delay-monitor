@@ -2326,7 +2326,7 @@
             var xn = w ? '<div class="xv-p">🚶 ' + esc(T("xfer.walk", { a: w.from, b: w.to }, "Przejście: {a} → {b}").replace("{a}", w.from).replace("{b}", w.to)) + " · " + w.min + " min" + fMk(w) + (w.mb || "") + "</div>" : "";
             var xd = []; if (w) xd.push(T("xfer.dWalk", { n: w.min }, "Na przejście liczymy {n} min").replace("{n}", w.min));
             rows.push('<tr class="f-x"><td colspan="2" style="padding:0">' + StopsView.xfer({ station: w ? w.to : q.at, status: xs, slack: q.slack,
-              arr: prevArr != null ? C.fmt(prevArr) : "", dep: nx.dep != null ? C.fmt(nx.dep) : "", depPlan: nx.depPlan != null ? C.fmt(nx.depPlan) : "", notes: xn, details: xd, key: "f|" + (q.at || "") + "|" + (nx.dep || "") }) + "</td></tr>");
+              arr: prevArr != null ? C.fmt(prevArr) : "", dep: nx.dep != null ? C.fmt(nx.dep) : "", depPlan: nx.depPlan != null ? C.fmt(nx.depPlan) : "", info: xn, details: xd, key: "f|" + (q.at || "") + "|" + (nx.dep || "") }) + "</td></tr>");
             return;
           }
           var what = w ? "🚶 " + esc(w.from) + " → <b>" + esc(w.to) + "</b>" : "⏳ " + esc(T("gzm.ceXfer", { s: "" }, "Przesiadka: {s}")) + "<b>" + esc(q.at) + "</b>";
