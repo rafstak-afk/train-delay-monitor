@@ -1522,7 +1522,9 @@
     "cxLine": "přestup {n} min",
     "cxTight": " — těsně",
     "cxEdge": " — na hraně",
-    "cxMiss": "přestup: chybí {n} min"
+    "cxMiss": "přestup: chybí {n} min",
+    "slowerBadge": "v cíli později",
+    "slowerHint": "rychleji: {l} v {d} → {a}"
   },
   "tt": {
     "swapLater": "Nahradit od 13.12",

@@ -1522,7 +1522,9 @@
     "cxLine": "change {n} min",
     "cxTight": " — tight",
     "cxEdge": " — borderline",
-    "cxMiss": "change: {n} min short"
+    "cxMiss": "change: {n} min short",
+    "slowerBadge": "arrives later",
+    "slowerHint": "faster: {l} at {d} → {a}"
   },
   "tt": {
     "swapLater": "Replace from 13.12",

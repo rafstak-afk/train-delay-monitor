@@ -1522,7 +1522,9 @@
     "cxLine": "Umstieg {n} Min.",
     "cxTight": " — knapp",
     "cxEdge": " — grenzwertig",
-    "cxMiss": "Umstieg: {n} Min. zu wenig"
+    "cxMiss": "Umstieg: {n} Min. zu wenig",
+    "slowerBadge": "später am Ziel",
+    "slowerHint": "schneller: {l} um {d} → {a}"
   },
   "tt": {
     "swapLater": "Ab 13.12 ersetzen",

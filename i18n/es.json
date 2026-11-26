@@ -1522,7 +1522,9 @@
     "cxLine": "transbordo {n} min",
     "cxTight": " — justo",
     "cxEdge": " — al límite",
-    "cxMiss": "transbordo: faltan {n} min"
+    "cxMiss": "transbordo: faltan {n} min",
+    "slowerBadge": "llega más tarde",
+    "slowerHint": "más rápido: {l} a las {d} → {a}"
   },
   "tt": {
     "swapLater": "Sustituir desde el 13.12",

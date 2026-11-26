@@ -2267,7 +2267,13 @@
       if (walk) meta.push(esc(T("gzm.fWalk", { n: walk }, "pieszo {n} min")));
       if (x.why) meta.push(esc(x.why));
       if (x.tDelay) meta.push('<span class="ce-tight">' + esc(T("gzm.v2TrainLive", { n: x.tDelay }, "pociąg +{n} min (na żywo)")) + "</span>");
-      return '<div class="card v2c ' + CE_ST[st] + '" data-det="' + esc(dk) + '" role="button" tabindex="0"><div class="c-head" style="display:block">' + fR1(x, steps, leave) + "</div>" +
+      // TODO 109: wolniejszy kurs — szara plakietka „⏬ później na miejscu” zamiast oceny i podpowiedź, czym szybciej
+      var slw = x.net && x.net.slower, head1 = fR1(x, steps, leave);
+      if (slw) {
+        head1 = '<div class="f-r1"><b>' + C.fmt(leave) + " → " + C.fmt(x.final) + '</b><span class="f-st" style="color:var(--muted);background:rgba(148,163,184,.14);border-radius:999px;padding:2px 9px">⏬ ' + esc(T("gzm.slowerBadge", null, "później na miejscu")) + "</span></div>";
+        meta.unshift('<span style="color:var(--muted)">' + esc(T("gzm.slowerHint", { l: slw.line, d: C.fmt(slw.dep), a: C.fmt(slw.arr) }, "szybciej: {l} o {d} → {a}").replace("{l}", slw.line).replace("{d}", C.fmt(slw.dep)).replace("{a}", C.fmt(slw.arr))) + "</span>");
+      }
+      return '<div class="card v2c ' + (slw ? "" : CE_ST[st]) + '" data-det="' + esc(dk) + '" role="button" tabindex="0"' + (slw ? ' style="border-left-color:#64748b"' : "") + '><div class="c-head" style="display:block">' + head1 + "</div>" +
         '<div class="f-how"' + (oneLine ? ' style="margin-top:6px"' : "") + ">" + how + '</div><div class="f-meta">' + (oneLine ? "⏱️ " : "") + meta.join(" · ") + "</div>" +
         (fInline() ? '<div style="text-align:right;margin-top:6px"><button type="button" class="btn-sm secondary" data-trasa="' + esc(dk) + '">' + esc(T("gzm.v2Route", null, "▼ Trasa")) + "</button></div>" : "") + "</div>";
     }
@@ -2499,6 +2505,7 @@
           var fP = S.fromNet || S.fromPlace, tP = S.toNet || S.toPlace;
           var o = Object.assign(fP ? { fromStops: fP.stops.map(function (x) { return { s: x.s, t: base + x.walk }; }), dep: base } : { from: S.fN, dep: base }, { rt: rt, maxTransfers: 2, count: 5, maxDep: base + 180 });
           if (tP) o.toStops = tP.stops.map(function (x) { return { s: x.s, walk: x.walk }; }); else o.to = S.netTo;
+          if (xAuthor()) o.withSlower = true;   // TODO 109: także wolniejsze bezpośrednie (z oznaczeniem)
           S.netRes = GzmRaptor.search(S.net, o).map(function (jn) { return withPlaceWalks(jn, fP, tP); });
         }
         S.netRes.forEach(function (jn) { out.push({ net: jn, final: jn.arr, start: jn.leave != null ? jn.leave : jn.dep }); });
@@ -2573,6 +2580,7 @@
         // dominacja: lepszy = wyrusza nie wcześniej, dociera nie później, nie więcej przesiadek; pociąg chroniony tolerancją
         var tolOf = function (y) { return Math.max(10, Math.round(0.15 * (y.final - y.start))); };
         out = out.filter(function (x) {
+          if (x.net && x.net.slower) return true;   // TODO 109: celowo pokazywany wolniejszy kurs
           return !out.some(function (y) {
             if (y === x || y.start < x.start || y.final > x.final || rideCount(y) > rideCount(x)) return false;
             if (!(y.final < x.final || y.start > x.start || rideCount(y) < rideCount(x))) return false;
@@ -2588,7 +2596,8 @@
         // dociera dużo później niż najlepsza (ponad 30 min albo ponad połowę czasu podróży) — nie pokazujemy
         var bestF = Math.min.apply(null, out.map(function (x) { return x.final; }).concat([Infinity]));
         if (bestF < Infinity) out = out.filter(function (x) { return x.final - bestF <= Math.max(30, 0.5 * (bestF - base)); });
-        out = out.slice(0, 6);
+        var slowX = out.filter(function (x) { return x.net && x.net.slower; });
+        out = out.filter(function (x) { return !(x.net && x.net.slower); }).slice(0, 6).concat(slowX.slice(0, 3));
         // 🚶 najmniej chodzenia (tylko gdy celem jest adres / moje miejsce)
         if (S.toPlace && S.toPlace.stops && S.toPlace.stops.length && out.length) {
           // łączne chodzenie w trasie (wszystkie odcinki pieszo)

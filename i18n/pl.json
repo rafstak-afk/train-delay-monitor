@@ -1522,7 +1522,9 @@
     "cxLine": "przesiadka {n} min",
     "cxTight": " — na styk",
     "cxEdge": " — na granicy",
-    "cxMiss": "przesiadka: brakuje {n} min"
+    "cxMiss": "przesiadka: brakuje {n} min",
+    "slowerBadge": "później na miejscu",
+    "slowerHint": "szybciej: {l} o {d} → {a}"
   },
   "tt": {
     "swapLater": "Zamień od 13.12",

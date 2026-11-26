@@ -269,7 +269,40 @@
     var sv = function (x) { return x._lv - WALK_W * x._wk; };
     all = all.filter(function (x) { return !all.some(function (y) { return y !== x && sv(y) >= sv(x) && y.arrTotal <= x.arrTotal && y.transfers <= x.transfers && (sv(y) > sv(x) || y.arrTotal < x.arrTotal || y.transfers < x.transfers); }); });
     all.sort(function (a, b) { return a.dep - b.dep || a.arrTotal - b.arrTotal; });
-    return all.slice(0, count).map(function (x) {
+    all = all.slice(0, count);
+    // TODO 109 (26.11): bezpośrednie kursy (bez przesiadki) między tymi samymi przystankami, które ruszają w oknie wyników,
+    // ale dowiozą później niż inne (np. 48 o 6:21 → 6:30, gdy 297 o 6:23 → 6:29) — pokazujemy je z oznaczeniem „później na miejscu”
+    if (o.withSlower && all.length) {
+      var j0 = net.j, lo = Math.min.apply(null, all.map(function (x) { return x.dep; })), hi = Math.max.apply(null, all.map(function (x) { return x.dep; }));
+      var have = {}; all.forEach(function (x) { x.legs.forEach(function (l) { if (l.type === "ride") have[l.trip] = 1; }); });
+      var extra = [], seenT = {};
+      origin.forEach(function (s0) {
+        var sp = net.stopPats[s0], w0 = startAt && startAt[s0] != null ? Math.max(0, startAt[s0] - startAt.dep0) : 0;
+        for (var q = 0; q + 1 < sp.length; q += 2) {
+          var p = sp[q], kb = sp[q + 1], pat = j0.pats[p], seq = pat[1], off = pat[2], fl = pat[3] || "";
+          if (+fl[kb] & 1) continue;   // tu nie wolno wsiąść
+          var ka = -1; for (var u = kb + 1; u < seq.length; u++) if (destSet[seq[u]] != null && !(+fl[u] & 2)) { ka = u; break; }
+          if (ka < 0) continue;
+          var ln = j0.lines[pat[0]], trs = net.patTrips[p];
+          for (var t = 0; t < trs.length; t++) {
+            var tr = j0.trips[trs[t]], tid = tr[2]; if (have[tid] || seenT[tid]) continue;
+            var dd = delayOf(net, trs[t], o.rt); if (dd === null) continue;
+            var dep1 = tr[1] + dd + off[2 * kb + 1]; if (dep1 < lo || dep1 > hi) continue;
+            var arr1 = tr[1] + dd + off[2 * ka], tot = arr1 + (destSet[seq[ka]] || 0);
+            var fast = all.filter(function (x) { return x.dep >= dep1 && x.arrTotal < tot; }).sort(function (a, b) { return a.arrTotal - b.arrTotal; })[0];
+            if (!fast) continue;
+            seenT[tid] = 1;
+            var fr = fast.legs.filter(function (l) { return l.type === "ride"; })[0];
+            var legs1 = [];
+            if (w0) legs1.push({ type: "walk", from: s0, to: s0, min: w0 });
+            legs1.push({ type: "ride", line: ln[0], kind: TYPE[ln[1]] || "bus", head: ln[2], trip: tid, from: seq[kb], to: seq[ka], dep: dep1, arr: arr1, depPlan: tr[1] + off[2 * kb + 1], delay: dd, live: !!(o.rt && o.rt.trips && o.rt.trips[tid]), stops: ka - kb });
+            extra.push({ dep: dep1, arr: arr1, arrTotal: tot, transfers: 0, legs: legs1, _lv: dep1 - w0, _wk: w0, slower: { line: fr ? fr.line : "", dep: fr ? fr.dep : fast.dep, arr: fast.arrTotal } });
+          }
+        }
+      });
+      all = all.concat(extra.slice(0, 4)).sort(function (a, b) { return a.dep - b.dep || a.arrTotal - b.arrTotal; });
+    }
+    return all.map(function (x) {
       delete x._lv; delete x._wk;
       x.legs.forEach(function (l) { l.fromName = net.name[l.from]; l.toName = net.name[l.to]; l.fromCode = net.j.stops[l.from][3]; l.toCode = net.j.stops[l.to][3]; });
       return x;
