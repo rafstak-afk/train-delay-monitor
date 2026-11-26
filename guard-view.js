@@ -327,6 +327,7 @@
           if (t.stationChange) mv.push(T('xfer.mvStation', null, 'przejście między stacjami +5 min'));
           if (!t.platformChange && !t.stationChange && t.need) mv.push(T('xfer.mvWalk', { n: t.need }, 'dojście pieszo {n} min').replace('{n}', t.need));
           if (mv.length) det.push(esc(T('xfer.dMove', { s: mv.join(', ') }, 'Liczymy przejście: {s}').replace('{s}', mv.join(', '))));
+          else if (t.platformArr && t.platformArr === t.platformDep) det.push(esc(T('xfer.mvSame', { p: t.platformArr }, 'Ten sam peron {p} — bez przechodzenia').replace('{p}', t.platformArr)));
           if (typeof t.plannedSlack === 'number') det.push(esc(T('xfer.dPlanOnly', { n: t.plannedSlack }, 'Wg rozkładu {n} min na przesiadkę').replace('{n}', t.plannedSlack)));
         } else {
         if (typeof t.plannedSlack === 'number') det.push(esc(T('xfer.dPlan', { n: t.plannedSlack, m: t.need }, 'Wg rozkładu {n} min na przesiadkę, potrzeba {m} min').replace('{n}', t.plannedSlack).replace('{m}', t.need)));

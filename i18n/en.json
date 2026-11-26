@@ -1598,6 +1598,7 @@
     "dMove": "We count the walk: {s}",
     "mvPlat": "platform {a} → {b} +2 min",
     "mvStation": "between stations +5 min",
-    "mvWalk": "walk {n} min"
+    "mvWalk": "walk {n} min",
+    "mvSame": "Same platform {p} — no walking"
   }
 }

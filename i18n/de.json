@@ -1598,6 +1598,7 @@
     "dMove": "Wegzeit: {s}",
     "mvPlat": "Bahnsteig {a} → {b} +2 Min.",
     "mvStation": "zwischen Bahnhöfen +5 Min.",
-    "mvWalk": "Fußweg {n} Min."
+    "mvWalk": "Fußweg {n} Min.",
+    "mvSame": "Gleicher Bahnsteig {p} — kein Wechsel"
   }
 }

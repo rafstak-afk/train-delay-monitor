@@ -1036,6 +1036,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     // 26.11 15:00: wspólna zasada — zapas po przejściu (zmiana peronu +2 min)
     var pa2=a&&a.platform&&a.platform!=='-'?a.platform:'',pb2=b&&b.platform&&b.platform!=='-'?b.platform:'',mvp=window.GuardCore&&GuardCore.unifyOn&&GuardCore.unifyOn()&&pa2&&pb2&&pa2!==pb2?2:0;
     if(window.GuardCore&&GuardCore.unifyOn&&GuardCore.unifyOn()){
+      if(!mvp&&pa2&&pa2===pb2)det.unshift(escapeHtml(T('xfer.mvSame',{p:pa2}).replace('{p}',pa2)));
       if(mvp)det.unshift(escapeHtml(T('xfer.dMove',{s:''}).replace('{s}',T('xfer.mvPlat',{a:pa2,b:pb2}).replace('{a}',pa2).replace('{b}',pb2))));
       var R=sl==null?null:sl-mvp;return {status:GuardCore.xferClass(R),slack:R,details:det,warn:warn||(R!=null&&R<5),platNext:pb2};
     }

@@ -1598,6 +1598,7 @@
     "dMove": "Počítáme přechod: {s}",
     "mvPlat": "nástupiště {a} → {b} +2 min",
     "mvStation": "mezi stanicemi +5 min",
-    "mvWalk": "chůze {n} min"
+    "mvWalk": "chůze {n} min",
+    "mvSame": "Stejné nástupiště {p} — bez přecházení"
   }
 }

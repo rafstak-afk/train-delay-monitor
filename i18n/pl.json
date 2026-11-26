@@ -1598,6 +1598,7 @@
     "dMove": "Liczymy przejście: {s}",
     "mvPlat": "zmiana peronu {a} → {b} +2 min",
     "mvStation": "przejście między stacjami +5 min",
-    "mvWalk": "dojście pieszo {n} min"
+    "mvWalk": "dojście pieszo {n} min",
+    "mvSame": "Ten sam peron {p} — bez przechodzenia"
   }
 }
