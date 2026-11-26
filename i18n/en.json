@@ -1222,7 +1222,8 @@
     "after": "later stations ({n})",
     "legStops": "Tap — stops of this section",
     "planBGzm": "Plan B with buses",
-    "planBGzmInfo": "the whole way on from {st} to {to}"
+    "planBGzmInfo": "the whole way on from {st} to {to}",
+    "rotLoading": "Checking where the train set is coming from"
   },
   "gzm": {
     "title": "🚌 GZM connections",

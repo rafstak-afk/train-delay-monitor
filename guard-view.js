@@ -170,7 +170,10 @@
         return Promise.all(c.legs.map(function (l) { return fetchTrain(l, c.date); })).then(function (rs) {
           // TODO 88 (autor): obieg składu — tablica stacji początkowej z przyjazdami, póki kurs nie wyruszył
           if (!G.rotationQuery) return rs;   // obieg składu — dla wszystkich od 24.11 (v6.84)
-          return Promise.all(c.legs.map(function (l, i) {
+          // TODO 124 (26.11, profil autora): obieg w tle — karta od razu, w „szczegółach” „🔁 Sprawdzam…”, potem wynik
+          var early = rotEarly(), pend = {};
+          c.legs.forEach(function (l, i) { var rd = rs[i]; if (l.mode !== 'gzm' && rd && G.rotationQuery(rd, c.date)) pend[i] = 1; });
+          var rotP = Promise.all(c.legs.map(function (l, i) {
             var rd = rs[i]; if (l.mode === 'gzm' || !rd) return null;
             if (!G.rotationQuery(rd, c.date)) return null;
             // 24.11: cały obieg na żywo — tablica stacji początkowej, bieg poprzedniego kursu, ogniwo wcześniej
@@ -182,7 +185,16 @@
             var getBoard = function (q) { var s = new URLSearchParams(q).toString(); return cached('rot|' + s, '/api/departures?' + s); };
             var getTrain = function (r, date) { var s = new URLSearchParams({ scheduleId: r.scheduleId, orderId: r.orderId, operatingDate: date, train: r.train }).toString(); return cached('rt|' + s, '/api/train-details?' + s); };
             return G.rotationResolve(rd, (l.train && l.train.number) || rd.train, c.date, getBoard, getTrain).then(function (rot) { rd._rot = rot; });
-          })).then(function () { return rs; });
+          }));
+          if (!early || !Object.keys(pend).length) return rotP.then(function () { return rs; });
+          rotPend[c.id] = pend;
+          rotP.then(function () { return waitStatsP(); }).then(function (ws) {
+            delete rotPend[c.id];
+            var prevR = results[c.id], res2 = G.evaluate(c, rs, { minTransfer: set.minTransfer, waitStats: ws });
+            res2.raw = rs; if (prevR && prevR.rising) res2.rising = prevR.rising;
+            results[c.id] = res2; render();
+          }).catch(function () { delete rotPend[c.id]; render(); });
+          return rs;
         }).then(function (rs) {
           return waitStatsP().then(function (ws) { return { rs: rs, ws: ws }; });   // „czy poczeka” — dla wszystkich od 24.11
         }).then(function (o) {
@@ -301,6 +313,8 @@
     }
     // ===== 26.11 wariant A (dla wszystkich od 15:00, wcześniej profil autora): numer pociągu nad wszystkim, linia odjazdu i przyjazdu,
     // odpowiedź o przesiadce w linii przyjazdu; reszta w „▸ szczegóły”
+    var rotPend = {};   // TODO 124: odcinki, dla których obieg składu jeszcze się wczytuje
+    function rotEarly() { try { return localStorage.getItem('showVersionBadge') === '1'; } catch (e) { return false; } }
     function layoutA() { if (!window.StopsView || !StopsView.legA) return false; if (Date.now() >= Date.parse("2026-11-26T16:00:00+01:00")) return true; try { return localStorage.getItem('showVersionBadge') === '1'; } catch (e) { return false; } }
     function srcTxt(src) { return src === 'live' || src === 'confirmed' ? T('guard.srcLive', null, 'na żywo') : src === 'forecast' ? T('guard.srcForecast', null, 'prognoza PLK') : ''; }
     function legAHtml(c, r, l, i) {
@@ -311,6 +325,8 @@
       var tag = '', det = [], warn = false;
       if (rr && rr.noData) { tag = ' <span class="src">(' + esc(T('guard.status.nodata', null, 'brak danych')) + ')</span>'; }
       else if (rr && rr.cancelled) { warn = true; tag = ' <b style="color:#fff;background:#000;padding:1px 6px;border-radius:6px;font-size:13px">⚫ ' + esc(rr.cancelLikely ? T('guard.likelyCancel', null, 'prawdopodobnie odwołany') : T('guard.status.cancelled', null, 'pociąg odwołany')) + '</b>'; if (rr.cancelSection) det.push(esc(rr.cancelSection.from + ' → ' + rr.cancelSection.to)); }
+      var rotWait = !!(rotPend[c.id] && rotPend[c.id][i] && d && !rr.rotation);
+      if (rotWait) det.push('<span style="color:#9fb0c2">🔁 ' + esc(T('guard.rotLoading', null, 'Sprawdzam, skąd przyjeżdża skład')) + '<span class="jl-dots"></span></span>');
       if (d && rr.rotation && !rr.started) {
         var bad = G.rotationRisk(rr), rl = '🔁 ' + esc(G.rotationLine(rr.rotation, rr.originName, curLang()));
         if (bad) { warn = true; tag += '<div style="flex-basis:100%;font-size:13px;color:var(--yellow);font-weight:700">' + rl + '</div>'; } else det.push(rl);
@@ -347,7 +363,7 @@
       return StopsView.legA({ icon: gz ? '' : '🚆', label: label, dir: (function () { var rw = r.raw && r.raw[i]; return rw && Array.isArray(rw.route) && rw.route.length ? rw.route[rw.route.length - 1].stationName : (gz && l.head) || ''; })(), tag: tag, attrs: attrs,
         dep: { time: dR, plan: dP, station: l.board.stationName, plat: d ? rr.platformDep : '' },
         arr: { time: aR, plan: aP + (l.alight.nextDay ? '' : ''), station: l.alight.stationName, plat: d ? rr.platformArr : '', platNext: t && nx && !nx.noData ? nx.platformDep : '' },
-        xfer: t ? (G.unifyOn && G.unifyOn() && typeof t.slack === 'number' && t.status !== 'cancelled' && t.status !== 'nodata' ? { status: t.onlyThanksToB && G.xferClass(t.slack - t.need) === 'ok' ? 'risk' : G.xferClass(t.slack - t.need), slack: t.slack - t.need } : { status: t.status, slack: t.slack }) : null, details: det.join('<br>'), warn: warn, key: 'g|' + c.id + '|' + i,
+        pending: rotWait, xfer: t ? (G.unifyOn && G.unifyOn() && typeof t.slack === 'number' && t.status !== 'cancelled' && t.status !== 'nodata' ? { status: t.onlyThanksToB && G.xferClass(t.slack - t.need) === 'ok' ? 'risk' : G.xferClass(t.slack - t.need), slack: t.slack - t.need } : { status: t.status, slack: t.slack }) : null, details: det.join('<br>'), warn: warn, key: 'g|' + c.id + '|' + i,
         after: !gz && rlegOpen[c.id + '|' + i] ? '<div class="gv-rtrip">' + railStops(c.id, i) + '</div>' : '' });
     }
     function xferHtml(t, rising, la, lb) {

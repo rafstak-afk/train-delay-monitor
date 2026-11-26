@@ -1222,7 +1222,8 @@
     "after": "estaciones siguientes ({n})",
     "legStops": "Toca — paradas de este tramo",
     "planBGzm": "Plan B con autobuses",
-    "planBGzmInfo": "todo el trayecto desde {st} hasta {to}"
+    "planBGzmInfo": "todo el trayecto desde {st} hasta {to}",
+    "rotLoading": "Comprobando de dónde llega el tren"
   },
   "gzm": {
     "title": "🚌 Conexiones GZM",

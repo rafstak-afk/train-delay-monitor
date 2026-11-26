@@ -163,7 +163,8 @@
     ".jl-ok .xv-b{background:rgba(34,197,94,.16);color:#4ade80}.jl-risk .xv-b{background:rgba(250,204,21,.16);color:#facc15}.jl-edge .xv-b,.jl-broken .xv-b{background:rgba(255,77,77,.18);color:#ff6b6b}" +
     ".jl-edge .xv-b{animation:xvb 1.2s ease-in-out infinite}.jl-nodata .xv-b{background:#334155;color:#cbd5e1}.jl-cancelled .xv-b{background:#000;color:#fff;border:1px solid #555}" +
     ".jl details{margin-top:2px}.jl summary{cursor:pointer;color:#8ea3ba;font-size:12.5px;list-style:none;padding:2px 0}.jl summary::-webkit-details-marker{display:none}.jl summary.xv-warn{color:#ff6b6b;font-weight:700}" +
-    ".jl .jl-det{font-size:12.5px;color:#9fb0c2;line-height:1.45;margin-top:2px}";
+    ".jl .jl-det{font-size:12.5px;color:#9fb0c2;line-height:1.45;margin-top:2px}.jl-dots::after{content:'';animation:jldots 1.2s steps(4) infinite}" +
+    "@keyframes jldots{0%{content:''}25%{content:'.'}50%{content:'..'}75%{content:'...'}}";
   function lcss() { xcss(); if (document.getElementById("jl-css")) return; var st = document.createElement("style"); st.id = "jl-css"; st.textContent = LCSS; document.head.appendChild(st); }
   function xBadge(x) {
     if (!x) return "";
@@ -193,7 +194,7 @@
     var warn = o.warn || late || (x && x.status && x.status !== "ok");
     return '<div class="' + cls + '"' + (o.attrs || "") + '><div class="jl-h">' + (o.icon || "🚆") + " " + (o.label || "") + (o.dir ? ' <span class="jl-d">→ ' + esc(o.dir) + "</span>" : "") + (o.tag || "") + "</div>" +
       row(o.dep, null, "") + row(o.arr, o.arr && o.arr.platNext, xBadge(x)) +
-      (o.details ? "<details" + dk + "><summary" + (warn ? ' class="xv-warn"' : "") + ">▸ " + esc(T("xfer.details", null, "szczegóły")) + '</summary><div class="jl-det">' + o.details + "</div></details>" : "") +
+      (o.details ? "<details" + dk + "><summary" + (warn ? ' class="xv-warn"' : "") + ">▸ " + (o.pending ? "⏳ " : "") + esc(T("xfer.details", null, "szczegóły")) + '</summary><div class="jl-det">' + o.details + "</div></details>" : "") +
       "</div>" + (o.after || "");
   }
   // dopisek pod przesiadkami — link do objaśnienia w „Jak działa aplikacja”

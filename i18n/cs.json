@@ -1222,7 +1222,8 @@
     "after": "další stanice ({n})",
     "legStops": "Klepni — zastávky tohoto úseku",
     "planBGzm": "Plán B s autobusy",
-    "planBGzmInfo": "celá další cesta z {st} do {to}"
+    "planBGzmInfo": "celá další cesta z {st} do {to}",
+    "rotLoading": "Zjišťuji, odkud souprava přijíždí"
   },
   "gzm": {
     "title": "🚌 Přestupy GZM",

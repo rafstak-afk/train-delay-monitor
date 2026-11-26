@@ -1222,7 +1222,8 @@
     "after": "dalsze stacje ({n})",
     "legStops": "Stuknij — przystanki tego odcinka",
     "planBGzm": "Plan B z autobusami",
-    "planBGzmInfo": "cała dalsza droga z {st} do {to}"
+    "planBGzmInfo": "cała dalsza droga z {st} do {to}",
+    "rotLoading": "Sprawdzam, skąd przyjeżdża skład"
   },
   "gzm": {
     "title": "🚌 Przesiadki GZM",

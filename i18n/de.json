@@ -1222,7 +1222,8 @@
     "after": "weitere Bahnhöfe ({n})",
     "legStops": "Tippen — Halte dieses Abschnitts",
     "planBGzm": "Plan B mit Bussen",
-    "planBGzmInfo": "der ganze Weg ab {st} nach {to}"
+    "planBGzmInfo": "der ganze Weg ab {st} nach {to}",
+    "rotLoading": "Prüfe, woher der Zug kommt"
   },
   "gzm": {
     "title": "🚌 GZM-Anschlüsse",
