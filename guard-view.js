@@ -285,7 +285,10 @@
       var info = !r ? '' : (r.noData ? ' <span class="src">(' + esc(T('guard.status.nodata', null, 'brak danych')) + ')</span>' : (r.cancelled ? ' <b style="color:#fff;background:#000;padding:1px 6px;border-radius:6px">⚫ ' + esc(r.cancelLikely ? T('guard.likelyCancel', null, 'prawdopodobnie odwołany') : T('guard.status.cancelled', null, 'pociąg odwołany')) + '</b>' + (r.cancelLikely ? ' <span class="src">' + esc(T('guard.likelyCancelWhy', null, 'PLK nie ma danych o ruchu tego pociągu')) + '</span>' : '') + (r.cancelSection ? ' <span class="src">' + esc(T('guard.cancelSection', { a: r.cancelSection.from, b: r.cancelSection.to }, 'na odcinku ' + r.cancelSection.from + ' – ' + r.cancelSection.to)) + (r.cancelSection.zka ? ' · 🚌 ' + esc(T('guard.zka', null, 'komunikacja zastępcza')) : '') + '</span>' : '') : ''));
       if (d && r.rotation && !r.started) {
         var ro = r.rotation, bad = G.rotationRisk(r);
-        info += '<div class="src" style="margin-top:2px' + (bad ? ';color:var(--yellow);font-weight:700' : '') + '">🔁 ' + esc(G.rotationLine(ro, r.originName, curLang())) + '</div>';
+        // prośba 26.11 (profil autora): obieg składu w „▸ szczegóły” — na wierzchu tylko, gdy zagraża pociągowi
+        var rk2 = 'rot|' + cid + '|' + li;
+        if (!bad && localStorage.getItem('showVersionBadge') === '1') info += '<details class="gv-rot" data-svk="' + esc(rk2) + '"' + (window.StopsView && StopsView.isOpen && StopsView.isOpen(rk2) ? ' open' : '') + ' style="margin-top:2px"><summary style="cursor:pointer;color:var(--muted);font-size:12.5px;list-style:none">▸ ' + esc(T('xfer.details', null, 'szczegóły')) + '</summary><div class="src">🔁 ' + esc(G.rotationLine(ro, r.originName, curLang())) + '</div></details>';
+        else info += '<div class="src" style="margin-top:2px' + (bad ? ';color:var(--yellow);font-weight:700' : '') + '">🔁 ' + esc(G.rotationLine(ro, r.originName, curLang())) + '</div>';
       }
       if (l.mode === "gzm") return '<div class="leg gv-gzm" data-gtrip="' + esc(l.trip) + '" data-gdate="' + esc(date) + '" data-gb="' + esc(l.board.stationName) + '" data-ga="' + esc(l.alight.stationName) + '" role="button" tabindex="0" title="' + esc(T('guard.gzmTrip', null, 'Stuknij — trasa kursu i gdzie jest teraz')) + '"><div class="leg-t">' + timeHtml(l.board.time, d ? r.delayDep : 0) + '<small>' + timeHtml(l.alight.time, d ? r.delayArr : 0) + '</small></div>' +
         '<div><div class="leg-train">' + esc(tr) + info + '</div><div class="leg-st">' + esc(l.board.stationName) + (d ? delayHtml(r.delayDep, r.depSource) : '') + ' → ' + esc(l.alight.stationName) + '</div></div></div>';
@@ -490,7 +493,7 @@
       }
       // TODO 101: odcinek pociągu — rozwiń/zwiń przystanki (numer pociągu to link do biegu)
       var rl = e.target.closest('[data-rleg]');
-      if (rl && !e.target.closest('a,button')) { var rk = rl.dataset.rleg; if (rlegOpen[rk]) delete rlegOpen[rk]; else rlegOpen[rk] = 1; render(); if (rlegOpen[rk] && window.StopsView) setTimeout(function () { var el = [].slice.call(document.querySelectorAll("[data-rleg]")).filter(function (x) { return x.dataset.rleg === rk; })[0]; StopsView.scrollTo(el && (el.closest(".card") || el)); }, 60); return; }
+      if (rl && !e.target.closest('a,button,summary,details')) { var rk = rl.dataset.rleg; if (rlegOpen[rk]) delete rlegOpen[rk]; else rlegOpen[rk] = 1; render(); if (rlegOpen[rk] && window.StopsView) setTimeout(function () { var el = [].slice.call(document.querySelectorAll("[data-rleg]")).filter(function (x) { return x.dataset.rleg === rk; })[0]; StopsView.scrollTo(el && (el.closest(".card") || el)); }, 60); return; }
       // odcinek autobusu/tramwaju: rozwiń trasę kursu (z zakładki 🚆🚌 — gzm-view.js)
       var gl = e.target.closest('[data-gtrip]');
       if (gl && !e.target.closest('button,a')) {

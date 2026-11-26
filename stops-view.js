@@ -145,5 +145,5 @@
       line + plat + walk + (o.notes || "") +
       (det.length ? "<details" + dk + "><summary>▸ " + esc(T("xfer.details", null, "szczegóły")) + '</summary><div class="xv-d">' + det.map(esc).join("<br>") + "</div></details>" : "") + "</div>";
   }
-  window.StopsView = { scrollTo: scrollTo, html: html, xfer: xfer, trainUrl: trainUrl, ready: function () { gzmIndex(); return gzmP; } };
+  window.StopsView = { isOpen: function (k) { return !!openMk[k]; }, scrollTo: scrollTo, html: html, xfer: xfer, trainUrl: trainUrl, ready: function () { gzmIndex(); return gzmP; } };
 })();
