@@ -1019,7 +1019,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     if(ai<route.length-1)rows+='<details style="margin:2px 0"><summary style="cursor:pointer;opacity:.75;font-size:13px">'+escapeHtml(T('planer.det.after',{n:route.length-1-ai}))+'</summary>'+route.slice(ai+1).map(function(x){return det77StopRow(x,false,'arr')}).join('')+'</details>';
     return head+'<div style="border-left:3px solid #3b82f6;padding-left:10px">'+rows+'</div>';
   }
-  function det77AuthorX(){if(Date.now() >= Date.parse("2026-11-26T15:00:00+01:00"))return true;try{return localStorage.getItem('showVersionBadge')==='1'}catch(e){return false}}
+  function det77AuthorX(){if(Date.now() >= Date.parse("2026-11-26T16:00:00+01:00"))return true;try{return localStorage.getItem('showVersionBadge')==='1'}catch(e){return false}}
   // ===== 26.11 wariant A (dla wszystkich od 15:00): numer pociągu nad wszystkim, linia odjazdu i przyjazdu,
   // odpowiedź o przesiadce w linii przyjazdu, reszta w „▸ szczegóły”
   function det77LayoutA(){return !!(window.StopsView&&StopsView.legA&&det77AuthorX())}

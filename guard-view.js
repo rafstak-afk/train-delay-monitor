@@ -288,7 +288,7 @@
         var ro = r.rotation, bad = G.rotationRisk(r);
         // prośba 26.11 (profil autora): obieg składu w „▸ szczegóły” — na wierzchu tylko, gdy zagraża pociągowi
         var rk2 = 'rot|' + cid + '|' + li;
-        if (!bad && (Date.now() >= Date.parse("2026-11-26T15:00:00+01:00") || localStorage.getItem('showVersionBadge') === '1')) info += '<details class="gv-rot" data-svk="' + esc(rk2) + '"' + (window.StopsView && StopsView.isOpen && StopsView.isOpen(rk2) ? ' open' : '') + ' style="margin-top:2px"><summary style="cursor:pointer;color:var(--muted);font-size:12.5px;list-style:none">▸ ' + esc(T('xfer.details', null, 'szczegóły')) + '</summary><div class="src">🔁 ' + esc(G.rotationLine(ro, r.originName, curLang())) + '</div></details>';
+        if (!bad && (Date.now() >= Date.parse("2026-11-26T16:00:00+01:00") || localStorage.getItem('showVersionBadge') === '1')) info += '<details class="gv-rot" data-svk="' + esc(rk2) + '"' + (window.StopsView && StopsView.isOpen && StopsView.isOpen(rk2) ? ' open' : '') + ' style="margin-top:2px"><summary style="cursor:pointer;color:var(--muted);font-size:12.5px;list-style:none">▸ ' + esc(T('xfer.details', null, 'szczegóły')) + '</summary><div class="src">🔁 ' + esc(G.rotationLine(ro, r.originName, curLang())) + '</div></details>';
         else info += '<div class="src" style="margin-top:2px' + (bad ? ';color:var(--yellow);font-weight:700' : '') + '">🔁 ' + esc(G.rotationLine(ro, r.originName, curLang())) + '</div>';
       }
       if (l.mode === "gzm") return '<div class="leg gv-gzm" data-gtrip="' + esc(l.trip) + '" data-gdate="' + esc(date) + '" data-gb="' + esc(l.board.stationName) + '" data-ga="' + esc(l.alight.stationName) + '" role="button" tabindex="0" title="' + esc(T('guard.gzmTrip', null, 'Stuknij — trasa kursu i gdzie jest teraz')) + '"><div class="leg-t">' + timeHtml(l.board.time, d ? r.delayDep : 0) + '<small>' + timeHtml(l.alight.time, d ? r.delayArr : 0) + '</small></div>' +
@@ -301,7 +301,7 @@
     }
     // ===== 26.11 wariant A (dla wszystkich od 15:00, wcześniej profil autora): numer pociągu nad wszystkim, linia odjazdu i przyjazdu,
     // odpowiedź o przesiadce w linii przyjazdu; reszta w „▸ szczegóły”
-    function layoutA() { if (!window.StopsView || !StopsView.legA) return false; if (Date.now() >= Date.parse("2026-11-26T15:00:00+01:00")) return true; try { return localStorage.getItem('showVersionBadge') === '1'; } catch (e) { return false; } }
+    function layoutA() { if (!window.StopsView || !StopsView.legA) return false; if (Date.now() >= Date.parse("2026-11-26T16:00:00+01:00")) return true; try { return localStorage.getItem('showVersionBadge') === '1'; } catch (e) { return false; } }
     function srcTxt(src) { return src === 'live' || src === 'confirmed' ? T('guard.srcLive', null, 'na żywo') : src === 'forecast' ? T('guard.srcForecast', null, 'prognoza PLK') : ''; }
     function legAHtml(c, r, l, i) {
       var rr = r.legs ? r.legs[i] : null, d = rr && !rr.noData, nx = r.legs ? r.legs[i + 1] : null, t = i < c.legs.length - 1 && r.transfers ? r.transfers[i] : null;
@@ -371,7 +371,7 @@
         mb = ' <button type="button" data-gpmap="' + esc(stN + '|' + stopN + '|' + code + '|' + (toSt ? 1 : 0)) + '" title="' + esc(T('gzm.wmapTitle2', null, 'Droga na mapie')) + '" style="border:0;background:none;cursor:pointer;font-size:1em;padding:0 2px">🗺️</button>';
       }
       // TODO 113 (26.11, profil autora): jedna odpowiedź — „Katowice · 46 min zapasu”; wyliczenia w „szczegóły”
-      if (window.StopsView && StopsView.xfer && (Date.now() >= Date.parse("2026-11-26T15:00:00+01:00") || localStorage.getItem('showVersionBadge') === '1')) {   // dla wszystkich od 26.11 15:00
+      if (window.StopsView && StopsView.xfer && (Date.now() >= Date.parse("2026-11-26T16:00:00+01:00") || localStorage.getItem('showVersionBadge') === '1')) {   // dla wszystkich od 26.11 15:00
         var notes = '';
         if (t.wait) notes += '<div class="src" style="color:#cfe0f5;margin-top:4px">' + esc(G.waitText(t, curLang())) + '</div>';
         var hint = G.xferHint ? G.xferHint(t, curLang()) : '';   // 26.11: „Zdążysz tylko, jeśli … zmniejszy opóźnienie…” — wszystkie przypadki
