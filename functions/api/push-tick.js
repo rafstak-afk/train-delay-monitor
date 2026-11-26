@@ -722,7 +722,8 @@ function briefText(conn, res, readings, lang) {
         : (o ? g("bNotYet", { st: o.stationName, t: o.plannedDeparture || o.plannedTime || "" }) : "");
       parts.push(lab + (x.delayDep > 0 ? " +" + x.delayDep + " min" : g("bOnTime")) + (state ? ", " + state : "") + (x.platformDep ? g("bPlat", { p: x.platformDep }) : ""));
     }
-    if (x.rotation && !x.started) parts.push("🔁 " + GuardCore.rotationLine(x.rotation, x.originName, lang));
+    // decyzja 26.11: obieg składu w briefie tylko, gdy zagraża pociągowi (opóźniony / odwołany skład)
+    if (x.rotation && !x.started && GuardCore.rotationRisk(x)) parts.push("🔁 " + GuardCore.rotationLine(x.rotation, x.originName, lang));
   });
   res.transfers.forEach(t => { if (t.status !== "nodata" && t.status !== "cancelled") parts.push(g("bXfer", { st: t.station, n: t.slack })); });
   const msgs = new Set();
