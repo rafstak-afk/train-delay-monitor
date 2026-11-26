@@ -58,7 +58,6 @@
     "moveDown": "Bajar",
     "emptyList": "Todavía no tienes trenes en tu lista.<br>Añade el primero en el formulario de abajo 👇",
     "loadError": "Error al cargar los datos: {message}. Prueba a actualizar.",
-    "confirmClearAll": "¿Quitar todos los trenes de la lista? No se puede deshacer.",
     "reorderBtn": "↕️ Cambiar orden",
     "reorderDone": "✅ Listo",
     "reorderHint": "Mueve los trenes con las flechas ▲▼. Las estrellas se ocultan mientras tanto para no borrar nada por error.",
@@ -284,8 +283,6 @@
     "alert": {
       "reasonToggleTitle": "Ver el motivo del retraso",
       "boxTitle": "🔔 Alarma: retrasos / cancelaciones",
-      "boxTitlePanel": "🔔 Alarmas: retrasos / cancelaciones",
-      "noneNow": "No hay trenes cancelados ni retrasos de más de 5 min.",
       "cancelledText": "{time} {label} CANCELADO",
       "delayedText": "{time} {label} +{delay} min",
       "notificationTitle": "Alarma de trenes"

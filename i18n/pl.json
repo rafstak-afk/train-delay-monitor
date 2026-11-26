@@ -58,7 +58,6 @@
     "moveDown": "Przesuń niżej",
     "emptyList": "Nie masz jeszcze żadnych pociągów na liście.<br>Dodaj pierwszy w formularzu poniżej 👇",
     "loadError": "Błąd ładowania danych: {message}. Spróbuj odświeżyć.",
-    "confirmClearAll": "Usunąć wszystkie pociągi z listy? Tej operacji nie da się cofnąć.",
     "reorderBtn": "↕️ Zmień kolejność",
     "reorderDone": "✅ Gotowe",
     "reorderHint": "Przesuwaj pociągi strzałkami ▲▼. Gwiazdki są na ten czas ukryte, żeby niczego nie usunąć przez pomyłkę.",
@@ -284,8 +283,6 @@
     "alert": {
       "reasonToggleTitle": "Pokaż przyczynę opóźnienia",
       "boxTitle": "🔔 Alarm: opóźnienia / odwołania",
-      "boxTitlePanel": "🔔 Alarmy: opóźnienia / odwołania",
-      "noneNow": "Brak odwołanych pociągów i opóźnień powyżej 5 min.",
       "cancelledText": "{time} {label} ODWOŁANY",
       "delayedText": "{time} {label} +{delay} min",
       "notificationTitle": "Alarm pociągów"

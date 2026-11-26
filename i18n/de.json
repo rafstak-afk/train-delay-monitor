@@ -58,7 +58,6 @@
     "moveDown": "Nach unten",
     "emptyList": "Du hast noch keine Züge auf deiner Liste.<br>Füge den ersten im Formular unten hinzu 👇",
     "loadError": "Fehler beim Laden der Daten: {message}. Versuche zu aktualisieren.",
-    "confirmClearAll": "Alle Züge von der Liste entfernen? Dies kann nicht rückgängig gemacht werden.",
     "reorderBtn": "↕️ Reihenfolge ändern",
     "reorderDone": "✅ Fertig",
     "reorderHint": "Verschiebe Züge mit den Pfeilen ▲▼. Die Sterne sind währenddessen ausgeblendet, damit nichts versehentlich entfernt wird.",
@@ -284,8 +283,6 @@
     "alert": {
       "reasonToggleTitle": "Verspätungsgrund anzeigen",
       "boxTitle": "🔔 Alarm: Verspätungen / Ausfälle",
-      "boxTitlePanel": "🔔 Alarme: Verspätungen / Ausfälle",
-      "noneNow": "Keine ausgefallenen Züge oder Verspätungen über 5 Min.",
       "cancelledText": "{time} {label} AUSGEFALLEN",
       "delayedText": "{time} {label} +{delay} min",
       "notificationTitle": "Zugalarm"

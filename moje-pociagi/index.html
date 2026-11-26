@@ -521,15 +521,6 @@ function emptyListHtml() {
   return '<div style="text-align:center;padding:28px 16px;color:#8b95a1;font-size:14px;">'+I18n.t('mojePociagi.emptyList')+'</div>';
 }
 
-function clearAllTrains() {
-  if (!currentTrains.length) return;
-  if (!confirm(I18n.t('mojePociagi.confirmClearAll'))) return;
-  currentTrains = [];
-  lastRows = [];
-  saveTrains(currentTrains);
-  renderFromCache();
-}
-
 let currentTrains = loadTrains();
 
 // Ostatnio wyrenderowany "row" na kartę (równoległa tablica do
@@ -913,20 +904,6 @@ async function fetchTrainByNumber(trainNum, station, _isRetry) {
   }
 }
 
-function extractCourseParams(row) {
-  if (!row) return '';
-  const sid = row.scheduleId || row.id || '';
-  const oid = row.orderId || '';
-  const toid = row.trainOrderId || '';
-  
-  let params = [];
-  if (sid) params.push(`scheduleId=${encodeURIComponent(sid)}`);
-  if (oid) params.push(`orderId=${encodeURIComponent(oid)}`);
-  if (toid) params.push(`trainOrderId=${encodeURIComponent(toid)}`);
-  
-  return params.join('&');
-}
-
 // Zwraca osobno nazwę stacji i godzinę — statusText niżej buduje z nich
 // podświetlony HTML (stacja i godzina większą czcionką, godzina w kolorze
 // gradientu punktualności), zamiast zwykłego, trudnego do wyłapania tekstu.
@@ -1121,14 +1098,6 @@ async function deleteTrain(index) {
   bar.id = 'undoBar'; bar.className = 'undo-bar'; bar.setAttribute('role', 'status');
   bar.innerHTML = '<span>' + escapeHtml(I18n.t('mojePociagi.removedToast', { train: label })) + '</span><button onclick="undoDelete()">' + escapeHtml(I18n.t('mojePociagi.undo')) + '</button>';
   document.body.appendChild(bar);
-}
-
-function goDetails(station, number, courseQuery) {
-  let url = `/train?train=${encodeURIComponent(number)}&station=${encodeURIComponent(station)}`;
-  if (courseQuery) {
-    url += `&${courseQuery}`;
-  }
-  window.location.href = url;
 }
 
 

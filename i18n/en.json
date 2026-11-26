@@ -58,7 +58,6 @@
     "moveDown": "Move down",
     "emptyList": "You don't have any trains on your list yet.<br>Add your first one in the form below 👇",
     "loadError": "Error loading data: {message}. Try refreshing.",
-    "confirmClearAll": "Remove all trains from the list? This can't be undone.",
     "reorderBtn": "↕️ Reorder",
     "reorderDone": "✅ Done",
     "reorderHint": "Move trains with the ▲▼ arrows. Stars are hidden meanwhile so nothing gets removed by mistake.",
@@ -284,8 +283,6 @@
     "alert": {
       "reasonToggleTitle": "Show delay reason",
       "boxTitle": "🔔 Alarm: delays / cancellations",
-      "boxTitlePanel": "🔔 Alarms: delays / cancellations",
-      "noneNow": "No cancelled trains or delays over 5 min.",
       "cancelledText": "{time} {label} CANCELLED",
       "delayedText": "{time} {label} +{delay} min",
       "notificationTitle": "Train alarm"
