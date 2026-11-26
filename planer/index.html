@@ -1096,7 +1096,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     var route=btn.hasAttribute('data-det77-route');
     // „▾ szczegóły”: pociągi + przesiadki (bez stacji pośrednich); „▼ Trasa”: to samo + stacje każdego pociągu (25.11)
     if(route){if(!box.hidden&&det77Stops[key]){det77Stops[key]=false}else{det77Stops[key]=true}}
-    else if(!box.hidden){box.hidden=true;det77Stops[key]=false;det77Labels(entry,key);return}
+    else if(!box.hidden){box.hidden=true;det77Stops[key]=false;det77Labels(entry,key);var lg0=entry.querySelector('.itin-legs');if(lg0)lg0.hidden=false;return}
     var L=det77Lookup(key);if(!L||!L.it||!L.it.legs)return;
     box.hidden=false;det77Labels(entry,key);
     box.innerHTML='<div class="muted" style="font-size:13px;margin:8px 0">'+escapeHtml(T('planer.det.loading'))+'</div>';
@@ -1106,6 +1106,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
       if(det77LayoutA()){
         h='<div style="margin-top:6px">'+L.it.legs.map(function(l,i){var nx=L.it.legs[i+1];var x=nx?det77XData((L.it.transfers||[])[i],l,nx,ds[i],ds[i+1],stats):null;return det77LegA(l,ds[i],x,L.date,!!det77Stops[key],key+'|'+i)}).join('')+'</div>';
         box.innerHTML=h+'<div class="muted" style="font-size:12px;margin-top:6px">'+escapeHtml(T('planer.det.source'))+'</div>';
+        var lg=entry.querySelector('.itin-legs');if(lg)lg.hidden=true;   // wariant A zastępuje krótką listę odcinków — bez dublowania
         if(window.StopsView)StopsView.scrollTo(entry);
         return;
       }
@@ -1167,7 +1168,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
         '<span class="itin-dur">'+shortDur(it.durationMinutes)+'</span>'+
         badgeHtml(it)+detBtn+
       '</div>'+
-      legsHtml+'<div class="itin-det77" hidden></div>'+
+      '<div class="itin-legs">'+legsHtml+'</div><div class="itin-det77" hidden></div>'+
       (opts.index!=null?fasterHintHtml(opts.index)+transferHintHtml(opts.index):'')+
       dateLine+savedLine+
       (actionHtml?'<div class="itin-actions">'+actionHtml+'</div>':'')+
