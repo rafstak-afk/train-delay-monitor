@@ -545,7 +545,7 @@
       body = fill(t.brk, { st: tr.station, a: trainLabel(tr.trainA), d: tr.delayA, b: trainLabel(tr.trainB), t: fmt(hm(tr.plannedDepB) + (tr.delayB || 0)) });
     } else if (tr) {
       body = fill(t.warn, { st: tr.station, a: trainLabel(tr.trainA), d: tr.delayA, b: trainLabel(tr.trainB), s: Math.max(0, tr.slack), n: tr.need });
-      if (tr.onlyThanksToB) body += fill(t.onlyB, { b: trainLabel(tr.trainB) });
+      if (tr.onlyThanksToB) { var hx = Date.now() >= Date.parse("2026-11-26T15:00:00+01:00") ? xferHint(tr, lang) : ""; body += hx ? " " + hx : fill(t.onlyB, { b: trainLabel(tr.trainB) }); }   // 26.11 15:00: nowe „Zdążysz, dopóki…”
     } else {
       body = t[res.status] || res.status;
     }

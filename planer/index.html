@@ -1019,7 +1019,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     if(ai<route.length-1)rows+='<details style="margin:2px 0"><summary style="cursor:pointer;opacity:.75;font-size:13px">'+escapeHtml(T('planer.det.after',{n:route.length-1-ai}))+'</summary>'+route.slice(ai+1).map(function(x){return det77StopRow(x,false,'arr')}).join('')+'</details>';
     return head+'<div style="border-left:3px solid #3b82f6;padding-left:10px">'+rows+'</div>';
   }
-  function det77AuthorX(){try{return localStorage.getItem('showVersionBadge')==='1'}catch(e){return false}}
+  function det77AuthorX(){if(Date.now() >= Date.parse("2026-11-26T15:00:00+01:00"))return true;try{return localStorage.getItem('showVersionBadge')==='1'}catch(e){return false}}
   function det77Xfer(t,legA,legB,dA,dB,stats){
     var find=function(d,name,after){var r=d&&Array.isArray(d.route)?d.route:[];for(var i=0;i<r.length;i++)if(det77Norm(r[i].stationName)===det77Norm(name))return r[i];return null};
     var a=find(dA,legA.alight.stationName),b=find(dB,legB.board.stationName);

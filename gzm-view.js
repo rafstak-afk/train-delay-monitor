@@ -2297,7 +2297,7 @@
       return foldRoute(rows, ib, ia, "f|" + leg.orderId, "station");
     }
     // 25.11: „▼ Trasa” = przystanki każdego pojazdu w karcie (pod jego wierszem); rozwinięcie karty samo — bez przystanków.
-    function xAuthor() { try { return localStorage.getItem("showVersionBadge") === "1"; } catch (e) { return false; } }   // TODO 113: nowy wygląd przesiadki — najpierw profil autora
+    function xAuthor() { if (Date.now() >= Date.parse("2026-11-26T15:00:00+01:00")) return true; try { return localStorage.getItem("showVersionBadge") === "1"; } catch (e) { return false; } }   // TODO 113: nowy wygląd przesiadki — najpierw profil autora
     function fInline() { if (ceOn() && Date.now() >= Date.parse("2026-11-25T17:00:00+01:00")) return true; try { return ceOn() && localStorage.getItem("showVersionBadge") === "1"; } catch (e) { return false; } }   // dla wszystkich od 25.11 17:00 (zaplanowane), wcześniej profil autora
     function fStops(q) {
       if (!fInline()) return "";
