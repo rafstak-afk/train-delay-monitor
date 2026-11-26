@@ -263,6 +263,54 @@ test("Przypomnienia: wyjście = odjazd − dojście, domyślnie 30 i 15 min, por
   if (!/DTSTART;TZID=Europe\/Warsaw:20261102T144000/.test(ics) || (ics.match(/BEGIN:VALARM/g) || []).length !== 3 || !/TRIGGER:-PT30M/.test(ics)) throw new Error(ics);
 });
 
+// ===== TODO 129: etapy przesiadki (opcja xfer2 — profil autora). Plan: A przyj. 14:10, B odj. 14:20 (ten sam peron).
+const x2 = (now, ws) => ({ minTransfer: 3, xfer2: true, now: now, waitStats: ws || null });
+test("129 (4) dochowana: A przyj. +12 (14:22), B odj. potwierdzony +4 (14:24) → ✅", () => {
+  const r = ev(trainA({ started: true, arrived: true, arrDelay: 12 }), trainB({ started: true, departed: true, depDelay: 4 }), x2(870));
+  const t = r.transfers[0];
+  eq(t.phase, "held"); eq(t.status, "ok"); eq(t.realSlack, 2); eq(r.status, "ok");
+  if (!/dochowana/.test(G.phaseText(t, "pl"))) throw new Error(G.phaseText(t, "pl"));
+  eq(G.phaseBadge(t, "pl"), "✅ dochowana");
+});
+test("129 (4) zerwana: A przyj. +15 (14:25), B odjechał planowo 14:20 → ❌", () => {
+  const t = ev(trainA({ started: true, arrived: true, arrDelay: 15 }), trainB({ started: true, departed: true, depDelay: 0 }), x2(870)).transfers[0];
+  eq(t.phase, "gone"); eq(t.status, "broken");
+});
+test("129 (3) jeszcze stoi: A przyj. +12, B nie potwierdzony, prognoza +3 → 🟢 „jeszcze stoi”", () => {
+  const t = ev(trainA({ started: true, arrived: true, arrDelay: 12 }), trainB({ started: true, forecast: 3 }), x2(863)).transfers[0];
+  eq(t.phase, "still"); eq(t.status, "ok");
+  if (!/jeszcze nie odjechał/.test(G.phaseText(t, "pl"))) throw new Error(G.phaseText(t, "pl"));
+});
+test("129 (3) nieaktualne: 15 min po przyjeździe A bez potwierdzenia B → bez „jeszcze stoi”", () => {
+  const t = ev(trainA({ started: true, arrived: true, arrDelay: 12 }), trainB({ started: true, forecast: 3 }), x2(880)).transfers[0];
+  eq(t.phase, undefined);
+});
+test("129 (1) poczeka: A +14 (14:24), PLK przesuwa odjazd B na 14:26 → 🟡 „poczeka”", () => {
+  const t = ev(trainA({ started: true, cur: 14, forecast: 14 }), trainB({ started: true, cur: 6, forecast: 6 }), x2(850)).transfers[0];
+  eq(t.phase, "bWaits"); eq(t.status, "risk");
+  if (!/14:26/.test(G.phaseText(t, "pl"))) throw new Error(G.phaseText(t, "pl"));
+});
+test("129 (2) bywa, że czeka: A +14, B bez prognozy, czekał 5 z 31 (najdłużej 6) → 🟠 zamiast 🔴", () => {
+  const ws = { pary: { "Chorzów Batory|40600|40500": [31, 5, 6] } };
+  const t = ev(trainA({ started: true, cur: 14, forecast: 14 }), trainB(), x2(850, ws)).transfers[0];
+  eq(t.status, "risk"); eq(t.mayWait, "maybe"); eq(G.phaseBadge(t, "pl"), "🟠 bywa, że czeka");
+  if (!/5 z 31/.test(G.phaseText(t, "pl"))) throw new Error(G.phaseText(t, "pl"));
+});
+test("129 (2) brakuje więcej niż najdłuższe czekanie → zostaje 🔴", () => {
+  const ws = { pary: { "Chorzów Batory|40600|40500": [31, 5, 3] } };
+  eq(ev(trainA({ started: true, cur: 14, forecast: 14 }), trainB(), x2(850, ws)).transfers[0].status, "broken");
+});
+test("129 bez opcji xfer2 — zachowanie jak dotąd", () => {
+  const t = ev(trainA({ started: true, arrived: true, arrDelay: 12 }), trainB({ started: true, departed: true, depDelay: 4 })).transfers[0];
+  eq(t.phase, undefined);
+});
+test("129 (5) powiadomienie: 🔴 → dochowana = „better” z tekstem etapu", () => {
+  const res = ev(trainA({ started: true, arrived: true, arrDelay: 12 }), trainB({ started: true, departed: true, depDelay: 4 }), x2(870));
+  eq(G.shouldNotify({ status: "broken", delayA: 12 }, { status: res.status, delayA: 12 }), "better");
+  const m = G.message(conn, res, "better", "pl", null);
+  if (!/dochowana/.test(m.body)) throw new Error(m.body);
+});
+
 let fail = 0;
 for (const t of T) { try { t.fn(); console.log("  ✔ " + t.name); } catch (e) { fail++; console.log("  ✘ " + t.name + "\n      " + e.message); } }
 console.log("\n" + (T.length - fail) + "/" + T.length + " testów OK");

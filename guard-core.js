@@ -339,7 +339,7 @@
   var UNIFY_AT = Date.parse("2026-11-26T16:00:00+01:00");
   function unifyOn() { return Date.now() >= UNIFY_AT; }
   function xferClass(r) { return r == null || !isFinite(r) ? "nodata" : r < 0 ? "broken" : r <= 1 ? "edge" : r < 5 ? "risk" : "ok"; }
-  function evalTransfer(legA, legB, rA, rB, minTransfer) {
+  function evalTransfer(legA, legB, rA, rB, minTransfer, x2) {
     var station = legA.alight.stationName;
     var stationChange = norm(legA.alight.stationName) !== norm(legB.board.stationName);
     var plannedA = hm((rA && !rA.noData && rA.plannedArr) || legA.alight.time);
@@ -378,7 +378,30 @@
     // B już odjechał, a A jeszcze nie dojechał — po przesiadce.
     if (rB.boarded && !rA.arrived && out.status !== "ok") out.status = "broken";
     out.bGone = !!(rB.boarded && !rA.arrived);
+    if (x2) xferPhase(out, rA, rB, plannedA, plannedB, need, x2);
     return out;
+  }
+  // ===== TODO 129 (26.11, profil autora): status przesiadki zmienia się w miarę napływu danych PLK — od najwcześniejszej informacji:
+  // (1) bWaits — PLK przesunęło odjazd B (prognoza) i to wystarcza na przejście → 🟡 „poczeka”;
+  // (3) still  — A potwierdzony na stacji przesiadki, B jeszcze nie odjechał → 🟢/🟡 „jeszcze stoi”;
+  // (4) held / heldTight — odjazd B potwierdzony po przyjeździe A → ✅ „dochowana” (koniec); gone — B odjechał przed A → ❌.
+  // (2) mayWait — w evaluate(), ze statystyki czekania. Bez dodatkowych zapytań do PLK.
+  function xferPhase(out, rA, rB, plannedA, plannedB, need, x2) {
+    var tA = plannedA + (rA.delayArr || 0), bDep = plannedB + Math.max(0, rB.delayDep || 0);
+    out.etaB = fmt(bDep);
+    if (rA.arrived && rB.boarded) {
+      var real = bDep - tA;
+      out.realSlack = real;
+      if (real >= 0) { out.phase = real >= need ? "held" : "heldTight"; out.status = "ok"; out.waited = Math.max(0, rB.delayDep || 0); }
+      else { out.phase = "gone"; out.status = "broken"; }
+      return;
+    }
+    if (rA.arrived && !rB.boarded) {
+      // „jeszcze nie odjechał” tylko świeżo po przyjeździe A — PLK potwierdza odjazd z 1–2 min opóźnieniem
+      if (typeof x2.now === "number" && x2.now <= Math.max(tA, bDep) + 3) { out.phase = "still"; out.status = bDep - tA >= need ? "ok" : "risk"; }
+      return;
+    }
+    if (rB.depSource === "forecast" && (rB.delayDep || 0) > 0 && out.slack >= need && out.onlyThanksToB) out.phase = "bWaits";
   }
 
   function worse(a, b) { return (RANK[b] || 0) > (RANK[a] || 0) ? b : a; }
@@ -390,13 +413,19 @@
     var legs = conn.legs || [];
     var r = legs.map(function (l, i) { return readLeg(l, readings[i]); });
     var transfers = [];
-    for (var i = 0; i < legs.length - 1; i++) transfers.push(evalTransfer(legs[i], legs[i + 1], r[i], r[i + 1], minTransfer));
+    var x2 = null;
+    if (opts.xfer2) { var wn = warsawNow(); x2 = { now: opts.now != null ? opts.now : (conn.date === wn.date ? wn.min : null) }; }
+    for (var i = 0; i < legs.length - 1; i++) transfers.push(evalTransfer(legs[i], legs[i + 1], r[i], r[i + 1], minTransfer, x2));
     if (opts.waitStats) transfers.forEach(function (t, k) {
       if ((t.status !== "risk" && t.status !== "broken") || legs[k].mode === "gzm" || legs[k + 1].mode === "gzm") return;
       var rb = r[k + 1], ra = r[k];
       if (rb && rb.boarded) return;   // B już odjechał
       t.wait = waitHint(opts.waitStats, t.station, legs[k + 1].train && legs[k + 1].train.number, legs[k].train && legs[k].train.number, rb && rb.line, ra && ra.line);
       if (t.wait) t.needWait = Math.max(0, (t.need || 0) - (typeof t.slack === "number" ? t.slack : 0));
+      // TODO 129 (2): pociąg zwykle/bywa, że czeka, a brakuje nie więcej niż jego najdłuższe czekanie → zamiast 🔴 „zagrożona”
+      if (x2 && t.wait && t.status === "broken" && !t.phase && !(ra && ra.arrived) && t.wait.w > 0 && t.needWait > 0 && t.needWait <= t.wait.max) {
+        t.status = "risk"; t.mayWait = t.wait.w / t.wait.n >= 0.5 ? "likely" : "maybe";
+      }
     });
     var status = "ok";
     r.forEach(function (x) { if (x.noData) status = worse(status, "nodata"); else if (x.cancelled) status = worse(status, "cancelled"); else if (rotationRisk(x)) status = worse(status, "risk"); });
@@ -533,6 +562,55 @@
     if (t.status === "risk") return fill(R === 0 ? h.keepA0 : h.keepA, { a: a, r: R });   // na styk
     return "";
   }
+  // TODO 129: teksty etapów przesiadki (karta i powiadomienie) + krótka plakietka
+  var PX = {
+    pl: { held: "✅ Przesiadka w {st} dochowana — {b} odjechał {n} min po przyjeździe {a}.", heldTight: "✅ Przesiadka w {st} dochowana na styk — {b} odjechał {n} min po przyjeździe {a}.",
+      gone: "❌ {b} odjechał z {st} przed przyjazdem {a} — przesiadka zerwana.", still: "🟢 {a} jest już w {st} — {b} wg PLK jeszcze nie odjechał{p}.", stillRisk: "🟡 {a} jest już w {st} — {b} wg PLK jeszcze nie odjechał{p}. Idź od razu.",
+      bWaits: "🟡 {b} wg PLK odjedzie z {st} o {t} — poczeka na {a}. Zdążysz, jeśli nie ruszy wcześniej.", maybe: "🟠 Przesiadka w {st} zagrożona, ale możliwa: bywa, że {b} czeka na {a} ({w} z {c} razy, najdłużej {m} min).",
+      likely: "🟡 {b} zwykle czeka na {a} w {st} ({w} z {c} razy, najdłużej {m} min) — przesiadka prawdopodobna.", plat: ", peron {p}",
+      bHeld: "✅ dochowana", bHeldTight: "✅ dochowana (na styk)", bGone: "❌ odjechał", bStill: "🟢 jeszcze stoi", bStillRisk: "🟡 jeszcze stoi — idź", bWaitsB: "🟡 poczeka", bMaybe: "🟠 bywa, że czeka", bLikely: "🟡 zwykle czeka" },
+    en: { held: "✅ Connection at {st} made — {b} left {n} min after {a} arrived.", heldTight: "✅ Connection at {st} made, just — {b} left {n} min after {a} arrived.",
+      gone: "❌ {b} left {st} before {a} arrived — connection missed.", still: "🟢 {a} is already at {st} — according to PLK {b} hasn't left yet{p}.", stillRisk: "🟡 {a} is already at {st} — according to PLK {b} hasn't left yet{p}. Go now.",
+      bWaits: "🟡 According to PLK {b} will leave {st} at {t} — it will wait for {a}. You'll make it if it doesn't leave earlier.", maybe: "🟠 Connection at {st} at risk but possible: {b} sometimes waits for {a} ({w} of {c} times, up to {m} min).",
+      likely: "🟡 {b} usually waits for {a} at {st} ({w} of {c} times, up to {m} min) — connection likely.", plat: ", platform {p}",
+      bHeld: "✅ made", bHeldTight: "✅ made (just)", bGone: "❌ left", bStill: "🟢 still there", bStillRisk: "🟡 still there — go", bWaitsB: "🟡 will wait", bMaybe: "🟠 sometimes waits", bLikely: "🟡 usually waits" },
+    de: { held: "✅ Anschluss in {st} geklappt — {b} fuhr {n} Min. nach Ankunft von {a} ab.", heldTight: "✅ Anschluss in {st} knapp geklappt — {b} fuhr {n} Min. nach Ankunft von {a} ab.",
+      gone: "❌ {b} fuhr in {st} vor Ankunft von {a} ab — Anschluss verpasst.", still: "🟢 {a} ist schon in {st} — {b} ist laut PLK noch nicht abgefahren{p}.", stillRisk: "🟡 {a} ist schon in {st} — {b} ist laut PLK noch nicht abgefahren{p}. Geh sofort.",
+      bWaits: "🟡 {b} fährt laut PLK um {t} in {st} ab — wartet auf {a}. Klappt, wenn er nicht früher abfährt.", maybe: "🟠 Anschluss in {st} gefährdet, aber möglich: {b} wartet manchmal auf {a} ({w} von {c} Mal, bis {m} Min.).",
+      likely: "🟡 {b} wartet in {st} meist auf {a} ({w} von {c} Mal, bis {m} Min.) — Anschluss wahrscheinlich.", plat: ", Gleis {p}",
+      bHeld: "✅ geklappt", bHeldTight: "✅ knapp geklappt", bGone: "❌ abgefahren", bStill: "🟢 steht noch", bStillRisk: "🟡 steht noch — los", bWaitsB: "🟡 wartet", bMaybe: "🟠 wartet manchmal", bLikely: "🟡 wartet meist" },
+    cs: { held: "✅ Přestup ve stanici {st} se povedl — {b} odjel {n} min po příjezdu {a}.", heldTight: "✅ Přestup ve stanici {st} se těsně povedl — {b} odjel {n} min po příjezdu {a}.",
+      gone: "❌ {b} odjel ze stanice {st} před příjezdem {a} — přestup ujel.", still: "🟢 {a} už je ve stanici {st} — {b} podle PLK ještě neodjel{p}.", stillRisk: "🟡 {a} už je ve stanici {st} — {b} podle PLK ještě neodjel{p}. Jdi hned.",
+      bWaits: "🟡 {b} podle PLK odjede ze stanice {st} v {t} — počká na {a}. Stihneš, pokud neodjede dřív.", maybe: "🟠 Přestup ve stanici {st} ohrožen, ale možný: {b} někdy čeká na {a} ({w} z {c}, nejdéle {m} min).",
+      likely: "🟡 {b} ve stanici {st} obvykle čeká na {a} ({w} z {c}, nejdéle {m} min) — přestup pravděpodobný.", plat: ", nástupiště {p}",
+      bHeld: "✅ povedl se", bHeldTight: "✅ těsně", bGone: "❌ odjel", bStill: "🟢 ještě stojí", bStillRisk: "🟡 ještě stojí — jdi", bWaitsB: "🟡 počká", bMaybe: "🟠 někdy čeká", bLikely: "🟡 obvykle čeká" },
+    es: { held: "✅ Transbordo en {st} hecho: {b} salió {n} min después de llegar {a}.", heldTight: "✅ Transbordo en {st} hecho por poco: {b} salió {n} min después de llegar {a}.",
+      gone: "❌ {b} salió de {st} antes de llegar {a}: transbordo perdido.", still: "🟢 {a} ya está en {st}; según PLK {b} aún no ha salido{p}.", stillRisk: "🟡 {a} ya está en {st}; según PLK {b} aún no ha salido{p}. Ve ya.",
+      bWaits: "🟡 Según PLK {b} saldrá de {st} a las {t}: esperará a {a}. Llegarás si no sale antes.", maybe: "🟠 Transbordo en {st} en riesgo pero posible: {b} a veces espera a {a} ({w} de {c} veces, hasta {m} min).",
+      likely: "🟡 {b} suele esperar a {a} en {st} ({w} de {c} veces, hasta {m} min): transbordo probable.", plat: ", andén {p}",
+      bHeld: "✅ hecho", bHeldTight: "✅ por poco", bGone: "❌ salió", bStill: "🟢 aún está", bStillRisk: "🟡 aún está: ve", bWaitsB: "🟡 esperará", bMaybe: "🟠 a veces espera", bLikely: "🟡 suele esperar" },
+    uk: { held: "✅ Пересадка на станції {st} відбулася — {b} відправився через {n} хв після прибуття {a}.", heldTight: "✅ Пересадка на станції {st} ледь відбулася — {b} відправився через {n} хв після прибуття {a}.",
+      gone: "❌ {b} відправився зі станції {st} до прибуття {a} — пересадку втрачено.", still: "🟢 {a} вже на станції {st} — {b} за даними PLK ще не відправився{p}.", stillRisk: "🟡 {a} вже на станції {st} — {b} за даними PLK ще не відправився{p}. Іди одразу.",
+      bWaits: "🟡 За даними PLK {b} відправиться зі станції {st} о {t} — зачекає на {a}. Встигнеш, якщо не рушить раніше.", maybe: "🟠 Пересадка на станції {st} під загрозою, але можлива: {b} іноді чекає на {a} ({w} з {c} разів, до {m} хв).",
+      likely: "🟡 {b} зазвичай чекає на {a} на станції {st} ({w} з {c} разів, до {m} хв) — пересадка ймовірна.", plat: ", платформа {p}",
+      bHeld: "✅ відбулася", bHeldTight: "✅ ледь", bGone: "❌ відправився", bStill: "🟢 ще стоїть", bStillRisk: "🟡 ще стоїть — іди", bWaitsB: "🟡 зачекає", bMaybe: "🟠 іноді чекає", bLikely: "🟡 зазвичай чекає" }
+  };
+  function phaseKey(t) {
+    if (!t) return "";
+    if (t.phase === "still") return t.status === "ok" ? "still" : "stillRisk";
+    return t.phase || t.mayWait || "";
+  }
+  function phaseText(t, lang) {
+    var k = phaseKey(t); if (!k) return "";
+    var P = PX[lang] || PX.pl, h = t.wait || {};
+    return fill(P[k], { st: t.station, a: trainLabel(t.trainA), b: trainLabel(t.trainB), n: t.realSlack, t: t.etaB, w: h.w, c: h.n, m: h.max,
+      p: t.platformDep ? fill(P.plat, { p: t.platformDep }) : "" });
+  }
+  var PXB = { held: "bHeld", heldTight: "bHeldTight", gone: "bGone", still: "bStill", stillRisk: "bStillRisk", bWaits: "bWaitsB", maybe: "bMaybe", likely: "bLikely" };
+  function phaseBadge(t, lang) {
+    var k = phaseKey(t); if (!k) return "";
+    return (PX[lang] || PX.pl)[PXB[k]] || "";
+  }
   function fill(s, p) { return String(s).replace(/\{(\w+)\}/g, function (m, k) { return p[k] != null ? p[k] : m; }); }
   function trainLabel(t) { return [t && t.category, t && t.number].filter(Boolean).join(" ") || "?"; }
 
@@ -547,6 +625,8 @@
       var cs = ci >= 0 && res.legs[ci].cancelSection;
       if (ci >= 0 && res.legs[ci].cancelLikely && t.likely) body = body.replace(/\.?$/, function () { return t.likely + "."; });
       if (cs && t.sec) body = body.replace(/\.?$/, function () { return fill(t.sec, { a: cs.from, b: cs.to, z: cs.zka ? t.zka : "" }) + "."; });
+    } else if (tr && (tr.phase || tr.mayWait) && phaseText(tr, lang)) {
+      body = phaseText(tr, lang);
     } else if (res.status === "risk" && kind !== "better" && rotationText(conn, res, lang) && (!tr || (RANK[tr.status] || 0) < RANK.risk)) {
       body = rotationText(conn, res, lang);
     } else if (kind === "better" && tr) {
@@ -559,7 +639,7 @@
     } else {
       body = t[res.status] || res.status;
     }
-    if (tr && tr.wait && (res.status === "risk" || res.status === "broken") && kind !== "better") body += " " + waitText(tr, lang);
+    if (tr && tr.wait && !tr.mayWait && !tr.phase && (res.status === "risk" || res.status === "broken") && kind !== "better") body += " " + waitText(tr, lang);
     var mixedTrip = (conn.legs || []).some(function (l) { return l.mode === "gzm"; });
     if ((res.status === "broken" || res.status === "cancelled") && kind !== "better") body += (altText ? fill(t.alt, { alt: altText }) : (mixedTrip ? "" : t.check)) + (mixedTrip && t.mixed ? t.mixed : "");
     else if (res.status === "risk" && kind !== "better" && altText) body += fill(t.alt, { alt: altText });   // notatka 25.11: plan B od razu przy zagrożonej przesiadce
@@ -824,7 +904,7 @@
     isCancelled: isCancelled, partialCancel: partialCancel, likelyCancelled: likelyCancelled,
     rotationQuery: rotationQuery, rotationFrom: rotationFrom, rotationRisk: rotationRisk, rotationText: rotationText,
     rotationLive: rotationLive, rotationResolve: rotationResolve, rotationLine: rotationLine,
-    lineOf: lineOf, waitHint: waitHint, waitText: waitText, gx: gx, xferHint: xferHint, xferClass: xferClass, unifyOn: unifyOn
+    lineOf: lineOf, waitHint: waitHint, waitText: waitText, gx: gx, xferHint: xferHint, xferClass: xferClass, unifyOn: unifyOn, phaseText: phaseText, phaseBadge: phaseBadge
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   root.GuardCore = api;

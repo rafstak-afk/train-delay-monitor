@@ -807,7 +807,7 @@ async function runGuard(env, origin, token, profile, subs, conns, fetchTrain, su
     }
     // TODO 75 (autor): czy pociąg zwykle czeka na spóźniony dowożący — statystyka z tablic
     if (author && waitStats === undefined) waitStats = await fetchJson(origin, "/data/czekanie.json");
-    const res = GuardCore.evaluate(conn, readings, { minTransfer: set.minTransfer, waitStats: author ? waitStats : null });
+    const res = GuardCore.evaluate(conn, readings, { minTransfer: set.minTransfer, waitStats: author ? waitStats : null, xfer2: !!author });   // TODO 129: etapy przesiadki (autor)
     const t = res.transfers[res.worst];
     const prev = prevState[conn.id] || null;
     const cur = { status: res.status, delayA: t && typeof t.delayA === "number" ? t.delayA : null };

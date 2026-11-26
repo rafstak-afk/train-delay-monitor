@@ -169,7 +169,8 @@
   function xBadge(x) {
     if (!x) return "";
     var s = x.status || "ok", n = Number(x.slack), b;
-    if (s === "nodata") b = T("xfer.noData", null, "brak danych");
+    if (x.label) b = x.label;   // TODO 129: etap przesiadki („✅ dochowana”, „🟢 jeszcze stoi”…)
+    else if (s === "nodata") b = T("xfer.noData", null, "brak danych");
     else if (s === "cancelled") b = T("xfer.cancelled", null, "pociąg odwołany");
     else if (!isFinite(n)) return "";
     else if (n < 0) b = T("xfer.short", { n: -n }, "{n} min za mało").replace("{n}", -n);

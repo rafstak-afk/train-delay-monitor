@@ -190,7 +190,7 @@
           rotPend[c.id] = pend;
           rotP.then(function () { return waitStatsP(); }).then(function (ws) {
             delete rotPend[c.id];
-            var prevR = results[c.id], res2 = G.evaluate(c, rs, { minTransfer: set.minTransfer, waitStats: ws });
+            var prevR = results[c.id], res2 = G.evaluate(c, rs, { minTransfer: set.minTransfer, waitStats: ws, xfer2: xfer2On() });
             res2.raw = rs; if (prevR && prevR.rising) res2.rising = prevR.rising;
             results[c.id] = res2; render();
           }).catch(function () { delete rotPend[c.id]; render(); });
@@ -199,7 +199,7 @@
           return waitStatsP().then(function (ws) { return { rs: rs, ws: ws }; });   // „czy poczeka” — dla wszystkich od 24.11
         }).then(function (o) {
           var rs = o.rs;
-          var res = G.evaluate(c, rs, { minTransfer: set.minTransfer, waitStats: o.ws });
+          var res = G.evaluate(c, rs, { minTransfer: set.minTransfer, waitStats: o.ws, xfer2: xfer2On() });
           res.raw = rs;
           var t = res.transfers[res.worst];
           if (t && typeof t.delayA === 'number') { var h = trend[c.id] = (trend[c.id] || []); if (h[h.length - 1] !== t.delayA || h.length < 1) h.push(t.delayA); if (h.length > 6) h.shift(); res.rising = G.rising(h); }
@@ -333,8 +333,10 @@
       }
       if (d && (rr.delayDep || rr.delayArr)) det.push(esc(T('xfer.dDelay', { a: rr.delayDep || 0, b: rr.delayArr || 0 }, 'Opóźnienie: odjazd +{a} min, przyjazd +{b} min').replace('{a}', rr.delayDep || 0).replace('{b}', rr.delayArr || 0)) + (srcTxt(rr.arrSource || rr.depSource) ? ' (' + esc(srcTxt(rr.arrSource || rr.depSource)) + ')' : ''));
       if (t) {
-        var hint = G.xferHint ? G.xferHint(t, curLang()) : '';
+        var ph = G.phaseText ? G.phaseText(t, curLang()) : '';   // TODO 129: etap przesiadki (dochowana / jeszcze stoi / poczeka / bywa, że czeka)
+        var hint = G.xferHint && !(t.phase && t.phase !== 'bWaits') ? G.xferHint(t, curLang()) : '';
         if (hint) { warn = true; det.unshift('<span style="color:#ffcc00;font-weight:700">' + esc(hint) + '</span>'); }
+        if (ph) { if (t.status !== 'ok') warn = true; det.unshift('<span style="color:' + (t.status === 'ok' ? '#4ade80' : t.status === 'broken' ? '#ff6b6b' : t.mayWait === 'maybe' ? '#fb923c' : '#ffcc00') + ';font-weight:700">' + esc(ph) + '</span>'); }
         if (t.wait) det.push(esc(G.waitText(t, curLang())));
         if (r.rising && r.worst === i) { warn = true; det.push('📈 ' + esc(T('guard.rising', null, 'Opóźnienie rośnie'))); }
         if (t.stationChange) det.push('🚶 ' + esc(T('xfer.walk', { a: t.station, b: t.toStation }, 'Przejście: {a} → {b}').replace('{a}', t.station).replace('{b}', t.toStation)));
@@ -363,7 +365,7 @@
       return StopsView.legA({ icon: gz ? '' : '🚆', label: label, dir: (function () { var rw = r.raw && r.raw[i]; return rw && Array.isArray(rw.route) && rw.route.length ? rw.route[rw.route.length - 1].stationName : (gz && l.head) || ''; })(), tag: tag, attrs: attrs,
         dep: { time: dR, plan: dP, station: l.board.stationName, plat: d ? rr.platformDep : '' },
         arr: { time: aR, plan: aP + (l.alight.nextDay ? '' : ''), station: l.alight.stationName, plat: d ? rr.platformArr : '', platNext: t && nx && !nx.noData ? nx.platformDep : '' },
-        pending: rotWait, xfer: t ? (G.unifyOn && G.unifyOn() && typeof t.slack === 'number' && t.status !== 'cancelled' && t.status !== 'nodata' ? { status: t.onlyThanksToB && G.xferClass(t.slack - t.need) === 'ok' ? 'risk' : G.xferClass(t.slack - t.need), slack: t.slack - t.need } : { status: t.status, slack: t.slack }) : null, details: det.join('<br>'), warn: warn, key: 'g|' + c.id + '|' + i,
+        pending: rotWait, xfer: t && (t.phase || t.mayWait) && G.phaseBadge ? { status: t.status === 'ok' ? 'ok' : t.status === 'broken' ? 'broken' : 'risk', slack: 0, label: G.phaseBadge(t, curLang()) } : t ? (G.unifyOn && G.unifyOn() && typeof t.slack === 'number' && t.status !== 'cancelled' && t.status !== 'nodata' ? { status: t.onlyThanksToB && G.xferClass(t.slack - t.need) === 'ok' ? 'risk' : G.xferClass(t.slack - t.need), slack: t.slack - t.need } : { status: t.status, slack: t.slack }) : null, details: det.join('<br>'), warn: warn, key: 'g|' + c.id + '|' + i,
         after: !gz && rlegOpen[c.id + '|' + i] ? '<div class="gv-rtrip">' + railStops(c.id, i) + '</div>' : '' });
     }
     function xferHtml(t, rising, la, lb) {
@@ -478,6 +480,8 @@
     }
     // 24.11 (v6.85): zwijanie kart i mapka przejścia pociąg ↔ GZM — dla wszystkich. Nowe testy: wrócić do warunku showVersionBadge.
     function authorOnG() { return true; }
+    // TODO 129 (26.11): etapy przesiadki — na razie profil autora
+    function xfer2On() { try { return localStorage.getItem('showVersionBadge') === '1'; } catch (e) { return false; } }
     var folded = (function () { try { return JSON.parse(localStorage.getItem('guardFoldV1')) || {}; } catch (e) { return {}; } })();
     function cardHtml(c) {
       var r = results[c.id] || { status: 'nodata' };
