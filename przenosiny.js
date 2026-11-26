@@ -26,6 +26,8 @@
     var get = function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } };
     var moved = get("przenosinyZrobione"), hasProfile = !!get("profileToken");
     if (moved && hasProfile) return;
+    // decyzja 26.11 (TODO 117): do 22.12 bez paska „Przenieś” — w części sieci firmowych nowa domena jest jeszcze blokowana; od 22.12 wraca sam
+    if (Date.now() < Date.parse("2026-12-22T00:00:00+01:00")) return;
     var send = null;
     window.addEventListener("message", function (ev) {
       if (ev.origin !== NEW || !ev.data) return;
