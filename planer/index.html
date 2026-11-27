@@ -130,6 +130,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
 .history-btns{flex:0 0 auto;display:flex;flex-direction:column;gap:6px;align-items:stretch}
 /* notatka 22.11: mała ikonka 📅 zamiast dużego pola daty — pole niewidoczne na ikonce, stuknięcie otwiera kalendarz */
 .rerun-pick{position:relative;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;width:40px;height:36px;border:1.5px solid var(--blue);border-radius:8px;padding:0;font-size:17px;cursor:pointer;align-self:center}.rerun-pick input{position:absolute;inset:0;width:100%;height:100%;opacity:0;border:0;padding:0;cursor:pointer;color-scheme:dark}
+.x-cxl{border:2px solid #ff4d4d!important;border-left-width:6px!important;background-color:rgba(255,77,77,.07)!important;box-shadow:0 0 0 1px rgba(255,77,77,.35)}.x-cxl .cxl-t{color:#ff6b6b;font-weight:800;font-size:14.5px;margin:0 0 6px;line-height:1.35}.x-cxl .cxl-t span{font-weight:400;color:#fca5a5}.x-cxl>*:not(.cxl-t){opacity:.6}
 .history-rerun.old{border-color:var(--line);color:var(--muted);padding:6px 10px;font-weight:600}
 .saved-date{font-size:12.5px;font-weight:700;margin-top:6px}
 .saved-date.past{color:var(--muted)}
@@ -986,6 +987,27 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     var e=getSavedResults().find(function(x){return x._key===key.slice(2)});
     return e?{it:e.snapshot,date:e.query&&e.query.date}:null;
   }
+  // ===== TODO 134 (27.11, dla wszystkich od razu — jak 133): odwołany pociąg w wynikach wyszukiwarki kolejowej, Zapisanych i Ostatnich.
+  // Każdy kurs (orderId) sprawdzamy raz (bieg pociągu z PLK, ta sama pamięć co „▾ szczegóły”); odwołanie → czerwona ramka i napis w karcie.
+  var cxlByOrder={},cxlChecked={};
+  function cxlCheck(its,date,after){
+    if(!window.GuardCore||!date)return;
+    var jobs=[];
+    (its||[]).forEach(function(it){(it&&it.legs||[]).forEach(function(l){
+      if(!l.orderId||cxlChecked[l.orderId])return;cxlChecked[l.orderId]=1;
+      jobs.push(det77Train(l,date).then(function(d){
+        if(!d)return;
+        var rd=GuardCore.readLeg({board:{stationName:l.board.stationName,time:l.board.time},alight:{stationName:l.alight.stationName,time:l.alight.time}},d);
+        if(!rd.noData&&rd.cancelled)cxlByOrder[l.orderId]={likely:!!rd.cancelLikely,label:[l.train&&l.train.category,l.train&&l.train.number].filter(Boolean).join(' ')};
+      }).catch(function(){}));
+    })});
+    if(jobs.length)Promise.all(jobs).then(function(){if(Object.keys(cxlByOrder).length&&after)after()});
+  }
+  function cxlLine(it){
+    var cx=(it&&it.legs||[]).map(function(l){return l.orderId&&cxlByOrder[l.orderId]}).filter(Boolean);
+    if(!cx.length)return '';
+    return '<div class="cxl-t">'+escapeHtml(cx.map(function(c){return '⚫ '+c.label+' '+T(c.likely?'gzm.cxlLikely':'gzm.cxlYes')}).join(' · '))+' <span>— '+escapeHtml(T('gzm.cxlHint'))+'</span></div>';
+  }
   function det77Train(leg,date){
     var k=leg.scheduleId+'|'+leg.orderId+'|'+date;
     if(!det77Cache[k])det77Cache[k]=fetch('/api/train-details?'+new URLSearchParams({scheduleId:leg.scheduleId||'',orderId:leg.orderId||'',operatingDate:date||'',train:(leg.train&&leg.train.number)||'',station:leg.board.stationName}).toString()).then(function(r){return r.ok?r.json():null}).catch(function(){return null});
@@ -1168,7 +1190,8 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     var savedLine=opts.savedAt?'<div class="saved-at">'+escapeHtml(T('planer.savedAt',{date:new Date(opts.savedAt).toLocaleString(dateLocale())}))+'</div>':'';
     var detKey=opts.index!=null?'i:'+opts.index:(opts.savedKey?'s:'+opts.savedKey:'');
     var detBtn=detKey&&det77On()?'<span style="margin-left:auto;display:inline-flex;gap:6px"><button type="button" class="btn-sm secondary itin-det-btn" data-det77="'+escapeHtml(detKey)+'">'+escapeHtml(T('planer.det.open'))+'</button><button type="button" class="btn-sm secondary itin-det-btn" data-det77="'+escapeHtml(detKey)+'" data-det77-route="1">'+escapeHtml(T('planer.det.route'))+'</button></span>':'';
-    return '<div class="entry"'+(opts.index!=null?' id="itin-'+opts.index+'"':'')+(detKey?' data-det77-entry="'+escapeHtml(detKey)+'"':'')+'>'+
+    var cxl=cxlLine(it);
+    return '<div class="entry'+(cxl?' x-cxl':'')+'"'+(opts.index!=null?' id="itin-'+opts.index+'"':'')+(detKey?' data-det77-entry="'+escapeHtml(detKey)+'"':'')+'>'+cxl+
       '<div class="itin-head">'+
         '<span class="itin-time">'+escapeHtml(it.departureTime)+'</span><span class="itin-arrow">→</span><span class="itin-time">'+escapeHtml(it.arrivalTime)+'</span>'+
         (it.arrivalNextDay?'<span class="itin-nextday">'+escapeHtml(T('planer.nextDay'))+'</span>':'')+
@@ -1250,6 +1273,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
       ? '<button type="button" class="btn-sm" id="loadMoreBtn" style="width:100%;margin-top:4px">'+escapeHtml(T('planer.loadMore',{count:Math.min(RESULTS_PAGE_SIZE,remaining),remaining:remaining}))+'</button>'
       : '';
     listEl.innerHTML=lastNotes+toShow.map(function(it,i){return itineraryHtml(it,{index:i})}).join('')+moreHtml;
+    cxlCheck(toShow,lastQuery&&lastQuery.date,renderVisibleItineraries);
   }
 
   $('resultsList').addEventListener('click',function(e){
@@ -1419,6 +1443,8 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
       return (savedOldTimetable(e)?'<div class="itin-old-tt" style="margin:10px 0 -4px;padding:8px 10px;border:1px solid #f59e0b;border-radius:10px;color:#fbbf24;font-size:13px">🗓️ '+escapeHtml(T('planer.oldTt'))+' <button type="button" class="btn-sm secondary itin-fresh" data-saved-key="'+escapeHtml(e._key)+'">'+escapeHtml(T('planer.oldTtSearch'))+'</button></div>':'')+
         itineraryHtml(e.snapshot,{savedKey:e._key,savedAt:e.createdAt});
     }).join('');
+    var today=new Date().toLocaleDateString('sv-SE',{timeZone:'Europe/Warsaw'});
+    list.slice().reverse().filter(function(e){return e.query&&e.query.date>=today}).slice(0,5).forEach(function(e){cxlCheck([e.snapshot],e.query.date,renderSavedPanel)});
   }
   $('savedList').addEventListener('click',function(e){
     var legRow=e.target.closest('.leg-row');

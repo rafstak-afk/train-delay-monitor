@@ -133,12 +133,14 @@ const TX = {
     arrOk: (a, d, r, z) => `✅ Na ${a} zdążysz, wyjeżdżając najpóźniej: ${d} → ${r} (zapas ${z} min)`, arrNo: (a, t) => `⚠️ Nie znalazłem połączenia z przyjazdem do ${a} (szukam od ${t}). Najwcześniej na miejscu:`,
     best: (d, r, m) => `🏆 Najszybciej na miejscu: ${d} → ${r} (${m} min)`, other: "Inne:", viaNo: v => `Przez stację ${v}: nie znalazłem połączenia.`,
     via: (v, d, r, x) => `🔀 Przez stację ${v}: ${d} → ${r}${x > 0 ? ` (na miejscu ${x} min później niż najszybciej)` : x < 0 ? ` (o ${-x} min wcześniej!)` : " (tak samo)"}`,
-    wait: w => `Do odjazdu najszybszego połączenia: ${w} min.`, today: "dziś", from: "od", src: "Rozkład i opóźnienia: PKP PLK." },
+    wait: w => `Do odjazdu najszybszego połączenia: ${w} min.`, today: "dziś", from: "od", src: "Rozkład i opóźnienia: PKP PLK.",
+    cxl: t => `⚫ Pominąłem połączenia z odwołanym pociągiem: ${t} (wg PLK).`, cxlAll: (A, B, t) => `⚫ Wszystkie znalezione połączenia ${A} → ${B} mają odwołany pociąg (${t}, wg PLK). Spróbuj późniejszej godziny albo 🚆🚌 Pociąg + GZM.` },
   en: { noSt: (a, b) => `I didn't recognise the station ${a}${a && b ? " or " : ""}${b}. Please write full names, e.g. „from Zawiercie to Tarnowskie Góry”.`, none: (A, B, t, d) => `I found no connection ${A} → ${B} from ${t} (${d}). Try another time.`,
     arrOk: (a, d, r, z) => `✅ You'll be there by ${a} if you leave at the latest: ${d} → ${r} (${z} min to spare)`, arrNo: (a, t) => `⚠️ I found no connection arriving by ${a} (searching from ${t}). Earliest arrival:`,
     best: (d, r, m) => `🏆 Fastest arrival: ${d} → ${r} (${m} min)`, other: "Other options:", viaNo: v => `Via ${v}: no connection found.`,
     via: (v, d, r, x) => `🔀 Via ${v}: ${d} → ${r}${x > 0 ? ` (${x} min later than the fastest)` : x < 0 ? ` (${-x} min earlier!)` : " (same time)"}`,
-    wait: w => `Until the fastest connection leaves: ${w} min.`, today: "today", from: "from", src: "Timetable and delays: PKP PLK." }
+    wait: w => `Until the fastest connection leaves: ${w} min.`, today: "today", from: "from", src: "Timetable and delays: PKP PLK.",
+    cxl: t => `⚫ I skipped connections with a cancelled train: ${t} (per PLK).`, cxlAll: (A, B, t) => `⚫ All connections found ${A} → ${B} have a cancelled train (${t}, per PLK). Try a later time or 🚆🚌 Train + GZM.` }
 };
 export async function solve(request, p, now, lang) {
   const X = TX[lang === "en" ? "en" : "pl"];
@@ -148,6 +150,18 @@ export async function solve(request, p, now, lang) {
   const time = p.time && /^\d{1,2}:\d{2}$/.test(p.time) ? p.time.padStart(5, "0") : now.time;
   const out = [], notes = [];
   const base = await planner(request, { from: A.name, to: B.name, date, time });
+  // TODO 134 (27.11): odwołane pociągi — sprawdzamy kursy pierwszych 6 połączeń (raz każdy) i pomijamy połączenia z odwołanym pociągiem
+  const cand = itsOf(base).slice(0, 6), seenO = new Map();
+  for (const it of cand) for (const l of (it.legs || [])) if (l.orderId && !seenO.has(l.orderId)) seenO.set(l.orderId, l);
+  const cxO = new Map();
+  await Promise.all([...seenO.values()].map(async l => {
+    const td = await api(request, "/api/train-details?" + new URLSearchParams({ scheduleId: l.scheduleId || "", orderId: l.orderId, operatingDate: date, train: (l.train && l.train.number) || "" }).toString());
+    if (td && String(td.status || "").toUpperCase() === "X") cxO.set(l.orderId, legTxt(l));
+  }));
+  const isCx = it => (it.legs || []).some(l => cxO.has(l.orderId));
+  const cxNote = cxO.size ? X.cxl([...new Set(cxO.values())].join(", ")) : "";
+  if (itsOf(base).length && itsOf(base).every(isCx)) return { ok: true, text: X.cxlAll(A.name, B.name, [...new Set(cxO.values())].join(", ")) };
+  if (base && Array.isArray(base.itineraries)) base.itineraries = base.itineraries.filter(x => !isCx(x));
   const its = itsOf(base).sort((a, b) => hm(a.arrivalTime) - hm(b.arrivalTime) || hm(b.departureTime) - hm(a.departureTime));
   if (!its.length) return { ok: true, text: X.none(A.name, B.name, time, date) };
   const best = its[0];
@@ -198,6 +212,7 @@ export async function solve(request, p, now, lang) {
     else notes.push(`⏳ Do odjazdu ${wait} min — nie znalazłem przejażdżki tam i z powrotem, która zdąży wrócić.`);
   }
   if (wait > 0 && date === now.date && time === now.time && !(p.flexible && wait >= 20)) notes.push(X.wait(wait));
+  if (cxNote) notes.unshift(cxNote);
   return { ok: true, text: `${A.name} → ${B.name}, ${date === now.date ? X.today : date} ${X.from} ${time}\n\n` + out.join("\n\n") + (notes.length ? "\n\n" + notes.join("\n") : "") + "\n\n" + X.src };
 }
 
