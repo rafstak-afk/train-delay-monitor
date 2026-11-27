@@ -1,5 +1,13 @@
 {
   "common": {
+    "pushLost": {
+      "title": "Der Browser hat die Benachrichtigungen von Czy zdążę? abgeschaltet",
+      "body": "Verspätungsalarme und überwachte Anschlüsse kommen auf diesem Handy nicht an, bis du sie wieder einschaltest.",
+      "how": "Tippe auf das Symbol neben der Adresse (🔒 oder ⓘ) → Berechtigungen → Benachrichtigungen → Zulassen und lade die Seite neu.",
+      "on": "Wieder einschalten",
+      "later": "Später",
+      "ok": "Benachrichtigungen auf diesem Handy wieder an."
+    },
     "burger": {
       "tgzm": "🚋 Straßenbahn-/Busverspätungen",
       "qr": "▣ PLK-QR-Generator",

@@ -1,5 +1,13 @@
 {
   "common": {
+    "pushLost": {
+      "title": "Your browser turned off notifications from Czy zdążę?",
+      "body": "Delay alarms and guarded connections won't reach this phone until you turn them back on.",
+      "how": "Tap the icon next to the address (🔒 or ⓘ) → Permissions → Notifications → Allow, then reload the page.",
+      "on": "Turn back on",
+      "later": "Later",
+      "ok": "Notifications are on again on this phone."
+    },
     "burger": {
       "tgzm": "🚋 Tram/bus delays",
       "qr": "▣ PLK QR generator",

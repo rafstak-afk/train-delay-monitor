@@ -1,5 +1,13 @@
 {
   "common": {
+    "pushLost": {
+      "title": "El navegador desactivó las notificaciones de Czy zdążę?",
+      "body": "Las alarmas de retraso y los transbordos vigilados no llegarán a este teléfono hasta que las vuelvas a activar.",
+      "how": "Toca el icono junto a la dirección (🔒 o ⓘ) → Permisos → Notificaciones → Permitir y recarga la página.",
+      "on": "Volver a activar",
+      "later": "Más tarde",
+      "ok": "Notificaciones activadas de nuevo en este teléfono."
+    },
     "burger": {
       "tgzm": "🚋 Retrasos de tranvías/autobuses",
       "qr": "▣ Generador de QR de PLK",

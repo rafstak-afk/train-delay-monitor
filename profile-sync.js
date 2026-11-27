@@ -381,6 +381,58 @@
     }
   } catch (e) {}
 
+  // ===== TODO 131 (27.11): Chrome potrafi sam odebrać stronie zgodę na powiadomienia („spam lub treści wprowadzające
+  // w błąd”) — wtedy alarmy i Pilnowane przestają przychodzić bez żadnego znaku. Urządzenie było zgłoszone
+  // (pushEndpointThisDevice), a zgody już nie ma → pasek z prośbą o ponowne włączenie. Gdy zgoda jest, ale subskrypcji
+  // nie ma albo ma inny adres (po „Cofnij” Chrome zakłada nową) — zgłaszamy ją od nowa, bez pytania.
+  function tt(k, def, p) {
+    try { if (window.I18n && I18n.t) { const v = I18n.t(k, p); if (v && v !== k) return v; } } catch (e) {}
+    return String(def).replace(/\{(\w+)\}/g, (m, x) => p && p[x] != null ? p[x] : m);
+  }
+  function showPushLost(denied) {
+    if (document.getElementById("pushLostBar")) return;
+    const b = document.createElement("div");
+    b.id = "pushLostBar";
+    b.setAttribute("role", "alert");
+    b.style.cssText = "position:fixed;left:10px;right:10px;bottom:12px;z-index:99999;max-width:560px;margin:0 auto;background:#3a1d1d;border:1px solid #ff6b6b;color:#fff;border-radius:14px;padding:12px 14px;font:14px/1.45 system-ui,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.5)";
+    const btn = "border:0;border-radius:10px;color:#fff;font-weight:800;padding:10px 12px;cursor:pointer;font-size:14px";
+    b.innerHTML = "🔕 <b>" + esc(tt("common.pushLost.title", "Przeglądarka wyłączyła powiadomienia z Czy zdążę?")) + "</b><br>" +
+      esc(tt("common.pushLost.body", "Alarmy o opóźnieniach i pilnowane przesiadki nie przyjdą na ten telefon, dopóki ich nie włączysz.")) +
+      (denied ? '<div style="margin-top:6px;color:#ffd7d7">' + esc(tt("common.pushLost.how", "Stuknij ikonę obok adresu strony (🔒 albo ⓘ) → Uprawnienia → Powiadomienia → Zezwalaj, a potem odśwież stronę.")) + "</div>" : "") +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">' +
+      (denied ? "" : '<button type="button" data-pl="on" style="' + btn + ';flex:1;background:#2e7d32">🔔 ' + esc(tt("common.pushLost.on", "Włącz ponownie")) + "</button>") +
+      '<button type="button" data-pl="later" style="' + btn + ';background:#37474f">' + esc(tt("common.pushLost.later", "Później")) + "</button></div>";
+    document.body.appendChild(b);
+    const on = b.querySelector("[data-pl=on]");
+    if (on) on.onclick = function () {
+      on.textContent = "⏳…";
+      ensureDevicePush(true).then(function (ok) {
+        if (ok) { b.innerHTML = "✅ " + esc(tt("common.pushLost.ok", "Powiadomienia znów włączone na tym telefonie.")); setTimeout(function () { b.remove(); }, 4000); }
+        else { b.remove(); showPushLost(true); }
+      });
+    };
+    b.querySelector("[data-pl=later]").onclick = function () { b.remove(); try { sessionStorage.setItem("pushLostLater", "1"); } catch (e) {} };
+  }
+  function esc(v) { return String(v == null ? "" : v).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+  function pushHealth() {
+    try {
+      if (!getToken() || !("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) return;
+      const stored = localStorage.getItem(PUSH_ENDPOINT_KEY);
+      if (!stored) return;
+      if (Notification.permission === "granted") {
+        navigator.serviceWorker.ready.then(reg => reg.pushManager.getSubscription()).then(sub => {
+          if (!sub || sub.endpoint !== stored) ensureDevicePush(false);
+        }).catch(() => {});
+        return;
+      }
+      if (sessionStorage.getItem("pushLostLater") === "1") return;
+      const show = () => showPushLost(Notification.permission === "denied");
+      if (document.body) show(); else document.addEventListener("DOMContentLoaded", show);
+    } catch (e) {}
+  }
+  setTimeout(pushHealth, 5000);
+  document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") setTimeout(pushHealth, 1500); });
+
   window.ProfileSync = {
     ensureDevicePush,
     generateToken,

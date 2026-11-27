@@ -1,5 +1,13 @@
 {
   "common": {
+    "pushLost": {
+      "title": "Prohlížeč vypnul oznámení z Czy zdążę?",
+      "body": "Upozornění na zpoždění a hlídané přestupy na tento telefon nepřijdou, dokud je znovu nezapneš.",
+      "how": "Klepni na ikonu vedle adresy (🔒 nebo ⓘ) → Oprávnění → Oznámení → Povolit a obnov stránku.",
+      "on": "Znovu zapnout",
+      "later": "Později",
+      "ok": "Oznámení jsou na tomto telefonu znovu zapnutá."
+    },
     "burger": {
       "tgzm": "🚋 Zpoždění tramvají/autobusů",
       "qr": "▣ Generátor QR PLK",

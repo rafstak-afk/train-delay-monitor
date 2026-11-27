@@ -885,10 +885,15 @@ async function runGuard(env, origin, token, profile, subs, conns, fetchTrain, su
     const live = conns.filter(c => !c._remind);
     if (live.length) {
       const nw = warsawNow();
-      for (const n of await carrierNotices(origin, live, nw.date)) {
-        if (seen.includes(n.id)) continue;
+      // TODO 131 (27.11): aktualizacje komunikatu o tym samym pociągu ZASTĘPUJĄ poprzednie (wspólny tag), a w jednym
+      // przebiegu wysyłamy tylko ostatnią — mniej serii powiadomień (Chrome odebrał zgodę „za spam”).
+      const fresh = (await carrierNotices(origin, live, nw.date)).filter(n => !seen.includes(n.id));
+      const byTag = new Map();
+      for (const n of fresh) { n.tag = (n.nums && n.nums.length ? "ks-" + n.nums[0] : n.id).slice(0, 60); byTag.set(n.tag, n); }
+      for (const n of fresh) {
+        if (byTag.get(n.tag) !== n) { next._seen = next._seen.concat(n.id).slice(-80); continue; }
         for (const sub of subs) {
-          try { const st = await sendPush(env, sub, { title: "📢 " + n.src, body: n.title, url: n.url, kind: "guard", tag: n.id.slice(0, 60) }); if (st >= 200 && st < 300) { summary.pushSent++; summary.guardNotices = (summary.guardNotices || 0) + 1; } }
+          try { const st = await sendPush(env, sub, { title: "📢 " + n.src, body: n.title, url: n.url, kind: "guard", tag: n.tag }); if (st >= 200 && st < 300) { summary.pushSent++; summary.guardNotices = (summary.guardNotices || 0) + 1; } }
           catch (e) { summary.errors.push(token + " push (notice): " + e.message); }
         }
         next._seen = next._seen.concat(n.id).slice(-80);

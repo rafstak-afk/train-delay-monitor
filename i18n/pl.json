@@ -1,5 +1,13 @@
 {
   "common": {
+    "pushLost": {
+      "title": "Przeglądarka wyłączyła powiadomienia z Czy zdążę?",
+      "body": "Alarmy o opóźnieniach i pilnowane przesiadki nie przyjdą na ten telefon, dopóki ich nie włączysz.",
+      "how": "Stuknij ikonę obok adresu strony (🔒 albo ⓘ) → Uprawnienia → Powiadomienia → Zezwalaj, a potem odśwież stronę.",
+      "on": "Włącz ponownie",
+      "later": "Później",
+      "ok": "Powiadomienia znów włączone na tym telefonie."
+    },
     "burger": {
       "tgzm": "🚋 TGZM",
       "qr": "▣ Generator QR PLK",
