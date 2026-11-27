@@ -76,6 +76,23 @@
     "unavailable": "Dane chwilowo niedostępne."
   },
   "index": {
+    "v2": {
+      "header": "Czy zdążę?",
+      "btnApi": "Pokaż odjazdy",
+      "btnOfficial": "PLK ↗",
+      "title": "Tablica odjazdów",
+      "titleSt": "Tablica odjazdów · {station}",
+      "metaHint": "Wybierz stację albo wpisz nazwę i stuknij „Pokaż odjazdy” — 20 odjazdów od wybranej lub bieżącej godziny.",
+      "plkTitle": "Wyświetlacz stacyjny PLK",
+      "plkDisplay": "📺 Wyświetlacz PLK ↗",
+      "more": "▾ więcej ({n})",
+      "less": "▴ mniej",
+      "now": "od teraz",
+      "from": "od {d} {t}",
+      "otherDt": "📅 inna data / godzina",
+      "hideDt": "▴ schowaj datę i godzinę",
+      "credit": "Claude Code i RafStaK"
+    },
     "trainWord": "pociąg",
     "lastTrain": "🚆 Ostatnio oglądany: {label} →",
     "favStar": {

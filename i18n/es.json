@@ -76,6 +76,23 @@
     "unavailable": "Datos no disponibles temporalmente."
   },
   "index": {
+    "v2": {
+      "header": "Czy zdążę?",
+      "btnApi": "Mostrar salidas",
+      "btnOfficial": "PLK ↗",
+      "title": "Tablero de salidas",
+      "titleSt": "Tablero de salidas · {station}",
+      "metaHint": "Elige una estación o escribe su nombre y toca «Mostrar salidas»: 20 salidas desde la hora elegida o actual.",
+      "plkTitle": "Pantalla de estación PLK",
+      "plkDisplay": "📺 Pantalla PLK ↗",
+      "more": "▾ más ({n})",
+      "less": "▴ menos",
+      "now": "desde ahora",
+      "from": "desde {d} {t}",
+      "otherDt": "📅 otra fecha / hora",
+      "hideDt": "▴ ocultar fecha y hora",
+      "credit": "Claude Code y RafStaK"
+    },
     "trainWord": "tren",
     "lastTrain": "🚆 Último visto: {label} →",
     "favStar": {

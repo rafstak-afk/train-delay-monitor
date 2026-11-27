@@ -76,6 +76,23 @@
     "unavailable": "Data temporarily unavailable."
   },
   "index": {
+    "v2": {
+      "header": "Czy zdążę?",
+      "btnApi": "Show departures",
+      "btnOfficial": "PLK ↗",
+      "title": "Departure board",
+      "titleSt": "Departure board · {station}",
+      "metaHint": "Pick a station or type its name and tap „Show departures” — 20 departures from the chosen or current time.",
+      "plkTitle": "PLK station display",
+      "plkDisplay": "📺 PLK display ↗",
+      "more": "▾ more ({n})",
+      "less": "▴ less",
+      "now": "from now",
+      "from": "from {d} {t}",
+      "otherDt": "📅 another date / time",
+      "hideDt": "▴ hide date and time",
+      "credit": "Claude Code & RafStaK"
+    },
     "trainWord": "train",
     "lastTrain": "🚆 Last viewed: {label} →",
     "favStar": {

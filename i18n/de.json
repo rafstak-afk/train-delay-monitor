@@ -76,6 +76,23 @@
     "unavailable": "Daten vorübergehend nicht verfügbar."
   },
   "index": {
+    "v2": {
+      "header": "Czy zdążę?",
+      "btnApi": "Abfahrten zeigen",
+      "btnOfficial": "PLK ↗",
+      "title": "Abfahrtstafel",
+      "titleSt": "Abfahrtstafel · {station}",
+      "metaHint": "Bahnhof wählen oder Namen eingeben und „Abfahrten zeigen” tippen — 20 Abfahrten ab der gewählten oder aktuellen Zeit.",
+      "plkTitle": "PLK-Bahnhofsanzeige",
+      "plkDisplay": "📺 PLK-Anzeige ↗",
+      "more": "▾ mehr ({n})",
+      "less": "▴ weniger",
+      "now": "ab jetzt",
+      "from": "ab {d} {t}",
+      "otherDt": "📅 anderes Datum / Uhrzeit",
+      "hideDt": "▴ Datum und Uhrzeit ausblenden",
+      "credit": "Claude Code & RafStaK"
+    },
     "trainWord": "Zug",
     "lastTrain": "🚆 Zuletzt angesehen: {label} →",
     "favStar": {

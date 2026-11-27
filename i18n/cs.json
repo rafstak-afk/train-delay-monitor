@@ -76,6 +76,23 @@
     "unavailable": "Data dočasně nedostupná."
   },
   "index": {
+    "v2": {
+      "header": "Czy zdążę?",
+      "btnApi": "Zobrazit odjezdy",
+      "btnOfficial": "PLK ↗",
+      "title": "Tabule odjezdů",
+      "titleSt": "Tabule odjezdů · {station}",
+      "metaHint": "Vyberte stanici nebo zadejte název a klepněte na „Zobrazit odjezdy” — 20 odjezdů od zvoleného nebo aktuálního času.",
+      "plkTitle": "Staniční displej PLK",
+      "plkDisplay": "📺 Displej PLK ↗",
+      "more": "▾ více ({n})",
+      "less": "▴ méně",
+      "now": "od teď",
+      "from": "od {d} {t}",
+      "otherDt": "📅 jiné datum / čas",
+      "hideDt": "▴ skrýt datum a čas",
+      "credit": "Claude Code a RafStaK"
+    },
     "trainWord": "vlak",
     "lastTrain": "🚆 Naposledy zobrazený: {label} →",
     "favStar": {
