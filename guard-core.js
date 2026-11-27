@@ -410,7 +410,8 @@
       // z 1–2 min opóźnieniem; wcześniej B może jeszcze nawet nie przyjechać (27.11: OsP 40103 +88 min, jeszcze nie wyruszył)
       var nw = x2.now;
       if (typeof nw === "number" && nw >= bDep - 3 && nw <= Math.max(tA, bDep) + 3) {
-        out.phase = "still"; out.status = bDep - tA >= need ? "ok" : "risk";
+        // po godzinie odjazdu bez potwierdzenia nie twierdzimy „nie odjechał” — PLK potwierdza z opóźnieniem (27.11 9:51: 40305)
+        out.phase = nw >= bDep ? "unconf" : "still"; out.status = bDep - tA >= need ? "ok" : "risk";
         if (rB.posName && rB.posIdx >= 0 && rB.posIdx < rB.boardIdx) out.bLast = (rB.posName + " " + (rB.posTime || "")).trim();
       }
       return;
@@ -580,32 +581,32 @@
   // TODO 129: teksty etapów przesiadki (karta i powiadomienie) + krótka plakietka
   var PX = {
     pl: { held: "✅ Przesiadka na stacji {st} dochowana — {b} odjechał {n} min po przyjeździe {a}.", heldTight: "✅ Przesiadka na stacji {st} dochowana na styk — {b} odjechał {n} min po przyjeździe {a}.",
-      gone: "❌ {b} odjechał z {st} przed przyjazdem {a} — przesiadka zerwana.", still: "🟢 {a} jest już na stacji {st} — {b} wg PLK jeszcze nie odjechał{p}{l}.", stillRisk: "🟡 {a} jest już na stacji {st} — {b} wg PLK jeszcze nie odjechał{p}{l}. Idź od razu.", last: " (ostatnio: {x})",
+      gone: "❌ {b} odjechał z {st} przed przyjazdem {a} — przesiadka zerwana.", still: "🟢 {a} jest już na stacji {st} — {b} wg PLK jeszcze nie odjechał{p}{l}.", stillRisk: "🟡 {a} jest już na stacji {st} — {b} wg PLK jeszcze nie odjechał{p}{l}. Idź od razu.", last: " (ostatnio: {x})", unconf: "⏳ {b} miał odjechać ze stacji {st} o {t} — PLK jeszcze nie potwierdziło odjazdu{l}. Jeśli stoi na peronie, zdążysz.", bUnconf: "⏳ brak potwierdzenia PLK",
       bWaits: "🟡 {b} wg PLK odjedzie z {st} o {t} — poczeka na {a}. Zdążysz, jeśli nie ruszy wcześniej.", maybe: "🟠 Przesiadka na stacji {st} zagrożona, ale możliwa: bywa, że {b} czeka na {a} ({w} z {c} razy, najdłużej {m} min).",
       likely: "🟡 {b} zwykle czeka na {a} na stacji {st} ({w} z {c} razy, najdłużej {m} min) — przesiadka prawdopodobna.", plat: ", peron {p}",
       bHeld: "✅ dochowana", bHeldTight: "✅ dochowana (na styk)", bGone: "❌ odjechał", bStill: "🟢 jeszcze nie odjechał", bStillRisk: "🟡 nie odjechał — idź", bWaitsB: "🟡 poczeka", bMaybe: "🟠 bywa, że czeka", bLikely: "🟡 zwykle czeka" },
     en: { held: "✅ Connection at {st} made — {b} left {n} min after {a} arrived.", heldTight: "✅ Connection at {st} made, just — {b} left {n} min after {a} arrived.",
-      gone: "❌ {b} left {st} before {a} arrived — connection missed.", still: "🟢 {a} is already at {st} — according to PLK {b} hasn't left yet{p}{l}.", stillRisk: "🟡 {a} is already at {st} — according to PLK {b} hasn't left yet{p}{l}. Go now.", last: " (last seen: {x})",
+      gone: "❌ {b} left {st} before {a} arrived — connection missed.", still: "🟢 {a} is already at {st} — according to PLK {b} hasn't left yet{p}{l}.", stillRisk: "🟡 {a} is already at {st} — according to PLK {b} hasn't left yet{p}{l}. Go now.", last: " (last seen: {x})", unconf: "⏳ {b} was due to leave {st} at {t} — PLK hasn't confirmed the departure yet{l}. If it's still at the platform, you'll make it.", bUnconf: "⏳ not confirmed by PLK",
       bWaits: "🟡 According to PLK {b} will leave {st} at {t} — it will wait for {a}. You'll make it if it doesn't leave earlier.", maybe: "🟠 Connection at {st} at risk but possible: {b} sometimes waits for {a} ({w} of {c} times, up to {m} min).",
       likely: "🟡 {b} usually waits for {a} at {st} ({w} of {c} times, up to {m} min) — connection likely.", plat: ", platform {p}",
       bHeld: "✅ made", bHeldTight: "✅ made (just)", bGone: "❌ left", bStill: "🟢 not left yet", bStillRisk: "🟡 not left — go", bWaitsB: "🟡 will wait", bMaybe: "🟠 sometimes waits", bLikely: "🟡 usually waits" },
     de: { held: "✅ Anschluss in {st} geklappt — {b} fuhr {n} Min. nach Ankunft von {a} ab.", heldTight: "✅ Anschluss in {st} knapp geklappt — {b} fuhr {n} Min. nach Ankunft von {a} ab.",
-      gone: "❌ {b} fuhr in {st} vor Ankunft von {a} ab — Anschluss verpasst.", still: "🟢 {a} ist schon in {st} — {b} ist laut PLK noch nicht abgefahren{p}{l}.", stillRisk: "🟡 {a} ist schon in {st} — {b} ist laut PLK noch nicht abgefahren{p}{l}. Geh sofort.", last: " (zuletzt: {x})",
+      gone: "❌ {b} fuhr in {st} vor Ankunft von {a} ab — Anschluss verpasst.", still: "🟢 {a} ist schon in {st} — {b} ist laut PLK noch nicht abgefahren{p}{l}.", stillRisk: "🟡 {a} ist schon in {st} — {b} ist laut PLK noch nicht abgefahren{p}{l}. Geh sofort.", last: " (zuletzt: {x})", unconf: "⏳ {b} sollte um {t} in {st} abfahren — PLK hat die Abfahrt noch nicht bestätigt{l}. Steht er noch am Bahnsteig, schaffst du es.", bUnconf: "⏳ von PLK unbestätigt",
       bWaits: "🟡 {b} fährt laut PLK um {t} in {st} ab — wartet auf {a}. Klappt, wenn er nicht früher abfährt.", maybe: "🟠 Anschluss in {st} gefährdet, aber möglich: {b} wartet manchmal auf {a} ({w} von {c} Mal, bis {m} Min.).",
       likely: "🟡 {b} wartet in {st} meist auf {a} ({w} von {c} Mal, bis {m} Min.) — Anschluss wahrscheinlich.", plat: ", Gleis {p}",
       bHeld: "✅ geklappt", bHeldTight: "✅ knapp geklappt", bGone: "❌ abgefahren", bStill: "🟢 noch nicht abgefahren", bStillRisk: "🟡 nicht abgefahren — los", bWaitsB: "🟡 wartet", bMaybe: "🟠 wartet manchmal", bLikely: "🟡 wartet meist" },
     cs: { held: "✅ Přestup ve stanici {st} se povedl — {b} odjel {n} min po příjezdu {a}.", heldTight: "✅ Přestup ve stanici {st} se těsně povedl — {b} odjel {n} min po příjezdu {a}.",
-      gone: "❌ {b} odjel ze stanice {st} před příjezdem {a} — přestup ujel.", still: "🟢 {a} už je ve stanici {st} — {b} podle PLK ještě neodjel{p}{l}.", stillRisk: "🟡 {a} už je ve stanici {st} — {b} podle PLK ještě neodjel{p}{l}. Jdi hned.", last: " (naposledy: {x})",
+      gone: "❌ {b} odjel ze stanice {st} před příjezdem {a} — přestup ujel.", still: "🟢 {a} už je ve stanici {st} — {b} podle PLK ještě neodjel{p}{l}.", stillRisk: "🟡 {a} už je ve stanici {st} — {b} podle PLK ještě neodjel{p}{l}. Jdi hned.", last: " (naposledy: {x})", unconf: "⏳ {b} měl odjet ze stanice {st} v {t} — PLK odjezd ještě nepotvrdilo{l}. Pokud stojí u nástupiště, stihneš to.", bUnconf: "⏳ PLK nepotvrdilo",
       bWaits: "🟡 {b} podle PLK odjede ze stanice {st} v {t} — počká na {a}. Stihneš, pokud neodjede dřív.", maybe: "🟠 Přestup ve stanici {st} ohrožen, ale možný: {b} někdy čeká na {a} ({w} z {c}, nejdéle {m} min).",
       likely: "🟡 {b} ve stanici {st} obvykle čeká na {a} ({w} z {c}, nejdéle {m} min) — přestup pravděpodobný.", plat: ", nástupiště {p}",
       bHeld: "✅ povedl se", bHeldTight: "✅ těsně", bGone: "❌ odjel", bStill: "🟢 ještě neodjel", bStillRisk: "🟡 neodjel — jdi", bWaitsB: "🟡 počká", bMaybe: "🟠 někdy čeká", bLikely: "🟡 obvykle čeká" },
     es: { held: "✅ Transbordo en {st} hecho: {b} salió {n} min después de llegar {a}.", heldTight: "✅ Transbordo en {st} hecho por poco: {b} salió {n} min después de llegar {a}.",
-      gone: "❌ {b} salió de {st} antes de llegar {a}: transbordo perdido.", still: "🟢 {a} ya está en {st}; según PLK {b} aún no ha salido{p}{l}.", stillRisk: "🟡 {a} ya está en {st}; según PLK {b} aún no ha salido{p}{l}. Ve ya.", last: " (último paso: {x})",
+      gone: "❌ {b} salió de {st} antes de llegar {a}: transbordo perdido.", still: "🟢 {a} ya está en {st}; según PLK {b} aún no ha salido{p}{l}.", stillRisk: "🟡 {a} ya está en {st}; según PLK {b} aún no ha salido{p}{l}. Ve ya.", last: " (último paso: {x})", unconf: "⏳ {b} debía salir de {st} a las {t}; PLK aún no ha confirmado la salida{l}. Si sigue en el andén, llegarás.", bUnconf: "⏳ sin confirmar por PLK",
       bWaits: "🟡 Según PLK {b} saldrá de {st} a las {t}: esperará a {a}. Llegarás si no sale antes.", maybe: "🟠 Transbordo en {st} en riesgo pero posible: {b} a veces espera a {a} ({w} de {c} veces, hasta {m} min).",
       likely: "🟡 {b} suele esperar a {a} en {st} ({w} de {c} veces, hasta {m} min): transbordo probable.", plat: ", andén {p}",
       bHeld: "✅ hecho", bHeldTight: "✅ por poco", bGone: "❌ salió", bStill: "🟢 aún no ha salido", bStillRisk: "🟡 no ha salido: ve", bWaitsB: "🟡 esperará", bMaybe: "🟠 a veces espera", bLikely: "🟡 suele esperar" },
     uk: { held: "✅ Пересадка на станції {st} відбулася — {b} відправився через {n} хв після прибуття {a}.", heldTight: "✅ Пересадка на станції {st} ледь відбулася — {b} відправився через {n} хв після прибуття {a}.",
-      gone: "❌ {b} відправився зі станції {st} до прибуття {a} — пересадку втрачено.", still: "🟢 {a} вже на станції {st} — {b} за даними PLK ще не відправився{p}{l}.", stillRisk: "🟡 {a} вже на станції {st} — {b} за даними PLK ще не відправився{p}{l}. Іди одразу.", last: " (востаннє: {x})",
+      gone: "❌ {b} відправився зі станції {st} до прибуття {a} — пересадку втрачено.", still: "🟢 {a} вже на станції {st} — {b} за даними PLK ще не відправився{p}{l}.", stillRisk: "🟡 {a} вже на станції {st} — {b} за даними PLK ще не відправився{p}{l}. Іди одразу.", last: " (востаннє: {x})", unconf: "⏳ {b} мав відправитися зі станції {st} о {t} — PLK ще не підтвердило відправлення{l}. Якщо він ще на платформі, встигнеш.", bUnconf: "⏳ PLK не підтвердило",
       bWaits: "🟡 За даними PLK {b} відправиться зі станції {st} о {t} — зачекає на {a}. Встигнеш, якщо не рушить раніше.", maybe: "🟠 Пересадка на станції {st} під загрозою, але можлива: {b} іноді чекає на {a} ({w} з {c} разів, до {m} хв).",
       likely: "🟡 {b} зазвичай чекає на {a} на станції {st} ({w} з {c} разів, до {m} хв) — пересадка ймовірна.", plat: ", платформа {p}",
       bHeld: "✅ відбулася", bHeldTight: "✅ ледь", bGone: "❌ відправився", bStill: "🟢 ще не відправився", bStillRisk: "🟡 не відправився — іди", bWaitsB: "🟡 зачекає", bMaybe: "🟠 іноді чекає", bLikely: "🟡 зазвичай чекає" }
@@ -613,6 +614,7 @@
   function phaseKey(t) {
     if (!t) return "";
     if (t.phase === "still") return t.status === "ok" ? "still" : "stillRisk";
+    if (t.phase === "unconf") return "unconf";
     return t.phase || t.mayWait || "";
   }
   function phaseText(t, lang) {
@@ -621,7 +623,7 @@
     return fill(P[k], { st: t.station, a: trainLabel(t.trainA), b: trainLabel(t.trainB), n: t.realSlack, t: t.etaB, w: h.w, c: h.n, m: h.max,
       p: t.platformDep ? fill(P.plat, { p: t.platformDep }) : "", l: t.bLast ? fill(P.last, { x: t.bLast }) : "" });
   }
-  var PXB = { held: "bHeld", heldTight: "bHeldTight", gone: "bGone", still: "bStill", stillRisk: "bStillRisk", bWaits: "bWaitsB", maybe: "bMaybe", likely: "bLikely" };
+  var PXB = { unconf: "bUnconf", held: "bHeld", heldTight: "bHeldTight", gone: "bGone", still: "bStill", stillRisk: "bStillRisk", bWaits: "bWaitsB", maybe: "bMaybe", likely: "bLikely" };
   function phaseBadge(t, lang) {
     var k = phaseKey(t); if (!k) return "";
     return (PX[lang] || PX.pl)[PXB[k]] || "";

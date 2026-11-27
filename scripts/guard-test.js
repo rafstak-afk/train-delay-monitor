@@ -277,7 +277,7 @@ test("129 (4) zerwana: A przyj. +15 (14:25), B odjechał planowo 14:20 → ❌",
   eq(t.phase, "gone"); eq(t.status, "broken");
 });
 test("129 (3) jeszcze stoi: A przyj. +12, B nie potwierdzony, prognoza +3 → 🟢 „jeszcze stoi”", () => {
-  const t = ev(trainA({ started: true, arrived: true, arrDelay: 12 }), trainB({ started: true, forecast: 3 }), x2(863)).transfers[0];
+  const t = ev(trainA({ started: true, arrived: true, arrDelay: 12 }), trainB({ started: true, forecast: 3 }), x2(861)).transfers[0];
   eq(t.phase, "still"); eq(t.status, "ok");
   if (!/jeszcze nie odjechał/.test(G.phaseText(t, "pl"))) throw new Error(G.phaseText(t, "pl"));
 });
