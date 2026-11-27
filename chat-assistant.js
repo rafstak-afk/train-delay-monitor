@@ -846,7 +846,7 @@
   function startMic(SR) {
     try {
       recog = new SR();
-      recog.lang = "pl-PL";
+      recog.lang = authorChat() && window.I18n && I18n.getLang && I18n.getLang() === "en" ? "en-GB" : "pl-PL";   // TODO 125 (c)
       recog.interimResults = false;
       recog.maxAlternatives = 1;
       recog.onresult = function (ev) { var t = ev.results[0][0].transcript; stopMic(); if (t) onUser(t); };
@@ -858,9 +858,17 @@
   }
   function stopMic() { if (recog) { try { recog.stop(); } catch (e) {} } recog = null; if (micBtn) micBtn.classList.remove("on"); }
 
+  // TODO 125 (b): angielski — gdy strona po angielsku albo zdanie po angielsku (profil autora)
+  var EN_RE = / (from|to|the|please|train|trains|when|tomorrow|today|where|is|at|how|get|need|go) /;
+  function chatLang(text) {
+    if (!authorChat()) return "pl";
+    if (window.I18n && I18n.getLang && I18n.getLang() === "en") return "en";
+    return EN_RE.test(" " + fold(text || "") + " ") && !/[ąćęłńóśźż]/i.test(text || "") ? "en" : "pl";
+  }
   function greet() {
     resetState();
     memLog = [];
+    if (authorChat() && window.I18n && I18n.getLang && I18n.getLang() === "en") { addMsg("Hi! Write or say (🎤) where you want to go, e.g. „from Tarnowskie Góry to Katowice tomorrow at 7”, or ask about a train: „where is 40658?”.", "bot"); offerWizard(); return; }
     addMsg(T("chat.greeting") + (cityFixOn() ? "\n\n" + T("chat.greetingAddr") : ""), "bot");
     offerWizard();
   }
@@ -871,6 +879,7 @@
       startNewRoute(); st.wizard = true; next();
     } }];
     if (howtoOn()) o.push({ label: "❓ Jak to zrobić?", onClick: function () { addMsg("Jak to zrobić?", "user"); addMsg("Mogę pokazać na stronie, co kliknąć:", "bot"); howtoOffer(null); } });
+    if (authorChat()) o.push({ label: "✍️ Jak pisać do asystenta", onClick: function () { addMsg("Jak pisać do asystenta", "user"); var h = FAQ.filter(function (x) { return x.id === "howto"; })[0]; if (h) faqAnswer(h); } });
     if (faqOn()) o.push({ label: "💡 Jak to działa?", onClick: function () { addMsg("Jak to działa?", "user"); faqMenu("Chętnie wyjaśnię, jak liczę i szukam. Wybierz temat albo zapytaj własnymi słowami:"); } });
     addOptions(o);
   }
@@ -901,6 +910,7 @@
     logEl.querySelectorAll(".ca-opts").forEach(function (b) { b.remove(); });
     addMsg(text, "user");
     var rules = function () { Promise.all([loadStations(), loadStops()]).then(function () { handle(text); }).catch(function () { addMsg("Nie udało się wczytać listy stacji. Spróbuj ponownie za chwilę.", "bot"); }); };
+    if (trainQ(text) || (st && st.pending && st.pending.kind === "trainStation")) { rules(); return; }   // TODO 125 (d): bez modelu AI
     if (aiOn()) { askAi(text, rules); return; }
     rules();
   }
@@ -910,7 +920,7 @@
   function askAi(text, fallback) {
     var w = addMsg("🧠 Sprawdzam połączenia, objazdy i rozkład…", "bot", true); w.classList.add("ca-wait");
     var ctl = typeof AbortController === "function" ? new AbortController() : null, tm = ctl ? setTimeout(function () { ctl.abort(); }, 90000) : null;
-    fetch("/api/asystent", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token: (window.ProfileSync && ProfileSync.getToken && ProfileSync.getToken()) || "", text: text }), signal: ctl ? ctl.signal : undefined })
+    fetch("/api/asystent", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token: (window.ProfileSync && ProfileSync.getToken && ProfileSync.getToken()) || "", text: text, lang: chatLang(text) }), signal: ctl ? ctl.signal : undefined })
       .then(function (r) { return r.json().catch(function () { return null; }); })
       .then(function (j) {
         if (tm) clearTimeout(tm); w.remove();
@@ -983,6 +993,28 @@
       re: / (profil\w*|token\w*|prywatn\w*|osobow\w*|rodo|zapisujesz|przechowujesz|urzadzen\w*) /,
       a: "👤 Bez profilu wszystko zostaje tylko w tej przeglądarce. Z profilem (anonimowy token, bez imienia i e-maila) ulubione, miejsca, pilnowane połączenia i ustawienia inne niż domyślne są na każdym Twoim urządzeniu. Szczegóły — w zakładce 🔒 RODO na stronie kontaktu." }
   ];
+  // ===== TODO 125 (27.11, profil autora): pomysły z „Asystenta KD” — (a) zasady przewoźników z linkami, (e) jak pisać do asystenta,
+  // (d) pytania o konkretny pociąg, (b) angielski, (c) mówienie po angielsku
+  function authorChat() { try { return localStorage.getItem("showVersionBadge") === "1"; } catch (e) { return false; } }
+  var CARRIER_LINKS = [
+    { label: "Koleje Śląskie ↗", url: "https://www.kolejeslaskie.pl" },
+    { label: "POLREGIO ↗", url: "https://polregio.pl" },
+    { label: "PKP Intercity ↗", url: "https://www.intercity.pl" }
+  ];
+  if (authorChat()) FAQ.push(
+    { id: "rules", label: "🚲 Rowery, zwierzęta, bagaż", links: CARRIER_LINKS,
+      re: / (rower\w*|zwierz\w*|pies|psa|psem|kot|kota|kotem|bagaz\w*|walizk\w*|hulajnog\w*|wozk\w*|narty|nart) /,
+      a: "🚲 Rower, zwierzę, duży bagaż — zasady (czy potrzebny bilet, ile miejsc, kaganiec, transporter) ustala PRZEWOŹNIK, którym jedziesz, i różnią się między nimi. Nie zgaduję ich za Ciebie — sprawdź na stronie przewoźnika (przyciski niżej). Którym przewoźnikiem jedziesz, zobaczysz w wyniku wyszukiwania albo napisz numer pociągu, np. „gdzie jest 40658”." },
+    { id: "lost", label: "🧳 Zgubiłem coś w pociągu", links: CARRIER_LINKS,
+      re: / (zgubi\w*|zostawi\w*|zapomni\w*|zguba|znalezion\w*|biuro rzeczy) /,
+      a: "🧳 Rzecz zostawiona w pociągu — zgłoś ją od razu PRZEWOŹNIKOWI tego pociągu (formularz albo infolinia na jego stronie, przyciski niżej). Przygotuj: numer pociągu, datę i godzinę, stację wsiadania i wysiadania, wagon i miejsce, opis rzeczy. Numer pociągu znajdziesz w 📓 Dzienniczku albo w 🕘 Ostatnich — albo napisz „gdzie jest 40658”, sprawdzę ten pociąg." },
+    { id: "tickets", label: "🎫 Bilety i ulgi",  links: CARRIER_LINKS,
+      re: / (bilet\w*|ulg\w*|cena|ceny|cennik\w*|kosztuj\w*|taryf\w*|miesieczn\w*) /,
+      a: "🎫 Biletów nie sprzedaję. W menu ☰ „🎫 Dobierz bilet” podpowiem, jaki bilet pasuje do trasy. Ceny, ulgi i bilety okresowe — na stronach przewoźników (przyciski niżej)." },
+    { id: "howto", label: "✍️ Jak pisać do asystenta",
+      re: / (jak (pisac|pytac|rozmawiac|zapytac)|co (umiesz|potrafisz)|przyklad\w*|poradnik\w*) /,
+      a: "✍️ Pisz albo mów (🎤) tak, jak do człowieka. Przykłady:\n• „z Tarnowskich Gór do Katowic jutro o 7”\n• „muszę być w Gliwicach na 8:00, jadę z Bytomia”\n• „z Zawiercia do Tarnowskich Gór, mam czas, mogę przez Częstochowę”\n• „gdzie jest 40658?”, „czy S1 o 6:07 z Chorzowa Batorego jedzie?”\n• „powrót jutro o 16”\n• „z domu do pracy” (gdy masz ustawione 🏠 i 🏢)\n• „jak liczysz dojście?”, „co znaczą kolory?”\nGdy czegoś nie zrozumiem — dopytam i dam przyciski do wyboru. English works too: „from Katowice to Gliwice tomorrow at 8”." }
+  );
   var FAQ_Q = / (jak|jakie|jaki|dlaczego|czemu|skad|co|czy|ile|po co|kiedy|w jaki sposob|wyjasnij|opowiedz|powiedz) /;
   function faqTopics(f) { return FAQ.filter(function (t) { return t.re.test(" " + f + " "); }); }
   function faqMenu(title) {
@@ -991,6 +1023,7 @@
   }
   function faqAnswer(t) {
     addMsg(t.a, "bot");
+    if (t.links) addOptions(t.links.map(function (l) { return { label: l.label, onClick: function () { try { window.open(l.url, "_blank", "noopener"); } catch (e) { location.href = l.url; } } }; }));
     var more = FAQ.filter(function (x) { return x !== t; }).slice(0, 3);
     addOptions(more.map(function (x) { return { label: x.label, onClick: function () { addMsg(x.label, "user"); faqAnswer(x); } }; })
       .concat([{ label: "💡 Inne pytanie", onClick: function () { addMsg("Inne pytanie", "user"); faqMenu(); } }, { label: "🚆 Szukam połączenia", onClick: function () { addMsg("Szukam połączenia", "user"); logEl.innerHTML = ""; greet(); } }]));
@@ -1038,9 +1071,92 @@
     } catch (e) {}
   }
   try { setTimeout(chatStatFlush, 4000); } catch (e) {}
+  // ===== TODO 125 (d): „gdzie jest 40658?”, „czy S1 o 6:07 z Chorzowa Batorego jedzie?”, „co z pociągiem 40450”
+  var TRAINQ_WORDS = / (gdzie|czy|jedzie|jest|jada|opozn\w*|spozn\w*|pociag\w*|co z|status\w*|odwolan\w*|kursuje|bedzie|where|is|late|delay\w*|running) /;
+  function trainQ(text) {
+    if (!authorChat()) return null;
+    var f = " " + fold(text) + " ";
+    if (!TRAINQ_WORDS.test(f)) return null;
+    var num = (String(text).match(/(?:^|[^\d:.])(\d{3,6})(?![\d:.])/) || [])[1];
+    var line = (String(text).match(/\b(S ?\d{1,2})\b/i) || [])[1];
+    var tm = (String(text).match(/\b(\d{1,2})[:.](\d{2})\b/) || []);
+    if (num) return { num: num };
+    if (line && tm[1]) return { line: line.replace(/\s/g, "").toUpperCase(), time: pad(+tm[1]) + ":" + tm[2] };
+    return null;
+  }
+  function myTrainStation(num) {
+    try {
+      var list = JSON.parse(localStorage.getItem("rafstakMojePociagiV4") || "[]") || [];
+      var hit = list.filter(function (x) { return String(x.trainNum || "").replace(/\D/g, "") === String(num); })[0];
+      if (hit && hit.station) return hit.station;
+    } catch (e) {}
+    try {
+      var g = window.GuardStore && GuardStore.all ? GuardStore.all() : [];
+      for (var i = 0; i < g.length; i++) for (var j = 0; j < (g[i].legs || []).length; j++) { var l = g[i].legs[j]; if (l.train && String(l.train.number) === String(num) && l.board) return l.board.stationName; }
+    } catch (e) {}
+    return null;
+  }
+  function stationFromText(text) {
+    var p = parse(text), cand = [p.from, p.to].concat((String(text).match(/(?:\bz|\bze|\bw|\bna|\bod)\s+(.+?)(?:\?|$| jedzie| o \d)/i) || []).slice(1));
+    for (var i = 0; i < cand.length; i++) { if (!cand[i]) continue; var m = matchStation(cand[i]); if (m && m.exact) return m.exact.name || m.exact; }
+    return null;
+  }
+  function trainAnswer(q, station) {
+    var w = addMsg("🚆 Sprawdzam pociąg…", "bot", true); w.classList.add("ca-wait");
+    var date = iso(today());
+    var getNum = q.num ? Promise.resolve({ num: q.num }) :
+      fetch("/api/departures?" + new URLSearchParams({ station: station, date: date, time: (function () { var m = +q.time.slice(0, 2) * 60 + +q.time.slice(3) - 3; m = (m + 1440) % 1440; return pad(Math.floor(m / 60)) + ":" + pad(m % 60); })(), limit: "20" }).toString())
+        .then(function (r) { return r.json(); }).then(function (j) {
+          var d = (j && j.departures || []).filter(function (x) { return String(x.name || "").toUpperCase().indexOf(q.line) === 0 && (x.plannedTime || "").slice(0, 5) === q.time; })[0];
+          return d ? { num: String(d.train), scheduleId: d.scheduleId, orderId: d.orderId } : null;
+        });
+    getNum.then(function (n) {
+      if (!n) { w.remove(); addMsg("Nie znalazłem " + q.line + " o " + q.time + " na stacji " + station + " (dziś). Sprawdź godzinę albo napisz numer pociągu.", "bot"); return null; }
+      var ids = n.orderId ? Promise.resolve({ ok: true, scheduleId: n.scheduleId, orderId: n.orderId }) :
+        fetch("/api/v2/smart-lookup?" + new URLSearchParams({ train: n.num, station: station, date: date }).toString()).then(function (r) { return r.json(); });
+      return ids.then(function (L) {
+        if (!L || !L.ok) { w.remove(); addMsg("Nie znalazłem dziś pociągu " + n.num + " na stacji " + station + ". Sprawdź numer albo stację.", "bot"); return; }
+        return fetch("/api/train-details?" + new URLSearchParams({ scheduleId: L.scheduleId || "", orderId: L.orderId, operatingDate: date, train: n.num }).toString()).then(function (r) { return r.json(); }).then(function (d) {
+          w.remove();
+          var route = (d && d.route) || [], me = route.filter(function (x) { return fold(x.stationName) === fold(station); })[0], o0 = route[0];
+          var name = ((d && (d.category || "")) + " " + n.num + (d && d.name ? " " + d.name : "")).trim(), lines = ["🚆 " + name + (o0 && route.length ? " (" + o0.stationName + " → " + route[route.length - 1].stationName + ")" : "")];
+          if (!d || d.error || !route.length) lines.push("PLK nie ma teraz danych o tym kursie.");
+          else if (String(d.status || "").toUpperCase() === "X") lines.push("⚫ Odwołany (wg PLK).");
+          else if (d.isFinished) lines.push("🏁 Zakończył bieg: " + (d.lastConfirmedStation || "") + " " + (d.lastConfirmedTime || ""));
+          else if (!d.lastConfirmedStation) lines.push("⏳ Jeszcze nie wyruszył (start: " + (o0 ? o0.stationName + " " + (o0.plannedDeparture || o0.plannedTime || "") : "?") + ").");
+          else lines.push("📍 Ostatnio: " + d.lastConfirmedStation + " " + (d.lastConfirmedTime || "") + (d.delay ? " · opóźnienie +" + d.delay + " min" : " · punktualnie"));
+          if (me) {
+            var pdp = me.plannedDeparture || me.plannedTime || "", dl = me.status === "confirmed" ? (me.departureDelay || 0) : (me.forecastDepartureDelay != null ? me.forecastDepartureDelay : (d.delay || 0));
+            lines.push((me.status === "confirmed" ? "✔️ Odjechał ze stacji " : "🕒 Odjazd ze stacji ") + station + ": " + pdp + (dl ? " → ok. +" + dl + " min" : "") + (me.platform && me.platform !== "-" ? ", peron " + me.platform : ""));
+          }
+          (d && d.disruptions || []).slice(0, 2).forEach(function (x) { lines.push("⚠️ " + x.message); });
+          lines.push("Dane: PKP PLK.");
+          addMsg(lines.join("\n"), "bot");
+          addOptions([{ label: "🚆 Cały bieg pociągu", primary: true, onClick: function () { location.href = "/train?" + new URLSearchParams({ train: n.num, station: station, date: date }).toString(); } }]);
+        });
+      });
+    }).catch(function () { w.remove(); addMsg("Nie udało się sprawdzić pociągu — spróbuj za chwilę.", "bot"); });
+  }
+  function trainFlow(q, text) {
+    var station = stationFromText(text) || (q.num ? myTrainStation(q.num) : null);
+    if (station) { trainAnswer(q, station); return true; }
+    st.pending = { kind: "trainStation", q: q };
+    var mine = myStations().slice(0, 5);
+    addMsg("Z której stacji odjeżdża " + (q.num || q.line + " o " + q.time) + "? Napisz nazwę stacji.", "bot");
+    if (mine.length) addOptions(mine.map(function (m) { return { label: m.name || m, onClick: function () { addMsg(m.name || m, "user"); st.pending = null; trainAnswer(q, m.name || m); } }; }));
+    return true;
+  }
   function handle(text) {
     chatStatCount();
     var f = fold(text);
+    if (st.pending && st.pending.kind === "trainStation") {
+      var tq = st.pending.q, sm = matchStation(text); st.pending = null;
+      var sn = sm && sm.exact ? (sm.exact.name || sm.exact) : null;
+      if (sn) return trainAnswer(tq, sn);
+      addMsg("Nie rozpoznałem stacji „" + text + "”. Napisz pełną nazwę, np. „Chorzów Batory”.", "bot"); st.pending = { kind: "trainStation", q: tq }; return;
+    }
+    var tqq = !st.pending && trainQ(text);
+    if (tqq) { var pp = parse(text); if (!(pp.from && pp.to)) return trainFlow(tqq, text); }
     if (!st.pending && !/ (ulubion\w*|gwiazdk\w*|pilnow\w*|pilnuj\w*|adres\w*) /.test(" " + f + " ") && faq(text, f)) return;
     if (!st.pending && howto(f)) return;
     if (RETURN_RE.test(" " + f + " ")) return returnTrip(text);

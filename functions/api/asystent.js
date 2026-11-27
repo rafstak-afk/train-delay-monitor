@@ -46,6 +46,7 @@ const SYSTEM = `Jesteś parserem próśb o połączenia kolejowe w Polsce (głó
 
 Pola:
 - trip: true, gdy pasażer pyta o połączenie, dojazd, trasę albo pociąg między miejscami. Pytania o coś innego (bilety, opóźnienie konkretnego pociągu, pogoda, rozmowa) → false i reszta pól null / false / [].
+- Prośba może być po polsku albo po angielsku (TODO 125) — nazwy stacji ZAWSZE po polsku, w mianowniku, z polskimi znakami (Katowice, Tarnowskie Góry, Chorzów Batory).
 - from, to: nazwy stacji w MIANOWNIKU, z polskimi znakami, bez słów „stacja”, „dworzec”, „PKP”. Odmiana: z Zawiercia → Zawiercie; do Tarnowskich Gór → Tarnowskie Góry; z Katowic → Katowice; do Gliwic → Gliwice; z Bytomia → Bytom; do Chorzowa Batorego → Chorzów Batory; z Sosnowca Głównego → Sosnowiec Główny; do Lublińca → Lubliniec; z Częstochowy → Częstochowa; do Zabrza → Zabrze; z Rudy Śląskiej → Ruda Śląska; do Dąbrowy Górniczej → Dąbrowa Górnicza; z Krakowa Głównego → Kraków Główny; z Opola Głównego → Opole Główne. Nie dopisuj „Główny/Główna”, jeśli pasażer tego nie napisał. „Z domu”, „z pracy”, „stąd”, „z miejsca, gdzie jestem” → null (nie zgaduj stacji).
 - date: dzień podróży. „dziś/dzisiaj” → dzisiejsza data; „jutro” → +1 dzień; „pojutrze” → +2 dni; nazwa dnia tygodnia („w piątek”) → najbliższy taki dzień od dziś (dziś, jeśli to ten dzień, a pora jeszcze nie minęła); brak wzmianki → null.
 - time: godzina odjazdu GG:MM. „o 8” / „o ósmej” → 08:00; „po siedemnastej” / „po 17” → 17:00; „około wpół do siódmej” → 06:30; „rano” → 06:00; „przed południem” → 09:00; „w południe” → 12:00; „po południu” → 14:00; „wieczorem” → 18:00; „w nocy” → 22:00; „za godzinę” → teraz + 60 min; „za pół godziny” → teraz + 30 min. Gdy pasażer podaje godzinę PRZYJAZDU („muszę być o 8:00”, „na 7:30 do pracy”) → arrive = ta godzina, a time = ta godzina minus 2 godziny. Brak wzmianki → null.
@@ -66,6 +67,8 @@ Prośba: chcę wyjechać pociągowi naprzeciw, jadę z Chorzowa Batorego do Byto
 {"trip":true,"from":"Chorzów Batory","to":"Bytom","date":null,"time":null,"arrive":null,"now":true,"flexible":false,"via":[],"meet":true}
 Prośba: z domu do Katowic wieczorem
 {"trip":true,"from":null,"to":"Katowice","date":null,"time":"18:00","arrive":null,"now":false,"flexible":false,"via":[],"meet":false}
+Prośba: from Katowice to Gliwice tomorrow at 8 am
+{"trip":true,"from":"Katowice","to":"Gliwice","date":"2026-11-24","time":"08:00","arrive":null,"now":false,"flexible":false,"via":[],"meet":false}
 Prośba: ile kosztuje bilet miesięczny?
 {"trip":false,"from":null,"to":null,"date":null,"time":null,"arrive":null,"now":false,"flexible":false,"via":[],"meet":false}`;
 
@@ -124,34 +127,48 @@ const itTxt = it => (it.legs || []).map(l => legTxt(l) + " " + l.board.stationNa
 const durMin = it => { let d = hm(it.arrivalTime) - hm(it.departureTime); return d < 0 ? d + 1440 : d; };
 
 // ---------- 3. rozumowanie ----------
-export async function solve(request, p, now) {
+// TODO 125 (b): teksty odpowiedzi po polsku / angielsku
+const TX = {
+  pl: { noSt: (a, b) => `Nie rozpoznałem stacji ${a}${a && b ? " ani " : ""}${b}. Napisz pełne nazwy, np. „z Zawiercia do Tarnowskich Gór”.`, none: (A, B, t, d) => `Nie znalazłem połączenia ${A} → ${B} od ${t} (${d}). Spróbuj innej godziny.`,
+    arrOk: (a, d, r, z) => `✅ Na ${a} zdążysz, wyjeżdżając najpóźniej: ${d} → ${r} (zapas ${z} min)`, arrNo: (a, t) => `⚠️ Nie znalazłem połączenia z przyjazdem do ${a} (szukam od ${t}). Najwcześniej na miejscu:`,
+    best: (d, r, m) => `🏆 Najszybciej na miejscu: ${d} → ${r} (${m} min)`, other: "Inne:", viaNo: v => `Przez stację ${v}: nie znalazłem połączenia.`,
+    via: (v, d, r, x) => `🔀 Przez stację ${v}: ${d} → ${r}${x > 0 ? ` (na miejscu ${x} min później niż najszybciej)` : x < 0 ? ` (o ${-x} min wcześniej!)` : " (tak samo)"}`,
+    wait: w => `Do odjazdu najszybszego połączenia: ${w} min.`, today: "dziś", from: "od", src: "Rozkład i opóźnienia: PKP PLK." },
+  en: { noSt: (a, b) => `I didn't recognise the station ${a}${a && b ? " or " : ""}${b}. Please write full names, e.g. „from Zawiercie to Tarnowskie Góry”.`, none: (A, B, t, d) => `I found no connection ${A} → ${B} from ${t} (${d}). Try another time.`,
+    arrOk: (a, d, r, z) => `✅ You'll be there by ${a} if you leave at the latest: ${d} → ${r} (${z} min to spare)`, arrNo: (a, t) => `⚠️ I found no connection arriving by ${a} (searching from ${t}). Earliest arrival:`,
+    best: (d, r, m) => `🏆 Fastest arrival: ${d} → ${r} (${m} min)`, other: "Other options:", viaNo: v => `Via ${v}: no connection found.`,
+    via: (v, d, r, x) => `🔀 Via ${v}: ${d} → ${r}${x > 0 ? ` (${x} min later than the fastest)` : x < 0 ? ` (${-x} min earlier!)` : " (same time)"}`,
+    wait: w => `Until the fastest connection leaves: ${w} min.`, today: "today", from: "from", src: "Timetable and delays: PKP PLK." }
+};
+export async function solve(request, p, now, lang) {
+  const X = TX[lang === "en" ? "en" : "pl"];
   const [A, B] = await Promise.all([station(request, p.from), station(request, p.to)]);
-  if (!A || !B) return { ok: false, text: `Nie rozpoznałem stacji ${!A ? "„" + (p.from || "?") + "”" : ""}${!A && !B ? " ani " : ""}${!B ? "„" + (p.to || "?") + "”" : ""}. Napisz pełne nazwy, np. „z Zawiercia do Tarnowskich Gór”.` };
+  if (!A || !B) return { ok: false, text: X.noSt(!A ? "„" + (p.from || "?") + "”" : "", !B ? "„" + (p.to || "?") + "”" : "") };
   const date = p.date && /^\d{4}-\d{2}-\d{2}$/.test(p.date) ? p.date : now.date;
   const time = p.time && /^\d{1,2}:\d{2}$/.test(p.time) ? p.time.padStart(5, "0") : now.time;
   const out = [], notes = [];
   const base = await planner(request, { from: A.name, to: B.name, date, time });
   const its = itsOf(base).sort((a, b) => hm(a.arrivalTime) - hm(b.arrivalTime) || hm(b.departureTime) - hm(a.departureTime));
-  if (!its.length) return { ok: true, text: `Nie znalazłem połączenia ${A.name} → ${B.name} od ${time} (${date}). Spróbuj innej godziny.` };
+  if (!its.length) return { ok: true, text: X.none(A.name, B.name, time, date) };
   const best = its[0];
   let arrPick = null;
   // 24.11: „muszę być na 8:00” — najpierw ostatnie połączenie, które zdąży (najdłużej w domu), potem najszybsze
   if (p.arrive && hm(p.arrive) != null) {
     const ok = itsOf(base).filter(x => hm(x.arrivalTime) <= hm(p.arrive)).sort((a, b) => hm(b.departureTime) - hm(a.departureTime));
     arrPick = ok[0] || null;
-    if (ok.length) out.push(`✅ Na ${p.arrive} zdążysz, wyjeżdżając najpóźniej: ${ok[0].departureTime} → ${ok[0].arrivalTime} (zapas ${hm(p.arrive) - hm(ok[0].arrivalTime)} min)\n   ${itTxt(ok[0])}`);
-    else out.push(`⚠️ Nie znalazłem połączenia z przyjazdem do ${p.arrive} (szukam od ${time}). Najwcześniej na miejscu:`);
+    if (ok.length) out.push(X.arrOk(p.arrive, ok[0].departureTime, ok[0].arrivalTime, hm(p.arrive) - hm(ok[0].arrivalTime)) + `\n   ${itTxt(ok[0])}`);
+    else out.push(X.arrNo(p.arrive, time));
   }
-  out.push(`🏆 Najszybciej na miejscu: ${best.departureTime} → ${best.arrivalTime} (${durMin(best)} min)\n   ${itTxt(best)}`);
+  out.push(X.best(best.departureTime, best.arrivalTime, durMin(best)) + `\n   ${itTxt(best)}`);
   const others = itsOf(base).filter(x => x !== best && x !== arrPick).slice(0, 3);
-  if (others.length) out.push("Inne:\n" + others.map(x => `   ${x.departureTime} → ${x.arrivalTime} · ${itTxt(x)}`).join("\n"));
+  if (others.length) out.push(X.other + "\n" + others.map(x => `   ${x.departureTime} → ${x.arrivalTime} · ${itTxt(x)}`).join("\n"));
   // objazdy przez wskazane stacje
   for (const v of (p.via || []).slice(0, 2)) {
     const V = await station(request, v); if (!V) continue;
     const vi = itsOf(await planner(request, { from: A.name, to: B.name, via: V.name, date, time, maxResults: "3" })).sort((a, b) => hm(a.arrivalTime) - hm(b.arrivalTime));
-    if (!vi.length) { notes.push(`Przez stację ${V.name}: nie znalazłem połączenia.`); continue; }
+    if (!vi.length) { notes.push(X.viaNo(V.name)); continue; }
     const d = hm(vi[0].arrivalTime) - hm(best.arrivalTime);
-    out.push(`🔀 Przez stację ${V.name}: ${vi[0].departureTime} → ${vi[0].arrivalTime}${d > 0 ? ` (na miejscu ${d} min później niż najszybciej)` : d < 0 ? ` (o ${-d} min wcześniej!)` : " (tak samo)"}\n   ${itTxt(vi[0])}`);
+    out.push(X.via(V.name, vi[0].departureTime, vi[0].arrivalTime, d) + `\n   ${itTxt(vi[0])}`);
   }
   // pociąg naprzeciw / skąd rusza pierwszy pociąg
   const wait = hm(best.departureTime) - hm(time);
@@ -180,8 +197,8 @@ export async function solve(request, p, now) {
     if (loops.length) out.push(`⏳ Zamiast czekać ${wait} min na peronie — przejażdżka tam i z powrotem:\n` + loops.join("\n"));
     else notes.push(`⏳ Do odjazdu ${wait} min — nie znalazłem przejażdżki tam i z powrotem, która zdąży wrócić.`);
   }
-  if (wait > 0 && date === now.date && time === now.time && !(p.flexible && wait >= 20)) notes.push(`Do odjazdu najszybszego połączenia: ${wait} min.`);
-  return { ok: true, text: `${A.name} → ${B.name}, ${date === now.date ? "dziś" : date} od ${time}\n\n` + out.join("\n\n") + (notes.length ? "\n\n" + notes.join("\n") : "") + "\n\nRozkład i opóźnienia: PKP PLK." };
+  if (wait > 0 && date === now.date && time === now.time && !(p.flexible && wait >= 20)) notes.push(X.wait(wait));
+  return { ok: true, text: `${A.name} → ${B.name}, ${date === now.date ? X.today : date} ${X.from} ${time}\n\n` + out.join("\n\n") + (notes.length ? "\n\n" + notes.join("\n") : "") + "\n\n" + X.src };
 }
 
 export async function onRequestPost({ request, env }) {
@@ -203,7 +220,7 @@ export async function onRequestPost({ request, env }) {
   }
   const p = await understand(env, text, now);
   if (!p || !p.trip || !p.from || !p.to) return json({ ok: false, reason: "not_trip", parsed: p, ai: !!env.AI });
-  const r = await solve(request, p, now);
+  const r = await solve(request, p, now, author && b.lang === "en" ? "en" : "pl");   // TODO 125 (b): angielski — profil autora
   return json(Object.assign({ parsed: p, ai: !!env.AI }, r));
 }
 

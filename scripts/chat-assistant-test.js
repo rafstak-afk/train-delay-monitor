@@ -58,7 +58,8 @@ class El {
   querySelectorAll(sel) { return this.all().filter(n => sel.startsWith(".") && n.classList.contains(sel.slice(1))); }
 }
 
-function makeEnv() {
+function makeEnv(opts) {
+  opts = opts || {};
   const store = () => { const m = new Map(); return { getItem: k => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: k => m.delete(k) }; };
   const body = new El("body"), head = new El("head");
   const document = {
@@ -80,6 +81,9 @@ function makeEnv() {
     fetch: () => Promise.resolve({ ok: true, json: () => Promise.resolve(JSON.parse(STATIONS)) })
   };
   window.localStorage = ctx.localStorage; window.sessionStorage = ctx.sessionStorage;
+  if (opts.author) ctx.localStorage.setItem("showVersionBadge", "1");
+  if (opts.fetch) { const base = ctx.fetch; ctx.fetch = (u, o) => opts.fetch(String(u), o) || base(u, o); }
+  if (opts.lang) I18n.getLang = () => opts.lang;
   vm.createContext(ctx);
   vm.runInContext(SRC, ctx);
   return ctx;
@@ -88,8 +92,8 @@ function makeEnv() {
 const flush = async () => { for (let i = 0; i < 6; i++) await new Promise(r => setImmediate(r)); };
 
 // ---------- jedna rozmowa ----------
-async function session() {
-  const env = makeEnv();
+async function session(opts) {
+  const env = makeEnv(opts);
   const CA = env.window.ChatAssistant;
   await CA._loadStations();
   CA.open();
@@ -645,6 +649,55 @@ test("czyść historię pyta o potwierdzenie", async () => {
   expectStation(c.state(), "from", "Bytom");
   await c.click("Tak, wyczyść");
   expectEmpty(c.state(), "from");
+});
+
+// ===== TODO 125 (27.11, profil autora): pomysły z „Asystenta KD”
+const jsonRes = o => Promise.resolve({ ok: true, json: () => Promise.resolve(o) });
+const trainFetch = u => {
+  if (u.startsWith("/api/v2/smart-lookup")) return jsonRes({ ok: true, scheduleId: "2026", orderId: "111" });
+  if (u.startsWith("/api/train-details")) return jsonRes({ category: "Os", name: "S1", status: "N", delay: 4, lastConfirmedStation: "Katowice", lastConfirmedTime: "06:01",
+    route: [{ stationName: "Gliwice", plannedDeparture: "05:20" }, { stationName: "Katowice", status: "confirmed", plannedDeparture: "05:57" }, { stationName: "Chorzów Batory", plannedDeparture: "06:07", forecastDepartureDelay: 4, platform: "1" }, { stationName: "Częstochowa", plannedArrival: "07:40" }] });
+  if (u.startsWith("/api/departures")) return jsonRes({ departures: [{ train: "40658", name: "S1", plannedTime: "06:07", scheduleId: "2026", orderId: "111" }] });
+  if (u.startsWith("/api/asystent")) return jsonRes({ ok: false, reason: "not_trip" });
+  return null;
+};
+test("125 (d) „gdzie jest 40658?” — pociąg z Moich pociągów: stacja z listy, odpowiedź z pozycją i odjazdem", async () => {
+  const c = await session({ author: true, fetch: trainFetch });
+  c.env.localStorage.setItem("rafstakMojePociagiV4", JSON.stringify([{ station: "Chorzów Batory", trainNum: "40658" }]));
+  await c.say("gdzie jest 40658?"); await flush(); await flush();
+  const all = c.log.all().filter(n => n.classList.contains("ca-bot")).map(n => n.textContent).join("\n");
+  expect(/Ostatnio: Katowice 06:01/.test(all), "brak pozycji: " + all.slice(-300));
+  expect(/Odjazd ze stacji Chorzów Batory: 06:07 → ok\. \+4 min, peron 1/.test(all), "brak odjazdu: " + all.slice(-300));
+  expect(c.options().some(o => /Cały bieg pociągu/.test(o)), "brak przycisku biegu");
+});
+test("125 (d) numer bez znanej stacji → pytanie o stację, potem odpowiedź", async () => {
+  const c = await session({ author: true, fetch: trainFetch });
+  await c.say("czy 40658 jedzie?");
+  expectSaid(c, "Z której stacji");
+  await c.say("Chorzów Batory"); await flush(); await flush();
+  const all = c.log.all().filter(n => n.classList.contains("ca-bot")).map(n => n.textContent).join("\n");
+  expect(/Os 40658 S1/.test(all), "brak odpowiedzi o pociągu: " + all.slice(-300));
+});
+test("125 (d) „czy S1 o 6:07 z Chorzowa Batorego jedzie?” — linia + godzina + stacja", async () => {
+  const c = await session({ author: true, fetch: trainFetch });
+  await c.say("czy S1 o 6:07 z Chorzowa Batorego jedzie?"); await flush(); await flush();
+  const all = c.log.all().filter(n => n.classList.contains("ca-bot")).map(n => n.textContent).join("\n");
+  expect(/40658/.test(all), "nie znalazł pociągu: " + all.slice(-300));
+});
+test("125 (a) rower → zasady przewoźnika z linkami", async () => {
+  const c = await session({ author: true });
+  await c.say("czy mogę wziąć rower do pociągu?");
+  expectSaid(c, "PRZEWOŹNIK");
+  expect(c.options().some(o => /Koleje Śląskie/.test(o)), "brak linku do przewoźnika: " + c.options().join(" | "));
+});
+test("125 (e) powitanie ma „Jak pisać do asystenta”", async () => {
+  const c = await session({ author: true });
+  await c.click("Jak pisać do asystenta");
+  expectSaid(c, "gdzie jest 40658");
+});
+test("125 bez profilu autora — po staremu (bez nowych tematów i pytań o pociąg)", async () => {
+  const c = await session();
+  expect(!c.options().some(o => /Jak pisać/.test(o)), "przycisk widoczny bez profilu autora");
 });
 
 // ---------- uruchomienie ----------
