@@ -995,7 +995,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
   // ===== TODO 136 etap 1 (27.11, profil autora): stan na żywo każdej widocznej karty — opóźnienia i przesiadki liczone jak w Pilnowanych
   // (GuardCore.evaluate). Alternatywa „➡️ Zamiast” zawsze, gdy jest choćby cień szansy, że przesiadka się nie uda (🟡/🔴/⚫).
   var liveByKey={},liveChecked={};
-  function liveOn(){try{return localStorage.getItem('showVersionBadge')==='1'}catch(e){return false}}
+  function liveOn(){if(Date.now()>=Date.parse('2026-11-27T16:00:00+01:00'))return true;try{return localStorage.getItem('showVersionBadge')==='1'}catch(e){return false}}
   function itKey(it){return (it&&it.legs||[]).map(function(l){return l.orderId||''}).join('|')}
   function liveCheck(its,date,after){
     if(!liveOn()||!window.GuardCore||!date)return;

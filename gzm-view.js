@@ -2742,7 +2742,7 @@
         renderC();
       }) : Promise.resolve();
     }
-    function lvAuthor() { try { return localStorage.getItem("showVersionBadge") === "1"; } catch (e) { return false; } }   // etap 5: na razie profil autora
+    function lvAuthor() { if (Date.now() >= Date.parse("2026-11-27T16:00:00+01:00")) return true; try { return localStorage.getItem("showVersionBadge") === "1"; } catch (e) { return false; } }   // etap 5: na razie profil autora
     function itKeyC(x) { return (x && x.it && x.it.legs || []).map(function (l) { return l.orderId || ""; }).join("|"); }
     // 'ok' | 'risk' | 'broken' | 'cancelled' | null — ta sama zasada co w wyszukiwarce kolejowej („cień szansy” = risk)
     function liveStateC(x) {
