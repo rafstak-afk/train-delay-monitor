@@ -43,7 +43,8 @@
     "html.home-v2:not(.show-version) .api-limits-toggle,html.home-v2:not(.show-version) #apiLimits{display:none!important}" +
     "html.home-v2:not(.show-version) #healthBox .btn-small{display:none!important}" +
     // stopka z podpisem
-    ".v2-foot{color:#6b7c8f;font-size:12px;text-align:center;margin:18px 0 6px}" +
+    ".v2-foot{color:#6b7c8f;font-size:12px;text-align:center;margin:18px 0 6px}.v2-foot .version-badge{margin:0;font-size:12px;color:inherit;font-weight:400}" +
+    ".v2-when .v2-cal{background:none!important;border:0!important;text-decoration:none!important;font-size:20px!important;padding:2px 6px!important;cursor:pointer;line-height:1}" +
     // telefon: czat jako sama ikonka
     // telefon (notatka 27.11 11:14): przyciski pod polem stacji w JEDNYM wierszu — szerokie „Pokaż odjazdy”, małe „PLK ↗”, alarm i 🔊
     "@media (max-width:600px){html.home-v2 .search-actions{display:flex!important;flex-wrap:nowrap!important;gap:6px!important;align-items:center}" +
@@ -115,8 +116,10 @@
     box.parentNode.insertBefore(w, box.nextSibling);
     var touched = false;
     var paint = function () {
-      var lbl = touched && (d.value || t.value) ? T("index.v2.from", { d: (d.value || "").split("-").reverse().slice(0, 2).join("."), t: t.value || "" }, "od {d} {t}") : T("index.v2.now", null, "od teraz");
-      w.innerHTML = "<b>" + esc(lbl) + "</b> · <button type=\"button\">" + esc(H.classList.contains("v2-dt") ? T("index.v2.hideDt", null, "▴ schowaj datę i godzinę") : T("index.v2.otherDt", null, "📅 inna data / godzina")) + "</button>";
+      // 27.11 (prośba): bez „od teraz” — sama ikonka 📅 (rozwija datę i godzinę); po zmianie obok mała data i godzina
+      var lbl = touched && (d.value || t.value) ? T("index.v2.from", { d: (d.value || "").split("-").reverse().slice(0, 2).join("."), t: t.value || "" }, "od {d} {t}") : "";
+      var tip = H.classList.contains("v2-dt") ? T("index.v2.hideDt", null, "▴ schowaj datę i godzinę") : T("index.v2.otherDt", null, "📅 inna data / godzina");
+      w.innerHTML = '<button type="button" class="v2-cal" title="' + esc(tip) + '" aria-label="' + esc(tip) + '">📅</button>' + (lbl ? " <b>" + esc(lbl) + "</b>" : "");
     };
     w.addEventListener("click", function (e) { if (e.target.closest("button")) { H.classList.toggle("v2-dt"); paint(); } });
     [d, t].forEach(function (el) { el.addEventListener("change", function () { touched = true; paint(); }); });
@@ -145,7 +148,8 @@
   function buildFoot() {
     var c = document.querySelector(".container"); if (!c) return;
     var v = document.querySelector("h1 .version-badge"), f = document.createElement("div"); f.className = "v2-foot";
-    f.textContent = "Czy zdążę? · " + T("index.v2.credit", null, "Claude Code i RafStaK") + (v ? " · " + v.textContent.trim() : "");
+    // numer wersji w klasie „version-badge” — strona chowa go wszystkim poza profilem autora (jak w nagłówku)
+    f.innerHTML = "Czy zdążę? · " + esc(T("index.v2.credit", null, "Claude Code i RafStaK")) + (v ? '<span class="version-badge v2-ver"> · ' + esc(v.textContent.trim()) + "</span>" : "");
     c.appendChild(f);
   }
 
