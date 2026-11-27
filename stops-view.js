@@ -117,7 +117,8 @@
   // Wspólne dla Pilnowanych, wyszukiwarki kolejowej i Pociąg + GZM. Wyliczenia (plan, potrzebny czas, zmiana peronu) — w „szczegóły”.
   // o: { station, status: ok|risk|edge|broken|nodata|cancelled, slack, need, arr, arrPlan, dep, depPlan, platA, platB, walkTo,
   //      icon (html obok nazwy, np. 🗺️), notes (html pod spodem: ostrzeżenia), details: [teksty], key }
-  var XCSS = ".xv{background:#16212d;border:1px solid #2b3b4f;border-radius:12px;padding:10px 12px;margin:8px 0}.xv-h{display:flex;align-items:center;justify-content:space-between;gap:8px}" +
+  // 27.11 (prośba): strzałka „▸” zmienia się na „▾”, gdy szczegóły są rozwinięte
+  var XCSS = ".xv-ar::before{content:'▸'}details[open]>summary .xv-ar::before{content:'▾'}" + ".xv{background:#16212d;border:1px solid #2b3b4f;border-radius:12px;padding:10px 12px;margin:8px 0}.xv-h{display:flex;align-items:center;justify-content:space-between;gap:8px}" +
     ".xv-st{font-weight:800;font-size:15px;min-width:0}.xv-b{flex:none;border-radius:999px;padding:3px 10px;font-size:13px;font-weight:800;white-space:nowrap}" +
     ".xv-ok .xv-b{background:rgba(34,197,94,.16);color:#4ade80}.xv-risk .xv-b{background:rgba(250,204,21,.16);color:#facc15}.xv-edge .xv-b,.xv-broken .xv-b{background:rgba(255,77,77,.18);color:#ff6b6b}" +
     ".xv-nodata .xv-b{background:#334155;color:#cbd5e1}.xv-cancelled .xv-b{background:#000;color:#fff;border:1px solid #555}.xv-broken{border-color:rgba(255,77,77,.45)}.xv-edge .xv-b{animation:xvb 1.2s ease-in-out infinite}" +
@@ -149,7 +150,7 @@
        (det.length ? '<div class="xv-d">' + det.map(esc).join("<br>") + "</div>" : "");
     return '<div class="xv xv-' + esc(s) + '"><div class="xv-h"><span class="xv-st">' + esc(o.station || "") + (o.icon || "") + "</span>" + (b ? '<span class="xv-b">' + esc(b) + "</span>" : "") + "</div>" +
       line + plat +
-      (body ? "<details" + dk + "><summary" + (warn ? ' class="xv-warn"' : "") + ">▸ " + esc(T("xfer.details", null, "szczegóły")) + "</summary>" + body + "</details>" : "") + "</div>";
+      (body ? "<details" + dk + "><summary" + (warn ? ' class="xv-warn"' : "") + "><span class=\"xv-ar\"></span> " + esc(T("xfer.details", null, "szczegóły")) + "</summary>" + body + "</details>" : "") + "</div>";
   }
   // ===== 26.11 wariant A: odcinek podróży — numer pociągu nad wszystkim, linia odjazdu i linia przyjazdu;
   // odpowiedź o przesiadce w linii przyjazdu na stację przesiadki; reszta w „▸ szczegóły” (czerwone przy odchyleniach).
@@ -195,7 +196,7 @@
     var warn = o.warn || late || (x && x.status && x.status !== "ok");
     return '<div class="' + cls + '"' + (o.attrs || "") + '><div class="jl-h">' + (o.icon || "🚆") + " " + (o.label || "") + (o.dir ? ' <span class="jl-d">→ ' + esc(o.dir) + "</span>" : "") + (o.tag || "") + "</div>" +
       row(o.dep, null, "") + row(o.arr, o.arr && o.arr.platNext, xBadge(x)) +
-      (o.details ? "<details" + dk + "><summary" + (warn ? ' class="xv-warn"' : "") + ">▸ " + (o.pending ? "⏳ " : "") + esc(T("xfer.details", null, "szczegóły")) + '</summary><div class="jl-det">' + o.details + "</div></details>" : "") +
+      (o.details ? "<details" + dk + "><summary" + (warn ? ' class="xv-warn"' : "") + "><span class=\"xv-ar\"></span> " + (o.pending ? "⏳ " : "") + esc(T("xfer.details", null, "szczegóły")) + '</summary><div class="jl-det">' + o.details + "</div></details>" : "") +
       "</div>" + (o.after || "");
   }
   // dopisek pod przesiadkami — link do objaśnienia w „Jak działa aplikacja”

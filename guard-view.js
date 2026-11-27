@@ -314,7 +314,7 @@
     // ===== 26.11 wariant A (dla wszystkich od 15:00, wcześniej profil autora): numer pociągu nad wszystkim, linia odjazdu i przyjazdu,
     // odpowiedź o przesiadce w linii przyjazdu; reszta w „▸ szczegóły”
     var rotPend = {};   // TODO 124: odcinki, dla których obieg składu jeszcze się wczytuje
-    function rotEarly() { try { return localStorage.getItem('showVersionBadge') === '1'; } catch (e) { return false; } }
+    function rotEarly() { if (Date.now() >= Date.parse("2026-11-27T16:00:00+01:00")) return true; try { return localStorage.getItem('showVersionBadge') === '1'; } catch (e) { return false; } }   // TODO 124, 132: dla wszystkich od 27.11 16:00
     function layoutA() { if (!window.StopsView || !StopsView.legA) return false; if (Date.now() >= Date.parse("2026-11-26T16:00:00+01:00")) return true; try { return localStorage.getItem('showVersionBadge') === '1'; } catch (e) { return false; } }
     function srcTxt(src) { return src === 'live' || src === 'confirmed' ? T('guard.srcLive', null, 'na żywo') : src === 'forecast' ? T('guard.srcForecast', null, 'prognoza PLK') : ''; }
     // TODO 132: stan odcinka — nie wyruszył / w drodze / dojechał, „punktualnie wg PLK”, tory (z biegu pociągu)
@@ -495,7 +495,7 @@
     // 24.11 (v6.85): zwijanie kart i mapka przejścia pociąg ↔ GZM — dla wszystkich. Nowe testy: wrócić do warunku showVersionBadge.
     function authorOnG() { return true; }
     // TODO 129 (26.11): etapy przesiadki — na razie profil autora
-    function xfer2On() { try { return localStorage.getItem('showVersionBadge') === '1'; } catch (e) { return false; } }
+    function xfer2On() { if (Date.now() >= Date.parse("2026-11-27T16:00:00+01:00")) return true; try { return localStorage.getItem('showVersionBadge') === '1'; } catch (e) { return false; } }   // TODO 129: dla wszystkich od 27.11 16:00
     var folded = (function () { try { return JSON.parse(localStorage.getItem('guardFoldV1')) || {}; } catch (e) { return {}; } })();
     function cardHtml(c) {
       var r = results[c.id] || { status: 'nodata' };

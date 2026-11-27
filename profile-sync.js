@@ -426,6 +426,7 @@
         return;
       }
       if (sessionStorage.getItem("pushLostLater") === "1") return;
+      if (Date.now() < Date.parse("2026-11-27T16:00:00+01:00") && localStorage.getItem("showVersionBadge") !== "1") return;   // pasek: profil autora, dla wszystkich od 27.11 16:00
       const show = () => showPushLost(Notification.permission === "denied");
       if (document.body) show(); else document.addEventListener("DOMContentLoaded", show);
     } catch (e) {}

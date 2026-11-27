@@ -2218,6 +2218,7 @@
       return foldRoute(rows, ib, ia, "f|" + leg.orderId, "station");
     }
     // 25.11: „▼ Trasa” = przystanki każdego pojazdu w karcie (pod jego wierszem); rozwinięcie karty samo — bez przystanków.
+    function rel27() { if (Date.now() >= Date.parse("2026-11-27T16:00:00+01:00")) return true; try { return localStorage.getItem("showVersionBadge") === "1"; } catch (e) { return false; } }   // wydanie zmian z 26–27.11 (TODO 109)
     function xAuthor() { if (Date.now() >= Date.parse("2026-11-26T16:00:00+01:00")) return true; try { return localStorage.getItem("showVersionBadge") === "1"; } catch (e) { return false; } }   // TODO 113: nowy wygląd przesiadki — najpierw profil autora
     function fInline() { if (ceOn() && Date.now() >= Date.parse("2026-11-25T17:00:00+01:00")) return true; try { return ceOn() && localStorage.getItem("showVersionBadge") === "1"; } catch (e) { return false; } }   // dla wszystkich od 25.11 17:00 (zaplanowane), wcześniej profil autora
     function fStops(q) {
@@ -2402,7 +2403,7 @@
           var fP = S.fromNet || S.fromPlace, tP = S.toNet || S.toPlace;
           var o = Object.assign(fP ? { fromStops: fP.stops.map(function (x) { return { s: x.s, t: base + x.walk }; }), dep: base } : { from: S.fN, dep: base }, { rt: rt, maxTransfers: 2, count: 5, maxDep: base + 180 });
           if (tP) o.toStops = tP.stops.map(function (x) { return { s: x.s, walk: x.walk }; }); else o.to = S.netTo;
-          if (xAuthor()) o.withSlower = true;   // TODO 109: także wolniejsze bezpośrednie (z oznaczeniem)
+          if (rel27()) o.withSlower = true;   // TODO 109: także wolniejsze bezpośrednie (z oznaczeniem) — dla wszystkich od 27.11 16:00
           S.netRes = GzmRaptor.search(S.net, o).map(function (jn) { return withPlaceWalks(jn, fP, tP); });
         }
         S.netRes.forEach(function (jn) { out.push({ net: jn, final: jn.arr, start: jn.leave != null ? jn.leave : jn.dep }); });
