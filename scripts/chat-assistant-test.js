@@ -700,6 +700,35 @@ test("125 bez profilu autora — po staremu (bez nowych tematów i pytań o poci
   expect(!c.options().some(o => /Jak pisać/.test(o)), "przycisk widoczny bez profilu autora");
 });
 
+// ===== TODO 98 (27.11, profil autora): miejsca po nazwie
+const poiFetch = u => {
+  if (u.indexOf("nominatim.openstreetmap.org") >= 0) {
+    const q = decodeURIComponent((u.match(/[?&]q=([^&]*)/) || [])[1] || "").replace(/\+/g, " ");
+    if (/castorama/i.test(q) && /tych/i.test(q)) return jsonRes([{ name: "Castorama", address: { road: "Towarowa", house_number: "2", city: "Tychy" } }]);
+    return jsonRes([]);
+  }
+  if (u.startsWith("/api/asystent")) return jsonRes({ ok: false, reason: "not_trip" });
+  return null;
+};
+test("98 „z Katowic do Castorama Tychy” → miejsce z mapy jako przycisk, po wyborze cel = adres", async () => {
+  const c = await session({ author: true, fetch: poiFetch });
+  await c.say("z Katowic do Castorama Tychy"); await flush(); await flush();
+  expect(c.options().some(o => /Castorama — Towarowa 2, Tychy/.test(o)), "brak przycisku miejsca: " + c.options().join(" | "));
+  await c.click("Castorama — Towarowa 2, Tychy");
+  expect(c.state().to && c.state().to.addr && c.state().to.name === "Towarowa 2, Tychy", "cel: " + JSON.stringify(c.state().to));
+});
+test("98 nazwa w dopełniaczu: „do Castoramy w Tychach” → wariant „Castorama Tychy”", async () => {
+  const c = await session({ author: true, fetch: poiFetch });
+  await c.say("z Katowic do Castoramy w Tychach"); await flush(); await flush();
+  expect(c.options().some(o => /Towarowa 2, Tychy/.test(o)), "brak przycisku miejsca: " + c.options().join(" | "));
+});
+test("98 nic na mapie → dotychczasowe pytanie (stacja / adres)", async () => {
+  const c = await session({ author: true, fetch: poiFetch });
+  await c.say("z Katowic do Xyzzyqw"); await flush(); await flush();
+  const all = c.log.all().filter(n => n.classList.contains("ca-bot")).map(n => n.textContent).join("\n");
+  expect(/Nie znalazłem stacji, przystanku ani miejsca/.test(all) || /Nie znalazłem stacji/.test(all), "brak dotychczasowego pytania: " + all.slice(-200));
+});
+
 // ---------- uruchomienie ----------
 (async () => {
   let fail = 0;

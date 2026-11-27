@@ -156,8 +156,76 @@
     var street = words.filter(function (w) { return w !== num && !(town && town.split(/\s+/).indexOf(w) >= 0); }).join(" ").replace(/,/g, "").trim();
     return { street: street, num: num, town: town };
   }
+  // ===== TODO 98 (27.11, profil autora): miejsca po NAZWIE — „Castorama Tychy”, „Galeria Katowicka”, „szpital w Bytomiu”.
+  // Wyszukiwarka OpenStreetMap (Nominatim, ta sama co dla adresów; obszar śląski), najwyżej kilka zapytań na rozmowę.
+  // Znalezione miejsce staje się adresem (ulica + numer + miasto), więc dalej liczy się jak każdy adres.
+  var poiCache = {}, lastUserText = "";
+  function poiVariants(phrase) {
+    var t = String(phrase).replace(/[?!.]/g, " ").replace(/\s+/g, " ").trim(), out = [t];
+    // „Castoramy w Tychach” → miasto z listy stacji w mianowniku („Tychy”), nazwa miejsca w mianowniku („Castorama”)
+    var m = t.match(/^(.+?)\s+(?:w|we|na|przy)\s+(.+)$/i), poi = m ? m[1] : t, town = null, townPh = m ? m[2] : null;
+    // zdanie mogło uciąć „w Tychach” przy dzieleniu na skąd/dokąd — szukamy „w <miasto>” zaraz po nazwie w całej wypowiedzi
+    if (!townPh && lastUserText) {
+      var low = fold(lastUserText), at = low.indexOf(fold(t));
+      if (at >= 0) { var mm = low.slice(at + fold(t).length).match(/^\s+(?:w|we)\s+([a-z ]+?)(?=\s+(?:o|jutro|dzis|teraz|przez|na|z|do)\b|$)/); if (mm) townPh = mm[1]; }
+    }
+    if (townPh && stations) { var ms = matchStation(townPh); if (ms && ms.exact) town = ms.exact.name.split(" ").slice(0, /Góry|Śląsk|Górnicza|Wielkie|Mazowiecki/.test(ms.exact.name) ? 2 : 1).join(" "); }
+    var nom = poi.replace(/([A-Za-zżźćńółęąśŻŹĆŃÓŁĘĄŚ]{3,}?)(owej|skiej|ckiej|nej|iej|ii|y)(?=\s|$)/g, function (m0, a, e) { return a + ({ owej: "owa", skiej: "ska", ckiej: "cka", nej: "na", iej: "a", ii: "ia", y: "a" })[e]; });
+    if (town) { out.push(nom + " " + town); out.push(poi + " " + town); }
+    if (nom !== poi) out.push(nom);
+    return out.filter(function (x, i) { return x && out.indexOf(x) === i; }).slice(0, 3);
+  }
+  function poiSearch(phrase) {
+    var key = fold(phrase); if (poiCache[key]) return Promise.resolve(poiCache[key]);
+    var vars = poiVariants(phrase), i = 0;
+    var one = function (q) {
+      var p = new URLSearchParams({ format: "jsonv2", q: q, addressdetails: "1", countrycodes: "pl", viewbox: "18.2,50.75,19.75,49.9", bounded: "1", limit: "5", "accept-language": "pl" });
+      return fetch("https://nominatim.openstreetmap.org/search?" + p.toString(), { headers: { Accept: "application/json" } }).then(function (r) { return r.ok ? r.json() : []; }).catch(function () { return []; });
+    };
+    var step = function () {
+      if (i >= vars.length) return Promise.resolve([]);
+      return one(vars[i++]).then(function (list) {
+        list = (Array.isArray(list) ? list : []).map(function (x) {
+          var a = x.address || {}, town = a.city || a.town || a.village || a.municipality || "", road = a.road || a.pedestrian || a.square || "";
+          if (!town || !road) return null;
+          var poiName = x.name || (x.display_name || "").split(",")[0] || "";
+          return { poi: poiName, addr: road + (a.house_number ? " " + a.house_number : "") + ", " + town, hasNum: !!a.house_number };
+        }).filter(Boolean);
+        var seen = {}; list = list.filter(function (x) { var k = fold(x.addr); if (seen[k]) return false; seen[k] = 1; return true; });
+        return list.length ? list : step();
+      });
+    };
+    return step().then(function (l) { poiCache[key] = l; return l; });
+  }
+  function poiLooks(phrase) { return authorChat() && !/\b\d{1,3}[a-zA-Z]?\b/.test(phrase) && !/\b\d{2}-\d{3}\b/.test(phrase) && fold(phrase).length >= 3; }
+  // Szuka miejsca; gdy są wyniki — przyciski „📍 Castorama — Towarowa 2, Tychy”; gdy nie — fallback() (dotychczasowe zachowanie).
+  function poiOffer(kind, phrase, fallback) {
+    var w = addMsg("🔎 Szukam „" + phrase + "” na mapie…", "bot", true); w.classList.add("ca-wait");
+    poiSearch(phrase).then(function (list) {
+      w.remove();
+      if (!list.length) return fallback();
+      st.pending = { kind: kind };
+      addMsg(list.length === 1 ? "📍 Znalazłem na mapie — o to miejsce chodzi" + (kind === "from" ? " (skąd)" : " (dokąd)") + "?" : "📍 Znalazłem na mapie kilka miejsc — które" + (kind === "from" ? " (skąd)" : " (dokąd)") + "?", "bot");
+      var o = list.slice(0, 5).map(function (x) { return { label: "📍 " + (x.poi && fold(x.addr).indexOf(fold(x.poi)) < 0 ? x.poi + " — " : "") + x.addr, primary: list.length === 1, onClick: function () {
+        addMsg((x.poi ? x.poi + " — " : "") + x.addr, "user");
+        st[kind] = { gzm: true, addr: true, name: x.addr, poi: x.poi || null }; st.pending = null;
+        addMsg("📍 Cel ustalony: " + (x.poi ? x.poi + ", " : "") + x.addr + " — liczę dojazd do tego adresu.", "bot");
+        next();
+      } }; });
+      o.push({ label: "✏️ Nie to — wpiszę adres", onClick: function () { addMsg("Nie to — wpiszę adres", "user"); st.pending = { kind: kind }; addMsg(ADDR_HELP, "bot"); if (inputEl) inputEl.focus(); } });
+      addOptions(o);
+    }).catch(function () { w.remove(); fallback(); });
+  }
   // Ustawia adres jako początek/cel albo — gdy czegoś brakuje — dopytuje. true = gotowe.
   function setAddr(kind, phrase) {
+    // TODO 98: „adres” bez numeru domu to często nazwa miejsca („Castorama Tychy”) — najpierw mapa, potem dopytanie o ulicę/numer
+    if (poiLooks(phrase) && !/bez numeru/i.test(phrase) && !(st.pending && st.pending.kind === "addrfix")) {
+      poiOffer(kind, cleanAddr(phrase), function () { if (setAddrCore(kind, phrase)) next(); });
+      return false;
+    }
+    return setAddrCore(kind, phrase);
+  }
+  function setAddrCore(kind, phrase) {
     var name = cleanAddr(phrase), p = addrParts(name);
     // „Kopienica 5” (wieś bez ulic) też jest kompletnym adresem
     if (!cityFixOn() || (p.num && p.town) || /bez numeru/i.test(name) && p.town) {
@@ -908,7 +976,7 @@
   function onUser(text) {
     // Stare przyciski wyboru (z poprzednich pytań) przestają obowiązywać.
     logEl.querySelectorAll(".ca-opts").forEach(function (b) { b.remove(); });
-    addMsg(text, "user");
+    addMsg(text, "user"); lastUserText = text;
     var rules = function () { Promise.all([loadStations(), loadStops()]).then(function () { handle(text); }).catch(function () { addMsg("Nie udało się wczytać listy stacji. Spróbuj ponownie za chwilę.", "bot"); }); };
     if (trainQ(text) || (st && st.pending && st.pending.kind === "trainStation")) { rules(); return; }   // TODO 125 (d): bez modelu AI
     if (aiOn()) { askAi(text, rules); return; }
@@ -1013,7 +1081,7 @@
       a: "🎫 Biletów nie sprzedaję. W menu ☰ „🎫 Dobierz bilet” podpowiem, jaki bilet pasuje do trasy. Ceny, ulgi i bilety okresowe — na stronach przewoźników (przyciski niżej)." },
     { id: "howto", label: "✍️ Jak pisać do asystenta",
       re: / (jak (pisac|pytac|rozmawiac|zapytac)|co (umiesz|potrafisz)|przyklad\w*|poradnik\w*) /,
-      a: "✍️ Pisz albo mów (🎤) tak, jak do człowieka. Przykłady:\n• „z Tarnowskich Gór do Katowic jutro o 7”\n• „muszę być w Gliwicach na 8:00, jadę z Bytomia”\n• „z Zawiercia do Tarnowskich Gór, mam czas, mogę przez Częstochowę”\n• „gdzie jest 40658?”, „czy S1 o 6:07 z Chorzowa Batorego jedzie?”\n• „powrót jutro o 16”\n• „z domu do pracy” (gdy masz ustawione 🏠 i 🏢)\n• „jak liczysz dojście?”, „co znaczą kolory?”\nGdy czegoś nie zrozumiem — dopytam i dam przyciski do wyboru. English works too: „from Katowice to Gliwice tomorrow at 8”." }
+      a: "✍️ Pisz albo mów (🎤) tak, jak do człowieka. Przykłady:\n• „z Tarnowskich Gór do Katowic jutro o 7”\n• „muszę być w Gliwicach na 8:00, jadę z Bytomia”\n• „z Zawiercia do Tarnowskich Gór, mam czas, mogę przez Częstochowę”\n• „gdzie jest 40658?”, „czy S1 o 6:07 z Chorzowa Batorego jedzie?”\n• „powrót jutro o 16”\n• „z domu do pracy” (gdy masz ustawione 🏠 i 🏢)\n• „z Katowic do Castoramy w Tychach” — miejsce po nazwie znajdę na mapie\n• „jak liczysz dojście?”, „co znaczą kolory?”\nGdy czegoś nie zrozumiem — dopytam i dam przyciski do wyboru. English works too: „from Katowice to Gliwice tomorrow at 8”." }
   );
   var FAQ_Q = / (jak|jakie|jaki|dlaczego|czemu|skad|co|czy|ile|po co|kiedy|w jaki sposob|wyjasnij|opowiedz|powiedz) /;
   function faqTopics(f) { return FAQ.filter(function (t) { return t.re.test(" " + f + " "); }); }
@@ -1512,7 +1580,18 @@
     }
     st.pending = { kind: kind };
     var sim = similarStations(phrase, 6);
-    if (gzOk) {
+    if (gzOk && poiLooks(phrase) && !addrLike(phrase)) {
+      // TODO 98: nazwa miejsca („Castorama Tychy”) — mapa; gdy nic — dotychczasowe pytanie
+      var phr = phrase, kd = kind, sim2 = sim;
+      poiOffer(kd, phr, function () {
+        st.pending = { kind: kd };
+        addMsg("Nie znalazłem stacji, przystanku ani miejsca „" + phr + "”. Może to adres? Albo chodziło o którąś z tych stacji?" + (cityFixOn() ? "\n\n" + ADDR_HELP : ""), "bot");
+        var o4 = [{ label: "📍 Szukaj jako adres", onClick: function () { addMsg("To adres", "user"); if (setAddrCore(kd, phr)) next(); } }];
+        sim2.forEach(function (x) { o4.push({ label: x.name, onClick: function () { addMsg(x.name, "user"); st[kd] = x; st.pending = null; next(); } }); });
+        o4.push({ label: "✏️ Wpiszę jeszcze raz", onClick: function () { addMsg("Wpiszę jeszcze raz", "user"); st.pending = { kind: kd }; if (inputEl) inputEl.focus(); } });
+        addOptions(o4);
+      });
+    } else if (gzOk) {
       addMsg("Nie znalazłem stacji ani przystanku „" + phrase + "”. Może to adres? Albo chodziło o którąś z tych stacji?" + (cityFixOn() ? "\n\n" + ADDR_HELP : ""), "bot");
       var o3 = [{ label: "📍 Szukaj jako adres", onClick: function () { addMsg("To adres", "user"); if (setAddr(kind, phrase)) next(); } }];
       sim.forEach(function (x) { o3.push({ label: x.name, onClick: function () { addMsg(x.name, "user"); st[kind] = x; st.pending = null; next(); } }); });
