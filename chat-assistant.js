@@ -160,16 +160,22 @@
   // Wyszukiwarka OpenStreetMap (Nominatim, ta sama co dla adresów; obszar śląski), najwyżej kilka zapytań na rozmowę.
   // Znalezione miejsce staje się adresem (ulica + numer + miasto), więc dalej liczy się jak każdy adres.
   var poiCache = {}, lastUserText = "";
-  function poiVariants(phrase) {
-    var t = String(phrase).replace(/[?!.]/g, " ").replace(/\s+/g, " ").trim(), out = [t];
-    // „Castoramy w Tychach” → miasto z listy stacji w mianowniku („Tychy”), nazwa miejsca w mianowniku („Castorama”)
-    var m = t.match(/^(.+?)\s+(?:w|we|na|przy)\s+(.+)$/i), poi = m ? m[1] : t, town = null, townPh = m ? m[2] : null;
-    // zdanie mogło uciąć „w Tychach” przy dzieleniu na skąd/dokąd — szukamy „w <miasto>” zaraz po nazwie w całej wypowiedzi
+  // miasto podane przy nazwie miejsca: „Castoramy w Tychach” albo — gdy zdanie ucięło — „w Tychach” zaraz po nazwie w całej wypowiedzi
+  function townAfter(phrase) {
+    var t = String(phrase).replace(/[?!.]/g, " ").replace(/\s+/g, " ").trim();
+    var m = t.match(/^(.+?)\s+(?:w|we|na|przy)\s+(.+)$/i), townPh = m ? m[2] : null;
     if (!townPh && lastUserText) {
       var low = fold(lastUserText), at = low.indexOf(fold(t));
       if (at >= 0) { var mm = low.slice(at + fold(t).length).match(/^\s+(?:w|we)\s+([a-z ]+?)(?=\s+(?:o|jutro|dzis|teraz|przez|na|z|do)\b|$)/); if (mm) townPh = mm[1]; }
     }
-    if (townPh && stations) { var ms = matchStation(townPh); if (ms && ms.exact) town = ms.exact.name.split(" ").slice(0, /Góry|Śląsk|Górnicza|Wielkie|Mazowiecki/.test(ms.exact.name) ? 2 : 1).join(" "); }
+    if (!townPh || !stations) return null;
+    var ms = matchStation(townPh);
+    return ms && ms.exact ? ms.exact.name.split(" ").slice(0, /Góry|Śląsk|Górnicza|Wielkie|Mazowiecki/.test(ms.exact.name) ? 2 : 1).join(" ") : null;
+  }
+  function poiVariants(phrase) {
+    var t = String(phrase).replace(/[?!.]/g, " ").replace(/\s+/g, " ").trim(), out = [t];
+    // „Castoramy w Tychach” → miasto z listy stacji w mianowniku („Tychy”), nazwa miejsca w mianowniku („Castorama”)
+    var m = t.match(/^(.+?)\s+(?:w|we|na|przy)\s+(.+)$/i), poi = m ? m[1] : t, town = townAfter(t);
     var nom = poi.replace(/([A-Za-zżźćńółęąśŻŹĆŃÓŁĘĄŚ]{3,}?)(owej|skiej|ckiej|nej|iej|ii|y)(?=\s|$)/g, function (m0, a, e) { return a + ({ owej: "owa", skiej: "ska", ckiej: "cka", nej: "na", iej: "a", ii: "ia", y: "a" })[e]; });
     if (town) { out.push(nom + " " + town); out.push(poi + " " + town); }
     if (nom !== poi) out.push(nom);
@@ -1545,6 +1551,19 @@
     if (m.exact) { st[kind] = m.exact; st.pending = null; return true; }
     if (gzOk) {
       var ms = matchStop(phrase), adr = looksAddr(phrase);
+      // TODO 98 (27.11, na żywo): „do Castoramy w Tychach” trafiało w przystanek „Tarnowskie Góry Castorama” — gdy w zdaniu jest
+      // miasto, a przystanek leży w innym, szukamy miejsca na mapie w tym mieście
+      var utown = poiLooks(phrase) ? townAfter(phrase) : null;
+      if (ms.exact && !adr && utown && fold(ms.exact.name).indexOf(fold(utown)) !== 0) {
+        var stopX = ms.exact, kd2 = kind, ph2 = phrase;
+        poiOffer(kd2, ph2, function () {
+          st.pending = { kind: kd2 };
+          addMsg("Nie znalazłem „" + ph2 + "” w miejscowości " + utown + ". Jest przystanek „" + stopX.name + "” — o niego chodzi?", "bot");
+          addOptions([{ label: "🚏 " + stopX.name, onClick: function () { addMsg(stopX.name, "user"); st[kd2] = { gzm: true, name: stopX.name }; st.pending = null; next(); } },
+            { label: "📍 To adres", onClick: function () { addMsg("To adres", "user"); if (setAddrCore(kd2, ph2)) next(); } }]);
+        });
+        return false;
+      }
       if (ms.exact && !adr) { st[kind] = { gzm: true, name: ms.exact.name }; st.pending = null; return true; }
       if (adr && !ms.exact && !m.options) {
         return setAddr(kind, phrase);
