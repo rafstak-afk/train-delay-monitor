@@ -26,6 +26,7 @@
     ".v2-c .x{background:#09449f;color:#cfe0ff;padding:10px;font-size:13px;border-left:1px solid rgba(255,255,255,.2)}.v2-c .x:hover{background:#073a87}" +
     ".v2-more{border:1px dashed #4b6584;background:none;color:#9fb0c2;border-radius:10px;padding:9px 12px;font:inherit;font-size:14px;cursor:pointer}" +
     // przyciski przy polu stacji: „Pokaż odjazdy” + mały „PLK ↗”
+    "html.home-v2 .search-actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px}html.home-v2 .search-actions .btn-api{order:1}html.home-v2 .search-actions .btn-official{order:2}html.home-v2 .search-actions #alertButton{order:3}html.home-v2 .search-actions #alertButton~*{order:4}" +
     "html.home-v2 .btn-official{background:none!important;color:#8fb8f5!important;text-decoration:underline;padding:8px 6px!important;font-weight:700}" +
     // data i godzina zwinięte
     "html.home-v2 #dateInput,html.home-v2 #timeInput{display:none}html.home-v2.v2-dt #dateInput,html.home-v2.v2-dt #timeInput{display:inline-block}" +
