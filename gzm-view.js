@@ -2715,33 +2715,81 @@
     // Teraz: każdy pociąg 3 pierwszych propozycji raz na wyszukiwanie (cState.tChk), odwołanie → cState.tCancel[numer].
     function trainCancelC() {
       if (!cState || !cState.shown || !window.GuardCore) return Promise.resolve();   // TODO 133: dla wszystkich od razu (27.11, Twoja decyzja)
-      cState.tChk = cState.tChk || {}; cState.tCancel = cState.tCancel || {};
-      var jobs = [];
-      cState.shown.filter(function (x) { return x.it && x.it.legs; }).slice(0, 3).forEach(function (x) {
+      cState.tChk = cState.tChk || {}; cState.tCancel = cState.tCancel || {}; cState.tDet = cState.tDet || {}; cState.tLive = cState.tLive || {};
+      // TODO 136 etap 5 (27.11): wszystkie pociągi 4 pierwszych propozycji (co najwyżej co 2 min) i ocena przesiadek jak w Pilnowanych
+      var au = lvAuthor(), jobs = [], xs = cState.shown.filter(function (x) { return x.it && x.it.legs; }).slice(0, au ? 4 : 3);
+      xs.forEach(function (x) {
         x.it.legs.forEach(function (l) {
-          var num = l.train && l.train.number; if (!num || !l.orderId || cState.tChk[num]) return;
-          cState.tChk[num] = 1;
+          var num = l.train && l.train.number; if (!num || !l.orderId) return;
+          if (cState.tChk[num] && (!au || Date.now() - cState.tChk[num] < 120000)) return;
+          cState.tChk[num] = Date.now();
           var q = new URLSearchParams({ scheduleId: l.scheduleId || "", orderId: l.orderId, operatingDate: cState.date, train: num });
           jobs.push(fetch("/api/train-details?" + q, { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
             if (!d) return;
+            cState.tDet[num] = d;
             var rd = GuardCore.readLeg({ board: { stationName: l.board.stationName, time: l.board.time }, alight: { stationName: l.alight.stationName, time: l.alight.time } }, d);
             if (!rd.noData && rd.cancelled) cState.tCancel[num] = { likely: !!rd.cancelLikely, label: ((l.train.category || "") + " " + num).trim() };
           }).catch(function () {}));
         });
       });
-      return jobs.length ? Promise.all(jobs).then(function () { renderC(); }) : Promise.resolve();
+      return jobs.length ? Promise.all(jobs).then(function () {
+        xs.forEach(function (x) {
+          var rs = x.it.legs.map(function (l) { return (l.train && cState.tDet[l.train.number]) || null; });
+          if (rs.some(function (d) { return !d; })) return;
+          try { cState.tLive[itKeyC(x)] = GuardCore.evaluate(GuardCore.fromItinerary(x.it, { date: cState.date }), rs, { minTransfer: 3, xfer2: true }); } catch (e) {}
+        });
+        renderC();
+      }) : Promise.resolve();
+    }
+    function lvAuthor() { try { return localStorage.getItem("showVersionBadge") === "1"; } catch (e) { return false; } }   // etap 5: na razie profil autora
+    function itKeyC(x) { return (x && x.it && x.it.legs || []).map(function (l) { return l.orderId || ""; }).join("|"); }
+    // 'ok' | 'risk' | 'broken' | 'cancelled' | null — ta sama zasada co w wyszukiwarce kolejowej („cień szansy” = risk)
+    function liveStateC(x) {
+      if (cancelledOf(x).length) return "cancelled";
+      var r = cState && cState.tLive && cState.tLive[itKeyC(x)]; if (!r) return null;
+      if (r.status === "cancelled") return "cancelled";
+      var ts = r.transfers || [];
+      if (ts.some(function (t) { return t.status === "broken" && t.phase !== "held" && t.phase !== "heldTight"; })) return "broken";
+      return ts.some(function (t) { return t.status === "risk" || (t.onlyThanksToB && !t.softB) || t.phase === "unconf" || t.phase === "stillRisk"; }) ? "risk" : "ok";
+    }
+    function altLineC(x) {
+      var list = (cState && cState.shown) || [], at = list.indexOf(x), best = null, fb = null;
+      for (var j = at + 1; at >= 0 && j < list.length; j++) {
+        var y = list[j]; if (y.start != null && x.start != null && y.start < x.start) continue;
+        var sy = y.it ? liveStateC(y) : "ok";
+        if (sy === "ok") { best = y; break; }
+        if (!fb && sy !== "cancelled" && sy !== "broken") fb = y;
+      }
+      var y2 = best || fb; if (!y2) return "";
+      var nm = y2.it && y2.it.legs ? y2.it.legs.map(function (l) { return ((l.train && l.train.category) || "") + " " + ((l.train && l.train.number) || ""); }).join(" + ") : (y2.net ? y2.net.legs.filter(function (l) { return l.type === "ride"; }).map(function (l) { return l.line; }).join(" + ") : "");
+      return '<div><button type="button" class="gz-btn sec cxl-go" data-cxlgo="' + esc(detKey(y2)) + '" style="margin:6px 0 2px">' + esc(T("gzm.cxlAlt", null, "➡️ Zamiast:") + " " + C.fmt(y2.start != null ? y2.start : y2.dep) + " → " + C.fmt(y2.final) + (nm ? " · " + nm.trim() : "")) + "</button></div>";
+    }
+    // 🟡/🔴 przesiadka między pociągami wątpliwa — ramka, opis z zapasem i opóźnieniem, „➡️ Zamiast”
+    function riskWrap(x, html) {
+      if (!lvAuthor()) return html;
+      var st = liveStateC(x); if (st !== "risk" && st !== "broken") return html;
+      cxlCss();
+      var r = cState.tLive[itKeyC(x)], t = (r.transfers || [])[r.worst >= 0 ? r.worst : 0] || {}, sl = typeof t.slack === "number" ? t.slack - (t.need || 0) : null;
+      var head = st === "broken" ? T("planer.liveBroken", { st: t.station || "", n: sl != null ? -sl : "?" }, "🔴 Przesiadka w {st} prawdopodobnie zerwana — brakuje {n} min").replace("{st}", t.station || "").replace("{n}", sl != null ? -sl : "?")
+        : T("planer.liveRisk", { st: t.station || "", n: sl != null ? Math.max(0, sl) : "?" }, "🟡 Przesiadka w {st} niepewna — zapas {n} min").replace("{st}", t.station || "").replace("{n}", sl != null ? Math.max(0, sl) : "?");
+      var why = t.delayA ? " (" + [t.trainA && t.trainA.category, t.trainA && t.trainA.number].filter(Boolean).join(" ") + " +" + t.delayA + " min)" : "";
+      var line = '<div class="lv-t lv-' + st + '">' + esc(head + why) + altLineC(x) + "</div>";
+      var m = String(html).match(/^s*<div[^>]*>/), cls = st === "broken" ? "x-lbroken" : "x-lrisk";
+      if (!m) return '<div class="' + cls + '">' + line + html + "</div>";
+      var tag = m[0].indexOf('class="') >= 0 ? m[0].replace(/class="/, 'class="' + cls + " ") : m[0].replace(/^(s*<div)/, '$1 class="' + cls + '"');
+      return tag + line + String(html).slice(m[0].length);
     }
     function cancelledOf(x) {
       var t = cState && cState.tCancel; if (!t || !x || !x.it || !x.it.legs) return [];
       return x.it.legs.map(function (l) { return l.train && t[l.train.number]; }).filter(Boolean);
     }
     function cancelWrap(x, html) {
-      var cx = cancelledOf(x); if (!cx.length) return html;
+      var cx = cancelledOf(x); if (!cx.length) return riskWrap(x, html);
       var txt = cx.map(function (c) { return "⚫ " + c.label + " " + (c.likely ? T("gzm.cxlLikely", null, "prawdopodobnie odwołany") : T("gzm.cxlYes", null, "odwołany (wg PLK)")); }).join(" · ");
       // 27.11 (Twoja prośba): cała ramka karty czerwona, napis o odwołaniu W KARCIE nad godzinami, bez „🟢 zdążysz”
       cxlCss();
       // TODO 135: alternatywa w karcie — najbliższa propozycja z listy, która jedzie (stuknięcie przewija do niej)
-      var alt = "", list = (cState && cState.shown) || [], at = list.indexOf(x);
+      var alt = altLineC(x), list = [], at = -1;
       for (var j = at + 1; at >= 0 && j < list.length; j++) {
         var y = list[j]; if (cancelledOf(y).length || (y.start != null && x.start != null && y.start < x.start)) continue;
         var nm = y.it && y.it.legs ? y.it.legs.map(function (l) { return ((l.train && l.train.category) || "") + " " + ((l.train && l.train.number) || ""); }).join(" + ") : (y.net ? y.net.legs.filter(function (l) { return l.type === "ride"; }).map(function (l) { return l.line; }).join(" + ") : "");
@@ -2765,6 +2813,8 @@
       if (document.getElementById("cxl-css")) return;
       var s = document.createElement("style"); s.id = "cxl-css";
       s.textContent = ".x-cxl{border:2px solid #ff4d4d!important;border-left-width:6px!important;box-shadow:0 0 0 1px rgba(255,77,77,.35)!important;background-color:rgba(255,77,77,.07)!important}" +
+        ".x-lrisk{border:2px solid #facc15!important;border-left-width:6px!important}.x-lbroken{border:2px solid #ff4d4d!important;border-left-width:6px!important;background-color:rgba(255,77,77,.06)!important}" +
+        ".lv-t{font-weight:800;font-size:14px;margin:0 0 6px;line-height:1.35}.lv-risk{color:#facc15}.lv-broken{color:#ff6b6b}.x-lrisk .f-st,.x-lbroken .f-st,.x-lrisk .v2c-dur,.x-lbroken .v2c-dur{display:none!important}" +
         ".x-cxl .cxl-t{color:#ff6b6b;font-weight:800;font-size:14.5px;margin:0 0 6px;line-height:1.35}.x-cxl .cxl-t span{font-weight:400;color:#fca5a5}" +
         ".x-cxl>*:not(.cxl-t){opacity:.6}.x-cxl .f-st,.x-cxl .v2c-dur{display:none!important}";
       document.head.appendChild(s);
