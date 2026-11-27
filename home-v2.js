@@ -28,7 +28,10 @@
     // przyciski przy polu stacji: „Pokaż odjazdy” + mały „PLK ↗”
     "html.home-v2 .search-actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px}html.home-v2 .search-actions .btn-api{order:1}html.home-v2 .search-actions .btn-official{order:2}html.home-v2 .search-actions #alertButton{order:3}html.home-v2 .search-actions #alertButton~*{order:4}" +
     // 27.11 (prośba): mniejsze „Pokaż odjazdy” i „Alarm”
-    "html.home-v2 .search-actions .btn-api,html.home-v2 #alertButton{font-size:13px!important;padding:7px 11px!important;min-width:0!important}html.home-v2 #alertButton~*{padding:6px 9px!important;min-width:0!important}html.home-v2 .search-actions .btn-official{min-width:0!important}" +
+    "html.home-v2 .v2-hint{display:none!important}" +
+    "html.home-v2 .search-actions .v2-when{order:1;margin:0;display:inline-flex;align-items:center;gap:4px;font-size:12px}" +
+    "html.home-v2 .search-actions .btn-api{font-size:12px!important;padding:6px 10px!important;min-width:0!important}" +
+    "html.home-v2 #alertButton{font-size:13px!important;padding:7px 11px!important;min-width:0!important}html.home-v2 #alertButton~*{padding:6px 9px!important;min-width:0!important}html.home-v2 .search-actions .btn-official{min-width:0!important}" +
     "html.home-v2 .btn-official{background:none!important;color:#8fb8f5!important;text-decoration:underline;padding:8px 6px!important;font-weight:700}" +
     // data i godzina zwinięte
     "html.home-v2 #dateInput,html.home-v2 #timeInput{display:none}html.home-v2.v2-dt #dateInput,html.home-v2.v2-dt #timeInput{display:inline-block}" +
@@ -48,7 +51,7 @@
     // telefon: czat jako sama ikonka
     // telefon (notatka 27.11 11:14): przyciski pod polem stacji w JEDNYM wierszu — szerokie „Pokaż odjazdy”, małe „PLK ↗”, alarm i 🔊
     "@media (max-width:600px){html.home-v2 .search-actions{display:flex!important;flex-wrap:nowrap!important;gap:6px!important;align-items:center}" +
-    "html.home-v2 .search-actions>*{width:auto!important;flex:0 0 auto;white-space:nowrap!important;margin:0!important}html.home-v2 .search-actions .btn-api{flex:1 1 auto!important;padding:9px 8px!important}" +
+    "html.home-v2 .search-actions>*{width:auto!important;flex:0 0 auto;white-space:nowrap!important;margin:0!important}html.home-v2 .search-actions .btn-api{flex:0 0 auto!important;padding:8px 10px!important}html.home-v2 .search-actions{justify-content:center!important}" +
     "html.home-v2 .search-actions .btn-official{padding:6px 2px!important;font-size:12px!important}html.home-v2 #alertButton{padding:9px 8px!important;font-size:12px!important}}" +
     "@media (max-width:600px){html.home-v2 .ca-fab.cta .ca-fab-txt,html.home-v2 .ca-fab.cta .ca-beta{display:none}html.home-v2 .ca-fab.cta{padding:12px 14px}.v2-c .n{font-size:13px;padding:8px 10px}.v2-c .x{padding:8px 7px;font-size:12px}}";
   var st = document.createElement("style"); st.id = "home-v2-css"; st.textContent = css; document.head.appendChild(st);
@@ -112,8 +115,10 @@
   function buildWhen() {
     var d = document.getElementById("dateInput"), t = document.getElementById("timeInput"), box = document.querySelector(".search-box");
     if (!d || !t || !box) return;
-    var w = document.createElement("div"); w.className = "v2-when"; w.id = "v2When";
-    box.parentNode.insertBefore(w, box.nextSibling);
+    // 27.11 (prośba): ikonka 📅 tuż po prawej od „Pokaż odjazdy” (w rzędzie przycisków)
+    var w = document.createElement("span"); w.className = "v2-when"; w.id = "v2When";
+    var api = box.querySelector(".search-actions .btn-api");
+    if (api) api.parentNode.insertBefore(w, api.nextSibling); else box.parentNode.insertBefore(w, box.nextSibling);
     var touched = false;
     var paint = function () {
       // 27.11 (prośba): bez „od teraz” — sama ikonka 📅 (rozwija datę i godzinę); po zmianie obok mała data i godzina
@@ -125,6 +130,15 @@
     [d, t].forEach(function (el) { el.addEventListener("change", function () { touched = true; paint(); }); });
     paint();
     window.addEventListener("langchange", paint);
+  }
+
+  // ---------- 27.11 (prośba): bez podpowiedzi „Wybierz stację albo wpisz nazwę…” (nad tablicą i w tablicy) ----------
+  // Chowamy tylko, gdy element pokazuje właśnie tę podpowiedź — komunikaty („Szukam tablicy…”, błędy) zostają.
+  function hideHints() {
+    var st = document.getElementById("status"), meta = document.getElementById("apiMeta");
+    var hints = function () { return [T("index.defaultStatus", null, "Wybierz stację albo wpisz nazwę."), T("index.v2.metaHint", null, ""), T("index.apiMetaHint", null, "")].map(function (x) { return String(x || "").trim(); }).filter(Boolean); };
+    var check = function (el) { if (!el) return; var tx = (el.textContent || "").trim(); el.classList.toggle("v2-hint", !tx || hints().indexOf(tx) >= 0); };
+    [st, meta].forEach(function (el) { if (!el) return; check(el); new MutationObserver(function () { check(el); }).observe(el, { childList: true, characterData: true, subtree: true }); });
   }
 
   // ---------- tablica: link do wyświetlacza PLK tej stacji ----------
@@ -154,7 +168,7 @@
   }
 
   function init() {
-    buildRow(); buildWhen(); buildBoardLink(); buildFoot();
+    buildRow(); buildWhen(); buildBoardLink(); buildFoot(); hideHints();
     var again = function () { wrapT(); rekey(); if (window.I18n && I18n.applyDom) I18n.applyDom(document); render(); };
     if (window.I18n && I18n.ready && I18n.ready.then) I18n.ready.then(again); else again();
     window.addEventListener("langchange", function () { rekey(); render(); });
