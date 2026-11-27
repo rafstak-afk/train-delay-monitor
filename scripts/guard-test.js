@@ -325,6 +325,18 @@ test("27.11 przypadek z notatki: A już dojechał, B +88 (jeszcze nie wyruszył)
   eq(t.softB, true); eq(t.status, "ok"); eq(t.phase, undefined);
 });
 
+test("27.11 „jeszcze stoi”: PLK potwierdziło stację ZA przesiadką, a samej przesiadki nie → B już odjechał (✅/❌, nie „nie odjechał”)", () => {
+  const b = trainB({ started: true, arrived: true });   // Tarnowskie Góry potwierdzone, Chorzów Batory nie
+  const t = ev(trainA({ started: true, arrived: true, arrDelay: 2 }), b, x2(862)).transfers[0];
+  eq(t.phase === "held" || t.phase === "heldTight" || t.phase === "gone", true, "faza " + t.phase + ":");
+});
+test("27.11 „jeszcze nie odjechał”: B ostatnio przed stacją przesiadki → tekst z miejscem", () => {
+  const b = trainB({ started: true, forecast: 1 }); b.route[0].actualTime = "14:05";
+  const t = ev(trainA({ started: true, arrived: true, arrDelay: 2 }), b, x2(860)).transfers[0];
+  eq(t.phase, "still"); eq(G.phaseBadge(t, "pl"), "🟢 jeszcze nie odjechał");
+  if (!/ostatnio: Gliwice 14:05/.test(G.phaseText(t, "pl"))) throw new Error(G.phaseText(t, "pl"));
+});
+
 let fail = 0;
 for (const t of T) { try { t.fn(); console.log("  ✔ " + t.name); } catch (e) { fail++; console.log("  ✘ " + t.name + "\n      " + e.message); } }
 console.log("\n" + (T.length - fail) + "/" + T.length + " testów OK");
