@@ -564,10 +564,10 @@
   }
   // TODO 129: teksty etapów przesiadki (karta i powiadomienie) + krótka plakietka
   var PX = {
-    pl: { held: "✅ Przesiadka w {st} dochowana — {b} odjechał {n} min po przyjeździe {a}.", heldTight: "✅ Przesiadka w {st} dochowana na styk — {b} odjechał {n} min po przyjeździe {a}.",
-      gone: "❌ {b} odjechał z {st} przed przyjazdem {a} — przesiadka zerwana.", still: "🟢 {a} jest już w {st} — {b} wg PLK jeszcze nie odjechał{p}.", stillRisk: "🟡 {a} jest już w {st} — {b} wg PLK jeszcze nie odjechał{p}. Idź od razu.",
-      bWaits: "🟡 {b} wg PLK odjedzie z {st} o {t} — poczeka na {a}. Zdążysz, jeśli nie ruszy wcześniej.", maybe: "🟠 Przesiadka w {st} zagrożona, ale możliwa: bywa, że {b} czeka na {a} ({w} z {c} razy, najdłużej {m} min).",
-      likely: "🟡 {b} zwykle czeka na {a} w {st} ({w} z {c} razy, najdłużej {m} min) — przesiadka prawdopodobna.", plat: ", peron {p}",
+    pl: { held: "✅ Przesiadka na stacji {st} dochowana — {b} odjechał {n} min po przyjeździe {a}.", heldTight: "✅ Przesiadka na stacji {st} dochowana na styk — {b} odjechał {n} min po przyjeździe {a}.",
+      gone: "❌ {b} odjechał z {st} przed przyjazdem {a} — przesiadka zerwana.", still: "🟢 {a} jest już na stacji {st} — {b} wg PLK jeszcze nie odjechał{p}.", stillRisk: "🟡 {a} jest już na stacji {st} — {b} wg PLK jeszcze nie odjechał{p}. Idź od razu.",
+      bWaits: "🟡 {b} wg PLK odjedzie z {st} o {t} — poczeka na {a}. Zdążysz, jeśli nie ruszy wcześniej.", maybe: "🟠 Przesiadka na stacji {st} zagrożona, ale możliwa: bywa, że {b} czeka na {a} ({w} z {c} razy, najdłużej {m} min).",
+      likely: "🟡 {b} zwykle czeka na {a} na stacji {st} ({w} z {c} razy, najdłużej {m} min) — przesiadka prawdopodobna.", plat: ", peron {p}",
       bHeld: "✅ dochowana", bHeldTight: "✅ dochowana (na styk)", bGone: "❌ odjechał", bStill: "🟢 jeszcze stoi", bStillRisk: "🟡 jeszcze stoi — idź", bWaitsB: "🟡 poczeka", bMaybe: "🟠 bywa, że czeka", bLikely: "🟡 zwykle czeka" },
     en: { held: "✅ Connection at {st} made — {b} left {n} min after {a} arrived.", heldTight: "✅ Connection at {st} made, just — {b} left {n} min after {a} arrived.",
       gone: "❌ {b} left {st} before {a} arrived — connection missed.", still: "🟢 {a} is already at {st} — according to PLK {b} hasn't left yet{p}.", stillRisk: "🟡 {a} is already at {st} — according to PLK {b} hasn't left yet{p}. Go now.",
