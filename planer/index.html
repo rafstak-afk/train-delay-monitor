@@ -1694,6 +1694,8 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
         .then(function(res){
           if(refining&&(!res.ok||!res.data.ok)){refining=false;showPartialWarn();return}
           if(!res.ok||!res.data.ok){
+            // TODO 130 (27.11): awaria serwera wyszukiwania → rejestr awarii (miejsce + kod, raz na 10 min), także gdy ponowienie się uda
+            if(!res.data.code&&!res.data.error&&window.ErrLog)ErrLog.report(refining?'planner-refine':'planner','http_'+res.status);
             if(!res.data.error&&canRetry){
               $('resultsStatus').className='status searching';
               $('resultsStatus').textContent=T('planer.retrying');
@@ -1721,6 +1723,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
           }
         })
         .catch(function(){
+          if(window.ErrLog)ErrLog.report(refining?'planner-refine':'planner','net');   // TODO 130: brak odpowiedzi
           if(refining){refining=false;showPartialWarn();return}
           if(canRetry){$('resultsStatus').className='status searching';$('resultsStatus').textContent=T('planer.retrying');setTimeout(function(){attempt(n+1)},RETRY_DELAYS[n]);return}
           btn.disabled=false;
