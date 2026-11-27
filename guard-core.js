@@ -11,6 +11,7 @@
   var DEFAULTS = { leadMin: 120, minTransfer: 3, autoPlan: true };
   var PLATFORM_EXTRA = 2;  // inny peron przyjazdu i odjazdu na przesiadce
   var STATION_EXTRA = 5;   // przesiadka między różnymi stacjami (dworzec ↔ przystanek)
+  var SOFT_B = 10;         // 27.11: od tylu minut zapasu z opóźnienia B — 🟢 z dopiskiem (B rzadko nadrabia tyle)
   var SAFE_MARGIN = 5;     // 🟢 dopiero od minimum + 5 min zapasu
   // Nowa reguła (TEST: profil autora, potem dla wszystkich): bez opóźnienia przesiadka z zapasem ≥ potrzebnego to 🟢;
   // zapas bezpieczeństwa = samo opóźnienie pociągu A (najwyżej SAFE_MARGIN) — bo opóźnienia zwykle rosną.
@@ -401,6 +402,8 @@
       if (typeof x2.now === "number" && x2.now <= Math.max(tA, bDep) + 3) { out.phase = "still"; out.status = bDep - tA >= need ? "ok" : "risk"; }
       return;
     }
+    // 27.11 (prośba): zapas wynika z opóźnienia B, ale jest duży (B musiałby nadrobić ≥ 10 min) → 🟢 z dopiskiem zamiast „na styk”
+    if (out.onlyThanksToB && out.slack - need >= SOFT_B) { out.softB = true; if (out.slack >= need + SAFE_MARGIN) out.status = "ok"; return; }
     if (rB.depSource === "forecast" && (rB.delayDep || 0) > 0 && out.slack >= need && out.onlyThanksToB) out.phase = "bWaits";
   }
 

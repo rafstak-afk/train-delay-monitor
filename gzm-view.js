@@ -342,7 +342,7 @@
     // 🗺️ Droga peron → przystanek na mapce (TODO 20) — na razie profil autora; dane: stations/<id>-walk.json
     var walkFiles = {};
     function walkMapBtn(stop) {
-      if (!authorOn() || !stop || !stop.c) return "";
+      if (!rel27() || !stop || !stop.c) return "";   // mapki: dla wszystkich od 27.11 16:00
       return ' <button type="button" class="gz-wmap" data-wmap="' + esc(stop.c) + '" title="' + esc(T("gzm.wmapTitle", null, "Droga z peronu na mapie")) + '" style="border:0;background:none;cursor:pointer;font-size:1em;padding:0 2px">🗺️</button>';
     }
     function openWalkMap(code) {
@@ -472,7 +472,7 @@
       drawWalkMap(r.a.name + " → " + r.b.name, [[r.a.lat, r.a.lon], [r.b.lat, r.b.lon]], { lat: r.b.lat, lon: r.b.lon }, r.a.icon, r.b.icon,
         T("gzm.wmapPlace", null, "Dla tego dojścia nie mam drogi z mapy — linia prosta, czas wg odległości. W terenie droga może być dłuższa."));
     }, true);
-    function mapBtn(attr, val) { return authorOn() ? ' <button type="button" ' + attr + '="' + esc(val) + '" title="' + esc(T("gzm.wmapTitle2", null, "Droga na mapie")) + '" style="border:0;background:none;cursor:pointer;font-size:1em;padding:0 2px">🗺️</button>' : ""; }
+    function mapBtn(attr, val) { return rel27() ? ' <button type="button" ' + attr + '="' + esc(val) + '" title="' + esc(T("gzm.wmapTitle2", null, "Droga na mapie")) + '" style="border:0;background:none;cursor:pointer;font-size:1em;padding:0 2px">🗺️</button>' : ""; }
     function depHtmlV2(x, cls, noFav) {
       var d = x.dep, inMin = Math.round(x.real - nowOn(cfg.date || warsawNow().date));
       var tTxt = (x.live && x.delay) ? '<span class="plan-strike">' + C.fmt(d.min) + "</span> " + C.fmt(x.real) : C.fmt(x.real);

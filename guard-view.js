@@ -349,7 +349,7 @@
       if (t) {
         var ph = G.phaseText ? G.phaseText(t, curLang()) : '';   // TODO 129: etap przesiadki (dochowana / jeszcze stoi / poczeka / bywa, że czeka)
         var hint = G.xferHint && !(t.phase && t.phase !== 'bWaits') ? G.xferHint(t, curLang()) : '';
-        if (hint) { warn = true; det.unshift('<span style="color:#ffcc00;font-weight:700">' + esc(hint) + '</span>'); }
+        if (hint) { if (!t.softB) warn = true; det.unshift('<span style="color:' + (t.softB ? '#cfe0f5' : '#ffcc00') + ';font-weight:700">' + esc(hint) + '</span>'); }
         if (ph) { if (t.status !== 'ok') warn = true; det.unshift('<span style="color:' + (t.status === 'ok' ? '#4ade80' : t.status === 'broken' ? '#ff6b6b' : t.mayWait === 'maybe' ? '#fb923c' : '#ffcc00') + ';font-weight:700">' + esc(ph) + '</span>'); }
         if (t.wait) det.push(esc(G.waitText(t, curLang())));
         if (r.rising && r.worst === i) { warn = true; det.push('📈 ' + esc(T('guard.rising', null, 'Opóźnienie rośnie'))); }
@@ -379,7 +379,7 @@
       return StopsView.legA({ icon: gz ? '' : '🚆', label: label, dir: (function () { var rw = r.raw && r.raw[i]; return rw && Array.isArray(rw.route) && rw.route.length ? rw.route[rw.route.length - 1].stationName : (gz && l.head) || ''; })(), tag: tag, attrs: attrs,
         dep: { time: dR, plan: dP, station: l.board.stationName, plat: d ? rr.platformDep : '' },
         arr: { time: aR, plan: aP + (l.alight.nextDay ? '' : ''), station: l.alight.stationName, plat: d ? rr.platformArr : '', platNext: t && nx && !nx.noData ? nx.platformDep : '' },
-        pending: rotWait, xfer: t && (t.phase || t.mayWait) && G.phaseBadge ? { status: t.status === 'ok' ? 'ok' : t.status === 'broken' ? 'broken' : 'risk', slack: 0, label: G.phaseBadge(t, curLang()) } : t ? (G.unifyOn && G.unifyOn() && typeof t.slack === 'number' && t.status !== 'cancelled' && t.status !== 'nodata' ? { status: t.onlyThanksToB && G.xferClass(t.slack - t.need) === 'ok' ? 'risk' : G.xferClass(t.slack - t.need), slack: t.slack - t.need } : { status: t.status, slack: t.slack }) : null, details: det.join('<br>'), warn: warn, key: 'g|' + c.id + '|' + i,
+        pending: rotWait, xfer: t && (t.phase || t.mayWait) && G.phaseBadge ? { status: t.status === 'ok' ? 'ok' : t.status === 'broken' ? 'broken' : 'risk', slack: 0, label: G.phaseBadge(t, curLang()) } : t ? (G.unifyOn && G.unifyOn() && typeof t.slack === 'number' && t.status !== 'cancelled' && t.status !== 'nodata' ? { status: t.onlyThanksToB && !t.softB && G.xferClass(t.slack - t.need) === 'ok' ? 'risk' : G.xferClass(t.slack - t.need), slack: t.slack - t.need } : { status: t.status, slack: t.slack }) : null, details: det.join('<br>'), warn: warn, key: 'g|' + c.id + '|' + i,
         after: !gz && rlegOpen[c.id + '|' + i] ? '<div class="gv-rtrip">' + railStops(c.id, i) + '</div>' : '' });
     }
     function xferHtml(t, rising, la, lb) {

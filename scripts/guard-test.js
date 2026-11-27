@@ -311,6 +311,15 @@ test("129 (5) powiadomienie: 🔴 → dochowana = „better” z tekstem etapu",
   if (!/dochowana/.test(m.body)) throw new Error(m.body);
 });
 
+test("27.11 łagodniej: zapas tylko dzięki opóźnieniu B, ale duży (B +30 → zapas 34) → 🟢 z dopiskiem", () => {
+  const t = ev(trainA({ started: true, cur: 6, forecast: 6 }), trainB({ started: true, cur: 30, forecast: 30 }), x2(840)).transfers[0];
+  eq(t.softB, true); eq(t.status, "ok");
+});
+test("27.11 łagodniej: mały zapas dzięki B (B +6 → zapas 2) → zostaje 🟡", () => {
+  const t = ev(trainA({ started: true, cur: 14, forecast: 14 }), trainB({ started: true, cur: 6, forecast: 6 }), x2(850)).transfers[0];
+  eq(t.softB, undefined); eq(t.status, "risk");
+});
+
 let fail = 0;
 for (const t of T) { try { t.fn(); console.log("  ✔ " + t.name); } catch (e) { fail++; console.log("  ✘ " + t.name + "\n      " + e.message); } }
 console.log("\n" + (T.length - fail) + "/" + T.length + " testów OK");
