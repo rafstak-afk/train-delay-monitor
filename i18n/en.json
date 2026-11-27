@@ -325,6 +325,8 @@
     "fetchFailedSimple": "Couldn't load the data. Please try again."
   },
   "planer": {
+    "liveRisk": "🟡 Connection at {st} uncertain — {n} min to spare",
+    "liveBroken": "🔴 Connection at {st} probably missed — {n} min short",
     "oldTt": "Saved under the old timetable (before 13.12). Times and trains may have changed.",
     "oldTtSearch": "🔄 Search again",
     "pageTitle": "Train and GZM public transport journey planner – Czy zdążę?",

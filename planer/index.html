@@ -130,6 +130,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
 .history-btns{flex:0 0 auto;display:flex;flex-direction:column;gap:6px;align-items:stretch}
 /* notatka 22.11: mała ikonka 📅 zamiast dużego pola daty — pole niewidoczne na ikonce, stuknięcie otwiera kalendarz */
 .rerun-pick{position:relative;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;width:40px;height:36px;border:1.5px solid var(--blue);border-radius:8px;padding:0;font-size:17px;cursor:pointer;align-self:center}.rerun-pick input{position:absolute;inset:0;width:100%;height:100%;opacity:0;border:0;padding:0;cursor:pointer;color-scheme:dark}
+.x-live-risk{border:2px solid #facc15!important;border-left-width:6px!important}.x-live-broken{border:2px solid #ff4d4d!important;border-left-width:6px!important}.live-t{font-weight:800;font-size:14px;margin:0 0 6px;line-height:1.35}.live-risk{color:#facc15}.live-broken{color:#ff6b6b}
 .x-cxl{border:2px solid #ff4d4d!important;border-left-width:6px!important;background-color:rgba(255,77,77,.07)!important;box-shadow:0 0 0 1px rgba(255,77,77,.35)}.x-cxl .cxl-t{color:#ff6b6b;font-weight:800;font-size:14.5px;margin:0 0 6px;line-height:1.35}.x-cxl .cxl-t span{font-weight:400;color:#fca5a5}.x-cxl>*:not(.cxl-t){opacity:.6}
 .history-rerun.old{border-color:var(--line);color:var(--muted);padding:6px 10px;font-weight:600}
 .saved-date{font-size:12.5px;font-weight:700;margin-top:6px}
@@ -990,6 +991,53 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
   // ===== TODO 134 (27.11, dla wszystkich od razu — jak 133): odwołany pociąg w wynikach wyszukiwarki kolejowej, Zapisanych i Ostatnich.
   // Każdy kurs (orderId) sprawdzamy raz (bieg pociągu z PLK, ta sama pamięć co „▾ szczegóły”); odwołanie → czerwona ramka i napis w karcie.
   var cxlByOrder={},cxlChecked={};
+  // ===== TODO 136 etap 1 (27.11, profil autora): stan na żywo każdej widocznej karty — opóźnienia i przesiadki liczone jak w Pilnowanych
+  // (GuardCore.evaluate). Alternatywa „➡️ Zamiast” zawsze, gdy jest choćby cień szansy, że przesiadka się nie uda (🟡/🔴/⚫).
+  var liveByKey={},liveChecked={};
+  function liveOn(){try{return localStorage.getItem('showVersionBadge')==='1'}catch(e){return false}}
+  function itKey(it){return (it&&it.legs||[]).map(function(l){return l.orderId||''}).join('|')}
+  function liveCheck(its,date,after){
+    if(!liveOn()||!window.GuardCore||!date)return;
+    var jobs=[];
+    (its||[]).forEach(function(it){
+      var k=itKey(it);if(!k||liveChecked[k]||!(it.legs||[]).length)return;liveChecked[k]=1;
+      jobs.push(Promise.all(it.legs.map(function(l){return l.orderId?det77Train(l,date):Promise.resolve(null)})).then(function(rs){
+        var conn=GuardCore.fromItinerary(it,{date:date});
+        liveByKey[k]=GuardCore.evaluate(conn,rs,{minTransfer:3,xfer2:true});
+      }).catch(function(){}));
+    });
+    if(jobs.length)Promise.all(jobs).then(function(){if(after)after()});
+  }
+  // 'ok' | 'risk' | 'broken' | 'cancelled' | null (jeszcze nie wiadomo)
+  function liveState(it){
+    if(cxlOf(it).length)return 'cancelled';
+    var r=liveByKey[itKey(it)];if(!r)return null;
+    if(r.status==='cancelled')return 'cancelled';
+    var bad=(r.transfers||[]).some(function(t){return t.status==='broken'&&t.phase!=='held'&&t.phase!=='heldTight'});
+    if(bad)return 'broken';
+    var doubt=(r.transfers||[]).some(function(t){return t.status==='risk'||t.status==='broken'||(t.onlyThanksToB&&!t.softB)||t.phase==='unconf'||t.phase==='stillRisk'});
+    return doubt?'risk':'ok';
+  }
+  function liveLine(it,opts){
+    var st=liveState(it);if(st!=='risk'&&st!=='broken')return '';
+    var r=liveByKey[itKey(it)],t=(r.transfers||[])[r.worst>=0?r.worst:0]||{},sl=typeof t.slack==='number'?t.slack-(t.need||0):null;
+    var head=st==='broken'
+      ?T('planer.liveBroken',{st:t.station||'',n:sl!=null?-sl:'?'})
+      :T('planer.liveRisk',{st:t.station||'',n:sl!=null?Math.max(0,sl):'?'});
+    var why=t.delayA?' ('+[t.trainA&&t.trainA.category,t.trainA&&t.trainA.number].filter(Boolean).join(' ')+' +'+t.delayA+' min)':'';
+    return '<div class="live-t live-'+st+'">'+escapeHtml(head+why)+altBtn(it,opts)+'</div>';
+  }
+  // najbliższe połączenie z listy, które jedzie i nie ma wątpliwej przesiadki (gdy jeszcze nieocenione — przynajmniej nieodwołane)
+  function altBtn(it,opts){
+    opts=opts||{};
+    if(opts.savedKey)return '<div><button type="button" class="btn-sm itin-fresh" data-saved-key="'+escapeHtml(opts.savedKey)+'" style="margin:4px 0 6px">'+escapeHtml(T('gzm.cxlFind'))+'</button></div>';
+    if(opts.index==null)return '';
+    var d0=it.departureTime||'',best=-1,fallback=-1;
+    for(var j=opts.index+1;j<lastItineraries.length;j++){var y=lastItineraries[j];if((y.departureTime||'')<d0)continue;var sy=liveState(y);
+      if(sy==='ok'){best=j;break}if(fallback<0&&sy!=='cancelled'&&sy!=='broken')fallback=j}
+    var j2=best>=0?best:fallback;if(j2<0)return '';var y2=lastItineraries[j2];
+    return '<div><button type="button" class="btn-sm cxl-go" data-cxlgo="'+j2+'" style="margin:4px 0 6px">'+escapeHtml(T('gzm.cxlAlt')+' '+y2.departureTime+' → '+y2.arrivalTime+' · '+(y2.legs||[]).map(function(l){return [l.train&&l.train.category,l.train&&l.train.number].filter(Boolean).join(' ')}).join(' + '))+'</button></div>';
+  }
   function cxlCheck(its,date,after){
     if(!window.GuardCore||!date)return;
     var jobs=[];
@@ -1009,7 +1057,8 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     if(!cx.length)return '';
     // TODO 135: alternatywa w karcie — najbliższe połączenie z listy, które jedzie (stuknięcie przewija); w Zapisanych — „Znajdź inne połączenie”
     var alt='';opts=opts||{};
-    if(opts.index!=null){
+    if(liveOn()){alt=altBtn(it,opts)}
+    else if(opts.index!=null){
       var d0=it.departureTime||'';
       for(var j=opts.index+1;j<lastItineraries.length;j++){var y=lastItineraries[j];if(cxlOf(y).length)continue;if((y.departureTime||'')<d0)continue;
         alt='<div><button type="button" class="btn-sm cxl-go" data-cxlgo="'+j+'" style="margin:2px 0 8px;opacity:1">'+escapeHtml(T('gzm.cxlAlt'))+' '+escapeHtml(y.departureTime+' → '+y.arrivalTime+' · '+(y.legs||[]).map(function(l){return [l.train&&l.train.category,l.train&&l.train.number].filter(Boolean).join(' ')}).join(' + '))+'</button></div>';break}
@@ -1198,8 +1247,8 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     var savedLine=opts.savedAt?'<div class="saved-at">'+escapeHtml(T('planer.savedAt',{date:new Date(opts.savedAt).toLocaleString(dateLocale())}))+'</div>':'';
     var detKey=opts.index!=null?'i:'+opts.index:(opts.savedKey?'s:'+opts.savedKey:'');
     var detBtn=detKey&&det77On()?'<span style="margin-left:auto;display:inline-flex;gap:6px"><button type="button" class="btn-sm secondary itin-det-btn" data-det77="'+escapeHtml(detKey)+'">'+escapeHtml(T('planer.det.open'))+'</button><button type="button" class="btn-sm secondary itin-det-btn" data-det77="'+escapeHtml(detKey)+'" data-det77-route="1">'+escapeHtml(T('planer.det.route'))+'</button></span>':'';
-    var cxl=cxlLine(it,opts);
-    return '<div class="entry'+(cxl?' x-cxl':'')+'"'+(opts.index!=null?' id="itin-'+opts.index+'"':'')+(detKey?' data-det77-entry="'+escapeHtml(detKey)+'"':'')+'>'+cxl+
+    var cxl=cxlLine(it,opts),lv=cxl?'':liveLine(it,opts),lst=lv?liveState(it):'';
+    return '<div class="entry'+(cxl?' x-cxl':lst==='broken'?' x-live-broken':lst==='risk'?' x-live-risk':'')+'"'+(opts.index!=null?' id="itin-'+opts.index+'"':'')+(detKey?' data-det77-entry="'+escapeHtml(detKey)+'"':'')+'>'+cxl+lv+
       '<div class="itin-head">'+
         '<span class="itin-time">'+escapeHtml(it.departureTime)+'</span><span class="itin-arrow">→</span><span class="itin-time">'+escapeHtml(it.arrivalTime)+'</span>'+
         (it.arrivalNextDay?'<span class="itin-nextday">'+escapeHtml(T('planer.nextDay'))+'</span>':'')+
@@ -1282,6 +1331,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
       : '';
     listEl.innerHTML=lastNotes+toShow.map(function(it,i){return itineraryHtml(it,{index:i})}).join('')+moreHtml;
     cxlCheck(toShow,lastQuery&&lastQuery.date,renderVisibleItineraries);
+    liveCheck(lastItineraries.slice(0,Math.max(visibleCount,8)),lastQuery&&lastQuery.date,renderVisibleItineraries);
   }
 
   $('resultsList').addEventListener('click',function(e){

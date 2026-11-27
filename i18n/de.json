@@ -325,6 +325,8 @@
     "fetchFailedSimple": "Daten konnten nicht geladen werden. Bitte erneut versuchen."
   },
   "planer": {
+    "liveRisk": "🟡 Umstieg in {st} unsicher — {n} Min. Puffer",
+    "liveBroken": "🔴 Umstieg in {st} wahrscheinlich verpasst — {n} Min. zu wenig",
     "oldTt": "Nach dem alten Fahrplan gespeichert (vor dem 13.12). Zeiten und Züge können sich geändert haben.",
     "oldTtSearch": "🔄 Erneut suchen",
     "pageTitle": "Reiseplaner Bahn und ÖPNV GZM – Czy zdążę?",

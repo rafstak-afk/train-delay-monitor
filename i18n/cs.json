@@ -325,6 +325,8 @@
     "fetchFailedSimple": "Data se nepodařilo načíst. Zkus to znovu."
   },
   "planer": {
+    "liveRisk": "🟡 Přestup ve stanici {st} nejistý — rezerva {n} min",
+    "liveBroken": "🔴 Přestup ve stanici {st} pravděpodobně ujede — chybí {n} min",
     "oldTt": "Uloženo podle starého jízdního řádu (před 13.12). Časy a vlaky se mohly změnit.",
     "oldTtSearch": "🔄 Hledat znovu",
     "pageTitle": "Plánovač cest vlakem a MHD GZM – Czy zdążę?",
