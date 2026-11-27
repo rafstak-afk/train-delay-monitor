@@ -827,12 +827,12 @@ async function runGuard(env, origin, token, profile, subs, conns, fetchTrain, su
       const walk = rcfg && rcfg.walk != null && rcfg.walk !== "" && Number.isFinite(Number(rcfg.walk)) ? Number(rcfg.walk) : GuardCore.REM_DEFAULTS.walk;
       const nw = warsawNow(), rel = GuardCore.hm(nw.time) + dayDiff(nw.date, conn.date) * 1440;
       const leave = GuardCore.hm(conn.legs[0].board.time) - walk;
-      // 24.11 (notatka): skrót dopiero, gdy pierwszy pociąg wyruszył ze stacji początkowej (+5 min) — wcześniej „planowo”
-      // nic nie znaczy; najpóźniej 12 min przed wyjściem z domu, nawet jeśli jeszcze nie wyruszył.
-      const r0 = readings[0], o0 = r0 && Array.isArray(r0.route) && r0.route[0], o0dep = o0 ? GuardCore.hm(o0.plannedDeparture || o0.plannedTime) : null;
-      let bFrom = leave - 35; const bTo = leave - 8;
-      if (o0dep != null && o0dep + 5 > bFrom) bFrom = Math.min(o0dep + 5, leave - 12);
-      if (leave != null && rel >= bFrom && rel <= bTo) {
+      // TODO 110 (27.11, Twoja decyzja): skrót ok. 20 min przed odjazdem ze stacji, na której WSIADASZ (nie ze stacji
+      // początkowej pociągu). Pełny przebieg idzie co 5 min, więc okno 24…12 min przed odjazdem — pierwszy przebieg w nim
+      // wypada ok. 20 min przed (np. odjazd 5:21 → skrót ok. 5:00).
+      const dep0 = GuardCore.hm(conn.legs[0].board.time);
+      const bFrom = dep0 - 24, bTo = dep0 - 12;
+      if (dep0 != null && rel >= bFrom && rel <= bTo) {
         const b = briefText(conn, res, readings, lang);
         let sent = false;
         for (const sub of subs) {
@@ -868,6 +868,14 @@ async function runGuard(env, origin, token, profile, subs, conns, fetchTrain, su
       }
     }
     const msg = GuardCore.message(conn, res, kind, lang, altText);
+    // TODO 126 (27.11, autor): kiedy PLK pokazało zmianę, a kiedy ją wykryliśmy — do oceny opóźnienia powiadomień
+    if (author) {
+      const wi = res.worst >= 0 ? res.worst : 0, rdA = readings[wi], nwd = warsawNow();
+      const plk = rdA && rdA.lastConfirmedStation ? (rdA.lastConfirmedStation + " " + (rdA.lastConfirmedTime || "")).trim() : "";
+      const tA = conn.legs[wi] && conn.legs[wi].train ? GuardCore.trainLabel(conn.legs[wi].train) : "";
+      msg.body += " ⏱️ " + (plk ? "PLK: " + tA + " ostatnio " + plk + " · " : "") + "wykryte " + nwd.time;
+      next[conn.id].det = { at: nwd.time, plk: plk, kind: kind };
+    }
     const payload = { title: msg.title, body: msg.body, url: "/planer/?gid=" + encodeURIComponent(conn.id) + "#pilnowane", kind: "guard", tag: "guard-" + conn.id };
     let sent = false;
     for (const sub of subs) {
