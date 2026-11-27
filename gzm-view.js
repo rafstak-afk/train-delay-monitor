@@ -2714,7 +2714,7 @@
     // notatka 27.11 12:25: S1 40917 odwołany (PLK: X), a w wynikach „zdążysz” — sprawdzaliśmy tylko OSTATNI pociąg i tylko opóźnienie.
     // Teraz: każdy pociąg 3 pierwszych propozycji raz na wyszukiwanie (cState.tChk), odwołanie → cState.tCancel[numer].
     function trainCancelC() {
-      if (!cState || !cState.shown || !window.GuardCore || !rel27()) return Promise.resolve();
+      if (!cState || !cState.shown || !window.GuardCore) return Promise.resolve();   // TODO 133: dla wszystkich od razu (27.11, Twoja decyzja)
       cState.tChk = cState.tChk || {}; cState.tCancel = cState.tCancel || {};
       var jobs = [];
       cState.shown.filter(function (x) { return x.it && x.it.legs; }).slice(0, 3).forEach(function (x) {
