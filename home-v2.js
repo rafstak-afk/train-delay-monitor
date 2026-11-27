@@ -27,6 +27,8 @@
     ".v2-more{border:1px dashed #4b6584;background:none;color:#9fb0c2;border-radius:10px;padding:9px 12px;font:inherit;font-size:14px;cursor:pointer}" +
     // przyciski przy polu stacji: „Pokaż odjazdy” + mały „PLK ↗”
     "html.home-v2 .search-actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px}html.home-v2 .search-actions .btn-api{order:1}html.home-v2 .search-actions .btn-official{order:2}html.home-v2 .search-actions #alertButton{order:3}html.home-v2 .search-actions #alertButton~*{order:4}" +
+    // 27.11 (prośba): mniejsze „Pokaż odjazdy” i „Alarm”
+    "html.home-v2 .search-actions .btn-api,html.home-v2 #alertButton{font-size:13px!important;padding:7px 11px!important;min-width:0!important}html.home-v2 #alertButton~*{padding:6px 9px!important;min-width:0!important}html.home-v2 .search-actions .btn-official{min-width:0!important}" +
     "html.home-v2 .btn-official{background:none!important;color:#8fb8f5!important;text-decoration:underline;padding:8px 6px!important;font-weight:700}" +
     // data i godzina zwinięte
     "html.home-v2 #dateInput,html.home-v2 #timeInput{display:none}html.home-v2.v2-dt #dateInput,html.home-v2.v2-dt #timeInput{display:inline-block}" +
@@ -43,6 +45,10 @@
     // stopka z podpisem
     ".v2-foot{color:#6b7c8f;font-size:12px;text-align:center;margin:18px 0 6px}" +
     // telefon: czat jako sama ikonka
+    // telefon (notatka 27.11 11:14): przyciski pod polem stacji w JEDNYM wierszu — szerokie „Pokaż odjazdy”, małe „PLK ↗”, alarm i 🔊
+    "@media (max-width:600px){html.home-v2 .search-actions{display:flex!important;flex-wrap:nowrap!important;gap:6px!important;align-items:center}" +
+    "html.home-v2 .search-actions>*{width:auto!important;flex:0 0 auto;white-space:nowrap!important;margin:0!important}html.home-v2 .search-actions .btn-api{flex:1 1 auto!important;padding:9px 8px!important}" +
+    "html.home-v2 .search-actions .btn-official{padding:6px 2px!important;font-size:12px!important}html.home-v2 #alertButton{padding:9px 8px!important;font-size:12px!important}}" +
     "@media (max-width:600px){html.home-v2 .ca-fab.cta .ca-fab-txt,html.home-v2 .ca-fab.cta .ca-beta{display:none}html.home-v2 .ca-fab.cta{padding:12px 14px}.v2-c .n{font-size:13px;padding:8px 10px}.v2-c .x{padding:8px 7px;font-size:12px}}";
   var st = document.createElement("style"); st.id = "home-v2-css"; st.textContent = css; document.head.appendChild(st);
 
@@ -63,7 +69,7 @@
 
   // ---------- jeden rząd stacji ----------
   var favEl = document.getElementById("stationButtons"), sugEl = document.getElementById("suggestions"), row = null, open = false;
-  var MAX = 6;
+  var MAX = 2;   // 27.11 (prośba): na wierzchu tylko dwie stacje, reszta pod „▾ więcej”
   function nameOf(btn, fn) {
     var m = (btn.getAttribute("onclick") || "").match(new RegExp(fn + "\\('((?:\\\\.|[^'])*)'\\)"));
     return m ? m[1].replace(/\\(.)/g, "$1") : (btn.textContent || "").replace(/[🔔⭐★]/g, "").trim();
