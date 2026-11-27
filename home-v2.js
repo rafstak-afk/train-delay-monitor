@@ -49,6 +49,10 @@
     ".v2-foot{color:#6b7c8f;font-size:12px;text-align:center;margin:18px 0 6px}.v2-foot .version-badge{margin:0;font-size:12px;color:inherit;font-weight:400}" +
     ".v2-when .v2-cal{background:none!important;border:0!important;text-decoration:none!important;font-size:20px!important;padding:2px 6px!important;cursor:pointer;line-height:1}" +
     // telefon: czat jako sama ikonka
+    // telefon (notatka 27.11 11:28): stacje w jednym pasku przewijanym w bok, z wygaszeniem przy prawej krawędzi
+    "@media (max-width:600px){.v2-st{flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding:2px 24px 4px 2px;margin-bottom:12px;" +
+    "-webkit-mask-image:linear-gradient(90deg,#000 88%,transparent);mask-image:linear-gradient(90deg,#000 88%,transparent);scroll-snap-type:x proximity}" +
+    ".v2-st::-webkit-scrollbar{display:none}.v2-c{flex:0 0 auto;scroll-snap-align:start}.v2-c .n{white-space:nowrap}.v2-c .x{padding:8px 9px;font-size:14px}}" +
     // telefon (notatka 27.11 11:14): przyciski pod polem stacji w JEDNYM wierszu — szerokie „Pokaż odjazdy”, małe „PLK ↗”, alarm i 🔊
     "@media (max-width:600px){html.home-v2 .search-actions{display:flex!important;flex-wrap:nowrap!important;gap:6px!important;align-items:center}" +
     "html.home-v2 .search-actions>*{width:auto!important;flex:0 0 auto;white-space:nowrap!important;margin:0!important}html.home-v2 .search-actions .btn-api{flex:0 0 auto!important;padding:8px 10px!important}html.home-v2 .search-actions{justify-content:center!important}" +
@@ -73,6 +77,7 @@
 
   // ---------- jeden rząd stacji ----------
   var favEl = document.getElementById("stationButtons"), sugEl = document.getElementById("suggestions"), row = null, open = false;
+  var PHONE = window.matchMedia ? window.matchMedia("(max-width:600px)") : null;
   var MAX = 2;   // 27.11 (prośba): na wierzchu tylko dwie stacje, reszta pod „▾ więcej”
   function nameOf(btn, fn) {
     var m = (btn.getAttribute("onclick") || "").match(new RegExp(fn + "\\('((?:\\\\.|[^'])*)'\\)"));
@@ -88,16 +93,19 @@
   }
   function render() {
     if (!row) return;
-    var list = collect(), shown = open ? list : list.slice(0, MAX);
+    // 27.11 (notatka 11:28): na telefonie WSZYSTKIE stacje w jednym pasku przewijanym w bok (bez „więcej”), PLK jako sama „↗”
+    var phone = PHONE && PHONE.matches;
+    var list = collect(), shown = open || phone ? list : list.slice(0, MAX);
     row.innerHTML = shown.map(function (s, i) {
-      return '<span class="v2-c"><button type="button" class="n" data-i="' + i + '">' + s.html + '</button><button type="button" class="x" data-x="' + i + '" title="' + esc(T("index.v2.plkTitle", null, "Wyświetlacz stacyjny PLK")) + '">PLK ↗</button></span>';
-    }).join("") + (list.length > MAX ? '<button type="button" class="v2-more">' + esc(open ? T("index.v2.less", null, "▴ mniej") : T("index.v2.more", { n: list.length - MAX }, "▾ więcej ({n})")) + "</button>" : "");
+      return '<span class="v2-c"><button type="button" class="n" data-i="' + i + '">' + s.html + '</button><button type="button" class="x" data-x="' + i + '" title="' + esc(T("index.v2.plkTitle", null, "Wyświetlacz stacyjny PLK")) + '" aria-label="' + esc(T("index.v2.plkTitle", null, "Wyświetlacz stacyjny PLK")) + '">' + (phone ? "↗" : "PLK ↗") + '</button></span>';
+    }).join("") + (!phone && list.length > MAX ? '<button type="button" class="v2-more">' + esc(open ? T("index.v2.less", null, "▴ mniej") : T("index.v2.more", { n: list.length - MAX }, "▾ więcej ({n})")) + "</button>" : "");
     row._list = shown;
   }
   function buildRow() {
     if (!favEl) return;
     row = document.createElement("div"); row.className = "v2-st"; row.id = "v2Stations";
     favEl.parentNode.insertBefore(row, favEl);
+    if (PHONE) { var onPh = function () { render(); }; if (PHONE.addEventListener) PHONE.addEventListener("change", onPh); else if (PHONE.addListener) PHONE.addListener(onPh); }
     row.addEventListener("click", function (e) {
       var b = e.target.closest("button"); if (!b) return;
       if (b.classList.contains("v2-more")) { open = !open; render(); return; }
