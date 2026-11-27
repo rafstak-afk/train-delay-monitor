@@ -2754,13 +2754,15 @@
       return ts.some(function (t) { return t.status === "risk" || (t.onlyThanksToB && !t.softB) || t.phase === "unconf" || t.phase === "stillRisk"; }) ? "risk" : "ok";
     }
     function altLineC(x) {
-      var list = (cState && cState.shown) || [], at = list.indexOf(x), best = null, fb = null;
-      for (var j = at + 1; at >= 0 && j < list.length; j++) {
-        var y = list[j]; if (y.start != null && x.start != null && y.start < x.start) continue;
+      // 27.11: każda propozycja z listy, która jeszcze nie odjechała (także wcześniejsza niż ta karta) — najwcześniej na miejscu
+      var list = (cState && cState.shown) || [], best = null, fb = null, now = nowOn(cState.date);
+      list.forEach(function (y) {
+        if (y === x) return;
+        var st0 = y.start != null ? y.start : y.dep; if (st0 != null && st0 < now) return;
         var sy = y.it ? liveStateC(y) : "ok";
-        if (sy === "ok") { best = y; break; }
-        if (!fb && sy !== "cancelled" && sy !== "broken") fb = y;
-      }
+        if (sy === "ok") { if (!best || y.final < best.final) best = y; }
+        else if (sy !== "cancelled" && sy !== "broken") { if (!fb || y.final < fb.final) fb = y; }
+      });
       var y2 = best || fb; if (!y2) return "";
       var nm = y2.it && y2.it.legs ? y2.it.legs.map(function (l) { return ((l.train && l.train.category) || "") + " " + ((l.train && l.train.number) || ""); }).join(" + ") : (y2.net ? y2.net.legs.filter(function (l) { return l.type === "ride"; }).map(function (l) { return l.line; }).join(" + ") : "");
       return '<div><button type="button" class="gz-btn sec cxl-go" data-cxlgo="' + esc(detKey(y2)) + '" style="margin:6px 0 2px">' + esc(T("gzm.cxlAlt", null, "➡️ Zamiast:") + " " + C.fmt(y2.start != null ? y2.start : y2.dep) + " → " + C.fmt(y2.final) + (nm ? " · " + nm.trim() : "")) + "</button></div>";
