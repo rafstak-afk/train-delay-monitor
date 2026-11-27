@@ -2961,7 +2961,34 @@
       root.innerHTML = '<div class="gz-empty">' + esc(T("gzm.noIndex", null, "Dane GZM są chwilowo niedostępne.")) + "</div>";
     });
 
+    // ===== TODO 136 etap 2 (27.11): alternatywa „samą komunikacją miejską” dla wyszukiwarki kolejowej.
+    // Ze stacji A do stacji B od depMin (min od północy), dane na żywo ZTM (gzm-rt) — jak w Pociąg + GZM. Bez zapytań do PLK.
+    function altJourney(fromName, toName, depMin, date) {
+      if (!window.GzmRaptor) return Promise.resolve(null);
+      return Promise.all([getIndex(), getNet(date), getRt()]).then(function (r) {
+        var ix = r[0], net = r[1];
+        if (!net._codeIx) { var m = {}; net.j.stops.forEach(function (s, i) { m[s[3]] = i; }); net._codeIx = m; }
+        var find = function (n) { return (ix.stations || []).find(function (x) { return normName(x.n) === normName(n); }); };
+        var stops = function (stn) {
+          var out = [];
+          (stn.s || []).forEach(function (p) { var i = net._codeIx[p[0]]; if (i == null) return; out.push({ s: i, walk: poleWalk(p).min }); });
+          if (!out.length) farStops(net, stn).list.forEach(function (o) { o.idx.forEach(function (i) { out.push({ s: i, walk: walkMin(havM(stn.lat, stn.lon, net.lat[i], net.lon[i])) + 2 }); }); });
+          return out;
+        };
+        var A = find(fromName), B = find(toName); if (!A || !B) return null;
+        var fa = stops(A), fb = stops(B); if (!fa.length || !fb.length) return null;
+        var js = GzmRaptor.search(net, { fromStops: fa.map(function (x) { return { s: x.s, t: depMin + x.walk }; }), toStops: fb.map(function (x) { return { s: x.s, walk: x.walk }; }), dep: depMin, rt: rt, maxTransfers: 2, count: 4 });
+        if (!js || !js.length) return null;
+        var fin = function (j) { return j.arrTotal != null ? j.arrTotal : j.arr; };
+        var best = js.slice().sort(function (a, b) { return fin(a) - fin(b); })[0];
+        var rides = best.legs.filter(function (l) { return l.type === "ride"; }); if (!rides.length) return null;
+        var w0 = best.legs[0].type === "walk" ? best.legs[0].min : (fa.find(function (x) { return x.s === rides[0].from; }) || {}).walk || 0;
+        var live = rides.some(function (l) { return l.live; }), dl = Math.max.apply(null, rides.map(function (l) { return l.live ? (l.delay || 0) : 0; }));
+        return { leave: rides[0].dep - w0, dep: rides[0].dep, arr: fin(best), lines: rides.map(function (l) { return l.line; }), live: !!(live && rtOk), delay: dl, transfers: rides.length - 1, from: A.n, to: B.n };
+      }).catch(function () { return null; });
+    }
     return {
+      altJourney: altJourney,
       start: function () { shown = true; ready.then(function () { if (file) getRt().then(function () { render(); }); schedule(); }); },
       stop: function () { shown = false; schedule(); },
       rerun: function (q) {

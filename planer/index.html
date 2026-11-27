@@ -1027,6 +1027,24 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     var why=t.delayA?' ('+[t.trainA&&t.trainA.category,t.trainA&&t.trainA.number].filter(Boolean).join(' ')+' +'+t.delayA+' min)':'';
     return '<div class="live-t live-'+st+'">'+escapeHtml(head+why)+altBtn(it,opts)+'</div>';
   }
+  // ===== TODO 136 etap 2: „🚌 Zamiast komunikacją miejską” — silnik GZM w telefonie, dane na żywo ZTM, bez zapytań do PLK
+  var gzAlt={};
+  function gzAltBtn(it){
+    if(!liveOn()||typeof gzmView==='undefined'||!gzmView||!gzmView.altJourney||!it||!(it.legs||[]).length)return '';
+    var k=itKey(it),a=gzAlt[k];
+    if(!a){
+      gzAlt[k]={loading:true};
+      var nowM=(function(){var p=new Date().toLocaleTimeString('sv-SE',{timeZone:'Europe/Warsaw',hour:'2-digit',minute:'2-digit'}).split(':');return +p[0]*60+ +p[1]})();
+      var today=new Date().toLocaleDateString('sv-SE',{timeZone:'Europe/Warsaw'}),date=lastQuery&&lastQuery.date||today;
+      var dep=itinMinutes(it.departureTime);if(date===today&&dep<nowM)dep=nowM;
+      gzmView.altJourney(it.legs[0].board.stationName,it.legs[it.legs.length-1].alight.stationName,dep,date).then(function(r){gzAlt[k]=r?{r:r}:{none:true};renderVisibleItineraries()});
+      return '';
+    }
+    if(!a.r)return '';
+    var r=a.r,fmt=function(m){m=((m%1440)+1440)%1440;return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0')};
+    var tag=r.live?(' ● '+T('planer.gzLive')+(r.delay>0?' (+'+r.delay+' min)':'')):(' ○ '+T('planer.gzSched'));
+    return '<div><button type="button" class="btn-sm gz-alt-go" data-gzf="'+escapeHtml(r.from)+'" data-gzt="'+escapeHtml(r.to)+'" data-gztime="'+fmt(r.leave)+'" style="margin:0 0 6px;background:#0f5132">'+escapeHtml(T('planer.gzAlt')+' '+fmt(r.dep)+' → '+fmt(r.arr)+' · '+r.lines.join(' + ')+tag)+'</button></div>';
+  }
   // najbliższe połączenie z listy, które jedzie i nie ma wątpliwej przesiadki (gdy jeszcze nieocenione — przynajmniej nieodwołane)
   function altBtn(it,opts){
     opts=opts||{};
@@ -1036,7 +1054,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     for(var j=opts.index+1;j<lastItineraries.length;j++){var y=lastItineraries[j];if((y.departureTime||'')<d0)continue;var sy=liveState(y);
       if(sy==='ok'){best=j;break}if(fallback<0&&sy!=='cancelled'&&sy!=='broken')fallback=j}
     var j2=best>=0?best:fallback;if(j2<0)return '';var y2=lastItineraries[j2];
-    return '<div><button type="button" class="btn-sm cxl-go" data-cxlgo="'+j2+'" style="margin:4px 0 6px">'+escapeHtml(T('gzm.cxlAlt')+' '+y2.departureTime+' → '+y2.arrivalTime+' · '+(y2.legs||[]).map(function(l){return [l.train&&l.train.category,l.train&&l.train.number].filter(Boolean).join(' ')}).join(' + '))+'</button></div>';
+    return '<div><button type="button" class="btn-sm cxl-go" data-cxlgo="'+j2+'" style="margin:4px 0 6px">'+escapeHtml(T('gzm.cxlAlt')+' '+y2.departureTime+' → '+y2.arrivalTime+' · '+(y2.legs||[]).map(function(l){return [l.train&&l.train.category,l.train&&l.train.number].filter(Boolean).join(' ')}).join(' + '))+'</button></div>'+gzAltBtn(it);
   }
   function cxlCheck(its,date,after){
     if(!window.GuardCore||!date)return;
@@ -1336,6 +1354,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
 
   $('resultsList').addEventListener('click',function(e){
     var cgo=e.target.closest('.cxl-go');if(cgo){showItinerary(Number(cgo.dataset.cxlgo));return}
+    var ggo=e.target.closest('.gz-alt-go');if(ggo&&gzmView&&gzmView.rerun){showTab('gzm');gzmView.rerun({from:ggo.dataset.gzf,to:ggo.dataset.gzt,date:lastQuery&&lastQuery.date,time:ggo.dataset.gztime});return}
     var hint=e.target.closest('.faster-hint');
     if(hint){showItinerary(Number(hint.dataset.target));return}
     if(e.target.closest('#loadMoreBtn')){

@@ -325,6 +325,9 @@
     "fetchFailedSimple": "Daten konnten nicht geladen werden. Bitte erneut versuchen."
   },
   "planer": {
+    "gzAlt": "🚌 Stattdessen mit ÖPNV:",
+    "gzLive": "live",
+    "gzSched": "laut Fahrplan",
     "liveRisk": "🟡 Umstieg in {st} unsicher — {n} Min. Puffer",
     "liveBroken": "🔴 Umstieg in {st} wahrscheinlich verpasst — {n} Min. zu wenig",
     "oldTt": "Nach dem alten Fahrplan gespeichert (vor dem 13.12). Zeiten und Züge können sich geändert haben.",

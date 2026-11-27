@@ -325,6 +325,9 @@
     "fetchFailedSimple": "Nie udało się pobrać danych. Spróbuj ponownie."
   },
   "planer": {
+    "gzAlt": "🚌 Zamiast komunikacją:",
+    "gzLive": "na żywo",
+    "gzSched": "wg rozkładu",
     "liveRisk": "🟡 Przesiadka w {st} niepewna — zapas {n} min",
     "liveBroken": "🔴 Przesiadka w {st} prawdopodobnie zerwana — brakuje {n} min",
     "oldTt": "Zapisane według starego rozkładu (przed 13.12). Godziny i pociągi mogą być już inne.",

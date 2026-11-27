@@ -325,6 +325,9 @@
     "fetchFailedSimple": "Data se nepodařilo načíst. Zkus to znovu."
   },
   "planer": {
+    "gzAlt": "🚌 Místo toho MHD:",
+    "gzLive": "živě",
+    "gzSched": "podle jízdního řádu",
     "liveRisk": "🟡 Přestup ve stanici {st} nejistý — rezerva {n} min",
     "liveBroken": "🔴 Přestup ve stanici {st} pravděpodobně ujede — chybí {n} min",
     "oldTt": "Uloženo podle starého jízdního řádu (před 13.12). Časy a vlaky se mohly změnit.",

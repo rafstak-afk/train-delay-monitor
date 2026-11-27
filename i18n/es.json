@@ -325,6 +325,9 @@
     "fetchFailedSimple": "No se pudieron cargar los datos. Inténtalo de nuevo."
   },
   "planer": {
+    "gzAlt": "🚌 En su lugar en transporte urbano:",
+    "gzLive": "en vivo",
+    "gzSched": "según horario",
     "liveRisk": "🟡 Transbordo en {st} incierto: {n} min de margen",
     "liveBroken": "🔴 Transbordo en {st} probablemente perdido: faltan {n} min",
     "oldTt": "Guardado con el horario antiguo (antes del 13.12). Las horas y los trenes pueden haber cambiado.",
