@@ -231,7 +231,11 @@
       alts[c.id] = { loading: true, origin: o };
       var qs = new URLSearchParams(G.altQuery(c, o));
       fetch('/api/planner?' + qs.toString(), { headers: { Accept: 'application/json' } }).then(function (r) { return r.json(); }).then(function (d) {
-        alts[c.id] = { list: G.pickAlternatives(d && d.itineraries, 3, c, o), origin: o }; render();
+        // TODO 135: bez odwołanych pociągów (27.11: pierwszą alternatywą był odwołany Os 40617)
+        var raw = G.pickAlternatives(d && d.itineraries, 6, c, o);
+        return (G.filterCancelledAlts ? G.filterCancelledAlts(raw, c.date, fetchTrain, 6) : Promise.resolve({ ok: raw, skipped: [] })).then(function (f) {
+          alts[c.id] = { list: f.ok.slice(0, 3), origin: o, skipped: f.skipped }; render();
+        });
       }).catch(function () { alts[c.id] = { error: true, origin: o }; render(); });
     }
     function switchTo(c, idx) {
@@ -500,7 +504,9 @@
     function cardHtml(c) {
       var r = results[c.id] || { status: 'nodata' };
       var s = r.status;
-      var html = '<div class="card s-' + s + (c.id === focusId ? ' hl' : '') + '" id="g-' + esc(c.id) + '">' +
+      // TODO 135: odwołane połączenie — czerwona ramka, wyszarzone odcinki (alternatywy pod spodem zostają wyraźne)
+      if (s === 'cancelled' && !document.getElementById('gcx-css')) { var gs = document.createElement('style'); gs.id = 'gcx-css'; gs.textContent = '.card.gcx{border:2px solid #ff4d4d!important;border-left-width:6px!important;background-color:rgba(255,77,77,.07)!important}.card.gcx .gv-ja,.card.gcx .leg,.card.gcx .xfer{opacity:.55}'; document.head.appendChild(gs); }
+      var html = '<div class="card s-' + s + (s === 'cancelled' ? ' gcx' : '') + (c.id === focusId ? ' hl' : '') + '" id="g-' + esc(c.id) + '">' +
         '<div class="c-head' + (authorOnG() ? ' gv-fold' : '') + '" data-fold="' + esc(c.id) + '"><div><div class="c-route">' + esc(c.from) + ' → ' + esc(c.to) + (c.source === 'plan' ? '<span class="badge">' + esc(T('guard.fromPlan', null, 'z dzienniczka')) + '</span>' : '') + '</div>' +
         '<div class="c-date">' + esc(c.date) + ' · ' + (function () {
           var l0 = r.legs && r.legs[0], ln = r.legs && r.legs[r.legs.length - 1], ok0 = l0 && !l0.noData, okn = ln && !ln.noData;
@@ -529,6 +535,7 @@
         if (a.loading) html += '<div class="src">' + esc(T('guard.altLoading', null, 'Szukam połączeń…')) + '</div>';
         else if (a.error || !a.list || !a.list.length) html += '<div class="src">' + esc(T('guard.altNone', null, 'Nie znalazłem alternatyw.')) + '</div> <button type="button" class="btn-sm secondary" data-act="altRetry" data-id="' + esc(c.id) + '">' + esc(T('guard.altRetry', null, 'Szukaj ponownie')) + '</button>';
         else {
+          if (a.skipped && a.skipped.length) html += '<div class="src" style="margin:0 0 6px;color:#ff8a8a">⚫ ' + esc(T('guard.altSkipped', { t: a.skipped.join(', ') }, 'Pominąłem odwołane: {t}').replace('{t}', a.skipped.join(', '))) + '</div>';
           var gap = G.hm(a.list[0].departureTime) - G.hm(a.origin.time);
           if (gap > 20) html += '<div class="src" style="margin:0 0 6px;line-height:1.45">ℹ️ ' + esc(T('guard.altNote', { dest: c.to, arr: a.list[0].arrivalTime, dep: a.list[0].departureTime, from: a.origin.station }, 'Wcześniej do stacji ' + c.to + ' się nie da: najbliższe połączenie dojedzie o ' + a.list[0].arrivalTime + '. Odjazd ' + a.list[0].departureTime + ' to najpóźniejszy, który zdąży — wcześniejsze pociągi ze stacji ' + a.origin.station + ' też zdążą, ale poczekasz dłużej na przesiadkę.')) + '</div>';
         }

@@ -854,7 +854,10 @@ async function runGuard(env, origin, token, profile, subs, conns, fetchTrain, su
         if (prev && prev.alt && prev.alt.key === key) altText = prev.alt.text || null;
         else {
           const d = await fetchJson(origin, "/api/planner?" + new URLSearchParams(GuardCore.altQuery(conn, o)).toString());
-          const picks = d && Array.isArray(d.itineraries) ? GuardCore.pickAlternatives(d.itineraries, author ? 2 : 1, conn, o) : [];
+          // TODO 135: bez odwołanych pociągów
+          const raw = d && Array.isArray(d.itineraries) ? GuardCore.pickAlternatives(d.itineraries, 5, conn, o) : [];
+          const flt = raw.length && GuardCore.filterCancelledAlts ? await GuardCore.filterCancelledAlts(raw, conn.date, fetchTrain, 5) : { ok: raw };
+          const picks = flt.ok.slice(0, author ? 2 : 1);
           // TODO 92 (autor): dwie alternatywy, a gdy plan B startuje z pierwszej stacji — „wyjdź o” (odjazd − dojście z przypomnień)
           const walk = (() => { const r = profile.guardReminders && profile.guardReminders[conn.id]; const w = r && r.walk != null && r.walk !== "" ? Number(r.walk) : GuardCore.REM_DEFAULTS.walk; return Number.isFinite(w) ? w : GuardCore.REM_DEFAULTS.walk; })();
           altText = picks.length ? picks.map(it => {

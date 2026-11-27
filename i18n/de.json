@@ -1151,6 +1151,7 @@
     "greetingAddr": "📍 Statt eines Bahnhofs kannst du eine Haltestelle oder eine Adresse eingeben: Straße, Hausnummer und Ort, z. B. „von Opolska 5, Tarnowskie Góry nach Hercena 1, Katowice“. Postleitzahl nicht nötig."
   },
   "guard": {
+    "altSkipped": "Ausgefallene übersprungen: {t}",
     "oldTt": "Nach dem alten Fahrplan gespeichert (vor dem 13.12). Dieser Zug fährt vielleicht zu einer anderen Zeit oder gar nicht.",
     "findNew": "🔎 Neue Verbindung suchen",
     "pageTitle": "Überwachte Verbindungen",
@@ -1469,6 +1470,8 @@
     "cxlYes": "fällt aus (laut PLK)",
     "cxlLikely": "fällt wahrscheinlich aus",
     "cxlHint": "diese Verbindung klappt nicht",
+    "cxlAlt": "➡️ Stattdessen:",
+    "cxlFind": "🔎 Andere Verbindung suchen",
     "v2XferEgr": "Nach dem Zug: {s}, {n} Min. Puffer",
     "v2MoreAcc": "Andere Wege zum Zug ({n})",
     "v2MoreEgr": "Weitere Möglichkeiten nach dem Zug ({n})",

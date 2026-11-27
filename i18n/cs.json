@@ -1151,6 +1151,7 @@
     "greetingAddr": "📍 Místo stanice můžete napsat zastávku nebo adresu: ulice, číslo a město, např. „z Opolska 5, Tarnowskie Góry do Hercena 1, Katowice“. PSČ není potřeba."
   },
   "guard": {
+    "altSkipped": "Vynechal jsem zrušené: {t}",
     "oldTt": "Uloženo podle starého jízdního řádu (před 13.12). Tento vlak může jet v jiný čas nebo vůbec.",
     "findNew": "🔎 Najít nové spojení",
     "pageTitle": "Hlídaná spojení",
@@ -1469,6 +1470,8 @@
     "cxlYes": "zrušen (podle PLK)",
     "cxlLikely": "pravděpodobně zrušen",
     "cxlHint": "toto spojení nevyjde",
+    "cxlAlt": "➡️ Místo toho:",
+    "cxlFind": "🔎 Najít jiné spojení",
     "v2XferEgr": "Po vlaku: {s}, rezerva {n} min",
     "v2MoreAcc": "Další cesty k vlaku ({n})",
     "v2MoreEgr": "Další možnosti po vlaku ({n})",

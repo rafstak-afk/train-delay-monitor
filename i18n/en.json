@@ -1151,6 +1151,7 @@
     "greetingAddr": "📍 Instead of a station you can type a stop or an address: street, number and town, e.g. “from Opolska 5, Tarnowskie Góry to Hercena 1, Katowice”. No postcode needed."
   },
   "guard": {
+    "altSkipped": "Skipped cancelled: {t}",
     "oldTt": "Saved under the old timetable (before 13.12). This train may run at a different time or not at all.",
     "findNew": "🔎 Find a new connection",
     "pageTitle": "Guarded connections",
@@ -1469,6 +1470,8 @@
     "cxlYes": "cancelled (per PLK)",
     "cxlLikely": "probably cancelled",
     "cxlHint": "this connection won't work",
+    "cxlAlt": "➡️ Instead:",
+    "cxlFind": "🔎 Find another connection",
     "v2XferEgr": "After the train: {s}, {n} min spare",
     "v2MoreAcc": "Other ways to the train ({n})",
     "v2MoreEgr": "Other options after the train ({n})",

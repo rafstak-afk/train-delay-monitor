@@ -1151,6 +1151,7 @@
     "greetingAddr": "📍 Zamiast stacji możesz wpisać przystanek albo adres: ulica, numer i miasto, np. „z Opolskiej 5 w Tarnowskich Górach do Hercena 1, Katowice”. Kod pocztowy niepotrzebny."
   },
   "guard": {
+    "altSkipped": "Pominąłem odwołane: {t}",
     "oldTt": "Zapisane według starego rozkładu (przed 13.12). Ten pociąg może jechać o innej godzinie albo wcale.",
     "findNew": "🔎 Znajdź nowe połączenie",
     "pageTitle": "Pilnowane połączenia",
@@ -1469,6 +1470,8 @@
     "cxlYes": "odwołany (wg PLK)",
     "cxlLikely": "prawdopodobnie odwołany",
     "cxlHint": "to połączenie nie dojdzie do skutku",
+    "cxlAlt": "➡️ Zamiast:",
+    "cxlFind": "🔎 Znajdź inne połączenie",
     "v2XferEgr": "Po pociągu: {s}, zapas {n} min",
     "v2MoreAcc": "Inne dojazdy na pociąg ({n})",
     "v2MoreEgr": "Inne możliwości po pociągu ({n})",

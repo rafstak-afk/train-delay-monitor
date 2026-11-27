@@ -1003,10 +1003,18 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     })});
     if(jobs.length)Promise.all(jobs).then(function(){if(Object.keys(cxlByOrder).length&&after)after()});
   }
-  function cxlLine(it){
-    var cx=(it&&it.legs||[]).map(function(l){return l.orderId&&cxlByOrder[l.orderId]}).filter(Boolean);
+  function cxlOf(it){return (it&&it.legs||[]).map(function(l){return l.orderId&&cxlByOrder[l.orderId]}).filter(Boolean)}
+  function cxlLine(it,opts){
+    var cx=cxlOf(it);
     if(!cx.length)return '';
-    return '<div class="cxl-t">'+escapeHtml(cx.map(function(c){return '⚫ '+c.label+' '+T(c.likely?'gzm.cxlLikely':'gzm.cxlYes')}).join(' · '))+' <span>— '+escapeHtml(T('gzm.cxlHint'))+'</span></div>';
+    // TODO 135: alternatywa w karcie — najbliższe połączenie z listy, które jedzie (stuknięcie przewija); w Zapisanych — „Znajdź inne połączenie”
+    var alt='';opts=opts||{};
+    if(opts.index!=null){
+      var d0=it.departureTime||'';
+      for(var j=opts.index+1;j<lastItineraries.length;j++){var y=lastItineraries[j];if(cxlOf(y).length)continue;if((y.departureTime||'')<d0)continue;
+        alt='<div><button type="button" class="btn-sm cxl-go" data-cxlgo="'+j+'" style="margin:2px 0 8px;opacity:1">'+escapeHtml(T('gzm.cxlAlt'))+' '+escapeHtml(y.departureTime+' → '+y.arrivalTime+' · '+(y.legs||[]).map(function(l){return [l.train&&l.train.category,l.train&&l.train.number].filter(Boolean).join(' ')}).join(' + '))+'</button></div>';break}
+    }else if(opts.savedKey){alt='<div><button type="button" class="btn-sm itin-fresh" data-saved-key="'+escapeHtml(opts.savedKey)+'" style="margin:2px 0 8px">'+escapeHtml(T('gzm.cxlFind'))+'</button></div>'}
+    return '<div class="cxl-t">'+escapeHtml(cx.map(function(c){return '⚫ '+c.label+' '+T(c.likely?'gzm.cxlLikely':'gzm.cxlYes')}).join(' · '))+' <span>— '+escapeHtml(T('gzm.cxlHint'))+'</span>'+alt+'</div>';
   }
   function det77Train(leg,date){
     var k=leg.scheduleId+'|'+leg.orderId+'|'+date;
@@ -1190,7 +1198,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
     var savedLine=opts.savedAt?'<div class="saved-at">'+escapeHtml(T('planer.savedAt',{date:new Date(opts.savedAt).toLocaleString(dateLocale())}))+'</div>':'';
     var detKey=opts.index!=null?'i:'+opts.index:(opts.savedKey?'s:'+opts.savedKey:'');
     var detBtn=detKey&&det77On()?'<span style="margin-left:auto;display:inline-flex;gap:6px"><button type="button" class="btn-sm secondary itin-det-btn" data-det77="'+escapeHtml(detKey)+'">'+escapeHtml(T('planer.det.open'))+'</button><button type="button" class="btn-sm secondary itin-det-btn" data-det77="'+escapeHtml(detKey)+'" data-det77-route="1">'+escapeHtml(T('planer.det.route'))+'</button></span>':'';
-    var cxl=cxlLine(it);
+    var cxl=cxlLine(it,opts);
     return '<div class="entry'+(cxl?' x-cxl':'')+'"'+(opts.index!=null?' id="itin-'+opts.index+'"':'')+(detKey?' data-det77-entry="'+escapeHtml(detKey)+'"':'')+'>'+cxl+
       '<div class="itin-head">'+
         '<span class="itin-time">'+escapeHtml(it.departureTime)+'</span><span class="itin-arrow">→</span><span class="itin-time">'+escapeHtml(it.arrivalTime)+'</span>'+
@@ -1277,6 +1285,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
   }
 
   $('resultsList').addEventListener('click',function(e){
+    var cgo=e.target.closest('.cxl-go');if(cgo){showItinerary(Number(cgo.dataset.cxlgo));return}
     var hint=e.target.closest('.faster-hint');
     if(hint){showItinerary(Number(hint.dataset.target));return}
     if(e.target.closest('#loadMoreBtn')){

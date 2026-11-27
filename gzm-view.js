@@ -2740,13 +2740,27 @@
       var txt = cx.map(function (c) { return "⚫ " + c.label + " " + (c.likely ? T("gzm.cxlLikely", null, "prawdopodobnie odwołany") : T("gzm.cxlYes", null, "odwołany (wg PLK)")); }).join(" · ");
       // 27.11 (Twoja prośba): cała ramka karty czerwona, napis o odwołaniu W KARCIE nad godzinami, bez „🟢 zdążysz”
       cxlCss();
-      var line = '<div class="cxl-t">' + esc(txt) + ' <span>— ' + esc(T("gzm.cxlHint", null, "to połączenie nie dojdzie do skutku")) + "</span></div>";
+      // TODO 135: alternatywa w karcie — najbliższa propozycja z listy, która jedzie (stuknięcie przewija do niej)
+      var alt = "", list = (cState && cState.shown) || [], at = list.indexOf(x);
+      for (var j = at + 1; at >= 0 && j < list.length; j++) {
+        var y = list[j]; if (cancelledOf(y).length || (y.start != null && x.start != null && y.start < x.start)) continue;
+        var nm = y.it && y.it.legs ? y.it.legs.map(function (l) { return ((l.train && l.train.category) || "") + " " + ((l.train && l.train.number) || ""); }).join(" + ") : (y.net ? y.net.legs.filter(function (l) { return l.type === "ride"; }).map(function (l) { return l.line; }).join(" + ") : "");
+        alt = '<div><button type="button" class="gz-btn sec cxl-go" data-cxlgo="' + esc(detKey(y)) + '" style="margin:6px 0 2px">' + esc(T("gzm.cxlAlt", null, "➡️ Zamiast:") + " " + C.fmt(y.start != null ? y.start : y.dep) + " → " + C.fmt(y.final) + (nm ? " · " + nm.trim() : "")) + "</button></div>";
+        break;
+      }
+      var line = '<div class="cxl-t">' + esc(txt) + ' <span>— ' + esc(T("gzm.cxlHint", null, "to połączenie nie dojdzie do skutku")) + "</span>" + alt + "</div>";
       var m = String(html).match(/^\s*<div\b[^>]*>/);
       if (!m) return '<div class="x-cxl">' + line + html + "</div>";
       var tag = m[0].replace(/class="/, 'class="x-cxl ');
       if (tag.indexOf('class="') < 0) tag = tag.replace(/^(\s*<div)/, '$1 class="x-cxl"');
       return tag + line + String(html).slice(m[0].length);
     }
+    root.addEventListener("click", function (e) {
+      var b = e.target.closest(".cxl-go"); if (!b) return;
+      e.stopPropagation();
+      var k = b.getAttribute("data-cxlgo"), el = root.querySelector('[data-det="' + (window.CSS && CSS.escape ? CSS.escape(k) : k) + '"],[data-detk="' + (window.CSS && CSS.escape ? CSS.escape(k) : k) + '"]');
+      if (el) { el.scrollIntoView({ behavior: "smooth", block: "center" }); el.style.outline = "3px solid #ffd400"; setTimeout(function () { el.style.outline = ""; }, 1800); }
+    }, true);
     function cxlCss() {
       if (document.getElementById("cxl-css")) return;
       var s = document.createElement("style"); s.id = "cxl-css";

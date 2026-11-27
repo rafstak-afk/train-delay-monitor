@@ -1151,6 +1151,7 @@
     "greetingAddr": "📍 En vez de una estación puedes escribir una parada o una dirección: calle, número y ciudad, p. ej. «de Opolska 5, Tarnowskie Góry a Hercena 1, Katowice». No hace falta el código postal."
   },
   "guard": {
+    "altSkipped": "Omití los cancelados: {t}",
     "oldTt": "Guardado con el horario antiguo (antes del 13.12). Este tren puede circular a otra hora o no circular.",
     "findNew": "🔎 Buscar una nueva conexión",
     "pageTitle": "Conexiones vigiladas",
@@ -1469,6 +1470,8 @@
     "cxlYes": "cancelado (según PLK)",
     "cxlLikely": "probablemente cancelado",
     "cxlHint": "esta conexión no funcionará",
+    "cxlAlt": "➡️ En su lugar:",
+    "cxlFind": "🔎 Buscar otra conexión",
     "v2XferEgr": "Tras el tren: {s}, margen {n} min",
     "v2MoreAcc": "Otras formas de llegar al tren ({n})",
     "v2MoreEgr": "Otras opciones tras el tren ({n})",

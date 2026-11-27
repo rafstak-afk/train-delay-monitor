@@ -756,6 +756,24 @@
       .slice().sort(function (a, b) { return (hm(a.arrivalTime) + (a.arrivalNextDay ? 1440 : 0)) - (hm(b.arrivalTime) + (b.arrivalNextDay ? 1440 : 0)); })
       .slice(0, n || 3);
   }
+  // TODO 135 (27.11): alternatywy bez odwołanych pociągów. getTrain(leg, date) → Promise danych biegu (/api/train-details).
+  // Sprawdza najwyżej „max” pierwszych połączeń; zwraca { ok: [...], skipped: ["Os 40617", …] }.
+  function filterCancelledAlts(itineraries, date, getTrain, max) {
+    var its = (itineraries || []).slice(0, max || 5);
+    return Promise.all(its.map(function (it) {
+      return Promise.all((it.legs || []).map(function (l) {
+        if (!l || !l.orderId) return Promise.resolve(null);
+        return Promise.resolve(getTrain(l, date)).then(function (d) {
+          var r = readLeg({ board: { stationName: l.board.stationName, time: l.board.time }, alight: { stationName: l.alight.stationName, time: l.alight.time } }, d);
+          return !r.noData && r.cancelled ? trainLabel(l.train) : null;
+        }).catch(function () { return null; });
+      }));
+    })).then(function (flags) {
+      var ok = [], skipped = [];
+      its.forEach(function (it, i) { var cx = flags[i].filter(Boolean); if (cx.length) cx.forEach(function (x) { if (skipped.indexOf(x) < 0) skipped.push(x); }); else ok.push(it); });
+      return { ok: ok, skipped: skipped };
+    });
+  }
   var ALT_FMT = { pl: "{tr} o {dep} (przyj. {arr})", en: "{tr} at {dep} (arr. {arr})", de: "{tr} um {dep} (an {arr})", cs: "{tr} v {dep} (příj. {arr})", es: "{tr} a las {dep} (llega {arr})", uk: "{tr} о {dep} (приб. {arr})" };
   // „KŚ 40602 o 17:42 (przyj. 18:30)” — do treści powiadomienia.
   function altText(it, lang) {
@@ -919,7 +937,7 @@
     REM_DEFAULTS: REM_DEFAULTS, remindMins: remindMins, remindPlan: remindPlan, remindShift: remindShift, remindText: remindText, remindIcs: remindIcs,
     DEFAULTS: DEFAULTS, RANK: RANK, MAX_ACTIVE: MAX_ACTIVE,
     lastArrMin: lastArrMin, buildJournalEntries: buildJournalEntries, kmFor: kmFor, remindMessage: remindMessage,
-    altOrigin: altOrigin, altQuery: altQuery, pickAlternatives: pickAlternatives, altText: altText,
+    altOrigin: altOrigin, altQuery: altQuery, pickAlternatives: pickAlternatives, altText: altText, filterCancelledAlts: filterCancelledAlts,
     norm: norm, hm: hm, fmt: fmt, connectionId: connectionId, fromItinerary: fromItinerary, fromPlannedTrips: fromPlannedTrips,
     timeWindow: timeWindow, isActive: isActive, readLeg: readLeg, evalTransfer: evalTransfer, evaluate: evaluate, setSoftMargin: setSoftMargin,
     rising: rising, shouldNotify: shouldNotify, message: message, tx: tx, trainLabel: trainLabel,
