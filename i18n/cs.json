@@ -77,6 +77,10 @@
   },
   "index": {
     "v2": {
+      "metaLoading": "Načítám odjezdy: {station}…",
+      "fetchFailed": "Nepodařilo se načíst odjezdy z PLK.",
+      "cancelFull": "Vlak zrušen (podle PLK)",
+      "cancelShort": "Zrušen (podle PLK)",
       "header": "Czy zdążę?",
       "btnApi": "Zobrazit odjezdy",
       "btnOfficial": "PLK ↗",

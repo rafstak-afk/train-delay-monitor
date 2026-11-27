@@ -62,7 +62,10 @@
 
   // ---------- napisy: inne klucze tłumaczeń (bez „API”) ----------
   var KEYS = { "index.header": "index.v2.header", "index.btnApi": "index.v2.btnApi", "index.btnOfficial": "index.v2.btnOfficial",
-    "index.apiPanelTitle": "index.v2.title", "index.apiPanelTitleWithStation": "index.v2.titleSt", "index.apiMetaHint": "index.v2.metaHint" };
+    "index.apiPanelTitle": "index.v2.title", "index.apiPanelTitleWithStation": "index.v2.titleSt", "index.apiMetaHint": "index.v2.metaHint",
+    // 27.11: reszta komunikatów bez „API”
+    "index.apiMetaLoading": "index.v2.metaLoading", "index.apiMetaFetchFailed": "index.v2.fetchFailed",
+    "index.status.cancelledNoteFull": "index.v2.cancelFull", "index.status.cancelledNoteShort": "index.v2.cancelShort" };
   function rekey() {
     Object.keys(KEYS).forEach(function (k) { document.querySelectorAll('[data-i18n="' + k + '"]').forEach(function (el) { el.setAttribute("data-i18n", KEYS[k]); }); });
     var t = document.getElementById("apiPanelTitle"); if (t && !t.getAttribute("data-i18n")) t.setAttribute("data-i18n", "index.v2.title");
@@ -145,7 +148,9 @@
   function hideHints() {
     var st = document.getElementById("status"), meta = document.getElementById("apiMeta");
     var hints = function () { return [T("index.defaultStatus", null, "Wybierz stację albo wpisz nazwę."), T("index.v2.metaHint", null, ""), T("index.apiMetaHint", null, "")].map(function (x) { return String(x || "").trim(); }).filter(Boolean); };
-    var check = function (el) { if (!el) return; var tx = (el.textContent || "").trim(); el.classList.toggle("v2-hint", !tx || hints().indexOf(tx) >= 0); };
+    // „Załadowano odjazdy z API PLK dla stacji: X” powtarza tytuł tablicy — też chowamy (porównanie po początku szablonu)
+    var loadedPre = function () { var s = String(T("index.status.loaded", { station: "\u0001" }, "") || ""), i = s.indexOf("\u0001"); return i > 0 ? s.slice(0, i).trim() : ""; };
+    var check = function (el) { if (!el) return; var tx = (el.textContent || "").trim(), lp = loadedPre(); el.classList.toggle("v2-hint", !tx || hints().indexOf(tx) >= 0 || (el.id === "status" && lp && tx.indexOf(lp) === 0)); };
     [st, meta].forEach(function (el) { if (!el) return; check(el); new MutationObserver(function () { check(el); }).observe(el, { childList: true, characterData: true, subtree: true }); });
   }
 

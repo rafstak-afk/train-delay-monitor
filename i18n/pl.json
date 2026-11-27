@@ -77,6 +77,10 @@
   },
   "index": {
     "v2": {
+      "metaLoading": "Ładowanie odjazdów: {station}…",
+      "fetchFailed": "Nie udało się pobrać odjazdów z PLK.",
+      "cancelFull": "Pociąg odwołany (wg PLK)",
+      "cancelShort": "Odwołany (wg PLK)",
       "header": "Czy zdążę?",
       "btnApi": "Pokaż odjazdy",
       "btnOfficial": "PLK ↗",

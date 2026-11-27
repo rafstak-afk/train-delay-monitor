@@ -77,6 +77,10 @@
   },
   "index": {
     "v2": {
+      "metaLoading": "Cargando salidas: {station}…",
+      "fetchFailed": "No se pudieron cargar las salidas de PLK.",
+      "cancelFull": "Tren cancelado (según PLK)",
+      "cancelShort": "Cancelado (según PLK)",
       "header": "Czy zdążę?",
       "btnApi": "Mostrar salidas",
       "btnOfficial": "PLK ↗",

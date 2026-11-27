@@ -77,6 +77,10 @@
   },
   "index": {
     "v2": {
+      "metaLoading": "Loading departures: {station}…",
+      "fetchFailed": "Couldn't load departures from PLK.",
+      "cancelFull": "Train cancelled (per PLK)",
+      "cancelShort": "Cancelled (per PLK)",
       "header": "Czy zdążę?",
       "btnApi": "Show departures",
       "btnOfficial": "PLK ↗",

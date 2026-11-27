@@ -77,6 +77,10 @@
   },
   "index": {
     "v2": {
+      "metaLoading": "Abfahrten werden geladen: {station}…",
+      "fetchFailed": "Abfahrten von PLK konnten nicht geladen werden.",
+      "cancelFull": "Zug fällt aus (laut PLK)",
+      "cancelShort": "Fällt aus (laut PLK)",
       "header": "Czy zdążę?",
       "btnApi": "Abfahrten zeigen",
       "btnOfficial": "PLK ↗",

@@ -77,6 +77,10 @@
   },
   "index": {
     "v2": {
+      "metaLoading": "Завантаження відправлень: {station}…",
+      "fetchFailed": "Не вдалося завантажити відправлення з PLK.",
+      "cancelFull": "Поїзд скасовано (за даними PLK)",
+      "cancelShort": "Скасовано (за даними PLK)",
       "header": "Czy zdążę?",
       "btnApi": "Показати відправлення",
       "btnOfficial": "PLK ↗",
