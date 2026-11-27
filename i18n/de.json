@@ -1220,7 +1220,12 @@
     "legStops": "Tippen — Halte dieses Abschnitts",
     "planBGzm": "Plan B mit Bussen",
     "planBGzmInfo": "der ganze Weg ab {st} nach {to}",
-    "rotLoading": "Prüfe, woher der Zug kommt"
+    "rotLoading": "Prüfe, woher der Zug kommt",
+    "legNotStarted": "Noch nicht abgefahren (Start: {s} {t})",
+    "legOnTime": "Pünktlich laut PLK",
+    "legNow": "Unterwegs — zuletzt: {s} {t}",
+    "legDone": "Angekommen: {s} {t}",
+    "legTracks": "Gleis: Abfahrt {a}, Ankunft {b}"
   },
   "gzm": {
     "title": "🚌 GZM-Anschlüsse",

@@ -317,6 +317,19 @@
     function rotEarly() { try { return localStorage.getItem('showVersionBadge') === '1'; } catch (e) { return false; } }
     function layoutA() { if (!window.StopsView || !StopsView.legA) return false; if (Date.now() >= Date.parse("2026-11-26T16:00:00+01:00")) return true; try { return localStorage.getItem('showVersionBadge') === '1'; } catch (e) { return false; } }
     function srcTxt(src) { return src === 'live' || src === 'confirmed' ? T('guard.srcLive', null, 'na żywo') : src === 'forecast' ? T('guard.srcForecast', null, 'prognoza PLK') : ''; }
+    // TODO 132: stan odcinka — nie wyruszył / w drodze / dojechał, „punktualnie wg PLK”, tory (z biegu pociągu)
+    function legState(r, rr, l, i) {
+      var raw = r.raw && r.raw[i], out = [], route = raw && Array.isArray(raw.route) ? raw.route : [];
+      var nm = function (x) { return G.norm(x || ''); }, o0 = route[0];
+      if (rr.arrived) out.push(esc(T('guard.legDone', { s: l.alight.stationName, t: G.fmt(G.hm(rr.plannedArr) + (rr.delayArr || 0)) }, 'Dojechał: {s} {t}').replace('{s}', l.alight.stationName).replace('{t}', G.fmt(G.hm(rr.plannedArr) + (rr.delayArr || 0)))));
+      else if (!rr.started && o0) { var st = o0.plannedDeparture || o0.plannedTime || ''; out.push(esc(T('guard.legNotStarted', { s: o0.stationName, t: st }, 'Jeszcze nie wyruszył (start: {s} {t})').replace('{s}', o0.stationName || '').replace('{t}', st))); }
+      else if (rr.started && raw && raw.lastConfirmedStation) out.push(esc(T('guard.legNow', { s: raw.lastConfirmedStation, t: raw.lastConfirmedTime || '' }, 'W drodze — ostatnio: {s} {t}').replace('{s}', raw.lastConfirmedStation).replace('{t}', raw.lastConfirmedTime || '')));
+      if (!rr.delayDep && !rr.delayArr && !rr.cancelled) out.push(esc(T('guard.legOnTime', null, 'Punktualnie wg PLK')));
+      var sb = route.find(function (s) { return nm(s.stationName) === nm(l.board.stationName); }), sa = route.find(function (s) { return nm(s.stationName) === nm(l.alight.stationName); });
+      var ta = sb && sb.track && sb.track !== '-' ? sb.track : '', tb = sa && sa.track && sa.track !== '-' ? sa.track : '';
+      if (ta || tb) out.push(esc(T('guard.legTracks', { a: ta || '–', b: tb || '–' }, 'Tor: odjazd {a}, przyjazd {b}').replace('{a}', ta || '–').replace('{b}', tb || '–')));
+      return out;
+    }
     function legAHtml(c, r, l, i) {
       var rr = r.legs ? r.legs[i] : null, d = rr && !rr.noData, nx = r.legs ? r.legs[i + 1] : null, t = i < c.legs.length - 1 && r.transfers ? r.transfers[i] : null;
       var tr = G.trainLabel(l.train) + (l.train && l.train.name ? ' ' + l.train.name : ''), gz = l.mode === 'gzm';
@@ -331,6 +344,7 @@
         var bad = G.rotationRisk(rr), rl = '🔁 ' + esc(G.rotationLine(rr.rotation, rr.originName, curLang()));
         if (bad) { warn = true; tag += '<div style="flex-basis:100%;font-size:13px;color:var(--yellow);font-weight:700">' + rl + '</div>'; } else det.push(rl);
       }
+      if (d && !gz && rotEarly()) det.push.apply(det, legState(r, rr, l, i));   // TODO 132 (27.11, profil autora): szczegóły przy każdym pociągu — także punktualnym
       if (d && (rr.delayDep || rr.delayArr)) det.push(esc(T('xfer.dDelay', { a: rr.delayDep || 0, b: rr.delayArr || 0 }, 'Opóźnienie: odjazd +{a} min, przyjazd +{b} min').replace('{a}', rr.delayDep || 0).replace('{b}', rr.delayArr || 0)) + (srcTxt(rr.arrSource || rr.depSource) ? ' (' + esc(srcTxt(rr.arrSource || rr.depSource)) + ')' : ''));
       if (t) {
         var ph = G.phaseText ? G.phaseText(t, curLang()) : '';   // TODO 129: etap przesiadki (dochowana / jeszcze stoi / poczeka / bywa, że czeka)

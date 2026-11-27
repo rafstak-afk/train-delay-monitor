@@ -1220,7 +1220,12 @@
     "legStops": "Toca — paradas de este tramo",
     "planBGzm": "Plan B con autobuses",
     "planBGzmInfo": "todo el trayecto desde {st} hasta {to}",
-    "rotLoading": "Comprobando de dónde llega el tren"
+    "rotLoading": "Comprobando de dónde llega el tren",
+    "legNotStarted": "Aún no ha salido (sale de: {s} {t})",
+    "legOnTime": "Puntual según PLK",
+    "legNow": "En camino — último paso: {s} {t}",
+    "legDone": "Llegó: {s} {t}",
+    "legTracks": "Vía: salida {a}, llegada {b}"
   },
   "gzm": {
     "title": "🚌 Conexiones GZM",

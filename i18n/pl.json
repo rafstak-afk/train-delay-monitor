@@ -1220,7 +1220,12 @@
     "legStops": "Stuknij — przystanki tego odcinka",
     "planBGzm": "Plan B z autobusami",
     "planBGzmInfo": "cała dalsza droga z {st} do {to}",
-    "rotLoading": "Sprawdzam, skąd przyjeżdża skład"
+    "rotLoading": "Sprawdzam, skąd przyjeżdża skład",
+    "legNotStarted": "Jeszcze nie wyruszył (start: {s} {t})",
+    "legOnTime": "Punktualnie wg PLK",
+    "legNow": "W drodze — ostatnio: {s} {t}",
+    "legDone": "Dojechał: {s} {t}",
+    "legTracks": "Tor: odjazd {a}, przyjazd {b}"
   },
   "gzm": {
     "title": "🚌 Przesiadki GZM",

@@ -1220,7 +1220,12 @@
     "legStops": "Tap — stops of this section",
     "planBGzm": "Plan B with buses",
     "planBGzmInfo": "the whole way on from {st} to {to}",
-    "rotLoading": "Checking where the train set is coming from"
+    "rotLoading": "Checking where the train set is coming from",
+    "legNotStarted": "Not started yet (starts: {s} {t})",
+    "legOnTime": "On time according to PLK",
+    "legNow": "On the way — last seen: {s} {t}",
+    "legDone": "Arrived: {s} {t}",
+    "legTracks": "Track: departure {a}, arrival {b}"
   },
   "gzm": {
     "title": "🚌 GZM connections",

@@ -1220,7 +1220,12 @@
     "legStops": "Klepni — zastávky tohoto úseku",
     "planBGzm": "Plán B s autobusy",
     "planBGzmInfo": "celá další cesta z {st} do {to}",
-    "rotLoading": "Zjišťuji, odkud souprava přijíždí"
+    "rotLoading": "Zjišťuji, odkud souprava přijíždí",
+    "legNotStarted": "Ještě nevyjel (start: {s} {t})",
+    "legOnTime": "Podle PLK včas",
+    "legNow": "Na cestě — naposledy: {s} {t}",
+    "legDone": "Dojel: {s} {t}",
+    "legTracks": "Kolej: odjezd {a}, příjezd {b}"
   },
   "gzm": {
     "title": "🚌 Přestupy GZM",
