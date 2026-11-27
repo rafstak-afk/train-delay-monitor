@@ -3041,6 +3041,10 @@
         return { leave: rides[0].dep - w0, dep: rides[0].dep, arr: fin(best), lines: rides.map(function (l) { return l.line; }), live: !!(live && rtOk), delay: dl, transfers: rides.length - 1, from: A.n, to: B.n };
       }).catch(function () { return null; });
     }
+    // TODO 136 etap 4: GZM jako pierwszy dostawca „komunikacji miejskiej” (city-transit.js)
+    if (window.CityTransit) CityTransit.register({ id: "gzm", label: "GZM",
+      covers: function (name) { return getIndex().then(function (ix) { var st = (ix.stations || []).find(function (x) { return normName(x.n) === normName(name); }); return !!st; }); },
+      altJourney: altJourney });
     return {
       altJourney: altJourney,
       start: function () { shown = true; ready.then(function () { if (file) getRt().then(function () { render(); }); schedule(); }); },

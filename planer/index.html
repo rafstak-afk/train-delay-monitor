@@ -314,6 +314,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
 <script src="/profile-sync.js"></script>
 <script src="/tutorial.js"></script>
 <script src="/profile-prompt.js"></script>
+<script src="/city-transit.js"></script>
 <script src="/guard-core.js"></script>
 <script src="/guard-store.js"></script>
 <script src="/alarm-sound.js"></script>
@@ -1030,20 +1031,20 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
   // ===== TODO 136 etap 2: „🚌 Zamiast komunikacją miejską” — silnik GZM w telefonie, dane na żywo ZTM, bez zapytań do PLK
   var gzAlt={};
   function gzAltBtn(it){
-    if(!liveOn()||typeof gzmView==='undefined'||!gzmView||!gzmView.altJourney||!it||!(it.legs||[]).length)return '';
+    if(!liveOn()||!window.CityTransit||!CityTransit.has()||!it||!(it.legs||[]).length)return '';
     var k=itKey(it),a=gzAlt[k];
     if(!a){
       gzAlt[k]={loading:true};
       var nowM=(function(){var p=new Date().toLocaleTimeString('sv-SE',{timeZone:'Europe/Warsaw',hour:'2-digit',minute:'2-digit'}).split(':');return +p[0]*60+ +p[1]})();
       var today=new Date().toLocaleDateString('sv-SE',{timeZone:'Europe/Warsaw'}),date=lastQuery&&lastQuery.date||today;
       var dep=itinMinutes(it.departureTime);if(date===today&&dep<nowM)dep=nowM;
-      gzmView.altJourney(it.legs[0].board.stationName,it.legs[it.legs.length-1].alight.stationName,dep,date).then(function(r){gzAlt[k]=r?{r:r}:{none:true};renderVisibleItineraries()});
+      CityTransit.altJourney(it.legs[0].board.stationName,it.legs[it.legs.length-1].alight.stationName,dep,date).then(function(r){gzAlt[k]=r?{r:r}:{none:true};renderVisibleItineraries()});
       return '';
     }
     if(!a.r)return '';
     var r=a.r,fmt=function(m){m=((m%1440)+1440)%1440;return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0')};
     var tag=r.live?(' ● '+T('planer.gzLive')+(r.delay>0?' (+'+r.delay+' min)':'')):(' ○ '+T('planer.gzSched'));
-    return '<div><button type="button" class="btn-sm gz-alt-go" data-gzf="'+escapeHtml(r.from)+'" data-gzt="'+escapeHtml(r.to)+'" data-gztime="'+fmt(r.leave)+'" style="margin:0 0 6px;background:#0f5132">'+escapeHtml(T('planer.gzAlt')+' '+fmt(r.dep)+' → '+fmt(r.arr)+' · '+r.lines.join(' + ')+tag)+'</button></div>';
+    return '<div><button type="button" class="btn-sm gz-alt-go" data-gzf="'+escapeHtml(r.from)+'" data-gzt="'+escapeHtml(r.to)+'" data-gztime="'+fmt(r.leave)+'" style="margin:0 0 6px;background:#0f5132">'+escapeHtml(T('planer.gzAlt').replace(/:$/,'')+(r.provider?' ('+r.provider.label+')':'')+': '+fmt(r.dep)+' → '+fmt(r.arr)+' · '+r.lines.join(' + ')+tag)+'</button></div>';
   }
   // najbliższe połączenie z listy, które jedzie i nie ma wątpliwej przesiadki (gdy jeszcze nieocenione — przynajmniej nieodwołane)
   function altBtn(it,opts){
