@@ -2578,9 +2578,9 @@
         out.map(function (x, i) {
           v2Cur[i] = x;
           // TODO 76 (profil autora): lista jak w oficjalnych wyszukiwarkach — 3 linijki, szczegóły po stuknięciu
-          { var dk = detKey(x); if (!detOpen[dk]) return ceOn() ? ceCompact(x, S, dk) : v2Compact(x, S, dk); }
+          { var dk = detKey(x); if (!detOpen[dk]) return cancelWrap(x, ceOn() ? ceCompact(x, S, dk) : v2Compact(x, S, dk)); }
           var full = x.net ? v2NetCard(x.net, guardOk ? i : null, x) : v2TrainCard(x, guardOk ? i : null, S);
-          return '<div class="v2c-open" data-detk="' + esc(detKey(x)) + '"><button type="button" class="v2c-hide" data-det="' + esc(detKey(x)) + '">▴ ' + esc(T("gzm.v2cHide", null, "zwiń do listy")) + "</button>" + full + "</div>";
+          return cancelWrap(x, '<div class="v2c-open" data-detk="' + esc(detKey(x)) + '"><button type="button" class="v2c-hide" data-det="' + esc(detKey(x)) + '">▴ ' + esc(T("gzm.v2cHide", null, "zwiń do listy")) + "</button>" + full + "</div>");
         }).join("") +
         ('<div style="display:flex;gap:8px;justify-content:space-between;margin:10px 2px">' +
           '<button type="button" class="btn-sm secondary" data-shift="' + (base - 60) + '">⏮ ' + esc(T("gzm.v3Earlier", null, "Wcześniejsze")) + "</button>" +
@@ -2711,8 +2711,38 @@
     function trKey(it) { var l = it && it.legs && it.legs[it.legs.length - 1]; return l && l.train && l.train.number ? "tr|" + l.train.number + "|" + ((l.alight && l.alight.stationName) || "") : null; }
     function delayOf(S, p, it) { var t = S.tDelay || {}, k2 = trKey(it); return t[cKey(p, it)] || (k2 && t[k2]) || null; }
     // Opóźnienie pociągu (ostatni odcinek) na stacji wysiadki — dla 2 pierwszych propozycji, co 60 s.
+    // notatka 27.11 12:25: S1 40917 odwołany (PLK: X), a w wynikach „zdążysz” — sprawdzaliśmy tylko OSTATNI pociąg i tylko opóźnienie.
+    // Teraz: każdy pociąg 3 pierwszych propozycji raz na wyszukiwanie (cState.tChk), odwołanie → cState.tCancel[numer].
+    function trainCancelC() {
+      if (!cState || !cState.shown || !window.GuardCore || !rel27()) return Promise.resolve();
+      cState.tChk = cState.tChk || {}; cState.tCancel = cState.tCancel || {};
+      var jobs = [];
+      cState.shown.filter(function (x) { return x.it && x.it.legs; }).slice(0, 3).forEach(function (x) {
+        x.it.legs.forEach(function (l) {
+          var num = l.train && l.train.number; if (!num || !l.orderId || cState.tChk[num]) return;
+          cState.tChk[num] = 1;
+          var q = new URLSearchParams({ scheduleId: l.scheduleId || "", orderId: l.orderId, operatingDate: cState.date, train: num });
+          jobs.push(fetch("/api/train-details?" + q, { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+            if (!d) return;
+            var rd = GuardCore.readLeg({ board: { stationName: l.board.stationName, time: l.board.time }, alight: { stationName: l.alight.stationName, time: l.alight.time } }, d);
+            if (!rd.noData && rd.cancelled) cState.tCancel[num] = { likely: !!rd.cancelLikely, label: ((l.train.category || "") + " " + num).trim() };
+          }).catch(function () {}));
+        });
+      });
+      return jobs.length ? Promise.all(jobs).then(function () { renderC(); }) : Promise.resolve();
+    }
+    function cancelledOf(x) {
+      var t = cState && cState.tCancel; if (!t || !x || !x.it || !x.it.legs) return [];
+      return x.it.legs.map(function (l) { return l.train && t[l.train.number]; }).filter(Boolean);
+    }
+    function cancelWrap(x, html) {
+      var cx = cancelledOf(x); if (!cx.length) return html;
+      var txt = cx.map(function (c) { return "⚫ " + c.label + " " + (c.likely ? T("gzm.cxlLikely", null, "prawdopodobnie odwołany") : T("gzm.cxlYes", null, "odwołany (wg PLK)")); }).join(" · ");
+      return '<div style="background:#000;border:1px solid #ff4d4d;color:#fff;border-radius:10px;padding:7px 10px;margin:8px 0 -4px;font-weight:800;font-size:13.5px">' + esc(txt) + ' <span style="font-weight:400;color:#cbd5e1">— ' + esc(T("gzm.cxlHint", null, "to połączenie nie dojdzie do skutku")) + '</span></div><div style="opacity:.5">' + html + "</div>";
+    }
     function trainLiveC() {
       if (!cState || !cState.shown || !window.GuardCore) return Promise.resolve();
+      trainCancelC();
       return Promise.all(cState.shown.filter(function (x) { return x.it && x.it.legs; }).slice(0, 2).map(function (x) {
         var l = x.it.legs && x.it.legs[x.it.legs.length - 1]; if (!l || !l.orderId) return null;
         var q = new URLSearchParams({ scheduleId: l.scheduleId || "", orderId: l.orderId, operatingDate: cState.date, train: (l.train && l.train.number) || "" });
