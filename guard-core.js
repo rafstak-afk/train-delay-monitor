@@ -397,13 +397,17 @@
       else { out.phase = "gone"; out.status = "broken"; }
       return;
     }
+    // 27.11 (prośba): zapas wynika z opóźnienia B, ale jest duży (B musiałby nadrobić ≥ 10 min) → 🟢 z dopiskiem zamiast „na styk”
+    // (poprawka 27.11 9:xx: liczone PRZED „jeszcze stoi” — wcześniej po przyjeździe A funkcja kończyła się bez złagodzenia)
+    if (out.onlyThanksToB && out.slack - need >= SOFT_B) { out.softB = true; if (out.slack >= need + SAFE_MARGIN) out.status = "ok"; }
     if (rA.arrived && !rB.boarded) {
-      // „jeszcze nie odjechał” tylko świeżo po przyjeździe A — PLK potwierdza odjazd z 1–2 min opóźnieniem
-      if (typeof x2.now === "number" && x2.now <= Math.max(tA, bDep) + 3) { out.phase = "still"; out.status = bDep - tA >= need ? "ok" : "risk"; }
+      // „jeszcze nie odjechał” tylko w okolicy odjazdu B (od 3 min przed) i świeżo po przyjeździe A — PLK potwierdza odjazd
+      // z 1–2 min opóźnieniem; wcześniej B może jeszcze nawet nie przyjechać (27.11: OsP 40103 +88 min, jeszcze nie wyruszył)
+      var nw = x2.now;
+      if (typeof nw === "number" && nw >= bDep - 3 && nw <= Math.max(tA, bDep) + 3) { out.phase = "still"; out.status = bDep - tA >= need ? "ok" : "risk"; }
       return;
     }
-    // 27.11 (prośba): zapas wynika z opóźnienia B, ale jest duży (B musiałby nadrobić ≥ 10 min) → 🟢 z dopiskiem zamiast „na styk”
-    if (out.onlyThanksToB && out.slack - need >= SOFT_B) { out.softB = true; if (out.slack >= need + SAFE_MARGIN) out.status = "ok"; return; }
+    if (out.softB) return;
     if (rB.depSource === "forecast" && (rB.delayDep || 0) > 0 && out.slack >= need && out.onlyThanksToB) out.phase = "bWaits";
   }
 

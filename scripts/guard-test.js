@@ -320,6 +320,11 @@ test("27.11 łagodniej: mały zapas dzięki B (B +6 → zapas 2) → zostaje �
   eq(t.softB, undefined); eq(t.status, "risk");
 });
 
+test("27.11 przypadek z notatki: A już dojechał, B +88 (jeszcze nie wyruszył) → 🟢 łagodnie, bez „jeszcze stoi”", () => {
+  const t = ev(trainA({ started: true, arrived: true, arrDelay: 6 }), trainB({ forecast: 88 }), x2(14 * 60 + 40)).transfers[0];
+  eq(t.softB, true); eq(t.status, "ok"); eq(t.phase, undefined);
+});
+
 let fail = 0;
 for (const t of T) { try { t.fn(); console.log("  ✔ " + t.name); } catch (e) { fail++; console.log("  ✘ " + t.name + "\n      " + e.message); } }
 console.log("\n" + (T.length - fail) + "/" + T.length + " testów OK");
