@@ -2738,7 +2738,22 @@
     function cancelWrap(x, html) {
       var cx = cancelledOf(x); if (!cx.length) return html;
       var txt = cx.map(function (c) { return "⚫ " + c.label + " " + (c.likely ? T("gzm.cxlLikely", null, "prawdopodobnie odwołany") : T("gzm.cxlYes", null, "odwołany (wg PLK)")); }).join(" · ");
-      return '<div style="background:#000;border:1px solid #ff4d4d;color:#fff;border-radius:10px;padding:7px 10px;margin:8px 0 -4px;font-weight:800;font-size:13.5px">' + esc(txt) + ' <span style="font-weight:400;color:#cbd5e1">— ' + esc(T("gzm.cxlHint", null, "to połączenie nie dojdzie do skutku")) + '</span></div><div style="opacity:.5">' + html + "</div>";
+      // 27.11 (Twoja prośba): cała ramka karty czerwona, napis o odwołaniu W KARCIE nad godzinami, bez „🟢 zdążysz”
+      cxlCss();
+      var line = '<div class="cxl-t">' + esc(txt) + ' <span>— ' + esc(T("gzm.cxlHint", null, "to połączenie nie dojdzie do skutku")) + "</span></div>";
+      var m = String(html).match(/^\s*<div\b[^>]*>/);
+      if (!m) return '<div class="x-cxl">' + line + html + "</div>";
+      var tag = m[0].replace(/class="/, 'class="x-cxl ');
+      if (tag.indexOf('class="') < 0) tag = tag.replace(/^(\s*<div)/, '$1 class="x-cxl"');
+      return tag + line + String(html).slice(m[0].length);
+    }
+    function cxlCss() {
+      if (document.getElementById("cxl-css")) return;
+      var s = document.createElement("style"); s.id = "cxl-css";
+      s.textContent = ".x-cxl{border:2px solid #ff4d4d!important;border-left-width:6px!important;box-shadow:0 0 0 1px rgba(255,77,77,.35)!important;background-color:rgba(255,77,77,.07)!important}" +
+        ".x-cxl .cxl-t{color:#ff6b6b;font-weight:800;font-size:14.5px;margin:0 0 6px;line-height:1.35}.x-cxl .cxl-t span{font-weight:400;color:#fca5a5}" +
+        ".x-cxl>*:not(.cxl-t){opacity:.6}.x-cxl .f-st,.x-cxl .v2c-dur{display:none!important}";
+      document.head.appendChild(s);
     }
     function trainLiveC() {
       if (!cState || !cState.shown || !window.GuardCore) return Promise.resolve();
