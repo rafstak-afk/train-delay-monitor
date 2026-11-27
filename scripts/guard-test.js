@@ -293,7 +293,7 @@ test("129 (1) poczeka: A +14 (14:24), PLK przesuwa odjazd B na 14:26 → 🟡 �
 test("129 (2) bywa, że czeka: A +14, B bez prognozy, czekał 5 z 31 (najdłużej 6) → 🟠 zamiast 🔴", () => {
   const ws = { pary: { "Chorzów Batory|40600|40500": [31, 5, 6] } };
   const t = ev(trainA({ started: true, cur: 14, forecast: 14 }), trainB(), x2(850, ws)).transfers[0];
-  eq(t.status, "risk"); eq(t.mayWait, "maybe"); eq(G.phaseBadge(t, "pl"), "🟠 bywa, że czeka");
+  eq(t.status, "risk"); eq(t.mayWait, "maybe"); eq(G.phaseBadge(t, "pl"), "🟠 40600 bywa, że czeka");
   if (!/5 z 31/.test(G.phaseText(t, "pl"))) throw new Error(G.phaseText(t, "pl"));
 });
 test("129 (2) brakuje więcej niż najdłuższe czekanie → zostaje 🔴", () => {
@@ -333,7 +333,7 @@ test("27.11 „jeszcze stoi”: PLK potwierdziło stację ZA przesiadką, a same
 test("27.11 „jeszcze nie odjechał”: B ostatnio przed stacją przesiadki → tekst z miejscem", () => {
   const b = trainB({ started: true, forecast: 1 }); b.route[0].actualTime = "14:05";
   const t = ev(trainA({ started: true, arrived: true, arrDelay: 2 }), b, x2(860)).transfers[0];
-  eq(t.phase, "still"); eq(G.phaseBadge(t, "pl"), "🟢 jeszcze nie odjechał");
+  eq(t.phase, "still"); eq(G.phaseBadge(t, "pl"), "🟢 40600 jeszcze nie odjechał");
   if (!/ostatnio: Gliwice 14:05/.test(G.phaseText(t, "pl"))) throw new Error(G.phaseText(t, "pl"));
 });
 

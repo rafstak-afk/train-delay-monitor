@@ -365,7 +365,7 @@
       station: station, toStation: legB.board.stationName, stationChange: stationChange, platformChange: platformChange,
       platformArr: rA && rA.platformArr || "", platformDep: rB && rB.platformDep || "",
       plannedSlack: plannedSlack, need: need,
-      trainA: legA.train, trainB: legB.train,
+      trainA: legA.train, trainB: legB.train, lineB: (rB && !rB.noData && rB.line) || "",
       plannedArrA: fmt(plannedA), plannedDepB: fmt(plannedB)
     };
     if (rA && !rA.noData && rA.cancelled) { out.status = "cancelled"; out.cancelledTrain = "A"; return out; }
@@ -626,7 +626,12 @@
   var PXB = { unconf: "bUnconf", held: "bHeld", heldTight: "bHeldTight", gone: "bGone", still: "bStill", stillRisk: "bStillRisk", bWaits: "bWaitsB", maybe: "bMaybe", likely: "bLikely" };
   function phaseBadge(t, lang) {
     var k = phaseKey(t); if (!k) return "";
-    return (PX[lang] || PX.pl)[PXB[k]] || "";
+    var b = (PX[lang] || PX.pl)[PXB[k]] || "";
+    // 27.11 (notatka „jeszcze stoi2”): plakietka stoi w wierszu przyjazdu Twojego pociągu, więc gdy mówi o pociągu
+    // przesiadkowym — z jego linią/numerem („🟢 S9 jeszcze nie odjechał”), żeby nie wyglądała na Twój pociąg
+    var who = t.lineB || (t.trainB && t.trainB.number) || "";
+    if (who && k !== "held" && k !== "heldTight") b = b.replace(/^(\S+) /, function (m, e) { return e + " " + who + " "; });
+    return b;
   }
   function fill(s, p) { return String(s).replace(/\{(\w+)\}/g, function (m, k) { return p[k] != null ? p[k] : m; }); }
   function trainLabel(t) { return [t && t.category, t && t.number].filter(Boolean).join(" ") || "?"; }
