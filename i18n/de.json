@@ -325,6 +325,7 @@
     "fetchFailedSimple": "Daten konnten nicht geladen werden. Bitte erneut versuchen."
   },
   "planer": {
+    "mmAlt": "🚆🚌 Zug + ÖPNV — mehr Möglichkeiten",
     "gzAlt": "🚌 Stattdessen mit ÖPNV:",
     "gzLive": "live",
     "gzSched": "laut Fahrplan",

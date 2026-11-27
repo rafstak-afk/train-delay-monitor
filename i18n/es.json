@@ -325,6 +325,7 @@
     "fetchFailedSimple": "No se pudieron cargar los datos. Inténtalo de nuevo."
   },
   "planer": {
+    "mmAlt": "🚆🚌 Tren + transporte urbano: más opciones",
     "gzAlt": "🚌 En su lugar en transporte urbano:",
     "gzLive": "en vivo",
     "gzSched": "según horario",

@@ -325,6 +325,7 @@
     "fetchFailedSimple": "Data se nepodařilo načíst. Zkus to znovu."
   },
   "planer": {
+    "mmAlt": "🚆🚌 Vlak + MHD — další možnosti",
     "gzAlt": "🚌 Místo toho MHD:",
     "gzLive": "živě",
     "gzSched": "podle jízdního řádu",

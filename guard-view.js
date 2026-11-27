@@ -547,6 +547,8 @@
           html += '<div class="alt"><div><b>' + esc(it.departureTime) + ' → ' + esc(it.arrivalTime) + '</b> · ' + esc(trs) + '<div class="src">' + esc(it.legs.length > 1 ? T('guard.altChanges', { n: it.legs.length - 1 }, 'przesiadki: ' + (it.legs.length - 1)) : T('guard.altDirect', null, 'bezpośrednio')) + lv + '</div></div>' +
             (a.origin.mixed ? '' : '<button type="button" class="btn-sm" data-act="switch" data-id="' + esc(c.id) + '" data-k="' + k + '">' + esc(T('guard.switch', null, '🛡️ Pilnuj tej')) + '</button>') + '</div>';
         });
+        // TODO 136 etap 3: „🚆🚌 Plan B z autobusami” także dla podróży samymi pociągami (Pociąg + GZM liczy pociągi + komunikację)
+        if (!a.origin.mixed && xfer2On() && window.GzmView) html += '<div style="margin-top:8px"><button type="button" class="btn-sm" data-act="planbGzm" data-id="' + esc(c.id) + '">🚆🚌 ' + esc(T('guard.planBGzm', null, 'Plan B z autobusami')) + '</button></div>';
         if (a.origin.mixed) html += '<div style="margin-top:8px"><button type="button" class="btn-sm" data-act="planbGzm" data-id="' + esc(c.id) + '">🚆🚌 ' + esc(T('guard.planBGzm', null, 'Plan B z autobusami')) + '</button> <span class="src">' + esc(T('guard.planBGzmInfo', { st: a.origin.station, to: a.origin.finalTo }, 'cała dalsza droga z {st} do {to}').replace('{st}', a.origin.station).replace('{to}', a.origin.finalTo)) + '</span></div>';
         html += '</div>';
       }
@@ -619,7 +621,7 @@
         return;
       }
       if (act === 'dismiss' && c) { b.disabled = true; S.dismissTrip(c).then(function () { delete results[id]; render(); }); return; }
-      if (act === 'planbGzm' && c) { var ao = alts[id] && alts[id].origin; if (ao) window.dispatchEvent(new CustomEvent('gzmplanb', { detail: { from: ao.station, to: ao.finalTo, date: c.date, time: ao.time } })); return; }
+      if (act === 'planbGzm' && c) { var ao = alts[id] && alts[id].origin; if (ao) { var tm = ao.time, nw = new Date().toLocaleTimeString('sv-SE', { timeZone: 'Europe/Warsaw', hour: '2-digit', minute: '2-digit' }), td = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Warsaw' }); if (c.date === td && tm < nw) tm = nw; window.dispatchEvent(new CustomEvent('gzmplanb', { detail: { from: ao.station, to: ao.finalTo || c.to, date: c.date, time: tm } })); } return; }
       if (act === 'altRetry' && c) { delete alts[id]; findAlternatives(c, results[id]); render(); }
     });
 

@@ -325,6 +325,7 @@
     "fetchFailedSimple": "Nie udało się pobrać danych. Spróbuj ponownie."
   },
   "planer": {
+    "mmAlt": "🚆🚌 Pociąg + komunikacja — więcej możliwości",
     "gzAlt": "🚌 Zamiast komunikacją:",
     "gzLive": "na żywo",
     "gzSched": "wg rozkładu",

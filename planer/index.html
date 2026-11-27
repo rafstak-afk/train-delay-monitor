@@ -1058,7 +1058,14 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
       if(sy==='ok'){if(best<0||arrM(y)<arrM(lastItineraries[best]))best=j}
       else if(sy!=='cancelled'&&sy!=='broken'){if(fallback<0||arrM(y)<arrM(lastItineraries[fallback]))fallback=j}}
     var j2=best>=0?best:fallback;if(j2<0)return '';var y2=lastItineraries[j2];
-    return '<div><button type="button" class="btn-sm cxl-go" data-cxlgo="'+j2+'" style="margin:4px 0 6px">'+escapeHtml(T('gzm.cxlAlt')+' '+y2.departureTime+' → '+y2.arrivalTime+' · '+(y2.legs||[]).map(function(l){return [l.train&&l.train.category,l.train&&l.train.number].filter(Boolean).join(' ')}).join(' + '))+'</button></div>'+gzAltBtn(it);
+    return '<div><button type="button" class="btn-sm cxl-go" data-cxlgo="'+j2+'" style="margin:4px 0 6px">'+escapeHtml(T('gzm.cxlAlt')+' '+y2.departureTime+' → '+y2.arrivalTime+' · '+(y2.legs||[]).map(function(l){return [l.train&&l.train.category,l.train&&l.train.number].filter(Boolean).join(' ')}).join(' + '))+'</button></div>'+gzAltBtn(it)+mmBtn(it);
+  }
+  // ===== TODO 136 etap 3 (27.11): „🚆🚌 Pociąg + komunikacja” na żądanie — otwiera Pociąg + GZM z tą trasą (tam pociągi PLK + komunikacja)
+  function mmBtn(it){
+    if(!liveOn()||typeof gzmView==='undefined'||!gzmView||!it||!(it.legs||[]).length)return '';
+    var today=new Date().toLocaleDateString('sv-SE',{timeZone:'Europe/Warsaw'}),date=lastQuery&&lastQuery.date||today,t=it.departureTime||'';
+    var nowS=new Date().toLocaleTimeString('sv-SE',{timeZone:'Europe/Warsaw',hour:'2-digit',minute:'2-digit'});if(date===today&&t<nowS)t=nowS;
+    return '<div><button type="button" class="btn-sm secondary mm-go" data-mmf="'+escapeHtml(it.legs[0].board.stationName)+'" data-mmt="'+escapeHtml(it.legs[it.legs.length-1].alight.stationName)+'" data-mmtime="'+escapeHtml(t)+'" style="margin:0 0 6px">'+escapeHtml(T('planer.mmAlt'))+'</button></div>';
   }
   function cxlCheck(its,date,after){
     if(!window.GuardCore||!date)return;
@@ -1358,6 +1365,7 @@ input[type=text],input[type=date],input[type=time]{width:100%;padding:14px;borde
 
   $('resultsList').addEventListener('click',function(e){
     var cgo=e.target.closest('.cxl-go');if(cgo){showItinerary(Number(cgo.dataset.cxlgo));return}
+    var mgo=e.target.closest('.mm-go');if(mgo){window.dispatchEvent(new CustomEvent('gzmplanb',{detail:{from:mgo.dataset.mmf,to:mgo.dataset.mmt,date:lastQuery&&lastQuery.date,time:mgo.dataset.mmtime}}));return}
     var ggo=e.target.closest('.gz-alt-go');if(ggo&&gzmView&&gzmView.rerun){showTab('gzm');gzmView.rerun({from:ggo.dataset.gzf,to:ggo.dataset.gzt,date:lastQuery&&lastQuery.date,time:ggo.dataset.gztime});return}
     var hint=e.target.closest('.faster-hint');
     if(hint){showItinerary(Number(hint.dataset.target));return}

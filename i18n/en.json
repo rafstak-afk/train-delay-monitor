@@ -325,6 +325,7 @@
     "fetchFailedSimple": "Couldn't load the data. Please try again."
   },
   "planer": {
+    "mmAlt": "🚆🚌 Train + public transport — more options",
     "gzAlt": "🚌 Instead by public transport:",
     "gzLive": "live",
     "gzSched": "timetable",
