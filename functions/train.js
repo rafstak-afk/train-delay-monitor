@@ -401,35 +401,43 @@ function waitCauseOn(){if(Date.now()>=Date.parse("2026-11-27T16:00:00+01:00"))re
 async function waitCause(data,stations){
   try{
     if(!waitCauseOn()||!data||!Array.isArray(stations))return;
-    let pick=null;
+    // stacje, na których postój wydłużył się o ≥ 2 min — po kolei wzdłuż trasy, najwyżej 3 (po 1 zapytaniu o tablicę)
+    // (poprawka 27.11: wcześniej tylko stacja z największym wydłużeniem — 40423 stał dłużej w Kaletach, Chorzów pomijany)
+    const picks=[];
     stations.forEach(function(st,i){
       if(st.status!=='confirmed'||!st.plannedDeparture)return;
       const dd=Number(st.departureDelay||0),ad=i>0?Number(st.arrivalDelay||0):0,gain=dd-ad;
-      if(gain>=2&&dd>=2&&(!pick||gain>pick.gain))pick={st:st,gain:gain,dd:dd};
+      if(gain>=2&&dd>=2)picks.push({st:st,gain:gain,dd:dd});
     });
-    if(!pick)return;
-    const S=pick.st.stationName,pd=toMin(pick.st.plannedDeparture),ad=pd+pick.dd;if(pd==null)return;
-    const q=new URLSearchParams({station:S,date:String(data.operatingDate||''),time:String(Math.floor(((pd-20+1440)%1440)/60)).padStart(2,'0')+':'+String((pd-20+1440)%60).padStart(2,'0'),limit:'40',arrivals:'1'});
-    const [bd,ws]=await Promise.all([fetch('/api/departures?'+q.toString()).then(r=>r.ok?r.json():null).catch(()=>null),fetch('/data/czekanie.json').then(r=>r.ok?r.json():null).catch(()=>null)]);
-    const me=String(data.trainNumber||'').trim(),deps=bd&&Array.isArray(bd.departures)?bd.departures:[];
-    let best=null;
-    deps.forEach(function(F){
-      if(!F.plannedArrivalTime||!F.arrivalTime||String(F.train)===me||F.status==='X')return;
-      const fp=toMin(F.plannedArrivalTime),fr=toMin(F.arrivalTime);if(fp==null||fr==null)return;
-      const plan=pd-fp,late=fr-fp,gap=ad-fr;
-      if(plan<3||plan>15||late<2||gap<0||gap>6||fr<=pd)return;
-      const pair=ws&&ws.pary&&ws.pary[S+'|'+me+'|'+F.train];
-      const sc=(pair&&pair[1]>0?10:0)-gap;
-      if(!best||sc>best.sc)best={F:F,late:late,sc:sc,pair:pair};
-    });
-    if(!best)return;
-    const F=best.F,lbl=((F.category||'')+' '+F.train+(F.name?' '+F.name:'')).trim();
-    let txt=T('train.waitCause',{s:S,f:lbl,t:shortTime(F.arrivalTime),d:best.late,w:pick.gain});
-    if(txt==='train.waitCause')txt='ℹ️ Prawdopodobnie czekał w '+S+' na opóźniony '+lbl+' (przyjazd '+shortTime(F.arrivalTime)+', +'+best.late+' min) — postój dłuższy o '+pick.gain+' min. Nasza ocena z tablicy przyjazdów, nie informacja PLK.';
-    const row='<div class="disruption-row" style="color:#cfe0f5;margin-top:6px">'+esc(txt)+'</div>';
+    if(!picks.length)return;
+    const ws=await fetch('/data/czekanie.json').then(r=>r.ok?r.json():null).catch(()=>null);
+    const me=String(data.trainNumber||'').trim(),rows=[];
+    for(const pick of picks.slice(0,3)){
+      const S=pick.st.stationName,pd=toMin(pick.st.plannedDeparture);if(pd==null)continue;
+      const ad=pd+pick.dd,t0=(pd-20+1440)%1440;
+      const q=new URLSearchParams({station:S,date:String(data.operatingDate||''),time:String(Math.floor(t0/60)).padStart(2,'0')+':'+String(t0%60).padStart(2,'0'),limit:'40',arrivals:'1'});
+      const bd=await fetch('/api/departures?'+q.toString()).then(r=>r.ok?r.json():null).catch(()=>null);
+      const deps=bd&&Array.isArray(bd.departures)?bd.departures:[];
+      let best=null;
+      deps.forEach(function(F){
+        if(!F.plannedArrivalTime||!F.arrivalTime||String(F.train)===me||F.status==='X')return;
+        const fp=toMin(F.plannedArrivalTime),fr=toMin(F.arrivalTime);if(fp==null||fr==null)return;
+        const plan=pd-fp,late=fr-fp,gap=ad-fr;
+        if(plan<3||plan>15||late<2||gap<0||gap>6||fr<=pd)return;
+        const pair=ws&&ws.pary&&ws.pary[S+'|'+me+'|'+F.train];
+        const sc=(pair&&pair[1]>0?10:0)-gap;
+        if(!best||sc>best.sc)best={F:F,late:late,sc:sc};
+      });
+      if(!best)continue;
+      const F=best.F,lbl=((F.category||'')+' '+F.train+(F.name?' '+F.name:'')).trim();
+      let txt=T('train.waitCause',{s:S,f:lbl,t:shortTime(F.arrivalTime),d:best.late,w:pick.gain});
+      if(txt==='train.waitCause')txt='ℹ️ Prawdopodobnie czekał na stacji '+S+' na opóźniony '+lbl+' (przyjazd '+shortTime(F.arrivalTime)+', +'+best.late+' min) — postój dłuższy o '+pick.gain+' min. Nasza ocena z tablicy przyjazdów, nie informacja PLK.';
+      rows.push('<div class="disruption-row" style="color:#cfe0f5;margin-top:6px">'+esc(txt)+'</div>');
+    }
+    if(!rows.length)return;
     const box=document.querySelector('.disruption-note');
-    if(box)box.insertAdjacentHTML('beforeend',row);
-    else{const c=document.getElementById('content'),p=c&&c.querySelector('.panel');if(p)p.insertAdjacentHTML('afterend','<div class="panel disruption-note">'+row+'</div>');}
+    if(box)box.insertAdjacentHTML('beforeend',rows.join(''));
+    else{const c=document.getElementById('content'),p=c&&c.querySelector('.panel');if(p)p.insertAdjacentHTML('afterend','<div class="panel disruption-note">'+rows.join('')+'</div>');}
   }catch(e){}
 }
 function renderTime(s,state){
