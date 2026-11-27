@@ -77,8 +77,9 @@
   function collect() {
     var out = [], seen = {};
     var add = function (name, html) { var k = String(name).toLowerCase(); if (!name || seen[k]) return; seen[k] = 1; out.push({ name: name, html: html }); };
-    if (favEl) favEl.querySelectorAll("button").forEach(function (b) { add(nameOf(b, "openStation"), b.innerHTML); });
+    // 27.11 (prośba): na wierzchu dwie OSTATNIO oglądane stacje — najpierw historia (od najnowszej), potem ulubione
     if (sugEl) sugEl.querySelectorAll("button").forEach(function (b) { add(nameOf(b, "chooseStation"), b.innerHTML); });
+    if (favEl) favEl.querySelectorAll("button").forEach(function (b) { add(nameOf(b, "openStation"), b.innerHTML); });
     return out;
   }
   function render() {
