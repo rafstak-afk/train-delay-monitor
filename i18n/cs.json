@@ -73,7 +73,8 @@
     "undo": "↩️ Zpět",
     "pageTitle": "Moje vlaky: upozornění na zpoždění – Czy zdążę?",
     "stillWaiting": "⏳ Stále čekám na data PLK…",
-    "unavailable": "Data dočasně nedostupná."
+    "unavailable": "Data dočasně nedostupná.",
+    "notToday": "🚫 Dnes nejede (podle jízdního řádu PLK)."
   },
   "index": {
     "v2": {

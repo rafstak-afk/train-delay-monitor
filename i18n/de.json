@@ -73,7 +73,8 @@
     "undo": "↩️ Rückgängig",
     "pageTitle": "Meine Züge: Verspätungsalarme – Czy zdążę?",
     "stillWaiting": "⏳ Warte noch auf PLK-Daten…",
-    "unavailable": "Daten vorübergehend nicht verfügbar."
+    "unavailable": "Daten vorübergehend nicht verfügbar.",
+    "notToday": "🚫 Verkehrt heute nicht (PLK-Fahrplan)."
   },
   "index": {
     "v2": {

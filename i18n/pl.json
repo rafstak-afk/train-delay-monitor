@@ -73,7 +73,8 @@
     "undo": "↩️ Cofnij",
     "pageTitle": "Moje pociągi: alarmy o opóźnieniach – Czy zdążę?",
     "stillWaiting": "⏳ Wciąż czekam na dane PLK…",
-    "unavailable": "Dane chwilowo niedostępne."
+    "unavailable": "Dane chwilowo niedostępne.",
+    "notToday": "🚫 Dziś nie kursuje (wg rozkładu PLK)."
   },
   "index": {
     "v2": {

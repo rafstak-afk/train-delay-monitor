@@ -73,7 +73,8 @@
     "undo": "↩️ Deshacer",
     "pageTitle": "Mis trenes: alertas de retrasos – Czy zdążę?",
     "stillWaiting": "⏳ Sigo esperando datos de PLK…",
-    "unavailable": "Datos no disponibles temporalmente."
+    "unavailable": "Datos no disponibles temporalmente.",
+    "notToday": "🚫 Hoy no circula (horario PLK)."
   },
   "index": {
     "v2": {

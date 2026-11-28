@@ -66,6 +66,7 @@
     { id: "pomiar-wieczorka-szkola", from: "2026-11-18", html: "⏱️ <b>Pomiar (TODO 71):</b> na przystanku <b>Osiedle Wieczorka Szkoła</b> zmierz stoperem przejście <b>stanowisko 01 → 02</b> (przez światła przy skrzyżowaniu z Ziętka / Armii Krajowej). Stoper: Planer → 🚆🚌 Pociąg + GZM → Pomiar dojścia → ✏️ inne." }
   ];
   function authorReminders() {
+    return; // 28.11 (notatka autora): przypomnienia tylko w rozmowie z Claude przy komputerze — w aplikacji wyłączone (lista w pamięci Claude)
     try { if (localStorage.getItem("showVersionBadge") !== "1") return; } catch (e) { return; }
     var today = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Warsaw" });
     var st = {}; try { st = JSON.parse(localStorage.getItem("authorRemindersV1") || "{}") || {}; } catch (e) {}

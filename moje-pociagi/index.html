@@ -577,7 +577,7 @@ async function retryCardNow(idx) {
   stuckRetryStartedAt.set(idx, Date.now());
   await retryStuckCard(idx);
   const el2 = document.getElementById('card-' + idx), sl2 = el2 && el2.querySelector('.status-line');
-  if (!lastRows[idx] && sl2) sl2.innerHTML = escapeHtml(I18n.t('mojePociagi.unavailable')) + ' <button type="button" class="btn-small" onclick="event.stopPropagation();retryCardNow(' + idx + ')" style="margin-left:6px">' + escapeHtml(I18n.t('train.plkRetryNow')) + '</button>';
+  if (!lastRows[idx] && sl2) sl2.innerHTML = escapeHtml(emptyMsg(idx, false)) + ' <button type="button" class="btn-small" onclick="event.stopPropagation();retryCardNow(' + idx + ')" style="margin-left:6px">' + escapeHtml(I18n.t('train.plkRetryNow')) + '</button>';
 }
 window.retryCardNow = retryCardNow;
 async function retryStuckCard(idx) {
@@ -720,6 +720,12 @@ function clearCachedCourse(trainNum, station) {
 
 const relookedUp = new Set();
 // Fallback: Pobieranie identyfikatorów i stanu biegu po samym numerze pociągu z PLK
+const notToday = new Set();
+function emptyMsg(idx, slow) {
+  const it = currentTrains[idx];
+  if (it && notToday.has(it.trainNum + "|" + it.station)) return I18n.t('mojePociagi.notToday');
+  return I18n.t(slow ? 'mojePociagi.stillWaiting' : 'mojePociagi.unavailable');
+}
 async function fetchTrainByNumber(trainNum, station, _isRetry) {
   try {
     let scheduleId = "";
@@ -739,6 +745,8 @@ async function fetchTrainByNumber(trainNum, station, _isRetry) {
         const lookupRes = await fetchWithTimeout(`/api/v2/smart-lookup?train=${encodeURIComponent(trainNum)}&station=${encodeURIComponent(station)}`, { cache: "no-store" });
         if (lookupRes.ok) {
           const lData = await lookupRes.json();
+          // 28.11 (notatka autora, sobota): PLK nie zna kursu tego dnia → „dziś nie kursuje”, zamiast „dane chwilowo niedostępne”
+          if (lData && lData.ok === false && /w podanym dniu/.test(lData.error || "")) notToday.add(trainNum + "|" + station);
           if (lData && lData.ok) {
             scheduleId = lData.scheduleId || "";
             orderId = lData.orderId || "";
@@ -1287,7 +1295,7 @@ async function init() {
       if (lastRows[idx]) return;
       const el = document.getElementById('card-' + idx), sl = el && el.querySelector('.status-line');
       if (!sl) return;
-      sl.innerHTML = escapeHtml(I18n.t(slow ? 'mojePociagi.stillWaiting' : 'mojePociagi.unavailable')) + ' <button type="button" class="btn-small" onclick="event.stopPropagation();retryCardNow(' + idx + ')" style="margin-left:6px">' + escapeHtml(I18n.t('train.plkRetryNow')) + '</button>';
+      sl.innerHTML = escapeHtml(emptyMsg(idx, slow)) + ' <button type="button" class="btn-small" onclick="event.stopPropagation();retryCardNow(' + idx + ')" style="margin-left:6px">' + escapeHtml(I18n.t('train.plkRetryNow')) + '</button>';
     });
   }
   function paintCard(idx, item, row) {

@@ -642,7 +642,7 @@ async function guardMinute(env, origin, now, nowMinutes, fetchGuardTrain, summar
     const conns = activeGuardConnections(profile, now, nowMinutes).filter(c => guardHot(c, now, nowMinutes));
     if (!conns.length) continue;
     summary.profilesChecked++;
-    try { await runGuard(env, origin, token, profile, subs, conns, fetchGuardTrain, summary, typeof profile.language === "string" ? profile.language : "pl"); }
+    try { await runGuard(env, origin, token, profile, subs, conns, fetchGuardTrain, summary, typeof profile.language === "string" ? profile.language : "pl", true); }
     catch (e) { summary.errors.push(token + " guard (minuta): " + e.message); }
   }
   return summary;
@@ -770,7 +770,7 @@ function briefText(conn, res, readings, lang) {
   [...msgs].slice(0, 2).forEach(m => parts.push("⚠️ " + m));
   return { title: "📋 " + (EM[res.status] || "") + " " + conn.from + " → " + conn.to + " " + conn.legs[0].board.time, body: parts.join(" · ") };
 }
-async function runGuard(env, origin, token, profile, subs, conns, fetchTrain, summary, lang) {
+async function runGuard(env, origin, token, profile, subs, conns, fetchTrain, summary, lang, light) {
   let prevState = {};
   try { prevState = JSON.parse((await env.USER_PROFILES.get(GUARD_STATE_PREFIX + token)) || "{}") || {}; } catch (e) {}
   const set = guardSettingsOf(profile);
@@ -912,7 +912,13 @@ async function runGuard(env, origin, token, profile, subs, conns, fetchTrain, su
     }
   }
   // Zapis tylko przy zmianie (limit zapisów KV).
-  if (JSON.stringify(next) !== JSON.stringify(prevState)) {
+  // 28.11 (ostrzeżenie Cloudflare: 50% dziennego limitu KV): w przebiegu CO MINUTĘ nie zapisujemy samych zmian opóźnienia
+  // i jego historii (delayA, hist) — zmieniały się prawie co minutę przy dużych opóźnieniach; zapisze je pełny przebieg (co 5 min).
+  // Status, wysłane powiadomienia, alternatywy, skrót itd. — zapisywane od razu, jak dotąd.
+  const strip = o => JSON.stringify(o, (k, v) => (k === "delayA" || k === "hist") ? undefined : v);
+  const changed = light ? strip(next) !== strip(prevState) : JSON.stringify(next) !== JSON.stringify(prevState);
+  if (light && !changed && JSON.stringify(next) !== JSON.stringify(prevState)) summary.guardWriteSkipped = (summary.guardWriteSkipped || 0) + 1;
+  if (changed) {
     await env.USER_PROFILES.put(GUARD_STATE_PREFIX + token, JSON.stringify(next), { expirationTtl: GUARD_STATE_TTL });
   }
 }

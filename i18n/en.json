@@ -73,7 +73,8 @@
     "undo": "↩️ Undo",
     "pageTitle": "My trains: delay alerts – Czy zdążę?",
     "stillWaiting": "⏳ Still waiting for PLK data…",
-    "unavailable": "Data temporarily unavailable."
+    "unavailable": "Data temporarily unavailable.",
+    "notToday": "🚫 Not running today (PLK timetable)."
   },
   "index": {
     "v2": {
