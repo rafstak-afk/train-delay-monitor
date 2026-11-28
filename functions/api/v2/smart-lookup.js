@@ -57,9 +57,10 @@ function routeMatchesTrain(route, wantedNormalized) {
 }
 
 async function resolveStationId(stationName, key) {
+  resolveStationId.lastErr = null;
   const path = "/dictionaries/stations?search=" + encodeURIComponent(stationName) + "&pageSize=20";
   const data = await plkFetch(path, key, STATION_SEARCH_CACHE_TTL);
-  if (!data || data._error) return null;
+  if (!data || data._error) { resolveStationId.lastErr = data && (data.status || data.message); return null; }
 
   const list = Array.isArray(data) ? data : (data.stations || data.items || data.results || data.data || []);
   const wanted = stationName.trim().toLowerCase();
@@ -111,7 +112,7 @@ export async function onRequest(context) {
     const stationId = await resolveStationId(stationName, key);
 
     if (!stationId) {
-      return json({ ok: false, error: "Nie znaleziono stacji " + stationName }, 200);
+      return json({ ok: false, error: "Nie znaleziono stacji " + stationName, plk: resolveStationId.lastErr || null }, 200);
     }
 
     const schedulesPath =
@@ -123,7 +124,8 @@ export async function onRequest(context) {
     if (!schedData || schedData._error) {
       return json({
         ok: false,
-        error: "Nie udało się pobrać rozkładu dla stacji " + stationName
+        error: "Nie udało się pobrać rozkładu dla stacji " + stationName,
+        plk: schedData ? (schedData.status || schedData.message || null) : null   // 28.11: diagnoza (status PLK)
       }, 200);
     }
 
